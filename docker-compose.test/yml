@@ -1,0 +1,160 @@
+version: '3.8'
+
+services:
+  # Frontend - Next.js Application (Test)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: test
+    container_name: commerce-frontend-test
+    ports:
+      - "3100:3000"
+    environment:
+      - NODE_ENV=test
+      - NEXT_PUBLIC_API_URL=http://backend:8080/api/v1
+      - NEXT_PUBLIC_APP_ENV=test
+      - CI=true
+    depends_on:
+      - backend
+    networks:
+      - commerce-test-network
+    restart: on-failure
+
+  # Backend - Go API (Test)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: test
+    container_name: commerce-backend-test
+    ports:
+      - "8180:8080"
+    env_file:
+      - .env.test
+    environment:
+      - APP_ENV=test
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-commerce_test}
+      - DB_USER=${DB_USER:-admin}
+      - DB_PASSWORD=${DB_PASSWORD:-test_password}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - LOG_LEVEL=info
+      - ENABLE_SWAGGER=true
+      - RUN_MIGRATIONS=true
+      - SEED_DATA=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - commerce-test-network
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL Database (Test)
+  postgres:
+    image: postgres:16-alpine
+    container_name: commerce-postgres-test
+    ports:
+      - "5532:5432"
+    environment:
+      - POSTGRES_DB=${DB_NAME:-commerce_test}
+      - POSTGRES_USER=${DB_USER:-admin}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-test_password}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+      - ./database/test-fixtures:/fixtures
+    networks:
+      - commerce-test-network
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-admin} -d ${DB_NAME:-commerce_test}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache (Test)
+  redis:
+    image: redis:7-alpine
+    container_name: commerce-redis-test
+    ports:
+      - "6479:6379"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-test_redis_pass}
+    volumes:
+      - redis-test-data:/data
+    networks:
+      - commerce-test-network
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Test Runner - Integration Tests
+  test-runner:
+    build:
+      context: ./tests
+      dockerfile: Dockerfile
+    container_name: commerce-test-runner
+    environment:
+      - TEST_API_URL=http://backend:8080
+      - TEST_FRONTEND_URL=http://frontend:3000
+      - DB_HOST=postgres
+      - DB_NAME=${DB_NAME:-commerce_test}
+      - DB_USER=${DB_USER:-admin}
+      - DB_PASSWORD=${DB_PASSWORD:-test_password}
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    networks:
+      - commerce-test-network
+    volumes:
+      - ./tests:/tests
+      - ./test-results:/test-results
+    command: ["./run-tests.sh"]
+
+  # Prometheus - Metrics (Test)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: commerce-prometheus-test
+    ports:
+      - "9190:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    volumes:
+      - ./monitoring/prometheus/prometheus.test.yml:/etc/prometheus/prometheus.yml
+      - prometheus-test-data:/prometheus
+    networks:
+      - commerce-test-network
+    restart: on-failure
+    depends_on:
+      - backend
+
+volumes:
+  postgres-test-data:
+    driver: local
+  redis-test-data:
+    driver: local
+  prometheus-test-data:
+    driver: local
+
+networks:
+  commerce-test-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
