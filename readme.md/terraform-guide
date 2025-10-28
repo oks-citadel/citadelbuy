@@ -1,0 +1,483 @@
+# Cross-Border Commerce Platform
+## Complete Infrastructure as Code with Terraform + Docker
+
+🚀 **Production-ready e-commerce platform with full infrastructure automation**
+
+---
+
+## 🎯 What's New: Terraform Infrastructure
+
+This repository now includes **complete Infrastructure as Code** using Terraform, enabling:
+
+- ✅ **One-command deployment** to AWS
+- ✅ **Multi-environment support** (dev, test, prod)
+- ✅ **Auto-scaling** infrastructure
+- ✅ **High availability** across multiple availability zones
+- ✅ **Managed database** (RDS PostgreSQL)
+- ✅ **Managed cache** (ElastiCache Redis)
+- ✅ **Cloud storage** (S3 + CloudFront CDN)
+- ✅ **Load balancing** (Application Load Balancer)
+- ✅ **Monitoring** (CloudWatch + Container Insights)
+- ✅ **Secrets management** (AWS Systems Manager)
+- ✅ **Security** (VPC, Security Groups, Encryption)
+
+---
+
+## 📦 Project Structure
+
+```
+commerce-platform/
+│
+├── terraform/                    # 🆕 Infrastructure as Code
+│   ├── main.tf                   # Main Terraform configuration
+│   ├── variables.tf              # Variable definitions
+│   ├── outputs.tf                # Output definitions
+│   ├── README.md                 # Terraform documentation
+│   ├── environments/             # Environment-specific configs
+│   │   ├── dev/
+│   │   ├── test/
+│   │   └── prod/
+│   └── modules/                  # Reusable modules
+│       ├── vpc/                  # Network infrastructure
+│       ├── database/             # RDS PostgreSQL
+│       ├── redis/                # ElastiCache Redis
+│       ├── storage/              # S3 & CloudFront
+│       ├── ecs/                  # Container orchestration
+│       ├── alb/                  # Load balancer
+│       └── monitoring/           # CloudWatch
+│
+├── backend/                      # Go API Application
+│   ├── Dockerfile
+│   └── cmd/api/main.go
+│
+├── frontend/                     # Next.js Application
+│   ├── Dockerfile
+│   └── pages/
+│
+├── docker-compose.dev.yml        # Local development
+├── docker-compose.test.yml       # Local testing
+├── docker-compose.prod.yml       # Docker Swarm deployment
+│
+└── README.md                     # This file
+```
+
+---
+
+## 🚀 Quick Start Guide
+
+### Choose Your Deployment Method
+
+#### Option 1: Cloud Deployment (AWS with Terraform) 🆕
+
+**Best for**: Production deployment, staging, scalable infrastructure
+
+```bash
+# 1. Install Terraform
+brew install terraform  # macOS
+# or download from https://terraform.io
+
+# 2. Configure AWS credentials
+aws configure
+
+# 3. Navigate to Terraform directory
+cd terraform
+
+# 4. Initialize and deploy to development
+cd environments/dev
+terraform init
+terraform plan
+terraform apply
+
+# Your infrastructure will be deployed to AWS!
+# Get the URLs:
+terraform output
+```
+
+**What you get**:
+- Fully managed infrastructure on AWS
+- Auto-scaling application containers
+- Managed PostgreSQL database (RDS)
+- Managed Redis cache (ElastiCache)
+- CDN for static assets (CloudFront)
+- Load balancer with SSL (ALB)
+- Automatic backups and monitoring
+- High availability across multiple data centers
+
+**Estimated costs**:
+- Dev: ~$100/month
+- Test: ~$200/month
+- Prod: ~$500-2000/month (scales with usage)
+
+#### Option 2: Local Development (Docker Compose)
+
+**Best for**: Local development, testing features
+
+```bash
+# 1. Start local environment
+make dev
+
+# OR
+docker-compose -f docker-compose.dev.yml up -d
+
+# 2. Access services
+# Frontend: http://localhost:3000
+# Backend: http://localhost:8080
+# API Docs: http://localhost:8080/swagger
+```
+
+**What you get**:
+- Local development environment
+- Hot reload for code changes
+- All services running locally
+- Database UI (pgAdmin)
+- Monitoring (Grafana)
+- Email testing (MailHog)
+
+**Requirements**:
+- Docker Desktop
+- 8GB RAM
+- 50GB disk space
+
+---
+
+## 🏗️ Architecture Comparison
+
+### Local (Docker Compose)
+```
+Your Computer
+├── Frontend Container (Next.js)
+├── Backend Container (Go)
+├── PostgreSQL Container
+├── Redis Container
+└── NGINX Container
+```
+**Pros**: Free, fast iteration, full control
+**Cons**: Not scalable, single point of failure, manual updates
+
+### Cloud (Terraform + AWS)
+```
+AWS Cloud
+├── Load Balancer (Multi-AZ)
+│   ├── Frontend (Auto-scaling: 2-20 containers)
+│   └── Backend (Auto-scaling: 2-20 containers)
+├── RDS PostgreSQL (Multi-AZ, Automated backups)
+├── ElastiCache Redis (Replication enabled)
+└── S3 + CloudFront (Global CDN)
+```
+**Pros**: Auto-scaling, high availability, managed services, monitoring
+**Cons**: Costs money, AWS knowledge required
+
+---
+
+## 📖 Documentation
+
+### Core Documentation
+- **[README.md](README.md)** - This file (overview)
+- **[QUICKSTART.md](QUICKSTART.md)** - 5-minute local setup
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Docker deployment guide
+
+### Terraform Documentation 🆕
+- **[terraform/README.md](terraform/README.md)** - Complete Terraform guide
+  - Prerequisites and setup
+  - Environment configuration
+  - Module documentation
+  - Deployment procedures
+  - Cost optimization
+  - Troubleshooting
+
+### Technical Documentation
+- **[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)** - Project organization
+- **Backend API**: See `backend/README.md`
+- **Frontend**: See `frontend/README.md`
+
+---
+
+## 🎯 Deployment Paths
+
+### Path 1: Start Local, Deploy to Cloud
+
+```bash
+# Step 1: Develop locally
+make dev
+# Build and test your features locally
+
+# Step 2: Deploy to cloud staging
+cd terraform/environments/test
+terraform apply
+# Test in cloud environment
+
+# Step 3: Deploy to production
+cd terraform/environments/prod
+terraform apply
+# Go live!
+```
+
+### Path 2: Cloud-First Development
+
+```bash
+# Step 1: Deploy dev environment to cloud
+cd terraform/environments/dev
+terraform apply
+
+# Step 2: Develop against cloud resources
+# Update container images
+# Push to registry
+# Terraform will update ECS
+
+# Step 3: Promote to production
+cd terraform/environments/prod
+terraform apply
+```
+
+---
+
+## 🔧 Technology Stack
+
+### Application Layer
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| Frontend | Next.js 14 | React framework with SSR |
+| Backend | Go 1.21+ | High-performance API |
+| Database | PostgreSQL 16 | Relational database |
+| Cache | Redis 7 | In-memory cache |
+
+### Infrastructure Layer (Terraform) 🆕
+| Component | AWS Service | Purpose |
+|-----------|------------|---------|
+| Compute | ECS Fargate | Containerized applications |
+| Load Balancer | ALB | Traffic distribution |
+| Database | RDS PostgreSQL | Managed database |
+| Cache | ElastiCache Redis | Managed cache |
+| Storage | S3 + CloudFront | Object storage + CDN |
+| DNS | Route53 | Domain management |
+| Secrets | Systems Manager | Secure configuration |
+| Monitoring | CloudWatch | Logs and metrics |
+| Network | VPC | Network isolation |
+
+---
+
+## 💰 Cost Breakdown
+
+### Local Development (Docker Compose)
+**Monthly Cost**: $0 (free)
+
+### Cloud Deployment (Terraform + AWS)
+
+**Development Environment**:
+- Compute (ECS Fargate): $30/month
+- Database (db.t3.micro): $15/month
+- Cache (cache.t3.micro): $12/month
+- Load Balancer: $20/month
+- Networking: $35/month
+- **Total**: ~$100/month
+
+**Production Environment**:
+- Compute (auto-scaling): $150-500/month
+- Database (db.r6g.xlarge): $600/month
+- Cache (cache.r6g.large x2): $300/month
+- Load Balancer: $20/month
+- CDN: $50/month
+- Networking: $100/month
+- Storage: $25/month
+- **Total**: ~$1,200-1,800/month (scales with traffic)
+
+💡 **Pro tip**: Use dev/test environments during business hours only to save costs!
+
+---
+
+## 🚀 Deployment Commands
+
+### Local Development
+
+```bash
+# Start everything
+make dev
+
+# View logs
+make logs
+
+# Stop everything
+make dev-down
+
+# Run tests
+make test
+
+# Clean up
+make clean
+```
+
+### Cloud Deployment (Terraform)
+
+```bash
+# Initialize Terraform
+cd terraform/environments/[env]
+terraform init
+
+# Preview changes
+terraform plan -var-file=terraform.tfvars
+
+# Deploy infrastructure
+terraform apply -var-file=terraform.tfvars
+
+# View outputs
+terraform output
+
+# Destroy infrastructure (careful!)
+terraform destroy -var-file=terraform.tfvars
+```
+
+---
+
+## 🔐 Environment Setup
+
+### For Local Development
+
+```bash
+# 1. Copy environment file
+cp .env.dev .env.dev.local
+
+# 2. Update values (optional for local)
+# All defaults work out of the box!
+
+# 3. Start
+make dev
+```
+
+### For Cloud Deployment
+
+```bash
+# 1. Set up AWS credentials
+aws configure
+
+# 2. Create S3 bucket for Terraform state
+aws s3 mb s3://your-terraform-state-bucket
+
+# 3. Update backend configuration
+# Edit terraform/environments/[env]/backend.tfvars
+
+# 4. Set secrets via environment variables
+export TF_VAR_stripe_secret_key="sk_live_..."
+
+# 5. Deploy
+cd terraform/environments/prod
+terraform init -backend-config=backend.tfvars
+terraform apply -var-file=terraform.tfvars
+```
+
+---
+
+## 📊 Monitoring & Observability
+
+### Local (Docker Compose)
+- **Grafana**: http://localhost:3001 (admin/admin)
+- **Prometheus**: http://localhost:9090
+- **Logs**: `docker-compose logs -f`
+
+### Cloud (AWS)
+- **CloudWatch Dashboards**: Auto-created by Terraform
+- **Container Insights**: Enabled by default
+- **Log Groups**: `/ecs/commerce-platform-[env]/[service]`
+- **Alarms**: Configured for critical metrics
+- **Cost Explorer**: Track spending
+
+---
+
+## 🔒 Security Features
+
+### Local Development
+- ✅ Network isolation (Docker networks)
+- ✅ Environment variable management
+- ✅ Local SSL certificates (self-signed)
+
+### Cloud Deployment
+- ✅ VPC with private subnets
+- ✅ Security groups (firewall rules)
+- ✅ Encrypted storage (RDS, S3, EBS)
+- ✅ SSL/TLS certificates (ACM)
+- ✅ Secrets management (Systems Manager)
+- ✅ IAM roles (least privilege)
+- ✅ VPC Flow Logs (network monitoring)
+- ✅ CloudTrail (API audit logging)
+
+---
+
+## 🆘 Getting Help
+
+### Documentation
+1. Check [QUICKSTART.md](QUICKSTART.md) for local setup
+2. Check [terraform/README.md](terraform/README.md) for cloud deployment
+3. Check [DEPLOYMENT.md](DEPLOYMENT.md) for Docker production
+
+### Support Channels
+- 📧 Email: devops@yourcompany.com
+- 💬 Slack: #infrastructure
+- 🐛 Issues: [GitHub Issues](https://github.com/yourorg/commerce-platform/issues)
+- 📚 Wiki: [Internal Wiki](https://wiki.yourcompany.com)
+
+---
+
+## 🎓 Learning Resources
+
+### Getting Started
+- [Terraform Tutorial](https://learn.hashicorp.com/terraform)
+- [AWS ECS Guide](https://docs.aws.amazon.com/ecs/)
+- [Docker Documentation](https://docs.docker.com)
+
+### Best Practices
+- [AWS Well-Architected](https://aws.amazon.com/architecture/well-architected/)
+- [Terraform Best Practices](https://www.terraform-best-practices.com)
+- [12-Factor App](https://12factor.net)
+
+---
+
+## 🗺️ Roadmap
+
+### ✅ Completed
+- Local development environment
+- Docker Compose for all environments
+- Complete Terraform infrastructure
+- Multi-environment support
+- Auto-scaling configuration
+- Monitoring and logging
+
+### 🔄 In Progress
+- CI/CD pipeline (GitHub Actions)
+- Automated testing in cloud
+- Blue-green deployment
+- Disaster recovery procedures
+
+### 📋 Planned
+- Kubernetes support (EKS)
+- Multi-region deployment
+- Advanced monitoring (Datadog)
+- Cost optimization automation
+- Infrastructure drift detection
+
+---
+
+## 📝 License
+
+MIT License - see [LICENSE](LICENSE) file
+
+---
+
+## 🙏 Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
+
+## 📞 Contact
+
+- **Project Lead**: lead@yourcompany.com
+- **DevOps Team**: devops@yourcompany.com
+- **Security**: security@yourcompany.com
+
+---
+
+**🚀 Ready to Deploy?**
+
+- **Local Development**: Run `make dev` and start coding!
+- **Cloud Deployment**: Check out [terraform/README.md](terraform/README.md) for AWS deployment
+
+**Built with ❤️ for global commerce**
