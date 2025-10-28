@@ -1,0 +1,314 @@
+name: Rollback Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to rollback'
+        required: true
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+      rollback-to:
+        description: 'Rollback to version (commit SHA or tag)'
+        required: true
+        type: string
+      reason:
+        description: 'Reason for rollback'
+        required: true
+        type: string
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  confirm-rollback:
+    name: Confirm Rollback
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.environment }}-rollback
+    steps:
+      - name: Confirm rollback action
+        run: |
+          echo "🔄 Rolling back ${{ github.event.inputs.environment }} to ${{ github.event.inputs.rollback-to }}"
+          echo "Reason: ${{ github.event.inputs.reason }}"
+
+  backup-current-state:
+    name: Backup Current State
+    runs-on: ubuntu-latest
+    needs: confirm-rollback
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+          terraform_wrapper: false
+
+      - name: Backup Terraform State
+        run: |
+          cd terraform/environments/${{ github.event.inputs.environment }}
+          terraform init \
+            -backend-config="key=${{ github.event.inputs.environment }}/terraform.tfstate"
+          
+          # Pull current state
+          terraform state pull > /tmp/terraform-state-backup-$(date +%Y%m%d-%H%M%S).json
+          
+          # Upload to S3
+          aws s3 cp /tmp/terraform-state-backup-*.json \
+            s3://commerce-platform-terraform-state/backups/
+
+      - name: Backup Database
+        run: |
+          CLUSTER="commerce-platform-${{ github.event.inputs.environment }}"
+          DB_INSTANCE=$(aws rds describe-db-instances \
+            --filters "Name=tag:Environment,Values=${{ github.event.inputs.environment }}" \
+            --query 'DBInstances[0].DBInstanceIdentifier' \
+            --output text)
+          
+          # Create snapshot
+          SNAPSHOT_ID="${DB_INSTANCE}-rollback-$(date +%Y%m%d-%H%M%S)"
+          aws rds create-db-snapshot \
+            --db-instance-identifier $DB_INSTANCE \
+            --db-snapshot-identifier $SNAPSHOT_ID
+          
+          echo "Database snapshot created: $SNAPSHOT_ID"
+
+  rollback-images:
+    name: Rollback Container Images
+    runs-on: ubuntu-latest
+    needs: backup-current-state
+    steps:
+      - name: Checkout target version
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.rollback-to }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/commerce-backend:rollback-${{ github.event.inputs.rollback-to }}
+            ${{ steps.login-ecr.outputs.registry }}/commerce-backend:${{ github.event.inputs.environment }}-latest
+
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/commerce-frontend:rollback-${{ github.event.inputs.rollback-to }}
+            ${{ steps.login-ecr.outputs.registry }}/commerce-frontend:${{ github.event.inputs.environment }}-latest
+
+  rollback-infrastructure:
+    name: Rollback Infrastructure
+    runs-on: ubuntu-latest
+    needs: rollback-images
+    environment:
+      name: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout target version
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.rollback-to }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        run: |
+          cd terraform/environments/${{ github.event.inputs.environment }}
+          terraform init \
+            -backend-config="key=${{ github.event.inputs.environment }}/terraform.tfstate"
+
+      - name: Terraform Plan
+        env:
+          TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
+        run: |
+          cd terraform/environments/${{ github.event.inputs.environment }}
+          terraform plan \
+            -var-file=terraform.tfvars \
+            -out=tfplan
+
+      - name: Terraform Apply
+        env:
+          TF_VAR_stripe_secret_key: ${{ secrets.STRIPE_SECRET_KEY }}
+        run: |
+          cd terraform/environments/${{ github.event.inputs.environment }}
+          terraform apply -auto-approve tfplan
+
+  update-ecs-services:
+    name: Update ECS Services
+    runs-on: ubuntu-latest
+    needs: rollback-infrastructure
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Force new deployment
+        run: |
+          CLUSTER="commerce-platform-${{ github.event.inputs.environment }}"
+          
+          # Update backend service
+          aws ecs update-service \
+            --cluster $CLUSTER \
+            --service commerce-platform-${{ github.event.inputs.environment }}-backend \
+            --force-new-deployment \
+            --desired-count 2
+          
+          # Update frontend service
+          aws ecs update-service \
+            --cluster $CLUSTER \
+            --service commerce-platform-${{ github.event.inputs.environment }}-frontend \
+            --force-new-deployment \
+            --desired-count 2
+
+      - name: Wait for services to stabilize
+        run: |
+          CLUSTER="commerce-platform-${{ github.event.inputs.environment }}"
+          
+          aws ecs wait services-stable \
+            --cluster $CLUSTER \
+            --services \
+              commerce-platform-${{ github.event.inputs.environment }}-backend \
+              commerce-platform-${{ github.event.inputs.environment }}-frontend
+
+  verify-rollback:
+    name: Verify Rollback
+    runs-on: ubuntu-latest
+    needs: update-ecs-services
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get service endpoints
+        id: endpoints
+        run: |
+          cd terraform/environments/${{ github.event.inputs.environment }}
+          terraform init -backend-config="key=${{ github.event.inputs.environment }}/terraform.tfstate"
+          
+          API_URL=$(terraform output -raw api_domain)
+          FRONTEND_URL=$(terraform output -raw frontend_domain)
+          
+          echo "api-url=$API_URL" >> $GITHUB_OUTPUT
+          echo "frontend-url=$FRONTEND_URL" >> $GITHUB_OUTPUT
+
+      - name: Health check
+        run: |
+          API_URL="${{ steps.endpoints.outputs.api-url }}"
+          
+          for i in {1..30}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$API_URL/health" || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✓ Health check passed"
+              exit 0
+            fi
+            echo "Attempt $i: Got $HTTP_CODE, retrying..."
+            sleep 10
+          done
+          
+          echo "✗ Health check failed after rollback"
+          exit 1
+
+      - name: Run smoke tests
+        run: |
+          API_URL="${{ steps.endpoints.outputs.api-url }}"
+          
+          # Test critical endpoints
+          curl -f "$API_URL/health" || exit 1
+          curl -f "$API_URL/api/v1/products" || exit 1
+          
+          echo "✓ All smoke tests passed"
+
+  notify:
+    name: Notify Team
+    runs-on: ubuntu-latest
+    needs: verify-rollback
+    if: always()
+    steps:
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "${{ needs.verify-rollback.result == 'success' && '✅ Rollback Successful' || '❌ Rollback Failed' }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Rollback Status*\n*Environment:* ${{ github.event.inputs.environment }}\n*Target Version:* ${{ github.event.inputs.rollback-to }}\n*Reason:* ${{ github.event.inputs.reason }}\n*Initiated by:* @${{ github.actor }}\n*Status:* ${{ needs.verify-rollback.result }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Create rollback issue
+        if: needs.verify-rollback.result == 'failure'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Rollback Failed: ${{ github.event.inputs.environment }}',
+              body: `**Rollback Details**
+              
+              - **Environment:** ${{ github.event.inputs.environment }}
+              - **Target Version:** ${{ github.event.inputs.rollback-to }}
+              - **Reason:** ${{ github.event.inputs.reason }}
+              - **Initiated by:** @${{ github.actor }}
+              - **Run URL:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+              
+              **Action Required:**
+              Manual intervention needed to resolve rollback failure.`,
+              labels: ['critical', 'infrastructure', 'rollback']
+            })
