@@ -1,554 +1,536 @@
-# ================================
-# Main Terraform Configuration
-# Cross-Border Commerce Platform
-# ================================
-
 terraform {
-  required_version = ">= 1.6.0"
-
+  required_version = ">= 1.5.0"
+  
   required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.80"
     }
-    docker = {
-      source  = "kreuzwerker/docker"
-      version = "~> 3.0"
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "~> 2.45"
     }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.5"
     }
-    null = {
-      source  = "hashicorp/null"
-      version = "~> 3.2"
-    }
-  }
-
-  # Backend configuration for state management
-  backend "s3" {
-    bucket         = "commerce-platform-terraform-state"
-    key            = "terraform.tfstate"
-    region         = "us-east-1"
-    encrypt        = true
-    dynamodb_table = "terraform-state-lock"
   }
 }
 
-# ================================
-# Provider Configuration
-# ================================
+provider "azurerm" {
+  features {
+    key_vault {
+      purge_soft_delete_on_destroy = var.environment == "dev" ? true : false
+    }
+    resource_group {
+      prevent_deletion_if_contains_resources = var.environment == "production" ? true : false
+    }
+  }
+}
 
-provider "aws" {
-  region = var.aws_region
+# Data sources
+data "azurerm_client_config" "current" {}
 
-  default_tags {
-    tags = {
-      Project     = var.project_name
+# Random suffix for globally unique names
+resource "random_string" "suffix" {
+  length  = 6
+  special = false
+  upper   = false
+}
+
+locals {
+  resource_prefix = "${var.project_name}-${var.environment}"
+  common_tags = merge(
+    var.tags,
+    {
       Environment = var.environment
+      Project     = var.project_name
       ManagedBy   = "Terraform"
       CostCenter  = var.cost_center
     }
-  }
+  )
 }
 
-provider "docker" {
-  host = var.docker_host
+# ===================================================================
+# RESOURCE GROUP
+# ===================================================================
+resource "azurerm_resource_group" "main" {
+  name     = "${local.resource_prefix}-rg"
+  location = var.location
+  tags     = local.common_tags
 }
 
-# ================================
-# Data Sources
-# ================================
+# ===================================================================
+# NETWORKING
+# ===================================================================
+module "networking" {
+  source = "./modules/networking"
 
-data "aws_availability_zones" "available" {
-  state = "available"
-}
-
-data "aws_caller_identity" "current" {}
-
-data "aws_region" "current" {}
-
-# ================================
-# Local Variables
-# ================================
-
-locals {
-  common_tags = {
-    Project     = var.project_name
-    Environment = var.environment
-    ManagedBy   = "Terraform"
-    Owner       = var.owner_email
-  }
-
-  az_count = min(length(data.aws_availability_zones.available.names), 3)
-
-  # Resource naming
-  name_prefix = "${var.project_name}-${var.environment}"
-
-  # CIDR calculations
-  availability_zones = slice(data.aws_availability_zones.available.names, 0, local.az_count)
-}
-
-# ================================
-# VPC Module
-# ================================
-
-module "vpc" {
-  source = "./modules/vpc"
-
-  project_name       = var.project_name
-  environment        = var.environment
-  vpc_cidr           = var.vpc_cidr
-  availability_zones = local.availability_zones
-  enable_nat_gateway = var.enable_nat_gateway
-  enable_vpn_gateway = var.enable_vpn_gateway
-
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  environment         = var.environment
+  resource_prefix     = local.resource_prefix
+  
+  vnet_address_space          = var.vnet_address_space
+  app_subnet_address_prefix   = var.app_subnet_address_prefix
+  data_subnet_address_prefix  = var.data_subnet_address_prefix
+  cache_subnet_address_prefix = var.cache_subnet_address_prefix
+  apim_subnet_address_prefix  = var.apim_subnet_address_prefix
+  
+  enable_ddos_protection = var.environment == "production" ? true : false
+  
   tags = local.common_tags
 }
 
-# ================================
-# Security Groups Module
-# ================================
-
-module "security_groups" {
+# ===================================================================
+# SECURITY - KEY VAULT
+# ===================================================================
+module "security" {
   source = "./modules/security"
 
-  project_name = var.project_name
-  environment  = var.environment
-  vpc_id       = module.vpc.vpc_id
-
-  allowed_cidr_blocks = var.allowed_cidr_blocks
-
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  environment         = var.environment
+  resource_prefix     = local.resource_prefix
+  
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+  object_id           = data.azurerm_client_config.current.object_id
+  
+  subnet_id           = module.networking.data_subnet_id
+  
+  enable_private_endpoint = var.environment != "dev"
+  
   tags = local.common_tags
 }
 
-# ================================
-# RDS PostgreSQL Module
-# ================================
-
+# ===================================================================
+# DATABASE - POSTGRESQL FLEXIBLE SERVER
+# ===================================================================
 module "database" {
   source = "./modules/database"
 
-  project_name          = var.project_name
-  environment           = var.environment
-  vpc_id                = module.vpc.vpc_id
-  database_subnet_ids   = module.vpc.database_subnet_ids
-  security_group_ids    = [module.security_groups.database_sg_id]
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  environment         = var.environment
+  resource_prefix     = local.resource_prefix
   
-  instance_class        = var.db_instance_class
-  allocated_storage     = var.db_allocated_storage
-  engine_version        = var.db_engine_version
-  database_name         = var.db_name
-  master_username       = var.db_username
-  backup_retention      = var.db_backup_retention
-  multi_az              = var.db_multi_az
-  deletion_protection   = var.db_deletion_protection
-
+  subnet_id           = module.networking.data_subnet_id
+  private_dns_zone_id = module.networking.postgres_private_dns_zone_id
+  
+  sku_name            = var.db_sku_name
+  storage_mb          = var.db_storage_mb
+  backup_retention_days = var.db_backup_retention_days
+  
+  administrator_login    = var.db_admin_username
+  administrator_password = var.db_admin_password
+  
+  database_names = [
+    "auth_db",
+    "user_db",
+    "product_db",
+    "order_db",
+    "payment_db",
+    "inventory_db",
+    "analytics_db"
+  ]
+  
+  enable_high_availability = var.environment == "production"
+  
   tags = local.common_tags
 }
 
-# ================================
-# ElastiCache Redis Module
-# ================================
-
+# ===================================================================
+# CACHE - REDIS
+# ===================================================================
 module "redis" {
   source = "./modules/redis"
 
-  project_name       = var.project_name
-  environment        = var.environment
-  vpc_id             = module.vpc.vpc_id
-  cache_subnet_ids   = module.vpc.cache_subnet_ids
-  security_group_ids = [module.security_groups.redis_sg_id]
-
-  node_type          = var.redis_node_type
-  num_cache_nodes    = var.redis_num_nodes
-  engine_version     = var.redis_engine_version
-  parameter_family   = var.redis_parameter_family
-
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  environment         = var.environment
+  resource_prefix     = local.resource_prefix
+  
+  subnet_id           = module.networking.cache_subnet_id
+  
+  capacity            = var.redis_capacity
+  family              = var.redis_family
+  sku_name            = var.redis_sku_name
+  
+  enable_non_ssl_port = var.environment == "dev"
+  
   tags = local.common_tags
 }
 
-# ================================
-# S3 Storage Module
-# ================================
-
+# ===================================================================
+# STORAGE
+# ===================================================================
 module "storage" {
   source = "./modules/storage"
 
-  project_name = var.project_name
-  environment  = var.environment
-
-  enable_versioning = var.s3_enable_versioning
-  enable_encryption = var.s3_enable_encryption
-  lifecycle_rules   = var.s3_lifecycle_rules
-
-  tags = local.common_tags
-}
-
-# ================================
-# ECS Cluster Module
-# ================================
-
-module "ecs" {
-  source = "./modules/ecs"
-
-  project_name = var.project_name
-  environment  = var.environment
-  vpc_id       = module.vpc.vpc_id
-
-  container_insights = var.ecs_container_insights
-
-  tags = local.common_tags
-}
-
-# ================================
-# Application Load Balancer Module
-# ================================
-
-module "alb" {
-  source = "./modules/alb"
-
-  project_name       = var.project_name
-  environment        = var.environment
-  vpc_id             = module.vpc.vpc_id
-  public_subnet_ids  = module.vpc.public_subnet_ids
-  security_group_ids = [module.security_groups.alb_sg_id]
-
-  enable_deletion_protection = var.alb_deletion_protection
-  enable_http2              = var.alb_enable_http2
-  idle_timeout              = var.alb_idle_timeout
-
-  ssl_certificate_arn = var.ssl_certificate_arn
-  domain_name         = var.domain_name
-
-  tags = local.common_tags
-}
-
-# ================================
-# Backend Service Module
-# ================================
-
-module "backend_service" {
-  source = "./modules/ecs-service"
-
-  project_name       = var.project_name
-  environment        = var.environment
-  service_name       = "backend"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  environment         = var.environment
+  resource_prefix     = local.resource_prefix
+  random_suffix       = random_string.suffix.result
   
-  cluster_id         = module.ecs.cluster_id
-  vpc_id             = module.vpc.vpc_id
-  private_subnet_ids = module.vpc.private_subnet_ids
-  security_group_ids = [module.security_groups.backend_sg_id]
-
-  # Container configuration
-  container_image    = var.backend_image
-  container_port     = 8080
-  cpu                = var.backend_cpu
-  memory             = var.backend_memory
-  desired_count      = var.backend_desired_count
-
-  # Load balancer
-  target_group_arn   = module.alb.backend_target_group_arn
-
-  # Environment variables
-  environment_variables = {
-    APP_ENV              = var.environment
-    DB_HOST              = module.database.endpoint
-    DB_PORT              = "5432"
-    DB_NAME              = var.db_name
-    DB_USER              = var.db_username
-    REDIS_HOST           = module.redis.endpoint
-    REDIS_PORT           = "6379"
-    S3_BUCKET            = module.storage.assets_bucket_name
-    AWS_REGION           = var.aws_region
-    LOG_LEVEL            = var.log_level
-  }
-
-  # Secrets from SSM Parameter Store
-  secrets = {
-    DB_PASSWORD      = aws_ssm_parameter.db_password.arn
-    REDIS_PASSWORD   = aws_ssm_parameter.redis_password.arn
-    JWT_SECRET       = aws_ssm_parameter.jwt_secret.arn
-    STRIPE_SECRET    = aws_ssm_parameter.stripe_secret.arn
-  }
-
-  # Auto-scaling
-  enable_autoscaling     = var.enable_autoscaling
-  autoscaling_min        = var.backend_autoscaling_min
-  autoscaling_max        = var.backend_autoscaling_max
-  autoscaling_target_cpu = var.autoscaling_target_cpu
-
-  tags = local.common_tags
-}
-
-# ================================
-# Frontend Service Module
-# ================================
-
-module "frontend_service" {
-  source = "./modules/ecs-service"
-
-  project_name       = var.project_name
-  environment        = var.environment
-  service_name       = "frontend"
+  account_tier             = var.storage_account_tier
+  account_replication_type = var.storage_replication_type
   
-  cluster_id         = module.ecs.cluster_id
-  vpc_id             = module.vpc.vpc_id
-  private_subnet_ids = module.vpc.private_subnet_ids
-  security_group_ids = [module.security_groups.frontend_sg_id]
-
-  # Container configuration
-  container_image    = var.frontend_image
-  container_port     = 3000
-  cpu                = var.frontend_cpu
-  memory             = var.frontend_memory
-  desired_count      = var.frontend_desired_count
-
-  # Load balancer
-  target_group_arn   = module.alb.frontend_target_group_arn
-
-  # Environment variables
-  environment_variables = {
-    NODE_ENV                = "production"
-    NEXT_PUBLIC_API_URL     = "https://api.${var.domain_name}"
-    NEXT_PUBLIC_CDN_URL     = module.storage.cloudfront_url
-    NEXT_TELEMETRY_DISABLED = "1"
-  }
-
-  secrets = {}
-
-  # Auto-scaling
-  enable_autoscaling     = var.enable_autoscaling
-  autoscaling_min        = var.frontend_autoscaling_min
-  autoscaling_max        = var.frontend_autoscaling_max
-  autoscaling_target_cpu = var.autoscaling_target_cpu
-
+  enable_versioning        = var.environment == "production"
+  enable_soft_delete       = true
+  
+  containers = [
+    "product-images",
+    "user-uploads",
+    "invoice-documents",
+    "analytics-exports",
+    "ml-models",
+    "backups"
+  ]
+  
   tags = local.common_tags
 }
 
-# ================================
-# Monitoring Module
-# ================================
+# ===================================================================
+# CONTAINER REGISTRY
+# ===================================================================
+module "container_registry" {
+  source = "./modules/container-registry"
 
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  environment         = var.environment
+  resource_prefix     = local.resource_prefix
+  random_suffix       = random_string.suffix.result
+  
+  sku                 = var.acr_sku
+  admin_enabled       = var.environment == "dev"
+  
+  enable_geo_replication = var.environment == "production"
+  
+  tags = local.common_tags
+}
+
+# ===================================================================
+# EVENT HUB
+# ===================================================================
+module "event_hub" {
+  source = "./modules/event-hub"
+
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  environment         = var.environment
+  resource_prefix     = local.resource_prefix
+  
+  sku                 = var.eventhub_sku
+  capacity            = var.eventhub_capacity
+  
+  event_hubs = [
+    {
+      name              = "order-events"
+      partition_count   = var.environment == "production" ? 8 : 2
+      message_retention = var.environment == "production" ? 7 : 1
+    },
+    {
+      name              = "payment-events"
+      partition_count   = var.environment == "production" ? 8 : 2
+      message_retention = var.environment == "production" ? 7 : 1
+    },
+    {
+      name              = "inventory-events"
+      partition_count   = var.environment == "production" ? 4 : 2
+      message_retention = var.environment == "production" ? 3 : 1
+    },
+    {
+      name              = "analytics-events"
+      partition_count   = var.environment == "production" ? 16 : 2
+      message_retention = var.environment == "production" ? 7 : 1
+    }
+  ]
+  
+  tags = local.common_tags
+}
+
+# ===================================================================
+# APPLICATION INSIGHTS & MONITORING
+# ===================================================================
 module "monitoring" {
   source = "./modules/monitoring"
 
-  project_name = var.project_name
-  environment  = var.environment
-
-  cluster_name = module.ecs.cluster_name
-  alb_arn      = module.alb.alb_arn
-
-  enable_container_insights = var.ecs_container_insights
-  log_retention_days        = var.log_retention_days
-
-  # SNS topic for alerts
-  alert_email = var.alert_email
-
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  environment         = var.environment
+  resource_prefix     = local.resource_prefix
+  
+  retention_in_days   = var.appinsights_retention_days
+  
   tags = local.common_tags
 }
 
-# ================================
-# Secrets Management
-# ================================
+# ===================================================================
+# API MANAGEMENT
+# ===================================================================
+module "api_management" {
+  source = "./modules/api-management"
 
-resource "random_password" "db_password" {
-  length  = 32
-  special = true
-}
-
-resource "random_password" "redis_password" {
-  length  = 32
-  special = false
-}
-
-resource "random_password" "jwt_secret" {
-  length  = 64
-  special = true
-}
-
-resource "aws_ssm_parameter" "db_password" {
-  name        = "/${var.project_name}/${var.environment}/db/password"
-  description = "Database master password"
-  type        = "SecureString"
-  value       = random_password.db_password.result
-
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  environment         = var.environment
+  resource_prefix     = local.resource_prefix
+  
+  subnet_id           = module.networking.apim_subnet_id
+  
+  sku_name            = var.apim_sku
+  publisher_name      = var.apim_publisher_name
+  publisher_email     = var.apim_publisher_email
+  
+  virtual_network_type = var.environment == "production" ? "Internal" : "None"
+  
   tags = local.common_tags
 }
 
-resource "aws_ssm_parameter" "redis_password" {
-  name        = "/${var.project_name}/${var.environment}/redis/password"
-  description = "Redis auth token"
-  type        = "SecureString"
-  value       = random_password.redis_password.result
+# ===================================================================
+# APP SERVICES - MICROSERVICES
+# ===================================================================
+module "app_services" {
+  source = "./modules/app-service"
 
-  tags = local.common_tags
-}
-
-resource "aws_ssm_parameter" "jwt_secret" {
-  name        = "/${var.project_name}/${var.environment}/app/jwt-secret"
-  description = "JWT signing secret"
-  type        = "SecureString"
-  value       = random_password.jwt_secret.result
-
-  tags = local.common_tags
-}
-
-resource "aws_ssm_parameter" "stripe_secret" {
-  name        = "/${var.project_name}/${var.environment}/stripe/secret-key"
-  description = "Stripe secret key"
-  type        = "SecureString"
-  value       = var.stripe_secret_key
-
-  tags = local.common_tags
-}
-
-# ================================
-# CloudWatch Log Groups
-# ================================
-
-resource "aws_cloudwatch_log_group" "backend" {
-  name              = "/ecs/${var.project_name}-${var.environment}/backend"
-  retention_in_days = var.log_retention_days
-
-  tags = local.common_tags
-}
-
-resource "aws_cloudwatch_log_group" "frontend" {
-  name              = "/ecs/${var.project_name}-${var.environment}/frontend"
-  retention_in_days = var.log_retention_days
-
-  tags = local.common_tags
-}
-
-# ================================
-# IAM Roles for ECS Tasks
-# ================================
-
-resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "${local.name_prefix}-ecs-task-execution-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = local.common_tags
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-resource "aws_iam_role_policy" "ecs_task_execution_ssm" {
-  name = "ssm-access"
-  role = aws_iam_role.ecs_task_execution_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "ssm:GetParameters",
-          "ssm:GetParameter"
-        ]
-        Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/${var.environment}/*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "kms:Decrypt"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role" "ecs_task_role" {
-  name = "${local.name_prefix}-ecs-task-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = local.common_tags
-}
-
-resource "aws_iam_role_policy" "ecs_task_s3" {
-  name = "s3-access"
-  role = aws_iam_role.ecs_task_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          module.storage.assets_bucket_arn,
-          "${module.storage.assets_bucket_arn}/*"
-        ]
-      }
-    ]
-  })
-}
-
-# ================================
-# DNS Configuration (Route53)
-# ================================
-
-data "aws_route53_zone" "main" {
-  count = var.create_route53_records ? 1 : 0
-  name  = var.domain_name
-}
-
-resource "aws_route53_record" "api" {
-  count   = var.create_route53_records ? 1 : 0
-  zone_id = data.aws_route53_zone.main[0].zone_id
-  name    = "api.${var.domain_name}"
-  type    = "A"
-
-  alias {
-    name                   = module.alb.alb_dns_name
-    zone_id                = module.alb.alb_zone_id
-    evaluate_target_health = true
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  environment         = var.environment
+  resource_prefix     = local.resource_prefix
+  
+  subnet_id           = module.networking.app_subnet_id
+  
+  sku_name            = var.app_service_sku
+  
+  # Microservices configuration
+  services = [
+    {
+      name                    = "api-gateway"
+      docker_image           = "${module.container_registry.login_server}/api-gateway"
+      docker_image_tag       = var.docker_image_tag
+      always_on              = var.environment != "dev"
+      health_check_path      = "/health"
+      min_instances          = var.environment == "production" ? 3 : 1
+      max_instances          = var.environment == "production" ? 10 : 3
+    },
+    {
+      name                    = "auth-service"
+      docker_image           = "${module.container_registry.login_server}/auth-service"
+      docker_image_tag       = var.docker_image_tag
+      always_on              = true
+      health_check_path      = "/health"
+      min_instances          = var.environment == "production" ? 2 : 1
+      max_instances          = var.environment == "production" ? 5 : 2
+    },
+    {
+      name                    = "user-service"
+      docker_image           = "${module.container_registry.login_server}/user-service"
+      docker_image_tag       = var.docker_image_tag
+      always_on              = var.environment != "dev"
+      health_check_path      = "/health"
+      min_instances          = var.environment == "production" ? 2 : 1
+      max_instances          = var.environment == "production" ? 8 : 3
+    },
+    {
+      name                    = "product-service"
+      docker_image           = "${module.container_registry.login_server}/product-service"
+      docker_image_tag       = var.docker_image_tag
+      always_on              = var.environment != "dev"
+      health_check_path      = "/health"
+      min_instances          = var.environment == "production" ? 3 : 1
+      max_instances          = var.environment == "production" ? 10 : 3
+    },
+    {
+      name                    = "order-service"
+      docker_image           = "${module.container_registry.login_server}/order-service"
+      docker_image_tag       = var.docker_image_tag
+      always_on              = true
+      health_check_path      = "/health"
+      min_instances          = var.environment == "production" ? 3 : 1
+      max_instances          = var.environment == "production" ? 15 : 3
+    },
+    {
+      name                    = "payment-service"
+      docker_image           = "${module.container_registry.login_server}/payment-service"
+      docker_image_tag       = var.docker_image_tag
+      always_on              = true
+      health_check_path      = "/health"
+      min_instances          = var.environment == "production" ? 3 : 1
+      max_instances          = var.environment == "production" ? 12 : 3
+    },
+    {
+      name                    = "inventory-service"
+      docker_image           = "${module.container_registry.login_server}/inventory-service"
+      docker_image_tag       = var.docker_image_tag
+      always_on              = var.environment != "dev"
+      health_check_path      = "/health"
+      min_instances          = var.environment == "production" ? 2 : 1
+      max_instances          = var.environment == "production" ? 8 : 3
+    },
+    {
+      name                    = "shipping-service"
+      docker_image           = "${module.container_registry.login_server}/shipping-service"
+      docker_image_tag       = var.docker_image_tag
+      always_on              = var.environment != "dev"
+      health_check_path      = "/health"
+      min_instances          = var.environment == "production" ? 2 : 1
+      max_instances          = var.environment == "production" ? 6 : 2
+    },
+    {
+      name                    = "notification-service"
+      docker_image           = "${module.container_registry.login_server}/notification-service"
+      docker_image_tag       = var.docker_image_tag
+      always_on              = var.environment != "dev"
+      health_check_path      = "/health"
+      min_instances          = var.environment == "production" ? 2 : 1
+      max_instances          = var.environment == "production" ? 8 : 3
+    },
+    {
+      name                    = "search-service"
+      docker_image           = "${module.container_registry.login_server}/search-service"
+      docker_image_tag       = var.docker_image_tag
+      always_on              = var.environment != "dev"
+      health_check_path      = "/health"
+      min_instances          = var.environment == "production" ? 2 : 1
+      max_instances          = var.environment == "production" ? 10 : 3
+    },
+    {
+      name                    = "analytics-service"
+      docker_image           = "${module.container_registry.login_server}/analytics-service"
+      docker_image_tag       = var.docker_image_tag
+      always_on              = var.environment != "dev"
+      health_check_path      = "/health"
+      min_instances          = var.environment == "production" ? 2 : 1
+      max_instances          = var.environment == "production" ? 6 : 2
+    },
+    {
+      name                    = "ai-service"
+      docker_image           = "${module.container_registry.login_server}/ai-service"
+      docker_image_tag       = var.docker_image_tag
+      always_on              = var.environment != "dev"
+      health_check_path      = "/health"
+      min_instances          = var.environment == "production" ? 2 : 1
+      max_instances          = var.environment == "production" ? 8 : 3
+    },
+    {
+      name                    = "vendor-service"
+      docker_image           = "${module.container_registry.login_server}/vendor-service"
+      docker_image_tag       = var.docker_image_tag
+      always_on              = var.environment != "dev"
+      health_check_path      = "/health"
+      min_instances          = var.environment == "production" ? 2 : 1
+      max_instances          = var.environment == "production" ? 5 : 2
+    }
+  ]
+  
+  # Common app settings
+  common_app_settings = {
+    "APPINSIGHTS_INSTRUMENTATIONKEY"             = module.monitoring.instrumentation_key
+    "APPLICATIONINSIGHTS_CONNECTION_STRING"      = module.monitoring.connection_string
+    "ApplicationInsightsAgent_EXTENSION_VERSION" = "~3"
+    
+    "POSTGRES_HOST"     = module.database.server_fqdn
+    "POSTGRES_PORT"     = "5432"
+    "POSTGRES_SSL_MODE" = "require"
+    
+    "REDIS_HOST"     = module.redis.hostname
+    "REDIS_PORT"     = module.redis.ssl_port
+    "REDIS_SSL"      = "true"
+    
+    "EVENTHUB_NAMESPACE" = module.event_hub.namespace_name
+    
+    "STORAGE_ACCOUNT_NAME" = module.storage.account_name
+    
+    "KEY_VAULT_URI" = module.security.key_vault_uri
+    
+    "ENVIRONMENT" = var.environment
   }
+  
+  tags = local.common_tags
+  
+  depends_on = [
+    module.container_registry
+  ]
 }
 
-resource "aws_route53_record" "www" {
-  count   = var.create_route53_records ? 1 : 0
-  zone_id = data.aws_route53_zone.main[0].zone_id
-  name    = "www.${var.domain_name}"
-  type    = "A"
+# ===================================================================
+# FRONT DOOR (CDN)
+# ===================================================================
+module "cdn" {
+  source = "./modules/cdn"
 
-  alias {
-    name                   = module.alb.alb_dns_name
-    zone_id                = module.alb.alb_zone_id
-    evaluate_target_health = true
-  }
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  environment         = var.environment
+  resource_prefix     = local.resource_prefix
+  
+  sku_name            = var.frontdoor_sku
+  
+  backend_address     = module.app_services.api_gateway_default_hostname
+  
+  enable_waf          = var.environment == "production"
+  
+  tags = local.common_tags
+}
+
+# ===================================================================
+# SECRETS - Store sensitive data in Key Vault
+# ===================================================================
+resource "azurerm_key_vault_secret" "db_connection_strings" {
+  for_each = toset([
+    "auth_db",
+    "user_db",
+    "product_db",
+    "order_db",
+    "payment_db",
+    "inventory_db",
+    "analytics_db"
+  ])
+
+  name         = "${each.key}-connection-string"
+  value        = "postgresql://${var.db_admin_username}@${module.database.server_name}:${var.db_admin_password}@${module.database.server_fqdn}:5432/${each.key}?sslmode=require"
+  key_vault_id = module.security.key_vault_id
+  
+  depends_on = [
+    module.security
+  ]
+}
+
+resource "azurerm_key_vault_secret" "redis_connection_string" {
+  name         = "redis-connection-string"
+  value        = module.redis.primary_connection_string
+  key_vault_id = module.security.key_vault_id
+  
+  depends_on = [
+    module.security
+  ]
+}
+
+resource "azurerm_key_vault_secret" "storage_connection_string" {
+  name         = "storage-connection-string"
+  value        = module.storage.primary_connection_string
+  key_vault_id = module.security.key_vault_id
+  
+  depends_on = [
+    module.security
+  ]
+}
+
+resource "azurerm_key_vault_secret" "eventhub_connection_strings" {
+  for_each = toset([
+    "order-events",
+    "payment-events",
+    "inventory-events",
+    "analytics-events"
+  ])
+
+  name         = "${each.key}-connection-string"
+  value        = module.event_hub.connection_strings[each.key]
+  key_vault_id = module.security.key_vault_id
+  
+  depends_on = [
+    module.security
+  ]
 }
