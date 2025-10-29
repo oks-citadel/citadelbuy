@@ -1,386 +1,222 @@
-# ================================
-# Terraform Variables
-# Cross-Border Commerce Platform
-# ================================
-
-# ================================
-# Project Configuration
-# ================================
-
+# ===================================================================
+# GENERAL VARIABLES
+# ===================================================================
 variable "project_name" {
   description = "Project name used for resource naming"
   type        = string
-  default     = "commerce-platform"
+  default     = "globalcommerce"
 }
 
 variable "environment" {
-  description = "Environment name (dev, test, prod)"
+  description = "Environment name (dev, test, production)"
   type        = string
+  validation {
+    condition     = contains(["dev", "test", "production"], var.environment)
+    error_message = "Environment must be dev, test, or production."
+  }
 }
 
-variable "aws_region" {
-  description = "AWS region for resources"
+variable "location" {
+  description = "Azure region for resources"
   type        = string
-  default     = "us-east-1"
-}
-
-variable "owner_email" {
-  description = "Email of the project owner"
-  type        = string
+  default     = "eastus"
 }
 
 variable "cost_center" {
   description = "Cost center for billing"
   type        = string
-  default     = "engineering"
+  default     = "Engineering"
 }
 
-# ================================
-# Network Configuration
-# ================================
-
-variable "vpc_cidr" {
-  description = "CIDR block for VPC"
-  type        = string
-  default     = "10.0.0.0/16"
+variable "tags" {
+  description = "Additional tags for resources"
+  type        = map(string)
+  default     = {}
 }
 
-variable "enable_nat_gateway" {
-  description = "Enable NAT Gateway for private subnets"
-  type        = bool
-  default     = true
-}
-
-variable "enable_vpn_gateway" {
-  description = "Enable VPN Gateway"
-  type        = bool
-  default     = false
-}
-
-variable "allowed_cidr_blocks" {
-  description = "CIDR blocks allowed to access resources"
+# ===================================================================
+# NETWORKING VARIABLES
+# ===================================================================
+variable "vnet_address_space" {
+  description = "Address space for virtual network"
   type        = list(string)
-  default     = ["0.0.0.0/0"]
+  default     = ["10.0.0.0/16"]
 }
 
-# ================================
-# Database Configuration
-# ================================
-
-variable "db_instance_class" {
-  description = "RDS instance class"
+variable "app_subnet_address_prefix" {
+  description = "Address prefix for application subnet"
   type        = string
-  default     = "db.t3.micro"
+  default     = "10.0.1.0/24"
 }
 
-variable "db_allocated_storage" {
-  description = "Allocated storage in GB"
+variable "data_subnet_address_prefix" {
+  description = "Address prefix for data services subnet"
+  type        = string
+  default     = "10.0.2.0/24"
+}
+
+variable "cache_subnet_address_prefix" {
+  description = "Address prefix for cache subnet"
+  type        = string
+  default     = "10.0.3.0/24"
+}
+
+variable "apim_subnet_address_prefix" {
+  description = "Address prefix for API Management subnet"
+  type        = string
+  default     = "10.0.4.0/24"
+}
+
+# ===================================================================
+# DATABASE VARIABLES
+# ===================================================================
+variable "db_sku_name" {
+  description = "PostgreSQL SKU name"
+  type        = string
+  default     = "B_Standard_B2s"
+  # Options: B_Standard_B1ms, B_Standard_B2s, GP_Standard_D2s_v3, GP_Standard_D4s_v3, etc.
+}
+
+variable "db_storage_mb" {
+  description = "PostgreSQL storage in MB"
   type        = number
-  default     = 20
+  default     = 32768
 }
 
-variable "db_engine_version" {
-  description = "PostgreSQL engine version"
-  type        = string
-  default     = "16.1"
-}
-
-variable "db_name" {
-  description = "Database name"
-  type        = string
-  default     = "commerce_db"
-}
-
-variable "db_username" {
-  description = "Database master username"
-  type        = string
-  default     = "admin"
-}
-
-variable "db_backup_retention" {
-  description = "Backup retention period in days"
+variable "db_backup_retention_days" {
+  description = "PostgreSQL backup retention in days"
   type        = number
   default     = 7
 }
 
-variable "db_multi_az" {
-  description = "Enable Multi-AZ deployment"
-  type        = bool
-  default     = false
-}
-
-variable "db_deletion_protection" {
-  description = "Enable deletion protection"
-  type        = bool
-  default     = true
-}
-
-# ================================
-# Redis Configuration
-# ================================
-
-variable "redis_node_type" {
-  description = "ElastiCache node type"
-  type        = string
-  default     = "cache.t3.micro"
-}
-
-variable "redis_num_nodes" {
-  description = "Number of cache nodes"
-  type        = number
-  default     = 1
-}
-
-variable "redis_engine_version" {
-  description = "Redis engine version"
-  type        = string
-  default     = "7.0"
-}
-
-variable "redis_parameter_family" {
-  description = "Redis parameter group family"
-  type        = string
-  default     = "redis7"
-}
-
-# ================================
-# S3 Storage Configuration
-# ================================
-
-variable "s3_enable_versioning" {
-  description = "Enable S3 bucket versioning"
-  type        = bool
-  default     = true
-}
-
-variable "s3_enable_encryption" {
-  description = "Enable S3 bucket encryption"
-  type        = bool
-  default     = true
-}
-
-variable "s3_lifecycle_rules" {
-  description = "S3 lifecycle rules"
-  type = list(object({
-    enabled = bool
-    prefix  = string
-    expiration_days = number
-  }))
-  default = [
-    {
-      enabled         = true
-      prefix          = "temp/"
-      expiration_days = 7
-    }
-  ]
-}
-
-# ================================
-# ECS Configuration
-# ================================
-
-variable "ecs_container_insights" {
-  description = "Enable CloudWatch Container Insights"
-  type        = bool
-  default     = true
-}
-
-# ================================
-# Application Load Balancer
-# ================================
-
-variable "alb_deletion_protection" {
-  description = "Enable ALB deletion protection"
-  type        = bool
-  default     = true
-}
-
-variable "alb_enable_http2" {
-  description = "Enable HTTP/2"
-  type        = bool
-  default     = true
-}
-
-variable "alb_idle_timeout" {
-  description = "ALB idle timeout in seconds"
-  type        = number
-  default     = 60
-}
-
-variable "ssl_certificate_arn" {
-  description = "ARN of SSL certificate in ACM"
-  type        = string
-  default     = ""
-}
-
-variable "domain_name" {
-  description = "Domain name for the application"
-  type        = string
-}
-
-variable "create_route53_records" {
-  description = "Create Route53 DNS records"
-  type        = bool
-  default     = true
-}
-
-# ================================
-# Backend Service Configuration
-# ================================
-
-variable "backend_image" {
-  description = "Docker image for backend service"
-  type        = string
-}
-
-variable "backend_cpu" {
-  description = "CPU units for backend container"
-  type        = number
-  default     = 512
-}
-
-variable "backend_memory" {
-  description = "Memory (MB) for backend container"
-  type        = number
-  default     = 1024
-}
-
-variable "backend_desired_count" {
-  description = "Desired number of backend tasks"
-  type        = number
-  default     = 2
-}
-
-variable "backend_autoscaling_min" {
-  description = "Minimum number of backend tasks"
-  type        = number
-  default     = 2
-}
-
-variable "backend_autoscaling_max" {
-  description = "Maximum number of backend tasks"
-  type        = number
-  default     = 10
-}
-
-# ================================
-# Frontend Service Configuration
-# ================================
-
-variable "frontend_image" {
-  description = "Docker image for frontend service"
-  type        = string
-}
-
-variable "frontend_cpu" {
-  description = "CPU units for frontend container"
-  type        = number
-  default     = 256
-}
-
-variable "frontend_memory" {
-  description = "Memory (MB) for frontend container"
-  type        = number
-  default     = 512
-}
-
-variable "frontend_desired_count" {
-  description = "Desired number of frontend tasks"
-  type        = number
-  default     = 2
-}
-
-variable "frontend_autoscaling_min" {
-  description = "Minimum number of frontend tasks"
-  type        = number
-  default     = 2
-}
-
-variable "frontend_autoscaling_max" {
-  description = "Maximum number of frontend tasks"
-  type        = number
-  default     = 10
-}
-
-# ================================
-# Auto-scaling Configuration
-# ================================
-
-variable "enable_autoscaling" {
-  description = "Enable auto-scaling for ECS services"
-  type        = bool
-  default     = true
-}
-
-variable "autoscaling_target_cpu" {
-  description = "Target CPU utilization for auto-scaling"
-  type        = number
-  default     = 70
-}
-
-# ================================
-# Monitoring Configuration
-# ================================
-
-variable "log_retention_days" {
-  description = "CloudWatch log retention in days"
-  type        = number
-  default     = 30
-}
-
-variable "alert_email" {
-  description = "Email address for CloudWatch alarms"
-  type        = string
-}
-
-# ================================
-# Secrets Configuration
-# ================================
-
-variable "stripe_secret_key" {
-  description = "Stripe secret key"
+variable "db_admin_username" {
+  description = "PostgreSQL administrator username"
   type        = string
   sensitive   = true
 }
 
-variable "log_level" {
-  description = "Application log level"
+variable "db_admin_password" {
+  description = "PostgreSQL administrator password"
   type        = string
-  default     = "info"
-  validation {
-    condition     = contains(["debug", "info", "warn", "error"], var.log_level)
-    error_message = "Log level must be one of: debug, info, warn, error"
-  }
+  sensitive   = true
 }
 
-# ================================
-# Docker Configuration
-# ================================
+# ===================================================================
+# REDIS CACHE VARIABLES
+# ===================================================================
+variable "redis_capacity" {
+  description = "Redis cache capacity"
+  type        = number
+  default     = 1
+}
 
-variable "docker_host" {
-  description = "Docker host for local development"
+variable "redis_family" {
+  description = "Redis cache family (C for Basic/Standard, P for Premium)"
   type        = string
-  default     = "unix:///var/run/docker.sock"
+  default     = "C"
 }
 
-# ================================
-# Feature Flags
-# ================================
-
-variable "enable_cdn" {
-  description = "Enable CloudFront CDN"
-  type        = bool
-  default     = true
+variable "redis_sku_name" {
+  description = "Redis SKU name (Basic, Standard, Premium)"
+  type        = string
+  default     = "Standard"
 }
 
-variable "enable_waf" {
-  description = "Enable AWS WAF"
-  type        = bool
-  default     = true
+# ===================================================================
+# STORAGE VARIABLES
+# ===================================================================
+variable "storage_account_tier" {
+  description = "Storage account tier"
+  type        = string
+  default     = "Standard"
+  # Options: Standard, Premium
 }
 
-variable "enable_backup" {
-  description = "Enable automated backups"
-  type        = bool
-  default     = true
+variable "storage_replication_type" {
+  description = "Storage account replication type"
+  type        = string
+  default     = "LRS"
+  # Options: LRS, GRS, RAGRS, ZRS, GZRS, RAGZRS
+}
+
+# ===================================================================
+# CONTAINER REGISTRY VARIABLES
+# ===================================================================
+variable "acr_sku" {
+  description = "Container Registry SKU"
+  type        = string
+  default     = "Standard"
+  # Options: Basic, Standard, Premium
+}
+
+# ===================================================================
+# EVENT HUB VARIABLES
+# ===================================================================
+variable "eventhub_sku" {
+  description = "Event Hub namespace SKU"
+  type        = string
+  default     = "Standard"
+  # Options: Basic, Standard, Premium
+}
+
+variable "eventhub_capacity" {
+  description = "Event Hub namespace capacity (throughput units)"
+  type        = number
+  default     = 1
+}
+
+# ===================================================================
+# APPLICATION INSIGHTS VARIABLES
+# ===================================================================
+variable "appinsights_retention_days" {
+  description = "Application Insights data retention in days"
+  type        = number
+  default     = 90
+}
+
+# ===================================================================
+# API MANAGEMENT VARIABLES
+# ===================================================================
+variable "apim_sku" {
+  description = "API Management SKU"
+  type        = string
+  default     = "Developer_1"
+  # Options: Developer_1, Basic_1, Standard_1, Premium_1
+}
+
+variable "apim_publisher_name" {
+  description = "API Management publisher name"
+  type        = string
+  default     = "Global Commerce Platform"
+}
+
+variable "apim_publisher_email" {
+  description = "API Management publisher email"
+  type        = string
+}
+
+# ===================================================================
+# APP SERVICE VARIABLES
+# ===================================================================
+variable "app_service_sku" {
+  description = "App Service Plan SKU"
+  type        = string
+  default     = "P1v3"
+  # Options: B1, B2, B3, S1, S2, S3, P1v2, P2v2, P3v2, P1v3, P2v3, P3v3
+}
+
+variable "docker_image_tag" {
+  description = "Docker image tag for deployment"
+  type        = string
+  default     = "latest"
+}
+
+# ===================================================================
+# FRONT DOOR VARIABLES
+# ===================================================================
+variable "frontdoor_sku" {
+  description = "Azure Front Door SKU"
+  type        = string
+  default     = "Standard_AzureFrontDoor"
+  # Options: Standard_AzureFrontDoor, Premium_AzureFrontDoor
 }
