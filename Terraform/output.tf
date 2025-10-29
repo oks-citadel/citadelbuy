@@ -1,239 +1,314 @@
-# ================================
-# Terraform Outputs
-# Cross-Border Commerce Platform
-# ================================
-
-# ================================
-# VPC Outputs
-# ================================
-
-output "vpc_id" {
-  description = "VPC ID"
-  value       = module.vpc.vpc_id
+# ===================================================================
+# GENERAL OUTPUTS
+# ===================================================================
+output "resource_group_name" {
+  description = "Name of the resource group"
+  value       = azurerm_resource_group.main.name
 }
 
-output "vpc_cidr" {
-  description = "VPC CIDR block"
-  value       = module.vpc.vpc_cidr
+output "resource_group_id" {
+  description = "ID of the resource group"
+  value       = azurerm_resource_group.main.id
 }
 
-output "public_subnet_ids" {
-  description = "Public subnet IDs"
-  value       = module.vpc.public_subnet_ids
+output "location" {
+  description = "Azure region"
+  value       = azurerm_resource_group.main.location
 }
 
-output "private_subnet_ids" {
-  description = "Private subnet IDs"
-  value       = module.vpc.private_subnet_ids
+output "environment" {
+  description = "Environment name"
+  value       = var.environment
 }
 
-# ================================
-# Database Outputs
-# ================================
+# ===================================================================
+# NETWORKING OUTPUTS
+# ===================================================================
+output "vnet_id" {
+  description = "Virtual Network ID"
+  value       = module.networking.vnet_id
+}
 
-output "database_endpoint" {
-  description = "RDS PostgreSQL endpoint"
-  value       = module.database.endpoint
+output "vnet_name" {
+  description = "Virtual Network name"
+  value       = module.networking.vnet_name
+}
+
+output "app_subnet_id" {
+  description = "Application subnet ID"
+  value       = module.networking.app_subnet_id
+}
+
+output "data_subnet_id" {
+  description = "Data subnet ID"
+  value       = module.networking.data_subnet_id
+}
+
+output "apim_subnet_id" {
+  description = "API Management subnet ID"
+  value       = module.networking.apim_subnet_id
+}
+
+# ===================================================================
+# SECURITY OUTPUTS
+# ===================================================================
+output "key_vault_id" {
+  description = "Key Vault ID"
+  value       = module.security.key_vault_id
+}
+
+output "key_vault_uri" {
+  description = "Key Vault URI"
+  value       = module.security.key_vault_uri
+}
+
+output "key_vault_name" {
+  description = "Key Vault name"
+  value       = module.security.key_vault_name
+}
+
+# ===================================================================
+# DATABASE OUTPUTS
+# ===================================================================
+output "postgres_server_id" {
+  description = "PostgreSQL server ID"
+  value       = module.database.server_id
+}
+
+output "postgres_server_name" {
+  description = "PostgreSQL server name"
+  value       = module.database.server_name
+}
+
+output "postgres_server_fqdn" {
+  description = "PostgreSQL server FQDN"
+  value       = module.database.server_fqdn
   sensitive   = true
 }
 
-output "database_name" {
-  description = "Database name"
-  value       = module.database.database_name
+output "postgres_database_names" {
+  description = "List of PostgreSQL database names"
+  value       = module.database.database_names
 }
 
-output "database_port" {
-  description = "Database port"
-  value       = module.database.port
+# ===================================================================
+# REDIS OUTPUTS
+# ===================================================================
+output "redis_id" {
+  description = "Redis cache ID"
+  value       = module.redis.id
 }
 
-# ================================
-# Redis Outputs
-# ================================
-
-output "redis_endpoint" {
-  description = "ElastiCache Redis endpoint"
-  value       = module.redis.endpoint
+output "redis_hostname" {
+  description = "Redis hostname"
+  value       = module.redis.hostname
   sensitive   = true
 }
 
-output "redis_port" {
-  description = "Redis port"
-  value       = module.redis.port
+output "redis_ssl_port" {
+  description = "Redis SSL port"
+  value       = module.redis.ssl_port
 }
 
-# ================================
-# Storage Outputs
-# ================================
-
-output "assets_bucket_name" {
-  description = "S3 assets bucket name"
-  value       = module.storage.assets_bucket_name
-}
-
-output "assets_bucket_arn" {
-  description = "S3 assets bucket ARN"
-  value       = module.storage.assets_bucket_arn
-}
-
-output "cloudfront_url" {
-  description = "CloudFront distribution URL"
-  value       = module.storage.cloudfront_url
-}
-
-# ================================
-# Load Balancer Outputs
-# ================================
-
-output "alb_dns_name" {
-  description = "Application Load Balancer DNS name"
-  value       = module.alb.alb_dns_name
-}
-
-output "alb_zone_id" {
-  description = "Application Load Balancer Zone ID"
-  value       = module.alb.alb_zone_id
-}
-
-output "alb_arn" {
-  description = "Application Load Balancer ARN"
-  value       = module.alb.alb_arn
-}
-
-# ================================
-# ECS Outputs
-# ================================
-
-output "ecs_cluster_id" {
-  description = "ECS cluster ID"
-  value       = module.ecs.cluster_id
-}
-
-output "ecs_cluster_name" {
-  description = "ECS cluster name"
-  value       = module.ecs.cluster_name
-}
-
-output "ecs_cluster_arn" {
-  description = "ECS cluster ARN"
-  value       = module.ecs.cluster_arn
-}
-
-# ================================
-# Service Outputs
-# ================================
-
-output "backend_service_name" {
-  description = "Backend ECS service name"
-  value       = module.backend_service.service_name
-}
-
-output "backend_task_definition_arn" {
-  description = "Backend task definition ARN"
-  value       = module.backend_service.task_definition_arn
-}
-
-output "frontend_service_name" {
-  description = "Frontend ECS service name"
-  value       = module.frontend_service.service_name
-}
-
-output "frontend_task_definition_arn" {
-  description = "Frontend task definition ARN"
-  value       = module.frontend_service.task_definition_arn
-}
-
-# ================================
-# Monitoring Outputs
-# ================================
-
-output "cloudwatch_log_group_backend" {
-  description = "CloudWatch log group for backend"
-  value       = aws_cloudwatch_log_group.backend.name
-}
-
-output "cloudwatch_log_group_frontend" {
-  description = "CloudWatch log group for frontend"
-  value       = aws_cloudwatch_log_group.frontend.name
-}
-
-# ================================
-# IAM Outputs
-# ================================
-
-output "ecs_task_execution_role_arn" {
-  description = "ECS task execution role ARN"
-  value       = aws_iam_role.ecs_task_execution_role.arn
-}
-
-output "ecs_task_role_arn" {
-  description = "ECS task role ARN"
-  value       = aws_iam_role.ecs_task_role.arn
-}
-
-# ================================
-# DNS Outputs
-# ================================
-
-output "api_domain" {
-  description = "API domain name"
-  value       = var.create_route53_records ? "https://api.${var.domain_name}" : "https://${module.alb.alb_dns_name}"
-}
-
-output "frontend_domain" {
-  description = "Frontend domain name"
-  value       = var.create_route53_records ? "https://www.${var.domain_name}" : "https://${module.alb.alb_dns_name}"
-}
-
-# ================================
-# Secret Outputs
-# ================================
-
-output "ssm_parameter_db_password" {
-  description = "SSM parameter name for DB password"
-  value       = aws_ssm_parameter.db_password.name
+output "redis_primary_access_key" {
+  description = "Redis primary access key"
+  value       = module.redis.primary_access_key
   sensitive   = true
 }
 
-output "ssm_parameter_redis_password" {
-  description = "SSM parameter name for Redis password"
-  value       = aws_ssm_parameter.redis_password.name
+# ===================================================================
+# STORAGE OUTPUTS
+# ===================================================================
+output "storage_account_id" {
+  description = "Storage account ID"
+  value       = module.storage.account_id
+}
+
+output "storage_account_name" {
+  description = "Storage account name"
+  value       = module.storage.account_name
+}
+
+output "storage_primary_blob_endpoint" {
+  description = "Storage primary blob endpoint"
+  value       = module.storage.primary_blob_endpoint
+}
+
+output "storage_containers" {
+  description = "List of storage containers"
+  value       = module.storage.container_names
+}
+
+# ===================================================================
+# CONTAINER REGISTRY OUTPUTS
+# ===================================================================
+output "acr_id" {
+  description = "Container Registry ID"
+  value       = module.container_registry.id
+}
+
+output "acr_name" {
+  description = "Container Registry name"
+  value       = module.container_registry.name
+}
+
+output "acr_login_server" {
+  description = "Container Registry login server"
+  value       = module.container_registry.login_server
+}
+
+output "acr_admin_username" {
+  description = "Container Registry admin username"
+  value       = module.container_registry.admin_username
   sensitive   = true
 }
 
-output "ssm_parameter_jwt_secret" {
-  description = "SSM parameter name for JWT secret"
-  value       = aws_ssm_parameter.jwt_secret.name
+output "acr_admin_password" {
+  description = "Container Registry admin password"
+  value       = module.container_registry.admin_password
   sensitive   = true
 }
 
-# ================================
-# Connection Information
-# ================================
+# ===================================================================
+# EVENT HUB OUTPUTS
+# ===================================================================
+output "eventhub_namespace_id" {
+  description = "Event Hub namespace ID"
+  value       = module.event_hub.namespace_id
+}
 
-output "connection_info" {
-  description = "Connection information for services"
+output "eventhub_namespace_name" {
+  description = "Event Hub namespace name"
+  value       = module.event_hub.namespace_name
+}
+
+output "eventhub_names" {
+  description = "List of Event Hub names"
+  value       = module.event_hub.event_hub_names
+}
+
+# ===================================================================
+# MONITORING OUTPUTS
+# ===================================================================
+output "appinsights_id" {
+  description = "Application Insights ID"
+  value       = module.monitoring.id
+}
+
+output "appinsights_instrumentation_key" {
+  description = "Application Insights instrumentation key"
+  value       = module.monitoring.instrumentation_key
+  sensitive   = true
+}
+
+output "appinsights_connection_string" {
+  description = "Application Insights connection string"
+  value       = module.monitoring.connection_string
+  sensitive   = true
+}
+
+output "log_analytics_workspace_id" {
+  description = "Log Analytics workspace ID"
+  value       = module.monitoring.log_analytics_workspace_id
+}
+
+# ===================================================================
+# API MANAGEMENT OUTPUTS
+# ===================================================================
+output "apim_id" {
+  description = "API Management ID"
+  value       = module.api_management.id
+}
+
+output "apim_name" {
+  description = "API Management name"
+  value       = module.api_management.name
+}
+
+output "apim_gateway_url" {
+  description = "API Management gateway URL"
+  value       = module.api_management.gateway_url
+}
+
+output "apim_portal_url" {
+  description = "API Management developer portal URL"
+  value       = module.api_management.portal_url
+}
+
+# ===================================================================
+# APP SERVICES OUTPUTS
+# ===================================================================
+output "app_service_plan_id" {
+  description = "App Service Plan ID"
+  value       = module.app_services.app_service_plan_id
+}
+
+output "app_service_ids" {
+  description = "Map of App Service IDs"
+  value       = module.app_services.app_service_ids
+}
+
+output "app_service_default_hostnames" {
+  description = "Map of App Service default hostnames"
+  value       = module.app_services.app_service_default_hostnames
+  sensitive   = true
+}
+
+output "api_gateway_url" {
+  description = "API Gateway URL"
+  value       = module.app_services.api_gateway_url
+}
+
+# ===================================================================
+# FRONT DOOR (CDN) OUTPUTS
+# ===================================================================
+output "frontdoor_id" {
+  description = "Front Door ID"
+  value       = module.cdn.id
+}
+
+output "frontdoor_endpoint_hostname" {
+  description = "Front Door endpoint hostname"
+  value       = module.cdn.endpoint_hostname
+}
+
+output "frontdoor_endpoint_url" {
+  description = "Front Door endpoint URL"
+  value       = "https://${module.cdn.endpoint_hostname}"
+}
+
+# ===================================================================
+# DEPLOYMENT INFORMATION
+# ===================================================================
+output "deployment_info" {
+  description = "Deployment summary information"
   value = {
-    frontend_url = var.create_route53_records ? "https://www.${var.domain_name}" : "https://${module.alb.alb_dns_name}"
-    api_url      = var.create_route53_records ? "https://api.${var.domain_name}" : "https://${module.alb.alb_dns_name}/api"
-    cdn_url      = module.storage.cloudfront_url
+    environment             = var.environment
+    region                  = var.location
+    resource_group          = azurerm_resource_group.main.name
+    api_gateway_url         = module.app_services.api_gateway_url
+    cdn_url                 = "https://${module.cdn.endpoint_hostname}"
+    apim_gateway_url        = module.api_management.gateway_url
+    key_vault_name          = module.security.key_vault_name
+    container_registry      = module.container_registry.login_server
+    postgres_server         = module.database.server_name
+    deployed_services_count = length(module.app_services.app_service_ids)
   }
 }
 
-# ================================
-# Summary Output
-# ================================
-
-output "deployment_summary" {
-  description = "Deployment summary"
+# ===================================================================
+# CONNECTION ENDPOINTS (for application configuration)
+# ===================================================================
+output "service_endpoints" {
+  description = "Service endpoints for application configuration"
   value = {
-    environment     = var.environment
-    region          = var.aws_region
-    vpc_id          = module.vpc.vpc_id
-    cluster_name    = module.ecs.cluster_name
-    frontend_url    = var.create_route53_records ? "https://www.${var.domain_name}" : "https://${module.alb.alb_dns_name}"
-    api_url         = var.create_route53_records ? "https://api.${var.domain_name}" : "https://${module.alb.alb_dns_name}/api"
-    database_endpoint = "Available in SSM Parameter Store"
-    redis_endpoint    = "Available in SSM Parameter Store"
+    api_gateway      = "https://${module.app_services.api_gateway_default_hostname}"
+    cdn_frontend     = "https://${module.cdn.endpoint_hostname}"
+    apim_gateway     = module.api_management.gateway_url
+    postgres_host    = module.database.server_fqdn
+    redis_host       = module.redis.hostname
+    storage_endpoint = module.storage.primary_blob_endpoint
+    eventhub_ns      = "${module.event_hub.namespace_name}.servicebus.windows.net"
   }
+  sensitive = true
 }
