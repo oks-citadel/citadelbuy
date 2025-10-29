@@ -1,89 +1,81 @@
-# ================================
-# Test Environment Variables
-# ================================
+# ===================================================================
+# TEST ENVIRONMENT CONFIGURATION
+# ===================================================================
 
-# Project Configuration
-project_name = "commerce-platform"
 environment  = "test"
-aws_region   = "us-east-1"
-owner_email  = "devops@yourcompany.com"
-cost_center  = "engineering"
+project_name = "globalcommerce"
+location     = "eastus"
+cost_center  = "Engineering"
 
-# Network Configuration
-vpc_cidr            = "10.1.0.0/16"
-enable_nat_gateway  = true
-enable_vpn_gateway  = false
-allowed_cidr_blocks = ["10.0.0.0/8"]  # Internal only
+tags = {
+  Environment = "Test"
+  Owner       = "Platform Team"
+  CostCenter  = "Engineering"
+}
 
-# Database Configuration
-db_instance_class      = "db.t3.small"
-db_allocated_storage   = 50
-db_engine_version      = "16.1"
-db_name                = "commerce_test"
-db_username            = "admin"
-db_backup_retention    = 7
-db_multi_az            = false
-db_deletion_protection = false
+# ===================================================================
+# NETWORKING
+# ===================================================================
+vnet_address_space          = ["10.1.0.0/16"]
+app_subnet_address_prefix   = "10.1.1.0/24"
+data_subnet_address_prefix  = "10.1.2.0/24"
+cache_subnet_address_prefix = "10.1.3.0/24"
+apim_subnet_address_prefix  = "10.1.4.0/24"
 
-# Redis Configuration
-redis_node_type        = "cache.t3.small"
-redis_num_nodes        = 1
-redis_engine_version   = "7.0"
-redis_parameter_family = "redis7"
+# ===================================================================
+# DATABASE - Medium specs for test
+# ===================================================================
+db_sku_name              = "B_Standard_B2s"  # Burstable tier
+db_storage_mb            = 65536              # 64 GB
+db_backup_retention_days = 7
 
-# S3 Storage
-s3_enable_versioning = true
-s3_enable_encryption = true
-s3_lifecycle_rules = [
-  {
-    enabled         = true
-    prefix          = "temp/"
-    expiration_days = 3
-  }
-]
+# ===================================================================
+# REDIS CACHE - Standard tier for test
+# ===================================================================
+redis_capacity = 1
+redis_family   = "C"
+redis_sku_name = "Standard"
 
-# ECS Configuration
-ecs_container_insights = true
+# ===================================================================
+# STORAGE - LRS for test
+# ===================================================================
+storage_account_tier     = "Standard"
+storage_replication_type = "LRS"
 
-# Load Balancer
-alb_deletion_protection = false
-alb_enable_http2        = true
-alb_idle_timeout        = 60
-ssl_certificate_arn     = ""  # Add your ACM certificate ARN
-domain_name             = "test.yourplatform.com"
-create_route53_records  = false
+# ===================================================================
+# CONTAINER REGISTRY - Standard tier
+# ===================================================================
+acr_sku = "Standard"
 
-# Backend Service
-backend_image           = "your-registry/commerce-backend:test"
-backend_cpu             = 512
-backend_memory          = 1024
-backend_desired_count   = 2
-backend_autoscaling_min = 2
-backend_autoscaling_max = 5
+# ===================================================================
+# EVENT HUB - Standard tier
+# ===================================================================
+eventhub_sku      = "Standard"
+eventhub_capacity = 2
 
-# Frontend Service
-frontend_image           = "your-registry/commerce-frontend:test"
-frontend_cpu             = 256
-frontend_memory          = 512
-frontend_desired_count   = 2
-frontend_autoscaling_min = 2
-frontend_autoscaling_max = 5
+# ===================================================================
+# APPLICATION INSIGHTS
+# ===================================================================
+appinsights_retention_days = 60
 
-# Auto-scaling
-enable_autoscaling     = true
-autoscaling_target_cpu = 70
+# ===================================================================
+# API MANAGEMENT - Basic tier
+# ===================================================================
+apim_sku            = "Basic_1"
+apim_publisher_name = "Global Commerce Platform - Test"
+# apim_publisher_email set via environment variable or prompt
 
-# Monitoring
-log_retention_days = 14
-alert_email        = "alerts-test@yourcompany.com"
+# ===================================================================
+# APP SERVICE - Standard tier for test
+# ===================================================================
+app_service_sku = "S2"  # Standard tier
 
-# Application
-log_level = "info"
+# ===================================================================
+# FRONT DOOR
+# ===================================================================
+frontdoor_sku = "Standard_AzureFrontDoor"
 
-# Feature Flags
-enable_cdn    = false
-enable_waf    = false
-enable_backup = true
-
-# Secrets (use environment variables or tfvars)
-# stripe_secret_key = "sk_test_..."
+# ===================================================================
+# DOCKER IMAGE TAG
+# ===================================================================
+docker_image_tag = "test-latest"
