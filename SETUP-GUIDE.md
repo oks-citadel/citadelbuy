@@ -1,58 +1,176 @@
-# Setup & Deployment Guide
+# 🚀 Quick Start & Deployment Guide
+## Global Commerce Platform
 
-## 🚀 Quick Start Guide
-
-This guide will help you set up and deploy the Global Commerce Platform on Azure.
+> **From zero to production in 4 hours**  
+> Step-by-step deployment to Azure • Full automation • Production-ready
 
 ---
 
-## Prerequisites
+## 📋 Overview
+
+### What You'll Deploy
+
+```
+INFRASTRUCTURE COMPONENTS
+├─ Azure Front Door (CDN + WAF)
+├─ API Gateway (Kong/APIM)
+├─ AKS Cluster (Kubernetes)
+├─ PostgreSQL Flexible Server (HA)
+├─ Redis Cache (Premium)
+├─ Azure Storage (GRS)
+├─ Application Insights
+├─ Key Vault
+├─ Virtual Network
+└─ 15+ Microservices
+
+TIME REQUIRED
+├─ Prerequisites: 30 min
+├─ Infrastructure: 45-60 min
+├─ Services: 30-45 min
+├─ Verification: 15 min
+└─ Total: ~2-3 hours
+```
+
+---
+
+## ✅ Prerequisites
 
 ### Required Tools
 
 ```bash
 # Check versions
-terraform --version    # >= 1.5.0
-docker --version       # >= 24.0.0
-node --version         # >= 18.0.0
-go version            # >= 1.21.0 (if using Go backend)
-kubectl version       # >= 1.27.0
-az --version          # >= 2.50.0
-git --version         # >= 2.40.0
+terraform --version    # Required: >= 1.5.0
+docker --version      # Required: >= 24.0.0
+node --version        # Required: >= 18.0.0
+kubectl version       # Required: >= 1.27.0
+az --version          # Required: >= 2.50.0
+git --version         # Required: >= 2.40.0
+
+# Optional (for Go services)
+go version            # Optional: >= 1.21.0
 ```
+
+### Install Missing Tools
+
+<details>
+<summary><strong>macOS (Homebrew)</strong></summary>
+
+```bash
+# Install Homebrew if needed
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install tools
+brew install terraform
+brew install docker
+brew install node@18
+brew install kubectl
+brew install azure-cli
+brew install git
+brew install go  # optional
+```
+</details>
+
+<details>
+<summary><strong>Linux (Ubuntu/Debian)</strong></summary>
+
+```bash
+# Terraform
+wget https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
+unzip terraform_1.6.0_linux_amd64.zip
+sudo mv terraform /usr/local/bin/
+
+# Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Node.js 18
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Azure CLI
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+# Git
+sudo apt-get install git -y
+```
+</details>
+
+<details>
+<summary><strong>Windows (PowerShell)</strong></summary>
+
+```powershell
+# Install Chocolatey if needed
+Set-ExecutionPolicy Bypass -Scope Process -Force
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+# Install tools
+choco install terraform -y
+choco install docker-desktop -y
+choco install nodejs-lts -y
+choco install kubernetes-cli -y
+choco install azure-cli -y
+choco install git -y
+choco install golang -y  # optional
+```
+</details>
 
 ### Azure Requirements
 
-- Active Azure subscription
-- Subscription Owner or Contributor role
-- Sufficient quota for resources
-- Azure CLI logged in
+| Requirement | Details |
+|-------------|---------|
+| **Azure Subscription** | Active subscription with billing enabled |
+| **Role** | Owner or Contributor + User Access Administrator |
+| **Quotas** | Verify CPU/memory quotas in target regions |
+| **Budget** | ~$23K/month for production |
 
 ---
 
-## 📋 Step-by-Step Setup
+## 🎯 Step-by-Step Deployment
 
-### Step 1: Clone Repository
-
-```bash
-git clone https://github.com/your-org/global-commerce-platform.git
-cd global-commerce-platform
-```
-
-### Step 2: Configure Azure CLI
+### Step 1: Azure CLI Setup (5 min)
 
 ```bash
-# Login to Azure
+# 1. Login to Azure
 az login
 
-# Set subscription
+# 2. List subscriptions
+az account list --output table
+
+# 3. Set subscription
 az account set --subscription "YOUR_SUBSCRIPTION_ID"
 
-# Verify
-az account show
+# 4. Verify current subscription
+az account show --output table
+
+# 5. Register required providers
+az provider register --namespace Microsoft.ContainerService
+az provider register --namespace Microsoft.DBforPostgreSQL
+az provider register --namespace Microsoft.Cache
+az provider register --namespace Microsoft.Storage
+az provider register --namespace Microsoft.KeyVault
+az provider register --namespace Microsoft.Cdn
+
+# Wait for registration (5-10 minutes)
+az provider show --namespace Microsoft.ContainerService --query "registrationState"
 ```
 
-### Step 3: Create Terraform Backend
+### Step 2: Clone Repository (2 min)
+
+```bash
+# Clone repository
+git clone https://github.com/your-org/global-commerce-platform.git
+cd global-commerce-platform
+
+# Verify structure
+tree -L 2 -d
+```
+
+### Step 3: Terraform Backend Setup (10 min)
 
 ```bash
 # Create resource group for Terraform state
@@ -60,7 +178,7 @@ az group create \
   --name tfstate-rg \
   --location eastus
 
-# Create storage account for Terraform state
+# Create storage account (unique name required)
 STORAGE_ACCOUNT_NAME="tfstate$(openssl rand -hex 4)"
 
 az storage account create \
@@ -82,24 +200,29 @@ az storage container create \
   --account-name $STORAGE_ACCOUNT_NAME \
   --account-key $ACCOUNT_KEY
 
-echo "Terraform backend created!"
+# Save for later
+echo "STORAGE_ACCOUNT_NAME=$STORAGE_ACCOUNT_NAME" > .env
+echo "ACCOUNT_KEY=$ACCOUNT_KEY" >> .env
+
+echo "✅ Terraform backend created!"
 echo "Storage Account: $STORAGE_ACCOUNT_NAME"
 ```
 
-### Step 4: Configure Terraform Variables
+### Step 4: Configure Variables (10 min)
 
 ```bash
 cd infrastructure/terraform
 
-# Copy example environment file
+# Copy example configuration
 cp environments/production/terraform.tfvars.example \
    environments/production/terraform.tfvars
 
-# Edit with your values
+# Edit configuration
 nano environments/production/terraform.tfvars
 ```
 
 **terraform.tfvars:**
+
 ```hcl
 # Project Configuration
 project_name = "global-commerce"
@@ -111,11 +234,11 @@ secondary_locations = ["westeurope", "southeastasia"]
 
 # Networking
 vnet_address_space = ["10.0.0.0/16"]
-allowed_ip_ranges  = ["YOUR_OFFICE_IP/32"]
+allowed_ip_ranges  = ["YOUR_OFFICE_IP/32"]  # Your IP for admin access
 
 # Database
 db_admin_username = "dbadmin"
-db_admin_password = "YOUR_SECURE_PASSWORD"  # Use Azure Key Vault in production
+db_admin_password = "YourSecurePassword123!"  # CHANGE THIS!
 db_sku_name       = "GP_Standard_D4s_v3"
 db_storage_mb     = 131072  # 128 GB
 
@@ -131,10 +254,13 @@ common_tags = {
 }
 ```
 
-### Step 5: Initialize Terraform
+### Step 5: Initialize Terraform (5 min)
 
 ```bash
-# Initialize Terraform
+# Load environment variables
+source ../../.env
+
+# Initialize Terraform with backend
 terraform init \
   -backend-config="storage_account_name=$STORAGE_ACCOUNT_NAME" \
   -backend-config="container_name=tfstate" \
@@ -144,127 +270,199 @@ terraform init \
 # Validate configuration
 terraform validate
 
-# Plan deployment
+# Format configuration
+terraform fmt -recursive
+```
+
+### Step 6: Plan Infrastructure (10 min)
+
+```bash
+# Create execution plan
 terraform plan \
   -var-file="environments/production/terraform.tfvars" \
   -out=tfplan
+
+# Review the plan
+# Look for:
+# - Number of resources to create (~50+)
+# - Estimated costs
+# - Any errors or warnings
 ```
 
-### Step 6: Deploy Infrastructure
+### Step 7: Deploy Infrastructure (45-60 min)
 
 ```bash
 # Apply Terraform configuration
 terraform apply tfplan
 
 # This will create:
-# - Virtual Network and Subnets
-# - PostgreSQL Flexible Server
-# - Azure Storage Account
-# - Azure Container Registry
-# - App Services
-# - Redis Cache
-# - Application Insights
-# - Key Vault
-# - Front Door (CDN)
-# - And more...
+# ├─ Virtual Network and Subnets
+# ├─ Network Security Groups
+# ├─ Azure Front Door (CDN)
+# ├─ API Management / Kong
+# ├─ AKS Cluster (takes ~10-15 min)
+# ├─ PostgreSQL Flexible Server (takes ~10-15 min)
+# ├─ Redis Cache Premium (takes ~10-15 min)
+# ├─ Azure Storage Account
+# ├─ Application Insights
+# ├─ Key Vault
+# ├─ Container Registry
+# └─ Log Analytics Workspace
 
-# Deployment takes ~30-45 minutes
+# Deployment progress will be shown
+# Total time: ~45-60 minutes
+
+# ✅ Infrastructure deployment complete!
 ```
 
-### Step 7: Configure Secrets
+### Step 8: Verify Infrastructure (5 min)
+
+```bash
+# Get outputs
+terraform output
+
+# Key outputs:
+# - aks_cluster_name
+# - acr_login_server
+# - key_vault_name
+# - postgresql_server_name
+# - frontend_domain
+
+# Connect to AKS cluster
+az aks get-credentials \
+  --resource-group rg-global-commerce-production-eastus \
+  --name $(terraform output -raw aks_cluster_name)
+
+# Verify cluster access
+kubectl get nodes
+kubectl get namespaces
+```
+
+---
+
+## 🔐 Step 9: Configure Secrets (15 min)
+
+### Store Secrets in Key Vault
 
 ```bash
 # Get Key Vault name
 KEY_VAULT_NAME=$(terraform output -raw key_vault_name)
 
-# Set database credentials
+# Database connection string
+DB_HOST=$(terraform output -raw postgresql_server_name)
 az keyvault secret set \
   --vault-name $KEY_VAULT_NAME \
   --name "db-connection-string" \
-  --value "postgresql://dbadmin:PASSWORD@SERVER.postgres.database.azure.com/commerce_main"
+  --value "postgresql://dbadmin:PASSWORD@${DB_HOST}.postgres.database.azure.com/commerce_main?sslmode=require"
 
-# Set Stripe API key
-az keyvault secret set \
-  --vault-name $KEY_VAULT_NAME \
-  --name "stripe-api-key" \
-  --value "sk_live_YOUR_STRIPE_KEY"
-
-# Set SendGrid API key
-az keyvault secret set \
-  --vault-name $KEY_VAULT_NAME \
-  --name "sendgrid-api-key" \
-  --value "SG.YOUR_SENDGRID_KEY"
-
-# Set JWT secret
+# JWT secret
 az keyvault secret set \
   --vault-name $KEY_VAULT_NAME \
   --name "jwt-secret" \
   --value "$(openssl rand -base64 32)"
+
+# Stripe API key (get from Stripe dashboard)
+az keyvault secret set \
+  --vault-name $KEY_VAULT_NAME \
+  --name "stripe-api-key" \
+  --value "sk_test_YOUR_KEY"
+
+# SendGrid API key (get from SendGrid)
+az keyvault secret set \
+  --vault-name $KEY_VAULT_NAME \
+  --name "sendgrid-api-key" \
+  --value "SG.YOUR_KEY"
+
+# PayPal credentials
+az keyvault secret set \
+  --vault-name $KEY_VAULT_NAME \
+  --name "paypal-client-id" \
+  --value "YOUR_CLIENT_ID"
+
+az keyvault secret set \
+  --vault-name $KEY_VAULT_NAME \
+  --name "paypal-secret" \
+  --value "YOUR_SECRET"
 ```
 
 ---
 
-## 🐳 Build and Deploy Services
+## 🐳 Step 10: Build & Deploy Services (30-45 min)
 
-### Step 1: Build Docker Images
+### Build Docker Images
 
 ```bash
-cd backend
+cd ../../backend
 
 # Build all services
 ./scripts/build-all.sh
 
 # Or build individual services
-docker build -t api-gateway:latest ./api-gateway
 docker build -t auth-service:latest ./services/auth-service
 docker build -t product-service:latest ./services/product-service
+docker build -t order-service:latest ./services/order-service
 # ... etc
 ```
 
-### Step 2: Push to Azure Container Registry
+### Push to Container Registry
 
 ```bash
 # Get ACR login server
-ACR_NAME=$(terraform output -raw container_registry_login_server)
+ACR_NAME=$(cd ../infrastructure/terraform && terraform output -raw acr_login_server)
 
 # Login to ACR
-az acr login --name $ACR_NAME
+az acr login --name ${ACR_NAME%.azurecr.io}
 
 # Tag and push images
-docker tag api-gateway:latest $ACR_NAME/api-gateway:latest
-docker push $ACR_NAME/api-gateway:latest
+for service in auth-service user-service product-service order-service payment-service inventory-service; do
+  docker tag ${service}:latest $ACR_NAME/${service}:latest
+  docker push $ACR_NAME/${service}:latest
+done
 
-docker tag auth-service:latest $ACR_NAME/auth-service:latest
-docker push $ACR_NAME/auth-service:latest
-
-# ... push all services
+echo "✅ Images pushed to ACR!"
 ```
 
-### Step 3: Deploy to App Service
+### Deploy to Kubernetes
 
 ```bash
-# Deploy using Azure CLI
-az webapp config container set \
-  --name api-gateway \
-  --resource-group rg-global-commerce-production-eastus \
-  --docker-custom-image-name $ACR_NAME/api-gateway:latest \
-  --docker-registry-server-url https://$ACR_NAME.azurecr.io
+# Create namespace
+kubectl create namespace production
 
-# Or use deployment script
-./scripts/deploy-services.sh production
+# Deploy services using Helm (recommended)
+cd ../infrastructure/kubernetes/helm-charts
+
+# Deploy each service
+helm install auth-service ./auth-service \
+  --namespace production \
+  --set image.repository=$ACR_NAME/auth-service \
+  --set image.tag=latest
+
+helm install product-service ./product-service \
+  --namespace production \
+  --set image.repository=$ACR_NAME/product-service \
+  --set image.tag=latest
+
+# ... deploy remaining services
+
+# Or use kubectl directly
+kubectl apply -f ../base/auth-service/ -n production
+kubectl apply -f ../base/product-service/ -n production
+
+# Monitor deployment
+kubectl get pods -n production -w
 ```
 
 ---
 
-## 🗄️ Database Setup
+## 🗄️ Step 11: Database Setup (10 min)
 
-### Step 1: Run Migrations
+### Run Migrations
 
 ```bash
-cd database
+cd ../../database
 
-# Install migration tool
-npm install -g db-migrate
+# Install db-migrate globally
+npm install -g db-migrate db-migrate-pg
 
 # Configure database connection
 export DATABASE_URL="postgresql://dbadmin:PASSWORD@SERVER.postgres.database.azure.com/commerce_main?sslmode=require"
@@ -272,31 +470,34 @@ export DATABASE_URL="postgresql://dbadmin:PASSWORD@SERVER.postgres.database.azur
 # Run migrations
 db-migrate up
 
-# Or use built-in script
+# Or use custom script
 ./scripts/migrate.sh up
+
+# Verify migrations
+db-migrate status
 ```
 
-### Step 2: Seed Data (Optional)
+### Seed Data (Optional)
 
 ```bash
 # Seed initial data
 ./scripts/seed.sh
 
-# This will create:
-# - Sample products
-# - Categories
-# - Sample users
+# This creates:
+# - Sample products (100)
+# - Categories (20)
+# - Sample users (10)
 # - Default settings
 ```
 
 ---
 
-## 🌐 Frontend Deployment
+## 🌐 Step 12: Deploy Frontend (15 min)
 
-### Option 1: Deploy to Azure Static Web Apps
+### Option 1: Azure Static Web Apps
 
 ```bash
-cd frontend/web
+cd ../frontend/web
 
 # Install dependencies
 npm install
@@ -312,325 +513,377 @@ az staticwebapp create \
   --location "East US 2" \
   --branch main \
   --app-location "/" \
-  --output-location "out"
+  --output-location "out" \
+  --token $(az account get-access-token --query accessToken -o tsv)
 ```
 
-### Option 2: Deploy to Vercel
-
-```bash
-cd frontend/web
-
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel --prod
-```
-
-### Option 3: Deploy to Azure App Service (Container)
+### Option 2: Azure App Service (Container)
 
 ```bash
 # Build Docker image
-docker build -t global-commerce-web:latest .
+docker build -t frontend:latest .
 
 # Push to ACR
-docker tag global-commerce-web:latest $ACR_NAME/global-commerce-web:latest
-docker push $ACR_NAME/global-commerce-web:latest
+docker tag frontend:latest $ACR_NAME/frontend:latest
+docker push $ACR_NAME/frontend:latest
 
-# Deploy
+# Deploy via Terraform or Azure CLI
 az webapp config container set \
   --name global-commerce-web \
   --resource-group rg-global-commerce-production-eastus \
-  --docker-custom-image-name $ACR_NAME/global-commerce-web:latest
+  --docker-custom-image-name $ACR_NAME/frontend:latest \
+  --docker-registry-server-url https://$ACR_NAME
 ```
 
 ---
 
-## 🔐 Configure Authentication
+## ✅ Step 13: Verification (10 min)
 
-### Auth0 Setup
+### Health Checks
 
 ```bash
-# 1. Create Auth0 account at https://auth0.com
-# 2. Create a new application (Single Page Application)
-# 3. Configure allowed callbacks:
-#    - https://yourdomain.com/callback
-#    - http://localhost:3000/callback (for development)
+# Get API endpoint
+API_URL=$(cd ../infrastructure/terraform && terraform output -raw api_gateway_url)
 
-# 4. Add to Key Vault
-az keyvault secret set \
-  --vault-name $KEY_VAULT_NAME \
-  --name "auth0-domain" \
-  --value "your-tenant.auth0.com"
+# Check API Gateway health
+curl $API_URL/health
+# Expected: {"status":"healthy","timestamp":"..."}
 
-az keyvault secret set \
-  --vault-name $KEY_VAULT_NAME \
-  --name "auth0-client-id" \
-  --value "YOUR_CLIENT_ID"
+# Check individual services
+curl $API_URL/api/v1/auth/health
+curl $API_URL/api/v1/products/health
+curl $API_URL/api/v1/orders/health
+```
 
-az keyvault secret set \
-  --vault-name $KEY_VAULT_NAME \
-  --name "auth0-client-secret" \
-  --value "YOUR_CLIENT_SECRET"
+### Test Authentication
+
+```bash
+# Register new user
+curl -X POST $API_URL/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "Test123!",
+    "name": "Test User"
+  }'
+
+# Login
+TOKEN=$(curl -X POST $API_URL/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "Test123!"
+  }' | jq -r '.accessToken')
+
+# Test authenticated request
+curl $API_URL/api/v1/users/me \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### Test Product API
+
+```bash
+# Get products
+curl $API_URL/api/v1/products
+
+# Create product (requires auth)
+curl -X POST $API_URL/api/v1/products \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Test Product",
+    "description": "This is a test product",
+    "price": 29.99,
+    "currency": "USD",
+    "stock": 100
+  }'
+```
+
+### Check Monitoring
+
+```bash
+# Get Application Insights name
+INSIGHTS_NAME=$(cd ../infrastructure/terraform && terraform output -raw app_insights_name)
+
+# View recent traces
+az monitor app-insights query \
+  --app $INSIGHTS_NAME \
+  --analytics-query "traces | take 10" \
+  --output table
+
+# View recent requests
+az monitor app-insights query \
+  --app $INSIGHTS_NAME \
+  --analytics-query "requests | take 10" \
+  --output table
 ```
 
 ---
 
-## 💳 Configure Payment Gateways
-
-### Stripe Setup
-
-```bash
-# 1. Create Stripe account at https://stripe.com
-# 2. Get API keys from dashboard
-# 3. Configure webhook endpoint: https://api.yourdomain.com/webhooks/stripe
-
-# Add keys to Key Vault
-az keyvault secret set \
-  --vault-name $KEY_VAULT_NAME \
-  --name "stripe-api-key" \
-  --value "sk_live_YOUR_KEY"
-
-az keyvault secret set \
-  --vault-name $KEY_VAULT_NAME \
-  --name "stripe-webhook-secret" \
-  --value "whsec_YOUR_SECRET"
-```
-
-### PayPal Setup
-
-```bash
-# 1. Create PayPal Business account
-# 2. Get API credentials
-# 3. Configure IPN endpoint
-
-# Add keys
-az keyvault secret set \
-  --vault-name $KEY_VAULT_NAME \
-  --name "paypal-client-id" \
-  --value "YOUR_CLIENT_ID"
-
-az keyvault secret set \
-  --vault-name $KEY_VAULT_NAME \
-  --name "paypal-secret" \
-  --value "YOUR_SECRET"
-```
-
----
-
-## 📧 Configure Email Service
-
-### SendGrid Setup
-
-```bash
-# 1. Create SendGrid account
-# 2. Create API key with full permissions
-# 3. Verify sender domain
-
-# Add to Key Vault
-az keyvault secret set \
-  --vault-name $KEY_VAULT_NAME \
-  --name "sendgrid-api-key" \
-  --value "SG.YOUR_KEY"
-
-# Configure templates in SendGrid dashboard
-```
-
----
-
-## 📊 Configure Monitoring
-
-### Application Insights
-
-```bash
-# Get instrumentation key
-INSTRUMENTATION_KEY=$(terraform output -raw app_insights_instrumentation_key)
-
-# Configure in application
-export APPLICATIONINSIGHTS_CONNECTION_STRING="InstrumentationKey=$INSTRUMENTATION_KEY"
-```
+## 🎛️ Step 14: Configure Monitoring (10 min)
 
 ### Set Up Alerts
 
 ```bash
-# Create action group for alerts
+# Create action group
 az monitor action-group create \
   --name ops-team \
   --resource-group rg-global-commerce-production-eastus \
   --short-name ops \
   --email-receiver email ops ops@yourcompany.com
 
-# Create metric alert for API response time
+# API response time alert
 az monitor metrics alert create \
   --name high-response-time \
   --resource-group rg-global-commerce-production-eastus \
-  --scopes /subscriptions/SUB_ID/resourceGroups/rg-global-commerce-production-eastus \
+  --scopes "/subscriptions/SUB_ID/resourceGroups/rg-global-commerce-production-eastus" \
   --condition "avg response_time > 500" \
   --description "Alert when API response time exceeds 500ms" \
   --evaluation-frequency 1m \
   --window-size 5m \
   --action ops-team
+
+# Error rate alert
+az monitor metrics alert create \
+  --name high-error-rate \
+  --resource-group rg-global-commerce-production-eastus \
+  --scopes "/subscriptions/SUB_ID/resourceGroups/rg-global-commerce-production-eastus" \
+  --condition "avg error_rate > 1" \
+  --description "Alert when error rate exceeds 1%" \
+  --evaluation-frequency 1m \
+  --window-size 5m \
+  --action ops-team
+```
+
+### Configure Dashboards
+
+```bash
+# Import pre-built dashboard
+az portal dashboard import \
+  --name "Global Commerce Dashboard" \
+  --resource-group rg-global-commerce-production-eastus \
+  --input-path ../scripts/monitoring/dashboard.json
 ```
 
 ---
 
-## 🔄 Configure CI/CD
+## 🔄 Step 15: CI/CD Setup (15 min)
 
 ### GitHub Actions
 
-```yaml
-# .github/workflows/deploy-production.yml
-name: Deploy to Production
+```bash
+# Create service principal for GitHub Actions
+az ad sp create-for-rbac \
+  --name "github-actions-global-commerce" \
+  --role contributor \
+  --scopes /subscriptions/YOUR_SUBSCRIPTION_ID \
+  --sdk-auth
 
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      
-      - name: Build and Push Docker Images
-        run: |
-          az acr login --name ${{ secrets.ACR_NAME }}
-          docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/api-gateway:${{ github.sha }} ./backend/api-gateway
-          docker push ${{ secrets.ACR_NAME }}.azurecr.io/api-gateway:${{ github.sha }}
-      
-      - name: Deploy to App Service
-        run: |
-          az webapp config container set \
-            --name api-gateway \
-            --resource-group ${{ secrets.RESOURCE_GROUP }} \
-            --docker-custom-image-name ${{ secrets.ACR_NAME }}.azurecr.io/api-gateway:${{ github.sha }}
+# Copy output and add to GitHub Secrets:
+# - AZURE_CREDENTIALS
+# - ACR_NAME
+# - RESOURCE_GROUP
 ```
+
+**Add to GitHub Secrets:**
+
+1. Go to repository Settings → Secrets → Actions
+2. Add secrets:
+   - `AZURE_CREDENTIALS` - Output from service principal
+   - `ACR_NAME` - Container registry name
+   - `RESOURCE_GROUP` - Resource group name
+   - `STRIPE_SECRET_KEY` - Stripe API key
+   - `SLACK_WEBHOOK_URL` - For notifications
 
 ---
 
-## ✅ Verify Deployment
+## 🎉 Deployment Complete!
 
-### Health Checks
+### Access Your Platform
 
-```bash
-# Check API Gateway
-curl https://api.yourdomain.com/health
-
-# Check services
-curl https://api.yourdomain.com/api/v1/products
-curl https://api.yourdomain.com/api/v1/orders
-
-# Check frontend
-curl https://yourdomain.com
+```
+Web Application:    https://your-domain.com
+Admin Dashboard:    https://admin.your-domain.com
+API Gateway:        https://api.your-domain.com
+API Documentation:  https://api.your-domain.com/docs
+Monitoring:         https://portal.azure.com (Application Insights)
 ```
 
-### Test Authentication
+### Next Steps
 
-```bash
-# Test login endpoint
-curl -X POST https://api.yourdomain.com/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "password123"
-  }'
-```
-
-### Test Payment
-
-```bash
-# Test Stripe payment (test mode)
-curl -X POST https://api.yourdomain.com/api/v1/payments \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -d '{
-    "amount": 1000,
-    "currency": "usd",
-    "payment_method": "pm_card_visa"
-  }'
-```
+- [ ] Configure custom domain (Azure DNS or your provider)
+- [ ] Set up SSL certificates (Let's Encrypt or purchased)
+- [ ] Configure Auth0 or Azure AD B2C
+- [ ] Add payment gateway credentials (Stripe, PayPal)
+- [ ] Configure email service (SendGrid)
+- [ ] Set up backup policies
+- [ ] Create runbooks for operations
+- [ ] Train team on operations
 
 ---
 
-## 🎯 Performance Testing
-
-### Load Testing with k6
-
-```bash
-# Install k6
-brew install k6  # macOS
-# or
-sudo apt install k6  # Ubuntu
-
-# Run load test
-cd scripts/load-tests
-k6 run --vus 100 --duration 5m api-load-test.js
-
-# Monitor results in Grafana
-```
-
----
-
-## 🔧 Troubleshooting
+## 🐛 Troubleshooting
 
 ### Common Issues
 
-**Issue: Cannot connect to database**
-```bash
-# Check network connectivity
-az postgres flexible-server show \
-  --resource-group rg-global-commerce-production-eastus \
-  --name postgres-global-commerce-production
+<details>
+<summary><strong>Issue: Cannot connect to database</strong></summary>
 
+```bash
 # Check firewall rules
 az postgres flexible-server firewall-rule list \
   --resource-group rg-global-commerce-production-eastus \
   --name postgres-global-commerce-production
-```
 
-**Issue: Container fails to start**
+# Add your IP
+az postgres flexible-server firewall-rule create \
+  --resource-group rg-global-commerce-production-eastus \
+  --name postgres-global-commerce-production \
+  --rule-name allow-my-ip \
+  --start-ip-address YOUR_IP \
+  --end-ip-address YOUR_IP
+```
+</details>
+
+<details>
+<summary><strong>Issue: Container fails to start</strong></summary>
+
 ```bash
-# Check logs
-az webapp log tail \
-  --name api-gateway \
-  --resource-group rg-global-commerce-production-eastus
+# Check pod logs
+kubectl logs -n production <pod-name>
 
-# Check container logs
-docker logs CONTAINER_ID
+# Describe pod for events
+kubectl describe pod -n production <pod-name>
+
+# Check service status
+kubectl get pods -n production
+kubectl get services -n production
 ```
+</details>
 
-**Issue: High latency**
+<details>
+<summary><strong>Issue: High latency</strong></summary>
+
 ```bash
 # Check Application Insights
 az monitor app-insights query \
-  --app APPLICATION_INSIGHTS_ID \
-  --analytics-query "requests | summarize avg(duration) by bin(timestamp, 1h)"
+  --app $INSIGHTS_NAME \
+  --analytics-query "requests | summarize avg(duration) by bin(timestamp, 1h)" \
+  --output table
+
+# Check pod resource usage
+kubectl top pods -n production
+
+# Scale up if needed
+kubectl scale deployment <service-name> --replicas=5 -n production
 ```
+</details>
+
+<details>
+<summary><strong>Issue: Terraform state lock</strong></summary>
+
+```bash
+# Force unlock (use with caution)
+terraform force-unlock <LOCK_ID>
+
+# Or delete lock from storage
+az storage blob delete \
+  --account-name $STORAGE_ACCOUNT_NAME \
+  --account-key $ACCOUNT_KEY \
+  --container-name tfstate \
+  --name global-commerce.tfstate.lock
+```
+</details>
 
 ---
 
 ## 📚 Additional Resources
 
+### Documentation
+
+- [Complete Architecture](../architecture/ARCHITECTURE.md)
+- [Technology Stack](../TECH-STACK.md)
+- [Platform Requirements](../PLATFORM-REQUIREMENTS.md)
+- [API Documentation](../api/README.md)
+
+### External Links
+
 - [Azure Documentation](https://docs.microsoft.com/azure)
 - [Terraform Azure Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
-- [Next.js Documentation](https://nextjs.org/docs)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [Redis Documentation](https://redis.io/docs/)
+- [Kubernetes Documentation](https://kubernetes.io/docs/)
+
+### Support
+
+- **Email:** devops@yourcompany.com
+- **Slack:** #platform-ops
+- **On-Call:** PagerDuty rotation
+- **Status:** https://status.yourcompany.com
 
 ---
 
-## 🆘 Support
+## 📊 Deployment Checklist
 
-- **Email**: devops@yourcompany.com
-- **Slack**: #platform-ops
-- **On-Call**: PagerDuty rotation
-- **Documentation**: https://docs.yourcompany.com
+### Pre-Deployment
+
+- [ ] Azure subscription active
+- [ ] All tools installed
+- [ ] Service accounts created
+- [ ] Secrets prepared
+- [ ] Budget approved
+
+### Infrastructure
+
+- [ ] Terraform backend created
+- [ ] Variables configured
+- [ ] Infrastructure deployed
+- [ ] Outputs verified
+- [ ] Networking tested
+
+### Services
+
+- [ ] Docker images built
+- [ ] Images pushed to ACR
+- [ ] Services deployed to AKS
+- [ ] Health checks passing
+- [ ] Logs available
+
+### Data
+
+- [ ] Database migrations run
+- [ ] Seed data loaded (if needed)
+- [ ] Backups configured
+- [ ] Connection pooling enabled
+
+### Security
+
+- [ ] Secrets in Key Vault
+- [ ] Firewall rules configured
+- [ ] WAF enabled
+- [ ] SSL certificates installed
+- [ ] RBAC configured
+
+### Monitoring
+
+- [ ] Application Insights configured
+- [ ] Alerts set up
+- [ ] Dashboards created
+- [ ] Log aggregation working
+
+### Post-Deployment
+
+- [ ] Health checks passing
+- [ ] Performance tests run
+- [ ] Load tests completed
+- [ ] Disaster recovery tested
+- [ ] Documentation updated
 
 ---
 
-*Last Updated: December 2024*
+**🎉 Congratulations! Your Global Commerce Platform is live! 🚀**
+
+---
+
+*Quick Start Guide Version: 2.0 (Redesigned)*  
+*Last Updated: December 2024*  
+*Maintained By: Platform DevOps Team*  
+*Next Review: March 2025*
