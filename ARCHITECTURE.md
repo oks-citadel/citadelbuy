@@ -1,824 +1,891 @@
-# System Architecture Documentation
+# 🏗️ System Architecture Documentation
+## Enterprise E-Commerce Platform
 
-## 📐 Enterprise E-Commerce Platform Architecture
-
-### Document Version: 1.0
-### Last Updated: December 2024
-
----
-
-## Table of Contents
-
-1. [Architecture Overview](#architecture-overview)
-2. [System Context](#system-context)
-3. [Container Architecture](#container-architecture)
-4. [Microservices Design](#microservices-design)
-5. [Data Architecture](#data-architecture)
-6. [Security Architecture](#security-architecture)
-7. [Deployment Architecture](#deployment-architecture)
-8. [Scalability Patterns](#scalability-patterns)
-9. [Reliability & High Availability](#reliability--high-availability)
-10. [Performance Optimization](#performance-optimization)
+> **Production-ready architecture for 100M+ users**  
+> Event-driven microservices • Multi-region • 99.99% SLA
 
 ---
 
-## 1. Architecture Overview
+## 📑 Table of Contents
 
-### 1.1 Architectural Style
+**Quick Navigation:**
+- [Architecture Overview](#architecture-overview) - Patterns & principles
+- [System Layers](#system-layers) - Edge to data layer
+- [Microservices](#microservices-design) - 15+ services detailed
+- [Data Architecture](#data-architecture) - Storage & flow
+- [Security](#security-architecture) - Defense in depth
+- [Deployment](#deployment-architecture) - Multi-region setup
+- [Scalability](#scalability-patterns) - Auto-scaling strategies
+- [Reliability](#reliability--high-availability) - HA & DR
 
-**Event-Driven Microservices Architecture** with the following characteristics:
+---
 
-- **Microservices**: Independently deployable services
-- **Event-Driven**: Asynchronous communication via events
-- **API Gateway**: Single entry point for clients
-- **Service Mesh**: Service-to-service communication
-- **CQRS**: Command Query Responsibility Segregation
-- **Event Sourcing**: Audit trail and state reconstruction
+## 🎯 Architecture Overview
 
-### 1.2 Architecture Principles
+### Core Pattern: Event-Driven Microservices
+
+```
+ARCHITECTURE CHARACTERISTICS
+├─ Pattern: Event-driven microservices
+├─ Communication: Async (Kafka) + Sync (REST/gRPC)
+├─ Data: Database per service
+├─ Deployment: Containerized (Docker + Kubernetes)
+├─ Regions: Multi-region (3 primary)
+└─ Scale: Horizontal auto-scaling
+```
+
+### Design Principles
+
+<table>
+<tr>
+<th width="50%">Core Principles</th>
+<th width="50%">Implementation</th>
+</tr>
+
+<tr>
+<td>
+
+**1. Single Responsibility**
+- Each service owns one domain
+- Clear boundaries
+- Minimal dependencies
+
+**2. Loose Coupling**
+- Services are independent
+- Event-driven communication
+- No direct dependencies
+
+**3. High Cohesion**
+- Related functionality together
+- Domain-driven design
+- Bounded contexts
+
+**4. Autonomous**
+- Independent deployment
+- Own database
+- Self-contained
+
+</td>
+<td>
+
+**5. Resilient**
+- Circuit breakers
+- Graceful degradation
+- Retry mechanisms
+- Fallback strategies
+
+**6. Observable**
+- Distributed tracing
+- Centralized logging
+- Real-time metrics
+- Health checks
+
+**7. Scalable**
+- Horizontal scaling
+- Stateless services
+- Caching layers
+- Load balancing
+
+**8. Secure**
+- Defense in depth
+- Zero-trust model
+- Encryption everywhere
+- RBAC
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🏛️ System Layers
+
+### Layer 1: Edge & CDN
+
+```
+┌──────────────────────────────────────────────────────────┐
+│         AZURE FRONT DOOR (Global CDN)                    │
+├──────────────────────────────────────────────────────────┤
+│ • 200+ edge locations worldwide                          │
+│ • SSL/TLS termination                                     │
+│ • DDoS Protection Standard                               │
+│ • Web Application Firewall (WAF)                         │
+│ • Geo-filtering & IP filtering                           │
+│ • Rate limiting (10K req/min per IP)                     │
+│ • Cache-Control & CDN caching                            │
+│ • Automatic failover                                      │
+└──────────────────────────────────────────────────────────┘
+
+CAPABILITIES
+├─ Static asset caching (1 year TTL)
+├─ API response caching (configurable TTL)
+├─ Smart routing to nearest region
+├─ OWASP Top 10 protection
+└─ Bot detection & mitigation
+```
+
+### Layer 2: API Gateway
+
+```
+┌──────────────────────────────────────────────────────────┐
+│         KONG / AZURE API MANAGEMENT                       │
+├──────────────────────────────────────────────────────────┤
+│ AUTHENTICATION & AUTHORIZATION                            │
+│ ├─ JWT token validation                                  │
+│ ├─ OAuth 2.0 / OpenID Connect                           │
+│ ├─ API key management                                    │
+│ └─ RBAC policy enforcement                               │
+│                                                          │
+│ TRAFFIC MANAGEMENT                                        │
+│ ├─ Rate limiting (per user/IP)                          │
+│ ├─ Throttling & quotas                                   │
+│ ├─ Circuit breaking                                      │
+│ └─ Load balancing                                        │
+│                                                          │
+│ TRANSFORMATION                                            │
+│ ├─ Request/response transformation                       │
+│ ├─ Protocol translation (REST ↔ gRPC)                   │
+│ ├─ API versioning (v1, v2)                              │
+│ └─ Response caching                                      │
+└──────────────────────────────────────────────────────────┘
+```
+
+### Layer 3: Application (Microservices)
+
+```
+┌─────────────────────────────────────────────────────────┐
+│              MICROSERVICES (15+ Services)               │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐│
+│  │   Auth   │  │   User   │  │ Product  │  │ Catalog ││
+│  │ Service  │  │ Service  │  │ Service  │  │ Service ││
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬────┘│
+│       │             │              │              │     │
+│  ┌────┴─────┐  ┌───┴──────┐  ┌───┴──────┐  ┌───┴────┐│
+│  │  Pricing │  │   Cart   │  │  Order   │  │Payment ││
+│  │ Service  │  │ Service  │  │ Service  │  │Service ││
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └───┬────┘│
+│       │             │              │             │     │
+│  ┌────┴─────┐  ┌───┴──────┐  ┌───┴──────┐  ┌──┴─────┐│
+│  │Inventory │  │ Shipping │  │  Search  │  │ AI/ML  ││
+│  │ Service  │  │ Service  │  │ Service  │  │Service ││
+│  └──────────┘  └──────────┘  └──────────┘  └────────┘│
+│                                                         │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐│
+│  │Analytics │  │  Notify  │  │  Vendor  │  │ Review  ││
+│  │ Service  │  │ Service  │  │ Service  │  │ Service ││
+│  └──────────┘  └──────────┘  └──────────┘  └─────────┘│
+└─────────────────────────────────────────────────────────┘
+```
+
+### Layer 4: Messaging & Events
+
+```
+┌──────────────────────────────────────────────────────────┐
+│      EVENT STREAMING (Kafka / Azure Event Hubs)          │
+├──────────────────────────────────────────────────────────┤
+│ EVENT TYPES                                              │
+│ ├─ OrderCreated, OrderUpdated, OrderCancelled           │
+│ ├─ PaymentProcessed, PaymentFailed, RefundIssued        │
+│ ├─ InventoryReserved, InventoryReleased, StockUpdated   │
+│ ├─ UserRegistered, UserUpdated, UserDeleted             │
+│ ├─ ProductViewed, ProductAddedToCart, PurchaseCompleted │
+│ └─ AuditLog, SystemEvent                                │
+│                                                          │
+│ CONFIGURATION                                            │
+│ ├─ Partitions: 32 per topic                            │
+│ ├─ Replication: 3 replicas                             │
+│ ├─ Retention: 7 days                                    │
+│ └─ Throughput: 1M+ events/sec                          │
+└──────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────┐
+│     MESSAGE QUEUE (RabbitMQ / Azure Service Bus)         │
+├──────────────────────────────────────────────────────────┤
+│ QUEUE TYPES                                              │
+│ ├─ Email Queue (transactional emails)                   │
+│ ├─ SMS Queue (notifications)                            │
+│ ├─ Background Jobs (data processing)                    │
+│ ├─ Scheduled Tasks (cron jobs)                          │
+│ └─ Dead Letter Queue (failed messages)                  │
+└──────────────────────────────────────────────────────────┘
+```
+
+### Layer 5: Data Storage
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                    DATA STORAGE LAYER                     │
+├──────────────────────────────────────────────────────────┤
+│                                                          │
+│  ┌─────────────┐  ┌─────────────┐  ┌────────────────┐  │
+│  │ PostgreSQL  │  │   Redis     │  │ Elasticsearch  │  │
+│  │ (Primary DB)│  │  (Cache)    │  │    (Search)    │  │
+│  ├─────────────┤  ├─────────────┤  ├────────────────┤  │
+│  │ • HA setup  │  │ • Cluster   │  │ • 3-node       │  │
+│  │ • 3 regions │  │ • 6 nodes   │  │ • Per region   │  │
+│  │ • Read rep. │  │ • Sentinel  │  │ • Sharded      │  │
+│  │ • Auto fail.│  │ • Persistent│  │ • Replicated   │  │
+│  └─────────────┘  └─────────────┘  └────────────────┘  │
+│                                                          │
+│  ┌─────────────┐  ┌─────────────┐  ┌────────────────┐  │
+│  │  MongoDB    │  │   Azure     │  │  Azure Synapse │  │
+│  │  (Catalog)  │  │  Storage    │  │  (Analytics)   │  │
+│  ├─────────────┤  ├─────────────┤  ├────────────────┤  │
+│  │ • Flexible  │  │ • GRS       │  │ • DW           │  │
+│  │ • Geospatial│  │ • CDN int.  │  │ • BI           │  │
+│  │ • Sharded   │  │ • Lifecycle │  │ • Big data     │  │
+│  │ • Indexed   │  │ • Encrypted │  │ • ML ready     │  │
+│  └─────────────┘  └─────────────┘  └────────────────┘  │
+│                                                          │
+│  ┌─────────────┐  ┌─────────────┐                       │
+│  │ Cosmos DB   │  │   Azure     │                       │
+│  │  (Global)   │  │ Key Vault   │                       │
+│  ├─────────────┤  ├─────────────┤                       │
+│  │ • Multi-reg.│  │ • Secrets   │                       │
+│  │ • Low lat.  │  │ • Certs     │                       │
+│  │ • 99.999%   │  │ • Keys      │                       │
+│  │ • Auto-scale│  │ • HSM       │                       │
+│  └─────────────┘  └─────────────┘                       │
+└──────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔧 Microservices Design
+
+### Service Inventory
+
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Tech</th>
+<th>Database</th>
+<th>Key Responsibilities</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Auth Service</strong></td>
+<td>Node.js</td>
+<td>PostgreSQL + Redis</td>
+<td>
+• Authentication (OAuth 2.0)<br>
+• Token management (JWT)<br>
+• MFA & session handling<br>
+• Permission management
+</td>
+</tr>
+
+<tr>
+<td><strong>User Service</strong></td>
+<td>Node.js</td>
+<td>PostgreSQL</td>
+<td>
+• User profiles & preferences<br>
+• Address management<br>
+• Notification settings<br>
+• Privacy controls (GDPR)
+</td>
+</tr>
+
+<tr>
+<td><strong>Product Service</strong></td>
+<td>Node.js</td>
+<td>PostgreSQL + MongoDB</td>
+<td>
+• Product catalog (CRUD)<br>
+• SKU management<br>
+• Product variants<br>
+• Digital products
+</td>
+</tr>
+
+<tr>
+<td><strong>Order Service</strong></td>
+<td>Go</td>
+<td>PostgreSQL</td>
+<td>
+• Order creation & tracking<br>
+• Order status management<br>
+• Order history<br>
+• Invoice generation
+</td>
+</tr>
+
+<tr>
+<td><strong>Payment Service</strong></td>
+<td>Go</td>
+<td>PostgreSQL (encrypted)</td>
+<td>
+• Payment processing<br>
+• Gateway integration (Stripe, Adyen)<br>
+• Refunds & chargebacks<br>
+• PCI DSS compliance
+</td>
+</tr>
+
+<tr>
+<td><strong>Inventory Service</strong></td>
+<td>Go</td>
+<td>PostgreSQL + Redis</td>
+<td>
+• Real-time stock levels<br>
+• Stock reservations<br>
+• Multi-warehouse tracking<br>
+• Low stock alerts
+</td>
+</tr>
+
+<tr>
+<td><strong>Search Service</strong></td>
+<td>Go</td>
+<td>Elasticsearch</td>
+<td>
+• Full-text search<br>
+• Autocomplete<br>
+• Faceted navigation<br>
+• Search analytics
+</td>
+</tr>
+
+<tr>
+<td><strong>AI Service</strong></td>
+<td>Python</td>
+<td>PostgreSQL</td>
+<td>
+• Product recommendations<br>
+• Fraud detection<br>
+• Demand forecasting<br>
+• Image recognition
+</td>
+</tr>
+
+</tbody>
+</table>
+
+### Service Communication Patterns
+
+#### Synchronous Communication
 
 ```yaml
-Design Principles:
-  1. Single Responsibility: Each service does one thing well
-  2. Loose Coupling: Services are independent
-  3. High Cohesion: Related functionality stays together
-  4. Autonomous: Services can be deployed independently
-  5. Resilient: Graceful degradation and recovery
-  6. Observable: Comprehensive monitoring and logging
-  7. Scalable: Horizontal scaling by design
-  8. Secure: Security at every layer
-```
+REST API (HTTP/JSON)
+├─ External: Client ↔ API Gateway ↔ Services
+├─ Use: Real-time queries, CRUD operations
+└─ Example: GET /api/v1/products/{id}
 
-### 1.3 Technology Decisions
-
-| Decision | Rationale |
-|----------|-----------|
-| Microservices over Monolith | Enables independent scaling, deployment, and team autonomy |
-| Event-Driven over Request-Response | Better scalability, loose coupling, resilience |
-| Multi-Region over Single Region | Global reach, disaster recovery, compliance |
-| Kubernetes over VMs | Container orchestration, efficient resource utilization |
-| PostgreSQL as primary DB | ACID compliance, performance, feature-rich |
-| Redis for caching | In-memory speed, pub/sub, data structures |
-| Kafka for events | High throughput, durability, replay capability |
-
----
-
-## 2. System Context
-
-### 2.1 System Context Diagram
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│                    External Actors                              │
-│                                                                 │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
-│  │ Customer │  │  Vendor  │  │  Admin   │  │  Support │      │
-│  │   Web    │  │  Portal  │  │Dashboard │  │   Team   │      │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘      │
-│       │             │              │              │            │
-│  ┌────┴─────────────┴──────────────┴──────────────┴────┐      │
-│  │                                                      │      │
-│  │        Global Commerce Platform                     │      │
-│  │                                                      │      │
-│  │  • Product Catalog  • Order Management              │      │
-│  │  • Payment Processing • Inventory Management        │      │
-│  │  • User Management  • Shipping & Logistics          │      │
-│  │  • Search & Discovery • Analytics & Reporting       │      │
-│  │  • AI/ML Services   • Notification Services         │      │
-│  │                                                      │      │
-│  └──────┬──────────────┬──────────────┬────────────────┘      │
-│         │              │              │                        │
-│  ┌──────▼──────┐ ┌─────▼──────┐ ┌────▼──────┐                │
-│  │  Payment    │ │  Shipping  │ │   Email   │                │
-│  │  Gateways   │ │  Providers │ │  Service  │                │
-│  │             │ │            │ │           │                │
-│  │ • Stripe    │ │ • FedEx    │ │ • SendGrid│                │
-│  │ • PayPal    │ │ • UPS      │ │ • Twilio  │                │
-│  │ • Adyen     │ │ • DHL      │ │           │                │
-│  └─────────────┘ └────────────┘ └───────────┘                │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 2.2 External Integrations
-
-**Third-Party Services:**
-
-1. **Payment Processors**
-   - Stripe, Adyen, PayPal, Braintree
-   - Regional payment gateways
-
-2. **Shipping & Logistics**
-   - FedEx, UPS, DHL, USPS
-   - Local carriers per region
-
-3. **Communication**
-   - SendGrid (email)
-   - Twilio (SMS)
-   - Firebase (push notifications)
-
-4. **Authentication**
-   - Auth0 / Azure AD B2C
-   - Social OAuth providers
-
-5. **Analytics**
-   - Google Analytics
-   - Mixpanel
-   - Segment
-
-6. **AI/ML**
-   - OpenAI / Azure OpenAI
-   - Google Cloud Vision API
-   - AWS Rekognition
-
----
-
-## 3. Container Architecture
-
-### 3.1 High-Level Container Diagram
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        EDGE LAYER                               │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  Azure Front Door (Global CDN + WAF + DDoS)              │  │
-│  │  • 200+ edge locations                                    │  │
-│  │  • SSL/TLS termination                                    │  │
-│  │  • Geo-filtering                                          │  │
-│  └────────────────────────┬─────────────────────────────────┘  │
-└───────────────────────────┼─────────────────────────────────────┘
-                            │
-┌───────────────────────────▼─────────────────────────────────────┐
-│                     GATEWAY LAYER                               │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  API Gateway (Kong / Azure APIM)                         │  │
-│  │  • Authentication & Authorization                         │  │
-│  │  • Rate Limiting & Throttling                            │  │
-│  │  • Request/Response Transformation                       │  │
-│  │  • Circuit Breaking                                       │  │
-│  │  • API Versioning                                         │  │
-│  └────────────────────────┬─────────────────────────────────┘  │
-└───────────────────────────┼─────────────────────────────────────┘
-                            │
-┌───────────────────────────▼─────────────────────────────────────┐
-│                   APPLICATION LAYER                             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐  │
-│  │              Core Business Services                      │  │
-│  ├─────────────────────────────────────────────────────────┤  │
-│  │                                                          │  │
-│  │  [Auth]  [User]  [Product]  [Catalog]  [Pricing]       │  │
-│  │    ↓       ↓        ↓          ↓          ↓            │  │
-│  │  [Cart]  [Order]  [Payment]  [Inventory]  [Shipping]   │  │
-│  │    ↓       ↓        ↓          ↓          ↓            │  │
-│  │  [Search] [Recommendation] [Analytics] [Notification]   │  │
-│  │    ↓       ↓        ↓          ↓          ↓            │  │
-│  │  [Vendor] [Review]  [AI/ML]  [Reporting] [Admin]       │  │
-│  │                                                          │  │
-│  └──────────────────────────┬───────────────────────────────┘  │
-└───────────────────────────┼─────────────────────────────────────┘
-                            │
-┌───────────────────────────▼─────────────────────────────────────┐
-│                   MESSAGING LAYER                               │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  Event Bus (Kafka / Azure Event Hubs)                    │  │
-│  │  • Order Events  • Payment Events  • Inventory Events    │  │
-│  │  • User Events   • Audit Events    • Analytics Events    │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  Message Queue (RabbitMQ / Azure Service Bus)            │  │
-│  │  • Email Queue   • SMS Queue      • Background Jobs      │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└───────────────────────────┼─────────────────────────────────────┘
-                            │
-┌───────────────────────────▼─────────────────────────────────────┐
-│                      DATA LAYER                                 │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌──────────┐ │
-│  │ PostgreSQL │  │   Redis    │  │Elasticsearch│ │  MongoDB │ │
-│  │  (Primary) │  │  (Cache)   │  │  (Search)  │  │(Catalog) │ │
-│  └────────────┘  └────────────┘  └────────────┘  └──────────┘ │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌──────────┐ │
-│  │   Azure    │  │   Azure    │  │   Azure    │  │  Azure   │ │
-│  │  Storage   │  │  Cosmos DB │  │   Synapse  │  │ Key Vault│ │
-│  │  (Blob)    │  │  (Global)  │  │(Analytics) │  │(Secrets) │ │
-│  └────────────┘  └────────────┘  └────────────┘  └──────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 4. Microservices Design
-
-### 4.1 Service Inventory
-
-#### **Core Business Services**
-
-| Service | Responsibility | Technology | Database |
-|---------|---------------|------------|----------|
-| **Auth Service** | Authentication, authorization, token management | Node.js | PostgreSQL + Redis |
-| **User Service** | User profiles, preferences, addresses | Node.js | PostgreSQL |
-| **Product Service** | Product catalog, SKUs, variants | Node.js | PostgreSQL + MongoDB |
-| **Catalog Service** | Categories, collections, search facets | Node.js | MongoDB |
-| **Pricing Service** | Price calculation, promotions, discounts | Go | PostgreSQL + Redis |
-| **Cart Service** | Shopping cart, wishlist | Node.js | Redis + PostgreSQL |
-| **Order Service** | Order creation, status, history | Go | PostgreSQL |
-| **Payment Service** | Payment processing, refunds | Go | PostgreSQL |
-| **Inventory Service** | Stock levels, reservations | Go | PostgreSQL + Redis |
-| **Shipping Service** | Shipping calculation, tracking | Node.js | PostgreSQL |
-| **Search Service** | Product search, autocomplete | Go | Elasticsearch |
-| **Recommendation Service** | Personalized recommendations | Python | PostgreSQL |
-| **Analytics Service** | Metrics, reporting, dashboards | Go | PostgreSQL + Azure Synapse |
-| **Notification Service** | Email, SMS, push notifications | Node.js | PostgreSQL + Queue |
-| **Vendor Service** | Vendor management, commissions | Node.js | PostgreSQL |
-| **Review Service** | Product reviews, ratings | Node.js | PostgreSQL |
-| **AI/ML Service** | AI features (chatbot, image search) | Python | PostgreSQL |
-| **Admin Service** | Admin operations | Node.js | PostgreSQL |
-
-### 4.2 Service Communication Patterns
-
-**Synchronous Communication:**
-
-```typescript
-// REST API (HTTP/JSON)
-GET /api/v1/products/{productId}
-POST /api/v1/orders
-PUT /api/v1/cart/{cartId}/items
-
-// GraphQL (Unified API)
-query {
-  product(id: "123") {
-    name
-    price
-    inventory {
-      available
+GraphQL (Unified API)
+├─ External: Web/Mobile ↔ GraphQL Gateway
+├─ Use: Flexible queries, reduce over-fetching
+└─ Example: 
+    query {
+      product(id: "123") {
+        name, price, inventory { available }
+      }
     }
-  }
-}
 
-// gRPC (Internal Services)
-service OrderService {
-  rpc CreateOrder(CreateOrderRequest) returns (Order);
-  rpc GetOrder(GetOrderRequest) returns (Order);
-}
+gRPC (Internal Services)
+├─ Internal: Service ↔ Service
+├─ Use: High-performance, strongly typed
+└─ Example: OrderService.CreateOrder(request)
 ```
 
-**Asynchronous Communication:**
+#### Asynchronous Communication
 
 ```yaml
-Event Types:
-  OrderCreated:
-    publisher: Order Service
-    subscribers: [Payment Service, Inventory Service, Notification Service]
-  
-  PaymentProcessed:
-    publisher: Payment Service
-    subscribers: [Order Service, Analytics Service]
-  
-  InventoryReserved:
-    publisher: Inventory Service
-    subscribers: [Order Service, Analytics Service]
-  
-  ProductViewed:
-    publisher: Product Service
-    subscribers: [Analytics Service, Recommendation Service]
+Event-Driven (Kafka)
+├─ Pattern: Publish/Subscribe
+├─ Use: Decoupled, eventual consistency
+└─ Examples:
+    OrderCreated:
+      publisher: Order Service
+      subscribers: [Payment, Inventory, Notification, Analytics]
+    
+    PaymentProcessed:
+      publisher: Payment Service
+      subscribers: [Order, Analytics]
+    
+    InventoryUpdated:
+      publisher: Inventory Service
+      subscribers: [Product, Search, Analytics]
 ```
 
-### 4.3 Database per Service Pattern
+### Database Per Service Pattern
 
 ```
-┌────────────────┐    ┌────────────────┐    ┌────────────────┐
-│  Auth Service  │    │  User Service  │    │ Product Service│
-│                │    │                │    │                │
-│  ┌──────────┐  │    │  ┌──────────┐  │    │  ┌──────────┐  │
-│  │  auth_db │  │    │  │ users_db │  │    │  │products_db│ │
-│  └──────────┘  │    │  └──────────┘  │    │  └──────────┘  │
-└────────────────┘    └────────────────┘    └────────────────┘
+SERVICE DATABASES (Isolated)
+├─ auth_db          → Auth Service (users, tokens, sessions)
+├─ users_db         → User Service (profiles, preferences)
+├─ products_db      → Product Service (catalog, SKUs)
+├─ orders_db        → Order Service (orders, items)
+├─ payments_db      → Payment Service (transactions, encrypted)
+├─ inventory_db     → Inventory Service (stock levels)
+├─ analytics_db     → Analytics Service (metrics, reports)
+└─ ...14 more databases
 
-Benefits:
-✅ Service isolation
-✅ Independent scaling
-✅ Technology diversity
-✅ Failure isolation
-```
-
----
-
-## 5. Data Architecture
-
-### 5.1 Data Flow Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     DATA INGESTION LAYER                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  User Actions → API Gateway → Microservices → Event Bus        │
-│                                                                 │
-└──────────────────┬──────────────────────────────────────────────┘
-                   │
-┌──────────────────▼──────────────────────────────────────────────┐
-│                    DATA PROCESSING LAYER                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Stream Processing (Kafka Streams / Azure Stream Analytics)    │
-│  • Real-time aggregation                                        │
-│  • Event enrichment                                             │
-│  • Fraud detection                                              │
-│  • Anomaly detection                                            │
-│                                                                 │
-└──────────────────┬──────────────────────────────────────────────┘
-                   │
-┌──────────────────▼──────────────────────────────────────────────┐
-│                     DATA STORAGE LAYER                          │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐        │
-│  │  Hot Storage │  │ Warm Storage │  │ Cold Storage │        │
-│  │  (Real-time) │  │ (Historical) │  │  (Archive)   │        │
-│  ├──────────────┤  ├──────────────┤  ├──────────────┤        │
-│  │ PostgreSQL   │  │ Azure Synapse│  │ Azure Blob   │        │
-│  │ Redis        │  │ Cosmos DB    │  │ Storage      │        │
-│  │ Elasticsearch│  │              │  │ (Cool Tier)  │        │
-│  └──────────────┘  └──────────────┘  └──────────────┘        │
-│                                                                 │
-└──────────────────┬──────────────────────────────────────────────┘
-                   │
-┌──────────────────▼──────────────────────────────────────────────┐
-│                   DATA ANALYTICS LAYER                          │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  • Azure Synapse Analytics (Data Warehouse)                     │
-│  • Power BI (Business Intelligence)                             │
-│  • Azure ML (Machine Learning)                                  │
-│  • Azure Cognitive Services (AI)                                │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 5.2 Data Models
-
-**Core Domain Models:**
-
-```typescript
-// Product Domain
-interface Product {
-  id: string;
-  sku: string;
-  name: Map<string, string>; // Multi-language
-  description: Map<string, string>;
-  price: Money;
-  images: Image[];
-  variants: ProductVariant[];
-  categories: string[];
-  attributes: Map<string, any>;
-  inventory: InventoryInfo;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Order Domain
-interface Order {
-  id: string;
-  orderNumber: string;
-  userId: string;
-  items: OrderItem[];
-  subtotal: Money;
-  tax: Money;
-  shipping: Money;
-  total: Money;
-  paymentInfo: PaymentInfo;
-  shippingAddress: Address;
-  status: OrderStatus;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// User Domain
-interface User {
-  id: string;
-  email: string;
-  profile: UserProfile;
-  addresses: Address[];
-  paymentMethods: PaymentMethod[];
-  preferences: UserPreferences;
-  createdAt: Date;
-  lastLoginAt: Date;
-}
-```
-
-### 5.3 Data Consistency Patterns
-
-**Eventual Consistency:**
-```
-Order Created → Order Service writes to DB
-             → Publishes OrderCreated event
-             → Inventory Service consumes event
-             → Updates stock (eventually consistent)
-```
-
-**Saga Pattern (Distributed Transactions):**
-```
-Create Order Saga:
-1. Reserve Inventory
-2. Process Payment
-3. Create Shipment
-4. Confirm Order
-
-Compensating Transactions:
-- If payment fails → Release inventory
-- If shipment fails → Refund payment, release inventory
+BENEFITS
+✅ Service isolation (failure containment)
+✅ Independent scaling per service
+✅ Technology diversity (PostgreSQL, MongoDB, etc.)
+✅ Schema evolution independence
+✅ Clear ownership boundaries
 ```
 
 ---
 
-## 6. Security Architecture
+## 💾 Data Architecture
 
-### 6.1 Defense in Depth
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Layer 1: Edge Security (Azure Front Door + WAF)           │
-│  • DDoS Protection                                          │
-│  • Geo-blocking                                             │
-│  • Rate limiting                                            │
-│  • Bot detection                                            │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│  Layer 2: API Gateway Security                             │
-│  • Authentication (JWT validation)                          │
-│  • Authorization (RBAC)                                     │
-│  • API key validation                                       │
-│  • Request sanitization                                     │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│  Layer 3: Service Mesh Security                            │
-│  • mTLS (mutual TLS)                                        │
-│  • Service-to-service authentication                        │
-│  • Encryption in transit                                    │
-│  • Network policies                                         │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│  Layer 4: Application Security                             │
-│  • Input validation                                         │
-│  • SQL injection prevention                                 │
-│  • XSS protection                                           │
-│  • CSRF protection                                          │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│  Layer 5: Data Security                                    │
-│  • Encryption at rest (AES-256)                            │
-│  • Database access controls                                 │
-│  • PII data masking                                         │
-│  • Audit logging                                            │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 6.2 Authentication & Authorization Flow
+### Data Flow
 
 ```
-1. User Login:
+┌──────────────────────────────────────────────────────┐
+│         USER ACTIONS (Web/Mobile/API)                │
+└───────────────────┬──────────────────────────────────┘
+                    ↓
+┌───────────────────▼──────────────────────────────────┐
+│         API GATEWAY (Request Validation)             │
+└───────────────────┬──────────────────────────────────┘
+                    ↓
+┌───────────────────▼──────────────────────────────────┐
+│         MICROSERVICES (Business Logic)               │
+└───────────────────┬──────────────────────────────────┘
+                    ↓
+┌───────────────────▼──────────────────────────────────┐
+│         EVENT BUS (Kafka - Async Events)             │
+└───┬───────────────┴───────────────────┬──────────────┘
+    ↓                                   ↓
+┌───▼─────────────────┐    ┌────────────▼──────────────┐
+│ STREAM PROCESSING   │    │   SERVICE DATABASES       │
+│ • Real-time agg.    │    │   • PostgreSQL            │
+│ • Event enrichment  │    │   • MongoDB               │
+│ • Fraud detection   │    │   • Redis                 │
+└───┬─────────────────┘    └───────────────────────────┘
+    ↓
+┌───▼──────────────────────────────────────────────────┐
+│         DATA WAREHOUSE (Azure Synapse)               │
+│         • Historical analytics                       │
+│         • Business intelligence                      │
+│         • ML model training                          │
+└──────────────────────────────────────────────────────┘
+```
+
+### Data Consistency Patterns
+
+#### Eventual Consistency
+
+```
+ORDER FLOW (Saga Pattern)
+1. Order Service: Create order → Publish OrderCreated event
+2. Inventory Service: Reserve stock → Publish InventoryReserved
+3. Payment Service: Process payment → Publish PaymentProcessed
+4. Order Service: Update order status → Complete
+
+COMPENSATING TRANSACTIONS (if failure)
+├─ Payment fails → Release inventory reservation
+├─ Shipment fails → Refund payment, release inventory
+└─ Order cancelled → Refund payment, release inventory, cancel shipment
+```
+
+### Caching Strategy
+
+```
+5-LAYER CACHING HIERARCHY
+
+L1: Browser Cache
+├─ TTL: 1 year (versioned assets)
+├─ Scope: Static assets (JS, CSS, images)
+└─ Header: Cache-Control: public, immutable
+
+L2: CDN Cache (Azure Front Door)
+├─ TTL: 1 hour (pages), 1 day (images)
+├─ Scope: Public content
+└─ Purge: On content update
+
+L3: API Gateway Cache
+├─ TTL: 5-60 seconds (API responses)
+├─ Scope: Read-heavy endpoints
+└─ Key: URL + Query + User ID
+
+L4: Redis Cache (Application Layer)
+├─ TTL: 1-60 minutes
+├─ Scope: 
+│   • Session data (7 days)
+│   • API responses (varies)
+│   • Database query results
+└─ Strategy: Cache-aside pattern
+
+L5: Database Query Cache
+├─ TTL: Automatic (database-managed)
+├─ Scope: Frequently executed queries
+└─ Strategy: Built-in PostgreSQL caching
+
+CACHE INVALIDATION
+├─ Time-based: Automatic TTL expiry
+├─ Event-based: Invalidate on write operations
+└─ Manual: Purge via admin API
+```
+
+---
+
+## 🔐 Security Architecture
+
+### Defense in Depth (7 Layers)
+
+```
+┌─────────────────────────────────────────────────────┐
+│ LAYER 1: EDGE SECURITY                              │
+│ ✓ Azure DDoS Protection Standard                   │
+│ ✓ WAF (OWASP Core Rule Set 3.2)                   │
+│ ✓ Geo-blocking (configurable countries)            │
+│ ✓ Rate limiting (10K req/min per IP)              │
+│ ✓ Bot detection & mitigation                       │
+├─────────────────────────────────────────────────────┤
+│ LAYER 2: API GATEWAY SECURITY                      │
+│ ✓ JWT token validation (RS256)                     │
+│ ✓ OAuth 2.0 / OpenID Connect                      │
+│ ✓ RBAC enforcement                                  │
+│ ✓ API key validation                               │
+│ ✓ Request sanitization                             │
+├─────────────────────────────────────────────────────┤
+│ LAYER 3: SERVICE MESH SECURITY                     │
+│ ✓ mTLS (mutual TLS) between services              │
+│ ✓ Service-to-service authentication                │
+│ ✓ Encryption in transit (TLS 1.3)                 │
+│ ✓ Network policies (Kubernetes)                    │
+├─────────────────────────────────────────────────────┤
+│ LAYER 4: APPLICATION SECURITY                      │
+│ ✓ Input validation (all user input)               │
+│ ✓ SQL injection prevention (parameterized)        │
+│ ✓ XSS protection (CSP headers)                    │
+│ ✓ CSRF tokens                                      │
+│ ✓ Secure headers (HSTS, X-Frame-Options)          │
+├─────────────────────────────────────────────────────┤
+│ LAYER 5: DATA SECURITY                             │
+│ ✓ Encryption at rest (AES-256)                    │
+│ ✓ Database access controls (least privilege)      │
+│ ✓ PII data masking                                 │
+│ ✓ Audit logging (immutable, centralized)          │
+├─────────────────────────────────────────────────────┤
+│ LAYER 6: SECRETS MANAGEMENT                        │
+│ ✓ Azure Key Vault (HSM-backed)                    │
+│ ✓ Automatic secret rotation                        │
+│ ✓ Access policies & RBAC                          │
+│ ✓ Audit trail for all access                      │
+├─────────────────────────────────────────────────────┤
+│ LAYER 7: MONITORING & RESPONSE                     │
+│ ✓ Security alerts (Azure Sentinel)                │
+│ ✓ Anomaly detection (ML-powered)                   │
+│ ✓ Incident response playbooks                      │
+│ ✓ Regular penetration testing                      │
+└─────────────────────────────────────────────────────┘
+```
+
+### Authentication & Authorization Flow
+
+```
+1. USER LOGIN
    Client → Auth Service → Azure AD B2C
    ← Access Token (JWT, 15 min) + Refresh Token (7 days)
 
-2. API Request:
-   Client → API Gateway [validates JWT]
-   → Microservice [validates scopes]
-   → Response
+2. API REQUEST
+   Client → API Gateway [validates JWT signature & expiry]
+   → Microservice [validates scopes/permissions]
+   → Database [execute query]
+   ← Response
 
-3. Token Refresh:
+3. TOKEN REFRESH
    Client → Auth Service [with refresh token]
+   [validates refresh token in database]
    ← New Access Token
 
-4. Logout:
+4. LOGOUT
    Client → Auth Service [revokes tokens]
-   → Redis [blacklists access token]
+   → Redis [blacklist access token until expiry]
+   ← Success
 ```
-
-### 6.3 Compliance & Standards
-
-- ✅ PCI DSS Level 1 (payment card data)
-- ✅ GDPR (EU data protection)
-- ✅ CCPA (California privacy)
-- ✅ SOC 2 Type II
-- ✅ ISO 27001
-- ✅ HIPAA (if health products)
 
 ---
 
-## 7. Deployment Architecture
+## 🚀 Deployment Architecture
 
-### 7.1 Multi-Region Deployment
+### Multi-Region Setup
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    REGION: US EAST                          │
-├─────────────────────────────────────────────────────────────┤
-│  • Primary for Americas                                     │
-│  • Full service deployment                                  │
-│  • PostgreSQL Primary + Read Replicas                       │
-│  • Redis Cluster                                            │
-│  • Elasticsearch Cluster                                    │
-└─────────────────────────────────────────────────────────────┘
+REGION 1: US EAST (Primary for Americas)
+├─ All microservices (20+ replicas each)
+├─ PostgreSQL Primary + 3 Read Replicas
+├─ Redis Cluster (6 nodes)
+├─ Elasticsearch (3 nodes)
+├─ Azure Storage (primary region)
+└─ Serves: North & South America
 
-┌─────────────────────────────────────────────────────────────┐
-│                    REGION: WEST EUROPE                      │
-├─────────────────────────────────────────────────────────────┤
-│  • Primary for Europe                                       │
-│  • Full service deployment                                  │
-│  • PostgreSQL Read Replicas + Geo-Replica                  │
-│  • Redis Cluster                                            │
-│  • Elasticsearch Cluster                                    │
-└─────────────────────────────────────────────────────────────┘
+REGION 2: WEST EUROPE (Primary for EMEA)
+├─ All microservices (15+ replicas each)
+├─ PostgreSQL Geo-Replica + 2 Read Replicas
+├─ Redis Cluster (6 nodes)
+├─ Elasticsearch (3 nodes)
+├─ Azure Storage (replicated)
+└─ Serves: Europe, Middle East, Africa
 
-┌─────────────────────────────────────────────────────────────┐
-│                  REGION: SOUTHEAST ASIA                     │
-├─────────────────────────────────────────────────────────────┤
-│  • Primary for APAC                                         │
-│  • Full service deployment                                  │
-│  • PostgreSQL Read Replicas + Geo-Replica                  │
-│  • Redis Cluster                                            │
-│  • Elasticsearch Cluster                                    │
-└─────────────────────────────────────────────────────────────┘
+REGION 3: SOUTHEAST ASIA (Primary for APAC)
+├─ All microservices (15+ replicas each)
+├─ PostgreSQL Geo-Replica + 2 Read Replicas
+├─ Redis Cluster (6 nodes)
+├─ Elasticsearch (3 nodes)
+├─ Azure Storage (replicated)
+└─ Serves: Asia Pacific
+
+CROSS-REGION
+├─ Azure Traffic Manager (DNS-based routing)
+├─ Azure Front Door (CDN + WAF)
+├─ Cosmos DB (multi-region writes)
+└─ Event Hubs (geo-replication)
 ```
 
-### 7.2 Kubernetes Deployment Architecture
+### Kubernetes Configuration
 
 ```yaml
-Kubernetes Cluster Configuration:
-
-Namespaces:
-  - production
-  - staging
-  - monitoring
-  - ingress
-
-Node Pools:
-  System Pool:
-    - VM Size: Standard_DS3_v2
-    - Count: 3-5 (auto-scale)
-    - OS: Linux
-    
-  Application Pool:
-    - VM Size: Standard_D8s_v3
-    - Count: 5-50 (auto-scale)
-    - OS: Linux
-    
-  GPU Pool (AI/ML):
-    - VM Size: Standard_NC6s_v3
-    - Count: 2-10 (auto-scale)
-    - OS: Linux
-
-Service Deployment:
-  Replicas:
-    Min: 3 per service
-    Max: 50 per service
+AKS Cluster Configuration:
+  Namespaces:
+    - production
+    - staging
+    - monitoring
+    - ingress-nginx
   
-  Resource Requests:
-    CPU: 500m - 2000m
-    Memory: 1Gi - 8Gi
+  Node Pools:
+    System Pool:
+      - VM Size: Standard_DS3_v2
+      - Count: 3-5 (auto-scale)
+      - OS: Linux
+      - Purpose: System pods (kube-system, monitoring)
+    
+    Application Pool:
+      - VM Size: Standard_D8s_v3
+      - Count: 5-50 (auto-scale)
+      - OS: Linux
+      - Purpose: Application microservices
+    
+    GPU Pool (for AI/ML):
+      - VM Size: Standard_NC6s_v3
+      - Count: 2-10 (auto-scale)
+      - OS: Linux
+      - Purpose: ML model inference
   
-  Resource Limits:
-    CPU: 2000m - 4000m
-    Memory: 4Gi - 16Gi
+  Service Configuration:
+    Replicas:
+      Min: 3 per service
+      Max: 50 per service
+    
+    Resource Requests:
+      CPU: 500m - 2000m
+      Memory: 1Gi - 8Gi
+    
+    Resource Limits:
+      CPU: 2000m - 4000m
+      Memory: 4Gi - 16Gi
+    
+    Health Checks:
+      Liveness: /health/live
+      Readiness: /health/ready
+      Initial Delay: 30s
+      Period: 10s
 ```
 
 ---
 
-## 8. Scalability Patterns
+## ⚡ Scalability Patterns
 
-### 8.1 Horizontal Scaling
-
-**Auto-Scaling Rules:**
+### Auto-Scaling Rules
 
 ```yaml
 Horizontal Pod Autoscaler (HPA):
   Metrics:
     - CPU Utilization > 70% → Scale Up
     - Memory Utilization > 80% → Scale Up
-    - Custom Metrics (requests/sec) > threshold → Scale Up
+    - Custom Metrics:
+        - Request rate > 1000 req/sec → Scale Up
+        - Queue depth > 100 messages → Scale Up
   
   Scaling Behavior:
-    Scale Up: Add 50% of current pods (min 1, max 10 at once)
-    Scale Down: Remove 10% of pods every 5 minutes
+    Scale Up:
+      - Add 50% of current pods
+      - Min: 1 pod at a time
+      - Max: 10 pods at a time
+      - Stabilization: 30 seconds
     
-  Cooldown:
-    Scale Up: 30 seconds
-    Scale Down: 5 minutes
+    Scale Down:
+      - Remove 10% of pods
+      - Every 5 minutes
+      - Never below minimum replicas
+  
+  Cooldown Periods:
+    - Scale Up: 30 seconds
+    - Scale Down: 5 minutes
 ```
 
-### 8.2 Caching Strategy
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    CACHING LAYERS                           │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  L1: Browser Cache (Static Assets)                         │
-│  • TTL: 1 year for versioned assets                        │
-│  • Cache-Control: public, immutable                        │
-│                                                             │
-│  L2: CDN Cache (Edge Locations)                            │
-│  • TTL: 1 hour for pages, 1 day for images                │
-│  • Purge on content update                                 │
-│                                                             │
-│  L3: API Gateway Cache                                     │
-│  • TTL: 5-60 seconds for API responses                     │
-│  • Cache key: URL + Query + User ID                        │
-│                                                             │
-│  L4: Redis Cache (Application)                             │
-│  • Session data (TTL: 7 days)                              │
-│  • API responses (TTL: 1-60 minutes)                       │
-│  • Database query results (TTL: 5-30 minutes)             │
-│                                                             │
-│  L5: Database Query Cache                                  │
-│  • Query result cache (automatic)                          │
-│  • Materialized views (updated hourly)                     │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 8.3 Database Sharding Strategy
+### Database Sharding
 
 ```yaml
-Sharding Key: User ID (for user-centric data)
-Shard Count: 16 shards initially
-
-Shard Distribution:
-  Shard 0: user_id % 16 = 0
-  Shard 1: user_id % 16 = 1
-  ...
-  Shard 15: user_id % 16 = 15
-
-Benefits:
-  ✅ Distributes load evenly
-  ✅ Independent scaling per shard
-  ✅ Limits blast radius of failures
-  ✅ Supports data residency requirements
+Sharding Strategy:
+  Shard Key: user_id (consistent hashing)
+  Shard Count: 16 shards (expandable to 32, 64)
+  
+  Distribution:
+    Shard 0: user_id % 16 = 0
+    Shard 1: user_id % 16 = 1
+    ...
+    Shard 15: user_id % 16 = 15
+  
+  Benefits:
+    ✅ Even load distribution
+    ✅ Independent scaling per shard
+    ✅ Limits blast radius
+    ✅ Supports data residency requirements
+  
+  Routing:
+    Application-level (middleware)
+    No database-level sharding (flexibility)
 ```
 
 ---
 
-## 9. Reliability & High Availability
+## 🛡️ Reliability & High Availability
 
-### 9.1 Availability Targets
+### SLA Targets
 
 | Component | SLA | RPO | RTO |
 |-----------|-----|-----|-----|
-| Overall Platform | 99.99% | 1 hour | 15 minutes |
-| API Gateway | 99.99% | N/A | 5 minutes |
-| Core Services | 99.95% | 1 hour | 10 minutes |
-| Database | 99.99% | 5 minutes | 15 minutes |
-| Cache | 99.9% | N/A | 1 minute |
+| **Overall Platform** | 99.99% | 1 hour | 15 min |
+| **API Gateway** | 99.99% | N/A | 5 min |
+| **Microservices** | 99.95% | 1 hour | 10 min |
+| **Database** | 99.99% | 5 min | 15 min |
+| **Cache (Redis)** | 99.9% | N/A | 1 min |
+| **Search** | 99.9% | 1 hour | 5 min |
 
-### 9.2 Failover Architecture
+### Disaster Recovery
 
 ```
-Primary Region Failure:
+BACKUP STRATEGY
+├─ Database Backups:
+│   ├─ Full backup: Daily at 2 AM UTC
+│   ├─ Incremental: Every 6 hours
+│   ├─ Transaction log: Continuous
+│   ├─ Retention: 35 days
+│   └─ Geo-replication: Enabled
+│
+├─ Application State:
+│   ├─ Configuration: Version controlled (Git)
+│   ├─ Secrets: Backed up in Key Vault
+│   └─ Container images: Stored in ACR with replication
+│
+└─ Testing:
+    ├─ Backup restore test: Monthly
+    ├─ DR drill: Quarterly
+    └─ Full region failover: Annually
+
+FAILOVER PROCEDURE
 1. Traffic Manager detects health probe failure
-2. DNS switches to secondary region (< 60 seconds)
-3. Secondary region serves traffic
+2. DNS switches to secondary region (< 60 sec)
+3. Secondary region takes over traffic
 4. Database read replicas promoted to primary
-5. Event replay from Kafka for data consistency
+5. Event replay from Kafka for consistency
+6. Monitor system health
+7. Investigate root cause
+8. Plan failback when ready
 ```
 
-### 9.3 Circuit Breaker Pattern
+### Circuit Breaker Pattern
 
 ```typescript
-// Service-to-service communication with circuit breaker
-const circuitBreaker = {
-  failureThreshold: 5,      // failures before opening
-  successThreshold: 2,      // successes before closing
-  timeout: 60000,          // 1 minute timeout
-  resetTimeout: 30000      // 30 seconds before retry
-};
+Circuit Breaker Configuration:
+  Failure Threshold: 5 consecutive failures
+  Success Threshold: 2 consecutive successes
+  Timeout: 60 seconds
+  Reset Timeout: 30 seconds (half-open state)
 
-// Circuit States:
-// CLOSED → Normal operation
-// OPEN → Fast-fail (don't call service)
-// HALF_OPEN → Test if service recovered
+States:
+  CLOSED → Normal operation (all requests pass)
+  OPEN → Fast-fail (reject requests immediately)
+  HALF_OPEN → Test recovery (allow limited requests)
+
+Example:
+  Service A calls Service B
+  ├─ If 5 consecutive failures → Circuit OPENS
+  ├─ Requests fail immediately (fast-fail)
+  ├─ After 30 seconds → Circuit HALF_OPEN
+  ├─ Try 2 requests to Service B
+  ├─ If both succeed → Circuit CLOSED
+  └─ If any fail → Circuit OPEN again
 ```
 
 ---
 
-## 10. Performance Optimization
+## 📊 Performance Optimization
 
-### 10.1 Performance Targets
+### Performance Targets & Implementation
 
-| Metric | Target | Monitoring |
-|--------|--------|------------|
-| API Response Time (P95) | < 200ms | Application Insights |
-| Page Load Time (P95) | < 2s | Real User Monitoring |
-| Database Query Time (P95) | < 50ms | Database Metrics |
-| Cache Hit Ratio | > 85% | Redis Metrics |
-| CDN Cache Hit Ratio | > 90% | CDN Analytics |
+| Metric | Target | Implementation Strategy |
+|--------|--------|-------------------------|
+| **API Response (P95)** | <200ms | Query optimization, Redis caching, connection pooling |
+| **Page Load (P95)** | <2s | Code splitting, lazy loading, CDN, WebP images |
+| **DB Query (P95)** | <50ms | Proper indexing, read replicas, query optimization |
+| **Cache Hit Ratio** | >85% | Multi-layer caching, appropriate TTLs |
+| **CDN Hit Ratio** | >90% | Long cache TTLs, proper invalidation |
 
-### 10.2 Performance Optimization Techniques
+### Optimization Techniques
 
-```yaml
-Frontend Optimization:
-  - Code splitting (per route)
-  - Lazy loading (images, components)
-  - Image optimization (WebP, responsive)
-  - Minification (HTML, CSS, JS)
-  - Tree shaking (remove unused code)
-  - Service Worker (offline support)
-
-Backend Optimization:
-  - Connection pooling (database)
-  - Query optimization (indexes, explain plans)
-  - Result pagination (cursor-based)
-  - Batch processing (bulk operations)
-  - Async processing (background jobs)
-  - Response compression (gzip, brotli)
-
-Database Optimization:
-  - Proper indexing strategy
-  - Query result caching
-  - Read replicas for read-heavy queries
-  - Partitioning for large tables
-  - Materialized views for complex queries
-  - Connection pooling (PgBouncer)
 ```
+FRONTEND OPTIMIZATION
+├─ Code splitting (per route)
+├─ Lazy loading (images, components)
+├─ Image optimization (WebP, responsive sizes)
+├─ Minification (HTML, CSS, JS)
+├─ Tree shaking (remove unused code)
+├─ Service Worker (offline support, caching)
+├─ Critical CSS inline
+└─ Font optimization (subset, preload)
 
-### 10.3 Load Testing Strategy
+BACKEND OPTIMIZATION
+├─ Connection pooling (1000 connections)
+├─ Query optimization (EXPLAIN, indexes)
+├─ Result pagination (cursor-based)
+├─ Batch processing (bulk operations)
+├─ Async processing (background jobs)
+├─ Response compression (gzip, brotli)
+├─ Database sharding
+└─ Read replicas for read-heavy queries
 
-```yaml
-Load Test Scenarios:
-
-Normal Load:
-  - Users: 100,000 concurrent
-  - Requests: 10,000 req/sec
-  - Duration: 1 hour
-  - Expected: 99% success, P95 < 200ms
-
-Peak Load (Black Friday):
-  - Users: 1,000,000 concurrent
-  - Requests: 50,000 req/sec
-  - Duration: 4 hours
-  - Expected: 99% success, P95 < 500ms
-
-Stress Test:
-  - Users: 2,000,000 concurrent
-  - Requests: 100,000 req/sec
-  - Duration: Until failure
-  - Goal: Identify breaking point
-
-Soak Test:
-  - Users: 500,000 concurrent
-  - Requests: 20,000 req/sec
-  - Duration: 24 hours
-  - Goal: Identify memory leaks
+DATABASE OPTIMIZATION
+├─ Proper indexing strategy
+│   └─ B-tree, GiST, GIN indexes as needed
+├─ Query result caching (Redis)
+├─ Connection pooling (PgBouncer)
+├─ Partitioning (time-based for large tables)
+├─ Materialized views (complex aggregations)
+├─ Vacuum & analyze (regular maintenance)
+└─ Query monitoring & optimization
 ```
 
 ---
 
-## 11. Disaster Recovery
+## 📚 Appendices
 
-### 11.1 Backup Strategy
+### Glossary
 
-```yaml
-Database Backups:
-  Full Backup: Daily at 2 AM UTC
-  Incremental: Every 6 hours
-  Transaction Log: Continuous
-  Retention: 35 days
-  Geo-Replication: Enabled
+| Term | Definition |
+|------|------------|
+| **CQRS** | Command Query Responsibility Segregation |
+| **mTLS** | Mutual Transport Layer Security |
+| **RBAC** | Role-Based Access Control |
+| **RPO** | Recovery Point Objective |
+| **RTO** | Recovery Time Objective |
+| **SLA** | Service Level Agreement |
+| **TTL** | Time To Live |
 
-Application State:
-  Configuration: Version controlled in Git
-  Secrets: Backed up in Azure Key Vault
-  Container Images: Stored in ACR with replication
-
-Testing:
-  Backup Restore Test: Monthly
-  Disaster Recovery Drill: Quarterly
-  Full Region Failover: Annually
-```
-
----
-
-## Appendix
-
-### A. Glossary
-
-- **CQRS**: Command Query Responsibility Segregation
-- **mTLS**: Mutual Transport Layer Security
-- **RBAC**: Role-Based Access Control
-- **RPO**: Recovery Point Objective
-- **RTO**: Recovery Time Objective
-- **SLA**: Service Level Agreement
-
-### B. References
+### References
 
 - [Azure Well-Architected Framework](https://learn.microsoft.com/azure/architecture/framework/)
 - [Microservices Patterns](https://microservices.io/patterns/)
@@ -827,6 +894,7 @@ Testing:
 
 ---
 
-*Document Version: 1.0*
-*Last Updated: December 2024*
-*Next Review: March 2025*
+*Architecture Guide Version: 2.0 (Redesigned)*  
+*Last Updated: December 2024*  
+*Next Review: March 2025*  
+*Maintained By: Platform Architecture Team*
