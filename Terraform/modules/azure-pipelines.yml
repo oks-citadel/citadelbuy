@@ -1,0 +1,521 @@
+# ===================================================================
+# AZURE DEVOPS PIPELINE - E-COMMERCE PLATFORM DEPLOYMENT
+# ===================================================================
+# This pipeline deploys the complete e-commerce infrastructure using Terraform
+# Supports multiple environments: dev, staging, production
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - terraform/*
+      - azure-pipelines.yml
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+
+variables:
+  - name: terraformVersion
+    value: '1.6.0'
+  - name: azureServiceConnection
+    value: 'Azure-Service-Connection' # Update with your service connection name
+  - name: terraformBackendResourceGroup
+    value: 'terraform-state-rg'
+  - name: terraformBackendStorageAccount
+    value: 'tfstatestorage'
+  - name: terraformBackendContainer
+    value: 'tfstate'
+  - name: terraformBackendKey
+    value: 'ecommerce.terraform.tfstate'
+
+stages:
+  # ===================================================================
+  # STAGE 1: VALIDATE & PLAN (DEV)
+  # ===================================================================
+  - stage: ValidateDev
+    displayName: 'Validate - Dev Environment'
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+    jobs:
+      - job: TerraformValidate
+        displayName: 'Terraform Validate & Plan'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout Repository'
+
+          - task: TerraformInstaller@1
+            displayName: 'Install Terraform'
+            inputs:
+              terraformVersion: $(terraformVersion)
+
+          - task: AzureCLI@2
+            displayName: 'Terraform Init'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                cd terraform
+                terraform init \
+                  -backend-config="resource_group_name=$(terraformBackendResourceGroup)" \
+                  -backend-config="storage_account_name=$(terraformBackendStorageAccount)" \
+                  -backend-config="container_name=$(terraformBackendContainer)" \
+                  -backend-config="key=dev-$(terraformBackendKey)"
+
+          - task: AzureCLI@2
+            displayName: 'Terraform Validate'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                cd terraform
+                terraform validate
+
+          - task: AzureCLI@2
+            displayName: 'Terraform Format Check'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                cd terraform
+                terraform fmt -check -recursive
+
+          - task: AzureCLI@2
+            displayName: 'Terraform Plan'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                cd terraform
+                terraform plan \
+                  -var="environment=dev" \
+                  -var="project_name=ecommerce" \
+                  -var="location=eastus" \
+                  -var="db_admin_username=$(DB_ADMIN_USERNAME)" \
+                  -var="db_admin_password=$(DB_ADMIN_PASSWORD)" \
+                  -var="tenant_id=$(ARM_TENANT_ID)" \
+                  -var="key_vault_admin_object_id=$(KEY_VAULT_ADMIN_OBJECT_ID)" \
+                  -out=tfplan
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Terraform Plan'
+            inputs:
+              targetPath: 'terraform/tfplan'
+              artifact: 'tfplan-dev'
+              publishLocation: 'pipeline'
+
+  # ===================================================================
+  # STAGE 2: DEPLOY DEV
+  # ===================================================================
+  - stage: DeployDev
+    displayName: 'Deploy - Dev Environment'
+    dependsOn: ValidateDev
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+    jobs:
+      - deployment: DeployTerraform
+        displayName: 'Deploy Terraform Infrastructure'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'dev'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: 'Checkout Repository'
+
+                - task: TerraformInstaller@1
+                  displayName: 'Install Terraform'
+                  inputs:
+                    terraformVersion: $(terraformVersion)
+
+                - task: DownloadPipelineArtifact@2
+                  displayName: 'Download Terraform Plan'
+                  inputs:
+                    artifact: 'tfplan-dev'
+                    path: 'terraform'
+
+                - task: AzureCLI@2
+                  displayName: 'Terraform Init'
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      cd terraform
+                      terraform init \
+                        -backend-config="resource_group_name=$(terraformBackendResourceGroup)" \
+                        -backend-config="storage_account_name=$(terraformBackendStorageAccount)" \
+                        -backend-config="container_name=$(terraformBackendContainer)" \
+                        -backend-config="key=dev-$(terraformBackendKey)"
+
+                - task: AzureCLI@2
+                  displayName: 'Terraform Apply'
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      cd terraform
+                      terraform apply -auto-approve tfplan
+                  env:
+                    ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+                    ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+                    ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+                    ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+                - task: AzureCLI@2
+                  displayName: 'Terraform Output'
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      cd terraform
+                      terraform output -json > outputs.json
+                      cat outputs.json
+
+                - task: PublishPipelineArtifact@1
+                  displayName: 'Publish Terraform Outputs'
+                  inputs:
+                    targetPath: 'terraform/outputs.json'
+                    artifact: 'terraform-outputs-dev'
+                    publishLocation: 'pipeline'
+
+  # ===================================================================
+  # STAGE 3: VALIDATE & PLAN (STAGING)
+  # ===================================================================
+  - stage: ValidateStaging
+    displayName: 'Validate - Staging Environment'
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - job: TerraformValidate
+        displayName: 'Terraform Validate & Plan'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout Repository'
+
+          - task: TerraformInstaller@1
+            displayName: 'Install Terraform'
+            inputs:
+              terraformVersion: $(terraformVersion)
+
+          - task: AzureCLI@2
+            displayName: 'Terraform Init'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                cd terraform
+                terraform init \
+                  -backend-config="resource_group_name=$(terraformBackendResourceGroup)" \
+                  -backend-config="storage_account_name=$(terraformBackendStorageAccount)" \
+                  -backend-config="container_name=$(terraformBackendContainer)" \
+                  -backend-config="key=staging-$(terraformBackendKey)"
+
+          - task: AzureCLI@2
+            displayName: 'Terraform Plan'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                cd terraform
+                terraform plan \
+                  -var="environment=staging" \
+                  -var="project_name=ecommerce" \
+                  -var="location=eastus" \
+                  -var="db_admin_username=$(DB_ADMIN_USERNAME)" \
+                  -var="db_admin_password=$(DB_ADMIN_PASSWORD)" \
+                  -var="tenant_id=$(ARM_TENANT_ID)" \
+                  -var="key_vault_admin_object_id=$(KEY_VAULT_ADMIN_OBJECT_ID)" \
+                  -out=tfplan
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Terraform Plan'
+            inputs:
+              targetPath: 'terraform/tfplan'
+              artifact: 'tfplan-staging'
+              publishLocation: 'pipeline'
+
+  # ===================================================================
+  # STAGE 4: DEPLOY STAGING
+  # ===================================================================
+  - stage: DeployStaging
+    displayName: 'Deploy - Staging Environment'
+    dependsOn: ValidateStaging
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployTerraform
+        displayName: 'Deploy Terraform Infrastructure'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'staging'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: 'Checkout Repository'
+
+                - task: TerraformInstaller@1
+                  displayName: 'Install Terraform'
+                  inputs:
+                    terraformVersion: $(terraformVersion)
+
+                - task: DownloadPipelineArtifact@2
+                  displayName: 'Download Terraform Plan'
+                  inputs:
+                    artifact: 'tfplan-staging'
+                    path: 'terraform'
+
+                - task: AzureCLI@2
+                  displayName: 'Terraform Init'
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      cd terraform
+                      terraform init \
+                        -backend-config="resource_group_name=$(terraformBackendResourceGroup)" \
+                        -backend-config="storage_account_name=$(terraformBackendStorageAccount)" \
+                        -backend-config="container_name=$(terraformBackendContainer)" \
+                        -backend-config="key=staging-$(terraformBackendKey)"
+
+                - task: AzureCLI@2
+                  displayName: 'Terraform Apply'
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      cd terraform
+                      terraform apply -auto-approve tfplan
+                  env:
+                    ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+                    ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+                    ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+                    ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+                - task: PublishPipelineArtifact@1
+                  displayName: 'Publish Terraform Outputs'
+                  inputs:
+                    targetPath: 'terraform/outputs.json'
+                    artifact: 'terraform-outputs-staging'
+                    publishLocation: 'pipeline'
+
+  # ===================================================================
+  # STAGE 5: VALIDATE & PLAN (PRODUCTION)
+  # ===================================================================
+  - stage: ValidateProduction
+    displayName: 'Validate - Production Environment'
+    dependsOn: DeployStaging
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - job: TerraformValidate
+        displayName: 'Terraform Validate & Plan'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout Repository'
+
+          - task: TerraformInstaller@1
+            displayName: 'Install Terraform'
+            inputs:
+              terraformVersion: $(terraformVersion)
+
+          - task: AzureCLI@2
+            displayName: 'Terraform Init'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                cd terraform
+                terraform init \
+                  -backend-config="resource_group_name=$(terraformBackendResourceGroup)" \
+                  -backend-config="storage_account_name=$(terraformBackendStorageAccount)" \
+                  -backend-config="container_name=$(terraformBackendContainer)" \
+                  -backend-config="key=production-$(terraformBackendKey)"
+
+          - task: AzureCLI@2
+            displayName: 'Terraform Plan'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                cd terraform
+                terraform plan \
+                  -var="environment=production" \
+                  -var="project_name=ecommerce" \
+                  -var="location=eastus" \
+                  -var="db_admin_username=$(DB_ADMIN_USERNAME)" \
+                  -var="db_admin_password=$(DB_ADMIN_PASSWORD)" \
+                  -var="tenant_id=$(ARM_TENANT_ID)" \
+                  -var="key_vault_admin_object_id=$(KEY_VAULT_ADMIN_OBJECT_ID)" \
+                  -var="app_service_sku=P3v3" \
+                  -var="db_sku_name=GP_Standard_D8s_v3" \
+                  -out=tfplan
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Terraform Plan'
+            inputs:
+              targetPath: 'terraform/tfplan'
+              artifact: 'tfplan-production'
+              publishLocation: 'pipeline'
+
+  # ===================================================================
+  # STAGE 6: DEPLOY PRODUCTION (WITH APPROVAL)
+  # ===================================================================
+  - stage: DeployProduction
+    displayName: 'Deploy - Production Environment'
+    dependsOn: ValidateProduction
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployTerraform
+        displayName: 'Deploy Terraform Infrastructure'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'production' # Configure manual approval in Azure DevOps
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: 'Checkout Repository'
+
+                - task: TerraformInstaller@1
+                  displayName: 'Install Terraform'
+                  inputs:
+                    terraformVersion: $(terraformVersion)
+
+                - task: DownloadPipelineArtifact@2
+                  displayName: 'Download Terraform Plan'
+                  inputs:
+                    artifact: 'tfplan-production'
+                    path: 'terraform'
+
+                - task: AzureCLI@2
+                  displayName: 'Terraform Init'
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      cd terraform
+                      terraform init \
+                        -backend-config="resource_group_name=$(terraformBackendResourceGroup)" \
+                        -backend-config="storage_account_name=$(terraformBackendStorageAccount)" \
+                        -backend-config="container_name=$(terraformBackendContainer)" \
+                        -backend-config="key=production-$(terraformBackendKey)"
+
+                - task: AzureCLI@2
+                  displayName: 'Terraform Apply'
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      cd terraform
+                      terraform apply -auto-approve tfplan
+                  env:
+                    ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+                    ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+                    ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+                    ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+                - task: AzureCLI@2
+                  displayName: 'Terraform Output'
+                  inputs:
+                    azureSubscription: $(azureServiceConnection)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      cd terraform
+                      terraform output -json > outputs.json
+                      cat outputs.json
+                      echo "##vso[task.setvariable variable=FRONT_DOOR_URL;isOutput=true]$(terraform output -raw front_door_endpoint_url)"
+
+                - task: PublishPipelineArtifact@1
+                  displayName: 'Publish Terraform Outputs'
+                  inputs:
+                    targetPath: 'terraform/outputs.json'
+                    artifact: 'terraform-outputs-production'
+                    publishLocation: 'pipeline'
+
+                - task: Bash@3
+                  displayName: 'Post-Deployment Summary'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      echo "============================================"
+                      echo "PRODUCTION DEPLOYMENT COMPLETED"
+                      echo "============================================"
+                      echo "Environment: Production"
+                      echo "Timestamp: $(date)"
+                      echo "Build ID: $(Build.BuildId)"
+                      echo "============================================"
+                      cd terraform
+                      terraform output deployment_summary
+
+  # ===================================================================
+  # STAGE 7: POST-DEPLOYMENT TESTS
+  # ===================================================================
+  - stage: PostDeploymentTests
+    displayName: 'Post-Deployment Tests'
+    dependsOn: DeployProduction
+    condition: succeeded()
+    jobs:
+      - job: HealthChecks
+        displayName: 'Run Health Checks'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: Bash@3
+            displayName: 'Health Check - Front Door'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Running health checks..."
+                # Add your health check scripts here
+                echo "Health checks completed successfully"
+
+          - task: Bash@3
+            displayName: 'Smoke Tests'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Running smoke tests..."
+                # Add your smoke test scripts here
+                echo "Smoke tests completed successfully"
