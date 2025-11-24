@@ -1,0 +1,158 @@
+---
+# CitadelBuy Maintenance Playbook
+# Handles routine maintenance tasks
+
+- name: CitadelBuy Maintenance Tasks
+  hosts: all
+  gather_facts: true
+  become: true
+
+  vars:
+    maintenance_mode: false
+    backup_before_maintenance: true
+    cleanup_old_images: true
+    update_packages: false
+
+  pre_tasks:
+    - name: Check if maintenance mode should be enabled
+      debug:
+        msg: "Maintenance mode: {{ maintenance_mode }}"
+
+    - name: Enable maintenance mode
+      command: docker exec citadelbuy-frontend touch /app/maintenance.html
+      when: maintenance_mode
+      ignore_errors: yes
+
+  tasks:
+    # Backup Tasks
+    - name: Run backup before maintenance
+      include_tasks: ../roles/database/tasks/backup.yml
+      when: backup_before_maintenance
+
+    # Cleanup Tasks
+    - name: Remove unused Docker images
+      command: docker image prune -af
+      register: prune_result
+      when: cleanup_old_images
+
+    - name: Display cleanup results
+      debug:
+        var: prune_result.stdout_lines
+      when: cleanup_old_images
+
+    - name: Remove old logs
+      find:
+        paths: "{{ app_home }}/logs"
+        age: "{{ log_retention_days }}d"
+        recurse: yes
+      register: old_logs
+
+    - name: Delete old log files
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ old_logs.files }}"
+      when: old_logs.matched > 0
+
+    - name: Clean up old backups
+      find:
+        paths: "{{ app_home }}/backups"
+        age: "{{ backup_retention_days }}d"
+        recurse: yes
+      register: old_backups
+
+    - name: Delete old backup files
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ old_backups.files }}"
+      when: old_backups.matched > 0
+
+    # Update Tasks
+    - name: Update system packages
+      apt:
+        update_cache: yes
+        upgrade: safe
+      when: update_packages and ansible_os_family == "Debian"
+
+    # Health Check Tasks
+    - name: Check Docker service status
+      systemd:
+        name: docker
+        state: started
+      register: docker_status
+
+    - name: Check container health
+      command: docker ps --filter "health=healthy" --filter "name=citadelbuy" --format "{{.Names}}"
+      register: healthy_containers
+      changed_when: false
+
+    - name: Display healthy containers
+      debug:
+        var: healthy_containers.stdout_lines
+
+    - name: Check disk usage
+      shell: df -h | grep -E '^/dev/' | awk '{ print $1 " " $5 " " $6 }'
+      register: disk_usage
+      changed_when: false
+
+    - name: Display disk usage
+      debug:
+        var: disk_usage.stdout_lines
+
+    - name: Check memory usage
+      shell: free -h | grep Mem | awk '{print "Used: " $3 " / Total: " $2}'
+      register: memory_usage
+      changed_when: false
+
+    - name: Display memory usage
+      debug:
+        var: memory_usage.stdout
+
+    # Log Rotation
+    - name: Configure logrotate for CitadelBuy
+      copy:
+        content: |
+          {{ app_home }}/logs/*.log {
+            daily
+            rotate {{ log_retention_days }}
+            compress
+            delaycompress
+            missingok
+            notifempty
+            create 0644 {{ app_user }} {{ app_group }}
+          }
+        dest: /etc/logrotate.d/citadelbuy
+
+    # Security Updates
+    - name: Check for security updates
+      apt:
+        update_cache: yes
+      register: apt_updates
+      when: ansible_os_family == "Debian"
+
+    - name: Install security updates
+      apt:
+        upgrade: yes
+        only_upgrade: yes
+        update_cache: yes
+      when: ansible_os_family == "Debian" and update_packages
+
+  post_tasks:
+    - name: Disable maintenance mode
+      command: docker exec citadelbuy-frontend rm -f /app/maintenance.html
+      when: maintenance_mode
+      ignore_errors: yes
+
+    - name: Send maintenance completion notification
+      debug:
+        msg: "Maintenance completed on {{ inventory_hostname }} at {{ ansible_date_time.iso8601 }}"
+
+    - name: Generate maintenance report
+      template:
+        src: ../templates/maintenance-report.j2
+        dest: "{{ app_home }}/logs/maintenance-{{ ansible_date_time.date }}.log"
+      vars:
+        disk_info: "{{ disk_usage.stdout_lines }}"
+        memory_info: "{{ memory_usage.stdout }}"
+        containers_info: "{{ healthy_containers.stdout_lines }}"

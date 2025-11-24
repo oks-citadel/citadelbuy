@@ -1,0 +1,4 @@
+Line 192-217: Replace createReturnLabel call with createShipment
+Line 451: Change TransactionType.RETURN to TransactionType.REFUND
+Line 530,537: Remove onHandQty fields (not in schema)
+Line 640: Cast returnRequest.status properly

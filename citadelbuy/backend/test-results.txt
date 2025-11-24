@@ -1,0 +1,931 @@
+
+> citadelbuy-backend@0.1.0 test:cov
+> cross-env NODE_OPTIONS="--localstorage-file=./test-storage.db" jest --coverage --runInBand
+
+ts-jest[config] (WARN) 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use "isolatedModules: true" in C:/Users/kogun/Downloads/CitadelBuy-Commerce/citadelbuy/backend/tsconfig.json instead, see https://www.typescriptlang.org/tsconfig/#isolatedModules
+  
+PASS src/modules/gift-cards/gift-cards.controller.spec.ts
+PASS src/modules/search/search.controller.spec.ts
+PASS src/modules/subscriptions/subscriptions.controller.spec.ts
+PASS src/modules/loyalty/loyalty.controller.spec.ts
+PASS src/modules/bnpl/bnpl.controller.spec.ts
+FAIL src/modules/payments/payments.controller.spec.ts
+  ● Test suite failed to run
+
+    TypeError: Cannot read properties of undefined (reading 'ServerEvent')
+
+    [0m [90m 10 |[39m [36mimport[39m bizSdk [36mfrom[39m [32m'facebook-nodejs-business-sdk'[39m[33m;[39m
+     [90m 11 |[39m
+    [31m[1m>[22m[39m[90m 12 |[39m [36mconst[39m [33mServerEvent[39m [33m=[39m bizSdk[33m.[39m[33mServerEvent[39m[33m;[39m
+     [90m    |[39m                            [31m[1m^[22m[39m
+     [90m 13 |[39m [36mconst[39m [33mEventRequest[39m [33m=[39m bizSdk[33m.[39m[33mEventRequest[39m[33m;[39m
+     [90m 14 |[39m [36mconst[39m [33mUserData[39m [33m=[39m bizSdk[33m.[39m[33mUserData[39m[33m;[39m
+     [90m 15 |[39m [36mconst[39m [33mCustomData[39m [33m=[39m bizSdk[33m.[39m[33mCustomData[39m[33m;[39m[0m
+
+      at Object.ServerEvent (modules/tracking/meta-conversions.service.ts:12:28)
+      at Object.require (modules/tracking/server-tracking.service.ts:7:1)
+      at Object.require (modules/payments/payments.controller.ts:25:1)
+      at Object.<anonymous> (modules/payments/payments.controller.spec.ts:2:1)
+
+PASS src/modules/advertisements/advertisements.controller.spec.ts
+FAIL src/modules/auth/auth.controller.spec.ts
+  ● Test suite failed to run
+
+    TypeError: Cannot read properties of undefined (reading 'ServerEvent')
+
+    [0m [90m 10 |[39m [36mimport[39m bizSdk [36mfrom[39m [32m'facebook-nodejs-business-sdk'[39m[33m;[39m
+     [90m 11 |[39m
+    [31m[1m>[22m[39m[90m 12 |[39m [36mconst[39m [33mServerEvent[39m [33m=[39m bizSdk[33m.[39m[33mServerEvent[39m[33m;[39m
+     [90m    |[39m                            [31m[1m^[22m[39m
+     [90m 13 |[39m [36mconst[39m [33mEventRequest[39m [33m=[39m bizSdk[33m.[39m[33mEventRequest[39m[33m;[39m
+     [90m 14 |[39m [36mconst[39m [33mUserData[39m [33m=[39m bizSdk[33m.[39m[33mUserData[39m[33m;[39m
+     [90m 15 |[39m [36mconst[39m [33mCustomData[39m [33m=[39m bizSdk[33m.[39m[33mCustomData[39m[33m;[39m[0m
+
+      at Object.ServerEvent (modules/tracking/meta-conversions.service.ts:12:28)
+      at Object.require (modules/tracking/server-tracking.service.ts:7:1)
+      at Object.require (modules/auth/auth.service.ts:9:1)
+      at Object.require (modules/auth/auth.controller.ts:3:1)
+      at Object.<anonymous> (modules/auth/auth.controller.spec.ts:2:1)
+
+PASS src/modules/orders/orders.controller.spec.ts
+PASS src/modules/reviews/reviews.controller.spec.ts
+PASS src/modules/deals/deals.controller.spec.ts
+PASS src/modules/categories/categories.service.spec.ts
+[31m[Nest] 16708  - [39m11/20/2025, 8:56:21 AM [31m  ERROR[39m [38;5;3m[DealsService] [39m[31mFailed to send deal notifications: Cannot read properties of undefined (reading 'map')[39m
+TypeError: Cannot read properties of undefined (reading 'map')
+    at DealsService.map [as sendDealNotifications] (C:\Users\kogun\Downloads\CitadelBuy-Commerce\citadelbuy\backend\src\modules\deals\deals.service.ts:1280:33)
+PASS src/modules/deals/deals.service.spec.ts
+PASS src/modules/i18n/i18n.service.spec.ts
+PASS src/modules/categories/categories.controller.spec.ts
+PASS src/modules/loyalty/loyalty.service.spec.ts
+[31m[Nest] 16708  - [39m11/20/2025, 8:56:22 AM [31m  ERROR[39m [38;5;3m[PaymentsService] [39m[31mFailed to create payment intent[39m
+[31m[Nest] 16708  - [39m11/20/2025, 8:56:22 AM [31m  ERROR[39m [38;5;3m[PaymentsService] [39m[31mError: Stripe API error: Invalid API key[39m
+[31m[Nest] 16708  - [39m11/20/2025, 8:56:22 AM [31m  ERROR[39m [38;5;3m[PaymentsService] [39m[31mFailed to retrieve payment intent[39m
+[31m[Nest] 16708  - [39m11/20/2025, 8:56:22 AM [31m  ERROR[39m [38;5;3m[PaymentsService] [39m[31mError: No such payment_intent[39m
+[31m[Nest] 16708  - [39m11/20/2025, 8:56:22 AM [31m  ERROR[39m [38;5;3m[PaymentsService] [39m[31mFailed to construct webhook event[39m
+[31m[Nest] 16708  - [39m11/20/2025, 8:56:22 AM [31m  ERROR[39m [38;5;3m[PaymentsService] [39m[31mError: Invalid signature[39m
+PASS src/modules/payments/payments.service.spec.ts
+PASS src/modules/products/products.controller.spec.ts
+PASS src/modules/recommendations/recommendations.controller.spec.ts
+PASS src/modules/wishlist/wishlist.controller.spec.ts
+PASS src/modules/users/users.controller.spec.ts
+PASS src/modules/products/products.service.spec.ts
+PASS src/modules/subscriptions/subscriptions.service.spec.ts
+PASS src/modules/analytics/analytics.service.spec.ts
+PASS src/modules/health/health.controller.spec.ts
+PASS src/modules/search/search.service.spec.ts
+PASS src/modules/bnpl/bnpl.service.spec.ts
+PASS src/modules/gift-cards/gift-cards.service.spec.ts
+PASS src/modules/reviews/reviews.service.spec.ts
+PASS src/modules/wishlist/wishlist.service.spec.ts
+FAIL src/modules/email/email.service.spec.ts
+  ● EmailService › sendWelcomeEmail › should send welcome email successfully
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: {"html": StringContaining "John Doe", "subject": "Welcome to CitadelBuy Test! 🎉", "to": "newuser@example.com"}
+
+    Number of calls: 0
+
+    [0m [90m 54 |[39m
+     [90m 55 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 56 |[39m       expect(sendEmailSpy)[33m.[39mtoHaveBeenCalledWith({
+     [90m    |[39m                            [31m[1m^[22m[39m
+     [90m 57 |[39m         to[33m,[39m
+     [90m 58 |[39m         subject[33m:[39m [32m'Welcome to CitadelBuy Test! 🎉'[39m[33m,[39m
+     [90m 59 |[39m         html[33m:[39m expect[33m.[39mstringContaining(userName)[33m,[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:56:28)
+
+  ● EmailService › sendWelcomeEmail › should include user name in welcome email template
+
+    TypeError: Cannot read properties of undefined (reading '0')
+
+    [0m [90m 72 |[39m
+     [90m 73 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 74 |[39m       [36mconst[39m emailCall [33m=[39m sendEmailSpy[33m.[39mmock[33m.[39mcalls[[35m0[39m][[35m0[39m][33m;[39m
+     [90m    |[39m                                                   [31m[1m^[22m[39m
+     [90m 75 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain(userName)[33m;[39m
+     [90m 76 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'Welcome to CitadelBuy Test'[39m)[33m;[39m
+     [90m 77 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'Browse Products'[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:74:51)
+
+  ● EmailService › sendWelcomeEmail › should handle errors when sending welcome email
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: undefined
+
+    [0m [90m 86 |[39m
+     [90m 87 |[39m       [90m// Act & Assert[39m
+    [31m[1m>[22m[39m[90m 88 |[39m       [36mawait[39m expect(service[33m.[39msendWelcomeEmail(to[33m,[39m userName))[33m.[39mrejects[33m.[39mtoThrow([32m'SendGrid error'[39m)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 89 |[39m     })[33m;[39m
+     [90m 90 |[39m   })[33m;[39m
+     [90m 91 |[39m[0m
+
+      at expect (../../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (modules/email/email.service.spec.ts:88:13)
+
+  ● EmailService › sendOrderConfirmation › should send order confirmation email successfully
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: {"html": StringContaining "ORD-12345", "subject": "Order Confirmation - ORD-12345", "to": "customer@example.com"}
+
+    Number of calls: 0
+
+    [0m [90m 116 |[39m
+     [90m 117 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 118 |[39m       expect(sendEmailSpy)[33m.[39mtoHaveBeenCalledWith({
+     [90m     |[39m                            [31m[1m^[22m[39m
+     [90m 119 |[39m         to[33m,[39m
+     [90m 120 |[39m         subject[33m:[39m [32m`Order Confirmation - ${orderData.orderId}`[39m[33m,[39m
+     [90m 121 |[39m         html[33m:[39m expect[33m.[39mstringContaining(orderData[33m.[39morderId)[33m,[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:118:28)
+
+  ● EmailService › sendOrderConfirmation › should include order details in confirmation email
+
+    TypeError: Cannot read properties of undefined (reading '0')
+
+    [0m [90m 147 |[39m
+     [90m 148 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 149 |[39m       [36mconst[39m emailCall [33m=[39m sendEmailSpy[33m.[39mmock[33m.[39mcalls[[35m0[39m][[35m0[39m][33m;[39m
+     [90m     |[39m                                                   [31m[1m^[22m[39m
+     [90m 150 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain(orderData[33m.[39mcustomerName)[33m;[39m
+     [90m 151 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain(orderData[33m.[39morderId)[33m;[39m
+     [90m 152 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'Laptop'[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:149:51)
+
+  ● EmailService › sendOrderConfirmation › should handle multiple items in order confirmation
+
+    TypeError: Cannot read properties of undefined (reading '0')
+
+    [0m [90m 174 |[39m
+     [90m 175 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 176 |[39m       [36mconst[39m emailCall [33m=[39m sendEmailSpy[33m.[39mmock[33m.[39mcalls[[35m0[39m][[35m0[39m][33m;[39m
+     [90m     |[39m                                                   [31m[1m^[22m[39m
+     [90m 177 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'Item 1'[39m)[33m;[39m
+     [90m 178 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'Item 2'[39m)[33m;[39m
+     [90m 179 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'Item 3'[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:176:51)
+
+  ● EmailService › sendOrderStatusUpdate › should send order status update email successfully
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: {"html": StringContaining "SHIPPED", "subject": "Order ORD-12345 - Status Updated to SHIPPED", "to": "customer@example.com"}
+
+    Number of calls: 0
+
+    [0m [90m 199 |[39m
+     [90m 200 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 201 |[39m       expect(sendEmailSpy)[33m.[39mtoHaveBeenCalledWith({
+     [90m     |[39m                            [31m[1m^[22m[39m
+     [90m 202 |[39m         to[33m,[39m
+     [90m 203 |[39m         subject[33m:[39m [32m`Order ${statusData.orderId} - Status Updated to ${statusData.newStatus}`[39m[33m,[39m
+     [90m 204 |[39m         html[33m:[39m expect[33m.[39mstringContaining(statusData[33m.[39mnewStatus)[33m,[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:201:28)
+
+  ● EmailService › sendOrderStatusUpdate › should include tracking information when provided
+
+    TypeError: Cannot read properties of undefined (reading '0')
+
+    [0m [90m 223 |[39m
+     [90m 224 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 225 |[39m       [36mconst[39m emailCall [33m=[39m sendEmailSpy[33m.[39mmock[33m.[39mcalls[[35m0[39m][[35m0[39m][33m;[39m
+     [90m     |[39m                                                   [31m[1m^[22m[39m
+     [90m 226 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain(statusData[33m.[39mtrackingNumber)[33m;[39m
+     [90m 227 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain(statusData[33m.[39morderId)[33m;[39m
+     [90m 228 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:225:51)
+
+  ● EmailService › sendOrderStatusUpdate › should handle status update without tracking information
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: {"html": Any<String>, "subject": "Order ORD-11111 - Status Updated to PROCESSING", "to": "customer@example.com"}
+
+    Number of calls: 0
+
+    [0m [90m 242 |[39m
+     [90m 243 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 244 |[39m       expect(sendEmailSpy)[33m.[39mtoHaveBeenCalledWith({
+     [90m     |[39m                            [31m[1m^[22m[39m
+     [90m 245 |[39m         to[33m,[39m
+     [90m 246 |[39m         subject[33m:[39m [32m`Order ${statusData.orderId} - Status Updated to ${statusData.newStatus}`[39m[33m,[39m
+     [90m 247 |[39m         html[33m:[39m expect[33m.[39many([33mString[39m)[33m,[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:244:28)
+
+  ● EmailService › sendPasswordResetEmail › should send password reset email successfully
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: {"html": StringContaining "http://localhost:3000/reset-password?token=abc123xyz789", "subject": "Password Reset Request", "to": "user@example.com"}
+
+    Number of calls: 0
+
+    [0m [90m 265 |[39m
+     [90m 266 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 267 |[39m       expect(sendEmailSpy)[33m.[39mtoHaveBeenCalledWith({
+     [90m     |[39m                            [31m[1m^[22m[39m
+     [90m 268 |[39m         to[33m,[39m
+     [90m 269 |[39m         subject[33m:[39m [32m'Password Reset Request'[39m[33m,[39m
+     [90m 270 |[39m         html[33m:[39m expect[33m.[39mstringContaining(resetData[33m.[39mresetUrl)[33m,[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:267:28)
+
+  ● EmailService › sendPasswordResetEmail › should include reset URL in password reset email
+
+    TypeError: Cannot read properties of undefined (reading '0')
+
+    [0m [90m 286 |[39m
+     [90m 287 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 288 |[39m       [36mconst[39m emailCall [33m=[39m sendEmailSpy[33m.[39mmock[33m.[39mcalls[[35m0[39m][[35m0[39m][33m;[39m
+     [90m     |[39m                                                   [31m[1m^[22m[39m
+     [90m 289 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain(resetData[33m.[39mcustomerName)[33m;[39m
+     [90m 290 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain(resetData[33m.[39mresetUrl)[33m;[39m
+     [90m 291 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'Reset Password'[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:288:51)
+
+  ● EmailService › sendPasswordResetEmail › should handle errors when sending password reset email
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: undefined
+
+    [0m [90m 304 |[39m
+     [90m 305 |[39m       [90m// Act & Assert[39m
+    [31m[1m>[22m[39m[90m 306 |[39m       [36mawait[39m expect(service[33m.[39msendPasswordResetEmail(to[33m,[39m resetData))[33m.[39mrejects[33m.[39mtoThrow([32m'Email service unavailable'[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 307 |[39m     })[33m;[39m
+     [90m 308 |[39m   })[33m;[39m
+     [90m 309 |[39m[0m
+
+      at expect (../../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (modules/email/email.service.spec.ts:306:13)
+
+  ● EmailService › sendEmail (private method via public methods) › should log email to console when SendGrid is not configured
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    [0m [90m 323 |[39m         [36mtypeof[39m call [33m===[39m [32m'string'[39m [33m&&[39m call[33m.[39mincludes([32m'📧 EMAIL SENT'[39m)
+     [90m 324 |[39m       )[33m;[39m
+    [31m[1m>[22m[39m[90m 325 |[39m       expect(hasEmailLog)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m     |[39m                           [31m[1m^[22m[39m
+     [90m 326 |[39m     })[33m;[39m
+     [90m 327 |[39m
+     [90m 328 |[39m     it([32m'should log success message after sending email'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:325:27)
+
+  ● EmailService › sendEmail (private method via public methods) › should log success message after sending email
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "Welcome email sent to success@example.com"
+    Received: "Welcome email would be sent to success@example.com"
+
+    Number of calls: 1
+
+    [0m [90m 336 |[39m
+     [90m 337 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 338 |[39m       expect(logSpy)[33m.[39mtoHaveBeenCalledWith(expect[33m.[39mstringContaining([32m`Welcome email sent to ${to}`[39m))[33m;[39m
+     [90m     |[39m                      [31m[1m^[22m[39m
+     [90m 339 |[39m     })[33m;[39m
+     [90m 340 |[39m
+     [90m 341 |[39m     it([32m'should log error when email sending fails'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:338:22)
+
+  ● EmailService › sendEmail (private method via public methods) › should log error when email sending fails
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: undefined
+
+    [0m [90m 348 |[39m
+     [90m 349 |[39m       [90m// Act & Assert[39m
+    [31m[1m>[22m[39m[90m 350 |[39m       [36mawait[39m expect(service[33m.[39msendWelcomeEmail(to[33m,[39m [32m'Fail User'[39m))[33m.[39mrejects[33m.[39mtoThrow([32m'Network error'[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 351 |[39m     })[33m;[39m
+     [90m 352 |[39m   })[33m;[39m
+     [90m 353 |[39m[0m
+
+      at expect (../../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (modules/email/email.service.spec.ts:350:13)
+
+  ● EmailService › configuration › should use custom configuration when provided
+
+    TypeError: Cannot read properties of undefined (reading '0')
+
+    [0m [90m 385 |[39m
+     [90m 386 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 387 |[39m       [36mconst[39m emailCall [33m=[39m sendEmailSpy[33m.[39mmock[33m.[39mcalls[[35m0[39m][[35m0[39m][33m;[39m
+     [90m     |[39m                                                   [31m[1m^[22m[39m
+     [90m 388 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'Custom Store'[39m)[33m;[39m
+     [90m 389 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'https://custom-store.com'[39m)[33m;[39m
+     [90m 390 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:387:51)
+
+PASS src/modules/analytics-dashboard/analytics-dashboard.service.spec.ts
+PASS src/modules/recommendations/recommendations.service.spec.ts
+PASS src/modules/users/users.service.spec.ts
+FAIL src/modules/auth/auth.service.spec.ts
+  ● Test suite failed to run
+
+    TypeError: Cannot read properties of undefined (reading 'ServerEvent')
+
+    [0m [90m 10 |[39m [36mimport[39m bizSdk [36mfrom[39m [32m'facebook-nodejs-business-sdk'[39m[33m;[39m
+     [90m 11 |[39m
+    [31m[1m>[22m[39m[90m 12 |[39m [36mconst[39m [33mServerEvent[39m [33m=[39m bizSdk[33m.[39m[33mServerEvent[39m[33m;[39m
+     [90m    |[39m                            [31m[1m^[22m[39m
+     [90m 13 |[39m [36mconst[39m [33mEventRequest[39m [33m=[39m bizSdk[33m.[39m[33mEventRequest[39m[33m;[39m
+     [90m 14 |[39m [36mconst[39m [33mUserData[39m [33m=[39m bizSdk[33m.[39m[33mUserData[39m[33m;[39m
+     [90m 15 |[39m [36mconst[39m [33mCustomData[39m [33m=[39m bizSdk[33m.[39m[33mCustomData[39m[33m;[39m[0m
+
+      at Object.ServerEvent (modules/tracking/meta-conversions.service.ts:12:28)
+      at Object.require (modules/tracking/server-tracking.service.ts:7:1)
+      at Object.require (modules/auth/auth.service.ts:9:1)
+      at Object.<anonymous> (modules/auth/auth.service.spec.ts:2:1)
+
+[31m[Nest] 16708  - [39m11/20/2025, 8:56:27 AM [31m  ERROR[39m [38;5;3m[OrdersService] [39m[31mFailed to update order nonexistent-order[39m
+[31m[Nest] 16708  - [39m11/20/2025, 8:56:27 AM [31m  ERROR[39m [38;5;3m[OrdersService] [39m[31mNotFoundException: Order nonexistent-order not found[39m
+PASS src/modules/orders/orders.service.spec.ts
+PASS src/modules/advertisements/advertisements.service.spec.ts
+-------------------------------------|---------|----------|---------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+File                                 | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                                                                                                                                                                                                       
+-------------------------------------|---------|----------|---------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+All files                            |   46.35 |    39.68 |   53.28 |   46.95 |                                                                                                                                                                                                                         
+ src                                 |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                         
+  app.controller.ts                  |       0 |        0 |       0 |       0 | 1-19                                                                                                                                                                                                                    
+  app.module.ts                      |       0 |      100 |     100 |       0 | 1-77                                                                                                                                                                                                                    
+  app.service.ts                     |       0 |        0 |       0 |       0 | 1-13                                                                                                                                                                                                                    
+  main.ts                            |       0 |        0 |       0 |       0 | 1-109                                                                                                                                                                                                                   
+ src/common/constants                |       0 |      100 |     100 |       0 |                                                                                                                                                                                                                         
+  index.ts                           |       0 |      100 |     100 |       0 | 7-81                                                                                                                                                                                                                    
+ src/common/controllers              |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                         
+  csrf.controller.ts                 |       0 |        0 |       0 |       0 | 1-33                                                                                                                                                                                                                    
+ src/common/decorators               |      50 |      100 |      50 |      50 |                                                                                                                                                                                                                         
+  roles.decorator.ts                 |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+  skip-csrf.decorator.ts             |       0 |      100 |       0 |       0 | 1-12                                                                                                                                                                                                                    
+ src/common/guards                   |   20.83 |    11.53 |       0 |   14.63 |                                                                                                                                                                                                                         
+  csrf.guard.ts                      |       0 |        0 |       0 |       0 | 1-79                                                                                                                                                                                                                    
+  jwt-auth.guard.ts                  |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+  roles.guard.ts                     |   35.71 |     37.5 |       0 |   27.27 | 7-25                                                                                                                                                                                                                    
+ src/common/prisma                   |   21.73 |        0 |       0 |   15.78 |                                                                                                                                                                                                                         
+  prisma.module.ts                   |       0 |      100 |     100 |       0 | 1-9                                                                                                                                                                                                                     
+  prisma.service.ts                  |   27.77 |        0 |       0 |   18.75 | 7-35                                                                                                                                                                                                                    
+ src/common/types                    |      50 |        0 |       0 |      50 |                                                                                                                                                                                                                         
+  auth-request.types.ts              |      50 |        0 |       0 |      50 | 24                                                                                                                                                                                                                      
+ src/modules/admin                   |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                         
+  admin-orders.controller.ts         |       0 |        0 |       0 |       0 | 1-68                                                                                                                                                                                                                    
+  admin-products.controller.ts       |       0 |        0 |       0 |       0 | 1-97                                                                                                                                                                                                                    
+  admin.module.ts                    |       0 |      100 |     100 |       0 | 1-11                                                                                                                                                                                                                    
+ src/modules/advertisements          |   95.08 |    71.02 |     100 |   95.97 |                                                                                                                                                                                                                         
+  advertisements.controller.ts       |     100 |    68.26 |     100 |     100 | 31-42,56,69-109,122,135-162,194-205                                                                                                                                                                                     
+  advertisements.module.ts           |       0 |      100 |     100 |       0 | 1-12                                                                                                                                                                                                                    
+  advertisements.service.ts          |   98.31 |    73.04 |     100 |   98.26 | 197,488                                                                                                                                                                                                                 
+ src/modules/advertisements/dto      |     100 |       75 |     100 |     100 |                                                                                                                                                                                                                         
+  ad-query.dto.ts                    |     100 |       75 |     100 |     100 | 9-26                                                                                                                                                                                                                    
+  create-advertisement.dto.ts        |     100 |       75 |     100 |     100 | 28                                                                                                                                                                                                                      
+  create-campaign.dto.ts             |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+  track-click.dto.ts                 |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+  track-impression.dto.ts            |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+  update-advertisement.dto.ts        |     100 |       75 |     100 |     100 | 11                                                                                                                                                                                                                      
+  update-campaign.dto.ts             |     100 |       75 |     100 |     100 | 11                                                                                                                                                                                                                      
+ src/modules/analytics               |    68.9 |    48.48 |   70.83 |   70.27 |                                                                                                                                                                                                                         
+  analytics.controller.ts            |       0 |        0 |       0 |       0 | 1-84                                                                                                                                                                                                                    
+  analytics.module.ts                |       0 |      100 |     100 |       0 | 1-12                                                                                                                                                                                                                    
+  analytics.service.ts               |   93.18 |    73.84 |     100 |   92.85 | 19-20,25-29                                                                                                                                                                                                             
+ src/modules/analytics-dashboard     |   62.11 |    29.16 |   76.59 |   61.22 |                                                                                                                                                                                                                         
+  analytics-dashboard.controller.ts  |       0 |        0 |       0 |       0 | 1-192                                                                                                                                                                                                                   
+  analytics-dashboard.module.ts      |       0 |      100 |     100 |       0 | 1-12                                                                                                                                                                                                                    
+  analytics-dashboard.service.ts     |     100 |       84 |     100 |     100 | 7,60,130-235                                                                                                                                                                                                            
+ src/modules/analytics-dashboard/dto |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                         
+  analytics-query.dto.ts             |       0 |        0 |       0 |       0 | 1-29                                                                                                                                                                                                                    
+ src/modules/analytics/dto           |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+  analytics-query.dto.ts             |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+ src/modules/auth                    |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                         
+  auth.controller.ts                 |       0 |        0 |       0 |       0 | 1-42                                                                                                                                                                                                                    
+  auth.module.ts                     |       0 |        0 |       0 |       0 | 1-35                                                                                                                                                                                                                    
+  auth.service.ts                    |       0 |        0 |       0 |       0 | 1-183                                                                                                                                                                                                                   
+ src/modules/auth/dto                |       0 |      100 |     100 |       0 |                                                                                                                                                                                                                         
+  forgot-password.dto.ts             |       0 |      100 |     100 |       0 | 1-7                                                                                                                                                                                                                     
+  reset-password.dto.ts              |       0 |      100 |     100 |       0 | 1-12                                                                                                                                                                                                                    
+ src/modules/auth/guards             |   43.47 |     37.5 |       0 |   35.29 |                                                                                                                                                                                                                         
+  admin.guard.ts                     |   38.46 |     37.5 |       0 |   27.27 | 6-20                                                                                                                                                                                                                    
+  jwt-auth.guard.ts                  |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+  local-auth.guard.ts                |       0 |      100 |     100 |       0 | 1-5                                                                                                                                                                                                                     
+ src/modules/auth/strategies         |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                         
+  jwt.strategy.ts                    |       0 |        0 |       0 |       0 | 1-17                                                                                                                                                                                                                    
+  local.strategy.ts                  |       0 |        0 |       0 |       0 | 1-17                                                                                                                                                                                                                    
+ src/modules/bnpl                    |   88.81 |       72 |     100 |   89.62 |                                                                                                                                                                                                                         
+  bnpl.controller.ts                 |     100 |    56.81 |     100 |     100 | 24-99                                                                                                                                                                                                                   
+  bnpl.module.ts                     |       0 |      100 |     100 |       0 | 1-12                                                                                                                                                                                                                    
+  bnpl.service.ts                    |   91.58 |    83.92 |     100 |   91.26 | 134-139,157-161,284,310                                                                                                                                                                                                 
+ src/modules/bnpl/dto                |     100 |       75 |     100 |     100 |                                                                                                                                                                                                                         
+  create-payment-plan.dto.ts         |     100 |       75 |     100 |     100 | 13                                                                                                                                                                                                                      
+ src/modules/categories              |   90.14 |    88.57 |     100 |    92.3 |                                                                                                                                                                                                                         
+  categories.controller.ts           |     100 |       75 |     100 |     100 | 24-143                                                                                                                                                                                                                  
+  categories.module.ts               |       0 |      100 |     100 |       0 | 1-12                                                                                                                                                                                                                    
+  categories.service.ts              |     100 |    95.65 |     100 |     100 | 13                                                                                                                                                                                                                      
+ src/modules/categories/dto          |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+  create-category.dto.ts             |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+  update-category.dto.ts             |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+ src/modules/deals                   |   70.43 |     56.4 |   80.64 |   70.99 |                                                                                                                                                                                                                         
+  deals.controller.ts                |     100 |     62.5 |     100 |     100 | 35-149,167-230,272                                                                                                                                                                                                      
+  deals.module.ts                    |       0 |      100 |     100 |       0 | 1-13                                                                                                                                                                                                                    
+  deals.service.ts                   |   66.66 |    54.43 |      70 |      67 | 97,127,180,237,270,274,278,339,368-382,402,475,508,522-525,543-547,566-570,604,624-625,630-647,656-667,679-680,705-706,776,835,864,892,929-956,984,992-1005,1099,1106-1111,1119-1135,1153-1164,1190,1269-1270,1281-1340 
+ src/modules/deals/dto               |   97.89 |       75 |       0 |   97.89 |                                                                                                                                                                                                                         
+  deal.dto.ts                        |   97.89 |       75 |       0 |   97.89 | 108,218                                                                                                                                                                                                                 
+ src/modules/email                   |   40.98 |    21.73 |   42.85 |   40.35 |                                                                                                                                                                                                                         
+  email.module.ts                    |       0 |      100 |     100 |       0 | 1-8                                                                                                                                                                                                                     
+  email.service.ts                   |   44.64 |    21.73 |   42.85 |   42.59 | 45-199                                                                                                                                                                                                                  
+ src/modules/gift-cards              |    84.1 |    63.04 |   93.75 |    85.2 |                                                                                                                                                                                                                         
+  gift-cards.controller.ts           |     100 |    65.55 |     100 |     100 | 37-161,178-256                                                                                                                                                                                                          
+  gift-cards.module.ts               |       0 |      100 |     100 |       0 | 1-13                                                                                                                                                                                                                    
+  gift-cards.service.ts              |   83.24 |    61.42 |   89.28 |   83.93 | 190,250-286,339-390,413,448,456,534,628,647,689,766,794,851,863-864,935-937                                                                                                                                             
+ src/modules/gift-cards/dto          |     100 |       75 |     100 |     100 |                                                                                                                                                                                                                         
+  gift-card.dto.ts                   |     100 |       75 |     100 |     100 | 23-150                                                                                                                                                                                                                  
+  store-credit.dto.ts                |     100 |       75 |     100 |     100 | 20-74                                                                                                                                                                                                                   
+ src/modules/health                  |   65.62 |    72.72 |   72.72 |   67.85 |                                                                                                                                                                                                                         
+  health.controller.ts               |    87.5 |    72.72 |   72.72 |   86.36 | 57,71-74                                                                                                                                                                                                                
+  health.module.ts                   |       0 |      100 |     100 |       0 | 1-15                                                                                                                                                                                                                    
+ src/modules/i18n                    |   57.89 |    50.63 |   53.06 |    58.9 |                                                                                                                                                                                                                         
+  i18n.controller.ts                 |       0 |        0 |       0 |       0 | 1-303                                                                                                                                                                                                                   
+  i18n.module.ts                     |       0 |      100 |     100 |       0 | 1-12                                                                                                                                                                                                                    
+  i18n.service.ts                    |     100 |     85.1 |     100 |     100 | 17,143-164,491-501                                                                                                                                                                                                      
+ src/modules/i18n/dto                |       0 |        0 |     100 |       0 |                                                                                                                                                                                                                         
+  language.dto.ts                    |       0 |      100 |     100 |       0 | 1-79                                                                                                                                                                                                                    
+  translation.dto.ts                 |       0 |        0 |     100 |       0 | 1-103                                                                                                                                                                                                                   
+ src/modules/inventory               |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                         
+  inventory.controller.ts            |       0 |        0 |       0 |       0 | 1-298                                                                                                                                                                                                                   
+  inventory.jobs.ts                  |       0 |        0 |       0 |       0 | 1-249                                                                                                                                                                                                                   
+  inventory.module.ts                |       0 |      100 |     100 |       0 | 1-17                                                                                                                                                                                                                    
+  inventory.service.ts               |       0 |        0 |       0 |       0 | 1-1101                                                                                                                                                                                                                  
+ src/modules/inventory/dto           |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                         
+  adjust-stock.dto.ts                |       0 |        0 |     100 |       0 | 1-43                                                                                                                                                                                                                    
+  backorder-query.dto.ts             |       0 |      100 |       0 |       0 | 1-30                                                                                                                                                                                                                    
+  create-transfer.dto.ts             |       0 |      100 |     100 |       0 | 1-39                                                                                                                                                                                                                    
+  create-warehouse.dto.ts            |       0 |      100 |     100 |       0 | 1-51                                                                                                                                                                                                                    
+  index.ts                           |       0 |      100 |     100 |       0 | 1-8                                                                                                                                                                                                                     
+  inventory-query.dto.ts             |       0 |        0 |       0 |       0 | 1-39                                                                                                                                                                                                                    
+  reorder-request.dto.ts             |       0 |      100 |     100 |       0 | 1-47                                                                                                                                                                                                                    
+  stock-movement-query.dto.ts        |       0 |        0 |       0 |       0 | 1-45                                                                                                                                                                                                                    
+  update-warehouse.dto.ts            |       0 |      100 |     100 |       0 | 1-4                                                                                                                                                                                                                     
+ src/modules/loyalty                 |    82.7 |    62.35 |   88.88 |   82.95 |                                                                                                                                                                                                                         
+  loyalty.controller.ts              |     100 |    63.88 |     100 |     100 | 38-58,80-110,123-323                                                                                                                                                                                                    
+  loyalty.module.ts                  |       0 |      100 |     100 |       0 | 1-12                                                                                                                                                                                                                    
+  loyalty.service.ts                 |   79.91 |    61.29 |   80.95 |   79.66 | 175,228,265,348,411,446,495,575-577,593,600-664,702,745,820-838,852,871,875,884-888,935-937,966,970,978,987,1019,1023-1025,1069,1111,1139,1257                                                                          
+ src/modules/loyalty/dto             |     100 |       75 |     100 |     100 |                                                                                                                                                                                                                         
+  loyalty.dto.ts                     |     100 |       75 |     100 |     100 | 105                                                                                                                                                                                                                     
+  reward.dto.ts                      |     100 |       75 |     100 |     100 | 16-121                                                                                                                                                                                                                  
+ src/modules/orders                  |   57.14 |    56.36 |   56.52 |   56.56 |                                                                                                                                                                                                                         
+  orders.controller.ts               |     100 |       75 |     100 |     100 | 20-41                                                                                                                                                                                                                   
+  orders.module.ts                   |       0 |      100 |     100 |       0 | 1-12                                                                                                                                                                                                                    
+  orders.service.ts                  |   54.21 |    53.19 |   47.36 |   53.08 | 109-118,196,229-230,332-518                                                                                                                                                                                             
+ src/modules/orders/dto              |   62.16 |        0 |       0 |   62.16 |                                                                                                                                                                                                                         
+  create-order.dto.ts                |      92 |      100 |       0 |      92 | 80,86                                                                                                                                                                                                                   
+  update-order-status.dto.ts         |       0 |        0 |       0 |       0 | 1-38                                                                                                                                                                                                                    
+ src/modules/payments                |   22.72 |    15.85 |      25 |    22.4 |                                                                                                                                                                                                                         
+  payments.controller.ts             |       0 |        0 |       0 |       0 | 1-203                                                                                                                                                                                                                   
+  payments.module.ts                 |       0 |      100 |     100 |       0 | 1-13                                                                                                                                                                                                                    
+  payments.service.ts                |   53.57 |    39.39 |      50 |   51.85 | 33,105-203                                                                                                                                                                                                              
+ src/modules/payments/dto            |       0 |      100 |     100 |       0 |                                                                                                                                                                                                                         
+  create-payment-intent.dto.ts       |       0 |      100 |     100 |       0 | 1-36                                                                                                                                                                                                                    
+ src/modules/products                |    50.8 |    48.86 |   68.18 |   50.86 |                                                                                                                                                                                                                         
+  products.controller.ts             |     100 |    80.76 |     100 |     100 | 23-28,88-99                                                                                                                                                                                                             
+  products.module.ts                 |       0 |      100 |     100 |       0 | 1-10                                                                                                                                                                                                                    
+  products.service.ts                |   40.86 |    35.48 |      50 |   40.44 | 53,88-256,299-308                                                                                                                                                                                                       
+ src/modules/products/dto            |    61.9 |      100 |   16.66 |      65 |                                                                                                                                                                                                                         
+  create-product.dto.ts              |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+  query-products.dto.ts              |   72.72 |      100 |   16.66 |      80 | 25,32,48,55                                                                                                                                                                                                             
+  update-product.dto.ts              |       0 |      100 |     100 |       0 | 1-43                                                                                                                                                                                                                    
+ src/modules/recommendations         |   92.07 |    69.04 |   97.05 |   94.11 |                                                                                                                                                                                                                         
+  recommendations.controller.ts      |     100 |       75 |     100 |     100 | 11-29,61                                                                                                                                                                                                                
+  recommendations.module.ts          |       0 |      100 |     100 |       0 | 1-12                                                                                                                                                                                                                    
+  recommendations.service.ts         |   98.63 |    63.63 |   96.29 |     100 | 7-39,95,132,169-221,302                                                                                                                                                                                                 
+ src/modules/returns                 |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                         
+  returns.controller.ts              |       0 |        0 |       0 |       0 | 1-155                                                                                                                                                                                                                   
+  returns.module.ts                  |       0 |      100 |     100 |       0 | 1-15                                                                                                                                                                                                                    
+  returns.service.ts                 |       0 |        0 |       0 |       0 | 1-934                                                                                                                                                                                                                   
+ src/modules/returns/dto             |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                         
+  returns.dto.ts                     |       0 |        0 |       0 |       0 | 1-292                                                                                                                                                                                                                   
+ src/modules/reviews                 |   93.69 |    74.62 |     100 |   95.19 |                                                                                                                                                                                                                         
+  reviews.controller.ts              |     100 |    61.11 |     100 |     100 | 27-182                                                                                                                                                                                                                  
+  reviews.module.ts                  |       0 |      100 |     100 |       0 | 1-12                                                                                                                                                                                                                    
+  reviews.service.ts                 |     100 |    90.32 |     100 |     100 | 15,380-381                                                                                                                                                                                                              
+ src/modules/reviews/dto             |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+  create-review.dto.ts               |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+  update-review.dto.ts               |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+  vote-review.dto.ts                 |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+ src/modules/search                  |   69.34 |     62.8 |   73.91 |   69.53 |                                                                                                                                                                                                                         
+  search.controller.ts               |     100 |    71.21 |     100 |     100 | 26-69,95,104-144                                                                                                                                                                                                        
+  search.module.ts                   |       0 |      100 |     100 |       0 | 1-12                                                                                                                                                                                                                    
+  search.service.ts                  |   58.33 |    57.14 |   58.62 |   56.96 | 68,355-586                                                                                                                                                                                                              
+ src/modules/search/dto              |   84.84 |    54.16 |       0 |   90.32 |                                                                                                                                                                                                                         
+  autocomplete.dto.ts                |   77.77 |      100 |       0 |    87.5 | 12                                                                                                                                                                                                                      
+  saved-search.dto.ts                |    92.3 |       50 |       0 |     100 | 15-36                                                                                                                                                                                                                   
+  search-products.dto.ts             |   69.56 |      100 |       0 |   76.19 | 18,25,32,64,71                                                                                                                                                                                                          
+  track-search.dto.ts                |     100 |    58.33 |     100 |     100 | 22-45                                                                                                                                                                                                                   
+  track-view.dto.ts                  |     100 |       50 |     100 |     100 | 26                                                                                                                                                                                                                      
+ src/modules/shipping                |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                         
+  shipping.controller.ts             |       0 |        0 |       0 |       0 | 1-125                                                                                                                                                                                                                   
+  shipping.module.ts                 |       0 |      100 |     100 |       0 | 1-12                                                                                                                                                                                                                    
+  shipping.service.ts                |       0 |        0 |       0 |       0 | 1-586                                                                                                                                                                                                                   
+ src/modules/shipping/dto            |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                         
+  shipping.dto.ts                    |       0 |        0 |       0 |       0 | 1-476                                                                                                                                                                                                                   
+ src/modules/shipping/providers      |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                         
+  fedex.provider.ts                  |       0 |        0 |       0 |       0 | 1-185                                                                                                                                                                                                                   
+  ups.provider.ts                    |       0 |        0 |       0 |       0 | 1-274                                                                                                                                                                                                                   
+  usps.provider.ts                   |       0 |        0 |       0 |       0 | 1-177                                                                                                                                                                                                                   
+ src/modules/subscriptions           |   83.52 |    64.05 |     100 |   84.52 |                                                                                                                                                                                                                         
+  subscriptions.controller.ts        |     100 |    63.33 |     100 |     100 | 26-37,70-159,181                                                                                                                                                                                                        
+  subscriptions.module.ts            |       0 |      100 |     100 |       0 | 1-12                                                                                                                                                                                                                    
+  subscriptions.service.ts           |   81.35 |    64.51 |     100 |   81.57 | 195-199,229,281,308,312,339,343,417,430-443,483,570-574                                                                                                                                                                 
+ src/modules/subscriptions/dto       |     100 |       75 |     100 |     100 |                                                                                                                                                                                                                         
+  create-subscription-plan.dto.ts    |     100 |       75 |     100 |     100 | 28-37                                                                                                                                                                                                                   
+  subscribe.dto.ts                   |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+  update-subscription-plan.dto.ts    |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+ src/modules/tracking                |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                         
+  meta-conversions.service.ts        |       0 |        0 |       0 |       0 | 7-385                                                                                                                                                                                                                   
+  server-tracking.service.ts         |       0 |        0 |       0 |       0 | 6-257                                                                                                                                                                                                                   
+  tiktok-events.service.ts           |       0 |        0 |       0 |       0 | 7-381                                                                                                                                                                                                                   
+  tracking.module.ts                 |       0 |      100 |     100 |       0 | 6-29                                                                                                                                                                                                                    
+ src/modules/users                   |      76 |       75 |     100 |   78.94 |                                                                                                                                                                                                                         
+  users.controller.ts                |     100 |       75 |     100 |     100 | 9                                                                                                                                                                                                                       
+  users.module.ts                    |       0 |      100 |     100 |       0 | 1-10                                                                                                                                                                                                                    
+  users.service.ts                   |     100 |       75 |     100 |     100 | 6                                                                                                                                                                                                                       
+ src/modules/vendors                 |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                         
+  vendors.controller.ts              |       0 |        0 |       0 |       0 | 1-104                                                                                                                                                                                                                   
+  vendors.module.ts                  |       0 |      100 |     100 |       0 | 1-12                                                                                                                                                                                                                    
+  vendors.service.ts                 |       0 |        0 |       0 |       0 | 1-333                                                                                                                                                                                                                   
+ src/modules/vendors/dto             |       0 |        0 |       0 |       0 |                                                                                                                                                                                                                         
+  commission-rule.dto.ts             |       0 |      100 |     100 |       0 | 1-202                                                                                                                                                                                                                   
+  index.ts                           |       0 |      100 |     100 |       0 | 1-8                                                                                                                                                                                                                     
+  payout-request.dto.ts              |       0 |        0 |     100 |       0 | 1-44                                                                                                                                                                                                                    
+  performance-metrics-query.dto.ts   |       0 |        0 |       0 |       0 | 1-64                                                                                                                                                                                                                    
+  update-banking-info.dto.ts         |       0 |        0 |       0 |       0 | 1-97                                                                                                                                                                                                                    
+  update-vendor-profile.dto.ts       |       0 |        0 |     100 |       0 | 1-135                                                                                                                                                                                                                   
+  vendor-query.dto.ts                |       0 |        0 |       0 |       0 | 1-88                                                                                                                                                                                                                    
+  vendor-registration.dto.ts         |       0 |        0 |     100 |       0 | 1-118                                                                                                                                                                                                                   
+  vendor-verification.dto.ts         |       0 |        0 |       0 |       0 | 1-106                                                                                                                                                                                                                   
+ src/modules/wishlist                |   88.13 |    64.28 |     100 |   90.38 |                                                                                                                                                                                                                         
+  wishlist.controller.ts             |     100 |    56.25 |     100 |     100 | 22-94                                                                                                                                                                                                                   
+  wishlist.module.ts                 |       0 |      100 |     100 |       0 | 1-12                                                                                                                                                                                                                    
+  wishlist.service.ts                |     100 |       90 |     100 |     100 | 11                                                                                                                                                                                                                      
+ src/modules/wishlist/dto            |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+  add-to-wishlist.dto.ts             |     100 |      100 |     100 |     100 |                                                                                                                                                                                                                         
+-------------------------------------|---------|----------|---------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Summary of all failing tests
+FAIL modules/payments/payments.controller.spec.ts
+  ● Test suite failed to run
+
+    TypeError: Cannot read properties of undefined (reading 'ServerEvent')
+
+    [0m [90m 10 |[39m [36mimport[39m bizSdk [36mfrom[39m [32m'facebook-nodejs-business-sdk'[39m[33m;[39m
+     [90m 11 |[39m
+    [31m[1m>[22m[39m[90m 12 |[39m [36mconst[39m [33mServerEvent[39m [33m=[39m bizSdk[33m.[39m[33mServerEvent[39m[33m;[39m
+     [90m    |[39m                            [31m[1m^[22m[39m
+     [90m 13 |[39m [36mconst[39m [33mEventRequest[39m [33m=[39m bizSdk[33m.[39m[33mEventRequest[39m[33m;[39m
+     [90m 14 |[39m [36mconst[39m [33mUserData[39m [33m=[39m bizSdk[33m.[39m[33mUserData[39m[33m;[39m
+     [90m 15 |[39m [36mconst[39m [33mCustomData[39m [33m=[39m bizSdk[33m.[39m[33mCustomData[39m[33m;[39m[0m
+
+      at Object.ServerEvent (modules/tracking/meta-conversions.service.ts:12:28)
+      at Object.require (modules/tracking/server-tracking.service.ts:7:1)
+      at Object.require (modules/payments/payments.controller.ts:25:1)
+      at Object.<anonymous> (modules/payments/payments.controller.spec.ts:2:1)
+
+FAIL modules/auth/auth.controller.spec.ts
+  ● Test suite failed to run
+
+    TypeError: Cannot read properties of undefined (reading 'ServerEvent')
+
+    [0m [90m 10 |[39m [36mimport[39m bizSdk [36mfrom[39m [32m'facebook-nodejs-business-sdk'[39m[33m;[39m
+     [90m 11 |[39m
+    [31m[1m>[22m[39m[90m 12 |[39m [36mconst[39m [33mServerEvent[39m [33m=[39m bizSdk[33m.[39m[33mServerEvent[39m[33m;[39m
+     [90m    |[39m                            [31m[1m^[22m[39m
+     [90m 13 |[39m [36mconst[39m [33mEventRequest[39m [33m=[39m bizSdk[33m.[39m[33mEventRequest[39m[33m;[39m
+     [90m 14 |[39m [36mconst[39m [33mUserData[39m [33m=[39m bizSdk[33m.[39m[33mUserData[39m[33m;[39m
+     [90m 15 |[39m [36mconst[39m [33mCustomData[39m [33m=[39m bizSdk[33m.[39m[33mCustomData[39m[33m;[39m[0m
+
+      at Object.ServerEvent (modules/tracking/meta-conversions.service.ts:12:28)
+      at Object.require (modules/tracking/server-tracking.service.ts:7:1)
+      at Object.require (modules/auth/auth.service.ts:9:1)
+      at Object.require (modules/auth/auth.controller.ts:3:1)
+      at Object.<anonymous> (modules/auth/auth.controller.spec.ts:2:1)
+
+FAIL modules/email/email.service.spec.ts
+  ● EmailService › sendWelcomeEmail › should send welcome email successfully
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: {"html": StringContaining "John Doe", "subject": "Welcome to CitadelBuy Test! ��", "to": "newuser@example.com"}
+
+    Number of calls: 0
+
+    [0m [90m 54 |[39m
+     [90m 55 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 56 |[39m       expect(sendEmailSpy)[33m.[39mtoHaveBeenCalledWith({
+     [90m    |[39m                            [31m[1m^[22m[39m
+     [90m 57 |[39m         to[33m,[39m
+     [90m 58 |[39m         subject[33m:[39m [32m'Welcome to CitadelBuy Test! ��'[39m[33m,[39m
+     [90m 59 |[39m         html[33m:[39m expect[33m.[39mstringContaining(userName)[33m,[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:56:28)
+
+  ● EmailService › sendWelcomeEmail › should include user name in welcome email template
+
+    TypeError: Cannot read properties of undefined (reading '0')
+
+    [0m [90m 72 |[39m
+     [90m 73 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 74 |[39m       [36mconst[39m emailCall [33m=[39m sendEmailSpy[33m.[39mmock[33m.[39mcalls[[35m0[39m][[35m0[39m][33m;[39m
+     [90m    |[39m                                                   [31m[1m^[22m[39m
+     [90m 75 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain(userName)[33m;[39m
+     [90m 76 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'Welcome to CitadelBuy Test'[39m)[33m;[39m
+     [90m 77 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'Browse Products'[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:74:51)
+
+  ● EmailService › sendWelcomeEmail › should handle errors when sending welcome email
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: undefined
+
+    [0m [90m 86 |[39m
+     [90m 87 |[39m       [90m// Act & Assert[39m
+    [31m[1m>[22m[39m[90m 88 |[39m       [36mawait[39m expect(service[33m.[39msendWelcomeEmail(to[33m,[39m userName))[33m.[39mrejects[33m.[39mtoThrow([32m'SendGrid error'[39m)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 89 |[39m     })[33m;[39m
+     [90m 90 |[39m   })[33m;[39m
+     [90m 91 |[39m[0m
+
+      at expect (../../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (modules/email/email.service.spec.ts:88:13)
+
+  ● EmailService › sendOrderConfirmation › should send order confirmation email successfully
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: {"html": StringContaining "ORD-12345", "subject": "Order Confirmation - ORD-12345", "to": "customer@example.com"}
+
+    Number of calls: 0
+
+    [0m [90m 116 |[39m
+     [90m 117 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 118 |[39m       expect(sendEmailSpy)[33m.[39mtoHaveBeenCalledWith({
+     [90m     |[39m                            [31m[1m^[22m[39m
+     [90m 119 |[39m         to[33m,[39m
+     [90m 120 |[39m         subject[33m:[39m [32m`Order Confirmation - ${orderData.orderId}`[39m[33m,[39m
+     [90m 121 |[39m         html[33m:[39m expect[33m.[39mstringContaining(orderData[33m.[39morderId)[33m,[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:118:28)
+
+  ● EmailService › sendOrderConfirmation › should include order details in confirmation email
+
+    TypeError: Cannot read properties of undefined (reading '0')
+
+    [0m [90m 147 |[39m
+     [90m 148 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 149 |[39m       [36mconst[39m emailCall [33m=[39m sendEmailSpy[33m.[39mmock[33m.[39mcalls[[35m0[39m][[35m0[39m][33m;[39m
+     [90m     |[39m                                                   [31m[1m^[22m[39m
+     [90m 150 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain(orderData[33m.[39mcustomerName)[33m;[39m
+     [90m 151 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain(orderData[33m.[39morderId)[33m;[39m
+     [90m 152 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'Laptop'[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:149:51)
+
+  ● EmailService › sendOrderConfirmation › should handle multiple items in order confirmation
+
+    TypeError: Cannot read properties of undefined (reading '0')
+
+    [0m [90m 174 |[39m
+     [90m 175 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 176 |[39m       [36mconst[39m emailCall [33m=[39m sendEmailSpy[33m.[39mmock[33m.[39mcalls[[35m0[39m][[35m0[39m][33m;[39m
+     [90m     |[39m                                                   [31m[1m^[22m[39m
+     [90m 177 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'Item 1'[39m)[33m;[39m
+     [90m 178 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'Item 2'[39m)[33m;[39m
+     [90m 179 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'Item 3'[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:176:51)
+
+  ● EmailService › sendOrderStatusUpdate › should send order status update email successfully
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: {"html": StringContaining "SHIPPED", "subject": "Order ORD-12345 - Status Updated to SHIPPED", "to": "customer@example.com"}
+
+    Number of calls: 0
+
+    [0m [90m 199 |[39m
+     [90m 200 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 201 |[39m       expect(sendEmailSpy)[33m.[39mtoHaveBeenCalledWith({
+     [90m     |[39m                            [31m[1m^[22m[39m
+     [90m 202 |[39m         to[33m,[39m
+     [90m 203 |[39m         subject[33m:[39m [32m`Order ${statusData.orderId} - Status Updated to ${statusData.newStatus}`[39m[33m,[39m
+     [90m 204 |[39m         html[33m:[39m expect[33m.[39mstringContaining(statusData[33m.[39mnewStatus)[33m,[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:201:28)
+
+  ● EmailService › sendOrderStatusUpdate › should include tracking information when provided
+
+    TypeError: Cannot read properties of undefined (reading '0')
+
+    [0m [90m 223 |[39m
+     [90m 224 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 225 |[39m       [36mconst[39m emailCall [33m=[39m sendEmailSpy[33m.[39mmock[33m.[39mcalls[[35m0[39m][[35m0[39m][33m;[39m
+     [90m     |[39m                                                   [31m[1m^[22m[39m
+     [90m 226 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain(statusData[33m.[39mtrackingNumber)[33m;[39m
+     [90m 227 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain(statusData[33m.[39morderId)[33m;[39m
+     [90m 228 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:225:51)
+
+  ● EmailService › sendOrderStatusUpdate › should handle status update without tracking information
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: {"html": Any<String>, "subject": "Order ORD-11111 - Status Updated to PROCESSING", "to": "customer@example.com"}
+
+    Number of calls: 0
+
+    [0m [90m 242 |[39m
+     [90m 243 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 244 |[39m       expect(sendEmailSpy)[33m.[39mtoHaveBeenCalledWith({
+     [90m     |[39m                            [31m[1m^[22m[39m
+     [90m 245 |[39m         to[33m,[39m
+     [90m 246 |[39m         subject[33m:[39m [32m`Order ${statusData.orderId} - Status Updated to ${statusData.newStatus}`[39m[33m,[39m
+     [90m 247 |[39m         html[33m:[39m expect[33m.[39many([33mString[39m)[33m,[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:244:28)
+
+  ● EmailService › sendPasswordResetEmail › should send password reset email successfully
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: {"html": StringContaining "http://localhost:3000/reset-password?token=abc123xyz789", "subject": "Password Reset Request", "to": "user@example.com"}
+
+    Number of calls: 0
+
+    [0m [90m 265 |[39m
+     [90m 266 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 267 |[39m       expect(sendEmailSpy)[33m.[39mtoHaveBeenCalledWith({
+     [90m     |[39m                            [31m[1m^[22m[39m
+     [90m 268 |[39m         to[33m,[39m
+     [90m 269 |[39m         subject[33m:[39m [32m'Password Reset Request'[39m[33m,[39m
+     [90m 270 |[39m         html[33m:[39m expect[33m.[39mstringContaining(resetData[33m.[39mresetUrl)[33m,[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:267:28)
+
+  ● EmailService › sendPasswordResetEmail › should include reset URL in password reset email
+
+    TypeError: Cannot read properties of undefined (reading '0')
+
+    [0m [90m 286 |[39m
+     [90m 287 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 288 |[39m       [36mconst[39m emailCall [33m=[39m sendEmailSpy[33m.[39mmock[33m.[39mcalls[[35m0[39m][[35m0[39m][33m;[39m
+     [90m     |[39m                                                   [31m[1m^[22m[39m
+     [90m 289 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain(resetData[33m.[39mcustomerName)[33m;[39m
+     [90m 290 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain(resetData[33m.[39mresetUrl)[33m;[39m
+     [90m 291 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'Reset Password'[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:288:51)
+
+  ● EmailService › sendPasswordResetEmail › should handle errors when sending password reset email
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: undefined
+
+    [0m [90m 304 |[39m
+     [90m 305 |[39m       [90m// Act & Assert[39m
+    [31m[1m>[22m[39m[90m 306 |[39m       [36mawait[39m expect(service[33m.[39msendPasswordResetEmail(to[33m,[39m resetData))[33m.[39mrejects[33m.[39mtoThrow([32m'Email service unavailable'[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 307 |[39m     })[33m;[39m
+     [90m 308 |[39m   })[33m;[39m
+     [90m 309 |[39m[0m
+
+      at expect (../../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (modules/email/email.service.spec.ts:306:13)
+
+  ● EmailService › sendEmail (private method via public methods) › should log email to console when SendGrid is not configured
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    [0m [90m 323 |[39m         [36mtypeof[39m call [33m===[39m [32m'string'[39m [33m&&[39m call[33m.[39mincludes([32m'�� EMAIL SENT'[39m)
+     [90m 324 |[39m       )[33m;[39m
+    [31m[1m>[22m[39m[90m 325 |[39m       expect(hasEmailLog)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m     |[39m                           [31m[1m^[22m[39m
+     [90m 326 |[39m     })[33m;[39m
+     [90m 327 |[39m
+     [90m 328 |[39m     it([32m'should log success message after sending email'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:325:27)
+
+  ● EmailService › sendEmail (private method via public methods) › should log success message after sending email
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "Welcome email sent to success@example.com"
+    Received: "Welcome email would be sent to success@example.com"
+
+    Number of calls: 1
+
+    [0m [90m 336 |[39m
+     [90m 337 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 338 |[39m       expect(logSpy)[33m.[39mtoHaveBeenCalledWith(expect[33m.[39mstringContaining([32m`Welcome email sent to ${to}`[39m))[33m;[39m
+     [90m     |[39m                      [31m[1m^[22m[39m
+     [90m 339 |[39m     })[33m;[39m
+     [90m 340 |[39m
+     [90m 341 |[39m     it([32m'should log error when email sending fails'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:338:22)
+
+  ● EmailService › sendEmail (private method via public methods) › should log error when email sending fails
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: undefined
+
+    [0m [90m 348 |[39m
+     [90m 349 |[39m       [90m// Act & Assert[39m
+    [31m[1m>[22m[39m[90m 350 |[39m       [36mawait[39m expect(service[33m.[39msendWelcomeEmail(to[33m,[39m [32m'Fail User'[39m))[33m.[39mrejects[33m.[39mtoThrow([32m'Network error'[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 351 |[39m     })[33m;[39m
+     [90m 352 |[39m   })[33m;[39m
+     [90m 353 |[39m[0m
+
+      at expect (../../node_modules/expect/build/index.js:2116:15)
+      at Object.<anonymous> (modules/email/email.service.spec.ts:350:13)
+
+  ● EmailService › configuration › should use custom configuration when provided
+
+    TypeError: Cannot read properties of undefined (reading '0')
+
+    [0m [90m 385 |[39m
+     [90m 386 |[39m       [90m// Assert[39m
+    [31m[1m>[22m[39m[90m 387 |[39m       [36mconst[39m emailCall [33m=[39m sendEmailSpy[33m.[39mmock[33m.[39mcalls[[35m0[39m][[35m0[39m][33m;[39m
+     [90m     |[39m                                                   [31m[1m^[22m[39m
+     [90m 388 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'Custom Store'[39m)[33m;[39m
+     [90m 389 |[39m       expect(emailCall[33m.[39mhtml)[33m.[39mtoContain([32m'https://custom-store.com'[39m)[33m;[39m
+     [90m 390 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (modules/email/email.service.spec.ts:387:51)
+
+FAIL modules/auth/auth.service.spec.ts
+  ● Test suite failed to run
+
+    TypeError: Cannot read properties of undefined (reading 'ServerEvent')
+
+    [0m [90m 10 |[39m [36mimport[39m bizSdk [36mfrom[39m [32m'facebook-nodejs-business-sdk'[39m[33m;[39m
+     [90m 11 |[39m
+    [31m[1m>[22m[39m[90m 12 |[39m [36mconst[39m [33mServerEvent[39m [33m=[39m bizSdk[33m.[39m[33mServerEvent[39m[33m;[39m
+     [90m    |[39m                            [31m[1m^[22m[39m
+     [90m 13 |[39m [36mconst[39m [33mEventRequest[39m [33m=[39m bizSdk[33m.[39m[33mEventRequest[39m[33m;[39m
+     [90m 14 |[39m [36mconst[39m [33mUserData[39m [33m=[39m bizSdk[33m.[39m[33mUserData[39m[33m;[39m
+     [90m 15 |[39m [36mconst[39m [33mCustomData[39m [33m=[39m bizSdk[33m.[39m[33mCustomData[39m[33m;[39m[0m
+
+      at Object.ServerEvent (modules/tracking/meta-conversions.service.ts:12:28)
+      at Object.require (modules/tracking/server-tracking.service.ts:7:1)
+      at Object.require (modules/auth/auth.service.ts:9:1)
+      at Object.<anonymous> (modules/auth/auth.service.spec.ts:2:1)
+
+
+Test Suites: 4 failed, 33 passed, 37 total
+Tests:       16 failed, 696 passed, 712 total
+Snapshots:   0 total
+Time:        21.478 s
+Ran all test suites.
+npm error Lifecycle script `test:cov` failed with error:
+npm error code 1
+npm error path C:\Users\kogun\Downloads\CitadelBuy-Commerce\citadelbuy\backend
+npm error workspace citadelbuy-backend@0.1.0
+npm error location C:\Users\kogun\Downloads\CitadelBuy-Commerce\citadelbuy\backend
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c cross-env NODE_OPTIONS="--localstorage-file=./test-storage.db" jest --coverage --runInBand
