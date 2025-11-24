@@ -1,0 +1,189 @@
+# Default values for citadelbuy
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  environment: production
+  domain: citadelbuy.com
+  storageClass: citadelbuy-storage
+
+replicaCount:
+  backend: 3
+  frontend: 3
+
+image:
+  registry: docker.io
+  repository: citadelplatforms/citadelbuy-ecommerce
+  pullPolicy: Always
+  backend:
+    tag: "backend-stable"
+  frontend:
+    tag: "frontend-stable"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 2000
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  type: ClusterIP
+  backend:
+    port: 4000
+  frontend:
+    port: 3000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+  hosts:
+    - host: citadelbuy.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: frontend
+    - host: www.citadelbuy.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: frontend
+    - host: api.citadelbuy.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: backend
+  tls:
+    - secretName: citadelbuy-tls
+      hosts:
+        - citadelbuy.com
+        - www.citadelbuy.com
+        - api.citadelbuy.com
+
+resources:
+  backend:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+  frontend:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - citadelbuy
+          topologyKey: kubernetes.io/hostname
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  auth:
+    username: citadelbuy
+    password: changeme
+    database: citadelbuy_prod
+  primary:
+    persistence:
+      enabled: true
+      size: 50Gi
+      storageClass: citadelbuy-storage
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+
+# Redis configuration
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: changeme
+  master:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: citadelbuy-storage
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+# Application configuration
+config:
+  nodeEnv: production
+  logLevel: info
+  jwtExpiresIn: 7d
+  frontendUrl: https://citadelbuy.com
+  backendUrl: https://api.citadelbuy.com
+
+# Persistent storage
+persistence:
+  enabled: true
+  uploads:
+    size: 100Gi
+    storageClass: citadelbuy-storage
+    accessMode: ReadWriteMany
+
+# Monitoring
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+
+# Backup
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  retention: 30

@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: citadelbuy
+  labels:
+    name: citadelbuy
+    app: citadelbuy
+    environment: production
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: citadelbuy-staging
+  labels:
+    name: citadelbuy-staging
+    app: citadelbuy
+    environment: staging
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: citadelbuy-dev
+  labels:
+    name: citadelbuy-dev
+    app: citadelbuy
+    environment: development

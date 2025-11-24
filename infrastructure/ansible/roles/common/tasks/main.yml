@@ -1,0 +1,11 @@
+---
+# Common role - Base setup for all servers
+
+- name: Install Docker
+  include_tasks: docker.yml
+
+- name: Configure system security
+  include_tasks: security.yml
+
+- name: Setup monitoring agent
+  include_tasks: monitoring.yml
