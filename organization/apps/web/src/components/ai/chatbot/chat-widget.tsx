@@ -168,9 +168,8 @@ export function ChatWidget() {
 
     setIsListening(true);
 
-    const SpeechRecognition =
-      (window as Window & { SpeechRecognition?: typeof window.SpeechRecognition; webkitSpeechRecognition?: typeof window.SpeechRecognition }).SpeechRecognition ||
-      (window as Window & { webkitSpeechRecognition?: typeof window.SpeechRecognition }).webkitSpeechRecognition;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       setIsListening(false);
@@ -181,7 +180,8 @@ export function ChatWidget() {
     recognition.lang = 'en-US';
     recognition.interimResults = false;
 
-    recognition.onresult = (event) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       setInputValue(transcript);
       setIsListening(false);

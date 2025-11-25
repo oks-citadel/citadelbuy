@@ -146,18 +146,23 @@ export default function CheckoutPage() {
     const runFraudCheck = async () => {
       if (paymentMethod.cardNumber && paymentMethod.cardNumber.length >= 16) {
         try {
+          const addressForFraud = {
+            city: shippingAddress.city,
+            country: shippingAddress.country,
+            postalCode: shippingAddress.zipCode,
+          };
           const result = await fraudDetectionService.analyzeTransaction({
+            orderId: '', // Will be assigned on order creation
             amount: calculateTotal(),
-            currency: 'USD',
             paymentMethod: 'card',
             userId: user?.id || '',
-            shippingAddress,
-            billingAddress: shippingAddress,
+            shippingAddress: addressForFraud,
+            billingAddress: addressForFraud,
           });
           setFraudCheckResult({
             riskScore: result.riskScore,
-            riskLevel: result.riskLevel,
-            recommendation: result.recommendation,
+            riskLevel: result.decision === 'DECLINE' ? 'high' : result.decision === 'REVIEW' ? 'medium' : 'low',
+            recommendation: result.recommendations[0] || 'Transaction looks safe.',
           });
         } catch (error) {
           console.error('Fraud check failed:', error);

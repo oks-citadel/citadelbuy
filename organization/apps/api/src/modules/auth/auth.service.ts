@@ -125,15 +125,10 @@ export class AuthService {
       },
     });
 
-    // Create reset URL
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
-    const resetUrl = `${frontendUrl}/auth/reset-password?token=${token}`;
-
     // Send email
     await this.emailService.sendPasswordResetEmail(user.email, {
-      customerName: user.name,
+      name: user.name,
       resetToken: token,
-      resetUrl,
     });
 
     return { message: 'If the email exists, a password reset link has been sent' };

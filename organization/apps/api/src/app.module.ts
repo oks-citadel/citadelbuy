@@ -43,6 +43,7 @@ import { AnalyticsAdvancedModule } from './modules/analytics-advanced/analytics-
 import { MobileModule } from './modules/mobile/mobile.module';
 import { SeoModule } from './modules/seo/seo.module';
 import { PlatformModule } from './modules/platform/platform.module';
+import { CheckoutModule } from './modules/checkout/checkout.module';
 
 @Module({
   imports: [
@@ -96,6 +97,7 @@ import { PlatformModule } from './modules/platform/platform.module';
     MobileModule,
     SeoModule,
     PlatformModule,
+    CheckoutModule,
   ],
   controllers: [AppController],
   providers: [AppService],

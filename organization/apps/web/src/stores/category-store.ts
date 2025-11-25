@@ -1,0 +1,234 @@
+import { create } from 'zustand';
+import { categoriesApi } from '@/lib/api-client';
+
+// Types
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  parentId?: string;
+  level: number;
+  sortOrder: number;
+  iconUrl?: string;
+  bannerImageUrl?: string;
+  thumbnailUrl?: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'DRAFT' | 'ARCHIVED';
+  isFeatured: boolean;
+  metaTitle?: string;
+  metaDescription?: string;
+  productCount: number;
+  viewCount: number;
+  children?: Category[];
+  parent?: Category;
+}
+
+export interface CategoryBreadcrumb {
+  id: string;
+  name: string;
+  slug: string;
+  level: number;
+}
+
+export interface CategoryFilter {
+  id: string;
+  name: string;
+  type: 'SELECT' | 'MULTI_SELECT' | 'RANGE' | 'BOOLEAN' | 'TEXT';
+  options?: string[];
+  min?: number;
+  max?: number;
+}
+
+interface CategoryState {
+  // Data
+  categories: Category[];
+  categoryTree: Category[];
+  featuredCategories: Category[];
+  trendingCategories: Category[];
+  currentCategory: Category | null;
+  breadcrumbs: CategoryBreadcrumb[];
+  filters: CategoryFilter[];
+  searchResults: Category[];
+
+  // UI State
+  isLoading: boolean;
+  isLoadingTree: boolean;
+  isMegaMenuOpen: boolean;
+  activeMegaMenuCategory: string | null;
+  error: string | null;
+
+  // Actions
+  fetchCategories: (params?: any) => Promise<void>;
+  fetchCategoryTree: (maxDepth?: number) => Promise<void>;
+  fetchFeaturedCategories: (limit?: number) => Promise<void>;
+  fetchTrendingCategories: (period?: 'day' | 'week' | 'month', limit?: number) => Promise<void>;
+  fetchCategory: (idOrSlug: string, bySlug?: boolean) => Promise<void>;
+  fetchCategoryProducts: (id: string, params?: any) => Promise<any>;
+  fetchCategoryFilters: (id: string) => Promise<void>;
+  searchCategories: (query: string) => Promise<void>;
+  trackCategoryView: (id: string) => Promise<void>;
+  setMegaMenuOpen: (open: boolean) => void;
+  setActiveMegaMenuCategory: (categoryId: string | null) => void;
+  clearCurrentCategory: () => void;
+  clearError: () => void;
+}
+
+export const useCategoryStore = create<CategoryState>((set, get) => ({
+  // Initial State
+  categories: [],
+  categoryTree: [],
+  featuredCategories: [],
+  trendingCategories: [],
+  currentCategory: null,
+  breadcrumbs: [],
+  filters: [],
+  searchResults: [],
+  isLoading: false,
+  isLoadingTree: false,
+  isMegaMenuOpen: false,
+  activeMegaMenuCategory: null,
+  error: null,
+
+  // Actions
+  fetchCategories: async (params) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await categoriesApi.getAll(params);
+      set({ categories: response.categories, isLoading: false });
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  fetchCategoryTree: async (maxDepth = 3) => {
+    set({ isLoadingTree: true, error: null });
+    try {
+      const tree = await categoriesApi.getTree({ maxDepth, includeProducts: true });
+      set({ categoryTree: tree, isLoadingTree: false });
+    } catch (error: any) {
+      set({ error: error.message, isLoadingTree: false });
+    }
+  },
+
+  fetchFeaturedCategories: async (limit = 10) => {
+    set({ isLoading: true, error: null });
+    try {
+      const featured = await categoriesApi.getFeatured(limit);
+      set({ featuredCategories: featured, isLoading: false });
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  fetchTrendingCategories: async (period = 'week', limit = 10) => {
+    set({ isLoading: true, error: null });
+    try {
+      const trending = await categoriesApi.getTrending({ period, limit });
+      set({ trendingCategories: trending, isLoading: false });
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  fetchCategory: async (idOrSlug, bySlug = false) => {
+    set({ isLoading: true, error: null });
+    try {
+      const category = bySlug
+        ? await categoriesApi.getBySlug(idOrSlug, {
+            includeBreadcrumb: true,
+            includeChildren: true,
+          })
+        : await categoriesApi.getById(idOrSlug, {
+            includeBreadcrumb: true,
+            includeChildren: true,
+            includeSiblings: true,
+            includeFilters: true,
+          });
+
+      set({
+        currentCategory: category,
+        breadcrumbs: category.breadcrumb || [],
+        isLoading: false,
+      });
+
+      // Track view
+      get().trackCategoryView(category.id);
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  fetchCategoryProducts: async (id, params) => {
+    try {
+      const response = await categoriesApi.getProducts(id, params);
+      return response;
+    } catch (error: any) {
+      set({ error: error.message });
+      throw error;
+    }
+  },
+
+  fetchCategoryFilters: async (id) => {
+    try {
+      const filters = await categoriesApi.getFilters(id);
+      set({ filters });
+    } catch (error: any) {
+      set({ error: error.message });
+    }
+  },
+
+  searchCategories: async (query) => {
+    if (!query.trim()) {
+      set({ searchResults: [] });
+      return;
+    }
+
+    try {
+      const results = await categoriesApi.search(query, { fuzzy: true, limit: 10 });
+      set({ searchResults: results });
+    } catch (error: any) {
+      set({ error: error.message });
+    }
+  },
+
+  trackCategoryView: async (id) => {
+    try {
+      await categoriesApi.trackView(id);
+    } catch {
+      // Silently fail for analytics
+    }
+  },
+
+  setMegaMenuOpen: (open) => {
+    set({ isMegaMenuOpen: open });
+    if (!open) {
+      set({ activeMegaMenuCategory: null });
+    }
+  },
+
+  setActiveMegaMenuCategory: (categoryId) => {
+    set({ activeMegaMenuCategory: categoryId });
+  },
+
+  clearCurrentCategory: () => {
+    set({
+      currentCategory: null,
+      breadcrumbs: [],
+      filters: [],
+    });
+  },
+
+  clearError: () => {
+    set({ error: null });
+  },
+}));
+
+// Selectors
+export const selectCategoryTree = (state: CategoryState) => state.categoryTree;
+export const selectFeaturedCategories = (state: CategoryState) => state.featuredCategories;
+export const selectTrendingCategories = (state: CategoryState) => state.trendingCategories;
+export const selectCurrentCategory = (state: CategoryState) => state.currentCategory;
+export const selectBreadcrumbs = (state: CategoryState) => state.breadcrumbs;
+export const selectCategoryFilters = (state: CategoryState) => state.filters;
+export const selectIsMegaMenuOpen = (state: CategoryState) => state.isMegaMenuOpen;
+export const selectActiveMegaMenuCategory = (state: CategoryState) => state.activeMegaMenuCategory;

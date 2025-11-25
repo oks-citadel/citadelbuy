@@ -13,17 +13,22 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SubscriptionsService } from './subscriptions.service';
+import { SubscriptionTierService } from './services/subscription-tier.service';
 import { CreateSubscriptionPlanDto } from './dto/create-subscription-plan.dto';
 import { UpdateSubscriptionPlanDto } from './dto/update-subscription-plan.dto';
 import { SubscribeDto } from './dto/subscribe.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { AuthRequest } from '../../common/types/auth-request.types';
+import { VENDOR_SUBSCRIPTION_TIERS, FeatureKey } from './constants';
 
 @ApiTags('subscriptions')
 @Controller('subscriptions')
 export class SubscriptionsController {
-  constructor(private readonly subscriptionsService: SubscriptionsService) {}
+  constructor(
+    private readonly subscriptionsService: SubscriptionsService,
+    private readonly subscriptionTierService: SubscriptionTierService,
+  ) {}
 
   // ============================================
   // SUBSCRIPTION PLANS (Admin & Public)
@@ -157,13 +162,14 @@ export class SubscriptionsController {
   @ApiOperation({ summary: 'Check if user can perform action' })
   @ApiResponse({ status: 200, description: 'Permission checked successfully' })
   async canPerformAction(@Request() req: AuthRequest, @Param('action') action: string) {
-    if (action !== 'createProduct' && action !== 'createAd') {
-      throw new BadRequestException('Invalid action');
+    const validActions = ['createProduct', 'createFeaturedListing', 'createOrder'];
+    if (!validActions.includes(action)) {
+      throw new BadRequestException('Invalid action. Valid actions: ' + validActions.join(', '));
     }
 
     const can = await this.subscriptionsService.canPerformAction(
       req.user.id,
-      action as 'createProduct' | 'createAd'
+      action as 'createProduct' | 'createFeaturedListing' | 'createOrder'
     );
 
     return { can };
@@ -180,6 +186,149 @@ export class SubscriptionsController {
   @ApiResponse({ status: 200, description: 'Invoices retrieved successfully' })
   getInvoices(@Request() req: AuthRequest, @Query('subscriptionId') subscriptionId?: string) {
     return this.subscriptionsService.getInvoices(req.user.id, subscriptionId);
+  }
+
+  // ============================================
+  // VENDOR TIERS (New endpoints)
+  // ============================================
+
+  @Get('vendor-tiers')
+  @ApiOperation({ summary: 'Get all vendor subscription tiers (Public)' })
+  @ApiResponse({ status: 200, description: 'Vendor tiers retrieved successfully' })
+  getVendorTiers() {
+    return VENDOR_SUBSCRIPTION_TIERS.map((tier) => ({
+      type: tier.type,
+      slug: tier.slug,
+      name: tier.name,
+      description: tier.description,
+      monthlyPrice: tier.monthlyPrice,
+      yearlyPrice: tier.yearlyPrice,
+      transactionFee: tier.transactionFee,
+      isPopular: tier.isPopular,
+      displayOrder: tier.displayOrder,
+      trialDays: tier.trialDays,
+      features: tier.features,
+    }));
+  }
+
+  @Get('vendor-tiers/:slug')
+  @ApiOperation({ summary: 'Get vendor tier by slug (Public)' })
+  @ApiResponse({ status: 200, description: 'Vendor tier retrieved successfully' })
+  getVendorTierBySlug(@Param('slug') slug: string) {
+    const tier = VENDOR_SUBSCRIPTION_TIERS.find((t) => t.slug === slug);
+
+    if (!tier) {
+      throw new BadRequestException(`Tier '${slug}' not found`);
+    }
+
+    return {
+      type: tier.type,
+      slug: tier.slug,
+      name: tier.name,
+      description: tier.description,
+      monthlyPrice: tier.monthlyPrice,
+      yearlyPrice: tier.yearlyPrice,
+      transactionFee: tier.transactionFee,
+      isPopular: tier.isPopular,
+      displayOrder: tier.displayOrder,
+      trialDays: tier.trialDays,
+      features: tier.features,
+    };
+  }
+
+  @Get('my-tier')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current vendor tier and subscription summary' })
+  @ApiResponse({ status: 200, description: 'Tier summary retrieved successfully' })
+  async getMyTier(@Request() req: AuthRequest) {
+    return this.subscriptionTierService.getVendorSubscriptionSummary(req.user.id);
+  }
+
+  @Get('my-tier/usage')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current vendor usage metrics' })
+  @ApiResponse({ status: 200, description: 'Usage metrics retrieved successfully' })
+  async getMyUsage(@Request() req: AuthRequest) {
+    const usage = await this.subscriptionTierService.getVendorUsage(req.user.id);
+    const [productLimit, orderLimit, discountLimit] = await Promise.all([
+      this.subscriptionTierService.checkProductLimit(req.user.id),
+      this.subscriptionTierService.checkOrderLimit(req.user.id),
+      this.subscriptionTierService.checkDiscountCodeLimit(req.user.id),
+    ]);
+
+    return {
+      usage,
+      limits: {
+        products: productLimit,
+        orders: orderLimit,
+        discountCodes: discountLimit,
+      },
+    };
+  }
+
+  @Get('my-tier/feature/:feature')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Check if vendor has access to a specific feature' })
+  @ApiResponse({ status: 200, description: 'Feature access checked successfully' })
+  async checkFeatureAccess(
+    @Request() req: AuthRequest,
+    @Param('feature') feature: string,
+  ) {
+    const hasAccess = await this.subscriptionTierService.hasFeatureAccess(
+      req.user.id,
+      feature as FeatureKey,
+    );
+
+    return { feature, hasAccess };
+  }
+
+  @Get('my-tier/upgrade-options')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get available upgrade options for vendor' })
+  @ApiResponse({ status: 200, description: 'Upgrade options retrieved successfully' })
+  async getUpgradeOptions(@Request() req: AuthRequest) {
+    return this.subscriptionTierService.getUpgradeOptions(req.user.id);
+  }
+
+  @Get('my-tier/transaction-fee')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get vendor transaction fee rate' })
+  @ApiResponse({ status: 200, description: 'Transaction fee retrieved successfully' })
+  async getTransactionFee(@Request() req: AuthRequest) {
+    const rate = await this.subscriptionTierService.getTransactionFeeRate(req.user.id);
+    return { transactionFeeRate: rate };
+  }
+
+  @Post('my-tier/calculate-fee')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Calculate transaction fee for an amount' })
+  @ApiResponse({ status: 200, description: 'Transaction fee calculated successfully' })
+  async calculateTransactionFee(
+    @Request() req: AuthRequest,
+    @Body() body: { amount: number },
+  ) {
+    if (!body.amount || body.amount <= 0) {
+      throw new BadRequestException('Amount must be a positive number');
+    }
+
+    const rate = await this.subscriptionTierService.getTransactionFeeRate(req.user.id);
+    const fee = await this.subscriptionTierService.calculateTransactionFee(
+      req.user.id,
+      body.amount,
+    );
+
+    return {
+      amount: body.amount,
+      transactionFeeRate: rate,
+      transactionFee: fee,
+      netAmount: Number((body.amount - fee).toFixed(2)),
+    };
   }
 
   // ============================================

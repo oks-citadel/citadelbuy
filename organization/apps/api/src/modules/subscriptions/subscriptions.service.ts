@@ -26,16 +26,20 @@ export class SubscriptionsService {
     return this.prisma.subscriptionPlan.create({
       data: {
         name: dto.name,
+        slug: dto.name.toLowerCase().replace(/\s+/g, '-'),
         description: dto.description,
         type: dto.type,
         price: dto.price,
         billingInterval: dto.billingInterval,
         trialDays: dto.trialDays || 0,
         benefits: dto.benefits,
+        features: dto.benefits, // Use benefits as features for compatibility
         maxProducts: dto.maxProducts,
-        maxAds: dto.maxAds,
+        maxOrders: dto.maxOrders,
+        maxAdminUsers: dto.maxAdminUsers || 1,
+        maxFeaturedListings: dto.maxFeaturedListings || 0,
         commissionRate: dto.commissionRate,
-        prioritySupport: dto.prioritySupport || false,
+        transactionFee: dto.transactionFee || 0,
       },
     });
   }
@@ -70,9 +74,15 @@ export class SubscriptionsService {
         : {
             type: {
               in: [
+                SubscriptionPlanType.VENDOR_FREE,
+                SubscriptionPlanType.VENDOR_SILVER,
+                SubscriptionPlanType.VENDOR_GOLD,
+                SubscriptionPlanType.VENDOR_PLATINUM,
+                SubscriptionPlanType.VENDOR_DIAMOND,
+                SubscriptionPlanType.VENDOR_ENTERPRISE,
+                // Legacy types for backwards compatibility
                 SubscriptionPlanType.VENDOR_STARTER,
                 SubscriptionPlanType.VENDOR_PROFESSIONAL,
-                SubscriptionPlanType.VENDOR_ENTERPRISE,
               ],
             },
           };
@@ -115,11 +125,13 @@ export class SubscriptionsService {
         ...(dto.price !== undefined && { price: dto.price }),
         ...(dto.billingInterval && { billingInterval: dto.billingInterval }),
         ...(dto.trialDays !== undefined && { trialDays: dto.trialDays }),
-        ...(dto.benefits && { benefits: dto.benefits }),
+        ...(dto.benefits && { benefits: dto.benefits, features: dto.benefits }),
         ...(dto.maxProducts !== undefined && { maxProducts: dto.maxProducts }),
-        ...(dto.maxAds !== undefined && { maxAds: dto.maxAds }),
+        ...(dto.maxOrders !== undefined && { maxOrders: dto.maxOrders }),
+        ...(dto.maxAdminUsers !== undefined && { maxAdminUsers: dto.maxAdminUsers }),
+        ...(dto.maxFeaturedListings !== undefined && { maxFeaturedListings: dto.maxFeaturedListings }),
         ...(dto.commissionRate !== undefined && { commissionRate: dto.commissionRate }),
-        ...(dto.prioritySupport !== undefined && { prioritySupport: dto.prioritySupport }),
+        ...(dto.transactionFee !== undefined && { transactionFee: dto.transactionFee }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
       },
     });
@@ -397,10 +409,13 @@ export class SubscriptionsService {
       planType: subscription.plan.type,
       status: subscription.status,
       benefits: subscription.plan.benefits,
+      features: subscription.plan.features,
       maxProducts: subscription.plan.maxProducts,
-      maxAds: subscription.plan.maxAds,
+      maxOrders: subscription.plan.maxOrders,
+      maxAdminUsers: subscription.plan.maxAdminUsers,
+      maxFeaturedListings: subscription.plan.maxFeaturedListings,
       commissionRate: subscription.plan.commissionRate,
-      prioritySupport: subscription.plan.prioritySupport,
+      transactionFee: subscription.plan.transactionFee,
       currentPeriodEnd: subscription.currentPeriodEnd,
       cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
     };
@@ -409,12 +424,15 @@ export class SubscriptionsService {
   /**
    * Check if user can perform action based on subscription limits
    */
-  async canPerformAction(userId: string, action: 'createProduct' | 'createAd'): Promise<boolean> {
+  async canPerformAction(
+    userId: string,
+    action: 'createProduct' | 'createFeaturedListing' | 'createOrder',
+  ): Promise<boolean> {
     const subscription = await this.getUserSubscription(userId);
 
     if (!subscription) {
       // Free tier limitations
-      return action === 'createProduct'; // Allow products, no ads
+      return action === 'createProduct'; // Allow products, no featured listings
     }
 
     if (action === 'createProduct') {
@@ -427,17 +445,48 @@ export class SubscriptionsService {
       return productCount < subscription.plan.maxProducts;
     }
 
-    if (action === 'createAd') {
-      if (subscription.plan.maxAds === null) return true; // Unlimited
+    if (action === 'createFeaturedListing') {
+      if (subscription.plan.maxFeaturedListings === null) return true; // Unlimited
+
+      // Count featured listings for this month
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
 
       const adCount = await this.prisma.advertisement.count({
         where: {
           vendorId: userId,
           status: 'ACTIVE',
+          createdAt: { gte: startOfMonth },
         },
       });
 
-      return adCount < subscription.plan.maxAds;
+      return adCount < subscription.plan.maxFeaturedListings;
+    }
+
+    if (action === 'createOrder') {
+      if (subscription.plan.maxOrders === null) return true; // Unlimited
+
+      // Count orders for this month
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      // Get vendor's products to find their orders
+      const vendorProducts = await this.prisma.product.findMany({
+        where: { vendorId: userId },
+        select: { id: true },
+      });
+      const productIds = vendorProducts.map((p) => p.id);
+
+      const orderCount = await this.prisma.order.count({
+        where: {
+          items: { some: { productId: { in: productIds } } },
+          createdAt: { gte: startOfMonth },
+        },
+      });
+
+      return orderCount < subscription.plan.maxOrders;
     }
 
     return false;

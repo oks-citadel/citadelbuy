@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -14,6 +15,7 @@ import {
   Home,
   ShoppingBag,
   Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,7 +24,7 @@ import { recommendationService } from '@/services/ai';
 import { Product } from '@/types';
 import confetti from 'canvas-confetti';
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId') || 'ORD-' + Date.now();
   const [recommendations, setRecommendations] = React.useState<Product[]>([]);
@@ -64,7 +66,7 @@ export default function CheckoutSuccessPage() {
     const loadRecommendations = async () => {
       try {
         const recs = await recommendationService.getPersonalized('user', 4);
-        setRecommendations(recs);
+        setRecommendations(recs.products);
       } catch (error) {
         console.error('Failed to load recommendations:', error);
       }
@@ -270,5 +272,13 @@ export default function CheckoutSuccessPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+      <CheckoutSuccessContent />
+    </Suspense>
   );
 }

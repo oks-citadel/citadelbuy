@@ -295,11 +295,13 @@ export class AnalyticsService {
 
     // Calculate customer lifetime value
     const customerSpending = customerOrders.reduce((acc, order) => {
-      if (!acc[order.userId]) {
-        acc[order.userId] = { totalSpent: 0, orderCount: 0 };
+      const userId = order.userId;
+      if (!userId) return acc;
+      if (!acc[userId]) {
+        acc[userId] = { totalSpent: 0, orderCount: 0 };
       }
-      acc[order.userId].totalSpent += order.total;
-      acc[order.userId].orderCount += 1;
+      acc[userId].totalSpent += order.total;
+      acc[userId].orderCount += 1;
       return acc;
     }, {} as Record<string, { totalSpent: number; orderCount: number }>);
 

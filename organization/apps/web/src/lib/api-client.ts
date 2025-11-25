@@ -244,19 +244,107 @@ export const productsApi = {
 
 // Categories API
 export const categoriesApi = {
-  getAll: async () => {
-    const response = await apiClient.get<any[]>('/categories');
+  getAll: async (params?: {
+    level?: number;
+    parentId?: string;
+    includeChildren?: boolean;
+    includeProducts?: boolean;
+    status?: string;
+    featured?: boolean;
+    sort?: string;
+    order?: 'asc' | 'desc';
+    limit?: number;
+    offset?: number;
+    search?: string;
+  }) => {
+    const response = await apiClient.get<{
+      categories: any[];
+      total: number;
+      page: number;
+      limit: number;
+    }>('/categories', { params });
     return response.data;
   },
 
-  getById: async (id: string) => {
-    const response = await apiClient.get<any>(`/categories/${id}`);
+  getTree: async (params?: {
+    maxDepth?: number;
+    includeProducts?: boolean;
+    status?: string;
+  }) => {
+    const response = await apiClient.get<any[]>('/categories/tree', { params });
     return response.data;
   },
 
-  getBySlug: async (slug: string) => {
-    const response = await apiClient.get<any>(`/categories/slug/${slug}`);
+  getFeatured: async (limit?: number) => {
+    const response = await apiClient.get<any[]>('/categories/featured', {
+      params: { limit },
+    });
     return response.data;
+  },
+
+  getTrending: async (params?: { period?: 'day' | 'week' | 'month'; limit?: number }) => {
+    const response = await apiClient.get<any[]>('/categories/trending', { params });
+    return response.data;
+  },
+
+  search: async (query: string, params?: { fuzzy?: boolean; limit?: number }) => {
+    const response = await apiClient.get<any[]>('/categories/search', {
+      params: { query, ...params },
+    });
+    return response.data;
+  },
+
+  getTopLevel: async () => {
+    const response = await apiClient.get<any[]>('/categories/top-level');
+    return response.data;
+  },
+
+  getById: async (id: string, options?: {
+    includeBreadcrumb?: boolean;
+    includeChildren?: boolean;
+    includeSiblings?: boolean;
+    includeFilters?: boolean;
+  }) => {
+    const response = await apiClient.get<any>(`/categories/${id}`, { params: options });
+    return response.data;
+  },
+
+  getBySlug: async (slug: string, options?: {
+    includeBreadcrumb?: boolean;
+    includeChildren?: boolean;
+  }) => {
+    const response = await apiClient.get<any>(`/categories/slug/${slug}`, { params: options });
+    return response.data;
+  },
+
+  getProducts: async (id: string, params?: {
+    page?: number;
+    limit?: number;
+    sort?: string;
+    priceMin?: number;
+    priceMax?: number;
+    inStock?: boolean;
+  }) => {
+    const response = await apiClient.get<{
+      products: any[];
+      total: number;
+      filters: any;
+    }>(`/categories/${id}/products`, { params });
+    return response.data;
+  },
+
+  getFilters: async (id: string) => {
+    const response = await apiClient.get<any[]>(`/categories/${id}/filters`);
+    return response.data;
+  },
+
+  getBreadcrumb: async (id: string) => {
+    const response = await apiClient.get<any[]>(`/categories/${id}/breadcrumb`);
+    return response.data;
+  },
+
+  trackView: async (id: string, data?: { sessionId?: string }) => {
+    await apiClient.post(`/categories/${id}/view`, data);
   },
 };
 

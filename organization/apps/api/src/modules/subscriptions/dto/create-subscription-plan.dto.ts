@@ -58,17 +58,35 @@ export class CreateSubscriptionPlanDto {
   @IsOptional()
   maxProducts?: number;
 
-  @ApiPropertyOptional({ description: 'Max active ads for vendors' })
+  @ApiPropertyOptional({ description: 'Max orders per month' })
   @IsInt()
   @Min(0)
   @IsOptional()
-  maxAds?: number;
+  maxOrders?: number;
+
+  @ApiPropertyOptional({ description: 'Max admin users' })
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  maxAdminUsers?: number;
+
+  @ApiPropertyOptional({ description: 'Max featured listings per month' })
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  maxFeaturedListings?: number;
 
   @ApiPropertyOptional({ description: 'Commission rate for vendors', minimum: 0, maximum: 100 })
   @IsNumber()
   @Min(0)
   @IsOptional()
   commissionRate?: number;
+
+  @ApiPropertyOptional({ description: 'Transaction fee percentage' })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  transactionFee?: number;
 
   @ApiPropertyOptional({ description: 'Priority support' })
   @IsBoolean()

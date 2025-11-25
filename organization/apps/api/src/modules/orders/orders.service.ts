@@ -161,22 +161,49 @@ export class OrdersService {
     }
 
     // Send order confirmation email (async, don't block order creation)
-    this.emailService
-      .sendOrderConfirmation(order.user.email, {
-        customerName: order.user.name,
-        orderId: order.id,
-        orderTotal: order.total,
-        orderItems: order.items.map((item) => ({
-          name: item.product.name,
-          quantity: item.quantity,
-          price: item.price,
-        })),
-        shippingAddress: JSON.parse(order.shippingAddress),
-        orderDate: order.createdAt.toLocaleString(),
-      })
-      .catch((error) => {
-        this.logger.error('Failed to send order confirmation email:', error);
-      });
+    // For guest orders, use guestEmail instead of user.email
+    const customerEmail = order.user?.email || (order as any).guestEmail;
+    const customerName = order.user?.name || 'Customer';
+
+    if (customerEmail) {
+      const shippingAddr = JSON.parse(order.shippingAddress);
+      this.emailService
+        .sendOrderConfirmation(customerEmail, {
+          customerName,
+          orderNumber: order.id.slice(-8).toUpperCase(), // Use last 8 chars of ID as order number
+          orderDate: order.createdAt.toLocaleDateString(),
+          items: order.items.map((item) => ({
+            name: item.product.name,
+            image: item.product.images?.[0] || '',
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          subtotal: order.subtotal,
+          shipping: order.shipping || 0,
+          shippingFree: !order.shipping || order.shipping === 0,
+          tax: order.tax || 0,
+          total: order.total,
+          currency: '$',
+          shippingAddress: {
+            name: shippingAddr.name || customerName,
+            line1: shippingAddr.line1 || shippingAddr.address || '',
+            line2: shippingAddr.line2,
+            city: shippingAddr.city || '',
+            state: shippingAddr.state || '',
+            postalCode: shippingAddr.postalCode || shippingAddr.zip || '',
+            country: shippingAddr.country || 'US',
+          },
+          paymentMethod: {
+            brand: order.paymentMethod || 'Card',
+            last4: '****',
+            email: customerEmail,
+          },
+          estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+        })
+        .catch((error) => {
+          this.logger.error('Failed to send order confirmation email:', error);
+        });
+    }
 
     return order;
   }
@@ -245,16 +272,39 @@ export class OrdersService {
 
       // Send status update email (only if status actually changed)
       if (existingOrder.status !== status) {
-        this.emailService
-          .sendOrderStatusUpdate(updatedOrder.user.email, {
-            customerName: updatedOrder.user.name,
-            orderId: updatedOrder.id,
-            newStatus: status,
-            trackingNumber: updateData.trackingNumber,
-          })
-          .catch((error) => {
-            this.logger.error('Failed to send order status update email:', error);
-          });
+        const email = updatedOrder.user?.email || (updatedOrder as any).guestEmail;
+        const name = updatedOrder.user?.name || 'Customer';
+
+        if (email) {
+          // Map order status to email status
+          const statusMap: Record<string, 'processing' | 'shipped' | 'delivered' | 'cancelled'> = {
+            PENDING: 'processing',
+            PROCESSING: 'processing',
+            SHIPPED: 'shipped',
+            DELIVERED: 'delivered',
+            CANCELLED: 'cancelled',
+            REFUNDED: 'cancelled',
+          };
+
+          this.emailService
+            .sendOrderStatusUpdate(email, {
+              customerName: name,
+              orderNumber: updatedOrder.id.slice(-8).toUpperCase(),
+              orderDate: updatedOrder.createdAt.toLocaleDateString(),
+              status: statusMap[status] || 'processing',
+              statusMessage: this.getStatusMessage(status),
+              trackingNumber: updateData.trackingNumber,
+              carrier: updateData.carrier,
+              items: updatedOrder.items.map((item) => ({
+                name: item.product.name,
+                image: item.product.images?.[0],
+                quantity: item.quantity,
+              })),
+            })
+            .catch((error) => {
+              this.logger.error('Failed to send order status update email:', error);
+            });
+        }
       }
 
       return updatedOrder;
@@ -452,18 +502,26 @@ export class OrdersService {
     });
 
     // Send tracking email
-    this.emailService
-      .sendOrderStatusUpdate(order.user.email, {
-        customerName: order.user.name,
-        orderId: order.id,
-        newStatus: 'SHIPPED',
-        trackingNumber,
-        carrier: trackingData.carrier,
-        estimatedDelivery: trackingData.estimatedDeliveryDate?.toLocaleDateString(),
-      })
-      .catch((error) => {
-        this.logger.error('Failed to send tracking email:', error);
-      });
+    const trackingEmail = order.user?.email || (order as any).guestEmail;
+    const trackingName = order.user?.name || 'Customer';
+
+    if (trackingEmail) {
+      this.emailService
+        .sendOrderStatusUpdate(trackingEmail, {
+          customerName: trackingName,
+          orderNumber: order.id.slice(-8).toUpperCase(),
+          orderDate: order.createdAt.toLocaleDateString(),
+          status: 'shipped',
+          statusMessage: 'Your order has been shipped and is on its way!',
+          trackingNumber,
+          carrier: trackingData.carrier,
+          estimatedDelivery: trackingData.estimatedDeliveryDate?.toLocaleDateString(),
+          items: [],
+        })
+        .catch((error) => {
+          this.logger.error('Failed to send tracking email:', error);
+        });
+    }
 
     this.logger.log(`Tracking info added to order ${orderId}: ${trackingNumber}`);
     return updatedOrder;
@@ -511,16 +569,25 @@ export class OrdersService {
     });
 
     // Send delivery confirmation email
-    this.emailService
-      .sendOrderStatusUpdate(order.user.email, {
-        customerName: order.user.name,
-        orderId: order.id,
-        newStatus: 'DELIVERED',
-        trackingNumber: order.trackingNumber ?? undefined,
-      })
-      .catch((error) => {
-        this.logger.error('Failed to send delivery confirmation email:', error);
-      });
+    const deliveryEmail = order.user?.email || (order as any).guestEmail;
+    const deliveryName = order.user?.name || 'Customer';
+
+    if (deliveryEmail) {
+      this.emailService
+        .sendOrderStatusUpdate(deliveryEmail, {
+          customerName: deliveryName,
+          orderNumber: order.id.slice(-8).toUpperCase(),
+          orderDate: order.createdAt.toLocaleDateString(),
+          status: 'delivered',
+          statusMessage: 'Your order has been delivered! Thank you for shopping with us.',
+          trackingNumber: order.trackingNumber ?? undefined,
+          carrier: order.carrier ?? undefined,
+          items: [],
+        })
+        .catch((error) => {
+          this.logger.error('Failed to send delivery confirmation email:', error);
+        });
+    }
 
     this.logger.log(`Order ${orderId} marked as delivered`);
     return updatedOrder;
@@ -576,6 +643,21 @@ export class OrdersService {
     }
 
     return order;
+  }
+
+  /**
+   * Get status message for email notifications
+   */
+  private getStatusMessage(status: string): string {
+    const messages: Record<string, string> = {
+      PENDING: 'Your order is being processed.',
+      PROCESSING: 'Your order is being prepared for shipment.',
+      SHIPPED: 'Your order has been shipped and is on its way!',
+      DELIVERED: 'Your order has been delivered. Thank you for shopping with us!',
+      CANCELLED: 'Your order has been cancelled.',
+      REFUNDED: 'Your order has been refunded.',
+    };
+    return messages[status] || 'Your order status has been updated.';
   }
 
   /**

@@ -212,26 +212,198 @@ export class EmailService {
     });
   }
 
-  // ==================== Other Email Methods (Stubs for other modules) ====================
+  // ==================== Core Email Methods ====================
 
+  /**
+   * Send welcome email to new users
+   */
   async sendWelcomeEmail(email: string, name: string): Promise<void> {
-    this.logger.log(`Welcome email would be sent to ${email}`);
-    // TODO: Implement welcome email template
+    await this.sendEmail({
+      to: email,
+      subject: 'Welcome to CitadelBuy - Your Shopping Journey Starts Here!',
+      template: 'welcome',
+      context: {
+        name,
+        shopUrl: `${this.configService.get('FRONTEND_URL')}`,
+        helpUrl: `${this.configService.get('FRONTEND_URL')}/help`,
+        unsubscribeUrl: `${this.configService.get('FRONTEND_URL')}/account/notifications`,
+      },
+    });
   }
 
-  async sendPasswordResetEmail(email: string, data: any): Promise<void> {
-    this.logger.log(`Password reset email would be sent to ${email}`);
-    // TODO: Implement password reset email template
+  /**
+   * Send password reset email
+   */
+  async sendPasswordResetEmail(email: string, data: {
+    name: string;
+    resetToken: string;
+    expiryMinutes?: number;
+    ipAddress?: string;
+  }): Promise<void> {
+    const expiryTime = data.expiryMinutes || 60;
+    const resetUrl = `${this.configService.get('FRONTEND_URL')}/auth/reset-password?token=${data.resetToken}`;
+
+    await this.sendEmail({
+      to: email,
+      subject: 'Reset Your CitadelBuy Password',
+      template: 'password-reset',
+      context: {
+        name: data.name,
+        email,
+        resetUrl,
+        expiryTime,
+        requestDate: new Date().toLocaleString(),
+        ipAddress: data.ipAddress || 'Unknown',
+        supportUrl: `${this.configService.get('FRONTEND_URL')}/support`,
+      },
+    });
   }
 
-  async sendOrderConfirmation(email: string, data: any): Promise<void> {
-    this.logger.log(`Order confirmation email would be sent to ${email}`);
-    // TODO: Implement order confirmation email template
+  /**
+   * Send order confirmation email
+   */
+  async sendOrderConfirmation(email: string, data: {
+    customerName: string;
+    orderNumber: string;
+    orderDate: string;
+    items: Array<{
+      name: string;
+      image?: string;
+      variant?: string;
+      quantity: number;
+      price: number;
+    }>;
+    subtotal: number;
+    discount?: number;
+    discountCode?: string;
+    shipping: number;
+    shippingFree?: boolean;
+    tax: number;
+    total: number;
+    currency?: string;
+    shippingAddress: {
+      name: string;
+      line1: string;
+      line2?: string;
+      city: string;
+      state: string;
+      postalCode: string;
+      country: string;
+    };
+    paymentMethod: {
+      brand: string;
+      last4: string;
+      email?: string;
+    };
+    estimatedDelivery: string;
+  }): Promise<void> {
+    const currency = data.currency || '$';
+
+    await this.sendEmail({
+      to: email,
+      subject: `Order Confirmed - #${data.orderNumber}`,
+      template: 'order-confirmation',
+      context: {
+        ...data,
+        currency,
+        itemCount: data.items.length,
+        trackingUrl: `${this.configService.get('FRONTEND_URL')}/orders/${data.orderNumber}`,
+        helpUrl: `${this.configService.get('FRONTEND_URL')}/help`,
+        supportEmail: this.configService.get('SUPPORT_EMAIL') || 'support@citadelbuy.com',
+        unsubscribeUrl: `${this.configService.get('FRONTEND_URL')}/account/notifications`,
+        privacyUrl: `${this.configService.get('FRONTEND_URL')}/privacy`,
+      },
+    });
   }
 
-  async sendOrderStatusUpdate(email: string, data: any): Promise<void> {
-    this.logger.log(`Order status update email would be sent to ${email}`);
-    // TODO: Implement order status update email template
+  /**
+   * Send order status update email
+   */
+  async sendOrderStatusUpdate(email: string, data: {
+    customerName: string;
+    orderNumber: string;
+    orderDate: string;
+    status: 'processing' | 'shipped' | 'delivered' | 'cancelled';
+    statusMessage: string;
+    trackingNumber?: string;
+    carrier?: string;
+    trackingUrl?: string;
+    estimatedDelivery?: string;
+    items: Array<{
+      name: string;
+      image?: string;
+      quantity: number;
+    }>;
+  }): Promise<void> {
+    const statusConfig = {
+      processing: {
+        statusClass: 'processing',
+        statusIcon: '&#9881;&#65039;',
+        statusTitle: 'Order Being Prepared',
+      },
+      shipped: {
+        statusClass: 'shipped',
+        statusIcon: '&#128230;',
+        statusTitle: 'Your Order Has Shipped!',
+      },
+      delivered: {
+        statusClass: 'delivered',
+        statusIcon: '&#10004;&#65039;',
+        statusTitle: 'Order Delivered!',
+      },
+      cancelled: {
+        statusClass: 'cancelled',
+        statusIcon: '&#10060;',
+        statusTitle: 'Order Cancelled',
+      },
+    };
+
+    const config = statusConfig[data.status];
+
+    // Build progress steps based on status
+    const progressSteps = [
+      {
+        stepNumber: 1,
+        title: 'Order Placed',
+        date: data.orderDate,
+        completed: true,
+      },
+      {
+        stepNumber: 2,
+        title: 'Processing',
+        completed: ['processing', 'shipped', 'delivered'].includes(data.status),
+        current: data.status === 'processing',
+      },
+      {
+        stepNumber: 3,
+        title: 'Shipped',
+        completed: ['shipped', 'delivered'].includes(data.status),
+        current: data.status === 'shipped',
+        description: data.trackingNumber ? `Tracking: ${data.trackingNumber}` : undefined,
+      },
+      {
+        stepNumber: 4,
+        title: 'Delivered',
+        completed: data.status === 'delivered',
+        current: false,
+      },
+    ];
+
+    await this.sendEmail({
+      to: email,
+      subject: `Order Update - #${data.orderNumber} - ${config.statusTitle}`,
+      template: 'order-status-update',
+      context: {
+        ...data,
+        ...config,
+        progressSteps,
+        orderUrl: `${this.configService.get('FRONTEND_URL')}/orders/${data.orderNumber}`,
+        helpUrl: `${this.configService.get('FRONTEND_URL')}/help`,
+        returnUrl: `${this.configService.get('FRONTEND_URL')}/returns`,
+        contactUrl: `${this.configService.get('FRONTEND_URL')}/support`,
+        unsubscribeUrl: `${this.configService.get('FRONTEND_URL')}/account/notifications`,
+      },
+    });
   }
 
   // ==================== Enhanced Email System Methods ====================

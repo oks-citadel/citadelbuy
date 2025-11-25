@@ -89,25 +89,193 @@ model User {
   mobileNotifications MobileNotification[]
   mobileSessions MobileSession[]
   offlineSyncQueue OfflineSyncQueue[]
+  categoryViews  CategoryView[]
+  categoriesCreated Category[] @relation("CategoryCreatedBy")
+  categoriesUpdated Category[] @relation("CategoryUpdatedBy")
 
   @@map("users")
 }
 
 model Category {
-  id          String    @id @default(uuid())
-  name        String    @unique
-  slug        String    @unique
-  description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                String         @id @default(uuid())
+  name              String
+  slug              String         @unique
+  description       String?
+  parentId          String?
+  level             Int            @default(0)
+  sortOrder         Int            @default(0)
+  iconUrl           String?
+  bannerImageUrl    String?
+  thumbnailUrl      String?
+  status            CategoryStatus @default(ACTIVE)
+  isFeatured        Boolean        @default(false)
+  metaTitle         String?
+  metaDescription   String?
+  metaKeywords      String?
+  seoContent        String?
+  productCount      Int            @default(0)
+  viewCount         BigInt         @default(0)
+  createdById       String?
+  updatedById       String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  deletedAt         DateTime?
 
-  // Relations
-  products Product[]
+  // Self-referencing relation for hierarchy
+  parent            Category?      @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children          Category[]     @relation("CategoryHierarchy")
+
+  // Creator/updater relations
+  createdBy         User?          @relation("CategoryCreatedBy", fields: [createdById], references: [id])
+  updatedBy         User?          @relation("CategoryUpdatedBy", fields: [updatedById], references: [id])
+
+  // Existing relations
+  products          Product[]
   categoryAnalytics CategoryAnalytics[]
-  translations CategoryTranslation[]
-  taxExemptions  TaxExemption[]
+  translations      CategoryTranslation[]
+  taxExemptions     TaxExemption[]
+  featuredSlots     FeaturedSlot[]
 
+  // New relations for enhanced category system
+  attributes        CategoryAttribute[]
+  filters           CategoryFilter[]
+  promotions        CategoryPromotion[]
+  closureAncestors  CategoryClosure[]    @relation("ClosureAncestor")
+  closureDescendants CategoryClosure[]   @relation("ClosureDescendant")
+  categoryViews     CategoryView[]
+
+  @@unique([parentId, name])
+  @@index([parentId])
+  @@index([status])
+  @@index([level])
+  @@index([sortOrder])
+  @@index([isFeatured])
+  @@index([deletedAt])
   @@map("categories")
+}
+
+enum CategoryStatus {
+  ACTIVE
+  INACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+// Category Closure table for efficient hierarchy queries
+model CategoryClosure {
+  ancestorId   String
+  descendantId String
+  depth        Int
+
+  ancestor     Category @relation("ClosureAncestor", fields: [ancestorId], references: [id], onDelete: Cascade)
+  descendant   Category @relation("ClosureDescendant", fields: [descendantId], references: [id], onDelete: Cascade)
+
+  @@id([ancestorId, descendantId])
+  @@index([ancestorId])
+  @@index([descendantId])
+  @@index([depth])
+  @@map("category_closure")
+}
+
+// Category attributes for custom fields per category
+model CategoryAttribute {
+  id             String              @id @default(uuid())
+  categoryId     String
+  attributeKey   String
+  attributeValue String?
+  attributeType  CategoryAttributeType @default(STRING)
+  isFilterable   Boolean             @default(false)
+  displayOrder   Int                 @default(0)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  category       Category            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, attributeKey])
+  @@index([categoryId])
+  @@index([isFilterable])
+  @@map("category_attributes")
+}
+
+enum CategoryAttributeType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
+}
+
+// Category filters for product filtering
+model CategoryFilter {
+  id            String           @id @default(uuid())
+  categoryId    String
+  filterName    String
+  filterKey     String
+  filterType    FilterType       @default(CHECKBOX)
+  filterOptions Json?
+  isActive      Boolean          @default(true)
+  displayOrder  Int              @default(0)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  category      Category         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, filterKey])
+  @@index([categoryId])
+  @@index([isActive])
+  @@map("category_filters")
+}
+
+enum FilterType {
+  RANGE
+  CHECKBOX
+  RADIO
+  DROPDOWN
+  COLOR
+  DATE_RANGE
+}
+
+// Category promotions
+model CategoryPromotion {
+  id                 String    @id @default(uuid())
+  categoryId         String
+  title              String
+  description        String?
+  bannerUrl          String?
+  discountPercentage Float?
+  discountAmount     Float?
+  startDate          DateTime
+  endDate            DateTime
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  category           Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([startDate, endDate])
+  @@map("category_promotions")
+}
+
+// Category views for analytics
+model CategoryView {
+  id         String   @id @default(uuid())
+  categoryId String
+  userId     String?
+  sessionId  String
+  ipAddress  String?
+  userAgent  String?
+  referer    String?
+  createdAt  DateTime @default(now())
+
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([categoryId])
+  @@index([userId])
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("category_views")
 }
 
 model Product {
@@ -144,6 +312,7 @@ model Product {
   wishlistItems  WishlistItem[]
   productShares  ProductShare[]
   productPerformance ProductPerformance?
+  featuredListings FeaturedListing[]
 
   trackInventory  Boolean  @default(true)
   allowBackorder  Boolean  @default(false)
@@ -153,6 +322,8 @@ model Product {
   length          Float?
   width           Float?
   height          Float?
+  dimensions      String?  // JSON string for custom dimensions
+  tags            String[] @default([])
 
   @@index([vendorId])
   @@index([categoryId])
@@ -162,7 +333,7 @@ model Product {
 
 model Order {
   id                    String      @id @default(uuid())
-  userId                String
+  userId                String?     // Optional for guest checkout
   total                 Float
   subtotal              Float
   tax                   Float
@@ -171,6 +342,11 @@ model Order {
   shippingAddress       String      // JSON string containing full shipping address
   paymentMethod         String?
   paymentIntentId       String?
+
+  // Guest checkout fields
+  guestEmail            String?
+  guestPhone            String?
+  isGuestOrder          Boolean     @default(false)
 
   // Tracking and Shipping
   trackingNumber        String?
@@ -185,7 +361,7 @@ model Order {
   updatedAt             DateTime    @updatedAt
 
   // Relations
-  user           User             @relation(fields: [userId], references: [id])
+  user           User?            @relation(fields: [userId], references: [id])
   items          OrderItem[]
   bnplPaymentPlan BnplPaymentPlan?
   pointTransactions PointTransaction[]
@@ -585,12 +761,22 @@ model AdClick {
 // ============================================
 
 enum SubscriptionPlanType {
+  // Customer tiers
   CUSTOMER_BASIC      // Free tier for customers
   CUSTOMER_PREMIUM    // Premium customer membership (Prime-style)
   CUSTOMER_PRO        // Pro customer with all benefits
-  VENDOR_STARTER      // Basic vendor subscription
-  VENDOR_PROFESSIONAL // Professional vendor features
-  VENDOR_ENTERPRISE   // Enterprise vendor with all features
+
+  // Vendor tiers (6 tiers)
+  VENDOR_FREE         // Free tier - $0/month, 3% fee, 10 products max
+  VENDOR_SILVER       // Silver - $29.99/month, 2.5% fee, 100 products max
+  VENDOR_GOLD         // Gold - $79.99/month, 2% fee, 500 products max
+  VENDOR_PLATINUM     // Platinum - $199.99/month, 1.5% fee, 2500 products max
+  VENDOR_DIAMOND      // Diamond - $499.99/month, 1% fee, unlimited products
+  VENDOR_ENTERPRISE   // Enterprise - Custom pricing, negotiated fee
+
+  // Legacy types (deprecated)
+  VENDOR_STARTER      // @deprecated - Use VENDOR_FREE
+  VENDOR_PROFESSIONAL // @deprecated - Use VENDOR_GOLD
 }
 
 enum SubscriptionStatus {
@@ -608,32 +794,54 @@ enum BillingInterval {
 }
 
 model SubscriptionPlan {
-  id              String                @id @default(uuid())
-  name            String
-  description     String?
-  type            SubscriptionPlanType
-  price           Float                 // Price in dollars
-  billingInterval BillingInterval       @default(MONTHLY)
-  trialDays       Int                   @default(0) // Free trial period
-  isActive        Boolean               @default(true)
+  id                String                @id @default(uuid())
+  name              String
+  slug              String                @unique // URL-friendly identifier (e.g., "free", "silver", "gold")
+  description       String?
+  type              SubscriptionPlanType
+  price             Float                 // Monthly price in dollars
+  yearlyPrice       Float?                // Annual price (typically 20% discount)
+  billingInterval   BillingInterval       @default(MONTHLY)
+  trialDays         Int                   @default(0) // Free trial period
+  isActive          Boolean               @default(true)
+  isPopular         Boolean               @default(false) // Highlight as popular choice
+  displayOrder      Int                   @default(0) // Order in pricing table
 
-  // Benefits (JSON format for flexibility)
-  benefits        Json                  // { "freeShipping": true, "discountPercent": 10, "features": [] }
+  // Transaction fees
+  transactionFee    Float                 @default(0) // Percentage fee on transactions
 
   // Limits and quotas
-  maxProducts     Int?                  // For vendors: max products they can list
-  maxAds          Int?                  // For vendors: max active ads
-  commissionRate  Float?                // Platform commission rate for vendors
-  prioritySupport Boolean               @default(false)
+  maxProducts       Int?                  // Max products (null = unlimited)
+  maxOrders         Int?                  // Max orders per month (null = unlimited)
+  maxAdminUsers     Int                   @default(1) // Max admin users
+  maxDiscountCodes  Int?                  // Max discount codes per month
+  maxFeaturedListings Int                 @default(0) // Featured listings per month
 
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  // Support options
+  supportType       String                @default("email") // email, chat, phone, dedicated
+  supportSLA        Int                   @default(48) // Response time in hours
+
+  // Features (JSON format for detailed feature flags)
+  features          Json                  // Detailed feature flags object
+  benefits          Json                  // Legacy benefits field for compatibility
+
+  // Platform settings
+  commissionRate    Float?                // Platform commission rate for vendors
+  prioritySupport   Boolean               @default(false)
+  removeBranding    Boolean               @default(false) // Remove CitadelBuy branding
+  customDomain      Boolean               @default(false) // Allow custom domain
+  apiAccess         Boolean               @default(false) // API access enabled
+  apiCallsPerMonth  Int?                  // API calls limit (null = unlimited)
+
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
 
   // Relations
-  subscriptions   Subscription[]
+  subscriptions     Subscription[]
 
   @@index([type])
   @@index([isActive])
+  @@index([slug])
   @@map("subscription_plans")
 }
 
@@ -2000,6 +2208,9 @@ model VendorProfile {
   payouts             VendorPayout[]
   commissionRules     VendorCommissionRule[]
   performanceMetrics  VendorPerformanceMetric[]
+  bulkUploadJobs      BulkUploadJob[]
+  featuredListings    FeaturedListing[]
+  vendorCoupons       VendorCoupon[]
 
   @@index([userId])
   @@index([status])
@@ -3503,6 +3714,285 @@ enum DiscountType {
   FREE_SHIPPING   // Free shipping
 }
 
+/// Promo-based referral codes for marketing campaigns
+model PromoReferralCode {
+  id              String   @id @default(uuid())
+  code            String   @unique // The promo code (e.g., "JOHN2024")
+
+  // Referrer (person who shares the code)
+  referrerId      String
+
+  // Rewards Configuration
+  referrerReward  Float    @default(10) // Reward for the referrer (e.g., $10 or 10%)
+  refereeReward   Float    @default(10) // Reward for the new customer
+  rewardType      PromoReferralRewardType @default(FIXED_AMOUNT) // PERCENTAGE or FIXED_AMOUNT
+
+  // Usage Tracking
+  timesUsed       Int      @default(0)
+  totalRewardsGiven Float  @default(0)
+  maxUses         Int?     // Limit on how many times this can be used
+
+  // Status
+  isActive        Boolean  @default(true)
+
+  // Validity
+  expiresAt       DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  usages          PromoReferralUsage[]
+
+  @@index([code])
+  @@index([referrerId])
+  @@index([isActive])
+  @@map("promo_referral_codes")
+}
+
+/// Tracks promo referral code usage
+model PromoReferralUsage {
+  id                String   @id @default(uuid())
+  promoCodeId       String
+  promoCode         PromoReferralCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+
+  // Referee (new customer who used the code)
+  refereeId         String
+
+  // Tracking
+  referrerRewardAmount Float?
+  refereeRewardAmount  Float?
+  referrerRewardIssued Boolean @default(false)
+  refereeRewardIssued  Boolean @default(false)
+  referrerRewardIssuedAt DateTime?
+  refereeRewardIssuedAt  DateTime?
+
+  // Associated order that triggered the referral
+  orderId           String?
+
+  // Status
+  status            PromoReferralUsageStatus @default(PENDING)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([promoCodeId, refereeId]) // User can only use code once
+  @@index([refereeId])
+  @@index([status])
+  @@map("promo_referral_usages")
+}
+
+enum PromoReferralRewardType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  STORE_CREDIT
+}
+
+enum PromoReferralUsageStatus {
+  PENDING     // User signed up but hasn't made qualifying purchase
+  QUALIFIED   // Qualifying purchase made, pending reward
+  REWARDED    // Rewards have been issued
+  CANCELLED   // Referral cancelled (e.g., refund)
+}
+
+/// Marketing campaigns for coordinated promotions
+model MarketingCampaign {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+
+  // Campaign Type
+  type            MarketingCampaignType // FLASH_SALE, SEASONAL, LOYALTY, CLEARANCE, LAUNCH
+
+  // Scheduling
+  startDate       DateTime
+  endDate         DateTime
+
+  // Budget & Goals
+  budget          Float?   // Maximum discount budget
+  budgetUsed      Float    @default(0)
+  targetRevenue   Float?
+  actualRevenue   Float    @default(0)
+
+  // Performance Metrics
+  totalOrders     Int      @default(0)
+  totalDiscount   Float    @default(0)
+  impressions     Int      @default(0)
+  clicks          Int      @default(0)
+  conversions     Int      @default(0)
+
+  // Status
+  status          MarketingCampaignStatus @default(DRAFT)
+
+  // Metadata
+  tags            String[] @default([])
+  metadata        Json?    // Additional campaign settings
+
+  createdById     String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  coupons         CampaignCoupon[]
+
+  @@index([status])
+  @@index([type])
+  @@index([startDate, endDate])
+  @@map("marketing_campaigns")
+}
+
+/// Links coupons to campaigns for tracking
+model CampaignCoupon {
+  id          String   @id @default(uuid())
+  campaignId  String
+  couponId    String
+
+  // Performance for this coupon in this campaign
+  usageCount  Int      @default(0)
+  revenue     Float    @default(0)
+  discount    Float    @default(0)
+
+  createdAt   DateTime @default(now())
+
+  campaign    MarketingCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, couponId])
+  @@index([couponId])
+  @@map("campaign_coupons")
+}
+
+enum MarketingCampaignType {
+  FLASH_SALE  // Short-duration high-discount
+  SEASONAL    // Holiday/seasonal promotions
+  LOYALTY     // Loyalty program rewards
+  CLEARANCE   // Inventory clearance
+  LAUNCH      // Product launch
+  REFERRAL    // Referral program
+  WIN_BACK    // Re-engagement campaign
+}
+
+enum MarketingCampaignStatus {
+  DRAFT       // Not yet scheduled
+  SCHEDULED   // Scheduled for future
+  ACTIVE      // Currently running
+  PAUSED      // Temporarily paused
+  COMPLETED   // Finished
+  CANCELLED   // Cancelled
+}
+
+/// Vendor-specific coupons (vendors can create for their products)
+model VendorCoupon {
+  id              String   @id @default(uuid())
+  vendorId        String   // Which vendor created this
+  vendor          VendorProfile @relation(fields: [vendorId], references: [id])
+
+  code            String   @unique
+  name            String
+  description     String?
+
+  // Discount Configuration
+  type            CouponType
+  value           Float
+
+  // Usage Restrictions
+  minOrderValue   Float?
+  maxDiscountAmount Float?
+  usageLimitPerUser Int?
+  totalUsageLimit Int?
+
+  // Validity
+  startDate       DateTime
+  endDate         DateTime?
+
+  // Scope (can only apply to vendor's own products)
+  applicableProductIds String[] @default([])
+
+  // Status
+  isActive        Boolean  @default(true)
+  timesUsed       Int      @default(0)
+
+  // Approval (if vendor coupons need admin approval)
+  requiresApproval Boolean @default(false)
+  approvalStatus   VendorCouponApprovalStatus @default(PENDING)
+  approvedById     String?
+  approvedAt       DateTime?
+  rejectionReason  String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  usages          VendorCouponUsage[]
+
+  @@index([vendorId])
+  @@index([code])
+  @@index([isActive])
+  @@index([approvalStatus])
+  @@map("vendor_coupons")
+}
+
+/// Tracks vendor coupon usage
+model VendorCouponUsage {
+  id              String   @id @default(uuid())
+  vendorCouponId  String
+  vendorCoupon    VendorCoupon @relation(fields: [vendorCouponId], references: [id], onDelete: Cascade)
+
+  userId          String
+  orderId         String?
+  discountAmount  Float
+
+  usedAt          DateTime @default(now())
+
+  @@index([vendorCouponId])
+  @@index([userId])
+  @@index([orderId])
+  @@map("vendor_coupon_usages")
+}
+
+enum VendorCouponApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Saved addresses for fast checkout
+model SavedAddress {
+  id          String   @id @default(uuid())
+  userId      String
+
+  // Address details
+  fullName    String
+  email       String?
+  phone       String?
+  street      String
+  city        String
+  state       String
+  postalCode  String
+  country     String
+
+  // Type/Label
+  label       String?  // e.g., "Home", "Work", "Office"
+  type        AddressType @default(SHIPPING) // SHIPPING, BILLING, BOTH
+
+  // Status
+  isDefault   Boolean  @default(false)
+  isVerified  Boolean  @default(false) // Address verification status
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isDefault])
+  @@map("saved_addresses")
+}
+
+enum AddressType {
+  SHIPPING
+  BILLING
+  BOTH
+}
+
 /// Shopping cart for users and guests
 model Cart {
   id          String   @id @default(uuid())
@@ -3595,20 +4085,79 @@ model CartAbandonment {
   recoveredAt DateTime?
   recoveryOrderId String?
 
+  // Discount tracking
+  recoveryDiscountCode String?  // Unique discount code for this abandonment
+  recoveryDiscountPercent Float? // Discount percentage offered
+  discountExpiresAt DateTime?   // When the recovery discount expires
+
   // Metadata
   cartValue   Float
   itemCount   Int
+  lastEmailType AbandonmentEmailType? // Track which email was last sent
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
   cart        Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  emails      CartAbandonmentEmail[]
 
   @@index([email])
   @@index([abandonedAt])
   @@index([recovered])
+  @@index([recoveryDiscountCode])
   @@map("cart_abandonments")
+}
+
+/// Email sequence types for abandoned cart recovery
+enum AbandonmentEmailType {
+  REMINDER_1HR      // First reminder - 1 hour after abandonment
+  REMINDER_24HR     // Second reminder - 24 hours after abandonment
+  REMINDER_72HR     // Final reminder - 72 hours after abandonment with discount
+}
+
+/// Track individual abandonment emails for recovery campaigns
+model CartAbandonmentEmail {
+  id              String              @id @default(uuid())
+  abandonmentId   String
+  emailLogId      String?  @unique    // Link to EmailLog for tracking
+
+  // Email type and timing
+  emailType       AbandonmentEmailType
+  scheduledFor    DateTime            // When the email should be sent
+
+  // Status tracking
+  sent            Boolean             @default(false)
+  sentAt          DateTime?
+  opened          Boolean             @default(false)
+  openedAt        DateTime?
+  clicked         Boolean             @default(false)
+  clickedAt       DateTime?
+
+  // Recovery attribution
+  convertedToOrder Boolean            @default(false)
+  orderId         String?
+  recoveryDiscount Float?             // Discount offered in this email
+  discountUsed    Boolean             @default(false)
+
+  // Unsubscribe tracking
+  unsubscribed    Boolean             @default(false)
+  unsubscribedAt  DateTime?
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  // Relations
+  abandonment     CartAbandonment     @relation(fields: [abandonmentId], references: [id], onDelete: Cascade)
+  emailLog        EmailLog?           @relation(fields: [emailLogId], references: [id], onDelete: SetNull)
+
+  @@unique([abandonmentId, emailType]) // Only one email per type per abandonment
+  @@index([abandonmentId])
+  @@index([emailType])
+  @@index([scheduledFor])
+  @@index([sent])
+  @@index([convertedToOrder])
+  @@map("cart_abandonment_emails")
 }
 
 // ============================================
@@ -3688,6 +4237,7 @@ model EmailLog {
   // Relations
   template       EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   user           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  abandonmentEmail CartAbandonmentEmail?
 
   @@index([userId])
   @@index([to])
@@ -4769,5 +5319,92 @@ model RateLimit {
 
   @@index([endpoint])
   @@map("rate_limits")
+}
+
+// ==================== Bulk Upload ====================
+
+model BulkUploadJob {
+  id              String   @id @default(uuid())
+  vendorId        String
+  vendor          VendorProfile @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  fileName        String
+  status          String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  totalRows       Int      @default(0)
+  processedRows   Int      @default(0)
+  successCount    Int      @default(0)
+  errorCount      Int      @default(0)
+  errors          Json     @default("[]")
+  createdProductIds Json   @default("[]")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  completedAt     DateTime?
+
+  @@index([vendorId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("bulk_upload_jobs")
+}
+
+// ==================== Featured Listings ====================
+
+model FeaturedListing {
+  id              String   @id @default(uuid())
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  vendorId        String
+  vendor          VendorProfile @relation(fields: [vendorId], references: [id])
+  position        FeaturedPosition
+  priority        Int      @default(0)
+  startDate       DateTime
+  endDate         DateTime
+  cost            Float
+  status          FeaturedStatus @default(PENDING)
+  impressions     Int      @default(0)
+  clicks          Int      @default(0)
+  paymentId       String?
+  paymentStatus   String?  // paid, pending, refunded
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([productId])
+  @@index([vendorId])
+  @@index([position])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("featured_listings")
+}
+
+model FeaturedSlot {
+  id              String   @id @default(uuid())
+  position        FeaturedPosition
+  categoryId      String?
+  category        Category? @relation(fields: [categoryId], references: [id])
+  maxListings     Int      @default(10)
+  dailyRate       Float
+  weeklyRate      Float
+  monthlyRate     Float
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([position, categoryId])
+  @@index([position])
+  @@index([categoryId])
+  @@map("featured_slots")
+}
+
+enum FeaturedPosition {
+  HOME_BANNER
+  HOME_FEATURED
+  CATEGORY_TOP
+  SEARCH_PROMOTED
+  SIDEBAR
+}
+
+enum FeaturedStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
 }
 

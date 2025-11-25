@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -52,10 +53,10 @@ const priceRanges = [
 
 const ratings = [4, 3, 2, 1];
 
-export default function ProductsPage() {
+function ProductsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { query, setQuery, results, isSearching } = useSearchStore();
+  const { query, setQuery, results, isLoading: isSearching } = useSearchStore();
 
   const [products, setProducts] = React.useState<Product[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -83,8 +84,8 @@ export default function ProductsPage() {
         } else {
           // Load recommended/featured products
           const recommended = await recommendationService.getPersonalized('user', 24);
-          setProducts(recommended);
-          setTotalProducts(recommended.length);
+          setProducts(recommended.products);
+          setTotalProducts(recommended.products.length);
         }
       } catch (error) {
         console.error('Failed to load products:', error);
@@ -137,7 +138,7 @@ export default function ProductsPage() {
 
     // Filter by rating
     if (minRating) {
-      filtered = filtered.filter((p) => (p.rating?.average || 0) >= minRating);
+      filtered = filtered.filter((p) => (p.rating || 0) >= minRating);
     }
 
     // Sort
@@ -149,7 +150,7 @@ export default function ProductsPage() {
         filtered.sort((a, b) => b.price - a.price);
         break;
       case 'rating':
-        filtered.sort((a, b) => (b.rating?.average || 0) - (a.rating?.average || 0));
+        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
         break;
       case 'newest':
         filtered.sort(
@@ -438,7 +439,6 @@ export default function ProductsPage() {
                     >
                       <ProductCard
                         product={product}
-                        variant={viewMode === 'list' ? 'horizontal' : 'default'}
                       />
                     </motion.div>
                   ))}
@@ -458,5 +458,13 @@ export default function ProductsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+      <ProductsContent />
+    </Suspense>
   );
 }

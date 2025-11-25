@@ -5,23 +5,18 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm
-
 # Copy package files
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json package-lock.json* ./
 
 # Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
+RUN npm install --legacy-peer-deps --omit=dev
 
 # Stage 2: Build
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-RUN npm install -g pnpm
-
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile
+COPY package.json package-lock.json* ./
+RUN npm install --legacy-peer-deps
 
 COPY . .
 
@@ -34,7 +29,7 @@ ENV NODE_ENV=$NODE_ENV
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build the application
-RUN pnpm build
+RUN npm run build
 
 # Stage 3: Production
 FROM node:20-alpine AS runner
@@ -59,7 +54,7 @@ USER nextjs
 
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
 CMD ["node", "server.js"]
