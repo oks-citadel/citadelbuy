@@ -1,0 +1,64 @@
+{
+  "name": "@citadelbuy/ai-sdk",
+  "version": "1.0.0",
+  "description": "AI SDK for CitadelBuy platform - client libraries for AI services",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./recommendation": {
+      "import": "./dist/recommendation.mjs",
+      "require": "./dist/recommendation.js",
+      "types": "./dist/recommendation.d.ts"
+    },
+    "./search": {
+      "import": "./dist/search.mjs",
+      "require": "./dist/search.js",
+      "types": "./dist/search.d.ts"
+    },
+    "./personalization": {
+      "import": "./dist/personalization.mjs",
+      "require": "./dist/personalization.js",
+      "types": "./dist/personalization.d.ts"
+    },
+    "./fraud": {
+      "import": "./dist/fraud.mjs",
+      "require": "./dist/fraud.js",
+      "types": "./dist/fraud.d.ts"
+    },
+    "./chatbot": {
+      "import": "./dist/chatbot.mjs",
+      "require": "./dist/chatbot.js",
+      "types": "./dist/chatbot.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts src/recommendation.ts src/search.ts src/personalization.ts src/fraud.ts src/chatbot.ts --format esm,cjs --dts",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "lint": "eslint src/",
+    "test": "vitest",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@citadelbuy/types": "workspace:*",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "keywords": [
+    "ai",
+    "sdk",
+    "ml",
+    "citadelbuy"
+  ],
+  "license": "UNLICENSED"
+}

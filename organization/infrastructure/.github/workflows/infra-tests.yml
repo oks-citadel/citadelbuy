@@ -1,0 +1,202 @@
+name: Infrastructure Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'infrastructure/terraform/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'infrastructure/terraform/**'
+  workflow_dispatch:
+
+env:
+  TF_VERSION: '1.6.0'
+  GO_VERSION: '1.21'
+  WORKING_DIRECTORY: infrastructure/terraform
+
+jobs:
+  # ============================================
+  # Unit Tests (Terraform validate)
+  # ============================================
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Validate all modules
+        run: |
+          failed=0
+          for module in modules/*/; do
+            echo "Testing $module"
+            cd $module
+
+            terraform init -backend=false
+            if ! terraform validate; then
+              echo "FAILED: $module"
+              failed=1
+            fi
+
+            cd ../..
+          done
+
+          exit $failed
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+  # ============================================
+  # Terratest (Integration Tests)
+  # ============================================
+  integration-tests:
+    name: Integration Tests (Terratest)
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    if: github.event_name == 'pull_request'
+
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_DEV_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Download Go dependencies
+        run: go mod download
+        working-directory: ${{ env.WORKING_DIRECTORY }}/tests/terratest
+
+      - name: Run Terratest
+        run: |
+          go test -v -timeout 30m -tags=integration ./...
+        working-directory: ${{ env.WORKING_DIRECTORY }}/tests/terratest
+
+  # ============================================
+  # Policy Tests (OPA/Conftest)
+  # ============================================
+  policy-tests:
+    name: Policy Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup conftest
+        run: |
+          wget https://github.com/open-policy-agent/conftest/releases/download/v0.46.0/conftest_0.46.0_Linux_x86_64.tar.gz
+          tar xzf conftest_0.46.0_Linux_x86_64.tar.gz
+          sudo mv conftest /usr/local/bin/
+
+      - name: Run policy tests
+        run: |
+          for env in environments/*/; do
+            echo "Testing policies for $env"
+            conftest test $env/*.tf -p policies/ || true
+          done
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+  # ============================================
+  # Documentation Check
+  # ============================================
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup terraform-docs
+        run: |
+          curl -sSLo terraform-docs.tar.gz https://terraform-docs.io/dl/v0.16.0/terraform-docs-v0.16.0-linux-amd64.tar.gz
+          tar -xzf terraform-docs.tar.gz
+          chmod +x terraform-docs
+          sudo mv terraform-docs /usr/local/bin/
+
+      - name: Check documentation
+        run: |
+          for module in modules/*/; do
+            echo "Checking docs for $module"
+            terraform-docs markdown $module > /tmp/readme.md
+
+            if [ -f "$module/README.md" ]; then
+              if ! diff -q /tmp/readme.md "$module/README.md" > /dev/null; then
+                echo "WARNING: Documentation may be out of date for $module"
+              fi
+            else
+              echo "WARNING: No README.md found for $module"
+            fi
+          done
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
+  # ============================================
+  # Cost Check
+  # ============================================
+  cost-check:
+    name: Cost Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v2
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+
+      - name: Generate base cost
+        run: |
+          infracost breakdown --path=base/${{ env.WORKING_DIRECTORY }}/environments/prod \
+            --format=json \
+            --out-file=/tmp/base.json
+
+      - name: Generate PR cost
+        run: |
+          infracost breakdown --path=${{ env.WORKING_DIRECTORY }}/environments/prod \
+            --format=json \
+            --out-file=/tmp/pr.json
+
+      - name: Generate diff
+        run: |
+          infracost diff --path=/tmp/pr.json \
+            --compare-to=/tmp/base.json \
+            --format=json \
+            --out-file=/tmp/diff.json
+
+      - name: Post comment
+        run: |
+          infracost comment github \
+            --path=/tmp/diff.json \
+            --repo=${{ github.repository }} \
+            --github-token=${{ secrets.GITHUB_TOKEN }} \
+            --pull-request=${{ github.event.pull_request.number }} \
+            --behavior=update

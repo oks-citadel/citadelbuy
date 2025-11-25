@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: citadelbuy
+  labels:
+    app.kubernetes.io/name: citadelbuy
+    app.kubernetes.io/managed-by: kustomize
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: citadelbuy-ai
+  labels:
+    app.kubernetes.io/name: citadelbuy-ai
+    app.kubernetes.io/managed-by: kustomize
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: citadelbuy-monitoring
+  labels:
+    app.kubernetes.io/name: citadelbuy-monitoring
+    app.kubernetes.io/managed-by: kustomize

@@ -122,7 +122,9 @@
       "Bash(git push:*)",
       "Bash(tree:*)",
       "Bash(cat:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(mkdir:*)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []
