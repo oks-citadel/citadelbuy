@@ -124,7 +124,9 @@
       "Bash(cat:*)",
       "Bash(git branch:*)",
       "Bash(mkdir:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(for svc in ai-engine recommendation search personalization fraud-detection inventory pricing chatbot analytics notification media)",
+      "Bash(do mkdir -p $svc/src/api $svc/notebooks $svc/data)"
     ],
     "deny": [],
     "ask": []
