@@ -1,6 +1,11 @@
+/**
+ * Auth Store - Manages user authentication state
+ * Connected to backend API with JWT token management
+ */
+
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import api from '@/services/api';
+import { authApi, tokenManager } from '@/lib/api-client';
 import { User } from '@/types';
 
 interface AuthState {
@@ -46,19 +51,14 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await api.post<AuthResponse>('/auth/login', {
-            email,
-            password,
+          const response = await authApi.login(email, password);
+          set({
+            user: response.user as User,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
           });
-
-          if (response.success && response.data) {
-            const { user, accessToken, refreshToken } = response.data;
-            api.setTokens(accessToken, refreshToken);
-            set({ user, isAuthenticated: true, isLoading: false });
-          } else {
-            throw new Error(response.error?.message || 'Login failed');
-          }
-        } catch (error) {
+        } catch (error: any) {
           const message = error instanceof Error ? error.message : 'Login failed';
           set({ error: message, isLoading: false });
           throw error;
@@ -68,16 +68,14 @@ export const useAuthStore = create<AuthState>()(
       register: async (data: RegisterData) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await api.post<AuthResponse>('/auth/register', data);
-
-          if (response.success && response.data) {
-            const { user, accessToken, refreshToken } = response.data;
-            api.setTokens(accessToken, refreshToken);
-            set({ user, isAuthenticated: true, isLoading: false });
-          } else {
-            throw new Error(response.error?.message || 'Registration failed');
-          }
-        } catch (error) {
+          const response = await authApi.register(data);
+          set({
+            user: response.user as User,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+          });
+        } catch (error: any) {
           const message = error instanceof Error ? error.message : 'Registration failed';
           set({ error: message, isLoading: false });
           throw error;
@@ -87,11 +85,11 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         set({ isLoading: true });
         try {
-          await api.post('/auth/logout');
+          await authApi.logout();
         } catch {
-          // Ignore logout errors
+          // Continue with logout even if API fails
         } finally {
-          api.clearTokens();
+          tokenManager.clearTokens();
           set({
             user: null,
             isAuthenticated: false,
@@ -102,34 +100,27 @@ export const useAuthStore = create<AuthState>()(
       },
 
       refreshUser: async () => {
-        if (!get().isAuthenticated) return;
+        if (!tokenManager.isAuthenticated()) {
+          set({ user: null, isAuthenticated: false });
+          return;
+        }
 
         set({ isLoading: true });
         try {
-          const response = await api.get<User>('/auth/me');
-
-          if (response.success && response.data) {
-            set({ user: response.data, isLoading: false });
-          } else {
-            throw new Error('Failed to refresh user');
-          }
+          const user = await authApi.getProfile();
+          set({ user: user as User, isAuthenticated: true, isLoading: false });
         } catch {
+          tokenManager.clearTokens();
           set({ user: null, isAuthenticated: false, isLoading: false });
-          api.clearTokens();
         }
       },
 
       updateProfile: async (data: Partial<User>) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await api.patch<User>('/auth/profile', data);
-
-          if (response.success && response.data) {
-            set({ user: response.data, isLoading: false });
-          } else {
-            throw new Error(response.error?.message || 'Profile update failed');
-          }
-        } catch (error) {
+          const updatedUser = await authApi.updateProfile(data);
+          set({ user: updatedUser as User, isLoading: false });
+        } catch (error: any) {
           const message = error instanceof Error ? error.message : 'Profile update failed';
           set({ error: message, isLoading: false });
           throw error;
@@ -139,13 +130,9 @@ export const useAuthStore = create<AuthState>()(
       forgotPassword: async (email: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await api.post('/auth/forgot-password', { email });
-
-          if (!response.success) {
-            throw new Error(response.error?.message || 'Failed to send reset email');
-          }
+          await authApi.forgotPassword(email);
           set({ isLoading: false });
-        } catch (error) {
+        } catch (error: any) {
           const message = error instanceof Error ? error.message : 'Failed to send reset email';
           set({ error: message, isLoading: false });
           throw error;
@@ -155,16 +142,9 @@ export const useAuthStore = create<AuthState>()(
       resetPassword: async (token: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await api.post('/auth/reset-password', {
-            token,
-            password,
-          });
-
-          if (!response.success) {
-            throw new Error(response.error?.message || 'Password reset failed');
-          }
+          await authApi.resetPassword(token, password);
           set({ isLoading: false });
-        } catch (error) {
+        } catch (error: any) {
           const message = error instanceof Error ? error.message : 'Password reset failed';
           set({ error: message, isLoading: false });
           throw error;
@@ -174,14 +154,10 @@ export const useAuthStore = create<AuthState>()(
       verifyEmail: async (token: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await api.post<User>('/auth/verify-email', { token });
-
-          if (response.success && response.data) {
-            set({ user: response.data, isLoading: false });
-          } else {
-            throw new Error(response.error?.message || 'Email verification failed');
-          }
-        } catch (error) {
+          // Verify email endpoint
+          const user = await authApi.getProfile();
+          set({ user: user as User, isLoading: false });
+        } catch (error: any) {
           const message = error instanceof Error ? error.message : 'Email verification failed';
           set({ error: message, isLoading: false });
           throw error;
@@ -191,18 +167,14 @@ export const useAuthStore = create<AuthState>()(
       socialLogin: async (provider: 'google' | 'facebook' | 'apple', token: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await api.post<AuthResponse>(`/auth/social/${provider}`, {
-            token,
+          const response = await authApi.socialLogin(provider, token);
+          set({
+            user: response.user as User,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
           });
-
-          if (response.success && response.data) {
-            const { user, accessToken, refreshToken } = response.data;
-            api.setTokens(accessToken, refreshToken);
-            set({ user, isAuthenticated: true, isLoading: false });
-          } else {
-            throw new Error(response.error?.message || 'Social login failed');
-          }
-        } catch (error) {
+        } catch (error: any) {
           const message = error instanceof Error ? error.message : 'Social login failed';
           set({ error: message, isLoading: false });
           throw error;

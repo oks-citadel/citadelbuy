@@ -1,6 +1,54 @@
 # CitadelBuy E-Commerce Platform
 
-A next-generation e-commerce platform built with modern technologies and enterprise-grade architecture.
+A next-generation AI-powered e-commerce platform built with modern technologies and enterprise-grade architecture.
+
+## Test User Accounts for Frontend Verification
+
+```
+╔═══════════════════════════════════════════════════════════════════════╗
+║                    TEST USER ACCOUNT #1                                ║
+╠═══════════════════════════════════════════════════════════════════════╣
+║  Email:     customer@citadelbuy.com                                    ║
+║  Password:  password123                                                ║
+║  Role:      CUSTOMER                                                   ║
+║                                                                        ║
+║  Pre-configured with:                                                  ║
+║  • Shipping address (123 Main Street, New York, NY 10001)              ║
+║  • Order history (delivered, shipped, processing orders)               ║
+║  • Can browse products, add to cart, checkout                          ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║                    TEST USER ACCOUNT #2                                ║
+╠═══════════════════════════════════════════════════════════════════════╣
+║  Email:     jane@example.com                                           ║
+║  Password:  password123                                                ║
+║  Role:      CUSTOMER                                                   ║
+║                                                                        ║
+║  Pre-configured with:                                                  ║
+║  • Shipping address (456 Oak Avenue, Los Angeles, CA 90001)            ║
+║  • Order history (shipped, pending orders)                             ║
+║  • Wishlist items, saved products                                      ║
+╚═══════════════════════════════════════════════════════════════════════╝
+```
+
+### Additional Test Accounts
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | `admin@citadelbuy.com` | `password123` |
+| Vendor 1 | `vendor1@citadelbuy.com` | `password123` |
+| Vendor 2 | `vendor2@citadelbuy.com` | `password123` |
+
+## URLs (Development)
+
+- **Frontend**: http://localhost:3000
+- **API**: http://localhost:4000/api
+- **API Docs (Swagger)**: http://localhost:4000/api/docs
+- **Grafana**: http://localhost:3001 (admin/admin)
+- **Prometheus**: http://localhost:9090
+
+---
 
 ## Project Structure
 
