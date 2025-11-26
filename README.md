@@ -1,415 +1,432 @@
-# CitadelBuy: Next-Generation E-Commerce Platform
-## Complete Implementation Package
+# CitadelBuy - AI-Powered E-Commerce Platform
 
-<div align="center">
+> Enterprise-grade e-commerce platform with advanced AI capabilities for intelligent product discovery, hyper-personalization, and automated operations.
 
-![CitadelBuy Logo](https://via.placeholder.com/400x120/0066FF/FFFFFF?text=CitadelBuy)
-
-**The Intelligent Commerce Platform That Empowers Everyone**
-
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/citadelbuy)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/oks-citadel/citadelbuy)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Azure](https://img.shields.io/badge/cloud-azure-blue.svg)](https://azure.microsoft.com)
-[![Status](https://img.shields.io/badge/status-ready-success.svg)](https://github.com/citadelbuy)
-
-[Website](https://citadelbuy.com) • [Documentation](./00-EXECUTIVE-SUMMARY.md) • [API Docs](https://api.citadelbuy.com/docs) • [Community](https://community.citadelbuy.com)
-
-</div>
-
----
-
-## 🎯 What is CitadelBuy?
-
-CitadelBuy is a **revolutionary AI-powered global commerce platform** that transcends traditional e-commerce by creating:
-
-- 🧠 **Hyper-Intelligent Shopping**: AI Shopping DNA that predicts needs with 85% accuracy
-- 🔍 **Complete Transparency**: Blockchain-verified authenticity & carbon tracking
-- 🎮 **Immersive Experiences**: Full AR/VR product visualization
-- 🤝 **Social Commerce**: Shop together with friends in real-time
-- 💰 **Fair Economics**: 8-12% fees (vs 15-20% on competitors)
-- 🌍 **Instant Global Selling**: One click to reach 195 countries
-- 🤖 **AI Business Coach**: Automated vendor success platform
-- 🌱 **Sustainable Commerce**: Carbon-neutral options & circular economy
-
----
-
-## 📚 Documentation Structure
-
-This package contains **500+ pages** of comprehensive documentation organized into 6 main sections:
-
-### 📖 Core Documents
-
-| Document | Pages | Description | Link |
-|----------|-------|-------------|------|
-| **Executive Summary** | 45 | Overview, financials, ROI | [Read →](./00-EXECUTIVE-SUMMARY.md) |
-| **Platform Strategy** | 110 | Discovery, research, unique features | [Read →](./01-PLATFORM-STRATEGY.md) |
-| **Go-to-Market** | 85 | Launch strategy, pricing, roadmap | [Read →](./02-GO-TO-MARKET-STRATEGY.md) |
-| **Technical Architecture** | 95 | Azure infrastructure, microservices | [Read →](./03-TECHNICAL-ARCHITECTURE.md) |
-| **Implementation Code** | 120 | Production-ready code examples | [Read →](./04-IMPLEMENTATION-CODE.md) |
-| **Quick Start Guide** | 78 | 8-week implementation plan | [Read →](./05-QUICK-START-GUIDE.md) |
+[![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 
 ---
 
 ## 🚀 Quick Start
 
-### For Executives & Product Managers
+```bash
+# Clone the repository
+git clone https://github.com/oks-citadel/citadelbuy.git
+cd citadelbuy
 
-```
-START HERE ─┬─> 📄 Executive Summary (30 min read)
-            │   • Market opportunity ($6.3T market)
-            │   • Financial projections (1,000%+ ROI)
-            │   • Competitive advantages
-            │
-            ├─> 📊 Platform Strategy (2 hour read)
-            │   • Unique features that don't exist elsewhere
-            │   • Customer & vendor value propositions
-            │   • Revolutionary shopping experiences
-            │
-            └─> 🎯 Go-to-Market Strategy (1 hour read)
-                • Launch strategy & timeline
-                • Customer acquisition plan
-                • Pricing strategy & economics
-```
+# Install dependencies
+npm install
 
-### For Engineers & Technical Teams
+# Setup environment
+cp .env.example .env
 
-```
-START HERE ─┬─> 🏗️ Technical Architecture (2 hour read)
-            │   • Complete Azure infrastructure
-            │   • Microservices architecture
-            │   • Technology stack decisions
-            │
-            ├─> 💻 Implementation Code (3 hour read)
-            │   • Backend services (Node.js + TypeScript)
-            │   • Frontend app (Next.js 14 + TypeScript)
-            │   • Database schemas & APIs
-            │
-            └─> 📖 Quick Start Guide (1 hour read)
-                • Local development setup
-                • Azure deployment
-                • CI/CD pipelines
-```
-
-### For Investors
-
-```
-START HERE ─┬─> 📊 Executive Summary
-            │   Pages 1-15: Market Opportunity
-            │   Pages 16-30: Financial Projections
-            │   Pages 31-45: Competitive Moat
-            │
-            └─> 📈 Go-to-Market Strategy
-                Pages 35-50: Revenue Model
-                Pages 51-70: Growth Projections
+# Start development
+npm run dev
 ```
 
 ---
 
-## 🎯 Key Differentiators
-
-### What Makes CitadelBuy Different?
-
-| Feature | Amazon | Shopify | Alibaba | **CitadelBuy** |
-|---------|--------|---------|---------|----------------|
-| **AI Personalization** | Basic | None | Basic | **Shopping DNA™** (85% accuracy) |
-| **Transaction Fees** | 15% | 2.9% + $29/mo | 8% | **8-12%** |
-| **Payout Speed** | 14-30 days | Instant | 30-90 days | **Weekly** |
-| **AR Shopping** | Limited | None | None | **Full product suite** |
-| **Social Commerce** | No | Limited | No | **Yes (group buying, live shows)** |
-| **Global Selling** | Complex | Manual | China-focused | **One-click to 195 countries** |
-| **Carbon Tracking** | No | No | No | **Every product** |
-| **Vendor AI Coach** | No | Limited | No | **24/7 AI assistant** |
-
----
-
-## 💡 Revolutionary Features
-
-### 1. AI Shopping DNA™
-*The world's most personal shopping experience*
-
-- Analyzes 200+ behavioral signals
-- Predicts next purchase with 85% accuracy
-- Learns style, budget, values, occasions
-- Reduces decision time by 75%
-
-### 2. Live Shopping Theater™
-*Interactive shopping entertainment*
-
-- Host live product demonstrations
-- Real-time Q&A with experts
-- Flash deals during show
-- 10x higher conversion rate
-
-### 3. Virtual Try-Everything™
-*AR/VR shopping revolution*
-
-- **Fashion**: Virtual fitting room with 3D avatars
-- **Home**: Place furniture in your room at scale
-- **Beauty**: Real-time makeup try-on
-- **Jewelry**: Hand tracking for perfect visualization
-
-### 4. Social Shopping Rooms™
-*Shop together, anywhere*
-
-- Video chat while browsing
-- Shared cart & voting
-- Group discounts (5-30% off)
-- Gift pooling for events
-
-### 5. Ethical Transparency™
-*Know the story behind every product*
-
-- Carbon footprint per item
-- Supply chain origin
-- Labor practices certification
-- Blockchain-verified authenticity
-
-### 6. Vendor Success AI™
-*Your 24/7 business consultant*
-
-- Pricing optimization
-- Inventory forecasting (90% accuracy)
-- Automated marketing campaigns
-- Customer insights & analytics
-
----
-
-## 📊 Market Opportunity
-
-### Total Addressable Market
+## 📁 Project Structure
 
 ```
-Global E-Commerce: $6.3 trillion
-        ↓
-Quality-Conscious Segment: $1.2 trillion (TAM)
-        ↓
-CitadelBuy Target (5% in 5 years): $60 billion
-```
-
-### Growth Projections
-
-| Metric | Year 1 | Year 2 | Year 3 | 5-Year Goal |
-|--------|--------|--------|--------|-------------|
-| **GMV** | $500M | $5B | $25B | $60B |
-| **Revenue** | $50M | $500M | $2.5B | $6B |
-| **Active Users** | 1M | 10M | 50M | 100M |
-| **Vendors** | 10k | 100k | 500k | 1M |
-| **Countries** | 10 | 50 | 150 | 195 |
-
----
-
-## 💰 Financial Overview
-
-### Investment Required
-
-| Category | Amount | Purpose |
-|----------|--------|---------|
-| **Development** | $425k | Platform build (8 weeks) |
-| **Year 1 Operations** | $2.2M | Personnel, infrastructure |
-| **Marketing** | $2M | Customer & vendor acquisition |
-| **Buffer** | $375k | Contingency |
-| **Total Seed Round** | **$5M** | |
-
-### Return on Investment
-
-**Year 1**
-- Revenue: $50M (10% of $500M GMV)
-- Costs: $4.4M
-- **Net Profit: $45.6M**
-- **ROI: 1,036%**
-
-**Year 3**
-- Revenue: $2.5B
-- Costs: $36M
-- **Net Profit: $2.46B**
-- **Valuation: $20B+** (at 8x revenue multiple)
-
----
-
-## 🛠️ Technology Stack
-
-### Production-Ready Architecture
-
-```yaml
-Frontend:
-  ├─ Next.js 15 (React 19) + TypeScript
-  ├─ Tailwind CSS + Shadcn UI
-  ├─ Zustand (State) + React Query (Data)
-  └─ Stripe Elements (Payments)
-
-Backend:
-  ├─ Node.js 20 + TypeScript + Express
-  ├─ GraphQL (Apollo Server) + REST
-  ├─ Prisma ORM
-  └─ Bull (Queue) + Redis (Cache)
-
-AI/ML:
-  ├─ Python 3.11 + FastAPI
-  ├─ TensorFlow + PyTorch
-  ├─ Azure OpenAI (GPT-4)
-  └─ Pinecone (Vector DB)
-
-Infrastructure:
-  ├─ Azure Kubernetes Service (AKS)
-  ├─ Azure SQL Database + Cosmos DB
-  ├─ Azure Cache for Redis
-  ├─ Azure Front Door (CDN + WAF)
-  ├─ Azure Service Bus
-  └─ Terraform (IaC)
+citadelbuy/
+├── app/                      # Client Applications
+│   ├── mobile/              # React Native Mobile App (iOS & Android)
+│   └── web/                 # Next.js Web Application
+│
+├── backend/                  # NestJS Backend API
+│   ├── src/
+│   │   ├── modules/         # 43 Feature Modules
+│   │   │   ├── ai/          # AI-Powered Features
+│   │   │   │   ├── visual-search/
+│   │   │   │   ├── conversational/
+│   │   │   │   ├── personalization/
+│   │   │   │   ├── chatbot/
+│   │   │   │   └── pricing-engine/
+│   │   │   ├── products/
+│   │   │   ├── orders/
+│   │   │   ├── payments/
+│   │   │   └── ... (38 more modules)
+│   │   └── common/          # Shared utilities
+│   └── prisma/              # Database schema & migrations
+│
+├── infrastructure/           # DevOps & Infrastructure
+│   ├── docker/              # Docker configurations
+│   ├── kubernetes/          # K8s manifests
+│   ├── terraform/           # Infrastructure as Code
+│   └── ansible/             # Configuration management
+│
+├── docs/                    # Documentation
+│   ├── architecture/        # System design docs
+│   ├── deployment/          # Deployment guides
+│   ├── features/            # Feature documentation
+│   └── api/                 # API documentation
+│
+└── scripts/                 # Utility scripts
 ```
 
 ---
 
-## 📈 Implementation Timeline
+## ✨ Core Features
 
-### 8-Week Path to Production
+### 🛍️ **E-Commerce Essentials**
+- Multi-vendor marketplace
+- Product catalog with variants
+- Shopping cart & checkout
+- Order management
+- Payment processing (Stripe)
+- Shipping integration (UPS, FedEx, USPS)
+- Inventory management
+- Returns & refunds
 
+### 🤖 **AI-Powered Features**
+
+#### 1. **Visual Search**
+- Camera-based product recognition
+- Reverse image search
+- Style similarity matching
+- TensorFlow.js + MobileNet
+
+#### 2. **Conversational Commerce**
+- Natural language product search
+- Multi-turn dialogue conversations
+- Intent recognition & entity extraction
+- Voice search support
+
+#### 3. **Hyper-Personalization**
+- Behavioral tracking & analysis
+- Personalized recommendations
+- Dynamic homepage customization
+- Personalized email campaigns
+
+#### 4. **Intelligent Chatbot**
+- 24/7 automated customer support
+- Sentiment analysis
+- Human agent handoff
+- Multi-language ready
+
+#### 5. **Dynamic Pricing**
+- Real-time price optimization
+- Demand forecasting
+- Competitor price monitoring
+- Personalized discounts
+
+### 📊 **Business Features**
+- Advanced analytics dashboard
+- Customer segmentation
+- Loyalty & rewards program
+- Gift cards & store credit
+- Coupons & promotions
+- Flash sales & deals
+- Subscription management
+- BNPL integration
+
+### 🔒 **Security & Compliance**
+- JWT authentication
+- Role-based access control (RBAC)
+- CSRF protection
+- Rate limiting
+- SQL injection prevention
+- XSS protection
+- GDPR & CCPA compliance
+
+---
+
+## 🏗️ Technology Stack
+
+### **Backend**
+- **Framework:** NestJS (TypeScript)
+- **Database:** PostgreSQL + Prisma ORM
+- **Cache:** Redis
+- **Search:** Elasticsearch / Algolia
+- **Queue:** Bull (Redis-based)
+- **AI/ML:** TensorFlow.js, MobileNet
+- **Payment:** Stripe
+- **Shipping:** EasyPost API
+
+### **Web Application**
+- **Framework:** Next.js 14 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **State:** Redux Toolkit
+- **Forms:** React Hook Form
+- **Validation:** Zod
+
+### **Mobile Application**
+- **Framework:** React Native 0.73
+- **Language:** TypeScript
+- **Navigation:** React Navigation
+- **State:** Redux Toolkit
+- **Camera:** React Native Camera
+- **Storage:** AsyncStorage
+
+### **Infrastructure**
+- **Containers:** Docker
+- **Orchestration:** Kubernetes
+- **IaC:** Terraform
+- **CI/CD:** GitHub Actions
+- **Hosting:** AWS / Azure / Railway
+- **CDN:** CloudFlare
+- **Monitoring:** Prometheus + Grafana
+
+---
+
+## 🚀 Development
+
+### **Prerequisites**
+- Node.js >= 18.0.0
+- npm >= 9.0.0
+- PostgreSQL >= 14
+- Redis >= 7
+- Docker (optional)
+
+### **Backend Development**
+```bash
+cd backend
+
+# Install dependencies
+npm install
+
+# Setup database
+npx prisma migrate dev
+npx prisma db seed
+
+# Start development server
+npm run start:dev
+
+# Run tests
+npm run test
+npm run test:e2e
 ```
-Week 1-2: Infrastructure Foundation
-  ├─ Azure setup & Terraform deployment
-  ├─ Database creation & migration
-  └─ Monitoring configuration
-  ✅ Deliverable: Live infrastructure
 
-Week 3-4: Backend Development
-  ├─ Auth, Product, Order, Payment services
-  ├─ API documentation
-  └─ 80%+ test coverage
-  ✅ Deliverable: Working APIs
+### **Web App Development**
+```bash
+cd app/web
 
-Week 5-6: Frontend Development
-  ├─ Homepage, catalog, cart, checkout
-  ├─ User dashboard
-  └─ Lighthouse score > 90
-  ✅ Deliverable: Complete UI
+# Install dependencies
+npm install
 
-Week 7: Integration & Testing
-  ├─ End-to-end testing
-  ├─ Load testing (1000+ users)
-  └─ Security audit
-  ✅ Deliverable: Production-ready system
+# Start development server
+npm run dev
 
-Week 8: Production Launch
-  ├─ Deployment to Azure
-  ├─ DNS & SSL configuration
-  └─ Go-live!
-  ✅ Deliverable: Live platform
+# Build for production
+npm run build
+```
+
+### **Mobile App Development**
+```bash
+cd app/mobile
+
+# Install dependencies
+npm install
+
+# iOS
+cd ios && pod install && cd ..
+npm run ios
+
+# Android
+npm run android
 ```
 
 ---
 
-## 🏆 Success Metrics
+## 📦 Deployment
 
-### Customer Metrics
-- **Retention Rate**: 40% → 60% → 75% (Y1-Y3)
-- **NPS Score**: 50 → 65 → 80
-- **Purchase Frequency**: 2.5x → 4x → 6x per month
-- **Average Order Value**: $75 → $95 → $120
+### **Docker Deployment**
+```bash
+# Build images
+docker-compose build
 
-### Vendor Metrics
-- **Active Vendors**: 10k → 100k → 500k
-- **Avg Revenue per Vendor**: $50k → $150k → $300k
-- **Vendor Satisfaction**: 70% → 85% → 92%
+# Start services
+docker-compose up -d
 
-### Platform Metrics
-- **Uptime**: 99.5% → 99.9% → 99.99%
-- **API Response Time**: <200ms (p95)
-- **Page Load Time**: <2s
-- **Error Rate**: <0.1%
+# Check status
+docker-compose ps
+```
+
+### **Kubernetes Deployment**
+```bash
+cd infrastructure/kubernetes
+
+# Apply configurations
+kubectl apply -f backend/
+kubectl apply -f app/
+kubectl apply -f ingress/
+
+# Check deployment
+kubectl get pods
+kubectl get services
+```
+
+### **Cloud Deployment**
+
+**Railway:**
+```bash
+# Install Railway CLI
+npm install -g @railway/cli
+
+# Login
+railway login
+
+# Deploy backend
+cd backend && railway up
+
+# Deploy frontend
+cd app/web && railway up
+```
 
 ---
 
-## 🔐 Security & Compliance
+## 📚 Documentation
 
-### Enterprise-Grade Security
+| Document | Description |
+|----------|-------------|
+| [Architecture Guide](docs/architecture/ARCHITECTURE.md) | System architecture & design patterns |
+| [API Reference](docs/api/API-REFERENCE.md) | Complete API documentation |
+| [Deployment Guide](docs/deployment/DEPLOYMENT-GUIDE.md) | Production deployment instructions |
+| [Feature Documentation](docs/features/) | Individual feature guides |
+| [Development Guide](docs/development/) | Development setup & guidelines |
 
-- ✅ **Zero Trust Architecture**
-- ✅ **End-to-End Encryption**
-- ✅ **PCI DSS Certified**
-- ✅ **GDPR Compliant**
-- ✅ **SOC 2 Type II**
-- ✅ **Regular Penetration Testing**
-- ✅ **24/7 Security Monitoring**
+---
+
+## 🎯 AI Features Roadmap
+
+### **Phase 1: Core AI (Completed ✅)**
+- [x] Visual search with image recognition
+- [x] Conversational commerce
+- [x] Personalization engine
+- [x] Intelligent chatbot
+- [x] Dynamic pricing
+
+### **Phase 2: Enhanced Intelligence (In Progress)**
+- [ ] Advanced visual recognition (AR try-on)
+- [ ] Demand forecasting
+- [ ] Fraud detection system
+- [ ] Content generation AI
+- [ ] Sentiment analysis enhancement
+
+### **Phase 3: Revenue Optimization**
+- [ ] Smart bundle optimization
+- [ ] Cart abandonment AI
+- [ ] Upsell/cross-sell intelligence
+- [ ] Subscription optimization
+- [ ] Loyalty program AI
+
+### **Phase 4: Advanced Features**
+- [ ] Virtual try-on (AR/VR)
+- [ ] Voice commerce
+- [ ] Social commerce AI
+- [ ] Sustainability tracking
+- [ ] Predictive analytics dashboard
+
+---
+
+## 🧪 Testing
+
+```bash
+# Backend tests
+cd backend
+npm run test              # Unit tests
+npm run test:e2e          # E2E tests
+npm run test:cov          # Coverage report
+
+# Frontend tests
+cd app/web
+npm run test
+
+# Mobile tests
+cd app/mobile
+npm run test
+```
+
+---
+
+## 📊 Performance Metrics
+
+### **Target KPIs**
+- API Response Time: < 200ms (P95)
+- Page Load Time: < 2s
+- Mobile App Launch: < 3s
+- Search Results: < 500ms
+- AI Inference: < 1s
+- Uptime: 99.9%
+
+### **Scalability**
+- Concurrent Users: 100,000+
+- Products: 10M+
+- Orders/day: 1M+
+- API Requests/sec: 10,000+
+
+---
+
+## 🔐 Security
+
+- SSL/TLS encryption
+- JWT authentication
+- Password hashing (bcrypt)
+- Rate limiting
+- CSRF protection
+- SQL injection prevention
+- XSS protection
+- Security headers
+- Regular security audits
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions from the community!
+We welcome contributions! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for details.
 
-### For Developers
-```bash
-# Clone repository
-git clone https://github.com/citadelbuy/platform.git
-
-# See CONTRIBUTING.md for guidelines
-cat CONTRIBUTING.md
-```
-
-### For Business Partners
-- Partnership inquiries: partnerships@citadelbuy.com
-- Vendor onboarding: vendors@citadelbuy.com
-- Investment opportunities: investors@citadelbuy.com
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
-## 📞 Contact & Support
-
-### General Inquiries
-- 🌐 Website: https://citadelbuy.com
-- 📧 Email: hello@citadelbuy.com
-- 💬 Slack: citadelbuy.slack.com
-- 🐦 Twitter: [@citadelbuy](https://twitter.com/citadelbuy)
-
-### Technical Support
-- 📚 Documentation: https://docs.citadelbuy.com
-- 💻 API Reference: https://api.citadelbuy.com/docs
-- 🎓 Tutorials: https://learn.citadelbuy.com
-- 🐛 Issues: https://github.com/citadelbuy/platform/issues
-
-### Business Development
-- 🤝 Partnerships: partnerships@citadelbuy.com
-- 💼 Enterprise: enterprise@citadelbuy.com
-- 📈 Investors: investors@citadelbuy.com
-
----
-
-## 📜 License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🙏 Acknowledgments
+## 📞 Support
 
-Built with ❤️ using:
-- [Azure Cloud Platform](https://azure.microsoft.com)
-- [Next.js](https://nextjs.org) by Vercel
-- [TypeScript](https://www.typescriptlang.org)
-- [Node.js](https://nodejs.org)
-- [Terraform](https://www.terraform.io)
-- [Kubernetes](https://kubernetes.io)
-
-Special thanks to the open-source community and early supporters.
+- **Documentation:** [docs/](docs/)
+- **Issues:** [GitHub Issues](https://github.com/oks-citadel/citadelbuy/issues)
+- **Email:** support@citadelbuy.com
+- **Website:** https://citadelbuy.com
 
 ---
 
-## 🌟 Star History
+## 🌟 Key Highlights
 
-If you find this project useful, please give it a star! ⭐
-
-[![Star History Chart](https://api.star-history.com/svg?repos=citadelbuy/platform&type=Date)](https://star-history.com/#citadelbuy/platform&Date)
-
----
-
-<div align="center">
-
-**Ready to revolutionize e-commerce?**
-
-[Get Started →](./05-QUICK-START-GUIDE.md) | [View Demo →](https://demo.citadelbuy.com) | [Contact Us →](mailto:hello@citadelbuy.com)
+- ✅ **43 Backend Modules** - Comprehensive feature set
+- ✅ **5 AI Modules** - Cutting-edge intelligence
+- ✅ **Cross-Platform** - Web + iOS + Android
+- ✅ **Production Ready** - Enterprise-grade architecture
+- ✅ **Scalable** - Handles millions of users
+- ✅ **Secure** - Industry best practices
+- ✅ **Well-Documented** - Extensive documentation
+- ✅ **Open Source** - MIT licensed
 
 ---
 
-Made with 💙 by the CitadelBuy Team
+## 📈 Stats
 
-</div>
+```
+Lines of Code:     238,000+
+Modules:           43
+API Endpoints:     200+
+Database Tables:   50+
+Test Coverage:     80%+
+Documentation:     100+ pages
+```
+
+---
+
+Made with ❤️ by the CitadelBuy Team
+
+**🤖 Powered by Advanced AI Technology**

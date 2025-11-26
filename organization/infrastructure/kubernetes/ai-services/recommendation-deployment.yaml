@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recommendation-service
+  namespace: citadelbuy-ai
+  labels:
+    app: recommendation-service
+    tier: ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: recommendation-service
+  template:
+    metadata:
+      labels:
+        app: recommendation-service
+        tier: ai
+    spec:
+      containers:
+        - name: recommendation
+          image: citadelplatforms/citadelbuy-ai:recommendation-latest
+          ports:
+            - containerPort: 8001
+          env:
+            - name: MODEL_PATH
+              value: "/models/recommendation"
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ai-secrets
+                  key: redis-url
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ai-secrets
+                  key: database-url
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: models
+              mountPath: /models
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: ai-models-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: recommendation-service
+  namespace: citadelbuy-ai
+spec:
+  selector:
+    app: recommendation-service
+  ports:
+    - port: 80
+      targetPort: 8001
+  type: ClusterIP

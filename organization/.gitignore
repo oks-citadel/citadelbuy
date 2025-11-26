@@ -1,0 +1,343 @@
+# ==============================================
+# CitadelBuy E-Commerce Platform - Git Ignore
+# ==============================================
+# Last Updated: 2025-11-18
+
+# ==============================================
+# CRITICAL: Environment Variables & Secrets
+# ==============================================
+# Never commit these files!
+.env
+.env.*
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+frontend/.env.local
+
+# Credentials and secrets
+credentials.json
+secrets.json
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+serviceAccountKey.json
+google-credentials.json
+aws-credentials.json
+
+# SSH keys
+id_rsa
+id_rsa.pub
+*.ppk
+
+# ==============================================
+# Dependencies
+# ==============================================
+node_modules/
+.pnp
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# ==============================================
+# Testing
+# ==============================================
+coverage/
+*.lcov
+.nyc_output
+test-results/
+playwright-report/
+.coverage
+htmlcov/
+*.spec.js.snap
+*.spec.ts.snap
+
+# ==============================================
+# Production Builds
+# ==============================================
+dist/
+build/
+.next/
+out/
+backend/dist/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# ==============================================
+# Logs
+# ==============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+combined.log
+error.log
+access.log
+
+# ==============================================
+# OS Files
+# ==============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+*~
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# ==============================================
+# IDEs and Editors
+# ==============================================
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+.project
+.classpath
+.settings/
+*.launch
+.vscode-test
+
+# ==============================================
+# Database Files
+# ==============================================
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+data/
+postgres-data/
+redis-data/
+mongodb-data/
+*.sql.gz
+*.dump
+
+# Prisma
+backend/prisma/migrations/*_migration/
+# Keep schema.prisma and migration folders
+
+# ==============================================
+# Uploads & User Content
+# ==============================================
+uploads/
+uploads/*
+backend/uploads/
+frontend/public/uploads/
+user-uploads/
+*.uploaded
+
+# ==============================================
+# Cache Directories
+# ==============================================
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.npm
+.next/cache/
+frontend/.turbo/
+.turbo/
+
+# ==============================================
+# Docker
+# ==============================================
+docker-compose.override.yml
+.dockerignore.local
+
+# ==============================================
+# Terraform & Infrastructure
+# ==============================================
+infrastructure/terraform/.terraform/
+infrastructure/terraform/*.tfstate
+infrastructure/terraform/*.tfstate.*
+infrastructure/terraform/*.tfvars
+infrastructure/terraform/.terraform.lock.hcl
+infrastructure/terraform/terraform.rc
+*.tfvars.json
+
+# ==============================================
+# Kubernetes
+# ==============================================
+k8s/**/secrets.yaml
+k8s/**/*-secrets.yaml
+*-secret.yaml
+
+# ==============================================
+# Temporary Files
+# ==============================================
+tmp/
+temp/
+*.tmp
+*.temp
+*.pid
+*.seed
+*.pid.lock
+.cache
+.temp
+
+# ==============================================
+# Build Artifacts
+# ==============================================
+*.tsbuildinfo
+.npm
+.eslintcache
+
+# ==============================================
+# Package Manager Lock Files
+# ==============================================
+# Uncomment if NOT using npm
+# package-lock.json
+
+# Uncomment if NOT using yarn
+# yarn.lock
+
+# Uncomment if NOT using pnpm
+# pnpm-lock.yaml
+
+# ==============================================
+# Sentry
+# ==============================================
+.sentryclirc
+sentry.properties
+
+# ==============================================
+# Monitoring & Analytics
+# ==============================================
+newrelic.js
+dd-agent/
+
+# ==============================================
+# Payment Provider Artifacts
+# ==============================================
+stripe-cli/
+.stripe/
+
+# ==============================================
+# Backup Files
+# ==============================================
+*.backup
+*.bak
+*.old
+*.orig
+*~
+
+# ==============================================
+# Documentation Build Outputs
+# ==============================================
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+
+# ==============================================
+# Frontend Specific
+# ==============================================
+frontend/.env.local
+frontend/.next/
+frontend/out/
+frontend/.turbo/
+frontend/.vercel
+.vercel
+frontend/storybook-static/
+
+# ==============================================
+# Backend Specific
+# ==============================================
+backend/.env
+backend/dist/
+backend/.nyc_output/
+
+# ==============================================
+# Email Templates (if containing sensitive data)
+# ==============================================
+# Uncomment if email templates contain secrets
+# backend/templates/*.html
+
+# ==============================================
+# Session Files
+# ==============================================
+sessions/
+*.session
+
+# ==============================================
+# Generated Documentation
+# ==============================================
+# Uncomment if you don't want to commit generated docs
+# docs/api/
+# swagger.json
+# openapi.yaml
+
+# ==============================================
+# macOS Specific
+# ==============================================
+*.DS_Store
+.AppleDouble
+.LSOverride
+
+# ==============================================
+# Windows Specific
+# ==============================================
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ==============================================
+# Linux Specific
+# ==============================================
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ==============================================
+# Security Scanning Results
+# ==============================================
+.snyk
+snyk-report.json
+security-scan-results/
+
+# ==============================================
+# Load Testing Results
+# ==============================================
+k6-results/
+artillery-results/
+
+# ==============================================
+# NOTES
+# ==============================================
+# This .gitignore is configured for the CitadelBuy platform
+# Keep .env.example and .env.local.example files (they're templates)
+# Regularly review this file when adding new features
+# Use git check-ignore -v <file> to debug ignore rules

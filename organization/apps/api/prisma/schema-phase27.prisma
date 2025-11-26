@@ -1,0 +1,214 @@
+// ==================== PHASE 27: GIFT CARDS & STORE CREDIT ====================
+
+enum GiftCardStatus {
+  ACTIVE
+  REDEEMED
+  EXPIRED
+  CANCELLED
+  SUSPENDED
+}
+
+enum GiftCardType {
+  DIGITAL      // Email delivery
+  PHYSICAL     // Shipped card
+  PROMOTIONAL  // Marketing/promotional cards
+}
+
+enum StoreCreditType {
+  REFUND       // From order returns
+  COMPENSATION // Customer service compensation
+  PROMOTIONAL  // Marketing promotions
+  GIFT         // Converted from gift card
+  LOYALTY      // Converted from loyalty points
+}
+
+enum TransactionType {
+  PURCHASE     // Initial purchase/creation
+  REDEMPTION   // Partial or full redemption
+  REFUND       // Refund back to card
+  ADJUSTMENT   // Manual adjustment
+  EXPIRATION   // Card expired
+  CANCELLATION // Card cancelled
+  TRANSFER     // Balance transfer
+}
+
+// Gift Card Model
+model GiftCard {
+  id                String          @id @default(uuid())
+  code              String          @unique // Unique redemption code
+  type              GiftCardType    @default(DIGITAL)
+  status            GiftCardStatus  @default(ACTIVE)
+
+  // Amount details
+  initialAmount     Float           // Original value
+  currentBalance    Float           // Remaining balance
+  currency          String          @default("USD")
+
+  // Purchaser information
+  purchasedBy       String?         // User who purchased (nullable for promotional)
+  purchaser         User?           @relation("GiftCardPurchaser", fields: [purchasedBy], references: [id], onDelete: SetNull)
+
+  // Recipient information
+  recipientEmail    String?         // Delivery email
+  recipientName     String?         // Recipient name
+  senderName        String?         // Purchaser's name
+  personalMessage   String?         // Custom message
+
+  // Redemption tracking
+  redeemedBy        String?         // User who redeemed
+  redeemer          User?           @relation("GiftCardRedeemer", fields: [redeemedBy], references: [id], onDelete: SetNull)
+  redeemedAt        DateTime?       // First redemption date
+
+  // Validity dates
+  purchaseDate      DateTime        @default(now())
+  activationDate    DateTime        @default(now()) // When card becomes active
+  expirationDate    DateTime?       // Expiry date (null = no expiry)
+
+  // Design customization
+  designTemplate    String?         // Template ID/name
+  customImage       String?         // Custom image URL
+
+  // Delivery
+  isScheduled       Boolean         @default(false)
+  scheduledDelivery DateTime?       // Scheduled email delivery time
+  deliveredAt       DateTime?       // When email was sent
+
+  // Order relationship
+  orderId           String?         // Order if purchased as product
+  order             Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  // Restrictions
+  minimumPurchase   Float?          // Min order value to use card
+  allowedCategories String[]        // Restrict to specific categories
+  excludedProducts  String[]        // Products that can't be purchased
+
+  // Tracking
+  lastUsedAt        DateTime?       // Last redemption
+  usageCount        Int             @default(0) // Number of times used
+
+  // Relationships
+  transactions      GiftCardTransaction[]
+  appliedToOrders   Order[]         @relation("OrderGiftCards")
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([code])
+  @@index([status])
+  @@index([purchasedBy])
+  @@index([redeemedBy])
+  @@index([recipientEmail])
+  @@index([expirationDate])
+}
+
+// Gift Card Transaction History
+model GiftCardTransaction {
+  id              String          @id @default(uuid())
+  giftCardId      String
+  giftCard        GiftCard        @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+
+  type            TransactionType
+  amount          Float           // Transaction amount
+  balanceBefore   Float           // Balance before transaction
+  balanceAfter    Float           // Balance after transaction
+
+  // Related entities
+  orderId         String?         // Order if redemption
+  order           Order?          @relation("GiftCardTransactionOrder", fields: [orderId], references: [id], onDelete: SetNull)
+
+  userId          String?         // User who performed action
+  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Details
+  description     String?         // Transaction description
+  notes           String?         // Admin notes
+
+  // Metadata
+  ipAddress       String?         // User's IP
+  userAgent       String?         // User's browser
+
+  createdAt       DateTime        @default(now())
+
+  @@index([giftCardId])
+  @@index([orderId])
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// Store Credit Model
+model StoreCredit {
+  id              String          @id @default(uuid())
+  userId          String          @unique
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Balance
+  currentBalance  Float           @default(0)
+  totalEarned     Float           @default(0)
+  totalSpent      Float           @default(0)
+  currency        String          @default("USD")
+
+  // Restrictions
+  expirationDate  DateTime?       // When all credit expires
+  minimumPurchase Float?          // Minimum order value to use credit
+
+  // Relationships
+  transactions    StoreCreditTransaction[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([userId])
+}
+
+// Store Credit Transaction History
+model StoreCreditTransaction {
+  id              String          @id @default(uuid())
+  storeCreditId   String
+  storeCredit     StoreCredit     @relation(fields: [storeCreditId], references: [id], onDelete: Cascade)
+
+  type            StoreCreditType
+  transactionType TransactionType @default(PURCHASE)
+
+  amount          Float           // Transaction amount
+  balanceBefore   Float           // Balance before transaction
+  balanceAfter    Float           // Balance after transaction
+
+  // Related entities
+  orderId         String?         // Related order
+  order           Order?          @relation("StoreCreditTransactionOrder", fields: [orderId], references: [id], onDelete: SetNull)
+
+  giftCardId      String?         // If converted from gift card
+
+  // Details
+  description     String
+  notes           String?         // Admin notes
+  expiresAt       DateTime?       // Expiration date for this credit
+
+  // Metadata
+  createdBy       String?         // Admin who created (for manual adjustments)
+
+  createdAt       DateTime        @default(now())
+
+  @@index([storeCreditId])
+  @@index([orderId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([expiresAt])
+}
+
+// ==================== RELATIONS TO EXISTING MODELS ====================
+
+// Add to User model:
+// giftCardsPurchased  GiftCard[]  @relation("GiftCardPurchaser")
+// giftCardsRedeemed   GiftCard[]  @relation("GiftCardRedeemer")
+// giftCardTransactions GiftCardTransaction[]
+// storeCredit         StoreCredit?
+// storeCreditTransactions StoreCreditTransaction[]
+
+// Add to Order model:
+// giftCardsApplied    GiftCard[]  @relation("OrderGiftCards")
+// giftCardTransactions GiftCardTransaction[] @relation("GiftCardTransactionOrder")
+// storeCreditTransactions StoreCreditTransaction[] @relation("StoreCreditTransactionOrder")
+// giftCardAmount      Float?      // Amount paid with gift cards
+// storeCreditAmount   Float?      // Amount paid with store credit

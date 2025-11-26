@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #F59E0B; color: white; padding: 20px; text-align: center; }
+        .content { background-color: #f9f9f9; padding: 30px; }
+        .footer { background-color: #333; color: white; padding: 20px; text-align: center; font-size: 12px; }
+        .button { background-color: #F59E0B; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }
+        .credit-box { background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .amount { font-size: 32px; color: #F59E0B; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎁 Store Credit Issued!</h1>
+        </div>
+        <div class="content">
+            <p>Hello {{customerName}},</p>
+            
+            <p>Your return has been processed and store credit has been added to your account!</p>
+            
+            <div class="credit-box">
+                <p style="margin: 0 0 10px 0; text-align: center;">Store Credit Balance</p>
+                <p class="amount" style="text-align: center; margin: 0;">${{creditAmount}}</p>
+                <hr style="margin: 20px 0; border: none; border-top: 1px solid #F59E0B;">
+                <p style="margin: 5px 0;"><strong>RMA Number:</strong> {{rmaNumber}}</p>
+                {{#if expiresAt}}
+                <p style="margin: 5px 0;"><strong>Expires:</strong> {{expiresAt}}</p>
+                {{/if}}
+            </div>
+            
+            <h3>How to Use Your Store Credit:</h3>
+            <ul>
+                <li>Your store credit is automatically applied at checkout</li>
+                <li>Use it on any items in our store</li>
+                <li>Store credit can be combined with other payment methods</li>
+                {{#if expiresAt}}
+                <li>Make sure to use it before it expires!</li>
+                {{/if}}
+            </ul>
+            
+            <a href="#" class="button">Start Shopping</a>
+            
+            <p>Thank you for shopping with CitadelBuy!</p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2025 CitadelBuy. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

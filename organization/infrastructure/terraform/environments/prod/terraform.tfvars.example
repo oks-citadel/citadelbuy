@@ -1,0 +1,37 @@
+# Production Environment Variables - Example
+# Copy to terraform.tfvars and fill in values (DO NOT commit terraform.tfvars)
+
+# Azure Configuration
+subscription_id = "your-subscription-id"
+tenant_id       = "your-tenant-id"
+
+# Database Configuration
+db_admin_username = "citadelbuy_admin"
+db_admin_password = "CHANGE_ME_STRONG_PASSWORD"
+
+# AKS Configuration
+aks_admin_group_ids = [
+  "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" # Platform Team group ID
+]
+
+# Security Configuration
+allowed_ip_ranges = [
+  "203.0.113.0/24" # Office IP range
+]
+
+blocked_ip_ranges = [
+  # Add known malicious IP ranges
+]
+
+blocked_countries = [
+  # ISO 3166-1 alpha-2 country codes to block
+]
+
+jwt_secret = "CHANGE_ME_LONG_RANDOM_STRING_64_CHARS"
+
+# Monitoring Configuration
+oncall_email            = "oncall@citadelbuy.com"
+team_email              = "platform-team@citadelbuy.com"
+additional_alert_emails = ["cto@citadelbuy.com"]
+pagerduty_webhook_url   = "https://events.pagerduty.com/integration/YOUR_KEY/enqueue"
+slack_webhook_url       = "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
