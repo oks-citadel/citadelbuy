@@ -17,6 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuthStore } from '../../stores/auth-store';
 import { AuthStackParamList } from '../../navigation/RootNavigator';
+import TestCredentials from '../../components/dev/TestCredentials';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -153,6 +154,8 @@ export default function LoginScreen() {
               <Text style={styles.footerLink}>Sign Up</Text>
             </TouchableOpacity>
           </View>
+        {/* Test Credentials - Development Only */}
+          <TestCredentials />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

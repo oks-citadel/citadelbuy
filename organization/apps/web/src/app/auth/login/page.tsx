@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/stores/auth-store';
 import { toast } from 'sonner';
+import { TestCredentials } from '@/components/dev/test-credentials';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -217,6 +218,11 @@ function LoginForm() {
             </p>
           </CardFooter>
         </Card>
+
+        {/* Dev Mode: Test Credentials */}
+        <div className="mt-6">
+          <TestCredentials />
+        </div>
       </motion.div>
     </div>
   );
