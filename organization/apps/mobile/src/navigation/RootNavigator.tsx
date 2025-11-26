@@ -24,6 +24,11 @@ import OrderDetailScreen from '../screens/account/OrderDetailScreen';
 import WishlistScreen from '../screens/account/WishlistScreen';
 import AddressesScreen from '../screens/account/AddressesScreen';
 import SettingsScreen from '../screens/account/SettingsScreen';
+import NotificationsScreen from '../screens/account/NotificationsScreen';
+
+// Review Screens
+import WriteReviewScreen from '../screens/reviews/WriteReviewScreen';
+import MyReviewsScreen from '../screens/reviews/MyReviewsScreen';
 
 // AI Features
 import AIAssistantScreen from '../screens/ai-features/AIAssistantScreen';
@@ -36,6 +41,7 @@ export type RootStackParamList = {
   Checkout: undefined;
   OrderDetail: { orderId: string };
   AIAssistant: undefined;
+  WriteReview: { productId: string; productName: string; productImage: string };
 };
 
 export type AuthStackParamList = {
@@ -59,6 +65,8 @@ export type AccountStackParamList = {
   Wishlist: undefined;
   Addresses: undefined;
   Settings: undefined;
+  Notifications: undefined;
+  MyReviews: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -93,6 +101,16 @@ function AccountNavigator() {
       <AccountStack.Screen name="Wishlist" component={WishlistScreen} />
       <AccountStack.Screen name="Addresses" component={AddressesScreen} />
       <AccountStack.Screen name="Settings" component={SettingsScreen} />
+      <AccountStack.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{ title: 'Notifications' }}
+      />
+      <AccountStack.Screen
+        name="MyReviews"
+        component={MyReviewsScreen}
+        options={{ title: 'My Reviews' }}
+      />
     </AccountStack.Navigator>
   );
 }
@@ -165,6 +183,11 @@ export default function RootNavigator() {
             name="AIAssistant"
             component={AIAssistantScreen}
             options={{ headerShown: true, title: 'AI Shopping Assistant' }}
+          />
+          <Stack.Screen
+            name="WriteReview"
+            component={WriteReviewScreen}
+            options={{ headerShown: true, title: 'Write Review' }}
           />
         </>
       )}
