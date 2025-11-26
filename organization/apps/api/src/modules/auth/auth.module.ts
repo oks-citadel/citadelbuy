@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Logger } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
@@ -20,12 +20,26 @@ import { TrackingModule } from '../tracking/tracking.module';
     PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get('JWT_SECRET') || 'super-secret-key',
-        signOptions: {
-          expiresIn: config.get('JWT_EXPIRATION') || '7d',
-        },
-      }),
+      useFactory: (config: ConfigService) => {
+        const jwtSecret = config.get<string>('JWT_SECRET');
+        const logger = new Logger('AuthModule');
+
+        // Enforce JWT_SECRET in production
+        if (!jwtSecret && process.env.NODE_ENV === 'production') {
+          throw new Error('JWT_SECRET environment variable is required in production');
+        }
+
+        if (!jwtSecret) {
+          logger.warn('JWT_SECRET not set. Using development fallback. DO NOT use in production!');
+        }
+
+        return {
+          secret: jwtSecret || 'dev-only-secret-change-in-production',
+          signOptions: {
+            expiresIn: config.get('JWT_EXPIRATION') || '7d',
+          },
+        };
+      },
     }),
   ],
   controllers: [AuthController],

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -7,6 +7,14 @@ import { UsersService } from '../users/users.service';
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ServerTrackingService } from '../tracking/server-tracking.service';
+import { SocialProvider, SocialLoginDto } from './dto/social-login.dto';
+
+interface SocialUserProfile {
+  email: string;
+  name: string;
+  providerId: string;
+  avatar?: string;
+}
 
 @Injectable()
 export class AuthService {
@@ -101,6 +109,62 @@ export class AuthService {
       user,
       access_token: this.jwtService.sign(payload),
     };
+  }
+
+  async socialLogin(socialLoginDto: SocialLoginDto): Promise<{ user: any; access_token: string }> {
+    const { provider, accessToken } = socialLoginDto;
+    const profile = await this.verifySocialToken(provider, accessToken);
+    if (!profile || !profile.email) {
+      throw new UnauthorizedException('Invalid social login credentials');
+    }
+    let user = await this.usersService.findByEmail(profile.email);
+    if (!user) {
+      const randomPassword = crypto.randomBytes(32).toString('hex');
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+      user = await this.usersService.create({ email: profile.email, password: hashedPassword, name: profile.name });
+      this.emailService.sendWelcomeEmail(user.email, user.name).catch((e) => console.error('Welcome email failed:', e));
+    }
+    const { password: _, ...result } = user;
+    return { user: result, access_token: this.jwtService.sign({ sub: user.id, email: user.email, role: user.role }) };
+  }
+
+  private async verifySocialToken(provider: SocialProvider, accessToken: string): Promise<SocialUserProfile | null> {
+    try {
+      switch (provider) {
+        case SocialProvider.GOOGLE: return await this.verifyGoogleToken(accessToken);
+        case SocialProvider.FACEBOOK: return await this.verifyFacebookToken(accessToken);
+        case SocialProvider.APPLE: return await this.verifyAppleToken(accessToken);
+        default: throw new BadRequestException('Unsupported social provider');
+      }
+    } catch (error) {
+      console.error('Social token verification failed:', error);
+      throw new UnauthorizedException('Failed to verify social login credentials');
+    }
+  }
+
+  private async verifyGoogleToken(accessToken: string): Promise<SocialUserProfile> {
+    const url = 'https://www.googleapis.com/oauth2/v3/userinfo?access_token=' + accessToken;
+    const response = await fetch(url);
+    if (!response.ok) throw new UnauthorizedException('Invalid Google access token');
+    const data = await response.json();
+    return { email: data.email, name: data.name || data.email.split('@')[0], providerId: data.sub, avatar: data.picture };
+  }
+
+  private async verifyFacebookToken(accessToken: string): Promise<SocialUserProfile> {
+    const url = 'https://graph.facebook.com/me?fields=id,name,email,picture&access_token=' + accessToken;
+    const response = await fetch(url);
+    if (!response.ok) throw new UnauthorizedException('Invalid Facebook access token');
+    const data = await response.json();
+    return { email: data.email, name: data.name || 'Facebook User', providerId: data.id, avatar: data.picture?.data?.url };
+  }
+
+  private async verifyAppleToken(identityToken: string): Promise<SocialUserProfile> {
+    try {
+      const payload = JSON.parse(Buffer.from(identityToken.split('.')[1], 'base64').toString());
+      return { email: payload.email, name: payload.email?.split('@')[0] || 'Apple User', providerId: payload.sub };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid Apple identity token');
+    }
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {
