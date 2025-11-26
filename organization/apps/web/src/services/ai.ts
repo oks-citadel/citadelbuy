@@ -60,17 +60,29 @@ export const recommendationService = {
     return response.data!;
   },
 
-  async getTrending(category?: string, limit: number = 10): Promise<Product[]> {
-    const params = new URLSearchParams({ limit: String(limit) });
-    if (category) params.append('category', category);
-    const response = await api.get<Product[]>(`/ai/recommendations/trending?${params}`);
+  async getTrending(limit: number = 10): Promise<Recommendation> {
+    const response = await api.get<Recommendation>(
+      `/ai/recommendations/trending?limit=${limit}`
+    );
     return response.data!;
   },
 
-  async getNewArrivals(userId?: string, limit: number = 10): Promise<Product[]> {
-    const params = new URLSearchParams({ limit: String(limit) });
-    if (userId) params.append('userId', userId);
-    const response = await api.get<Product[]>(`/ai/recommendations/new-arrivals?${params}`);
+  async getNewArrivals(limit: number = 10): Promise<Recommendation> {
+    const response = await api.get<Recommendation>(
+      `/ai/recommendations/new-arrivals?limit=${limit}`
+    );
+    return response.data!;
+  },
+
+  async getRecentlyViewed(userId: string, limit: number = 10): Promise<Recommendation> {
+    const response = await api.get<Recommendation>(
+      `/ai/recommendations/recently-viewed?userId=${userId}&limit=${limit}`
+    );
+    return response.data!;
+  },
+
+  async getTrendingSearches(): Promise<string[]> {
+    const response = await api.get<string[]>('/ai/recommendations/trending-searches');
     return response.data!;
   },
 
@@ -205,10 +217,15 @@ export const smartSearchService = {
     return response.data!;
   },
 
-  async getAutocomplete(query: string): Promise<AISearchSuggestion[]> {
-    const response = await api.get<AISearchSuggestion[]>(
+  async getAutocomplete(query: string): Promise<{ suggestions: AISearchSuggestion[] }> {
+    const response = await api.get<{ suggestions: AISearchSuggestion[] }>(
       `/ai/search/autocomplete?q=${encodeURIComponent(query)}`
     );
+    return response.data!;
+  },
+
+  async getTrending(): Promise<string[]> {
+    const response = await api.get<string[]>('/ai/search/trending');
     return response.data!;
   },
 

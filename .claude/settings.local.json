@@ -158,7 +158,9 @@
       "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" build -t citadelplatforms/citadelbuy-ecommerce:backend-latest -t citadelplatforms/citadelbuy-ecommerce:backend-v2.0-phase54 /c/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api)",
       "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" build -t citadelplatforms/citadelbuy-ecommerce:frontend-latest -t citadelplatforms/citadelbuy-ecommerce:frontend-v2.0-phase54 /c/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/web)",
       "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" push citadelplatforms/citadelbuy-ecommerce:backend-v2.0-phase54)",
-      "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" push citadelplatforms/citadelbuy-ecommerce:frontend-v2.0-phase54)"
+      "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" push citadelplatforms/citadelbuy-ecommerce:frontend-v2.0-phase54)",
+      "Bash(dir:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []
