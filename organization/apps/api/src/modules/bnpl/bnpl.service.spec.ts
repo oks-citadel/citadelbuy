@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { BnplService } from './bnpl.service';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { BnplProviderService } from './services/bnpl-provider.service';
 import {
   BnplProvider,
   BnplPaymentPlanStatus,
@@ -33,6 +35,27 @@ describe('BnplService', () => {
       update: jest.fn(),
       updateMany: jest.fn(),
     },
+  };
+
+  const mockConfigService = {
+    get: jest.fn().mockReturnValue('test_api_key'),
+  };
+
+  const mockBnplProviderService = {
+    createSession: jest.fn().mockResolvedValue({
+      sessionId: 'session-123',
+      redirectUrl: 'https://example.com/checkout',
+    }),
+    getSession: jest.fn().mockResolvedValue({
+      status: 'active',
+    }),
+    capturePayment: jest.fn().mockResolvedValue({
+      success: true,
+    }),
+    refundPayment: jest.fn().mockResolvedValue({
+      success: true,
+    }),
+    isProviderConfigured: jest.fn().mockReturnValue(false),
   };
 
   // Mock data
@@ -82,6 +105,14 @@ describe('BnplService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
+        },
+        {
+          provide: BnplProviderService,
+          useValue: mockBnplProviderService,
         },
       ],
     }).compile();

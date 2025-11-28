@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { SearchService } from './search.service';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { SearchProviderFactory } from './providers/search-provider.factory';
 
 describe('SearchService', () => {
   let service: SearchService;
@@ -34,6 +36,31 @@ describe('SearchService', () => {
     },
   };
 
+  const mockSearchProvider = {
+    searchProducts: jest.fn().mockResolvedValue({
+      products: [],
+      total: 0,
+      page: 1,
+      limit: 20,
+      facets: {},
+    }),
+    getAutocomplete: jest.fn().mockResolvedValue({
+      suggestions: [],
+      products: [],
+    }),
+    indexProduct: jest.fn().mockResolvedValue(undefined),
+    removeProduct: jest.fn().mockResolvedValue(undefined),
+    getProviderName: jest.fn().mockReturnValue('internal'),
+  };
+
+  const mockSearchProviderFactory = {
+    getProvider: jest.fn().mockResolvedValue(mockSearchProvider),
+  };
+
+  const mockConfigService = {
+    get: jest.fn().mockReturnValue('internal'),
+  };
+
   const mockProduct = {
     id: 'product-123',
     name: 'Laptop Computer',
@@ -62,6 +89,14 @@ describe('SearchService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: SearchProviderFactory,
+          useValue: mockSearchProviderFactory,
+        },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
         },
       ],
     }).compile();

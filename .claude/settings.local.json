@@ -174,7 +174,8 @@
       "Bash(for file in \"C:\\Users\\citad\\OneDrive\\Documents\\citadelbuy-master\\organization\\apps\\web\\src\\components\\vendor\\ad-campaign-builder.tsx\" \"C:\\Users\\citad\\OneDrive\\Documents\\citadelbuy-master\\organization\\apps\\web\\src\\components\\vendor\\pricing-dashboard.tsx\")",
       "Bash(npm run db:seed:*)",
       "Bash(for name in sarah michael emily james)",
-      "Bash(pnpm --version:*)"
+      "Bash(pnpm --version:*)",
+      "Bash(pnpm test:*)"
     ],
     "deny": [],
     "ask": []
