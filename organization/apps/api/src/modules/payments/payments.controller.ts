@@ -207,4 +207,166 @@ export class PaymentsController {
       }
     }
   }
+
+  @Post('paypal/webhook')
+  @SkipCsrf()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Handle PayPal webhook events' })
+  @ApiResponse({ status: 200, description: 'Webhook processed successfully' })
+  async handlePayPalWebhook(
+    @Headers() headers: Record<string, string>,
+    @Body() body: any,
+  ) {
+    try {
+      // Verify webhook signature
+      const isValid = await this.paymentsService.verifyPayPalWebhook(headers, body);
+      if (!isValid) {
+        this.logger.warn('PayPal webhook signature verification failed');
+        return { received: false, error: 'Invalid signature' };
+      }
+
+      this.logger.log(`PayPal webhook received: ${body.event_type}`);
+
+      // Handle different event types
+      switch (body.event_type) {
+        case 'CHECKOUT.ORDER.APPROVED':
+          await this.handlePayPalOrderApproved(body.resource);
+          break;
+
+        case 'PAYMENT.CAPTURE.COMPLETED':
+          await this.handlePayPalCaptureCompleted(body.resource);
+          break;
+
+        case 'PAYMENT.CAPTURE.DENIED':
+          await this.handlePayPalCaptureDenied(body.resource);
+          break;
+
+        case 'PAYMENT.CAPTURE.REFUNDED':
+          await this.handlePayPalRefunded(body.resource);
+          break;
+
+        case 'CHECKOUT.ORDER.COMPLETED':
+          await this.handlePayPalOrderCompleted(body.resource);
+          break;
+
+        case 'PAYMENT.CAPTURE.REVERSED':
+          await this.handlePayPalReversed(body.resource);
+          break;
+
+        default:
+          this.logger.log(`Unhandled PayPal event type: ${body.event_type}`);
+      }
+
+      return { received: true };
+    } catch (error) {
+      this.logger.error('PayPal webhook error', error);
+      return { received: false };
+    }
+  }
+
+  private async handlePayPalOrderApproved(resource: any) {
+    this.logger.log(`PayPal order approved: ${resource.id}`);
+    // Order is approved but not yet captured
+    // This is the point where the customer has approved the payment
+    // The actual capture should be triggered from the frontend
+  }
+
+  private async handlePayPalCaptureCompleted(resource: any) {
+    this.logger.log(`PayPal capture completed: ${resource.id}`);
+
+    // Get the order ID from custom_id or invoice_id
+    const orderId = resource.custom_id || resource.invoice_id;
+
+    if (orderId) {
+      try {
+        // Update order status to PROCESSING
+        await this.ordersService.updateOrderPayment(
+          orderId,
+          resource.id,
+          'paypal',
+        );
+
+        this.logger.log(
+          `Order ${orderId} updated to PROCESSING with PayPal capture ${resource.id}`,
+        );
+
+        // Get supplementary data for tracking
+        const supplementaryData = resource.supplementary_data?.related_ids;
+        const payerId = supplementaryData?.payer_id || resource.payer?.payer_id;
+
+        if (payerId) {
+          // Track purchase (async)
+          const order = await this.ordersService.findById(orderId);
+          if (order && order.userId && this.serverTrackingService.isEnabled()) {
+            const items = (order.items || []).map((item: any) => ({
+              id: item.productId || item.product?.id,
+              name: item.product?.name,
+              quantity: item.quantity,
+              price: parseFloat(item.price?.toString() || '0'),
+            }));
+
+            this.serverTrackingService.trackPurchase({
+              userId: order.userId,
+              orderId,
+              value: order.total,
+              currency: resource.amount?.currency_code || 'USD',
+              items,
+              numItems: items.length,
+            }).catch(e => this.logger.error('Failed to track PayPal purchase', e));
+          }
+        }
+      } catch (error) {
+        this.logger.error(
+          `Failed to update order ${orderId} after PayPal capture`,
+          error,
+        );
+      }
+    } else {
+      this.logger.warn(
+        `PayPal capture ${resource.id} completed but no orderId found`,
+      );
+    }
+  }
+
+  private async handlePayPalCaptureDenied(resource: any) {
+    this.logger.error(`PayPal capture denied: ${resource.id}`);
+    const orderId = resource.custom_id || resource.invoice_id;
+
+    if (orderId) {
+      this.logger.error(
+        `PayPal capture denied for order ${orderId}: ${resource.status_details?.reason || 'Unknown reason'}`,
+      );
+    }
+  }
+
+  private async handlePayPalRefunded(resource: any) {
+    this.logger.log(`PayPal refund processed: ${resource.id}`);
+    // Handle refund - update order status or create refund record
+    const orderId = resource.custom_id || resource.invoice_id;
+
+    if (orderId) {
+      try {
+        this.logger.log(`Refund processed for order ${orderId}: ${resource.amount?.value} ${resource.amount?.currency_code}`);
+        // You could update the order status or create a refund record here
+      } catch (error) {
+        this.logger.error(`Failed to process refund for order ${orderId}`, error);
+      }
+    }
+  }
+
+  private async handlePayPalOrderCompleted(resource: any) {
+    this.logger.log(`PayPal order completed: ${resource.id}`);
+    // This fires when the entire order flow is complete
+    // Similar handling to capture completed
+  }
+
+  private async handlePayPalReversed(resource: any) {
+    this.logger.error(`PayPal payment reversed (chargeback): ${resource.id}`);
+    const orderId = resource.custom_id || resource.invoice_id;
+
+    if (orderId) {
+      // This is a chargeback situation - may need to flag the order
+      this.logger.error(`Chargeback/reversal for order ${orderId}`);
+    }
+  }
 }

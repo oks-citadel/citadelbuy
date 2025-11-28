@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { SearchProductsDto } from './dto/search-products.dto';
 import { TrackSearchDto } from './dto/track-search.dto';
@@ -9,11 +10,22 @@ import { Prisma } from '@prisma/client';
 import { SearchProviderFactory } from './providers/search-provider.factory';
 import { SearchParams, SearchFilters, SearchSort } from './providers/search-provider.interface';
 
+// Embedding cache to reduce API calls
+interface EmbeddingCache {
+  embedding: number[];
+  timestamp: number;
+}
+
 @Injectable()
 export class SearchService {
+  private readonly logger = new Logger(SearchService.name);
+  private embeddingCache: Map<string, EmbeddingCache> = new Map();
+  private readonly EMBEDDING_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
   constructor(
     private prisma: PrismaService,
     private searchProviderFactory: SearchProviderFactory,
+    private configService: ConfigService,
   ) {}
 
   /**
@@ -720,5 +732,385 @@ export class SearchService {
   async updateProductInIndex(productId: string) {
     // Just re-index the product
     await this.indexProduct(productId);
+  }
+
+  // ==================== Semantic Search with Embeddings ====================
+
+  /**
+   * Semantic search using OpenAI embeddings for natural language queries
+   * Falls back to keyword search if embeddings are not configured
+   */
+  async semanticSearch(query: string, options: {
+    limit?: number;
+    categoryId?: string;
+    minPrice?: number;
+    maxPrice?: number;
+  } = {}) {
+    const { limit = 20, categoryId, minPrice, maxPrice } = options;
+
+    const openaiKey = this.configService.get<string>('OPENAI_API_KEY');
+
+    if (!openaiKey) {
+      this.logger.warn('OPENAI_API_KEY not configured. Falling back to keyword search.');
+      return this.fallbackKeywordSearch(query, options);
+    }
+
+    try {
+      // Get query embedding
+      const queryEmbedding = await this.getEmbedding(query, openaiKey);
+
+      // Get products with their embeddings from database
+      // In a production system, you would store embeddings in a vector database
+      // For now, we'll compute similarity in memory
+      const products = await this.getProductsWithEmbeddings(categoryId, minPrice, maxPrice);
+
+      // Calculate cosine similarity for each product
+      const scoredProducts = await Promise.all(
+        products.map(async (product) => {
+          let productEmbedding = product.embedding;
+
+          // Generate embedding for products that don't have one cached
+          if (!productEmbedding) {
+            const productText = `${product.name} ${product.description || ''} ${product.categoryName}`;
+            productEmbedding = await this.getEmbedding(productText, openaiKey);
+          }
+
+          const similarity = this.cosineSimilarity(queryEmbedding, productEmbedding);
+
+          return {
+            ...product,
+            semanticScore: similarity,
+          };
+        })
+      );
+
+      // Sort by semantic similarity and take top results
+      scoredProducts.sort((a, b) => b.semanticScore - a.semanticScore);
+      const topResults = scoredProducts.slice(0, limit);
+
+      return {
+        products: topResults.map(p => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          price: p.price,
+          images: p.images,
+          categoryId: p.categoryId,
+          categoryName: p.categoryName,
+          vendorId: p.vendorId,
+          vendorName: p.vendorName,
+          stock: p.stock,
+          semanticScore: p.semanticScore,
+        })),
+        total: topResults.length,
+        searchType: 'semantic',
+        query,
+      };
+    } catch (error: any) {
+      this.logger.error(`Semantic search failed: ${error.message}`);
+      // Fall back to keyword search
+      return this.fallbackKeywordSearch(query, options);
+    }
+  }
+
+  /**
+   * Get embedding from OpenAI API with caching
+   */
+  private async getEmbedding(text: string, apiKey: string): Promise<number[]> {
+    const cacheKey = text.toLowerCase().trim();
+
+    // Check cache
+    const cached = this.embeddingCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.EMBEDDING_CACHE_TTL) {
+      return cached.embedding;
+    }
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/embeddings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'text-embedding-3-small',
+          input: text.slice(0, 8000), // Limit text length
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      const embedding = data.data[0].embedding;
+
+      // Cache the embedding
+      this.embeddingCache.set(cacheKey, {
+        embedding,
+        timestamp: Date.now(),
+      });
+
+      // Clean old cache entries periodically
+      if (this.embeddingCache.size > 10000) {
+        this.cleanEmbeddingCache();
+      }
+
+      return embedding;
+    } catch (error: any) {
+      this.logger.error(`Failed to get embedding: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Calculate cosine similarity between two vectors
+   */
+  private cosineSimilarity(a: number[], b: number[]): number {
+    if (a.length !== b.length) {
+      return 0;
+    }
+
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+
+    for (let i = 0; i < a.length; i++) {
+      dotProduct += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+
+    const denominator = Math.sqrt(normA) * Math.sqrt(normB);
+    return denominator === 0 ? 0 : dotProduct / denominator;
+  }
+
+  /**
+   * Get products with cached embeddings for semantic search
+   */
+  private async getProductsWithEmbeddings(
+    categoryId?: string,
+    minPrice?: number,
+    maxPrice?: number,
+  ) {
+    const where: any = {
+      status: 'ACTIVE',
+    };
+
+    if (categoryId) {
+      where.categoryId = categoryId;
+    }
+
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      where.price = {};
+      if (minPrice !== undefined) where.price.gte = minPrice;
+      if (maxPrice !== undefined) where.price.lte = maxPrice;
+    }
+
+    const products = await this.prisma.product.findMany({
+      where,
+      take: 500, // Limit for in-memory processing
+      include: {
+        category: { select: { name: true } },
+        vendor: { select: { id: true, name: true } },
+      },
+    });
+
+    return products.map(p => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      price: p.price,
+      images: p.images,
+      categoryId: p.categoryId,
+      categoryName: p.category.name,
+      vendorId: p.vendorId,
+      vendorName: p.vendor.name,
+      stock: p.stock,
+      embedding: null as number[] | null, // Will be computed if needed
+    }));
+  }
+
+  /**
+   * Fallback keyword search when embeddings are not available
+   */
+  private async fallbackKeywordSearch(query: string, options: {
+    limit?: number;
+    categoryId?: string;
+    minPrice?: number;
+    maxPrice?: number;
+  }) {
+    const { limit = 20, categoryId, minPrice, maxPrice } = options;
+
+    const where: any = {
+      status: 'ACTIVE',
+      OR: [
+        { name: { contains: query, mode: 'insensitive' } },
+        { description: { contains: query, mode: 'insensitive' } },
+      ],
+    };
+
+    if (categoryId) {
+      where.categoryId = categoryId;
+    }
+
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      where.price = {};
+      if (minPrice !== undefined) where.price.gte = minPrice;
+      if (maxPrice !== undefined) where.price.lte = maxPrice;
+    }
+
+    const products = await this.prisma.product.findMany({
+      where,
+      take: limit,
+      include: {
+        category: { select: { name: true } },
+        vendor: { select: { id: true, name: true } },
+      },
+    });
+
+    return {
+      products: products.map(p => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        price: p.price,
+        images: p.images,
+        categoryId: p.categoryId,
+        categoryName: p.category.name,
+        vendorId: p.vendorId,
+        vendorName: p.vendor.name,
+        stock: p.stock,
+        semanticScore: null,
+      })),
+      total: products.length,
+      searchType: 'keyword',
+      query,
+    };
+  }
+
+  /**
+   * Clean old entries from embedding cache
+   */
+  private cleanEmbeddingCache() {
+    const now = Date.now();
+    for (const [key, value] of this.embeddingCache.entries()) {
+      if (now - value.timestamp > this.EMBEDDING_CACHE_TTL) {
+        this.embeddingCache.delete(key);
+      }
+    }
+  }
+
+  /**
+   * Find similar products using semantic similarity
+   */
+  async findSimilarProducts(productId: string, limit: number = 10) {
+    const openaiKey = this.configService.get<string>('OPENAI_API_KEY');
+
+    // Get the source product
+    const sourceProduct = await this.prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        category: { select: { name: true } },
+      },
+    });
+
+    if (!sourceProduct) {
+      throw new NotFoundException('Product not found');
+    }
+
+    if (!openaiKey) {
+      // Fall back to category-based similar products
+      return this.getCategorySimilarProducts(sourceProduct.categoryId, productId, limit);
+    }
+
+    try {
+      const productText = `${sourceProduct.name} ${sourceProduct.description || ''} ${sourceProduct.category.name}`;
+      const sourceEmbedding = await this.getEmbedding(productText, openaiKey);
+
+      // Get other products in the same category
+      const candidates = await this.prisma.product.findMany({
+        where: {
+          id: { not: productId },
+          categoryId: sourceProduct.categoryId,
+          stock: { gt: 0 }, // Only in-stock products
+        },
+        take: 100,
+        include: {
+          category: { select: { name: true } },
+          vendor: { select: { id: true, name: true } },
+        },
+      });
+
+      // Calculate similarity for each candidate
+      const scoredProducts = await Promise.all(
+        candidates.map(async (product) => {
+          const candidateText = `${product.name} ${product.description || ''} ${product.category?.name || ''}`;
+          const candidateEmbedding = await this.getEmbedding(candidateText, openaiKey);
+          const similarity = this.cosineSimilarity(sourceEmbedding, candidateEmbedding);
+
+          return {
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            images: product.images,
+            categoryName: product.category?.name || '',
+            vendorName: product.vendor?.name || '',
+            similarity,
+          };
+        })
+      );
+
+      // Sort by similarity and return top results
+      scoredProducts.sort((a, b) => b.similarity - a.similarity);
+
+      return {
+        sourceProduct: {
+          id: sourceProduct.id,
+          name: sourceProduct.name,
+        },
+        similarProducts: scoredProducts.slice(0, limit),
+        searchType: 'semantic',
+      };
+    } catch (error: any) {
+      this.logger.error(`Similar products search failed: ${error.message}`);
+      return this.getCategorySimilarProducts(sourceProduct.categoryId, productId, limit);
+    }
+  }
+
+  /**
+   * Fallback: Get similar products from same category
+   */
+  private async getCategorySimilarProducts(categoryId: string, excludeProductId: string, limit: number) {
+    const products = await this.prisma.product.findMany({
+      where: {
+        categoryId,
+        id: { not: excludeProductId },
+        stock: { gt: 0 }, // Only in-stock products
+      },
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        category: { select: { name: true } },
+        vendor: { select: { id: true, name: true } },
+      },
+    });
+
+    return {
+      sourceProduct: { id: excludeProductId },
+      similarProducts: products.map(p => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        price: p.price,
+        images: p.images,
+        categoryName: p.category?.name || '',
+        vendorName: p.vendor?.name || '',
+        similarity: null,
+      })),
+      searchType: 'category',
+    };
   }
 }

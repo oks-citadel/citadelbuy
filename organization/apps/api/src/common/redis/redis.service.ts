@@ -422,4 +422,237 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       return { connected: false, keys: 0, memory: '0' };
     }
   }
+
+  // ==================== Search History Methods ====================
+
+  private readonly SEARCH_HISTORY_KEY_PREFIX = 'search_history:';
+  private readonly SEARCH_HISTORY_TTL = 30 * 24 * 60 * 60; // 30 days
+  private readonly MAX_SEARCH_HISTORY = 100;
+
+  /**
+   * Add a search query to user's search history
+   */
+  async addSearchHistory(
+    userId: string,
+    searchData: {
+      query: string;
+      resultsCount: number;
+      filters?: Record<string, any>;
+      timestamp?: number;
+    },
+  ): Promise<boolean> {
+    if (!this.isConnected) {
+      return false;
+    }
+
+    const key = `${this.SEARCH_HISTORY_KEY_PREFIX}${userId}`;
+    const entry = JSON.stringify({
+      ...searchData,
+      timestamp: searchData.timestamp || Date.now(),
+    });
+
+    try {
+      // Add to sorted set with timestamp as score (for ordering)
+      await this.client.zAdd(key, {
+        score: Date.now(),
+        value: entry,
+      });
+
+      // Trim to max entries (keep only the most recent)
+      await this.client.zRemRangeByRank(key, 0, -(this.MAX_SEARCH_HISTORY + 1));
+
+      // Set/refresh TTL
+      await this.client.expire(key, this.SEARCH_HISTORY_TTL);
+
+      return true;
+    } catch (error) {
+      this.logger.error(`Error adding search history for user ${userId}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Get user's search history
+   */
+  async getSearchHistory(
+    userId: string,
+    limit: number = 20,
+    offset: number = 0,
+  ): Promise<Array<{
+    query: string;
+    resultsCount: number;
+    filters?: Record<string, any>;
+    timestamp: number;
+  }>> {
+    if (!this.isConnected) {
+      return [];
+    }
+
+    const key = `${this.SEARCH_HISTORY_KEY_PREFIX}${userId}`;
+
+    try {
+      // Get searches in reverse chronological order
+      const start = -(offset + limit);
+      const stop = offset > 0 ? -(offset + 1) : -1;
+
+      const entries = await this.client.zRange(key, start, stop, { REV: true });
+
+      return entries.map((entry) => {
+        try {
+          return JSON.parse(entry);
+        } catch {
+          return null;
+        }
+      }).filter(Boolean);
+    } catch (error) {
+      this.logger.error(`Error getting search history for user ${userId}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Clear user's search history
+   */
+  async clearSearchHistory(userId: string): Promise<boolean> {
+    if (!this.isConnected) {
+      return false;
+    }
+
+    const key = `${this.SEARCH_HISTORY_KEY_PREFIX}${userId}`;
+
+    try {
+      await this.client.del(key);
+      return true;
+    } catch (error) {
+      this.logger.error(`Error clearing search history for user ${userId}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Delete specific search from history
+   */
+  async deleteSearchFromHistory(userId: string, timestamp: number): Promise<boolean> {
+    if (!this.isConnected) {
+      return false;
+    }
+
+    const key = `${this.SEARCH_HISTORY_KEY_PREFIX}${userId}`;
+
+    try {
+      // Get all entries and find the one with matching timestamp
+      const entries = await this.client.zRange(key, 0, -1);
+
+      for (const entry of entries) {
+        try {
+          const parsed = JSON.parse(entry);
+          if (parsed.timestamp === timestamp) {
+            await this.client.zRem(key, entry);
+            return true;
+          }
+        } catch {
+          // Skip invalid entries
+        }
+      }
+
+      return false;
+    } catch (error) {
+      this.logger.error(`Error deleting search from history for user ${userId}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Get search history count for user
+   */
+  async getSearchHistoryCount(userId: string): Promise<number> {
+    if (!this.isConnected) {
+      return 0;
+    }
+
+    const key = `${this.SEARCH_HISTORY_KEY_PREFIX}${userId}`;
+
+    try {
+      return await this.client.zCard(key);
+    } catch (error) {
+      this.logger.error(`Error getting search history count for user ${userId}:`, error);
+      return 0;
+    }
+  }
+
+  // ==================== Trending Searches ====================
+
+  private readonly TRENDING_SEARCHES_KEY = 'trending_searches';
+  private readonly TRENDING_TTL = 24 * 60 * 60; // 24 hours
+
+  /**
+   * Record a search for trending calculation
+   */
+  async recordSearchForTrending(query: string): Promise<void> {
+    if (!this.isConnected) {
+      return;
+    }
+
+    const normalizedQuery = query.trim().toLowerCase();
+    if (normalizedQuery.length < 2) return;
+
+    try {
+      // Increment score in sorted set
+      await this.client.zIncrBy(this.TRENDING_SEARCHES_KEY, 1, normalizedQuery);
+
+      // Set TTL on first write
+      const ttl = await this.client.ttl(this.TRENDING_SEARCHES_KEY);
+      if (ttl === -1) {
+        await this.client.expire(this.TRENDING_SEARCHES_KEY, this.TRENDING_TTL);
+      }
+    } catch (error) {
+      this.logger.error('Error recording search for trending:', error);
+    }
+  }
+
+  /**
+   * Get trending searches
+   */
+  async getTrendingSearches(limit: number = 10): Promise<Array<{
+    query: string;
+    count: number;
+  }>> {
+    if (!this.isConnected) {
+      return [];
+    }
+
+    try {
+      const results = await this.client.zRangeWithScores(
+        this.TRENDING_SEARCHES_KEY,
+        0,
+        limit - 1,
+        { REV: true },
+      );
+
+      return results.map((r) => ({
+        query: r.value,
+        count: r.score,
+      }));
+    } catch (error) {
+      this.logger.error('Error getting trending searches:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Reset trending searches (for daily reset)
+   */
+  async resetTrendingSearches(): Promise<boolean> {
+    if (!this.isConnected) {
+      return false;
+    }
+
+    try {
+      await this.client.del(this.TRENDING_SEARCHES_KEY);
+      return true;
+    } catch (error) {
+      this.logger.error('Error resetting trending searches:', error);
+      return false;
+    }
+  }
 }

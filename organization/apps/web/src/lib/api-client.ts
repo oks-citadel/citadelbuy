@@ -446,7 +446,7 @@ export const checkoutApi = {
   },
 
   processPayment: async (sessionId: string, paymentDetails: any) => {
-    const response = await apiClient.post<{ orderId: string; status: string }>(
+    const response = await apiClient.post<{ orderId: string; status: string; redirectUrl?: string }>(
       `/checkout/session/${sessionId}/pay`,
       paymentDetails
     );

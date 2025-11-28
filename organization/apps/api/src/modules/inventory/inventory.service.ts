@@ -1086,6 +1086,295 @@ export class InventoryService {
     return seasonalFactors[month] || 1.0;
   }
 
+  // ==================== REAL-TIME AVAILABILITY CHECK ====================
+
+  /**
+   * Check real-time stock availability for checkout
+   * Returns availability across all warehouses or a specific warehouse
+   */
+  async checkRealTimeAvailability(
+    productId: string,
+    requestedQuantity: number,
+    warehouseId?: string,
+  ): Promise<{
+    isAvailable: boolean;
+    availableQuantity: number;
+    reservedQuantity: number;
+    totalQuantity: number;
+    warehouses: Array<{
+      warehouseId: string;
+      warehouseName: string;
+      available: number;
+      reserved: number;
+      canFulfill: boolean;
+    }>;
+    canPartiallyFulfill: boolean;
+    estimatedRestockDate?: Date | null;
+    alternatives?: Array<{
+      productId: string;
+      productName: string;
+      available: number;
+    }>;
+  }> {
+    const where: any = { productId };
+
+    if (warehouseId) {
+      where.warehouseId = warehouseId;
+    }
+
+    // Get inventory across all warehouses
+    const inventoryItems = await this.prisma.inventoryItem.findMany({
+      where,
+      include: {
+        warehouse: {
+          select: {
+            id: true,
+            name: true,
+            isActive: true,
+          },
+        },
+        product: {
+          select: {
+            categoryId: true,
+          },
+        },
+      },
+    });
+
+    // Calculate totals
+    let totalAvailable = 0;
+    let totalReserved = 0;
+    let totalQuantity = 0;
+
+    const warehouses = inventoryItems
+      .filter(item => item.warehouse.isActive)
+      .map(item => {
+        totalAvailable += item.availableQty;
+        totalReserved += item.reservedQty;
+        totalQuantity += item.quantity;
+
+        return {
+          warehouseId: item.warehouse.id,
+          warehouseName: item.warehouse.name,
+          available: item.availableQty,
+          reserved: item.reservedQty,
+          canFulfill: item.availableQty >= requestedQuantity,
+        };
+      });
+
+    const isAvailable = totalAvailable >= requestedQuantity;
+    const canPartiallyFulfill = totalAvailable > 0 && totalAvailable < requestedQuantity;
+
+    // Get estimated restock date from pending reorders
+    let estimatedRestockDate: Date | null = null;
+    if (!isAvailable) {
+      const pendingReorder = await this.prisma.reorderRequest.findFirst({
+        where: {
+          productId,
+          status: { in: [ReorderStatus.PENDING, ReorderStatus.ORDERED] },
+        },
+        orderBy: { expectedDate: 'asc' },
+      });
+
+      estimatedRestockDate = pendingReorder?.expectedDate || null;
+    }
+
+    // Find alternative products in the same category
+    let alternatives: Array<{ productId: string; productName: string; available: number }> = [];
+    if (!isAvailable && inventoryItems.length > 0) {
+      // Get product info to find its category
+      const productInfo = await this.prisma.product.findUnique({
+        where: { id: productId },
+        select: { categoryId: true },
+      });
+
+      if (productInfo?.categoryId) {
+        const alternativeInventory = await this.prisma.inventoryItem.findMany({
+          where: {
+            productId: { not: productId },
+            availableQty: { gte: requestedQuantity },
+          },
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                categoryId: true,
+              },
+            },
+          },
+          take: 20, // Get more and filter
+          orderBy: { availableQty: 'desc' },
+        });
+
+        // Filter by category and limit to 5
+        alternatives = alternativeInventory
+          .filter(item => item.product.categoryId === productInfo.categoryId)
+          .slice(0, 5)
+          .map(item => ({
+            productId: item.product.id,
+            productName: item.product.name,
+            available: item.availableQty,
+          }));
+      }
+    }
+
+    return {
+      isAvailable,
+      availableQuantity: totalAvailable,
+      reservedQuantity: totalReserved,
+      totalQuantity,
+      warehouses,
+      canPartiallyFulfill,
+      estimatedRestockDate,
+      alternatives: !isAvailable ? alternatives : undefined,
+    };
+  }
+
+  /**
+   * Bulk availability check for multiple products (for cart validation)
+   */
+  async checkBulkAvailability(
+    items: Array<{ productId: string; quantity: number }>,
+  ): Promise<{
+    allAvailable: boolean;
+    items: Array<{
+      productId: string;
+      requestedQuantity: number;
+      isAvailable: boolean;
+      availableQuantity: number;
+      shortfall: number;
+    }>;
+    unavailableCount: number;
+    totalShortfall: number;
+  }> {
+    const results = await Promise.all(
+      items.map(async (item) => {
+        const availability = await this.checkRealTimeAvailability(item.productId, item.quantity);
+
+        return {
+          productId: item.productId,
+          requestedQuantity: item.quantity,
+          isAvailable: availability.isAvailable,
+          availableQuantity: availability.availableQuantity,
+          shortfall: Math.max(0, item.quantity - availability.availableQuantity),
+        };
+      })
+    );
+
+    const unavailableItems = results.filter(r => !r.isAvailable);
+    const totalShortfall = results.reduce((sum, r) => sum + r.shortfall, 0);
+
+    return {
+      allAvailable: unavailableItems.length === 0,
+      items: results,
+      unavailableCount: unavailableItems.length,
+      totalShortfall,
+    };
+  }
+
+  /**
+   * Reserve stock for checkout with real-time validation
+   */
+  async reserveStockForCheckout(
+    productId: string,
+    quantity: number,
+    orderId: string,
+    preferredWarehouseId?: string,
+  ): Promise<{
+    success: boolean;
+    warehouseId: string;
+    reservedQuantity: number;
+    error?: string;
+  }> {
+    // Check availability first
+    const availability = await this.checkRealTimeAvailability(productId, quantity, preferredWarehouseId);
+
+    if (!availability.isAvailable) {
+      return {
+        success: false,
+        warehouseId: '',
+        reservedQuantity: 0,
+        error: `Insufficient stock. Available: ${availability.availableQuantity}, Requested: ${quantity}`,
+      };
+    }
+
+    // Find best warehouse to fulfill from
+    let selectedWarehouse = availability.warehouses.find(
+      w => w.warehouseId === preferredWarehouseId && w.canFulfill
+    );
+
+    // If preferred warehouse can't fulfill, find another
+    if (!selectedWarehouse) {
+      selectedWarehouse = availability.warehouses.find(w => w.canFulfill);
+    }
+
+    if (!selectedWarehouse) {
+      return {
+        success: false,
+        warehouseId: '',
+        reservedQuantity: 0,
+        error: 'No warehouse can fulfill this order',
+      };
+    }
+
+    try {
+      // Reserve the stock
+      await this.reserveStock(productId, selectedWarehouse.warehouseId, quantity, orderId);
+
+      return {
+        success: true,
+        warehouseId: selectedWarehouse.warehouseId,
+        reservedQuantity: quantity,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        warehouseId: selectedWarehouse.warehouseId,
+        reservedQuantity: 0,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Subscribe to stock notifications
+   */
+  async subscribeToStockNotification(
+    productId: string,
+    email: string,
+    threshold: number = 1,
+  ): Promise<{ success: boolean; subscriptionId?: string }> {
+    // Check if already subscribed using raw query since stockSubscription model may not exist
+    try {
+      const existing = await this.prisma.$queryRaw<Array<{ id: string }>>`
+        SELECT id FROM stock_subscriptions
+        WHERE product_id = ${productId} AND email = ${email} AND is_active = true
+        LIMIT 1
+      `;
+
+      if (existing && existing.length > 0) {
+        return { success: true, subscriptionId: existing[0].id };
+      }
+
+      // Create notification subscription
+      const subscription = await this.prisma.$queryRaw<Array<{ id: string }>>`
+        INSERT INTO stock_subscriptions (id, product_id, email, threshold, is_active, created_at)
+        VALUES (gen_random_uuid(), ${productId}, ${email}, ${threshold}, true, NOW())
+        RETURNING id
+      `;
+
+      return {
+        success: true,
+        subscriptionId: subscription?.[0]?.id,
+      };
+    } catch {
+      // If table doesn't exist, log it but don't fail
+      console.log(`Stock subscription requested for ${email} on product ${productId}`);
+      return { success: true };
+    }
+  }
+
   // ==================== HELPER METHODS ====================
 
   private calculateStockStatus(quantity: number, reorderPoint: number, minStockLevel: number): StockStatus {

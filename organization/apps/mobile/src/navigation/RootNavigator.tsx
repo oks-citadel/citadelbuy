@@ -33,15 +33,27 @@ import MyReviewsScreen from '../screens/reviews/MyReviewsScreen';
 // AI Features
 import AIAssistantScreen from '../screens/ai-features/AIAssistantScreen';
 
+// AR Features
+import ARTryOnScreen from '../screens/ar/ARTryOnScreen';
+
+// Payment Screens
+import PaymentScreen from '../screens/payments/PaymentScreen';
+import SubscriptionScreen from '../screens/payments/SubscriptionScreen';
+import WalletScreen from '../screens/payments/WalletScreen';
+
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   ProductDetail: { productId: string };
   Cart: undefined;
   Checkout: undefined;
+  Payment: { amount: number; currency: string; orderId?: string; items?: any[] };
   OrderDetail: { orderId: string };
   AIAssistant: undefined;
+  ARTryOn: { productId?: string; category?: string };
   WriteReview: { productId: string; productName: string; productImage: string };
+  Subscription: undefined;
+  Wallet: undefined;
 };
 
 export type AuthStackParamList = {
@@ -185,9 +197,29 @@ export default function RootNavigator() {
             options={{ headerShown: true, title: 'AI Shopping Assistant' }}
           />
           <Stack.Screen
+            name="ARTryOn"
+            component={ARTryOnScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
             name="WriteReview"
             component={WriteReviewScreen}
             options={{ headerShown: true, title: 'Write Review' }}
+          />
+          <Stack.Screen
+            name="Payment"
+            component={PaymentScreen}
+            options={{ headerShown: true, title: 'Payment' }}
+          />
+          <Stack.Screen
+            name="Subscription"
+            component={SubscriptionScreen}
+            options={{ headerShown: true, title: 'Subscription Plans' }}
+          />
+          <Stack.Screen
+            name="Wallet"
+            component={WalletScreen}
+            options={{ headerShown: true, title: 'Wallet' }}
           />
         </>
       )}

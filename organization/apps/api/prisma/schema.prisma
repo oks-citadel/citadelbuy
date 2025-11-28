@@ -785,6 +785,7 @@ enum SubscriptionStatus {
   EXPIRED
   PAST_DUE
   TRIAL
+  SUSPENDED
 }
 
 enum BillingInterval {

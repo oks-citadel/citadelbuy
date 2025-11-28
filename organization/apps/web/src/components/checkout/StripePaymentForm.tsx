@@ -180,7 +180,7 @@ function StripePaymentFormInternal({
       } else {
         // Unexpected state
         setPaymentError('Payment status is uncertain. Please contact support.');
-        onError?('Unexpected payment status');
+        onError?.('Unexpected payment status');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';

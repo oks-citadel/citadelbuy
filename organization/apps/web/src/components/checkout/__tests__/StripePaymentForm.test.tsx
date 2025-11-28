@@ -5,22 +5,21 @@
  * and props handling. Full E2E testing with Stripe requires test mode setup.
  */
 
-import { describe, it, expect, vi } from '@jest/globals';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import StripePaymentFormWrapper from '../StripePaymentForm';
 
 // Mock Stripe
-vi.mock('@stripe/stripe-js', () => ({
-  loadStripe: vi.fn(() => Promise.resolve({
-    confirmCardPayment: vi.fn(),
+jest.mock('@stripe/stripe-js', () => ({
+  loadStripe: jest.fn(() => Promise.resolve({
+    confirmCardPayment: jest.fn(),
   })),
 }));
 
 // Mock API
-vi.mock('@/services/api', () => ({
+jest.mock('@/services/api', () => ({
   api: {
-    post: vi.fn(() => Promise.resolve({
+    post: jest.fn(() => Promise.resolve({
       success: true,
       data: {
         clientSecret: 'pi_test_secret_123',
@@ -64,7 +63,7 @@ describe('StripePaymentFormWrapper', () => {
   });
 
   it('accepts onSuccess callback', () => {
-    const handleSuccess = vi.fn();
+    const handleSuccess = jest.fn();
 
     render(
       <StripePaymentFormWrapper
@@ -78,7 +77,7 @@ describe('StripePaymentFormWrapper', () => {
   });
 
   it('accepts onError callback', () => {
-    const handleError = vi.fn();
+    const handleError = jest.fn();
 
     render(
       <StripePaymentFormWrapper

@@ -160,7 +160,21 @@
       "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" push citadelplatforms/citadelbuy-ecommerce:backend-v2.0-phase54)",
       "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" push citadelplatforms/citadelbuy-ecommerce:frontend-v2.0-phase54)",
       "Bash(dir:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(git checkout:*)",
+      "Bash(git stash pop:*)",
+      "Bash(git stash drop:*)",
+      "Bash(for file in \"C:\\Users\\citad\\OneDrive\\Documents\\citadelbuy-master\\organization\\apps\\web\\src\\components\\ui\\accordion.tsx\" \"C:\\Users\\citad\\OneDrive\\Documents\\citadelbuy-master\\organization\\apps\\web\\src\\components\\ui\\select.tsx\" \"C:\\Users\\citad\\OneDrive\\Documents\\citadelbuy-master\\organization\\apps\\web\\src\\components\\ui\\tabs.tsx\")",
+      "Bash(do:*)",
+      "Bash(echo:*)",
+      "Bash(for module in analytics-dashboard inventory returns tracking variants coupons cart security support social analytics-advanced mobile seo platform checkout)",
+      "Bash(do)",
+      "Bash(then)",
+      "Bash(test:*)",
+      "Bash(for file in \"C:\\Users\\citad\\OneDrive\\Documents\\citadelbuy-master\\organization\\apps\\web\\src\\components\\vendor\\ad-campaign-builder.tsx\" \"C:\\Users\\citad\\OneDrive\\Documents\\citadelbuy-master\\organization\\apps\\web\\src\\components\\vendor\\pricing-dashboard.tsx\")",
+      "Bash(npm run db:seed:*)",
+      "Bash(for name in sarah michael emily james)",
+      "Bash(pnpm --version:*)"
     ],
     "deny": [],
     "ask": []

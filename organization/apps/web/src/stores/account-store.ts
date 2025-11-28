@@ -411,7 +411,11 @@ interface GiftCardsState {
   purchaseGiftCard: (data: {
     amount: number;
     recipientEmail: string;
+    recipientName?: string;
+    senderName?: string;
     message?: string;
+    designTemplate?: string;
+    scheduledDeliveryDate?: string;
   }) => Promise<void>;
   redeemGiftCard: (code: string) => Promise<{ success: boolean; creditsAdded: number }>;
   checkBalance: (code: string) => Promise<{ balance: number; currency: string } | null>;

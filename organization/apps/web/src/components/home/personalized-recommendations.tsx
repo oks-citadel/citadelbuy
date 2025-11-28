@@ -27,8 +27,8 @@ export function PersonalizedRecommendations() {
         setRecommendations(result.products);
       } else {
         // Get trending products for non-authenticated users
-        const products = await recommendationService.getTrending(undefined, 8);
-        setRecommendations(products);
+        const data = await recommendationService.getTrending(8);
+        setRecommendations(data.products);
       }
     } catch (err) {
       console.error('Failed to fetch recommendations:', err);

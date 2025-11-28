@@ -1,13 +1,26 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { SentryExceptionFilter } from './common/filters/sentry-exception.filter';
 import helmet from 'helmet';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
 
+// Fix BigInt serialization for JSON responses (Prisma count returns BigInt)
+(BigInt.prototype as any).toJSON = function () {
+  return Number(this);
+};
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Get config service
+  const configService = app.get(ConfigService);
+
+  // Global exception filter with Sentry reporting
+  app.useGlobalFilters(new SentryExceptionFilter(configService));
 
   // Security Headers with Helmet
   app.use(

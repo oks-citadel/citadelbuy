@@ -44,6 +44,7 @@ import { MobileModule } from './modules/mobile/mobile.module';
 import { SeoModule } from './modules/seo/seo.module';
 import { PlatformModule } from './modules/platform/platform.module';
 import { CheckoutModule } from './modules/checkout/checkout.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -98,6 +99,7 @@ import { CheckoutModule } from './modules/checkout/checkout.module';
     SeoModule,
     PlatformModule,
     CheckoutModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

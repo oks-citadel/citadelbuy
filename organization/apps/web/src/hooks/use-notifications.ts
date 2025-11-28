@@ -80,7 +80,7 @@ export function useNotifications() {
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
       });
 
       setIsSubscribed(true);
@@ -141,6 +141,7 @@ export function useNotifications() {
 
       try {
         const registration = await navigator.serviceWorker.ready;
+        // Use ServiceWorkerRegistration.showNotification which supports more options
         await registration.showNotification(options.title, {
           body: options.body,
           icon: options.icon || '/icons/icon-192x192.png',
@@ -151,7 +152,7 @@ export function useNotifications() {
           requireInteraction: options.requireInteraction,
           silent: options.silent,
           vibrate: options.vibrate || [100, 50, 100],
-        });
+        } as globalThis.NotificationOptions);
       } catch (error) {
         // Fallback to standard Notification API
         new Notification(options.title, {

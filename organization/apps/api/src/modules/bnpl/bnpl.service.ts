@@ -3,15 +3,24 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
 import { CreatePaymentPlanDto } from './dto/create-payment-plan.dto';
 import { BnplProvider, BnplPaymentPlanStatus, BnplInstallmentStatus } from '@prisma/client';
 import { addDays, addWeeks, addMonths } from 'date-fns';
+import { BnplProviderService, BnplSessionRequest } from './services/bnpl-provider.service';
 
 @Injectable()
 export class BnplService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(BnplService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+    private readonly bnplProviderService: BnplProviderService,
+  ) {}
 
   // ============================================
   // PAYMENT PLAN CREATION
@@ -108,11 +117,99 @@ export class BnplService {
       data: installments,
     });
 
-    // In production, integrate with actual provider API
-    // const providerResponse = await this.integrateWithProvider(paymentPlan, order);
-    // Update providerPlanId with response
+    // Create provider session for payment authorization
+    let providerSession = null;
+    if (this.bnplProviderService.isProviderConfigured(dto.provider)) {
+      try {
+        const user = await this.prisma.user.findUnique({
+          where: { id: userId },
+        });
 
-    return this.findOnePaymentPlan(paymentPlan.id, userId);
+        // Parse shipping address from order (stored as JSON string)
+        let shippingAddress: {
+          line1?: string;
+          line2?: string;
+          city?: string;
+          state?: string;
+          postalCode?: string;
+          country?: string;
+        } = {};
+
+        try {
+          if (order.shippingAddress) {
+            shippingAddress = typeof order.shippingAddress === 'string'
+              ? JSON.parse(order.shippingAddress)
+              : order.shippingAddress;
+          }
+        } catch {
+          this.logger.warn('Failed to parse shipping address from order');
+        }
+
+        if (user) {
+          const sessionRequest: BnplSessionRequest = {
+            orderId: dto.orderId,
+            orderTotal: order.total,
+            currency: 'USD',
+            items: [], // Will be populated from order items
+            customer: {
+              email: user.email,
+              firstName: user.name?.split(' ')[0] || '',
+              lastName: user.name?.split(' ').slice(1).join(' ') || '',
+              phone: '', // User model doesn't have phone field
+            },
+            billingAddress: {
+              line1: shippingAddress.line1 || '',
+              line2: shippingAddress.line2 || '',
+              city: shippingAddress.city || '',
+              state: shippingAddress.state || '',
+              postalCode: shippingAddress.postalCode || '',
+              country: shippingAddress.country || 'US',
+            },
+            shippingAddress: {
+              line1: shippingAddress.line1 || '',
+              line2: shippingAddress.line2 || '',
+              city: shippingAddress.city || '',
+              state: shippingAddress.state || '',
+              postalCode: shippingAddress.postalCode || '',
+              country: shippingAddress.country || 'US',
+            },
+            returnUrl: `${this.configService.get('APP_URL')}/checkout/success?orderId=${dto.orderId}`,
+            cancelUrl: `${this.configService.get('APP_URL')}/checkout/cancel?orderId=${dto.orderId}`,
+            numberOfInstallments: dto.numberOfInstallments,
+          };
+
+          providerSession = await this.bnplProviderService.createSession(dto.provider, sessionRequest);
+
+          // Update payment plan with provider session ID
+          await this.prisma.bnplPaymentPlan.update({
+            where: { id: paymentPlan.id },
+            data: {
+              providerPlanId: providerSession.sessionId,
+            },
+          });
+
+          this.logger.log(`BNPL session created with ${dto.provider}: ${providerSession.sessionId}`);
+        }
+      } catch (error: any) {
+        this.logger.error(`Failed to create BNPL provider session: ${error.message}`);
+        // Don't fail the payment plan creation, just log the error
+        // The user can still manually trigger payment later
+      }
+    } else {
+      this.logger.warn(`BNPL provider ${dto.provider} not configured. Payment plan created without provider session.`);
+    }
+
+    const result = await this.findOnePaymentPlan(paymentPlan.id, userId);
+
+    // Include provider session info in response if available
+    return {
+      ...result,
+      providerSession: providerSession ? {
+        redirectUrl: providerSession.redirectUrl,
+        expiresAt: providerSession.expiresAt,
+        clientToken: providerSession.clientToken,
+      } : null,
+    };
   }
 
   /**
@@ -294,11 +391,19 @@ export class BnplService {
   /**
    * Process installment payment
    */
-  async processInstallmentPayment(installmentId: string, userId: string) {
+  async processInstallmentPayment(installmentId: string, userId: string, paymentToken?: string) {
     const installment = await this.prisma.bnplInstallment.findUnique({
       where: { id: installmentId },
       include: {
-        paymentPlan: true,
+        paymentPlan: {
+          include: {
+            order: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -314,21 +419,104 @@ export class BnplService {
       throw new BadRequestException('Installment already paid');
     }
 
-    // In production, process payment through provider
-    // const paymentResult = await this.processPaymentWithProvider(installment);
-
-    // Update installment
+    // Update attempt tracking
     await this.prisma.bnplInstallment.update({
       where: { id: installmentId },
       data: {
-        status: BnplInstallmentStatus.PAID,
-        paidDate: new Date(),
         attemptCount: { increment: 1 },
         lastAttemptDate: new Date(),
       },
     });
 
-    // Update payment plan
+    // Process payment through the BNPL provider
+    const { paymentPlan } = installment;
+    const provider = paymentPlan.provider;
+
+    // Check if provider is configured
+    if (!this.bnplProviderService.isProviderConfigured(provider)) {
+      // In development, simulate successful payment
+      if (this.configService.get('NODE_ENV') !== 'production') {
+        this.logger.warn(`BNPL provider ${provider} not configured. Simulating payment in development.`);
+        return this.completeInstallmentPayment(installment);
+      }
+      throw new BadRequestException(`BNPL provider ${provider} is not configured`);
+    }
+
+    try {
+      // If this is the first installment, we need to capture the initial authorization
+      // For subsequent installments, most BNPL providers handle them automatically
+      // but some require explicit capture
+
+      if (installment.installmentNumber === 1 && paymentPlan.providerPlanId) {
+        // Authorize and capture the first payment
+        const authResult = await this.bnplProviderService.authorizePayment(
+          provider,
+          paymentPlan.providerPlanId,
+          paymentToken,
+        );
+
+        if (!authResult.authorized) {
+          this.logger.error(`BNPL authorization failed for installment ${installmentId}: ${authResult.errorMessage}`);
+
+          // Update installment with failure
+          await this.prisma.bnplInstallment.update({
+            where: { id: installmentId },
+            data: {
+              status: BnplInstallmentStatus.FAILED,
+              failureReason: authResult.errorMessage,
+            },
+          });
+
+          return {
+            success: false,
+            message: authResult.errorMessage || 'Payment authorization failed',
+          };
+        }
+
+        // Update payment plan with provider order ID
+        if (authResult.providerOrderId) {
+          await this.prisma.bnplPaymentPlan.update({
+            where: { id: paymentPlan.id },
+            data: {
+              providerPlanId: authResult.providerOrderId,
+              status: BnplPaymentPlanStatus.ACTIVE,
+            },
+          });
+        }
+      }
+
+      // Complete the installment payment
+      return this.completeInstallmentPayment(installment);
+    } catch (error: any) {
+      this.logger.error(`BNPL payment processing failed: ${error.message}`, error.stack);
+
+      // Update installment with failure
+      await this.prisma.bnplInstallment.update({
+        where: { id: installmentId },
+        data: {
+          status: BnplInstallmentStatus.FAILED,
+          failureReason: error.message,
+        },
+      });
+
+      throw new BadRequestException(`Payment processing failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Complete installment payment and update balances
+   */
+  private async completeInstallmentPayment(installment: any) {
+    // Update installment as paid
+    await this.prisma.bnplInstallment.update({
+      where: { id: installment.id },
+      data: {
+        status: BnplInstallmentStatus.PAID,
+        paidDate: new Date(),
+      },
+    });
+
+    // Update payment plan balances
     const updatedTotalPaid = installment.paymentPlan.totalPaid + installment.amount;
     const updatedRemainingBalance = installment.paymentPlan.remainingBalance - installment.amount;
 
@@ -343,6 +531,8 @@ export class BnplService {
             : BnplPaymentPlanStatus.ACTIVE,
       },
     });
+
+    this.logger.log(`Installment ${installment.id} paid successfully. Remaining balance: ${updatedRemainingBalance}`);
 
     return { success: true, message: 'Payment processed successfully' };
   }

@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '@/common/prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
 import natural from 'natural';
 
 interface SearchQuery {
@@ -9,16 +11,39 @@ interface SearchQuery {
   confidence: number;
 }
 
+interface ProductResult {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  images: string[];
+  categoryId: string;
+  categoryName: string;
+  vendorId: string;
+  vendorName: string;
+  stock: number;
+  avgRating: number | null;
+  reviewCount: number;
+  relevanceScore: number;
+}
+
 @Injectable()
 export class SmartSearchService {
   private readonly logger = new Logger(SmartSearchService.name);
   private readonly tokenizer = new natural.WordTokenizer();
   private readonly stemmer = natural.PorterStemmer;
-  private readonly spellCheck = new natural.Spellcheck(['product', 'shoes', 'shirt', 'pants', 'jacket', 'watch', 'phone', 'laptop', 'tablet']);
+  private readonly spellCheck = new natural.Spellcheck(['product', 'shoes', 'shirt', 'pants', 'jacket', 'watch', 'phone', 'laptop', 'tablet', 'dress', 'electronics', 'clothing', 'accessories', 'furniture', 'beauty', 'sports', 'toys', 'books', 'food', 'drinks']);
 
-  // In-memory storage (use Redis in production)
+  // In-memory caching with TTL for search history (use Redis in production)
   private searchHistory: Map<string, any[]> = new Map();
   private queryStats: Map<string, number> = new Map();
+  private searchCache: Map<string, { results: ProductResult[]; timestamp: number }> = new Map();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async search(query: string, userId?: string) {
     try {
@@ -139,26 +164,166 @@ export class SmartSearchService {
     return entities;
   }
 
-  private async executeSearch(processedQuery: SearchQuery): Promise<any[]> {
-    // In production: Query Elasticsearch/Algolia with processed query
-    // For now, return mock results
+  private async executeSearch(processedQuery: SearchQuery): Promise<ProductResult[]> {
+    const { corrected, entities } = processedQuery;
 
-    const mockResults = [
-      {
-        id: '1',
-        name: `Product matching "${processedQuery.corrected}"`,
-        price: 49.99,
-        relevanceScore: 0.95,
-      },
-      {
-        id: '2',
-        name: `Similar product to "${processedQuery.corrected}"`,
-        price: 59.99,
-        relevanceScore: 0.87,
-      },
-    ];
+    // Check cache first
+    const cacheKey = JSON.stringify({ query: corrected, entities });
+    const cached = this.searchCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      this.logger.debug(`Cache hit for query: ${corrected}`);
+      return cached.results;
+    }
 
-    return mockResults;
+    // Build search conditions
+    const searchTerms = corrected.split(' ').filter(term => term.length > 1);
+
+    // Create OR conditions for name, description, and category name
+    const searchConditions: any[] = searchTerms.map(term => ({
+      OR: [
+        { name: { contains: term, mode: 'insensitive' } },
+        { description: { contains: term, mode: 'insensitive' } },
+        { category: { name: { contains: term, mode: 'insensitive' } } },
+        { vendor: { name: { contains: term, mode: 'insensitive' } } },
+      ],
+    }));
+
+    // Build filter conditions from entities
+    const filterConditions: any = {};
+
+    if (entities.maxPrice) {
+      filterConditions.price = { lte: entities.maxPrice };
+    }
+
+    if (entities.brand) {
+      filterConditions.vendor = {
+        name: { contains: entities.brand, mode: 'insensitive' }
+      };
+    }
+
+    // Execute database query
+    try {
+      const products = await this.prisma.product.findMany({
+        where: {
+          AND: [
+            { status: 'ACTIVE' },
+            { OR: searchConditions.flatMap(c => c.OR) },
+            ...Object.keys(filterConditions).length > 0 ? [filterConditions] : [],
+          ],
+        },
+        include: {
+          category: { select: { id: true, name: true } },
+          vendor: { select: { id: true, name: true } },
+          reviews: { select: { rating: true } },
+        },
+        take: 50, // Limit to top 50 results for NLP scoring
+        orderBy: [
+          { salesCount: 'desc' },
+          { stock: 'desc' },
+        ],
+      });
+
+      // Calculate relevance scores for each product
+      const scoredResults: ProductResult[] = products.map(product => {
+        const relevanceScore = this.calculateRelevanceScore(product, searchTerms, entities);
+        const avgRating = product.reviews.length > 0
+          ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length
+          : null;
+
+        return {
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          images: product.images,
+          categoryId: product.category.id,
+          categoryName: product.category.name,
+          vendorId: product.vendor.id,
+          vendorName: product.vendor.name,
+          stock: product.stock,
+          avgRating,
+          reviewCount: product.reviews.length,
+          relevanceScore,
+        };
+      });
+
+      // Sort by relevance score
+      scoredResults.sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+      // Take top 20 most relevant
+      const topResults = scoredResults.slice(0, 20);
+
+      // Cache results
+      this.searchCache.set(cacheKey, { results: topResults, timestamp: Date.now() });
+
+      this.logger.log(`Smart search for "${corrected}" returned ${topResults.length} results`);
+      return topResults;
+    } catch (error) {
+      this.logger.error(`Database search failed: ${error.message}`);
+      // Return empty results on database error
+      return [];
+    }
+  }
+
+  /**
+   * Calculate relevance score based on term matching and entity alignment
+   */
+  private calculateRelevanceScore(
+    product: any,
+    searchTerms: string[],
+    entities: Record<string, any>,
+  ): number {
+    let score = 0;
+    const productName = product.name.toLowerCase();
+    const productDesc = (product.description || '').toLowerCase();
+    const categoryName = product.category.name.toLowerCase();
+    const vendorName = product.vendor.name.toLowerCase();
+
+    // Term matching in name (highest weight)
+    for (const term of searchTerms) {
+      const termLower = term.toLowerCase();
+      if (productName.includes(termLower)) {
+        score += 0.4;
+        // Bonus for exact word match
+        if (productName.split(/\s+/).some(word => word === termLower)) {
+          score += 0.2;
+        }
+      }
+      if (productDesc.includes(termLower)) {
+        score += 0.15;
+      }
+      if (categoryName.includes(termLower)) {
+        score += 0.2;
+      }
+      if (vendorName.includes(termLower)) {
+        score += 0.1;
+      }
+    }
+
+    // Entity alignment bonuses
+    if (entities.brand && vendorName.includes(entities.brand.toLowerCase())) {
+      score += 0.3;
+    }
+    if (entities.maxPrice && product.price <= entities.maxPrice) {
+      score += 0.1;
+    }
+    if (entities.color && (productName.includes(entities.color) || productDesc.includes(entities.color))) {
+      score += 0.2;
+    }
+
+    // Availability bonus
+    if (product.stock > 0) {
+      score += 0.1;
+    }
+
+    // Reviews/rating bonus
+    if (product.reviews && product.reviews.length > 0) {
+      const avgRating = product.reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / product.reviews.length;
+      score += avgRating / 50; // Small bonus based on rating
+    }
+
+    // Normalize score to 0-1 range
+    return Math.min(1, Math.max(0, score / (searchTerms.length || 1)));
   }
 
   async semanticSearch(query: string) {

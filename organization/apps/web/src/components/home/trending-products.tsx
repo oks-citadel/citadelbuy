@@ -15,8 +15,8 @@ export function TrendingProducts() {
   React.useEffect(() => {
     const fetchTrending = async () => {
       try {
-        const data = await recommendationService.getTrending(undefined, 8);
-        setProducts(data);
+        const data = await recommendationService.getTrending(8);
+        setProducts(data.products);
       } catch (error) {
         console.error('Failed to fetch trending products:', error);
       } finally {
