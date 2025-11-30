@@ -1,13 +1,14 @@
 import { useCallback, useMemo } from 'react';
-import { useCartStore } from '../stores/cart-store';
+import { useCartStore, CartItem } from '../stores/cart-store';
 
 /**
  * Hook for accessing cart state and methods
  */
 export function useCart() {
   const {
-    items,
+    cart,
     isLoading,
+    isUpdating,
     error,
     addItem,
     removeItem,
@@ -15,23 +16,25 @@ export function useCart() {
     clearCart,
     applyCoupon,
     removeCoupon,
-    coupon,
   } = useCartStore();
 
+  const items = cart?.items || [];
+  const coupon = cart?.coupon;
+
   const itemCount = useMemo(() => {
-    return items.reduce((total, item) => total + item.quantity, 0);
+    return items.reduce((total: number, item: CartItem) => total + item.quantity, 0);
   }, [items]);
 
   const subtotal = useMemo(() => {
-    return items.reduce((total, item) => total + item.price * item.quantity, 0);
+    return items.reduce((total: number, item: CartItem) => total + item.price * item.quantity, 0);
   }, [items]);
 
   const discount = useMemo(() => {
     if (!coupon) return 0;
     if (coupon.type === 'percentage') {
-      return subtotal * (coupon.value / 100);
+      return subtotal * (coupon.discount / 100);
     }
-    return coupon.value;
+    return coupon.discount;
   }, [coupon, subtotal]);
 
   const total = useMemo(() => {
@@ -82,6 +85,7 @@ export function useCart() {
     total,
     coupon,
     isLoading,
+    isUpdating,
     error,
     addItem: handleAddItem,
     removeItem: handleRemoveItem,

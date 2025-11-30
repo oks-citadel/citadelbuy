@@ -63,7 +63,7 @@ export default function AccountScreen() {
       style={styles.menuItem}
       onPress={() => item.route && navigation.navigate(item.route as any)}
     >
-      <View style={[styles.menuIcon, item.color && { backgroundColor: item.color + '20' }]}>
+      <View style={[styles.menuIcon, item.color ? { backgroundColor: item.color + '20' } : undefined]}>
         <Ionicons name={item.icon as any} size={22} color={item.color || '#6366f1'} />
       </View>
       <View style={styles.menuContent}>

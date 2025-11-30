@@ -14,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Camera, CameraType, CameraView } from 'expo-camera';
+import { Camera, CameraType } from 'expo-camera';
 import * as MediaLibrary from 'expo-media-library';
 import { RootStackParamList } from '../../types/navigation';
 
@@ -46,10 +46,10 @@ const mockARProducts: ARProduct[] = [
 export default function ARTryOnScreen() {
   const navigation = useNavigation<ARTryOnNavigationProp>();
   const route = useRoute<ARTryOnRouteProp>();
-  const cameraRef = useRef<CameraView>(null);
+  const cameraRef = useRef<Camera>(null);
 
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [cameraType, setCameraType] = useState<CameraType>('front');
+  const [cameraType, setCameraType] = useState(CameraType.front);
   const [isARActive, setIsARActive] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ARProduct | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
@@ -69,7 +69,7 @@ export default function ARTryOnScreen() {
   }, []);
 
   const toggleCameraType = () => {
-    setCameraType(current => (current === 'back' ? 'front' : 'back'));
+    setCameraType(current => (current === CameraType.back ? CameraType.front : CameraType.back));
   };
 
   const capturePhoto = async () => {
@@ -132,7 +132,7 @@ export default function ARTryOnScreen() {
   if (hasPermission === false) {
     return (
       <View style={styles.permissionDenied}>
-        <Ionicons name="camera-off-outline" size={64} color="#9ca3af" />
+        <Ionicons name="camera-outline" size={64} color="#9ca3af" />
         <Text style={styles.permissionTitle}>Camera Access Required</Text>
         <Text style={styles.permissionText}>
           Please enable camera access in your device settings to use AR Try-On
@@ -150,10 +150,10 @@ export default function ARTryOnScreen() {
   return (
     <View style={styles.container}>
       {/* Camera View */}
-      <CameraView
+      <Camera
         ref={cameraRef}
         style={styles.camera}
-        facing={cameraType}
+        type={cameraType}
       >
         {/* AR Overlay - Simulated for demo */}
         {isARActive && selectedProduct && (
@@ -241,13 +241,13 @@ export default function ARTryOnScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.arControlButton}
-                onPress={() => setArOverlayScale(s => Math.min(s + 0.1, 2))}
+                onPress={() => setAROverlayScale(s => Math.min(s + 0.1, 2))}
               >
                 <Ionicons name="add" size={24} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.arControlButton}
-                onPress={() => setArOverlayScale(s => Math.max(s - 0.1, 0.5))}
+                onPress={() => setAROverlayScale(s => Math.max(s - 0.1, 0.5))}
               >
                 <Ionicons name="remove" size={24} color="#fff" />
               </TouchableOpacity>
@@ -283,7 +283,7 @@ export default function ARTryOnScreen() {
             )}
           </TouchableOpacity>
         </View>
-      </CameraView>
+      </Camera>
 
       {/* Product Selector */}
       <View style={styles.productSelector}>

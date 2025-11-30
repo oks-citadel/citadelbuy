@@ -18,7 +18,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
-  EditReview: { reviewId: string };
+  EditReview: { reviewId: string; productId: string; productName: string; productImage: string };
 };
 
 type EditReviewRouteProp = RouteProp<RootStackParamList, 'EditReview'>;
@@ -35,7 +35,7 @@ export default function EditReviewScreen() {
   const [pros, setPros] = useState('');
   const [cons, setCons] = useState('');
   const [images, setImages] = useState<string[]>([]);
-  const [isSaving...etIsSubmitting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -71,7 +71,7 @@ export default function EditReviewScreen() {
       return;
     }
 
-    setIsSaving...ue);
+    setIsSaving(true);
 
     try {
       // In production, this would send to the API
@@ -85,7 +85,7 @@ export default function EditReviewScreen() {
         images,
       };
 
-      console.log('Saving...view:', reviewData);
+      console.log('Submitting review:', reviewData);
 
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -103,7 +103,7 @@ export default function EditReviewScreen() {
     } catch (error) {
       Alert.alert('Error', 'Failed to submit review. Please try again.');
     } finally {
-      setIsSaving...lse);
+      setIsSaving(false);
     }
   };
 
@@ -273,12 +273,12 @@ export default function EditReviewScreen() {
           <TouchableOpacity
             style={[
               styles.submitButton,
-              (isSaving... rating === 0) && styles.submitButtonDisabled,
+              (isSaving || rating === 0) && styles.submitButtonDisabled,
             ]}
             onPress={handleSubmit}
-            disabled={isSaving... rating === 0}
+            disabled={isSaving || rating === 0}
           >
-            {isSaving...(
+            {isSaving ? (
               <Text style={styles.submitButtonText}>Saving...</Text>
             ) : (
               <Text style={styles.submitButtonText}>Save Changes</Text>
