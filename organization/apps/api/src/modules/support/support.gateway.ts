@@ -8,16 +8,28 @@ import {
   OnGatewayDisconnect,
   OnGatewayInit,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { SupportService } from './support.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
-interface AuthenticatedSocket extends Socket {
+// Use 'any' type for Socket to avoid dependency issues
+type Socket = any;
+type Server = any;
+
+interface AuthenticatedSocket {
+  id: string;
   userId?: string;
   userRole?: string;
   sessionId?: string;
+  handshake: {
+    headers: { authorization?: string };
+    auth?: { token?: string };
+  };
+  emit: (event: string, data: any) => void;
+  join: (room: string) => void;
+  leave: (room: string) => void;
+  to: (room: string) => { emit: (event: string, data: any) => void };
 }
 
 interface ChatMessage {

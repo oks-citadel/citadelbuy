@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { useAuthStore } from '@/stores/auth-store';
+import { tokenManager } from '@/lib/api-client';
 
 interface ChatMessage {
   id: string;
@@ -64,7 +64,7 @@ export function useLiveChat(options: UseLiveChatOptions = {}): UseLiveChatReturn
   const { autoConnect = false, onConnect, onDisconnect, onError } = options;
 
   const socketRef = useRef<Socket | null>(null);
-  const { accessToken } = useAuthStore();
+  const accessToken = tokenManager.getAccessToken();
 
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);

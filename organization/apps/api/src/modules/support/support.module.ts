@@ -21,6 +21,6 @@ import { PrismaModule } from '@/common/prisma/prisma.module';
   ],
   controllers: [SupportController],
   providers: [SupportService, SupportGateway],
-  exports: [SupportService, SupportGateway],
+  exports: [SupportService],
 })
 export class SupportModule {}

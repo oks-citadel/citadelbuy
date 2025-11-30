@@ -179,6 +179,9 @@ export class AuthService {
       }
 
       const kid = decodedHeader.header.kid;
+      if (!kid) {
+        throw new UnauthorizedException('Invalid Apple token - missing key ID');
+      }
 
       // Get Apple's public keys
       const publicKey = await this.getApplePublicKey(kid);

@@ -82,7 +82,7 @@ export class StripeProvider implements IPaymentProvider, ISubscriptionProvider {
         description: request.description,
         metadata: {
           ...request.metadata,
-          items: request.items ? JSON.stringify(request.items) : undefined,
+          items: request.items ? JSON.stringify(request.items) : null,
         },
         automatic_payment_methods: {
           enabled: true,

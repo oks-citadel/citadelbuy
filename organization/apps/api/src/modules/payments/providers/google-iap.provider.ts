@@ -52,7 +52,7 @@ export class GoogleIAPProvider implements IIAPProvider {
    */
   private async getAccessToken(): Promise<string> {
     if (this.accessToken && Date.now() < this.tokenExpiry - 60000) {
-      return this.accessToken;
+      return this.accessToken!;
     }
 
     try {
@@ -77,7 +77,7 @@ export class GoogleIAPProvider implements IIAPProvider {
       this.accessToken = data.access_token;
       this.tokenExpiry = Date.now() + (data.expires_in * 1000);
 
-      return this.accessToken;
+      return this.accessToken!;
     } catch (error: any) {
       this.logger.error(`Failed to get Google access token: ${error.message}`);
       throw error;

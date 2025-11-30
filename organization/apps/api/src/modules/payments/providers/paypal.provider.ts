@@ -47,7 +47,7 @@ export class PayPalProvider implements IPaymentProvider {
   private async getAccessToken(): Promise<string> {
     // Return cached token if still valid (with 5 min buffer)
     if (this.accessToken && Date.now() < this.tokenExpiry - 300000) {
-      return this.accessToken;
+      return this.accessToken!;
     }
 
     const auth = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
@@ -69,7 +69,7 @@ export class PayPalProvider implements IPaymentProvider {
     this.accessToken = data.access_token;
     this.tokenExpiry = Date.now() + (data.expires_in * 1000);
 
-    return this.accessToken;
+    return this.accessToken!;
   }
 
   async createPayment(request: CreatePaymentRequest): Promise<PaymentResult> {

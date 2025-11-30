@@ -16,6 +16,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Loader2,
+  LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -231,7 +232,7 @@ export function RevenueDashboard() {
   }: {
     title: string;
     metric: RevenueMetric;
-    icon: React.ElementType;
+    icon: any;
     prefix?: string;
     suffix?: string;
   }) => (
