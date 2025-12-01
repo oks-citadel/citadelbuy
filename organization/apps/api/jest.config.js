@@ -1,9 +1,9 @@
 module.exports = {
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: 'src',
-  testRegex: '.*\\.spec\\.ts$',
+  testRegex: '.*.spec.ts$',
   transform: {
-    '^.+\\.(t|j)s$': ['ts-jest', {
+    '^.+.(t|j)s$': ['ts-jest', {
       isolatedModules: true,
     }],
   },
@@ -16,4 +16,12 @@ module.exports = {
     '^@/modules/(.*)$': '<rootDir>/modules/$1',
     '^@/config/(.*)$': '<rootDir>/config/$1',
   },
+  // Memory optimization
+  maxWorkers: 2,
+  workerIdleMemoryLimit: '512MB',
+  detectOpenHandles: true,
+  // Clear mocks between tests
+  clearMocks: true,
+  resetMocks: true,
+  restoreMocks: true,
 };
