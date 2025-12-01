@@ -1,9 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { Sparkles, Camera, MessageSquare, Target, Brain, ShieldCheck, Zap, BarChart3, ArrowRight } from 'lucide-react';
+import { Sparkles, Camera, MessageSquare, Target, Brain, ShieldCheck, Zap, BarChart3, ArrowRight, Mic, Eye, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { VoiceSearch } from '@/components/ai/voice';
+import { VirtualTryOn } from '@/components/ai/virtual-tryon';
+import { RecommendationCarousel } from '@/components/ai/recommendations';
 
 const aiFeatures = [
   {
@@ -15,12 +20,22 @@ const aiFeatures = [
     color: 'from-pink-500 to-rose-500',
   },
   {
-    icon: MessageSquare,
-    title: 'AI Shopping Assistant',
-    description: 'Chat with our AI assistant to get personalized product recommendations and answers to your questions.',
-    benefits: ['24/7 shopping assistance', 'Natural language queries', 'Personalized suggestions'],
-    link: '/chat',
+    icon: Mic,
+    title: 'Voice Search',
+    description: 'Speak naturally to search for products. Our AI understands your voice commands and finds exactly what you need.',
+    benefits: ['Hands-free shopping', 'Natural language understanding', 'Instant voice-to-search'],
+    link: '#voice-demo',
     color: 'from-blue-500 to-cyan-500',
+    isDemo: true,
+  },
+  {
+    icon: Eye,
+    title: 'Virtual Try-On',
+    description: 'See how products look on you with AR technology. Upload your photo and try on eyewear, jewelry, and accessories.',
+    benefits: ['Try before you buy', 'AR-powered preview', 'Share with friends'],
+    link: '#tryon-demo',
+    color: 'from-purple-500 to-violet-500',
+    isDemo: true,
   },
   {
     icon: Target,
@@ -28,7 +43,7 @@ const aiFeatures = [
     description: 'Our AI learns your preferences to show you products you will love, tailored just for you.',
     benefits: ['Personalized product feed', 'Similar item suggestions', 'Trending picks for you'],
     link: '/for-you',
-    color: 'from-purple-500 to-indigo-500',
+    color: 'from-indigo-500 to-purple-500',
   },
   {
     icon: Brain,
@@ -56,9 +71,66 @@ const aiFeatures = [
   },
 ];
 
+// Demo products for Virtual Try-On
+const tryOnProducts = [
+  { id: '1', name: 'Classic Aviator Sunglasses', image: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=200', category: 'eyewear' as const },
+  { id: '2', name: 'Round Gold Frames', image: 'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=200', category: 'eyewear' as const },
+  { id: '3', name: 'Diamond Studs', image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=200', category: 'jewelry' as const },
+  { id: '4', name: 'Pearl Necklace', image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=200', category: 'jewelry' as const },
+  { id: '5', name: 'Leather Watch', image: 'https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=200', category: 'accessories' as const },
+  { id: '6', name: 'Silk Scarf', image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=200', category: 'accessories' as const },
+];
+
+// Demo products for Recommendation Carousel
+const recommendationProducts = [
+  { id: '1', name: 'Wireless Bluetooth Headphones', price: 79.99, originalPrice: 99.99, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400', rating: 4.8, reviewCount: 1234, category: 'Electronics', inStock: true },
+  { id: '2', name: 'Smart Fitness Tracker', price: 149.99, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400', rating: 4.6, reviewCount: 892, category: 'Wearables', inStock: true },
+  { id: '3', name: 'Premium Leather Wallet', price: 59.99, image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400', rating: 4.9, reviewCount: 456, category: 'Accessories', inStock: true },
+  { id: '4', name: 'Vintage Sunglasses', price: 129.99, originalPrice: 159.99, image: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400', rating: 4.7, reviewCount: 321, category: 'Fashion', inStock: true },
+  { id: '5', name: 'Running Shoes Pro', price: 189.99, image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400', rating: 4.8, reviewCount: 2341, category: 'Sports', inStock: true },
+  { id: '6', name: 'Ceramic Plant Pot', price: 34.99, image: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=400', rating: 4.5, reviewCount: 198, category: 'Home', inStock: true },
+];
+
 export default function AIFeaturesPage() {
+  const [voiceDialogOpen, setVoiceDialogOpen] = useState(false);
+  const [tryOnDialogOpen, setTryOnDialogOpen] = useState(false);
+
+  const handleVoiceSearch = (query: string) => {
+    console.log('Voice search:', query);
+    setVoiceDialogOpen(false);
+    window.location.href = `/products?q=${encodeURIComponent(query)}`;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Voice Search Dialog */}
+      <Dialog open={voiceDialogOpen} onOpenChange={setVoiceDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mic className="h-5 w-5 text-primary" />
+              Voice Search
+            </DialogTitle>
+          </DialogHeader>
+          <VoiceSearch
+            onSearch={handleVoiceSearch}
+            onClose={() => setVoiceDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Virtual Try-On Dialog */}
+      <Dialog open={tryOnDialogOpen} onOpenChange={setTryOnDialogOpen}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-primary" />
+              Virtual Try-On
+            </DialogTitle>
+          </DialogHeader>
+          <VirtualTryOn products={tryOnProducts} />
+        </DialogContent>
+      </Dialog>
       {/* Hero */}
       <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white">
         <div className="container mx-auto px-4 py-20">
@@ -144,15 +216,48 @@ export default function AIFeaturesPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href={feature.link}>
-                  <Button variant="outline" className="w-full">
+                {feature.link === '#voice-demo' ? (
+                  <Button variant="outline" className="w-full" onClick={() => setVoiceDialogOpen(true)}>
                     Try it now
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
-                </Link>
+                ) : feature.link === '#tryon-demo' ? (
+                  <Button variant="outline" className="w-full" onClick={() => setTryOnDialogOpen(true)}>
+                    Try it now
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Link href={feature.link}>
+                    <Button variant="outline" className="w-full">
+                      Try it now
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                )}
               </CardContent>
             </Card>
           ))}
+        </div>
+      </div>
+
+      {/* AI Recommendations Section */}
+      <div className="bg-white py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold mb-4 flex items-center justify-center gap-2">
+              <ShoppingBag className="h-8 w-8 text-primary" />
+              Smart Product Recommendations
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Experience our AI-powered recommendation engine in action
+            </p>
+          </div>
+          <RecommendationCarousel
+            type="personalized"
+            title="Personalized For You"
+            subtitle="Products selected based on your browsing history and preferences"
+            products={recommendationProducts}
+          />
         </div>
       </div>
 
