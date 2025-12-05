@@ -7,30 +7,33 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg font-semibold transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-violet-500 disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
         default:
-          'bg-primary text-primary-foreground shadow hover:bg-primary/90',
-        destructive:
-          'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
-        outline:
-          'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground',
+          'bg-gradient-to-br from-violet-600 to-violet-700 text-white shadow-md hover:shadow-violet-400/40 hover:shadow-lg hover:-translate-y-0.5 hover:brightness-110',
         secondary:
-          'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
+          'bg-slate-800 text-white shadow-md hover:bg-slate-700 hover:shadow-lg hover:-translate-y-0.5',
+        outline:
+          'bg-transparent border-2 border-violet-600 text-violet-600 hover:bg-violet-50 hover:shadow-md hover:-translate-y-0.5',
+        ghost:
+          'bg-transparent text-slate-700 hover:text-violet-600 hover:bg-violet-50',
+        destructive:
+          'bg-rose-500 text-white shadow-md hover:bg-rose-600 hover:shadow-lg hover:shadow-rose-400/30 hover:-translate-y-0.5',
         success:
-          'bg-success text-success-foreground shadow-sm hover:bg-success/90',
-        warning:
-          'bg-warning text-warning-foreground shadow-sm hover:bg-warning/90',
+          'bg-emerald-500 text-white shadow-md hover:bg-emerald-600 hover:shadow-lg hover:shadow-emerald-400/30 hover:-translate-y-0.5',
+        link:
+          'text-violet-600 underline-offset-4 hover:underline hover:text-violet-700',
+        gradient:
+          'bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 text-white shadow-lg hover:shadow-xl hover:shadow-violet-400/50 hover:-translate-y-0.5 hover:brightness-110 animate-gradient bg-[length:200%_auto]',
       },
       size: {
-        default: 'h-10 px-4 py-2',
-        sm: 'h-9 rounded-md px-3 text-xs',
-        lg: 'h-11 rounded-md px-8',
-        xl: 'h-12 rounded-md px-10 text-base',
+        xs: 'h-7 px-2.5 text-xs rounded-md',
+        sm: 'h-9 px-3 text-sm',
+        default: 'h-11 px-5 text-base',
+        lg: 'h-[52px] px-7 text-lg',
+        xl: 'h-14 px-8 text-xl',
         icon: 'h-10 w-10',
         'icon-sm': 'h-8 w-8',
         'icon-lg': 'h-12 w-12',
@@ -47,6 +50,7 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  loading?: boolean;
   isLoading?: boolean;
   loadingText?: string;
   leftIcon?: React.ReactNode;
@@ -60,6 +64,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       variant,
       size,
       asChild = false,
+      loading = false,
       isLoading = false,
       loadingText,
       leftIcon,
@@ -71,24 +76,25 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const Comp = asChild ? Slot : 'button';
+    const showLoading = loading || isLoading;
 
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
-        disabled={disabled || isLoading}
+        disabled={disabled || showLoading}
         {...props}
       >
-        {isLoading ? (
+        {showLoading ? (
           <>
             <Loader2 className="animate-spin" />
             {loadingText || children}
           </>
         ) : (
           <>
-            {leftIcon}
+            {leftIcon && <span className="inline-flex shrink-0">{leftIcon}</span>}
             {children}
-            {rightIcon}
+            {rightIcon && <span className="inline-flex shrink-0">{rightIcon}</span>}
           </>
         )}
       </Comp>

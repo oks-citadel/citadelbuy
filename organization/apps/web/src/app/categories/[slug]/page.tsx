@@ -22,8 +22,9 @@ export default function CategoryPage() {
     const fetchCategoryData = async () => {
       setIsLoading(true);
       try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
         // Fetch category details
-        const categoryRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/categories`);
+        const categoryRes = await fetch(`${apiUrl}/categories`);
         const categoryData = await categoryRes.json();
         const foundCategory = categoryData.data?.find((c: Category) => c.slug === slug);
         setCategory(foundCategory || null);
@@ -31,7 +32,7 @@ export default function CategoryPage() {
         // Fetch products for this category
         if (foundCategory) {
           const productsRes = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/products?categoryId=${foundCategory.id}`
+            `${apiUrl}/products?categoryId=${foundCategory.id}`
           );
           const productsData = await productsRes.json();
           setProducts(productsData.data || []);

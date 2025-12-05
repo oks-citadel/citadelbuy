@@ -96,7 +96,7 @@ export default function AIFeaturesPage() {
   const [tryOnDialogOpen, setTryOnDialogOpen] = useState(false);
 
   const handleVoiceSearch = (query: string) => {
-    console.log('Voice search:', query);
+    // Navigate to products page with voice search query
     setVoiceDialogOpen(false);
     window.location.href = `/products?q=${encodeURIComponent(query)}`;
   };

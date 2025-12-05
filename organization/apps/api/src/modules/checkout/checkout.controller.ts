@@ -18,9 +18,11 @@ import {
   GuestCheckoutRequest,
 } from './checkout.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '@/common/guards/optional-jwt-auth.guard';
 import { AuthRequest } from '@/common/types/auth-request.types';
 import { IsString, IsBoolean, IsOptional, IsEmail, IsNumber, IsArray, ValidateNested, Min } from 'class-validator';
 import { Type } from 'class-transformer';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
 // ==================== DTOs ====================
 
@@ -385,11 +387,17 @@ export class CheckoutController {
   }
 
   @Post('guest')
+  @UseGuards(OptionalJwtAuthGuard, ThrottlerGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 guest checkouts per minute per IP
   @ApiOperation({ summary: 'Guest checkout - checkout without an account' })
   @ApiResponse({ status: 200, description: 'Guest order created, payment intent ready' })
   @ApiResponse({ status: 400, description: 'Invalid request' })
-  async guestCheckout(@Body() dto: GuestCheckoutDto) {
-    return this.checkoutService.guestCheckout(dto);
+  @ApiResponse({ status: 429, description: 'Too many requests - rate limit exceeded' })
+  async guestCheckout(@Request() req: AuthRequest, @Body() dto: GuestCheckoutDto) {
+    // OptionalJwtAuthGuard allows both authenticated and guest users
+    // If req.user exists, user is authenticated; otherwise they're a guest
+    const userId = req.user?.id || null;
+    return this.checkoutService.guestCheckout(dto, userId);
   }
 
   // ==================== Quick Actions ====================

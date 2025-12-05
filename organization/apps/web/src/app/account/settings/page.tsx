@@ -141,9 +141,9 @@ export default function SettingsPage() {
 
   const handleExportData = async () => {
     try {
-      const response = await profileApi.exportData();
-      if (response.data?.downloadUrl) {
-        window.open(response.data.downloadUrl, '_blank');
+      const data = await profileApi.exportData();
+      if (data?.downloadUrl) {
+        window.open(data.downloadUrl, '_blank');
       }
     } catch (error) {
       setSaveMessage('Failed to export data');
@@ -229,8 +229,8 @@ export default function SettingsPage() {
                 <Button variant="outline" onClick={() => setIsEditing(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleSaveProfile} disabled={isSaving}>
-                  {isSaving ? 'Saving...' : 'Save Changes'}
+                <Button onClick={handleSaveProfile} disabled={isSaving} isLoading={isSaving}>
+                  Save Changes
                 </Button>
               </div>
             )}
@@ -272,7 +272,7 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setProfile({ ...profile, name: e.target.value })
                   }
-                  disabled={!isEditing}
+                  disabled={!isEditing || isSaving}
                 />
               </div>
               <div>
@@ -293,7 +293,7 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setProfile({ ...profile, phone: e.target.value })
                   }
-                  disabled={!isEditing}
+                  disabled={!isEditing || isSaving}
                   placeholder="+1 (555) 000-0000"
                 />
               </div>
@@ -307,7 +307,7 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setProfile({ ...profile, dateOfBirth: e.target.value })
                   }
-                  disabled={!isEditing}
+                  disabled={!isEditing || isSaving}
                 />
               </div>
             </div>
@@ -334,6 +334,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       setPasswords({ ...passwords, current: e.target.value })
                     }
+                    disabled={isSaving}
                   />
                   <button
                     type="button"
@@ -358,6 +359,7 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setPasswords({ ...passwords, new: e.target.value })
                   }
+                  disabled={isSaving}
                 />
               </div>
               <div>
@@ -370,10 +372,11 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setPasswords({ ...passwords, confirm: e.target.value })
                   }
+                  disabled={isSaving}
                 />
               </div>
-              <Button onClick={handleChangePassword} disabled={isSaving}>
-                {isSaving ? 'Changing...' : 'Change Password'}
+              <Button onClick={handleChangePassword} disabled={isSaving} isLoading={isSaving}>
+                Change Password
               </Button>
             </CardContent>
           </Card>
@@ -527,8 +530,8 @@ export default function SettingsPage() {
               ))}
             </div>
 
-            <Button onClick={handleSaveNotifications} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save Preferences'}
+            <Button onClick={handleSaveNotifications} disabled={isSaving} isLoading={isSaving}>
+              Save Preferences
             </Button>
           </CardContent>
         </Card>

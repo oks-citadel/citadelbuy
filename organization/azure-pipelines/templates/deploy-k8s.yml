@@ -1,0 +1,200 @@
+# ==================================
+# CitadelBuy - Reusable Kubernetes Deploy Template
+# Deploy applications to AKS cluster
+# ==================================
+
+parameters:
+  - name: environment
+    type: string
+    displayName: 'Target environment (staging/production)'
+    values:
+      - staging
+      - production
+  - name: namespace
+    type: string
+    displayName: 'Kubernetes namespace'
+  - name: apiImageTag
+    type: string
+    displayName: 'API image tag'
+  - name: webImageTag
+    type: string
+    displayName: 'Web image tag'
+  - name: manifestPath
+    type: string
+    default: 'infrastructure/kubernetes'
+    displayName: 'Path to Kubernetes manifests'
+  - name: healthCheckTimeout
+    type: number
+    default: 300
+    displayName: 'Health check timeout in seconds'
+
+steps:
+  - checkout: self
+    displayName: 'Checkout manifests'
+
+  - script: |
+      echo "Deploying to ${{ parameters.environment }} environment"
+      echo "Namespace: ${{ parameters.namespace }}"
+      echo "API Image Tag: ${{ parameters.apiImageTag }}"
+      echo "Web Image Tag: ${{ parameters.webImageTag }}"
+    displayName: 'Display deployment info'
+
+  - task: KubernetesManifest@1
+    displayName: 'Create namespace if not exists'
+    inputs:
+      action: 'deploy'
+      connectionType: 'azureResourceManager'
+      azureSubscriptionConnection: '$(AZURE_SERVICE_CONNECTION)'
+      azureResourceGroup: '$(AKS_RESOURCE_GROUP)'
+      kubernetesCluster: '$(AKS_CLUSTER_NAME)'
+      namespace: '${{ parameters.namespace }}'
+      manifests: |
+        ${{ parameters.manifestPath }}/namespace.yaml
+    continueOnError: true
+
+  - task: KubernetesManifest@1
+    displayName: 'Deploy ConfigMaps'
+    inputs:
+      action: 'deploy'
+      connectionType: 'azureResourceManager'
+      azureSubscriptionConnection: '$(AZURE_SERVICE_CONNECTION)'
+      azureResourceGroup: '$(AKS_RESOURCE_GROUP)'
+      kubernetesCluster: '$(AKS_CLUSTER_NAME)'
+      namespace: '${{ parameters.namespace }}'
+      manifests: |
+        ${{ parameters.manifestPath }}/${{ parameters.environment }}/configmap.yaml
+
+  - task: KubernetesManifest@1
+    displayName: 'Deploy Secrets'
+    inputs:
+      action: 'deploy'
+      connectionType: 'azureResourceManager'
+      azureSubscriptionConnection: '$(AZURE_SERVICE_CONNECTION)'
+      azureResourceGroup: '$(AKS_RESOURCE_GROUP)'
+      kubernetesCluster: '$(AKS_CLUSTER_NAME)'
+      namespace: '${{ parameters.namespace }}'
+      manifests: |
+        ${{ parameters.manifestPath }}/${{ parameters.environment }}/secrets.yaml
+
+  - task: KubernetesManifest@1
+    displayName: 'Deploy Services'
+    inputs:
+      action: 'deploy'
+      connectionType: 'azureResourceManager'
+      azureSubscriptionConnection: '$(AZURE_SERVICE_CONNECTION)'
+      azureResourceGroup: '$(AKS_RESOURCE_GROUP)'
+      kubernetesCluster: '$(AKS_CLUSTER_NAME)'
+      namespace: '${{ parameters.namespace }}'
+      manifests: |
+        ${{ parameters.manifestPath }}/${{ parameters.environment }}/service.yaml
+
+  - task: KubernetesManifest@1
+    displayName: 'Deploy API'
+    inputs:
+      action: 'deploy'
+      connectionType: 'azureResourceManager'
+      azureSubscriptionConnection: '$(AZURE_SERVICE_CONNECTION)'
+      azureResourceGroup: '$(AKS_RESOURCE_GROUP)'
+      kubernetesCluster: '$(AKS_CLUSTER_NAME)'
+      namespace: '${{ parameters.namespace }}'
+      manifests: |
+        ${{ parameters.manifestPath }}/${{ parameters.environment }}/api-deployment.yaml
+      containers: |
+        $(AZURE_CONTAINER_REGISTRY)/citadelbuy-api:${{ parameters.apiImageTag }}
+
+  - task: KubernetesManifest@1
+    displayName: 'Deploy Web'
+    inputs:
+      action: 'deploy'
+      connectionType: 'azureResourceManager'
+      azureSubscriptionConnection: '$(AZURE_SERVICE_CONNECTION)'
+      azureResourceGroup: '$(AKS_RESOURCE_GROUP)'
+      kubernetesCluster: '$(AKS_CLUSTER_NAME)'
+      namespace: '${{ parameters.namespace }}'
+      manifests: |
+        ${{ parameters.manifestPath }}/${{ parameters.environment }}/web-deployment.yaml
+      containers: |
+        $(AZURE_CONTAINER_REGISTRY)/citadelbuy-web:${{ parameters.webImageTag }}
+
+  - task: KubernetesManifest@1
+    displayName: 'Deploy Supplier Integration'
+    inputs:
+      action: 'deploy'
+      connectionType: 'azureResourceManager'
+      azureSubscriptionConnection: '$(AZURE_SERVICE_CONNECTION)'
+      azureResourceGroup: '$(AKS_RESOURCE_GROUP)'
+      kubernetesCluster: '$(AKS_CLUSTER_NAME)'
+      namespace: '${{ parameters.namespace }}'
+      manifests: |
+        ${{ parameters.manifestPath }}/${{ parameters.environment }}/supplier-integration-deployment.yaml
+      containers: |
+        $(AZURE_CONTAINER_REGISTRY)/citadelbuy-supplier-integration:${{ parameters.apiImageTag }}
+
+  - task: KubernetesManifest@1
+    displayName: 'Deploy AI Engine'
+    inputs:
+      action: 'deploy'
+      connectionType: 'azureResourceManager'
+      azureSubscriptionConnection: '$(AZURE_SERVICE_CONNECTION)'
+      azureResourceGroup: '$(AKS_RESOURCE_GROUP)'
+      kubernetesCluster: '$(AKS_CLUSTER_NAME)'
+      namespace: '${{ parameters.namespace }}'
+      manifests: |
+        ${{ parameters.manifestPath }}/${{ parameters.environment }}/ai-engine-deployment.yaml
+      containers: |
+        $(AZURE_CONTAINER_REGISTRY)/citadelbuy-ai-engine:${{ parameters.apiImageTag }}
+
+  - task: KubernetesManifest@1
+    displayName: 'Deploy Ingress'
+    inputs:
+      action: 'deploy'
+      connectionType: 'azureResourceManager'
+      azureSubscriptionConnection: '$(AZURE_SERVICE_CONNECTION)'
+      azureResourceGroup: '$(AKS_RESOURCE_GROUP)'
+      kubernetesCluster: '$(AKS_CLUSTER_NAME)'
+      namespace: '${{ parameters.namespace }}'
+      manifests: |
+        ${{ parameters.manifestPath }}/${{ parameters.environment }}/ingress.yaml
+
+  - script: |
+      echo "Waiting for pods to be ready..."
+      kubectl wait --for=condition=ready pod \
+        -l app=api \
+        -n ${{ parameters.namespace }} \
+        --timeout=${{ parameters.healthCheckTimeout }}s
+
+      kubectl wait --for=condition=ready pod \
+        -l app=web \
+        -n ${{ parameters.namespace }} \
+        --timeout=${{ parameters.healthCheckTimeout }}s
+    displayName: 'Wait for pods to be ready'
+
+  - script: |
+      echo "Deployment completed successfully!"
+      echo "Getting pod status..."
+      kubectl get pods -n ${{ parameters.namespace }}
+
+      echo "Getting service status..."
+      kubectl get svc -n ${{ parameters.namespace }}
+
+      echo "Getting ingress status..."
+      kubectl get ingress -n ${{ parameters.namespace }}
+    displayName: 'Deployment status'
+
+  - script: |
+      # Get pod logs for troubleshooting if needed
+      echo "API Pod Logs:"
+      kubectl logs -l app=api -n ${{ parameters.namespace }} --tail=50 || true
+
+      echo "Web Pod Logs:"
+      kubectl logs -l app=web -n ${{ parameters.namespace }} --tail=50 || true
+    displayName: 'Collect deployment logs'
+    condition: always()
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish deployment manifests'
+    condition: always()
+    inputs:
+      targetPath: '${{ parameters.manifestPath }}/${{ parameters.environment }}'
+      artifact: 'k8s-manifests-${{ parameters.environment }}'
+      publishLocation: 'pipeline'

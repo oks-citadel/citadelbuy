@@ -33,9 +33,9 @@ export function LiveChatWidget({ className }: LiveChatWidgetProps) {
     endSession,
   } = useLiveChat({
     autoConnect: false,
-    onConnect: () => console.log('Connected to chat'),
-    onDisconnect: () => console.log('Disconnected from chat'),
-    onError: (err) => console.error('Chat error:', err),
+    onConnect: () => {}, // Connection callback
+    onDisconnect: () => {}, // Disconnection callback
+    onError: (err) => {}, // Error callback handled by hook state
   });
 
   useEffect(() => {

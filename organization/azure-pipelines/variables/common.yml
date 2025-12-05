@@ -1,0 +1,61 @@
+# ==================================
+# CitadelBuy - Common Variables
+# Shared across all pipelines and environments
+# ==================================
+
+variables:
+  # Node.js Configuration
+  NODE_VERSION: '20.x'
+  PNPM_VERSION: '10.23.0'
+
+  # Python Configuration
+  PYTHON_VERSION: '3.11'
+
+  # Agent Configuration
+  AGENT_VM_IMAGE: 'ubuntu-latest'
+
+  # Azure Container Registry
+  AZURE_CONTAINER_REGISTRY: 'citadelbuyacr.azurecr.io'
+  ACR_SERVICE_CONNECTION: 'CitadelBuyACR'
+
+  # Azure Service Connection
+  AZURE_SERVICE_CONNECTION: 'CitadelBuyAzure'
+
+  # Cache Directories
+  PNPM_CACHE_FOLDER: '$(Pipeline.Workspace)/.pnpm-store'
+  PIP_CACHE_DIR: '$(Pipeline.Workspace)/.pip-cache'
+
+  # Build Configuration
+  BUILD_CONFIGURATION: 'Release'
+  DOCKER_BUILDKIT: '1'
+
+  # Test Configuration
+  TEST_TIMEOUT: '300000'
+  JEST_MAX_WORKERS: '2'
+
+  # Database Configuration (Test)
+  TEST_DATABASE_URL: 'postgresql://citadelbuy:citadelbuy123@localhost:5432/citadelbuy_test'
+  TEST_REDIS_URL: 'redis://localhost:6379'
+
+  # Security
+  TRIVY_VERSION: 'latest'
+
+  # Kubernetes Configuration
+  KUBECTL_VERSION: 'latest'
+  HELM_VERSION: '3.12.0'
+
+  # Monitoring & Logging
+  LOG_LEVEL: 'info'
+
+  # Application Configuration
+  NEXT_TELEMETRY_DISABLED: '1'
+  NODE_ENV: 'production'
+
+  # CI/CD Configuration
+  PARALLEL_JOBS: '4'
+
+  # Artifact Retention
+  ARTIFACT_RETENTION_DAYS: '30'
+
+  # Notification
+  SLACK_WEBHOOK_URL: '$(SLACK_WEBHOOK_SECRET)'

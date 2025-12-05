@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import {
   Facebook,
   Twitter,
@@ -15,9 +16,12 @@ import {
   Shield,
   Truck,
   RotateCcw,
+  ArrowRight,
+  Sparkles,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const footerLinks = {
   shop: [
@@ -65,208 +69,243 @@ const socialLinks = [
 const features = [
   { icon: Truck, title: 'Free Shipping', description: 'On orders over $50' },
   { icon: RotateCcw, title: '30-Day Returns', description: 'Easy returns policy' },
-  { icon: Shield, title: 'Secure Payment', description: 'Your data is safe' },
+  { icon: Shield, title: 'Secure Payment', description: '256-bit SSL encryption' },
   { icon: CreditCard, title: 'Buy Now, Pay Later', description: 'Flexible payment options' },
 ];
 
 export function Footer() {
   const [email, setEmail] = React.useState('');
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle newsletter subscription
-    console.log('Newsletter subscription:', email);
+    setIsSubmitting(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsSubmitting(false);
     setEmail('');
   };
 
   return (
-    <footer className="border-t bg-muted/30">
+    <footer className="relative overflow-hidden">
       {/* Features bar */}
-      <div className="border-b">
-        <div className="container py-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {features.map((feature) => (
-              <div key={feature.title} className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <feature.icon className="h-5 w-5 text-primary" />
+      <div className="border-y bg-muted/30">
+        <div className="container py-8 md:py-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+            {features.map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="flex items-center gap-4"
+              >
+                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <feature.icon className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm">{feature.title}</p>
-                  <p className="text-xs text-muted-foreground">{feature.description}</p>
+                  <p className="font-semibold text-foreground">{feature.title}</p>
+                  <p className="text-sm text-muted-foreground">{feature.description}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Main footer content */}
-      <div className="container py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
-          {/* Brand and newsletter */}
-          <div className="lg:col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">C</span>
+      {/* Newsletter Section */}
+      <div className="relative bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-500 py-16">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
+        <div className="container relative">
+          <div className="max-w-2xl mx-auto text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-6 backdrop-blur-sm">
+                <Sparkles className="h-4 w-4" />
+                Get 10% off your first order
               </div>
-              <span className="font-bold text-xl">CitadelBuy</span>
-            </Link>
-            <p className="text-sm text-muted-foreground mb-6">
-              Discover the future of shopping with AI-powered recommendations, visual search, and personalized experiences.
-            </p>
-            <form onSubmit={handleNewsletterSubmit} className="mb-6">
-              <p className="text-sm font-medium mb-2">Subscribe to our newsletter</p>
-              <div className="flex gap-2">
+              <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                Join the CitadelBuy Community
+              </h3>
+              <p className="text-white/80 mb-8 text-lg">
+                Subscribe for exclusive deals, early access to sales, and personalized recommendations.
+              </p>
+              <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
                 <Input
                   type="email"
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="flex-1"
+                  className="h-12 bg-white/95 border-0 text-slate-900 placeholder:text-slate-400 rounded-xl"
                 />
-                <Button type="submit">Subscribe</Button>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Get 10% off your first order when you sign up.
-              </p>
-            </form>
-            <div className="flex items-center gap-3">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.name}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="h-9 w-9 rounded-full bg-muted flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
-                  aria-label={social.name}
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={isSubmitting}
+                  className="h-12 px-8 bg-slate-900 hover:bg-slate-800 text-white rounded-xl whitespace-nowrap"
                 >
-                  <social.icon className="h-4 w-4" />
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {/* Shop links */}
-          <div>
-            <h3 className="font-semibold mb-4">Shop</h3>
-            <ul className="space-y-2">
-              {footerLinks.shop.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Support links */}
-          <div>
-            <h3 className="font-semibold mb-4">Support</h3>
-            <ul className="space-y-2">
-              {footerLinks.support.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Company links */}
-          <div>
-            <h3 className="font-semibold mb-4">Company</h3>
-            <ul className="space-y-2">
-              {footerLinks.company.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Sell links */}
-          <div>
-            <h3 className="font-semibold mb-4">Sell</h3>
-            <ul className="space-y-2">
-              {footerLinks.sell.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {/* Contact info */}
-        <div className="mt-12 pt-8 border-t">
-          <div className="flex flex-wrap gap-6 justify-center md:justify-start">
-            <a
-              href="mailto:support@citadelbuy.com"
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Mail className="h-4 w-4" />
-              support@citadelbuy.com
-            </a>
-            <a
-              href="tel:1-800-CITADEL"
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Phone className="h-4 w-4" />
-              1-800-CITADEL
-            </a>
-            <span className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              San Francisco, CA
-            </span>
+                  Subscribe
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </form>
+            </motion.div>
           </div>
         </div>
       </div>
 
-      {/* Bottom bar */}
-      <div className="border-t">
-        <div className="container py-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-              <span>© {new Date().getFullYear()} CitadelBuy. All rights reserved.</span>
-              <Link href="/privacy" className="hover:text-foreground transition-colors">
-                Privacy Policy
+      {/* Main footer content */}
+      <div className="bg-slate-900 text-slate-300">
+        <div className="container py-16">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 lg:gap-12">
+            {/* Brand */}
+            <div className="col-span-2 md:col-span-3 lg:col-span-2">
+              <Link href="/" className="flex items-center gap-3 mb-6">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25">
+                  <span className="text-white font-bold text-xl">C</span>
+                </div>
+                <span className="font-bold text-2xl text-white">CitadelBuy</span>
               </Link>
-              <Link href="/terms" className="hover:text-foreground transition-colors">
-                Terms of Service
-              </Link>
-              <Link href="/cookies" className="hover:text-foreground transition-colors">
-                Cookie Settings
-              </Link>
-              <Link href="/accessibility" className="hover:text-foreground transition-colors">
-                Accessibility
-              </Link>
+              <p className="text-slate-400 mb-6 leading-relaxed max-w-sm">
+                Discover the future of shopping with AI-powered recommendations, visual search, and personalized experiences.
+              </p>
+              <div className="flex items-center gap-3">
+                {socialLinks.map((social) => (
+                  <a
+                    key={social.name}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-10 w-10 rounded-xl bg-slate-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all duration-200 hover:scale-110"
+                    aria-label={social.name}
+                  >
+                    <social.icon className="h-5 w-5" />
+                  </a>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <img src="/payment/visa.svg" alt="Visa" className="h-6" />
-              <img src="/payment/mastercard.svg" alt="Mastercard" className="h-6" />
-              <img src="/payment/amex.svg" alt="American Express" className="h-6" />
-              <img src="/payment/paypal.svg" alt="PayPal" className="h-6" />
-              <img src="/payment/apple-pay.svg" alt="Apple Pay" className="h-6" />
-              <img src="/payment/google-pay.svg" alt="Google Pay" className="h-6" />
+
+            {/* Shop links */}
+            <div>
+              <h4 className="font-semibold text-white mb-4">Shop</h4>
+              <ul className="space-y-3">
+                {footerLinks.shop.map((link) => (
+                  <li key={link.name}>
+                    <Link
+                      href={link.href}
+                      className="text-slate-400 hover:text-white transition-colors inline-flex items-center group"
+                    >
+                      <span>{link.name}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Support links */}
+            <div>
+              <h4 className="font-semibold text-white mb-4">Support</h4>
+              <ul className="space-y-3">
+                {footerLinks.support.map((link) => (
+                  <li key={link.name}>
+                    <Link
+                      href={link.href}
+                      className="text-slate-400 hover:text-white transition-colors"
+                    >
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Company links */}
+            <div className="hidden md:block">
+              <h4 className="font-semibold text-white mb-4">Company</h4>
+              <ul className="space-y-3">
+                {footerLinks.company.map((link) => (
+                  <li key={link.name}>
+                    <Link
+                      href={link.href}
+                      className="text-slate-400 hover:text-white transition-colors"
+                    >
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Sell links */}
+            <div className="hidden lg:block">
+              <h4 className="font-semibold text-white mb-4">Sell</h4>
+              <ul className="space-y-3">
+                {footerLinks.sell.map((link) => (
+                  <li key={link.name}>
+                    <Link
+                      href={link.href}
+                      className="text-slate-400 hover:text-white transition-colors"
+                    >
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Contact info */}
+          <div className="mt-12 pt-8 border-t border-slate-800">
+            <div className="flex flex-wrap gap-6 justify-center md:justify-start">
+              <a
+                href="mailto:support@citadelbuy.com"
+                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+              >
+                <Mail className="h-4 w-4" />
+                support@citadelbuy.com
+              </a>
+              <a
+                href="tel:1-800-CITADEL"
+                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+              >
+                <Phone className="h-4 w-4" />
+                1-800-CITADEL
+              </a>
+              <span className="flex items-center gap-2 text-slate-400">
+                <MapPin className="h-4 w-4" />
+                San Francisco, CA
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="border-t border-slate-800">
+          <div className="container py-6">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-2 text-sm text-slate-500">
+                <span>&copy; {new Date().getFullYear()} CitadelBuy. All rights reserved.</span>
+                <Link href="/privacy" className="hover:text-white transition-colors">
+                  Privacy Policy
+                </Link>
+                <Link href="/terms" className="hover:text-white transition-colors">
+                  Terms of Service
+                </Link>
+                <Link href="/cookies" className="hover:text-white transition-colors">
+                  Cookie Settings
+                </Link>
+              </div>
+              <div className="flex items-center gap-3">
+                <img src="/payment/visa.svg" alt="Visa" className="h-8 opacity-60 hover:opacity-100 transition-opacity" />
+                <img src="/payment/mastercard.svg" alt="Mastercard" className="h-8 opacity-60 hover:opacity-100 transition-opacity" />
+                <img src="/payment/amex.svg" alt="American Express" className="h-8 opacity-60 hover:opacity-100 transition-opacity" />
+                <img src="/payment/paypal.svg" alt="PayPal" className="h-8 opacity-60 hover:opacity-100 transition-opacity" />
+                <img src="/payment/apple-pay.svg" alt="Apple Pay" className="h-8 opacity-60 hover:opacity-100 transition-opacity" />
+                <img src="/payment/google-pay.svg" alt="Google Pay" className="h-8 opacity-60 hover:opacity-100 transition-opacity" />
+              </div>
             </div>
           </div>
         </div>

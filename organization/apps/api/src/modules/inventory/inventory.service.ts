@@ -1370,7 +1370,7 @@ export class InventoryService {
       };
     } catch {
       // If table doesn't exist, log it but don't fail
-      console.log(`Stock subscription requested for ${email} on product ${productId}`);
+      // Stock subscription requested (table doesn't exist yet)
       return { success: true };
     }
   }

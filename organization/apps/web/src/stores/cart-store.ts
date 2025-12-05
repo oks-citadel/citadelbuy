@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import api from '@/services/api';
+import { apiClient as api } from '@/lib/api-client';
 import { Cart, CartItem, Product, ProductVariant } from '@/types';
 import { recommendationService } from '@/services/ai';
 
@@ -50,8 +50,9 @@ export const useCartStore = create<CartState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await api.get<Cart>('/cart');
-          if (response.success && response.data) {
-            set({ cart: response.data, isLoading: false });
+          const data = response.data;
+          if (data) {
+            set({ cart: data, isLoading: false });
             get().getRecommendations();
           } else {
             set({ cart: null, isLoading: false });
@@ -70,12 +71,13 @@ export const useCartStore = create<CartState>()(
             variantId: variant?.id,
             quantity,
           });
+          const data = response.data;
 
-          if (response.success && response.data) {
-            set({ cart: response.data, isLoading: false, isOpen: true });
+          if (data) {
+            set({ cart: data, isLoading: false, isOpen: true });
             get().getRecommendations();
           } else {
-            throw new Error(response.error?.message || 'Failed to add item');
+            throw new Error('Failed to add item');
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Failed to add item';
@@ -106,12 +108,13 @@ export const useCartStore = create<CartState>()(
 
         try {
           const response = await api.patch<Cart>(`/cart/items/${itemId}`, { quantity });
+          const data = response.data;
 
-          if (response.success && response.data) {
-            set({ cart: response.data });
+          if (data) {
+            set({ cart: data });
           } else {
             set({ cart: previousCart });
-            throw new Error(response.error?.message || 'Failed to update quantity');
+            throw new Error('Failed to update quantity');
           }
         } catch (error) {
           set({ cart: previousCart });
@@ -139,13 +142,14 @@ export const useCartStore = create<CartState>()(
 
         try {
           const response = await api.delete<Cart>(`/cart/items/${itemId}`);
+          const data = response.data;
 
-          if (response.success && response.data) {
-            set({ cart: response.data });
+          if (data) {
+            set({ cart: data });
             get().getRecommendations();
           } else {
             set({ cart: previousCart });
-            throw new Error(response.error?.message || 'Failed to remove item');
+            throw new Error('Failed to remove item');
           }
         } catch (error) {
           set({ cart: previousCart });
@@ -160,10 +164,10 @@ export const useCartStore = create<CartState>()(
         try {
           const response = await api.delete<Cart>('/cart');
 
-          if (response.success) {
+          if (response.status === 200 || response.status === 204) {
             set({ cart: null, isLoading: false, recommendations: [] });
           } else {
-            throw new Error(response.error?.message || 'Failed to clear cart');
+            throw new Error('Failed to clear cart');
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Failed to clear cart';
@@ -176,11 +180,12 @@ export const useCartStore = create<CartState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await api.post<Cart>('/cart/coupon', { code });
+          const data = response.data;
 
-          if (response.success && response.data) {
-            set({ cart: response.data, isLoading: false });
+          if (data) {
+            set({ cart: data, isLoading: false });
           } else {
-            throw new Error(response.error?.message || 'Invalid coupon code');
+            throw new Error('Invalid coupon code');
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Invalid coupon code';
@@ -193,11 +198,12 @@ export const useCartStore = create<CartState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await api.delete<Cart>('/cart/coupon');
+          const data = response.data;
 
-          if (response.success && response.data) {
-            set({ cart: response.data, isLoading: false });
+          if (data) {
+            set({ cart: data, isLoading: false });
           } else {
-            throw new Error(response.error?.message || 'Failed to remove coupon');
+            throw new Error('Failed to remove coupon');
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Failed to remove coupon';
@@ -210,11 +216,12 @@ export const useCartStore = create<CartState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await api.post<Cart>(`/cart/items/${itemId}/save-for-later`);
+          const data = response.data;
 
-          if (response.success && response.data) {
-            set({ cart: response.data, isLoading: false });
+          if (data) {
+            set({ cart: data, isLoading: false });
           } else {
-            throw new Error(response.error?.message || 'Failed to save item');
+            throw new Error('Failed to save item');
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Failed to save item';
@@ -227,11 +234,12 @@ export const useCartStore = create<CartState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await api.post<Cart>(`/cart/items/${itemId}/move-to-cart`);
+          const data = response.data;
 
-          if (response.success && response.data) {
-            set({ cart: response.data, isLoading: false });
+          if (data) {
+            set({ cart: data, isLoading: false });
           } else {
-            throw new Error(response.error?.message || 'Failed to move item');
+            throw new Error('Failed to move item');
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Failed to move item';

@@ -5,6 +5,7 @@ import { PrismaModule } from '@/common/prisma/prisma.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { OrdersModule } from '../orders/orders.module';
 import { CouponsModule } from '../coupons/coupons.module';
+import { CartModule } from '../cart/cart.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
@@ -14,6 +15,7 @@ import { ConfigModule } from '@nestjs/config';
     forwardRef(() => PaymentsModule),
     forwardRef(() => OrdersModule),
     forwardRef(() => CouponsModule),
+    forwardRef(() => CartModule),
   ],
   controllers: [CheckoutController],
   providers: [CheckoutService],

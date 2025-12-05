@@ -1,0 +1,464 @@
+version: '3.8'
+
+#===========================================
+# CitadelBuy AI Services Docker Stack
+# 300+ AI Capabilities for E-Commerce Intelligence
+#===========================================
+# REQUIRED ENVIRONMENT VARIABLES:
+# - DATABASE_URL: PostgreSQL connection string
+# - REDIS_URL: Redis connection string
+# - OPENAI_API_KEY: OpenAI API key for AI models
+# - LOG_LEVEL: Logging level (INFO, DEBUG, WARNING, ERROR)
+#
+# OPTIONAL ENVIRONMENT VARIABLES:
+# - MODEL_PATH: Path to ML models (default: /app/models)
+# - WORKERS: Number of workers per service (default: 2)
+# - SERVICE_ENV: Environment (development, staging, production)
+#
+# See .env.example in project root for complete configuration
+#===========================================
+
+services:
+  #-----------------------------------------
+  # AI Engine Service (Port 8002)
+  # Core AI/ML capabilities for dropshipping
+  #-----------------------------------------
+  ai-engine:
+    build:
+      context: ../../apps/services/ai-engine
+      dockerfile: Dockerfile
+    container_name: citadelbuy-ai-engine
+    restart: unless-stopped
+    ports:
+      - '8002:8002'
+    environment:
+      - SERVICE_NAME=ai-engine
+      - PORT=8002
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - NODE_ENV=${SERVICE_ENV:-development}
+      # ML Model Configuration
+      - MODEL_PATH=${MODEL_PATH:-/app/models}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Service URLs
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+    volumes:
+      - ai-models:/app/models
+      - ai-engine-logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - citadelbuy-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8002/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.citadelbuy.service=ai-engine"
+      - "com.citadelbuy.description=Core AI/ML dropshipping engine"
+
+  #-----------------------------------------
+  # Recommendation Service (Port 8001)
+  # Personalized product recommendations
+  #-----------------------------------------
+  recommendation:
+    build:
+      context: ../../apps/services/recommendation
+      dockerfile: Dockerfile
+    container_name: citadelbuy-recommendation
+    restart: unless-stopped
+    ports:
+      - '8001:8001'
+    environment:
+      - SERVICE_NAME=recommendation
+      - PORT=8001
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - NODE_ENV=${SERVICE_ENV:-development}
+      # Recommendation Engine Config
+      - RECOMMENDATION_STRATEGY=${RECOMMENDATION_STRATEGY:-hybrid}
+      - MIN_CONFIDENCE_THRESHOLD=${MIN_CONFIDENCE_THRESHOLD:-0.5}
+      - CACHE_TTL_SECONDS=${CACHE_TTL_SECONDS:-3600}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - citadelbuy-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8001/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.citadelbuy.service=recommendation"
+      - "com.citadelbuy.description=AI-powered product recommendations"
+
+  #-----------------------------------------
+  # Search Service (Port 8007)
+  # Semantic, Visual, and Voice Search
+  #-----------------------------------------
+  search:
+    build:
+      context: ../../apps/services/search
+      dockerfile: Dockerfile
+    container_name: citadelbuy-search
+    restart: unless-stopped
+    ports:
+      - '8007:8007'
+    environment:
+      - SERVICE_NAME=search
+      - PORT=8007
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-http://elasticsearch:9200}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - NODE_ENV=${SERVICE_ENV:-development}
+      # Search Configuration
+      - SEARCH_INDEX_NAME=${SEARCH_INDEX_NAME:-products}
+      - ENABLE_VISUAL_SEARCH=${ENABLE_VISUAL_SEARCH:-true}
+      - ENABLE_VOICE_SEARCH=${ENABLE_VOICE_SEARCH:-true}
+      - MAX_RESULTS=${MAX_RESULTS:-100}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - citadelbuy-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8007/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.citadelbuy.service=search"
+      - "com.citadelbuy.description=AI-powered semantic search"
+
+  #-----------------------------------------
+  # Fraud Detection Service (Port 8003)
+  # AI-powered fraud prevention
+  #-----------------------------------------
+  fraud-detection:
+    build:
+      context: ../../apps/services/fraud-detection
+      dockerfile: Dockerfile
+    container_name: citadelbuy-fraud-detection
+    restart: unless-stopped
+    ports:
+      - '8003:8003'
+    environment:
+      - SERVICE_NAME=fraud-detection
+      - PORT=8003
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - NODE_ENV=${SERVICE_ENV:-development}
+      # Fraud Detection Config
+      - FRAUD_THRESHOLD=${FRAUD_THRESHOLD:-75}
+      - REVIEW_THRESHOLD=${REVIEW_THRESHOLD:-50}
+      - MODEL_VERSION=${FRAUD_MODEL_VERSION:-v2.0.0}
+      - ENABLE_REALTIME_SCORING=${ENABLE_REALTIME_SCORING:-true}
+    volumes:
+      - fraud-models:/app/models
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - citadelbuy-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8003/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.citadelbuy.service=fraud-detection"
+      - "com.citadelbuy.description=AI fraud detection and prevention"
+
+  #-----------------------------------------
+  # Chatbot Service (Port 8004)
+  # Conversational AI for customer support
+  #-----------------------------------------
+  chatbot:
+    build:
+      context: ../../apps/services/chatbot
+      dockerfile: Dockerfile
+    container_name: citadelbuy-chatbot
+    restart: unless-stopped
+    ports:
+      - '8004:8004'
+    environment:
+      - SERVICE_NAME=chatbot
+      - PORT=8004
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - NODE_ENV=${SERVICE_ENV:-development}
+      # Chatbot Configuration
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DEFAULT_LANGUAGE=${DEFAULT_LANGUAGE:-en}
+      - ENABLE_WEBSOCKET=${ENABLE_WEBSOCKET:-true}
+      - SESSION_TIMEOUT_MINUTES=${SESSION_TIMEOUT_MINUTES:-30}
+      - MAX_CONTEXT_MESSAGES=${MAX_CONTEXT_MESSAGES:-10}
+      # Integration URLs
+      - PRODUCT_SERVICE_URL=${PRODUCT_SERVICE_URL:-http://backend:4000}
+      - SUPPORT_SERVICE_URL=${SUPPORT_SERVICE_URL:-http://backend:4000}
+    volumes:
+      - chatbot-sessions:/app/sessions
+      - chatbot-logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - citadelbuy-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8004/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.citadelbuy.service=chatbot"
+      - "com.citadelbuy.description=AI conversational assistant"
+
+  #-----------------------------------------
+  # Analytics Service (Port 8005)
+  # Real-time analytics with ML insights
+  #-----------------------------------------
+  analytics:
+    build:
+      context: ../../apps/services/analytics
+      dockerfile: Dockerfile
+    container_name: citadelbuy-analytics
+    restart: unless-stopped
+    ports:
+      - '8005:8005'
+    environment:
+      - SERVICE_NAME=analytics
+      - PORT=8005
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - NODE_ENV=${SERVICE_ENV:-development}
+      # Analytics Configuration
+      - ANALYTICS_RETENTION_DAYS=${ANALYTICS_RETENTION_DAYS:-90}
+      - ENABLE_REALTIME=${ENABLE_REALTIME:-true}
+      - BATCH_SIZE=${BATCH_SIZE:-1000}
+      - AGGREGATION_INTERVAL=${AGGREGATION_INTERVAL:-300}
+      # ML Features
+      - ENABLE_ANOMALY_DETECTION=${ENABLE_ANOMALY_DETECTION:-true}
+      - ENABLE_FORECASTING=${ENABLE_FORECASTING:-true}
+    volumes:
+      - analytics-data:/app/data
+      - analytics-logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - citadelbuy-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8005/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.citadelbuy.service=analytics"
+      - "com.citadelbuy.description=Real-time analytics with ML"
+
+  #-----------------------------------------
+  # Pricing Service (Port 8006)
+  # Dynamic pricing optimization
+  #-----------------------------------------
+  pricing:
+    build:
+      context: ../../apps/services/pricing
+      dockerfile: Dockerfile
+    container_name: citadelbuy-pricing
+    restart: unless-stopped
+    ports:
+      - '8006:8006'
+    environment:
+      - SERVICE_NAME=pricing
+      - PORT=8006
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - NODE_ENV=${SERVICE_ENV:-development}
+      # Pricing Configuration
+      - DEFAULT_STRATEGY=${DEFAULT_STRATEGY:-profit_maximize}
+      - MIN_MARGIN_PERCENT=${MIN_MARGIN_PERCENT:-10}
+      - MAX_DISCOUNT_PERCENT=${MAX_DISCOUNT_PERCENT:-70}
+      - PRICE_UPDATE_INTERVAL=${PRICE_UPDATE_INTERVAL:-3600}
+      # ML Features
+      - ENABLE_ELASTICITY_MODEL=${ENABLE_ELASTICITY_MODEL:-true}
+      - ENABLE_DEMAND_FORECAST=${ENABLE_DEMAND_FORECAST:-true}
+      - ENABLE_COMPETITOR_TRACKING=${ENABLE_COMPETITOR_TRACKING:-true}
+    volumes:
+      - pricing-models:/app/models
+      - pricing-logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - citadelbuy-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8006/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.citadelbuy.service=pricing"
+      - "com.citadelbuy.description=Dynamic pricing optimization"
+
+  #-----------------------------------------
+  # Infrastructure Dependencies
+  #-----------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: citadelbuy-postgres-ai
+    restart: unless-stopped
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-citadelbuy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env file}
+      POSTGRES_DB: ${POSTGRES_DB:-citadelbuy_ai}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-ai-data:/var/lib/postgresql/data
+    networks:
+      - citadelbuy-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-citadelbuy}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    image: redis:7-alpine
+    container_name: citadelbuy-redis-ai
+    restart: unless-stopped
+    ports:
+      - '6380:6379'
+    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-ai-data:/data
+    networks:
+      - citadelbuy-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+#-----------------------------------------
+# Volumes
+#-----------------------------------------
+volumes:
+  # Database and Cache
+  postgres-ai-data:
+    driver: local
+  redis-ai-data:
+    driver: local
+
+  # AI Models
+  ai-models:
+    driver: local
+  fraud-models:
+    driver: local
+  pricing-models:
+    driver: local
+
+  # Service Data
+  chatbot-sessions:
+    driver: local
+  analytics-data:
+    driver: local
+
+  # Logs
+  ai-engine-logs:
+    driver: local
+  chatbot-logs:
+    driver: local
+  analytics-logs:
+    driver: local
+  pricing-logs:
+    driver: local
+
+#-----------------------------------------
+# Networks
+#-----------------------------------------
+networks:
+  citadelbuy-network:
+    driver: bridge
+    name: citadelbuy-ai-network
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

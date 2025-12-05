@@ -1,0 +1,152 @@
+---
+# Supplier Integration Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: supplier-integration
+  labels:
+    app: supplier-integration
+    tier: backend
+    component: dropshipping
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: supplier-integration
+  template:
+    metadata:
+      labels:
+        app: supplier-integration
+        tier: backend
+    spec:
+      containers:
+        - name: supplier-integration
+          image: ghcr.io/citadelplatforms/citadelbuy-supplier-integration:latest
+          ports:
+            - containerPort: 8001
+              name: http
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          env:
+            - name: SERVICE_NAME
+              value: "supplier-integration"
+            - name: PORT
+              value: "8001"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: citadelbuy-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: citadelbuy-secrets
+                  key: redis-url
+            - name: ALIEXPRESS_APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: supplier-secrets
+                  key: aliexpress-app-key
+            - name: ALIEXPRESS_APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: supplier-secrets
+                  key: aliexpress-app-secret
+            - name: CJ_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: supplier-secrets
+                  key: cj-api-key
+            - name: PRINTFUL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: supplier-secrets
+                  key: printful-api-key
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - supplier-integration
+                topologyKey: kubernetes.io/hostname
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: supplier-integration
+  labels:
+    app: supplier-integration
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8001
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: supplier-integration
+
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: supplier-integration-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: supplier-integration
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+# Pod Disruption Budget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: supplier-integration-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: supplier-integration

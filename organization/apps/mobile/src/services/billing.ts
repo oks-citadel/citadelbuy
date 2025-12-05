@@ -12,7 +12,27 @@
 
 import { Platform, Linking } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import * as InAppPurchases from 'expo-in-app-purchases';
+import type {
+  IAPItemDetails,
+  InAppPurchase,
+  IAPQueryResponse,
+} from 'expo-in-app-purchases';
 import { api } from './api';
+import {
+  getPlatformProductIds,
+  findProductById,
+  SUBSCRIPTION_PRODUCTS,
+  CREDIT_PACKAGES,
+} from '../config/iap-products';
+import type {
+  PurchaseResult,
+  PurchaseError,
+  IAPErrorCode,
+  EnrichedProduct,
+  SubscriptionStatus,
+  IAPLogEntry,
+} from '../types/iap.types';
 
 // ==================== Types ====================
 
@@ -235,6 +255,80 @@ export const walletApi = {
   },
 };
 
+// ==================== IAP Logging ====================
+
+class IAPLogger {
+  private logs: IAPLogEntry[] = [];
+  private maxLogs = 100;
+
+  log(
+    level: 'debug' | 'info' | 'warn' | 'error',
+    message: string,
+    category: 'initialization' | 'purchase' | 'restore' | 'validation' | 'subscription',
+    data?: any
+  ) {
+    const entry: IAPLogEntry = {
+      level,
+      message,
+      category,
+      data,
+      timestamp: new Date(),
+    };
+
+    this.logs.push(entry);
+
+    // Keep only recent logs
+    if (this.logs.length > this.maxLogs) {
+      this.logs.shift();
+    }
+
+    // Console output
+    const logFn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
+    logFn(`[IAP:${category}] ${message}`, data || '');
+  }
+
+  getLogs(): IAPLogEntry[] {
+    return [...this.logs];
+  }
+
+  clearLogs() {
+    this.logs = [];
+  }
+}
+
+const iapLogger = new IAPLogger();
+
+// ==================== IAP Error Handler ====================
+
+function createPurchaseError(
+  code: IAPErrorCode | string,
+  message: string,
+  details?: any
+): PurchaseError {
+  const error: PurchaseError = {
+    code,
+    message,
+  };
+
+  // Set specific flags based on error code
+  if (code === 'USER_CANCELLED' || message.toLowerCase().includes('cancel')) {
+    error.userCancelled = true;
+  }
+  if (code === 'NETWORK_ERROR' || message.toLowerCase().includes('network')) {
+    error.networkError = true;
+  }
+  if (code === 'PRODUCT_ALREADY_OWNED' || message.toLowerCase().includes('already owned')) {
+    error.itemAlreadyOwned = true;
+  }
+  if (code === 'PRODUCT_NOT_AVAILABLE' || message.toLowerCase().includes('not available')) {
+    error.itemUnavailable = true;
+  }
+
+  iapLogger.log('error', message, 'purchase', { code, details });
+
+  return error;
+}
+
 // ==================== Unified Billing Service ====================
 
 /**
@@ -246,6 +340,10 @@ export const walletApi = {
  */
 class BillingService {
   private iapInitialized = false;
+  private iapConnected = false;
+  private products: IAPItemDetails[] = [];
+  private purchaseListener: any = null;
+  private pendingPurchases: Map<string, (result: PurchaseResult) => void> = new Map();
 
   /**
    * Initialize the billing service
@@ -253,15 +351,183 @@ class BillingService {
    */
   async initialize(): Promise<void> {
     // Initialize native IAP SDK based on platform
-    // This would typically use react-native-iap or expo-in-app-purchases
     try {
       if (Platform.OS === 'ios' || Platform.OS === 'android') {
-        // TODO: Initialize IAP SDK
-        // await initIAP();
+        iapLogger.log('info', 'Initializing IAP SDK', 'initialization', { platform: Platform.OS });
+
+        // Connect to the store
+        await InAppPurchases.connectAsync();
+        this.iapConnected = true;
+
+        iapLogger.log('info', 'Connected to IAP store', 'initialization');
+
+        // Get product IDs for current platform
+        const platform = Platform.OS as 'ios' | 'android';
+        const productIds = getPlatformProductIds(platform);
+
+        iapLogger.log('debug', 'Fetching products', 'initialization', { productIds });
+
+        // Fetch product details
+        const { results, responseCode } = await InAppPurchases.getProductsAsync(productIds);
+
+        if (responseCode === InAppPurchases.IAPResponseCode.OK) {
+          this.products = results || [];
+          iapLogger.log('info', `Loaded ${this.products.length} products`, 'initialization', {
+            products: this.products.map(p => p.productId),
+          });
+        } else {
+          iapLogger.log('warn', 'Failed to fetch products', 'initialization', { responseCode });
+        }
+
+        // Set up purchase listener
+        this.setupPurchaseListener();
+
+        // Check for unfinished transactions
+        await this.finishUnfinishedTransactions();
+
         this.iapInitialized = true;
+        iapLogger.log('info', 'IAP initialization complete', 'initialization');
       }
-    } catch (error) {
+    } catch (error: any) {
+      iapLogger.log('error', 'Failed to initialize IAP', 'initialization', { error: error.message });
       console.error('Failed to initialize billing:', error);
+    }
+  }
+
+  /**
+   * Set up listener for purchase updates
+   */
+  private setupPurchaseListener() {
+    this.purchaseListener = InAppPurchases.setPurchaseListener(
+      async ({ responseCode, results, errorCode }) => {
+        iapLogger.log('debug', 'Purchase listener triggered', 'purchase', {
+          responseCode,
+          errorCode,
+          resultsCount: results?.length || 0,
+        });
+
+        if (responseCode === InAppPurchases.IAPResponseCode.OK) {
+          for (const purchase of results || []) {
+            await this.handlePurchaseUpdate(purchase);
+          }
+        } else if (responseCode === InAppPurchases.IAPResponseCode.USER_CANCELED) {
+          iapLogger.log('info', 'User cancelled purchase', 'purchase');
+          // Resolve any pending purchases with cancelled result
+          this.pendingPurchases.forEach(resolve => {
+            resolve({
+              success: false,
+              cancelled: true,
+              error: createPurchaseError('USER_CANCELLED', 'User cancelled the purchase'),
+            });
+          });
+          this.pendingPurchases.clear();
+        } else {
+          iapLogger.log('error', 'Purchase error', 'purchase', { responseCode, errorCode });
+          const error = createPurchaseError(
+            'UNKNOWN_ERROR',
+            `Purchase failed with code ${responseCode}`
+          );
+          this.pendingPurchases.forEach(resolve => {
+            resolve({ success: false, error });
+          });
+          this.pendingPurchases.clear();
+        }
+      }
+    );
+  }
+
+  /**
+   * Handle purchase update from store
+   */
+  private async handlePurchaseUpdate(purchase: InAppPurchase) {
+    try {
+      iapLogger.log('info', 'Processing purchase', 'purchase', {
+        productId: purchase.productId,
+        transactionId: purchase.transactionReceipt ? 'present' : 'missing',
+      });
+
+      // Get platform
+      const platform = Platform.OS as 'ios' | 'android';
+
+      // Validate receipt with backend
+      const receipt = purchase.transactionReceipt;
+      if (!receipt) {
+        throw new Error('No receipt available');
+      }
+
+      iapLogger.log('debug', 'Validating receipt with backend', 'validation');
+
+      const validation = await iapApi.validateReceipt(platform, receipt, purchase.productId);
+
+      if (validation.valid) {
+        iapLogger.log('info', 'Receipt validated successfully', 'validation');
+
+        // Sync purchase with backend to grant entitlements
+        await iapApi.syncPurchase(platform, receipt, purchase.productId);
+
+        // Finish the transaction
+        await InAppPurchases.finishTransactionAsync(purchase, true);
+
+        iapLogger.log('info', 'Transaction finished', 'purchase', { productId: purchase.productId });
+
+        // Resolve pending purchase
+        const resolver = this.pendingPurchases.get(purchase.productId);
+        if (resolver) {
+          resolver({
+            success: true,
+            purchase,
+            provider: platform === 'ios' ? 'APPLE_IAP' : 'GOOGLE_IAP',
+            transactionId: purchase.orderId || purchase.productId,
+          });
+          this.pendingPurchases.delete(purchase.productId);
+        }
+      } else {
+        throw new Error('Receipt validation failed');
+      }
+    } catch (error: any) {
+      iapLogger.log('error', 'Failed to process purchase', 'purchase', {
+        productId: purchase.productId,
+        error: error.message,
+      });
+
+      // Finish transaction with error
+      await InAppPurchases.finishTransactionAsync(purchase, false);
+
+      const resolver = this.pendingPurchases.get(purchase.productId);
+      if (resolver) {
+        resolver({
+          success: false,
+          error: createPurchaseError('RECEIPT_VALIDATION_FAILED', error.message),
+        });
+        this.pendingPurchases.delete(purchase.productId);
+      }
+    }
+  }
+
+  /**
+   * Finish any unfinished transactions from previous sessions
+   */
+  private async finishUnfinishedTransactions() {
+    try {
+      const history = await InAppPurchases.getPurchaseHistoryAsync();
+
+      if (history.responseCode === InAppPurchases.IAPResponseCode.OK && history.results) {
+        iapLogger.log('info', `Found ${history.results.length} purchase history items`, 'initialization');
+
+        for (const purchase of history.results) {
+          // Check if transaction needs to be finished
+          if (purchase.acknowledged === false) {
+            iapLogger.log('info', 'Finishing unfinished transaction', 'purchase', {
+              productId: purchase.productId,
+            });
+            await InAppPurchases.finishTransactionAsync(purchase, true);
+          }
+        }
+      }
+    } catch (error: any) {
+      iapLogger.log('warn', 'Failed to check unfinished transactions', 'initialization', {
+        error: error.message,
+      });
     }
   }
 
@@ -270,6 +536,34 @@ class BillingService {
    */
   async getAvailableProviders(currency?: string, country?: string) {
     return paymentsApi.getProviders(currency, country);
+  }
+
+  /**
+   * Get available IAP products with details
+   */
+  async getProducts(): Promise<EnrichedProduct[]> {
+    if (!this.iapInitialized) {
+      iapLogger.log('warn', 'IAP not initialized', 'purchase');
+      return [];
+    }
+
+    return this.products.map(product => {
+      const configProduct = findProductById(product.productId);
+
+      return {
+        productId: product.productId,
+        title: product.title || configProduct?.name || '',
+        description: product.description || configProduct?.description || '',
+        price: product.price || '',
+        priceAmountMicros: parseInt(product.priceAmountMicros || '0'),
+        priceCurrencyCode: product.priceCurrencyCode || 'USD',
+        type: configProduct?.type || 'consumable',
+        subscriptionPeriod: (product as any).subscriptionPeriod,
+        credits: (configProduct as any)?.credits,
+        bonus: (configProduct as any)?.bonus,
+        interval: (configProduct as any)?.interval,
+      } as EnrichedProduct;
+    });
   }
 
   /**
@@ -373,35 +667,38 @@ class BillingService {
    */
   async purchaseAppleIAP(productId: string): Promise<PaymentResult> {
     try {
-      // TODO: Implement using react-native-iap or expo-in-app-purchases
-      // Example flow:
-      // 1. Get product details
-      // 2. Request purchase
-      // 3. Get receipt
-      // 4. Validate with backend
-      // 5. Grant entitlement
+      if (!this.iapInitialized) {
+        throw createPurchaseError('NOT_INITIALIZED', 'IAP not initialized');
+      }
 
-      // Placeholder - actual implementation depends on IAP library
-      /*
-      const products = await getProducts([productId]);
-      if (products.length === 0) throw new Error('Product not found');
+      iapLogger.log('info', 'Starting Apple IAP purchase', 'purchase', { productId });
 
-      const purchase = await requestPurchase(productId);
-      const receipt = await getReceipt();
+      // Create a promise that will be resolved by the purchase listener
+      const purchasePromise = new Promise<PurchaseResult>((resolve) => {
+        this.pendingPurchases.set(productId, resolve);
+      });
 
-      // Validate and sync with backend
-      await iapApi.syncPurchase('ios', receipt, productId);
+      // Request purchase
+      await InAppPurchases.purchaseItemAsync(productId);
 
-      // Acknowledge purchase
-      await finishTransaction(purchase);
-      */
+      // Wait for purchase to complete (with timeout)
+      const timeoutPromise = new Promise<PurchaseResult>((resolve) => {
+        setTimeout(() => {
+          this.pendingPurchases.delete(productId);
+          resolve({
+            success: false,
+            error: createPurchaseError('UNKNOWN_ERROR', 'Purchase timeout'),
+          });
+        }, 60000); // 60 second timeout
+      });
 
-      return {
-        success: true,
-        provider: 'APPLE_IAP',
-        // transactionId from receipt
-      };
+      const result = await Promise.race([purchasePromise, timeoutPromise]);
+
+      return result;
     } catch (error: any) {
+      iapLogger.log('error', 'Apple IAP purchase failed', 'purchase', { error: error.message });
+      this.pendingPurchases.delete(productId);
+
       return {
         success: false,
         provider: 'APPLE_IAP',
@@ -415,15 +712,38 @@ class BillingService {
    */
   async purchaseGoogleIAP(productId: string): Promise<PaymentResult> {
     try {
-      // TODO: Implement using react-native-iap or expo-in-app-purchases
-      // Similar flow to Apple IAP
+      if (!this.iapInitialized) {
+        throw createPurchaseError('NOT_INITIALIZED', 'IAP not initialized');
+      }
 
-      return {
-        success: true,
-        provider: 'GOOGLE_IAP',
-        // transactionId from purchase token
-      };
+      iapLogger.log('info', 'Starting Google Play purchase', 'purchase', { productId });
+
+      // Create a promise that will be resolved by the purchase listener
+      const purchasePromise = new Promise<PurchaseResult>((resolve) => {
+        this.pendingPurchases.set(productId, resolve);
+      });
+
+      // Request purchase
+      await InAppPurchases.purchaseItemAsync(productId);
+
+      // Wait for purchase to complete (with timeout)
+      const timeoutPromise = new Promise<PurchaseResult>((resolve) => {
+        setTimeout(() => {
+          this.pendingPurchases.delete(productId);
+          resolve({
+            success: false,
+            error: createPurchaseError('UNKNOWN_ERROR', 'Purchase timeout'),
+          });
+        }, 60000); // 60 second timeout
+      });
+
+      const result = await Promise.race([purchasePromise, timeoutPromise]);
+
+      return result;
     } catch (error: any) {
+      iapLogger.log('error', 'Google Play purchase failed', 'purchase', { error: error.message });
+      this.pendingPurchases.delete(productId);
+
       return {
         success: false,
         provider: 'GOOGLE_IAP',
@@ -436,15 +756,68 @@ class BillingService {
    * Restore previous purchases
    * Important for subscription apps
    */
-  async restorePurchases(): Promise<void> {
+  async restorePurchases(): Promise<{ success: boolean; restoredCount: number; error?: string }> {
     try {
-      // TODO: Implement restore logic
-      // 1. Get all available receipts/purchase history
-      // 2. Validate each with backend
-      // 3. Grant entitlements
-    } catch (error) {
-      console.error('Failed to restore purchases:', error);
-      throw error;
+      if (!this.iapInitialized) {
+        throw new Error('IAP not initialized');
+      }
+
+      iapLogger.log('info', 'Starting purchase restore', 'restore');
+
+      const platform = Platform.OS as 'ios' | 'android';
+      let restoredCount = 0;
+
+      // Get purchase history
+      const history = await InAppPurchases.getPurchaseHistoryAsync();
+
+      if (history.responseCode === InAppPurchases.IAPResponseCode.OK && history.results) {
+        iapLogger.log('info', `Found ${history.results.length} purchases to restore`, 'restore');
+
+        for (const purchase of history.results) {
+          try {
+            const receipt = purchase.transactionReceipt;
+            if (!receipt) continue;
+
+            // Validate and sync with backend
+            const validation = await iapApi.validateReceipt(
+              platform,
+              receipt,
+              purchase.productId
+            );
+
+            if (validation.valid) {
+              await iapApi.syncPurchase(platform, receipt, purchase.productId);
+              restoredCount++;
+
+              iapLogger.log('info', 'Restored purchase', 'restore', {
+                productId: purchase.productId,
+              });
+            }
+          } catch (error: any) {
+            iapLogger.log('warn', 'Failed to restore purchase', 'restore', {
+              productId: purchase.productId,
+              error: error.message,
+            });
+          }
+        }
+
+        iapLogger.log('info', `Restore complete: ${restoredCount} purchases restored`, 'restore');
+
+        return {
+          success: true,
+          restoredCount,
+        };
+      } else {
+        throw new Error('Failed to get purchase history');
+      }
+    } catch (error: any) {
+      iapLogger.log('error', 'Purchase restore failed', 'restore', { error: error.message });
+
+      return {
+        success: false,
+        restoredCount: 0,
+        error: error.message || 'Failed to restore purchases',
+      };
     }
   }
 
@@ -463,19 +836,10 @@ class BillingService {
     // Try native IAP for consumables
     if (useNativeIAP && this.iapInitialized) {
       if (Platform.OS === 'ios' && pkg.appleProductId) {
-        const result = await this.purchaseAppleIAP(pkg.appleProductId);
-        if (result.success) {
-          // Sync with backend to credit wallet
-          // await iapApi.syncPurchase('ios', receipt, pkg.appleProductId);
-        }
-        return result;
+        return await this.purchaseAppleIAP(pkg.appleProductId);
       }
       if (Platform.OS === 'android' && pkg.googleProductId) {
-        const result = await this.purchaseGoogleIAP(pkg.googleProductId);
-        if (result.success) {
-          // await iapApi.syncPurchase('android', token, pkg.googleProductId);
-        }
-        return result;
+        return await this.purchaseGoogleIAP(pkg.googleProductId);
       }
     }
 
@@ -529,6 +893,52 @@ class BillingService {
       console.error('Failed to cancel subscription:', error);
       return false;
     }
+  }
+
+  /**
+   * Get IAP logs for debugging
+   */
+  getLogs(): IAPLogEntry[] {
+    return iapLogger.getLogs();
+  }
+
+  /**
+   * Clear IAP logs
+   */
+  clearLogs() {
+    iapLogger.clearLogs();
+  }
+
+  /**
+   * Disconnect from IAP store
+   * Call this on app shutdown
+   */
+  async disconnect() {
+    try {
+      if (this.purchaseListener) {
+        this.purchaseListener.remove();
+        this.purchaseListener = null;
+      }
+
+      if (this.iapConnected) {
+        await InAppPurchases.disconnectAsync();
+        this.iapConnected = false;
+        this.iapInitialized = false;
+
+        iapLogger.log('info', 'Disconnected from IAP store', 'initialization');
+      }
+    } catch (error: any) {
+      iapLogger.log('error', 'Failed to disconnect from IAP', 'initialization', {
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * Check if IAP is available and initialized
+   */
+  isIAPAvailable(): boolean {
+    return this.iapInitialized && this.iapConnected;
   }
 }
 

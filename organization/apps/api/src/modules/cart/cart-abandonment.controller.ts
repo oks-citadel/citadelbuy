@@ -7,7 +7,10 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Res,
+  Redirect,
 } from '@nestjs/common';
+import { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -29,22 +32,72 @@ export class CartAbandonmentController {
 
   /**
    * Track email opens via tracking pixel
+   * Returns a 1x1 transparent pixel image
    */
   @Get('track/open/:emailId')
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Track email open (pixel tracking)' })
-  async trackEmailOpen(@Param('emailId') emailId: string): Promise<void> {
-    await this.abandonmentService.trackEmailOpen(emailId);
+  @ApiResponse({
+    status: 200,
+    description: 'Returns transparent 1x1 pixel image',
+    content: { 'image/png': {} }
+  })
+  async trackEmailOpen(
+    @Param('emailId') emailId: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      // Track the email open asynchronously (don't await to avoid blocking)
+      this.abandonmentService.trackEmailOpen(emailId).catch(err => {
+        // Email tracking error (logged by service)
+      });
+    } catch (error) {
+      // Don't fail the pixel request even if tracking fails
+      // Email tracking error (logged by service)
+    }
+
+    // Return a 1x1 transparent PNG pixel
+    const pixel = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      'base64'
+    );
+
+    // Set response headers and send pixel
+    res.set('Content-Type', 'image/png');
+    res.set('Content-Length', pixel.length.toString());
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.send(pixel);
   }
 
   /**
-   * Track email link clicks
+   * Track email link clicks and redirect to target URL
    */
   @Get('track/click/:emailId')
   @ApiOperation({ summary: 'Track email click and redirect' })
-  async trackEmailClick(@Param('emailId') emailId: string): Promise<{ redirectUrl: string }> {
-    await this.abandonmentService.trackEmailClick(emailId);
-    return { redirectUrl: '/cart' };
+  @ApiQuery({ name: 'redirect', required: false, description: 'URL to redirect to after tracking' })
+  @ApiResponse({
+    status: 302,
+    description: 'Redirects to the target URL after tracking',
+  })
+  async trackEmailClick(
+    @Param('emailId') emailId: string,
+    @Query('redirect') redirectUrl: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      // Track the click asynchronously (don't await to avoid blocking redirect)
+      this.abandonmentService.trackEmailClick(emailId).catch(err => {
+        // Email tracking error (logged by service)
+      });
+    } catch (error) {
+      // Log error but still redirect
+      // Email tracking error (logged by service)
+    }
+
+    // Redirect to target URL
+    const targetUrl = redirectUrl || '/cart';
+    res.redirect(302, targetUrl);
   }
 
   /**

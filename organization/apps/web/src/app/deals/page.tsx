@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, Zap, Tag, ArrowRight, ShoppingCart, Heart, Flame, Timer, Percent } from 'lucide-react';
+import { Clock, Zap, Tag, ArrowRight, ShoppingCart, Heart, Flame, Timer, Percent, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { apiClient } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 interface Deal {
   id: string;
@@ -21,87 +23,6 @@ interface Deal {
   stock: number;
   sold: number;
 }
-
-const mockDeals: Deal[] = [
-  {
-    id: '1',
-    name: 'Premium Wireless Headphones',
-    description: 'High-fidelity sound with active noise cancellation',
-    originalPrice: 299.99,
-    salePrice: 149.99,
-    discount: 50,
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400',
-    category: 'Electronics',
-    endsAt: new Date(Date.now() + 3600000 * 5),
-    stock: 50,
-    sold: 35,
-  },
-  {
-    id: '2',
-    name: 'Smart Watch Pro',
-    description: 'Advanced fitness tracking with heart rate monitor',
-    originalPrice: 399.99,
-    salePrice: 249.99,
-    discount: 38,
-    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
-    category: 'Electronics',
-    endsAt: new Date(Date.now() + 3600000 * 8),
-    stock: 30,
-    sold: 22,
-  },
-  {
-    id: '3',
-    name: 'Designer Leather Bag',
-    description: 'Handcrafted genuine leather with gold accents',
-    originalPrice: 450.00,
-    salePrice: 225.00,
-    discount: 50,
-    image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400',
-    category: 'Fashion',
-    endsAt: new Date(Date.now() + 3600000 * 12),
-    stock: 20,
-    sold: 15,
-  },
-  {
-    id: '4',
-    name: 'Robot Vacuum Cleaner',
-    description: 'Smart mapping with automatic charging',
-    originalPrice: 599.99,
-    salePrice: 349.99,
-    discount: 42,
-    image: 'https://images.unsplash.com/photo-1558317374-067fb5f30001?w=400',
-    category: 'Home',
-    endsAt: new Date(Date.now() + 3600000 * 6),
-    stock: 40,
-    sold: 28,
-  },
-  {
-    id: '5',
-    name: 'Professional Camera Kit',
-    description: 'Mirrorless camera with 2 lenses and accessories',
-    originalPrice: 1499.99,
-    salePrice: 999.99,
-    discount: 33,
-    image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400',
-    category: 'Electronics',
-    endsAt: new Date(Date.now() + 3600000 * 10),
-    stock: 15,
-    sold: 8,
-  },
-  {
-    id: '6',
-    name: 'Ergonomic Office Chair',
-    description: 'Premium mesh back with lumbar support',
-    originalPrice: 699.99,
-    salePrice: 399.99,
-    discount: 43,
-    image: 'https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=400',
-    category: 'Furniture',
-    endsAt: new Date(Date.now() + 3600000 * 4),
-    stock: 25,
-    sold: 18,
-  },
-];
 
 function CountdownTimer({ endsAt }: { endsAt: Date }) {
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
@@ -137,13 +58,74 @@ function CountdownTimer({ endsAt }: { endsAt: Date }) {
 }
 
 export default function DealsPage() {
+  const [deals, setDeals] = useState<Deal[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadDeals();
+  }, []);
+
+  const loadDeals = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Load active deals from backend
+      const response = await apiClient.get('/deals/active');
+
+      // Map deals to frontend format
+      const mappedDeals: Deal[] = response.data.map((deal: any) => ({
+        id: deal.id,
+        name: deal.name,
+        description: deal.description,
+        originalPrice: deal.originalPrice,
+        salePrice: deal.discountedPrice,
+        discount: deal.discountPercentage,
+        image: deal.imageUrl || '/placeholder-product.png',
+        category: deal.category?.name || 'General',
+        endsAt: new Date(deal.endsAt),
+        stock: deal.stockAvailable || 100,
+        sold: deal.purchaseCount || 0,
+      }));
+
+      setDeals(mappedDeals);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load deals';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      // Set empty array on error to prevent UI issues
+      setDeals([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const toggleWishlist = (id: string) => {
     setWishlist(prev =>
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-red-50 to-white">
+        <div className="bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white">
+          <div className="container mx-auto px-4 py-12">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Zap className="h-10 w-10 animate-pulse" />
+              <h1 className="text-4xl md:text-5xl font-bold">Flash Deals</h1>
+              <Flame className="h-10 w-10 animate-pulse" />
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-red-50 to-white">
@@ -160,11 +142,11 @@ export default function DealsPage() {
           </p>
           <div className="flex justify-center gap-4">
             <div className="bg-white/20 backdrop-blur-sm rounded-lg px-6 py-3">
-              <div className="text-3xl font-bold">{mockDeals.length}</div>
+              <div className="text-3xl font-bold">{deals.length}</div>
               <div className="text-sm opacity-90">Active Deals</div>
             </div>
             <div className="bg-white/20 backdrop-blur-sm rounded-lg px-6 py-3">
-              <div className="text-3xl font-bold">50%</div>
+              <div className="text-3xl font-bold">{deals.length > 0 ? Math.max(...deals.map(d => d.discount)) : 0}%</div>
               <div className="text-sm opacity-90">Max Discount</div>
             </div>
           </div>
@@ -184,8 +166,18 @@ export default function DealsPage() {
           </div>
         </div>
 
+        {deals.length === 0 ? (
+          <div className="text-center py-12">
+            <Zap className="h-16 w-16 mx-auto mb-4 text-red-500 opacity-50" />
+            <h3 className="text-xl font-semibold mb-2">No Active Deals</h3>
+            <p className="text-muted-foreground mb-4">
+              Check back soon for amazing flash deals!
+            </p>
+            <p className="text-sm text-muted-foreground">Backend API integration pending</p>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockDeals.map((deal) => (
+          {deals.map((deal) => (
             <Card key={deal.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-2 hover:border-red-200">
               <div className="relative">
                 <div className="aspect-square relative overflow-hidden bg-gray-100">
@@ -270,6 +262,7 @@ export default function DealsPage() {
             </Card>
           ))}
         </div>
+        )}
 
         {/* More Deals CTA */}
         <div className="text-center mt-12">

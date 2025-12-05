@@ -1,0 +1,966 @@
+{
+  "name": "CitadelBuy Returns & Refunds Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "citadelbuy-returns",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-return-request",
+      "name": "Webhook - Return Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "citadelbuy-returns-webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, return_id: $json.data.return_id, message: 'Return request received and processing' }) }}"
+      },
+      "id": "webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse and validate webhook payload\nconst event = $input.item.json;\n\nif (!event.event || event.event !== 'return.requested') {\n  throw new Error('Invalid event type');\n}\n\nif (!event.data || !event.data.return_id) {\n  throw new Error('Missing return data');\n}\n\nconst returnData = event.data;\n\n// Calculate days since delivery\nconst deliveryDate = new Date(returnData.delivery_date);\nconst today = new Date();\nconst daysSinceDelivery = Math.floor((today - deliveryDate) / (1000 * 60 * 60 * 24));\n\n// Non-returnable SKU patterns\nconst nonReturnableSKUs = [\n  'CB-DIGITAL-',\n  'CB-FINAL-',\n  'CB-PERSONAL-',\n  'CB-FOOD-',\n  'CB-SOFTWARE-'\n];\n\n// Check if any item is non-returnable\nconst hasNonReturnableItems = returnData.items.some(item => \n  nonReturnableSKUs.some(pattern => item.sku.startsWith(pattern))\n);\n\n// Calculate total refund amount\nconst totalRefund = returnData.items.reduce((sum, item) => \n  sum + (item.price * item.quantity), 0\n);\n\n// Determine if high value\nconst isHighValue = totalRefund > 200;\n\n// Check for damage claims\nconst hasDamageClaim = returnData.items.some(item => \n  ['damaged', 'defective', 'not_as_described'].includes(item.reason)\n);\n\nreturn {\n  json: {\n    ...returnData,\n    validation: {\n      days_since_delivery: daysSinceDelivery,\n      within_return_window: daysSinceDelivery <= 30,\n      has_non_returnable_items: hasNonReturnableItems,\n      is_high_value: isHighValue,\n      has_damage_claim: hasDamageClaim,\n      total_refund: totalRefund\n    }\n  }\n};"
+      },
+      "id": "parse-validate-request",
+      "name": "Parse & Validate Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.citadelbuy.com/v1/customers/{{ $json.customer_id }}/returns/history",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "citadelBuyApi",
+        "options": {
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "days",
+                "value": "90"
+              }
+            ]
+          }
+        }
+      },
+      "id": "check-customer-history",
+      "name": "Check Customer History",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge return data with customer history\nconst returnData = $('Parse & Validate Request').item.json;\nconst historyResponse = $input.item.json;\n\nconst returnCount = historyResponse.returns?.length || 0;\nconst isFrequentReturner = returnCount >= 3;\n\n// Determine auto-approval eligibility\nconst standardReasons = ['didnt_fit', 'changed_mind', 'ordered_wrong', 'color_not_as_expected'];\n\nconst hasStandardReason = returnData.items.every(item => \n  standardReasons.includes(item.reason)\n);\n\nconst autoApprovalEligible = \n  returnData.validation.within_return_window &&\n  !returnData.validation.has_non_returnable_items &&\n  !returnData.validation.is_high_value &&\n  !returnData.validation.has_damage_claim &&\n  !isFrequentReturner &&\n  hasStandardReason;\n\n// Determine review reasons\nconst reviewReasons = [];\nif (!returnData.validation.within_return_window) reviewReasons.push('Outside 30-day return window');\nif (returnData.validation.has_non_returnable_items) reviewReasons.push('Contains non-returnable items');\nif (returnData.validation.is_high_value) reviewReasons.push('High-value return (>$200)');\nif (returnData.validation.has_damage_claim) reviewReasons.push('Damage/defect claim requires inspection');\nif (isFrequentReturner) reviewReasons.push(`Frequent returner (${returnCount} returns in 90 days)`);\nif (!hasStandardReason) reviewReasons.push('Non-standard return reason');\n\nreturn {\n  json: {\n    ...returnData,\n    customer_analysis: {\n      return_count_90_days: returnCount,\n      is_frequent_returner: isFrequentReturner,\n      recent_returns: historyResponse.returns || []\n    },\n    auto_approval: {\n      eligible: autoApprovalEligible,\n      review_reasons: reviewReasons\n    }\n  }\n};"
+      },
+      "id": "analyze-eligibility",
+      "name": "Analyze Eligibility",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.auto_approval.eligible }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "route-by-approval",
+      "name": "Route by Approval",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.citadelbuy.com/v1/returns/{{ $json.return_id }}/approve",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "citadelBuyApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "approved"
+            },
+            {
+              "name": "approval_type",
+              "value": "automatic"
+            },
+            {
+              "name": "approved_at",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      },
+      "id": "auto-approve-return",
+      "name": "Auto-Approve Return",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1560,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ssapi.shipstation.com/shipments/createlabel",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "shipStationApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "carrierCode",
+              "value": "fedex"
+            },
+            {
+              "name": "serviceCode",
+              "value": "fedex_ground"
+            },
+            {
+              "name": "packageCode",
+              "value": "package"
+            },
+            {
+              "name": "confirmation",
+              "value": "none"
+            },
+            {
+              "name": "shipDate",
+              "value": "={{ new Date().toISOString().split('T')[0] }}"
+            },
+            {
+              "name": "weight",
+              "value": "={\"value\": 5, \"units\": \"pounds\"}"
+            },
+            {
+              "name": "shipFrom",
+              "value": "={\"name\": $json.items[0].name, \"street1\": \"123 Customer St\", \"city\": \"Customer City\", \"state\": \"CA\", \"postalCode\": \"90001\", \"country\": \"US\"}"
+            },
+            {
+              "name": "shipTo",
+              "value": "={\"name\": \"CitadelBuy Returns\", \"company\": \"CitadelBuy Inc\", \"street1\": \"500 Returns Pkwy\", \"city\": \"Commerce\", \"state\": \"CA\", \"postalCode\": \"90040\", \"country\": \"US\", \"phone\": \"888-555-0100\"}"
+            },
+            {
+              "name": "testLabel",
+              "value": false
+            }
+          ]
+        }
+      },
+      "id": "generate-return-label",
+      "name": "Generate Return Label",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1780,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract label URL and tracking from ShipStation response\nconst shipStationResponse = $input.item.json;\nconst returnData = $('Analyze Eligibility').item.json;\n\nreturn {\n  json: {\n    ...returnData,\n    shipping_label: {\n      url: shipStationResponse.labelData || shipStationResponse.labelDownload?.href,\n      format: 'pdf',\n      tracking_number: shipStationResponse.trackingNumber,\n      carrier: 'FedEx',\n      service: 'FedEx Ground',\n      created_at: new Date().toISOString()\n    }\n  }\n};"
+      },
+      "id": "process-label-response",
+      "name": "Process Label Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.citadelbuy.com/v1/emails/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "citadelBuyApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $json.customer_email }}"
+            },
+            {
+              "name": "template",
+              "value": "return-instructions"
+            },
+            {
+              "name": "data",
+              "value": "={{ JSON.stringify({\n  customer_name: $json.customer_email.split('@')[0],\n  return_id: $json.return_id,\n  order_id: $json.order_id,\n  items: $json.items,\n  total_refund: $json.validation.total_refund,\n  tracking_number: $json.shipping_label.tracking_number,\n  label_url: $json.shipping_label.url,\n  return_deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],\n  instructions: [\n    'Print the attached prepaid shipping label',\n    'Pack items securely in original packaging if possible',\n    'Attach the label to the outside of the package',\n    'Drop off at any FedEx location or schedule a pickup',\n    'Keep your tracking number for reference'\n  ]\n}) }}"
+            }
+          ]
+        }
+      },
+      "id": "send-return-instructions",
+      "name": "Send Return Instructions Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2220,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.citadelbuy.com/v1/returns/{{ $json.return_id }}/update",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "citadelBuyApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "label_sent"
+            },
+            {
+              "name": "tracking_number",
+              "value": "={{ $json.shipping_label.tracking_number }}"
+            },
+            {
+              "name": "label_sent_at",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "expected_return_by",
+              "value": "={{ new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() }}"
+            }
+          ]
+        }
+      },
+      "id": "update-return-status-label-sent",
+      "name": "Update Return Status - Label Sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2440,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://{{ $env.ZENDESK_SUBDOMAIN }}.zendesk.com/api/v2/tickets",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "zendeskApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "ticket",
+              "value": "={{ JSON.stringify({\n  subject: `Return Request Review Required - ${$json.return_id}`,\n  comment: {\n    body: `Return request requires manual review:\\n\\nReturn ID: ${$json.return_id}\\nOrder ID: ${$json.order_id}\\nCustomer: ${$json.customer_email}\\nTotal Refund: $${$json.validation.total_refund}\\n\\nReview Reasons:\\n${$json.auto_approval.review_reasons.map(r => '- ' + r).join('\\\\n')}\\n\\nItems:\\n${$json.items.map(i => `- ${i.name} (${i.sku}) - Qty: ${i.quantity} - Reason: ${i.reason} - Condition: ${i.condition}`).join('\\\\n')}\\n\\nCustomer History:\\n- Returns in last 90 days: ${$json.customer_analysis.return_count_90_days}\\n- Days since delivery: ${$json.validation.days_since_delivery}\\n\\nAction Required: Review and approve/deny return request in CitadelBuy admin panel.`\n  },\n  priority: $json.validation.is_high_value || $json.validation.has_damage_claim ? 'high' : 'normal',\n  type: 'task',\n  tags: ['return-review', 'returns', $json.validation.is_high_value ? 'high-value' : '', $json.customer_analysis.is_frequent_returner ? 'frequent-returner' : ''].filter(Boolean),\n  custom_fields: [\n    { id: 360001, value: $json.return_id },\n    { id: 360002, value: $json.order_id },\n    { id: 360003, value: $json.validation.total_refund }\n  ]\n}) }}"
+            }
+          ]
+        }
+      },
+      "id": "create-zendesk-ticket",
+      "name": "Create Zendesk Review Ticket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1560,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.citadelbuy.com/v1/returns/{{ $json.return_id }}/update",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "citadelBuyApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "pending_review"
+            },
+            {
+              "name": "review_required",
+              "value": true
+            },
+            {
+              "name": "review_reasons",
+              "value": "={{ JSON.stringify($json.auto_approval.review_reasons) }}"
+            },
+            {
+              "name": "zendesk_ticket_id",
+              "value": "={{ $('Create Zendesk Review Ticket').item.json.ticket.id }}"
+            }
+          ]
+        }
+      },
+      "id": "update-return-status-review",
+      "name": "Update Return Status - Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1780,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.citadelbuy.com/v1/emails/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "citadelBuyApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $json.customer_email }}"
+            },
+            {
+              "name": "template",
+              "value": "return-under-review"
+            },
+            {
+              "name": "data",
+              "value": "={{ JSON.stringify({\n  customer_name: $json.customer_email.split('@')[0],\n  return_id: $json.return_id,\n  order_id: $json.order_id,\n  review_timeframe: '1-2 business days',\n  support_email: 'returns@citadelbuy.com'\n}) }}"
+            }
+          ]
+        }
+      },
+      "id": "send-review-notification",
+      "name": "Send Review Notification Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2000,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "citadelbuy-return-received",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-return-received",
+      "name": "Webhook - Return Received",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        700
+      ],
+      "webhookId": "citadelbuy-return-received-webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, return_id: $json.return_id, message: 'Return receipt acknowledged' }) }}"
+      },
+      "id": "webhook-response-received",
+      "name": "Webhook Response - Received",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        460,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.citadelbuy.com/v1/returns/{{ $json.return_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "citadelBuyApi"
+      },
+      "id": "get-return-details",
+      "name": "Get Return Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        680,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process each returned item for inventory adjustment\nconst returnData = $input.item.json;\nconst items = returnData.items || [];\n\nconst inventoryAdjustments = items.map(item => ({\n  json: {\n    return_id: returnData.return_id,\n    order_id: returnData.order_id,\n    sku: item.sku,\n    quantity: item.quantity,\n    condition: item.condition,\n    adjustment_type: item.condition === 'unopened' ? 'restockable' : 'damaged',\n    location: 'returns_processing'\n  }\n}));\n\nreturn inventoryAdjustments;"
+      },
+      "id": "prepare-inventory-adjustments",
+      "name": "Prepare Inventory Adjustments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.citadelbuy.com/v1/inventory/adjust",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "citadelBuyApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "sku",
+              "value": "={{ $json.sku }}"
+            },
+            {
+              "name": "quantity",
+              "value": "={{ $json.quantity }}"
+            },
+            {
+              "name": "type",
+              "value": "return"
+            },
+            {
+              "name": "condition",
+              "value": "={{ $json.condition }}"
+            },
+            {
+              "name": "location",
+              "value": "={{ $json.location }}"
+            },
+            {
+              "name": "reference_id",
+              "value": "={{ $json.return_id }}"
+            },
+            {
+              "name": "notes",
+              "value": "Return received for order {{ $json.order_id }}"
+            }
+          ]
+        }
+      },
+      "id": "update-inventory",
+      "name": "Update Inventory",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1120,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.stripe.com/v1/refunds",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "stripeApi",
+        "sendBody": true,
+        "specifyBody": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "charge",
+              "value": "={{ $('Get Return Details').item.json.stripe_charge_id }}"
+            },
+            {
+              "name": "amount",
+              "value": "={{ Math.round($('Get Return Details').item.json.total_refund * 100) }}"
+            },
+            {
+              "name": "reason",
+              "value": "requested_by_customer"
+            },
+            {
+              "name": "metadata[return_id]",
+              "value": "={{ $('Get Return Details').item.json.return_id }}"
+            },
+            {
+              "name": "metadata[order_id]",
+              "value": "={{ $('Get Return Details').item.json.order_id }}"
+            }
+          ]
+        }
+      },
+      "id": "process-stripe-refund",
+      "name": "Process Stripe Refund",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1340,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.citadelbuy.com/v1/returns/{{ $('Get Return Details').item.json.return_id }}/complete",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "citadelBuyApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "completed"
+            },
+            {
+              "name": "refund_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "refund_amount",
+              "value": "={{ $json.amount / 100 }}"
+            },
+            {
+              "name": "refund_processed_at",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "inventory_updated",
+              "value": true
+            }
+          ]
+        }
+      },
+      "id": "complete-return",
+      "name": "Complete Return",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1560,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.citadelbuy.com/v1/emails/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "citadelBuyApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $('Get Return Details').item.json.customer_email }}"
+            },
+            {
+              "name": "template",
+              "value": "refund-processed"
+            },
+            {
+              "name": "data",
+              "value": "={{ JSON.stringify({\n  customer_name: $('Get Return Details').item.json.customer_email.split('@')[0],\n  return_id: $('Get Return Details').item.json.return_id,\n  order_id: $('Get Return Details').item.json.order_id,\n  refund_amount: ($('Process Stripe Refund').item.json.amount / 100).toFixed(2),\n  refund_method: 'Original payment method',\n  processing_time: '5-10 business days',\n  items: $('Get Return Details').item.json.items\n}) }}"
+            }
+          ]
+        }
+      },
+      "id": "send-refund-confirmation",
+      "name": "Send Refund Confirmation Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1780,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "unit": "days",
+        "amount": 7
+      },
+      "id": "wait-7-days",
+      "name": "Wait 7 Days",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        700
+      ],
+      "webhookId": "post-return-survey-wait"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.citadelbuy.com/v1/emails/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "citadelBuyApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{ $('Get Return Details').item.json.customer_email }}"
+            },
+            {
+              "name": "template",
+              "value": "post-return-survey"
+            },
+            {
+              "name": "data",
+              "value": "={{ JSON.stringify({\n  customer_name: $('Get Return Details').item.json.customer_email.split('@')[0],\n  return_id: $('Get Return Details').item.json.return_id,\n  order_id: $('Get Return Details').item.json.order_id,\n  survey_url: `https://citadelbuy.com/surveys/return-experience?return_id=${$('Get Return Details').item.json.return_id}`,\n  questions: [\n    'How easy was the return process?',\n    'How satisfied are you with the refund timeline?',\n    'Would you shop with us again?',\n    'Any suggestions for improvement?'\n  ]\n}) }}"
+            }
+          ]
+        }
+      },
+      "id": "send-post-return-survey",
+      "name": "Send Post-Return Survey",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2220,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Returns & Refunds Automation Workflow\n\n**Trigger 1: Return Request Webhook**\n- Receives return requests from CitadelBuy Returns Portal\n- Validates eligibility (30-day window, returnable items)\n- Checks customer history for frequent returners\n\n**Auto-Approval Path:**\n- Standard reasons + good history → auto-approve\n- Generates ShipStation return label\n- Emails prepaid label to customer\n\n**Manual Review Path:**\n- High-value (>$200)\n- Damage claims\n- Frequent returners (≥3 returns/90 days)\n- Creates Zendesk ticket for review\n\n**Trigger 2: Return Received Webhook**\n- Updates inventory via API\n- Processes Stripe refund\n- Sends confirmation email\n- Schedules post-return survey (7 days)",
+        "height": 460,
+        "width": 380
+      },
+      "id": "sticky-note-workflow-overview",
+      "name": "Workflow Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        240,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Eligibility Rules\n\n✅ **Auto-Approval Criteria:**\n- Within 30-day return window\n- No non-returnable SKUs\n- Value ≤ $200\n- Standard reasons only\n- < 3 returns in 90 days\n\n❌ **Non-Returnable Patterns:**\n- CB-DIGITAL-* (digital goods)\n- CB-FINAL-* (final sale)\n- CB-PERSONAL-* (personal care)\n- CB-FOOD-* (consumables)\n- CB-SOFTWARE-* (software)\n\n⚠️ **Manual Review Triggers:**\n- High-value returns\n- Damage/defect claims\n- Frequent returners\n- Outside policy window",
+        "height": 460,
+        "width": 360
+      },
+      "id": "sticky-note-eligibility-rules",
+      "name": "Eligibility Rules",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        660,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Return Received Flow\n\n1️⃣ Warehouse scans return (triggers webhook)\n2️⃣ Fetch full return details\n3️⃣ Update inventory by SKU & condition\n4️⃣ Process Stripe refund\n5️⃣ Mark return as completed\n6️⃣ Send refund confirmation\n7️⃣ Wait 7 days\n8️⃣ Send post-return survey",
+        "height": 320,
+        "width": 360
+      },
+      "id": "sticky-note-return-received",
+      "name": "Return Received Flow",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        240,
+        920
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook - Return Request": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Response": {
+      "main": [
+        [
+          {
+            "node": "Parse & Validate Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Validate Request": {
+      "main": [
+        [
+          {
+            "node": "Check Customer History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Customer History": {
+      "main": [
+        [
+          {
+            "node": "Analyze Eligibility",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Eligibility": {
+      "main": [
+        [
+          {
+            "node": "Route by Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Approval": {
+      "main": [
+        [
+          {
+            "node": "Auto-Approve Return",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Zendesk Review Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto-Approve Return": {
+      "main": [
+        [
+          {
+            "node": "Generate Return Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Return Label": {
+      "main": [
+        [
+          {
+            "node": "Process Label Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Label Response": {
+      "main": [
+        [
+          {
+            "node": "Send Return Instructions Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Return Instructions Email": {
+      "main": [
+        [
+          {
+            "node": "Update Return Status - Label Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Zendesk Review Ticket": {
+      "main": [
+        [
+          {
+            "node": "Update Return Status - Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Return Status - Review": {
+      "main": [
+        [
+          {
+            "node": "Send Review Notification Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Return Received": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response - Received",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Response - Received": {
+      "main": [
+        [
+          {
+            "node": "Get Return Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Return Details": {
+      "main": [
+        [
+          {
+            "node": "Prepare Inventory Adjustments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Inventory Adjustments": {
+      "main": [
+        [
+          {
+            "node": "Update Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Inventory": {
+      "main": [
+        [
+          {
+            "node": "Process Stripe Refund",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Stripe Refund": {
+      "main": [
+        [
+          {
+            "node": "Complete Return",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Complete Return": {
+      "main": [
+        [
+          {
+            "node": "Send Refund Confirmation Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Refund Confirmation Email": {
+      "main": [
+        [
+          {
+            "node": "Wait 7 Days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 7 Days": {
+      "main": [
+        [
+          {
+            "node": "Send Post-Return Survey",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "id": "returns",
+      "name": "Returns"
+    },
+    {
+      "id": "refunds",
+      "name": "Refunds"
+    },
+    {
+      "id": "customer-service",
+      "name": "Customer Service"
+    }
+  ],
+  "meta": {
+    "instanceId": "citadelbuy-production"
+  },
+  "pinData": {},
+  "versionId": "1.0.0"
+}

@@ -1,0 +1,101 @@
+# Kustomize configuration for production environment
+# This file defines how Kustomize should handle resource transformations
+
+nameReference:
+- kind: ConfigMap
+  version: v1
+  fieldSpecs:
+  - path: spec/volumes/configMap/name
+    kind: Pod
+  - path: spec/containers/env/valueFrom/configMapKeyRef/name
+    kind: Pod
+  - path: spec/containers/envFrom/configMapRef/name
+    kind: Pod
+  - path: spec/initContainers/env/valueFrom/configMapKeyRef/name
+    kind: Pod
+  - path: spec/initContainers/envFrom/configMapRef/name
+    kind: Pod
+
+- kind: Secret
+  version: v1
+  fieldSpecs:
+  - path: spec/volumes/secret/secretName
+    kind: Pod
+  - path: spec/containers/env/valueFrom/secretKeyRef/name
+    kind: Pod
+  - path: spec/containers/envFrom/secretRef/name
+    kind: Pod
+  - path: spec/initContainers/env/valueFrom/secretKeyRef/name
+    kind: Pod
+  - path: spec/initContainers/envFrom/secretRef/name
+    kind: Pod
+  - path: spec/tls/secretName
+    kind: Ingress
+
+- kind: Service
+  version: v1
+  fieldSpecs:
+  - path: spec/rules/http/paths/backend/service/name
+    kind: Ingress
+  - path: spec/backend/service/name
+    kind: Ingress
+
+varReference:
+- path: spec/rules/http/paths/backend/service/name
+  kind: Ingress
+- path: spec/template/spec/containers/env/value
+  kind: Deployment
+- path: spec/template/spec/containers/command
+  kind: Deployment
+- path: spec/template/spec/containers/args
+  kind: Deployment
+
+commonLabels:
+- path: metadata/labels
+  create: true
+  kind: "*"
+- path: spec/selector
+  create: true
+  kind: Service
+- path: spec/selector/matchLabels
+  create: true
+  kind: Deployment
+- path: spec/selector/matchLabels
+  create: true
+  kind: StatefulSet
+- path: spec/selector/matchLabels
+  create: true
+  kind: DaemonSet
+
+commonAnnotations:
+- path: metadata/annotations
+  create: true
+  kind: "*"
+
+images:
+- path: spec/template/spec/containers[]/image
+  kind: Deployment
+- path: spec/template/spec/initContainers[]/image
+  kind: Deployment
+- path: spec/template/spec/containers[]/image
+  kind: StatefulSet
+- path: spec/template/spec/initContainers[]/image
+  kind: StatefulSet
+- path: spec/template/spec/containers[]/image
+  kind: DaemonSet
+- path: spec/template/spec/initContainers[]/image
+  kind: DaemonSet
+- path: spec/template/spec/containers[]/image
+  kind: CronJob
+- path: spec/jobTemplate/spec/template/spec/containers[]/image
+  kind: CronJob
+- path: spec/jobTemplate/spec/template/spec/initContainers[]/image
+  kind: CronJob
+
+replicas:
+- path: spec/replicas
+  create: true
+  kind: Deployment
+- path: spec/replicas
+  create: true
+  kind: StatefulSet

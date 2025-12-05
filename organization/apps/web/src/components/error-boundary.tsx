@@ -1,28 +1,34 @@
 'use client';
 
 import * as React from 'react';
+import { errorReporting } from '@/lib/error-reporting';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
   fallback?: React.ComponentType<ErrorFallbackProps>;
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+  componentName?: string;
 }
 
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
   errorInfo: React.ErrorInfo | null;
+  eventId: string | undefined;
 }
 
 interface ErrorFallbackProps {
   error: Error | null;
   errorInfo: React.ErrorInfo | null;
   resetError: () => void;
+  eventId?: string;
+  componentName?: string;
 }
 
 /**
  * Error Boundary Component for Next.js Web Application
  * Catches JavaScript errors anywhere in the component tree and displays a fallback UI
+ * Automatically reports errors to Sentry with full context
  */
 export class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
@@ -34,6 +40,7 @@ export class ErrorBoundary extends React.Component<
       hasError: false,
       error: null,
       errorInfo: null,
+      eventId: undefined,
     };
   }
 
@@ -46,31 +53,70 @@ export class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    // Log error details to console (can be extended to external error tracking service)
+    // Log error details to console
     console.error('Error Boundary caught an error:', error);
     console.error('Error Info:', errorInfo);
     console.error('Component Stack:', errorInfo.componentStack);
-
-    // Update state with error info
-    this.setState({
-      errorInfo,
-    });
 
     // Call custom error handler if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
 
-    // TODO: Send error to external monitoring service (e.g., Sentry, LogRocket)
-    // Example:
-    // Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } });
+    // Report error to Sentry with full context
+    try {
+      const eventId = errorReporting.captureException(
+        error,
+        'error',
+        {
+          react: {
+            componentStack: errorInfo.componentStack,
+          },
+        },
+        {
+          component: this.props.componentName || 'ErrorBoundary',
+          action: 'componentDidCatch',
+          errorBoundary: 'true',
+          location: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+        }
+      );
+
+      // Add breadcrumb for context
+      errorReporting.addBreadcrumb(
+        'error-boundary',
+        `Error caught in ${this.props.componentName || 'ErrorBoundary'}`,
+        'error',
+        {
+          errorMessage: error.message,
+          errorName: error.name,
+        }
+      );
+
+      // Update state with error info and event ID
+      this.setState({
+        errorInfo,
+        eventId,
+      });
+    } catch (reportingError) {
+      console.error('Failed to report error to Sentry:', reportingError);
+      this.setState({
+        errorInfo,
+      });
+    }
   }
 
   resetError = (): void => {
+    // Track error recovery attempt
+    errorReporting.trackEvent('error-boundary-reset', {
+      component: this.props.componentName,
+      hadEventId: !!this.state.eventId,
+    });
+
     this.setState({
       hasError: false,
       error: null,
       errorInfo: null,
+      eventId: undefined,
     });
   };
 
@@ -84,6 +130,8 @@ export class ErrorBoundary extends React.Component<
           error={this.state.error}
           errorInfo={this.state.errorInfo}
           resetError={this.resetError}
+          eventId={this.state.eventId}
+          componentName={this.props.componentName}
         />
       );
     }
@@ -100,8 +148,36 @@ function DefaultErrorFallback({
   error,
   errorInfo,
   resetError,
+  eventId,
+  componentName,
 }: ErrorFallbackProps): React.ReactElement {
   const isDevelopment = process.env.NODE_ENV === 'development';
+  const [feedbackSubmitted, setFeedbackSubmitted] = React.useState(false);
+
+  const handleReportIssue = () => {
+    if (eventId) {
+      errorReporting.showReportDialog(eventId);
+    } else {
+      // Fallback: show a generic feedback form
+      alert('Error reporting is temporarily unavailable. Please contact support directly.');
+    }
+  };
+
+  const handleRetry = () => {
+    errorReporting.trackEvent('error-retry-clicked', {
+      component: componentName,
+      eventId,
+    });
+    resetError();
+  };
+
+  const handleGoHome = () => {
+    errorReporting.trackEvent('error-go-home-clicked', {
+      component: componentName,
+      eventId,
+    });
+    window.location.href = '/';
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
@@ -135,23 +211,36 @@ function DefaultErrorFallback({
           {/* Error Message */}
           <p className="text-gray-600 text-center mb-6">
             We're sorry for the inconvenience. An unexpected error occurred while loading this page.
+            {eventId && ' Our team has been automatically notified and will investigate the issue.'}
           </p>
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
             <button
-              onClick={resetError}
+              onClick={handleRetry}
               className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               Try Again
             </button>
             <button
-              onClick={() => window.location.href = '/'}
+              onClick={handleGoHome}
               className="px-6 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
             >
               Go to Homepage
             </button>
           </div>
+
+          {/* Report Issue Button */}
+          {eventId && !feedbackSubmitted && (
+            <div className="flex justify-center mb-6">
+              <button
+                onClick={handleReportIssue}
+                className="text-blue-600 hover:text-blue-700 font-medium text-sm underline"
+              >
+                Report this issue to our team
+              </button>
+            </div>
+          )}
 
           {/* Development Error Details */}
           {isDevelopment && error && (
@@ -200,9 +289,21 @@ function DefaultErrorFallback({
             </div>
           )}
 
+          {/* Error ID for Reference */}
+          {eventId && (
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <p className="text-xs text-gray-500 text-center">
+                Error ID: <code className="font-mono text-gray-700">{eventId}</code>
+              </p>
+              <p className="text-xs text-gray-400 text-center mt-1">
+                (Reference this ID when contacting support)
+              </p>
+            </div>
+          )}
+
           {/* Support Message */}
           <p className="text-xs text-gray-500 text-center mt-6">
-            If the problem persists, please contact our support team.
+            If the problem persists, please contact our support team at support@citadelbuy.com
           </p>
         </div>
       </div>

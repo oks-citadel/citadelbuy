@@ -1,0 +1,152 @@
+# ==================================
+# CitadelBuy Organization Service - Production Dockerfile
+# Multi-stage build: Dependencies → Build → Runtime
+# Optimized for organization, banking, escrow, and compliance modules
+# ==================================
+
+# Build arguments
+ARG NODE_VERSION=20
+ARG NODE_ENV=production
+
+# Stage 1: Dependencies
+FROM node:${NODE_VERSION}-alpine AS deps
+LABEL stage=deps
+LABEL maintainer="CitadelBuy Platform <dev@citadelbuy.com>"
+
+WORKDIR /app
+
+# Install build dependencies for native modules
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    postgresql-client \
+    openssl
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma/
+
+# Install pnpm
+RUN npm install -g pnpm@8
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile --prod=false
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Stage 2: Builder
+FROM node:${NODE_VERSION}-alpine AS builder
+LABEL stage=builder
+
+WORKDIR /app
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/prisma ./prisma
+
+# Copy source code
+COPY . .
+
+# Install pnpm
+RUN npm install -g pnpm@8
+
+# Build the application
+RUN pnpm run build
+
+# Prune dev dependencies
+RUN pnpm install --frozen-lockfile --prod
+
+# Remove unnecessary files
+RUN rm -rf \
+    src \
+    test \
+    .git \
+    .github \
+    .vscode \
+    *.md \
+    .eslintrc.js \
+    .prettierrc \
+    tsconfig.json \
+    tsconfig.build.json
+
+# Stage 3: Production Runtime
+FROM node:${NODE_VERSION}-alpine AS production
+LABEL maintainer="CitadelBuy Platform <dev@citadelbuy.com>"
+LABEL version="2.0.0"
+LABEL description="CitadelBuy Organization Service - Multi-tenant Organizations, Banking, Escrow & Compliance"
+LABEL org.opencontainers.image.source="https://github.com/citadelplatforms/citadelbuy"
+LABEL org.opencontainers.image.vendor="CitadelBuy"
+LABEL org.opencontainers.image.title="Organization Service"
+
+# Build args for metadata
+ARG BUILD_DATE
+ARG VCS_REF
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+LABEL org.opencontainers.image.revision="${VCS_REF}"
+
+WORKDIR /app
+
+# Install runtime dependencies and security tools
+RUN apk add --no-cache \
+    dumb-init \
+    curl \
+    tini \
+    ca-certificates \
+    postgresql-client \
+    openssl \
+    tzdata && \
+    # Security: Remove unnecessary packages
+    apk del --purge && \
+    rm -rf /var/cache/apk/* /tmp/*
+
+# Create non-root user with specific UID/GID for better security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nestjs -u 1001 -G nodejs && \
+    mkdir -p /app/logs /app/uploads && \
+    chown -R nestjs:nodejs /app
+
+# Copy production dependencies
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nodejs /app/package.json ./
+COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
+
+# Copy built application
+COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
+
+# Set environment variables
+ENV NODE_ENV=production \
+    PORT=3000 \
+    TZ=UTC \
+    # Security headers
+    NODE_OPTIONS="--max-old-space-size=2048 --enable-source-maps" \
+    # Disable DNS caching for better service discovery
+    NODE_DNS_ORDER=ipv4first
+
+# Switch to non-root user
+USER nestjs
+
+# Expose application port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
+# Volume for logs and temporary files
+VOLUME ["/app/logs", "/app/uploads"]
+
+# Use tini as init system to handle signals properly
+ENTRYPOINT ["/sbin/tini", "--"]
+
+# Start application with graceful shutdown support
+CMD ["node", "dist/main.js"]
+
+# Metadata
+LABEL org.opencontainers.image.description="Production-ready Organization Service with Banking, Escrow, and Compliance modules" \
+      org.opencontainers.image.documentation="https://docs.citadelbuy.com/services/organization" \
+      org.opencontainers.image.licenses="Proprietary" \
+      io.citadelbuy.service.name="organization-service" \
+      io.citadelbuy.service.tier="backend" \
+      io.citadelbuy.service.port="3000"

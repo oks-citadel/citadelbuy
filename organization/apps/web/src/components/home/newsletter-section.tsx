@@ -83,6 +83,7 @@ export function NewsletterSection() {
               onChange={(e) => setEmail(e.target.value)}
               className="h-12 bg-white text-foreground"
               required
+              disabled={isLoading}
             />
             <Button
               type="submit"

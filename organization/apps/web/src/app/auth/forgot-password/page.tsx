@@ -84,12 +84,13 @@ export default function ForgotPasswordPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Sending...' : 'Send Reset Link'}
+            <Button type="submit" className="w-full" disabled={isSubmitting} isLoading={isSubmitting}>
+              Send Reset Link
             </Button>
           </form>
 

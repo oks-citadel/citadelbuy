@@ -1,0 +1,1435 @@
+{
+  "name": "CitadelBuy AI-Powered Customer Support Chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d",
+      "name": "Webhook - Web Chat",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "web-chat-webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b2c3d4e5-f6a7-4b5c-9d0e-1f2a3b4c5d6e",
+      "name": "Webhook - WhatsApp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        480
+      ],
+      "webhookId": "whatsapp-webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "c3d4e5f6-a7b8-4c5d-0e1f-2a3b4c5d6e7f",
+      "name": "Webhook - Telegram",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        660
+      ],
+      "webhookId": "telegram-webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "d4e5f6a7-b8c9-4d5e-1f2a-3b4c5d6e7f8a",
+      "name": "Webhook - Email",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        840
+      ],
+      "webhookId": "email-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize incoming messages from different channels\nconst items = $input.all();\nconst normalizedItems = [];\n\nfor (const item of items) {\n  const data = item.json;\n  let normalized = {\n    conversationId: '',\n    customerId: '',\n    customerName: '',\n    customerEmail: '',\n    customerPhone: '',\n    message: '',\n    channel: '',\n    timestamp: new Date().toISOString(),\n    metadata: {}\n  };\n\n  // Determine channel and extract data\n  if (data.channel === 'web') {\n    // Web chat format\n    normalized.conversationId = data.sessionId || data.conversationId;\n    normalized.customerId = data.userId;\n    normalized.customerEmail = data.email;\n    normalized.customerName = data.name || 'Web User';\n    normalized.message = data.message;\n    normalized.channel = 'web';\n    normalized.metadata = {\n      userAgent: data.userAgent,\n      ip: data.ip,\n      url: data.pageUrl\n    };\n  } else if (data.From && data.From.includes('whatsapp')) {\n    // WhatsApp via Twilio format\n    normalized.conversationId = data.From;\n    normalized.customerPhone = data.From.replace('whatsapp:', '');\n    normalized.customerName = data.ProfileName || 'WhatsApp User';\n    normalized.message = data.Body;\n    normalized.channel = 'whatsapp';\n    normalized.metadata = {\n      twilioSid: data.MessageSid,\n      accountSid: data.AccountSid\n    };\n  } else if (data.message && data.message.chat) {\n    // Telegram format\n    normalized.conversationId = `telegram_${data.message.chat.id}`;\n    normalized.customerId = data.message.from.id.toString();\n    normalized.customerName = `${data.message.from.first_name || ''} ${data.message.from.last_name || ''}`.trim();\n    normalized.message = data.message.text;\n    normalized.channel = 'telegram';\n    normalized.metadata = {\n      chatId: data.message.chat.id,\n      messageId: data.message.message_id\n    };\n  } else if (data.from && data.subject) {\n    // Email via SendGrid format\n    normalized.conversationId = `email_${data.envelope.from}_${Date.now()}`;\n    normalized.customerEmail = data.from;\n    normalized.customerName = data.from.split('@')[0];\n    normalized.message = `Subject: ${data.subject}\\n\\n${data.text || data.html}`;\n    normalized.channel = 'email';\n    normalized.metadata = {\n      subject: data.subject,\n      messageId: data.headers['Message-ID']\n    };\n  }\n\n  normalizedItems.push({ json: normalized });\n}\n\nreturn normalizedItems;"
+      },
+      "id": "e5f6a7b8-c9d0-4e5f-2a3b-4c5d6e7f8a9b",
+      "name": "Normalize Message Format",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO conversation_history (conversation_id, customer_id, customer_name, customer_email, customer_phone, channel, message, sender, timestamp, metadata)\nVALUES ($1, $2, $3, $4, $5, $6, $7, 'customer', $8, $9)\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{[\n  $json.conversationId,\n  $json.customerId,\n  $json.customerName,\n  $json.customerEmail,\n  $json.customerPhone,\n  $json.channel,\n  $json.message,\n  $json.timestamp,\n  JSON.stringify($json.metadata)\n]}}"
+        }
+      },
+      "id": "f6a7b8c9-d0e1-4f5a-3b4c-5d6e7f8a9b0c",
+      "name": "Store Customer Message",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        680,
+        520
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL - CitadelBuy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT message, sender, timestamp\nFROM conversation_history\nWHERE conversation_id = $1\nORDER BY timestamp DESC\nLIMIT 10;",
+        "options": {
+          "queryReplacement": "={{ [$json.conversationId] }}"
+        }
+      },
+      "id": "a7b8c9d0-e1f2-4a5b-4c5d-6e7f8a9b0c1d",
+      "name": "Retrieve Conversation History",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        900,
+        520
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL - CitadelBuy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build context from conversation history\nconst currentMessage = $('Store Customer Message').first().json;\nconst historyItems = $input.all();\n\n// Reverse to get chronological order\nconst conversationHistory = historyItems\n  .map(item => item.json)\n  .reverse()\n  .map(msg => `${msg.sender}: ${msg.message}`)\n  .join('\\n');\n\nconst contextPrompt = `CONVERSATION HISTORY:\\n${conversationHistory}\\n\\nCURRENT MESSAGE:\\nCustomer: ${currentMessage.message}`;\n\nreturn {\n  json: {\n    ...currentMessage,\n    conversationHistory: conversationHistory,\n    contextPrompt: contextPrompt\n  }\n};"
+      },
+      "id": "b8c9d0e1-f2a3-4b5c-5d6e-7f8a9b0c1d2e",
+      "name": "Build Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT customer_tier, total_orders, lifetime_value\nFROM customers\nWHERE email = $1 OR phone = $2\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [$json.customerEmail || '', $json.customerPhone || ''] }}"
+        }
+      },
+      "id": "c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3f",
+      "name": "Get Customer Profile",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1120,
+        720
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL - CitadelBuy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4-turbo-preview",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a friendly customer support assistant for CitadelBuy, a modern e-commerce platform. \n\nYour personality: Professional yet warm, concise but thorough, empathetic and solution-focused.\n\nCore rules:\n1. NEVER make up information - only use data from provided tools\n2. Always verify customer identity before sharing order details\n3. For complaints or frustrated customers, offer human escalation\n4. Be proactive - anticipate customer needs\n5. Use customer's name when available\n6. Keep responses under 150 words unless detailed explanation needed\n\nYou have access to these tools:\n- ORDER_STATUS: Look up order information\n- PRODUCT_SEARCH: Find product details and availability\n- RETURN_POLICY: Access return/refund policies\n- SHIPPING_INFO: Check shipping status and estimates\n- ESCALATE: Route to human agent\n\nClassify customer intent into one of:\n- order_status\n- product_question\n- return_refund\n- shipping_inquiry\n- complaint\n- general_question\n- escalation_request\n\nRespond in JSON format:\n{\n  \"intent\": \"<intent_type>\",\n  \"confidence\": <0.0-1.0>,\n  \"sentiment\": <-1.0 to 1.0>,\n  \"entities\": {\n    \"order_number\": \"<if mentioned>\",\n    \"product_name\": \"<if mentioned>\",\n    \"tracking_number\": \"<if mentioned>\"\n  },\n  \"requires_escalation\": <boolean>,\n  \"escalation_reason\": \"<if applicable>\"\n}"
+            },
+            {
+              "role": "user",
+              "content": "={{ $json.contextPrompt }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.3,
+          "maxTokens": 500
+        },
+        "promptType": "define"
+      },
+      "id": "d0e1f2a3-b4c5-4d5e-7f8a-9b0c1d2e3f4a",
+      "name": "AI Intent Classification",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        520
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "2",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse AI response and merge with context\nconst context = $('Build Context').first().json;\nconst customerProfile = $('Get Customer Profile').first().json;\nconst aiResponse = $input.first().json.choices[0].message.content;\n\n// Parse JSON from AI response\nlet aiData;\ntry {\n  aiData = JSON.parse(aiResponse);\n} catch (e) {\n  // Fallback if AI doesn't return valid JSON\n  aiData = {\n    intent: 'general_question',\n    confidence: 0.5,\n    sentiment: 0,\n    entities: {},\n    requires_escalation: false\n  };\n}\n\n// Check escalation triggers\nconst isVIP = customerProfile.customer_tier === 'VIP' || customerProfile.customer_tier === 'Platinum';\nconst highValue = (customerProfile.lifetime_value || 0) > 1000;\nconst lowConfidence = aiData.confidence < 0.7;\nconst negativeSentiment = aiData.sentiment < -0.5;\n\nif (isVIP || highValue || lowConfidence || negativeSentiment || aiData.requires_escalation) {\n  aiData.requires_escalation = true;\n  if (!aiData.escalation_reason) {\n    const reasons = [];\n    if (isVIP) reasons.push('VIP customer');\n    if (highValue) reasons.push('High lifetime value');\n    if (lowConfidence) reasons.push('Low confidence');\n    if (negativeSentiment) reasons.push('Negative sentiment');\n    aiData.escalation_reason = reasons.join(', ');\n  }\n}\n\nreturn {\n  json: {\n    ...context,\n    customerProfile: customerProfile,\n    intent: aiData.intent,\n    confidence: aiData.confidence,\n    sentiment: aiData.sentiment,\n    entities: aiData.entities,\n    requires_escalation: aiData.requires_escalation,\n    escalation_reason: aiData.escalation_reason || null\n  }\n};"
+      },
+      "id": "e1f2a3b4-c5d6-4e5f-8a9b-0c1d2e3f4a5b",
+      "name": "Parse Intent & Check Escalation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.requires_escalation }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "f2a3b4c5-d6e7-4f5a-9b0c-1d2e3f4a5b6c",
+      "name": "Check If Escalation Needed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1780,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.intent }}",
+              "operation": "equals",
+              "value2": "order_status"
+            }
+          ]
+        }
+      },
+      "id": "a3b4c5d6-e7f8-4a5b-0c1d-2e3f4a5b6c7d",
+      "name": "Route: Order Status",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.intent }}",
+              "operation": "equals",
+              "value2": "product_question"
+            }
+          ]
+        }
+      },
+      "id": "b4c5d6e7-f8a9-4b5c-1d2e-3f4a5b6c7d8e",
+      "name": "Route: Product Question",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.intent }}",
+              "operation": "equals",
+              "value2": "return_refund"
+            }
+          ]
+        }
+      },
+      "id": "c5d6e7f8-a9b0-4c5d-2e3f-4a5b6c7d8e9f",
+      "name": "Route: Return/Refund",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.intent }}",
+              "operation": "equals",
+              "value2": "shipping_inquiry"
+            }
+          ]
+        }
+      },
+      "id": "d6e7f8a9-b0c1-4d5e-3f4a-5b6c7d8e9f0a",
+      "name": "Route: Shipping Inquiry",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.citadelbuy.com/v1/orders/{{ $json.entities.order_number || 'search' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "citadelBuyApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $json.customerEmail }}"
+            },
+            {
+              "name": "phone",
+              "value": "={{ $json.customerPhone }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e7f8a9b0-c1d2-4e5f-4a5b-6c7d8e9f0a1b",
+      "name": "CitadelBuy API - Get Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2220,
+        420
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3",
+          "name": "CitadelBuy API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "index": "citadelbuy-products",
+        "operation": "search",
+        "query": {
+          "match": {
+            "content": "={{ $json.message }}"
+          }
+        },
+        "topK": 5,
+        "options": {
+          "includeMetadata": true
+        }
+      },
+      "id": "f8a9b0c1-d2e3-4f5a-5b6c-7d8e9f0a1b2c",
+      "name": "Pinecone RAG - Product Search",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1,
+      "position": [
+        2220,
+        540
+      ],
+      "credentials": {
+        "pineconeApi": {
+          "id": "4",
+          "name": "Pinecone API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.citadelbuy.com/v1/returns/policy",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "citadelBuyApi",
+        "options": {}
+      },
+      "id": "a9b0c1d2-e3f4-4a5b-6c7d-8e9f0a1b2c3d",
+      "name": "CitadelBuy API - Return Policy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2220,
+        660
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3",
+          "name": "CitadelBuy API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://ssapi.shipstation.com/shipments?orderNumber={{ $json.entities.order_number || '' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "shipStationApi",
+        "options": {}
+      },
+      "id": "b0c1d2e3-f4a5-4b5c-7d8e-9f0a1b2c3d4e",
+      "name": "ShipStation API - Get Tracking",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2220,
+        780
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "5",
+          "name": "ShipStation API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4-turbo-preview",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a helpful customer support assistant for CitadelBuy. Use the provided order data to give the customer a friendly, informative response about their order status.\n\nInclude:\n- Order number and date\n- Current status\n- Expected delivery date\n- Tracking link if available\n\nKeep the tone warm and reassuring. If there are any delays, acknowledge them empathetically."
+            },
+            {
+              "role": "user",
+              "content": "=Customer question: {{ $('Build Context').first().json.message }}\\n\\nOrder data:\\n{{ JSON.stringify($json) }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 300
+        },
+        "promptType": "define"
+      },
+      "id": "c1d2e3f4-a5b6-4c5d-8e9f-0a1b2c3d4e5f",
+      "name": "Generate Order Status Response",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [
+        2440,
+        420
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "2",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4-turbo-preview",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a knowledgeable product expert for CitadelBuy. Use the RAG search results to answer the customer's product question accurately.\n\nGuidelines:\n- Only use information from the search results\n- If you don't have enough information, say so and offer to escalate\n- Be enthusiastic about products but honest about limitations\n- Include relevant product details: price, availability, specs, reviews\n- Suggest related products if appropriate"
+            },
+            {
+              "role": "user",
+              "content": "=Customer question: {{ $('Build Context').first().json.message }}\\n\\nProduct search results:\\n{{ JSON.stringify($json) }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 350
+        },
+        "promptType": "define"
+      },
+      "id": "d2e3f4a5-b6c7-4d5e-9f0a-1b2c3d4e5f6a",
+      "name": "Generate Product Response",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [
+        2440,
+        540
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "2",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4-turbo-preview",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a customer support assistant helping with returns and refunds for CitadelBuy.\n\nUse the return policy data to:\n- Explain the return window and conditions\n- Guide customer through return process\n- Check if their item is eligible for return\n- Explain refund timeline\n- Provide return shipping instructions\n\nBe empathetic if customer is disappointed with product."
+            },
+            {
+              "role": "user",
+              "content": "=Customer question: {{ $('Build Context').first().json.message }}\\n\\nReturn policy:\\n{{ JSON.stringify($json) }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 300
+        },
+        "promptType": "define"
+      },
+      "id": "e3f4a5b6-c7d8-4e5f-0a1b-2c3d4e5f6a7b",
+      "name": "Generate Return Response",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [
+        2440,
+        660
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "2",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4-turbo-preview",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a customer support assistant helping with shipping inquiries for CitadelBuy.\n\nUse the tracking data to:\n- Provide current shipment location\n- Give estimated delivery date\n- Explain any delays\n- Provide carrier and tracking number\n- Offer tracking link\n\nIf there are shipping issues, be proactive in offering solutions."
+            },
+            {
+              "role": "user",
+              "content": "=Customer question: {{ $('Build Context').first().json.message }}\\n\\nShipping data:\\n{{ JSON.stringify($json) }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 250
+        },
+        "promptType": "define"
+      },
+      "id": "f4a5b6c7-d8e9-4f5a-1b2c-3d4e5f6a7b8c",
+      "name": "Generate Shipping Response",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [
+        2440,
+        780
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "2",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4-turbo-preview",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a friendly customer support assistant for CitadelBuy. Answer general questions about the platform, policies, and services.\n\nTopics you can help with:\n- How to place an order\n- Payment methods accepted\n- Account management\n- Shipping options and costs\n- Customer service hours\n- Company policies\n\nBe helpful and guide customers to the right resources."
+            },
+            {
+              "role": "user",
+              "content": "={{ $('Build Context').first().json.message }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.8,
+          "maxTokens": 250
+        },
+        "promptType": "define"
+      },
+      "id": "a5b6c7d8-e9f0-4a5b-2c3d-4e5f6a7b8c9d",
+      "name": "Generate General Response",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [
+        2440,
+        900
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "2",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "ticket",
+        "operation": "create",
+        "subject": "=Escalated Chat: {{ $('Parse Intent & Check Escalation').first().json.intent }}",
+        "description": "=CUSTOMER INFORMATION:\\nName: {{ $json.customerName }}\\nEmail: {{ $json.customerEmail }}\\nPhone: {{ $json.customerPhone }}\\nChannel: {{ $json.channel }}\\nCustomer Tier: {{ $json.customerProfile.customer_tier }}\\n\\nESCALATION REASON:\\n{{ $json.escalation_reason }}\\n\\nCONVERSATION CONTEXT:\\n{{ $json.conversationHistory }}\\n\\nCURRENT MESSAGE:\\n{{ $json.message }}\\n\\nAI ANALYSIS:\\nIntent: {{ $json.intent }}\\nConfidence: {{ $json.confidence }}\\nSentiment: {{ $json.sentiment }}",
+        "priority": "={{ $json.customerProfile.customer_tier === 'VIP' ? 'urgent' : 'high' }}",
+        "tags": "={{ ['ai-escalation', $json.channel, $json.intent] }}",
+        "customFields": {
+          "fields": [
+            {
+              "field": "conversation_id",
+              "value": "={{ $json.conversationId }}"
+            },
+            {
+              "field": "sentiment_score",
+              "value": "={{ $json.sentiment }}"
+            }
+          ]
+        }
+      },
+      "id": "b6c7d8e9-f0a1-4b5c-3d4e-5f6a7b8c9d0e",
+      "name": "Create Zendesk Ticket",
+      "type": "n8n-nodes-base.zendesk",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        320
+      ],
+      "credentials": {
+        "zendeskApi": {
+          "id": "6",
+          "name": "Zendesk API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate escalation message for customer\nconst context = $input.first().json;\nconst ticket = $('Create Zendesk Ticket').first().json;\n\nconst escalationMessage = `Thank you for your patience, ${context.customerName}. I've created a priority support ticket (#${ticket.id}) for you, and one of our specialist team members will reach out to you shortly via ${context.customerEmail || context.customerPhone}.\\n\\nIn the meantime, is there anything else I can help you with?`;\n\nreturn {\n  json: {\n    ...context,\n    aiResponse: escalationMessage,\n    ticketId: ticket.id,\n    isEscalated: true\n  }\n};"
+      },
+      "id": "c7d8e9f0-a1b2-4c5d-4e5f-6a7b8c9d0e1f",
+      "name": "Build Escalation Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2220,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract AI response from different response generators\nconst context = $('Parse Intent & Check Escalation').first().json;\nlet aiResponse = '';\n\n// Check which response node executed\nif ($('Generate Order Status Response').all().length > 0) {\n  aiResponse = $('Generate Order Status Response').first().json.choices[0].message.content;\n} else if ($('Generate Product Response').all().length > 0) {\n  aiResponse = $('Generate Product Response').first().json.choices[0].message.content;\n} else if ($('Generate Return Response').all().length > 0) {\n  aiResponse = $('Generate Return Response').first().json.choices[0].message.content;\n} else if ($('Generate Shipping Response').all().length > 0) {\n  aiResponse = $('Generate Shipping Response').first().json.choices[0].message.content;\n} else if ($('Generate General Response').all().length > 0) {\n  aiResponse = $('Generate General Response').first().json.choices[0].message.content;\n}\n\nreturn {\n  json: {\n    ...context,\n    aiResponse: aiResponse,\n    isEscalated: false\n  }\n};"
+      },
+      "id": "d8e9f0a1-b2c3-4d5e-5f6a-7b8c9d0e1f2a",
+      "name": "Extract AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2660,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO conversation_history (conversation_id, customer_id, customer_name, customer_email, customer_phone, channel, message, sender, timestamp, metadata)\nVALUES ($1, $2, $3, $4, $5, $6, $7, 'assistant', NOW(), $8);",
+        "options": {
+          "queryReplacement": "={{[\n  $json.conversationId,\n  $json.customerId,\n  $json.customerName,\n  $json.customerEmail,\n  $json.customerPhone,\n  $json.channel,\n  $json.aiResponse,\n  JSON.stringify({\n    intent: $json.intent,\n    confidence: $json.confidence,\n    sentiment: $json.sentiment,\n    isEscalated: $json.isEscalated,\n    ticketId: $json.ticketId || null\n  })\n]}}"
+        }
+      },
+      "id": "e9f0a1b2-c3d4-4e5f-6a7b-8c9d0e1f2a3b",
+      "name": "Store AI Response",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        2880,
+        520
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL - CitadelBuy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.channel }}",
+              "operation": "equals",
+              "value2": "web"
+            }
+          ]
+        }
+      },
+      "id": "f0a1b2c3-d4e5-4f5a-7b8c-9d0e1f2a3b4c",
+      "name": "Route Response: Web",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        3100,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.channel }}",
+              "operation": "equals",
+              "value2": "whatsapp"
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d",
+      "name": "Route Response: WhatsApp",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        3100,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.channel }}",
+              "operation": "equals",
+              "value2": "telegram"
+            }
+          ]
+        }
+      },
+      "id": "b2c3d4e5-f6a7-4b5c-9d0e-1f2a3b4c5d6e",
+      "name": "Route Response: Telegram",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        3100,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.channel }}",
+              "operation": "equals",
+              "value2": "email"
+            }
+          ]
+        }
+      },
+      "id": "c3d4e5f6-a7b8-4c5d-0e1f-2a3b4c5d6e7f",
+      "name": "Route Response: Email",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [
+        3100,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: $json.aiResponse, conversationId: $json.conversationId, sentiment: $json.sentiment, isEscalated: $json.isEscalated } }}"
+      },
+      "id": "d4e5f6a7-b8c9-4d5e-1f2a-3b4c5d6e7f8a",
+      "name": "Respond to Web Chat",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        3320,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "from": "={{ $credentials.twilioAccountSid }}",
+        "to": "={{ $json.customerPhone }}",
+        "message": "={{ $json.aiResponse }}",
+        "options": {}
+      },
+      "id": "e5f6a7b8-c9d0-4e5f-2a3b-4c5d6e7f8a9b",
+      "name": "Send WhatsApp Message",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        3320,
+        540
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "7",
+          "name": "Twilio API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.metadata.chatId }}",
+        "text": "={{ $json.aiResponse }}",
+        "additionalFields": {}
+      },
+      "id": "f6a7b8c9-d0e1-4f5a-3b4c-5d6e7f8a9b0c",
+      "name": "Send Telegram Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        3320,
+        660
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "8",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "support@citadelbuy.com",
+        "toEmail": "={{ $json.customerEmail }}",
+        "subject": "=Re: {{ $json.metadata.subject }}",
+        "emailFormat": "html",
+        "message": "={{ $json.aiResponse }}",
+        "options": {
+          "inReplyTo": "={{ $json.metadata.messageId }}"
+        }
+      },
+      "id": "a7b8c9d0-e1f2-4a5b-4c5d-6e7f8a9b0c1d",
+      "name": "Send Email Response",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        3320,
+        780
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "9",
+          "name": "SendGrid SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: $json.aiResponse } }}"
+      },
+      "id": "b8c9d0e1-f2a3-4b5c-5d6e-7f8a9b0c1d2e",
+      "name": "Respond to WhatsApp Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        3540,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true } }}"
+      },
+      "id": "c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3f",
+      "name": "Respond to Telegram Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        3540,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true } }}"
+      },
+      "id": "d0e1f2a3-b4c5-4d5e-7f8a-9b0c1d2e3f4a",
+      "name": "Respond to Email Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        3540,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Error handler - log and send fallback response\nconst error = $input.first().json;\nconst originalData = $('Normalize Message Format').first().json;\n\nconsole.error('Workflow error:', error);\n\nconst fallbackMessage = `I apologize, but I'm experiencing technical difficulties. A support ticket has been created for you, and our team will reach out shortly. For immediate assistance, please contact us at support@citadelbuy.com or call 1-800-CITADEL.`;\n\nreturn {\n  json: {\n    ...originalData,\n    aiResponse: fallbackMessage,\n    error: true,\n    errorMessage: error.message\n  }\n};"
+      },
+      "id": "e1f2a3b4-c5d6-4e5f-8a9b-0c1d2e3f4a5b",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        920
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_analytics (workflow_name, execution_id, channel, intent, confidence, sentiment, response_time_ms, is_escalated, error, timestamp)\nVALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW());",
+        "options": {
+          "queryReplacement": "={{[\n  'ai-chatbot',\n  $execution.id,\n  $json.channel,\n  $json.intent || 'unknown',\n  $json.confidence || 0,\n  $json.sentiment || 0,\n  $execution.resumeTime - $execution.startTime,\n  $json.isEscalated || false,\n  $json.error || false\n]}}"
+        }
+      },
+      "id": "f2a3b4c5-d6e7-4f5a-9b0c-1d2e3f4a5b6c",
+      "name": "Log Analytics",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        3100,
+        920
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL - CitadelBuy"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - Web Chat": {
+      "main": [
+        [
+          {
+            "node": "Normalize Message Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Normalize Message Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Telegram": {
+      "main": [
+        [
+          {
+            "node": "Normalize Message Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Email": {
+      "main": [
+        [
+          {
+            "node": "Normalize Message Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Message Format": {
+      "main": [
+        [
+          {
+            "node": "Store Customer Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Customer Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Customer Message": {
+      "main": [
+        [
+          {
+            "node": "Retrieve Conversation History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Conversation History": {
+      "main": [
+        [
+          {
+            "node": "Build Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Context": {
+      "main": [
+        [
+          {
+            "node": "AI Intent Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Customer Profile": {
+      "main": [
+        [
+          {
+            "node": "AI Intent Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Intent Classification": {
+      "main": [
+        [
+          {
+            "node": "Parse Intent & Check Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Intent & Check Escalation": {
+      "main": [
+        [
+          {
+            "node": "Check If Escalation Needed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Escalation Needed": {
+      "main": [
+        [
+          {
+            "node": "Create Zendesk Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route: Order Status",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route: Product Question",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route: Return/Refund",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route: Shipping Inquiry",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate General Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: Order Status": {
+      "main": [
+        [
+          {
+            "node": "CitadelBuy API - Get Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: Product Question": {
+      "main": [
+        [
+          {
+            "node": "Pinecone RAG - Product Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: Return/Refund": {
+      "main": [
+        [
+          {
+            "node": "CitadelBuy API - Return Policy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: Shipping Inquiry": {
+      "main": [
+        [
+          {
+            "node": "ShipStation API - Get Tracking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CitadelBuy API - Get Order": {
+      "main": [
+        [
+          {
+            "node": "Generate Order Status Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone RAG - Product Search": {
+      "main": [
+        [
+          {
+            "node": "Generate Product Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CitadelBuy API - Return Policy": {
+      "main": [
+        [
+          {
+            "node": "Generate Return Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ShipStation API - Get Tracking": {
+      "main": [
+        [
+          {
+            "node": "Generate Shipping Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Order Status Response": {
+      "main": [
+        [
+          {
+            "node": "Extract AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Product Response": {
+      "main": [
+        [
+          {
+            "node": "Extract AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Return Response": {
+      "main": [
+        [
+          {
+            "node": "Extract AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Shipping Response": {
+      "main": [
+        [
+          {
+            "node": "Extract AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate General Response": {
+      "main": [
+        [
+          {
+            "node": "Extract AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Zendesk Ticket": {
+      "main": [
+        [
+          {
+            "node": "Build Escalation Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Escalation Response": {
+      "main": [
+        [
+          {
+            "node": "Store AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract AI Response": {
+      "main": [
+        [
+          {
+            "node": "Store AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store AI Response": {
+      "main": [
+        [
+          {
+            "node": "Route Response: Web",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route Response: WhatsApp",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route Response: Telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route Response: Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Response: Web": {
+      "main": [
+        [
+          {
+            "node": "Respond to Web Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Response: WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Response: Telegram": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Response: Email": {
+      "main": [
+        [
+          {
+            "node": "Send Email Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Message": {
+      "main": [
+        [
+          {
+            "node": "Respond to WhatsApp Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram Message": {
+      "main": [
+        [
+          {
+            "node": "Respond to Telegram Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Email Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Store AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "versionId": "1",
+  "id": "2",
+  "meta": {
+    "instanceId": "citadelbuy-ai-chatbot"
+  },
+  "tags": [
+    {
+      "createdAt": "2025-12-03T00:00:00.000Z",
+      "updatedAt": "2025-12-03T00:00:00.000Z",
+      "id": "1",
+      "name": "AI"
+    },
+    {
+      "createdAt": "2025-12-03T00:00:00.000Z",
+      "updatedAt": "2025-12-03T00:00:00.000Z",
+      "id": "2",
+      "name": "Customer Support"
+    },
+    {
+      "createdAt": "2025-12-03T00:00:00.000Z",
+      "updatedAt": "2025-12-03T00:00:00.000Z",
+      "id": "3",
+      "name": "RAG"
+    }
+  ]
+}

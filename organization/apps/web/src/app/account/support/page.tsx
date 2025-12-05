@@ -55,12 +55,12 @@ export default function SupportPage() {
 
   const loadKnowledgeBase = async () => {
     try {
-      const [categoriesRes, articlesRes] = await Promise.all([
+      const [categoriesData, articlesData] = await Promise.all([
         supportApi.getCategories(),
         supportApi.getArticles({ limit: 10 }),
       ]);
-      setKbCategories(categoriesRes.data || []);
-      setKbArticles(articlesRes.data || []);
+      setKbCategories(categoriesData || []);
+      setKbArticles(articlesData || []);
     } catch (error) {
       console.error('Failed to load knowledge base');
     }
@@ -69,8 +69,8 @@ export default function SupportPage() {
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     try {
-      const response = await supportApi.getArticles({ search: searchQuery });
-      setKbArticles(response.data || []);
+      const data = await supportApi.getArticles({ search: searchQuery });
+      setKbArticles(data || []);
     } catch (error) {
       console.error('Search failed');
     }

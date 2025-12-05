@@ -5,6 +5,7 @@ export enum SocialProvider {
   GOOGLE = 'google',
   FACEBOOK = 'facebook',
   APPLE = 'apple',
+  GITHUB = 'github',
 }
 
 export class SocialLoginDto {

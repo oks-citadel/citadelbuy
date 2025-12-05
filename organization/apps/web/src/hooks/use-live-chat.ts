@@ -58,7 +58,7 @@ interface UseLiveChatReturn {
   endSession: () => void;
 }
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4000';
+const SOCKET_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:4000';
 
 export function useLiveChat(options: UseLiveChatOptions = {}): UseLiveChatReturn {
   const { autoConnect = false, onConnect, onDisconnect, onError } = options;
@@ -107,7 +107,7 @@ export function useLiveChat(options: UseLiveChatOptions = {}): UseLiveChatReturn
     });
 
     socket.on('connected', (data: { clientId: string; authenticated: boolean }) => {
-      console.log('Connected to support chat:', data);
+      // Client successfully connected to support chat
     });
 
     socket.on('session-started', (data: { session: ChatSession }) => {

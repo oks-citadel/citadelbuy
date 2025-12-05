@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   MessageSquare,
   Clock,
@@ -16,12 +16,15 @@ import {
   MoreHorizontal,
   Send,
   Paperclip,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { apiClient } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'WAITING_FOR_CUSTOMER' | 'RESOLVED' | 'CLOSED';
 type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -53,101 +56,79 @@ interface LiveChat {
   assignedTo?: string;
 }
 
-// Mock data
-const mockTickets: Ticket[] = [
-  {
-    id: '1',
-    ticketNumber: 'TKT-001',
-    subject: 'Order not received after 10 days',
-    description: 'I placed an order on the 15th and still havent received it.',
-    status: 'OPEN',
-    priority: 'HIGH',
-    customerName: 'John Doe',
-    customerEmail: 'john@example.com',
-    createdAt: '2024-01-15T10:30:00Z',
-    lastUpdated: '2024-01-15T10:30:00Z',
-    messageCount: 3,
-  },
-  {
-    id: '2',
-    ticketNumber: 'TKT-002',
-    subject: 'Refund request for damaged item',
-    description: 'The laptop I received has a cracked screen.',
-    status: 'IN_PROGRESS',
-    priority: 'URGENT',
-    customerName: 'Jane Smith',
-    customerEmail: 'jane@example.com',
-    createdAt: '2024-01-14T14:20:00Z',
-    lastUpdated: '2024-01-15T09:00:00Z',
-    messageCount: 5,
-    assignedTo: 'Support Agent 1',
-  },
-  {
-    id: '3',
-    ticketNumber: 'TKT-003',
-    subject: 'Password reset not working',
-    description: 'I cant reset my password, not receiving emails.',
-    status: 'WAITING_FOR_CUSTOMER',
-    priority: 'MEDIUM',
-    customerName: 'Bob Johnson',
-    customerEmail: 'bob@example.com',
-    createdAt: '2024-01-13T08:45:00Z',
-    lastUpdated: '2024-01-14T16:30:00Z',
-    messageCount: 4,
-    assignedTo: 'Support Agent 2',
-  },
-  {
-    id: '4',
-    ticketNumber: 'TKT-004',
-    subject: 'Product inquiry',
-    description: 'Looking for bulk pricing information.',
-    status: 'RESOLVED',
-    priority: 'LOW',
-    customerName: 'Alice Brown',
-    customerEmail: 'alice@example.com',
-    createdAt: '2024-01-12T11:00:00Z',
-    lastUpdated: '2024-01-13T10:00:00Z',
-    messageCount: 2,
-    assignedTo: 'Support Agent 1',
-  },
-];
-
-const mockLiveChats: LiveChat[] = [
-  {
-    id: 'chat-1',
-    guestName: 'Sarah Wilson',
-    guestEmail: 'sarah@example.com',
-    status: 'WAITING',
-    startedAt: '2024-01-15T11:45:00Z',
-    messageCount: 1,
-    waitingTime: '3 min',
-  },
-  {
-    id: 'chat-2',
-    guestName: 'Mike Chen',
-    status: 'ACTIVE',
-    startedAt: '2024-01-15T11:30:00Z',
-    messageCount: 8,
-    waitingTime: '0 min',
-    assignedTo: 'You',
-  },
-  {
-    id: 'chat-3',
-    guestName: 'Emma Davis',
-    guestEmail: 'emma@example.com',
-    status: 'WAITING',
-    startedAt: '2024-01-15T11:40:00Z',
-    messageCount: 2,
-    waitingTime: '5 min',
-  },
-];
-
 export default function SupportPage() {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [liveChats, setLiveChats] = useState<LiveChat[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [selectedChat, setSelectedChat] = useState<LiveChat | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [replyMessage, setReplyMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadSupportData();
+  }, []);
+
+  const loadSupportData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Load tickets and live chat sessions from backend
+      const [ticketsResponse, chatsResponse] = await Promise.all([
+        apiClient.get('/support/tickets'),
+        apiClient.get('/support/chat/sessions/active'),
+      ]);
+
+      // Map tickets to frontend format
+      const mappedTickets: Ticket[] = ticketsResponse.data.map((ticket: any) => ({
+        id: ticket.id,
+        ticketNumber: ticket.ticketNumber,
+        subject: ticket.subject,
+        description: ticket.description,
+        status: ticket.status,
+        priority: ticket.priority,
+        customerName: ticket.user?.name || ticket.guestName || 'Guest',
+        customerEmail: ticket.user?.email || ticket.guestEmail || '',
+        createdAt: ticket.createdAt,
+        lastUpdated: ticket.updatedAt,
+        messageCount: ticket._count?.messages || 0,
+        assignedTo: ticket.assignedTo?.name,
+      }));
+
+      // Map live chat sessions to frontend format
+      const mappedChats: LiveChat[] = chatsResponse.data.map((chat: any) => {
+        const startTime = new Date(chat.startedAt);
+        const now = new Date();
+        const diffMinutes = Math.floor((now.getTime() - startTime.getTime()) / (1000 * 60));
+
+        return {
+          id: chat.id,
+          guestName: chat.user?.name || chat.guestName || 'Guest',
+          guestEmail: chat.user?.email || chat.guestEmail,
+          status: chat.status,
+          startedAt: chat.startedAt,
+          messageCount: chat._count?.messages || 0,
+          waitingTime: `${diffMinutes} min`,
+          assignedTo: chat.assignedTo?.name,
+        };
+      });
+
+      setTickets(mappedTickets);
+      setLiveChats(mappedChats);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load support data';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      // Set empty arrays on error to prevent UI issues
+      setTickets([]);
+      setLiveChats([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getStatusBadge = (status: TicketStatus) => {
     const styles: Record<TicketStatus, string> = {
@@ -180,11 +161,19 @@ export default function SupportPage() {
   };
 
   const stats = {
-    openTickets: mockTickets.filter((t) => t.status === 'OPEN').length,
-    inProgress: mockTickets.filter((t) => t.status === 'IN_PROGRESS').length,
-    waitingChats: mockLiveChats.filter((c) => c.status === 'WAITING').length,
-    activeChats: mockLiveChats.filter((c) => c.status === 'ACTIVE').length,
+    openTickets: tickets.filter((t) => t.status === 'OPEN').length,
+    inProgress: tickets.filter((t) => t.status === 'IN_PROGRESS').length,
+    waitingChats: liveChats.filter((c) => c.status === 'WAITING').length,
+    activeChats: liveChats.filter((c) => c.status === 'ACTIVE').length,
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -307,8 +296,15 @@ export default function SupportPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
+                  {tickets.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No support tickets found</p>
+                      <p className="text-sm mt-2">Backend API integration pending</p>
+                    </div>
+                  ) : (
                   <div className="space-y-3">
-                    {mockTickets.map((ticket) => (
+                    {tickets.map((ticket) => (
                       <div
                         key={ticket.id}
                         onClick={() => setSelectedTicket(ticket)}
@@ -352,6 +348,7 @@ export default function SupportPage() {
                       </div>
                     ))}
                   </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -445,12 +442,19 @@ export default function SupportPage() {
                 <CardHeader className="pb-3">
                   <CardTitle>Active Sessions</CardTitle>
                   <CardDescription>
-                    {mockLiveChats.filter((c) => c.status !== 'ENDED').length} chats in queue
+                    {liveChats.filter((c) => c.status !== 'ENDED').length} chats in queue
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {liveChats.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No active chat sessions</p>
+                      <p className="text-sm mt-2">Backend API integration pending</p>
+                    </div>
+                  ) : (
                   <div className="space-y-3">
-                    {mockLiveChats.map((chat) => (
+                    {liveChats.map((chat) => (
                       <div
                         key={chat.id}
                         onClick={() => setSelectedChat(chat)}
@@ -474,13 +478,14 @@ export default function SupportPage() {
                           <span>{chat.messageCount} messages</span>
                         </div>
                         {chat.status === 'WAITING' && (
-                          <Button size="sm" className="w-full mt-2">
+                          <Button size="sm" className="w-full mt-2" disabled={isLoading}>
                             Accept Chat
                           </Button>
                         )}
                       </div>
                     ))}
                   </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -553,6 +558,7 @@ export default function SupportPage() {
                         value={replyMessage}
                         onChange={(e) => setReplyMessage(e.target.value)}
                         className="flex-1"
+                        disabled={isLoading}
                         onKeyPress={(e) => {
                           if (e.key === 'Enter' && replyMessage.trim()) {
                             // Send message
@@ -560,7 +566,7 @@ export default function SupportPage() {
                           }
                         }}
                       />
-                      <Button disabled={!replyMessage.trim()}>
+                      <Button disabled={!replyMessage.trim() || isLoading} isLoading={isLoading}>
                         <Send className="h-4 w-4" />
                       </Button>
                     </div>

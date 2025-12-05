@@ -43,7 +43,7 @@ export class ReturnsService {
       await emailFunction();
     } catch (error) {
       // Log error but don't throw - emails shouldn't break the workflow
-      console.error('Email send failed:', error);
+      // Email error (don't break workflow)
     }
   }
 

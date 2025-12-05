@@ -1,0 +1,284 @@
+# CitadelBuy - Staging Deployment Pipeline
+# Converted from GitHub Actions deploy-staging.yml
+# Deploys frontend and backend to staging environment
+
+trigger:
+  branches:
+    include:
+      - develop
+
+pr: none
+
+variables:
+  - name: NODE_VERSION
+    value: '20'
+  - name: PNPM_VERSION
+    value: '8'
+
+stages:
+  # ============================================
+  # STAGE 1: Run Tests Before Deployment
+  # ============================================
+  - stage: PreDeploymentTests
+    displayName: 'Pre-Deployment Tests'
+    jobs:
+      - job: RunTests
+        displayName: 'Run Tests'
+        pool:
+          vmImage: 'ubuntu-latest'
+        services:
+          postgres:
+            image: postgres:16-alpine
+            ports:
+              - 5432:5432
+            env:
+              POSTGRES_USER: test
+              POSTGRES_PASSWORD: test
+              POSTGRES_DB: test
+            options: >-
+              --health-cmd pg_isready
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
+          redis:
+            image: redis:7-alpine
+            ports:
+              - 6379:6379
+            options: >-
+              --health-cmd "redis-cli ping"
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: NodeTool@0
+            displayName: 'Setup Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              npm install -g pnpm@$(PNPM_VERSION)
+            displayName: 'Setup pnpm'
+
+          - script: |
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - script: |
+              cd apps/api
+              npx prisma migrate deploy
+              pnpm test
+            displayName: 'Run API tests'
+            env:
+              DATABASE_URL: postgresql://test:test@localhost:5432/test?schema=public
+              REDIS_URL: redis://localhost:6379
+              JWT_SECRET: test-jwt-secret
+
+          - script: |
+              cd apps/web
+              pnpm test
+            displayName: 'Run Web tests'
+
+  # ============================================
+  # STAGE 2: Deploy Frontend to Staging
+  # ============================================
+  - stage: DeployFrontend
+    displayName: 'Deploy Frontend to Staging'
+    dependsOn: PreDeploymentTests
+    condition: succeeded()
+    jobs:
+      - deployment: DeployFrontendToStaging
+        displayName: 'Deploy Frontend'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'staging'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: 'Checkout code'
+                  fetchSubmodules: true
+
+                - task: AzureStaticWebApp@0
+                  displayName: 'Build and Deploy to Azure Static Web Apps'
+                  inputs:
+                    azure_static_web_apps_api_token: $(AZURE_STATIC_WEB_APPS_API_TOKEN_STAGING)
+                    app_location: '/apps/web'
+                    api_location: ''
+                    output_location: 'out'
+                  env:
+                    NEXT_PUBLIC_API_URL: $(STAGING_API_URL)
+                    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: $(STRIPE_PUBLISHABLE_KEY_TEST)
+
+  # ============================================
+  # STAGE 3: Deploy Backend to Staging
+  # ============================================
+  - stage: DeployBackend
+    displayName: 'Deploy Backend to Staging'
+    dependsOn: PreDeploymentTests
+    condition: succeeded()
+    jobs:
+      - deployment: DeployBackendToStaging
+        displayName: 'Deploy Backend'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'staging'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: 'Checkout code'
+
+                - task: NodeTool@0
+                  displayName: 'Setup Node.js $(NODE_VERSION)'
+                  inputs:
+                    versionSpec: '$(NODE_VERSION)'
+
+                - script: |
+                    npm install -g pnpm@$(PNPM_VERSION)
+                  displayName: 'Setup pnpm'
+
+                - script: |
+                    cd apps/api
+                    pnpm install --frozen-lockfile
+                  displayName: 'Install dependencies'
+
+                - script: |
+                    cd apps/api
+                    npx prisma generate
+                  displayName: 'Generate Prisma Client'
+
+                - script: |
+                    cd apps/api
+                    pnpm run build
+                  displayName: 'Build application'
+
+                - task: AzureWebApp@1
+                  displayName: 'Deploy to Azure Web App'
+                  inputs:
+                    azureSubscription: 'Azure-ServiceConnection'
+                    appType: 'webAppLinux'
+                    appName: $(AZURE_WEBAPP_NAME_STAGING)
+                    package: '$(System.DefaultWorkingDirectory)/apps/api'
+                    runtimeStack: 'NODE|20-lts'
+
+                - script: |
+                    cd apps/api
+                    pnpm run migrate:deploy
+                  displayName: 'Run database migrations'
+                  env:
+                    DATABASE_URL: $(DATABASE_URL_STAGING)
+
+                - bash: |
+                    echo "Waiting for services to start..."
+                    sleep 30
+
+                    echo "Checking API health endpoint..."
+                    curl -f https://staging-api.citadelbuy.com/api/health || exit 1
+
+                    echo "Checking API root endpoint..."
+                    curl -f https://staging-api.citadelbuy.com/api || exit 1
+
+                    echo "Checking API status endpoint..."
+                    curl -f https://staging-api.citadelbuy.com/api/status || echo "Status endpoint not available (non-critical)"
+
+                    echo "All critical health checks passed!"
+                  displayName: 'Enhanced health checks'
+
+  # ============================================
+  # STAGE 4: Post-Deployment Verification
+  # ============================================
+  - stage: PostDeploymentVerification
+    displayName: 'Post-Deployment Verification'
+    dependsOn:
+      - DeployFrontend
+      - DeployBackend
+    condition: succeeded()
+    jobs:
+      - job: VerifyDeployment
+        displayName: 'Verify Staging Deployment'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - bash: |
+              echo "=== Staging Deployment Verification ==="
+
+              # Check Frontend
+              echo "Checking Frontend..."
+              FRONTEND_STATUS=$(curl -o /dev/null -s -w "%{http_code}" https://staging.citadelbuy.com)
+              if [ "$FRONTEND_STATUS" -eq 200 ]; then
+                echo "✓ Frontend is accessible (HTTP $FRONTEND_STATUS)"
+              else
+                echo "✗ Frontend check failed (HTTP $FRONTEND_STATUS)"
+                exit 1
+              fi
+
+              # Check Backend API
+              echo "Checking Backend API..."
+              API_STATUS=$(curl -o /dev/null -s -w "%{http_code}" https://staging-api.citadelbuy.com/api/health)
+              if [ "$API_STATUS" -eq 200 ]; then
+                echo "✓ Backend API is healthy (HTTP $API_STATUS)"
+              else
+                echo "✗ Backend API check failed (HTTP $API_STATUS)"
+                exit 1
+              fi
+
+              # Check Backend Root
+              echo "Checking Backend Root..."
+              API_ROOT_STATUS=$(curl -o /dev/null -s -w "%{http_code}" https://staging-api.citadelbuy.com/api)
+              if [ "$API_ROOT_STATUS" -eq 200 ]; then
+                echo "✓ Backend root is accessible (HTTP $API_ROOT_STATUS)"
+              else
+                echo "✗ Backend root check failed (HTTP $API_ROOT_STATUS)"
+                exit 1
+              fi
+
+              echo ""
+              echo "=== All Staging Verification Checks Passed ==="
+            displayName: 'Run verification checks'
+
+          - task: InvokeRESTAPI@1
+            displayName: 'Send deployment notification to Slack'
+            condition: always()
+            inputs:
+              connectionType: 'connectedServiceName'
+              serviceConnection: 'SlackWebhook'
+              method: 'POST'
+              body: |
+                {
+                  "text": "🚀 Staging Deployment Completed",
+                  "blocks": [
+                    {
+                      "type": "header",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "CitadelBuy - Staging Deployment"
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": "*Status:* Deployment Successful\n*Environment:* Staging\n*Commit:* $(Build.SourceVersion)\n*Build:* $(Build.BuildNumber)"
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "fields": [
+                        {
+                          "type": "mrkdwn",
+                          "text": "*Web:*\n<https://staging.citadelbuy.com|View Staging>"
+                        },
+                        {
+                          "type": "mrkdwn",
+                          "text": "*API:*\n<https://staging-api.citadelbuy.com|View API>"
+                        }
+                      ]
+                    }
+                  ]
+                }
+            continueOnError: true

@@ -3,6 +3,21 @@
 # Production Docker Compose Configuration
 # Version: 2.0.0
 # ==================================
+# ⚠️  CRITICAL PRODUCTION SECURITY NOTICE  ⚠️
+# ==================================
+# This file requires environment variables for ALL sensitive data.
+# NEVER hardcode passwords, secrets, or keys in this file.
+#
+# Required environment variables (set via .env file or container orchestration):
+#   - POSTGRES_PASSWORD, MONGO_PASSWORD, REDIS_PASSWORD
+#   - JWT_SECRET, JWT_REFRESH_SECRET
+#   - STRIPE_SECRET_KEY, PAYPAL_CLIENT_SECRET
+#   - AWS_SECRET_ACCESS_KEY, ALGOLIA_API_KEY
+#   - All other *_PASSWORD, *_SECRET, *_KEY variables
+#
+# Generate secure secrets: openssl rand -base64 64
+# See .env.docker.example for full list
+# ==================================
 
 version: '3.9'
 
@@ -340,7 +355,7 @@ services:
         reservations:
           cpus: '0.25'
           memory: 256M
-    command: redis-server /usr/local/etc/redis/redis.conf --appendonly yes --requirepass ${REDIS_PASSWORD}
+    command: redis-server /usr/local/etc/redis/redis.conf --appendonly yes ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
 
   # ==================================
   # RabbitMQ (Message Queue)

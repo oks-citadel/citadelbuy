@@ -1,0 +1,356 @@
+# CitadelBuy - CI Pipeline
+# Converted from GitHub Actions ci.yml
+# Runs linting, type checking, tests, and builds
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    exclude:
+      - '*.md'
+      - 'docs/**'
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    exclude:
+      - '*.md'
+      - 'docs/**'
+
+variables:
+  - name: NODE_VERSION
+    value: '20'
+  - name: PNPM_VERSION
+    value: '8'
+  - name: POSTGRES_USER
+    value: 'citadelbuy'
+  - name: POSTGRES_PASSWORD
+    value: 'citadelbuy123'
+  - name: POSTGRES_DB
+    value: 'citadelbuy_test'
+
+stages:
+  # ============================================
+  # STAGE 1: Code Quality
+  # ============================================
+  - stage: CodeQuality
+    displayName: 'Code Quality & Type Checking'
+    jobs:
+      - job: Lint
+        displayName: 'Run Linting'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              npm install -g pnpm@$(PNPM_VERSION)
+              pnpm --version
+            displayName: 'Install pnpm'
+
+          - script: |
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - script: |
+              pnpm lint
+            displayName: 'Run ESLint'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish lint report'
+            condition: always()
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)/eslint-report.json'
+              artifact: 'lint-report'
+              publishLocation: 'pipeline'
+            continueOnError: true
+
+      - job: TypeCheck
+        displayName: 'TypeScript Type Checking'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              npm install -g pnpm@$(PNPM_VERSION)
+            displayName: 'Install pnpm'
+
+          - script: |
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - script: |
+              pnpm type-check
+            displayName: 'Run TypeScript check'
+
+  # ============================================
+  # STAGE 2: Testing
+  # ============================================
+  - stage: Testing
+    displayName: 'Run Tests'
+    dependsOn: CodeQuality
+    condition: succeeded()
+    jobs:
+      - job: APITests
+        displayName: 'API Tests'
+        pool:
+          vmImage: 'ubuntu-latest'
+        services:
+          postgres:
+            image: postgres:16
+            ports:
+              - 5432:5432
+            env:
+              POSTGRES_USER: $(POSTGRES_USER)
+              POSTGRES_PASSWORD: $(POSTGRES_PASSWORD)
+              POSTGRES_DB: $(POSTGRES_DB)
+            options: >-
+              --health-cmd pg_isready
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
+          redis:
+            image: redis:7
+            ports:
+              - 6379:6379
+            options: >-
+              --health-cmd "redis-cli ping"
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              npm install -g pnpm@$(PNPM_VERSION)
+            displayName: 'Install pnpm'
+
+          - script: |
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - script: |
+              pnpm prisma:generate
+            displayName: 'Generate Prisma Client'
+
+          - script: |
+              pnpm db:migrate:deploy
+            displayName: 'Run database migrations'
+            env:
+              DATABASE_URL: postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:5432/$(POSTGRES_DB)
+
+          - script: |
+              pnpm test:api
+            displayName: 'Run API tests'
+            env:
+              DATABASE_URL: postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:5432/$(POSTGRES_DB)
+              REDIS_URL: redis://localhost:6379
+              JWT_SECRET: test-secret-key
+              NODE_ENV: test
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Publish code coverage'
+            condition: always()
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml'
+              reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
+
+          - task: PublishTestResults@2
+            displayName: 'Publish test results'
+            condition: always()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/junit.xml'
+              mergeTestResults: true
+              failTaskOnFailedTests: true
+              testRunTitle: 'API Tests'
+
+      - job: WebTests
+        displayName: 'Web Tests'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              npm install -g pnpm@$(PNPM_VERSION)
+            displayName: 'Install pnpm'
+
+          - script: |
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - script: |
+              pnpm test:web
+            displayName: 'Run web tests'
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Publish code coverage'
+            condition: always()
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/apps/web/coverage/cobertura-coverage.xml'
+              reportDirectory: '$(System.DefaultWorkingDirectory)/apps/web/coverage'
+
+          - task: PublishTestResults@2
+            displayName: 'Publish test results'
+            condition: always()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/junit.xml'
+              mergeTestResults: true
+              failTaskOnFailedTests: true
+              testRunTitle: 'Web Tests'
+
+  # ============================================
+  # STAGE 3: Security Scanning
+  # ============================================
+  - stage: Security
+    displayName: 'Security Scanning'
+    dependsOn: CodeQuality
+    condition: succeeded()
+    jobs:
+      - job: SecurityScan
+        displayName: 'Run Security Scans'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: trivy@1
+            displayName: 'Run Trivy vulnerability scanner'
+            inputs:
+              version: 'latest'
+              path: '$(System.DefaultWorkingDirectory)'
+              severities: 'CRITICAL,HIGH'
+              format: 'sarif'
+              output: 'trivy-results.sarif'
+            continueOnError: true
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Trivy results'
+            condition: always()
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)/trivy-results.sarif'
+              artifact: 'trivy-scan-results'
+              publishLocation: 'pipeline'
+
+  # ============================================
+  # STAGE 4: Build
+  # ============================================
+  - stage: Build
+    displayName: 'Build Applications'
+    dependsOn:
+      - Testing
+      - Security
+    condition: succeeded()
+    jobs:
+      - job: BuildAll
+        displayName: 'Build All Packages'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              npm install -g pnpm@$(PNPM_VERSION)
+            displayName: 'Install pnpm'
+
+          - script: |
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - script: |
+              pnpm build
+            displayName: 'Build all packages'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish build artifacts'
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)'
+              artifact: 'build-artifacts'
+              publishLocation: 'pipeline'
+              artifactType: 'pipeline'
+            enabled: true
+
+  # ============================================
+  # STAGE 5: Docker Build (main/develop only)
+  # ============================================
+  - stage: DockerBuild
+    displayName: 'Build Docker Images'
+    dependsOn: Build
+    condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/develop')))
+    jobs:
+      - job: BuildDockerImages
+        displayName: 'Build and Push Docker Images'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: Docker@2
+            displayName: 'Login to Docker Hub'
+            inputs:
+              command: 'login'
+              containerRegistry: 'DockerHub'
+
+          - task: Docker@2
+            displayName: 'Build API image'
+            inputs:
+              command: 'buildAndPush'
+              repository: 'citadelplatforms/citadelbuy-ecommerce'
+              dockerfile: '$(System.DefaultWorkingDirectory)/apps/api/Dockerfile'
+              tags: |
+                backend-$(Build.SourceVersion)
+                backend-latest
+              buildContext: '$(System.DefaultWorkingDirectory)/apps/api'
+
+          - task: Docker@2
+            displayName: 'Build Web image'
+            inputs:
+              command: 'buildAndPush'
+              repository: 'citadelplatforms/citadelbuy-ecommerce'
+              dockerfile: '$(System.DefaultWorkingDirectory)/apps/web/Dockerfile'
+              tags: |
+                frontend-$(Build.SourceVersion)
+                frontend-latest
+              buildContext: '$(System.DefaultWorkingDirectory)/apps/web'

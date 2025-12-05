@@ -313,8 +313,14 @@ export class CartAbandonmentService {
 
     // Prepare email content
     const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
-    const recoveryLink = `${frontendUrl}/cart?recover=${abandonment.id}`;
-    const unsubscribeLink = `${frontendUrl}/unsubscribe?type=cart_abandonment&id=${abandonment.id}`;
+    const apiUrl = this.configService.get('API_URL', 'http://localhost:3000/api');
+
+    // Add tracking to recovery link
+    const recoveryLink = `${apiUrl}/cart-abandonment/track/click/${abandonmentEmail.id}?redirect=${encodeURIComponent(`${frontendUrl}/cart?recover=${abandonment.id}`)}`;
+    const unsubscribeLink = `${apiUrl}/cart-abandonment/unsubscribe/${abandonment.id}`;
+
+    // Create tracking pixel URL for email opens
+    const trackingPixelUrl = `${apiUrl}/cart-abandonment/track/open/${abandonmentEmail.id}`;
 
     const cartItems = cart.items.map((item: any) => ({
       name: item.product.name,
@@ -333,6 +339,7 @@ export class CartAbandonmentService {
       discountExpiry,
       recoveryLink,
       unsubscribeLink,
+      trackingPixelUrl,
     });
 
     // Send email and log it
@@ -344,6 +351,7 @@ export class CartAbandonmentService {
       type: EmailType.NOTIFICATION,
       metadata: {
         abandonmentId: abandonment.id,
+        abandonmentEmailId: abandonmentEmail.id,
         emailType,
         cartValue: cart.total,
         itemCount: cart.items.length,
@@ -391,6 +399,7 @@ export class CartAbandonmentService {
       discountExpiry: Date | null;
       recoveryLink: string;
       unsubscribeLink: string;
+      trackingPixelUrl: string;
     },
   ): { subject: string; html: string; text: string } {
     const subjects: Record<AbandonmentEmailType, string> = {
@@ -500,6 +509,9 @@ export class CartAbandonmentService {
       <p>&copy; ${new Date().getFullYear()} CitadelBuy. All rights reserved.</p>
     </div>
   </div>
+
+  <!-- Tracking Pixel for Email Opens -->
+  <img src="${data.trackingPixelUrl}" width="1" height="1" style="display:none;" alt="" />
 </body>
 </html>
     `;
@@ -613,28 +625,72 @@ Unsubscribe: ${data.unsubscribeLink}
 
   /**
    * Track email opens (called via tracking pixel)
+   * Only tracks the first open to avoid inflating metrics
    */
   async trackEmailOpen(abandonmentEmailId: string): Promise<void> {
-    await this.prisma.cartAbandonmentEmail.update({
-      where: { id: abandonmentEmailId },
-      data: {
-        opened: true,
-        openedAt: new Date(),
-      },
-    });
+    try {
+      const email = await this.prisma.cartAbandonmentEmail.findUnique({
+        where: { id: abandonmentEmailId },
+        select: { opened: true, openedAt: true },
+      });
+
+      // Only update if not already opened (track first open only)
+      if (email && !email.opened) {
+        await this.prisma.cartAbandonmentEmail.update({
+          where: { id: abandonmentEmailId },
+          data: {
+            opened: true,
+            openedAt: new Date(),
+          },
+        });
+
+        this.logger.debug(`Tracked email open for abandonment email ${abandonmentEmailId}`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to track email open for ${abandonmentEmailId}:`, error);
+      // Don't throw - tracking failures shouldn't break the email experience
+    }
   }
 
   /**
    * Track email link clicks
+   * Only tracks the first click to avoid inflating metrics
    */
   async trackEmailClick(abandonmentEmailId: string): Promise<void> {
-    await this.prisma.cartAbandonmentEmail.update({
-      where: { id: abandonmentEmailId },
-      data: {
-        clicked: true,
-        clickedAt: new Date(),
-      },
-    });
+    try {
+      const email = await this.prisma.cartAbandonmentEmail.findUnique({
+        where: { id: abandonmentEmailId },
+        select: { clicked: true, clickedAt: true, opened: true },
+      });
+
+      if (email) {
+        const updateData: any = {};
+
+        // Track click if not already clicked (first click only)
+        if (!email.clicked) {
+          updateData.clicked = true;
+          updateData.clickedAt = new Date();
+        }
+
+        // Also mark as opened if clicking (implies they opened the email)
+        if (!email.opened) {
+          updateData.opened = true;
+          updateData.openedAt = new Date();
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          await this.prisma.cartAbandonmentEmail.update({
+            where: { id: abandonmentEmailId },
+            data: updateData,
+          });
+
+          this.logger.debug(`Tracked email click for abandonment email ${abandonmentEmailId}`);
+        }
+      }
+    } catch (error) {
+      this.logger.error(`Failed to track email click for ${abandonmentEmailId}:`, error);
+      // Don't throw - tracking failures shouldn't break the user experience
+    }
   }
 
   /**

@@ -1,0 +1,430 @@
+# Role-Based Access Control (RBAC) Configuration for CitadelBuy Platform
+# Implements least privilege principle with dedicated service accounts and minimal permissions
+
+---
+# Service Account for API Backend
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: citadelbuy-api
+  namespace: citadelbuy
+  labels:
+    app: citadelbuy-api
+    tier: backend
+automountServiceAccountToken: true
+
+---
+# Service Account for Web Frontend
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: citadelbuy-web
+  namespace: citadelbuy
+  labels:
+    app: citadelbuy-web
+    tier: frontend
+automountServiceAccountToken: true
+
+---
+# Service Account for PostgreSQL
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: postgres
+  namespace: citadelbuy
+  labels:
+    app: postgres
+    tier: database
+automountServiceAccountToken: false
+
+---
+# Service Account for Redis
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: redis
+  namespace: citadelbuy
+  labels:
+    app: redis
+    tier: cache
+automountServiceAccountToken: false
+
+---
+# Service Account for Elasticsearch
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: elasticsearch
+  namespace: citadelbuy
+  labels:
+    app: elasticsearch
+    tier: search
+automountServiceAccountToken: false
+
+---
+# Service Account for PostgreSQL Exporter
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: postgres-exporter
+  namespace: citadelbuy
+  labels:
+    app: postgres-exporter
+    tier: monitoring
+automountServiceAccountToken: true
+
+---
+# Service Account for Redis Exporter
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: redis-exporter
+  namespace: citadelbuy
+  labels:
+    app: redis-exporter
+    tier: monitoring
+automountServiceAccountToken: true
+
+---
+# Service Account for Elasticsearch Exporter
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: elasticsearch-exporter
+  namespace: citadelbuy
+  labels:
+    app: elasticsearch-exporter
+    tier: monitoring
+automountServiceAccountToken: true
+
+---
+# Role for API Backend - Minimal permissions to access ConfigMaps and Secrets
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: citadelbuy-api-role
+  namespace: citadelbuy
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+    resourceNames: ["citadelbuy-config"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+    resourceNames: ["citadelbuy-secrets"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list"]
+
+---
+# RoleBinding for API Backend
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: citadelbuy-api-rolebinding
+  namespace: citadelbuy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: citadelbuy-api-role
+subjects:
+  - kind: ServiceAccount
+    name: citadelbuy-api
+    namespace: citadelbuy
+
+---
+# Role for Web Frontend - Minimal permissions to access ConfigMaps
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: citadelbuy-web-role
+  namespace: citadelbuy
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+    resourceNames: ["citadelbuy-config"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list"]
+
+---
+# RoleBinding for Web Frontend
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: citadelbuy-web-rolebinding
+  namespace: citadelbuy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: citadelbuy-web-role
+subjects:
+  - kind: ServiceAccount
+    name: citadelbuy-web
+    namespace: citadelbuy
+
+---
+# Role for Monitoring Exporters
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: monitoring-exporter-role
+  namespace: citadelbuy
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "list"]
+
+---
+# RoleBinding for PostgreSQL Exporter
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: postgres-exporter-rolebinding
+  namespace: citadelbuy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: monitoring-exporter-role
+subjects:
+  - kind: ServiceAccount
+    name: postgres-exporter
+    namespace: citadelbuy
+
+---
+# RoleBinding for Redis Exporter
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: redis-exporter-rolebinding
+  namespace: citadelbuy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: monitoring-exporter-role
+subjects:
+  - kind: ServiceAccount
+    name: redis-exporter
+    namespace: citadelbuy
+
+---
+# RoleBinding for Elasticsearch Exporter
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: elasticsearch-exporter-rolebinding
+  namespace: citadelbuy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: monitoring-exporter-role
+subjects:
+  - kind: ServiceAccount
+    name: elasticsearch-exporter
+    namespace: citadelbuy
+
+---
+# ClusterRole for Pod Security Policy (Legacy - for older K8s versions)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: citadelbuy-psp-restricted
+rules:
+  - apiGroups: ["policy"]
+    resources: ["podsecuritypolicies"]
+    verbs: ["use"]
+    resourceNames: ["citadelbuy-restricted"]
+
+---
+# ClusterRole for Database Pod Security Policy
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: citadelbuy-psp-database
+rules:
+  - apiGroups: ["policy"]
+    resources: ["podsecuritypolicies"]
+    verbs: ["use"]
+    resourceNames: ["citadelbuy-database"]
+
+---
+# ClusterRoleBinding for Application PSP
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: citadelbuy-psp-restricted-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: citadelbuy-psp-restricted
+subjects:
+  - kind: ServiceAccount
+    name: citadelbuy-api
+    namespace: citadelbuy
+  - kind: ServiceAccount
+    name: citadelbuy-web
+    namespace: citadelbuy
+  - kind: ServiceAccount
+    name: postgres-exporter
+    namespace: citadelbuy
+  - kind: ServiceAccount
+    name: redis-exporter
+    namespace: citadelbuy
+  - kind: ServiceAccount
+    name: elasticsearch-exporter
+    namespace: citadelbuy
+
+---
+# ClusterRoleBinding for Database PSP
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: citadelbuy-psp-database-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: citadelbuy-psp-database
+subjects:
+  - kind: ServiceAccount
+    name: postgres
+    namespace: citadelbuy
+  - kind: ServiceAccount
+    name: redis
+    namespace: citadelbuy
+  - kind: ServiceAccount
+    name: elasticsearch
+    namespace: citadelbuy
+
+---
+# ClusterRole for metrics collection (Prometheus access)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: citadelbuy-metrics-reader
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - nodes/metrics
+      - services
+      - endpoints
+      - pods
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    verbs: ["get"]
+  - nonResourceURLs:
+      - /metrics
+      - /metrics/cadvisor
+    verbs: ["get"]
+
+---
+# Service Account for Prometheus (in monitoring namespace)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: citadelbuy-monitoring
+  labels:
+    app: prometheus
+    tier: monitoring
+
+---
+# ClusterRoleBinding for Prometheus
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: citadelbuy-metrics-reader
+subjects:
+  - kind: ServiceAccount
+    name: prometheus
+    namespace: citadelbuy-monitoring
+
+---
+# Role for viewing pod logs (debugging purposes)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pod-log-reader
+  namespace: citadelbuy
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+
+---
+# Network Policy User Role (for services that need to manage network policies)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: citadelbuy-network-policy-reader
+rules:
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "watch"]
+
+---
+# Service Account for External Secrets Operator
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: external-secrets
+  namespace: citadelbuy
+  labels:
+    app: external-secrets
+
+---
+# Role for External Secrets Operator
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: external-secrets-role
+  namespace: citadelbuy
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  - apiGroups: ["external-secrets.io"]
+    resources: ["secretstores", "externalsecrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["external-secrets.io"]
+    resources: ["externalsecrets/status", "secretstores/status"]
+    verbs: ["get", "patch", "update"]
+
+---
+# RoleBinding for External Secrets Operator
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: external-secrets-rolebinding
+  namespace: citadelbuy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: external-secrets-role
+subjects:
+  - kind: ServiceAccount
+    name: external-secrets
+    namespace: citadelbuy

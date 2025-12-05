@@ -1,41 +1,121 @@
 'use client';
 
 import { useState } from 'react';
-import { Package, Search, Truck, CheckCircle, Clock, MapPin } from 'lucide-react';
+import { Package, Search, Truck, CheckCircle, Clock, MapPin, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { trackingApi } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 interface TrackingStatus {
   status: string;
+  description: string;
   location: string;
   timestamp: string;
-  completed: boolean;
+  completed?: boolean;
 }
 
-const mockTracking: TrackingStatus[] = [
-  { status: 'Order Placed', location: 'Online', timestamp: 'Nov 20, 2024 - 10:30 AM', completed: true },
-  { status: 'Processing', location: 'Warehouse', timestamp: 'Nov 20, 2024 - 2:15 PM', completed: true },
-  { status: 'Shipped', location: 'Distribution Center', timestamp: 'Nov 21, 2024 - 9:00 AM', completed: true },
-  { status: 'In Transit', location: 'Local Facility', timestamp: 'Nov 23, 2024 - 8:45 AM', completed: true },
-  { status: 'Out for Delivery', location: 'Your City', timestamp: 'Nov 24, 2024 - 7:30 AM', completed: false },
-  { status: 'Delivered', location: 'Your Address', timestamp: 'Estimated Today', completed: false },
-];
+interface TrackingData {
+  orderNumber: string;
+  orderId: string;
+  status: string;
+  trackingNumber?: string;
+  carrier?: string;
+  shippingMethod?: string;
+  estimatedDelivery: string;
+  actualDelivery?: string;
+  orderDate: string;
+  timeline: TrackingStatus[];
+  shippingAddress?: any;
+  items?: Array<{
+    name: string;
+    quantity: number;
+    image?: string;
+  }>;
+  total?: number;
+}
 
 export default function TrackOrderPage() {
   const [orderNumber, setOrderNumber] = useState('');
   const [email, setEmail] = useState('');
   const [isTracking, setIsTracking] = useState(false);
-  const [showResults, setShowResults] = useState(false);
+  const [trackingData, setTrackingData] = useState<TrackingData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleTrack = () => {
-    if (orderNumber && email) {
-      setIsTracking(true);
-      setTimeout(() => {
-        setIsTracking(false);
-        setShowResults(true);
-      }, 1500);
+  const handleTrack = async () => {
+    if (!orderNumber || !email) {
+      toast.error('Please enter both order number and email');
+      return;
     }
+
+    try {
+      setIsTracking(true);
+      setError(null);
+
+      // Call the tracking API with order number and email (guest tracking)
+      const response = await trackingApi.trackGuestOrder(orderNumber, email);
+
+      // Transform the response to match our interface
+      const trackingData: TrackingData = {
+        orderNumber: response.orderNumber,
+        orderId: response.orderId,
+        status: response.status,
+        trackingNumber: response.trackingNumber,
+        carrier: response.carrier,
+        shippingMethod: response.shippingMethod,
+        estimatedDelivery: new Date(response.estimatedDelivery).toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        }),
+        actualDelivery: response.actualDelivery
+          ? new Date(response.actualDelivery).toLocaleDateString('en-US', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })
+          : undefined,
+        orderDate: response.orderDate,
+        timeline: response.timeline.map(event => ({
+          status: event.description,
+          description: event.description,
+          location: event.location,
+          timestamp: new Date(event.timestamp).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+          }),
+          completed: event.completed ?? false,
+        })),
+        shippingAddress: response.shippingAddress,
+        items: response.items,
+        total: response.total,
+      };
+
+      setTrackingData(trackingData);
+      toast.success('Order tracking information loaded successfully');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to track order';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      setTrackingData(null);
+    } finally {
+      setIsTracking(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    const statusLower = status.toLowerCase();
+    if (statusLower.includes('delivered')) return 'bg-green-100 text-green-800';
+    if (statusLower.includes('transit') || statusLower.includes('shipped')) return 'bg-blue-100 text-blue-800';
+    if (statusLower.includes('processing')) return 'bg-yellow-100 text-yellow-800';
+    if (statusLower.includes('cancelled') || statusLower.includes('exception')) return 'bg-red-100 text-red-800';
+    return 'bg-gray-100 text-gray-800';
   };
 
   return (
@@ -70,9 +150,10 @@ export default function TrackOrderPage() {
                 </label>
                 <Input
                   type="text"
-                  placeholder="e.g., CB-2024-12345"
+                  placeholder="e.g., CB-2024-12345678"
                   value={orderNumber}
                   onChange={(e) => setOrderNumber(e.target.value)}
+                  disabled={isTracking}
                 />
               </div>
               <div>
@@ -84,16 +165,18 @@ export default function TrackOrderPage() {
                   placeholder="Email used for order"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={isTracking}
                 />
               </div>
               <Button
                 className="w-full"
                 onClick={handleTrack}
                 disabled={!orderNumber || !email || isTracking}
+                isLoading={isTracking}
               >
                 {isTracking ? (
                   <>
-                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Tracking...
                   </>
                 ) : (
@@ -107,21 +190,52 @@ export default function TrackOrderPage() {
           </CardContent>
         </Card>
 
+        {/* Error Message */}
+        {error && (
+          <div className="max-w-3xl mx-auto">
+            <Card className="border-red-200 bg-red-50">
+              <CardContent className="p-6 text-center">
+                <Package className="h-12 w-12 mx-auto mb-4 text-red-600 opacity-50" />
+                <h3 className="text-lg font-semibold mb-2 text-red-900">Order Not Found</h3>
+                <p className="text-red-800">{error}</p>
+                <p className="text-sm text-red-700 mt-2">
+                  Please check your order number and email address and try again.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Tracking Results */}
-        {showResults && (
+        {trackingData && (
           <div className="max-w-3xl mx-auto">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
-                    <CardTitle>Order #{orderNumber || 'CB-2024-12345'}</CardTitle>
-                    <p className="text-sm text-gray-500 mt-1">Estimated Delivery: Today</p>
+                    <CardTitle>Order #{trackingData.orderNumber}</CardTitle>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Ordered on {new Date(trackingData.orderDate).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </p>
+                    {trackingData.trackingNumber && (
+                      <p className="text-sm text-gray-500">
+                        Tracking: {trackingData.trackingNumber}
+                        {trackingData.carrier && ` (${trackingData.carrier})`}
+                      </p>
+                    )}
                   </div>
-                  <div className="text-right">
-                    <span className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                  <div className="text-left md:text-right">
+                    <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(trackingData.status)}`}>
                       <Truck className="h-4 w-4" />
-                      Out for Delivery
+                      {trackingData.status.replace(/_/g, ' ')}
                     </span>
+                    <p className="text-sm text-gray-500 mt-2">
+                      Est. Delivery: {trackingData.estimatedDelivery}
+                    </p>
                   </div>
                 </div>
               </CardHeader>
@@ -131,14 +245,16 @@ export default function TrackOrderPage() {
                   <div className="h-2 bg-gray-200 rounded-full">
                     <div
                       className="h-2 bg-emerald-500 rounded-full transition-all duration-500"
-                      style={{ width: '80%' }}
+                      style={{
+                        width: `${(trackingData.timeline.filter(s => s.completed).length / trackingData.timeline.length) * 100}%`
+                      }}
                     />
                   </div>
                 </div>
 
                 {/* Timeline */}
                 <div className="space-y-6">
-                  {mockTracking.map((step, index) => (
+                  {trackingData.timeline.map((step, index) => (
                     <div key={index} className="flex gap-4">
                       <div className="flex flex-col items-center">
                         <div
@@ -154,7 +270,7 @@ export default function TrackOrderPage() {
                             <Clock className="h-5 w-5" />
                           )}
                         </div>
-                        {index < mockTracking.length - 1 && (
+                        {index < trackingData.timeline.length - 1 && (
                           <div
                             className={`w-0.5 h-12 ${
                               step.completed ? 'bg-emerald-500' : 'bg-gray-200'
@@ -168,33 +284,63 @@ export default function TrackOrderPage() {
                             step.completed ? 'text-gray-900' : 'text-gray-400'
                           }`}
                         >
-                          {step.status}
+                          {step.description}
                         </h3>
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
                           <MapPin className="h-3 w-3" />
                           {step.location}
                         </div>
-                        <p className="text-sm text-gray-400">{step.timestamp}</p>
+                        <p className="text-sm text-gray-400 mt-1">{step.timestamp}</p>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Delivery Info */}
-                <div className="mt-8 p-4 bg-emerald-50 rounded-lg">
-                  <h3 className="font-semibold text-emerald-800 mb-2">Delivery Details</h3>
-                  <p className="text-sm text-emerald-700">
-                    Your package is currently out for delivery and will arrive today between 2:00 PM - 6:00 PM.
-                    Please ensure someone is available to receive the package.
-                  </p>
-                </div>
+                {/* Order Items */}
+                {trackingData.items && trackingData.items.length > 0 && (
+                  <div className="mt-8 pt-8 border-t">
+                    <h4 className="font-semibold mb-4">Order Items</h4>
+                    <div className="space-y-3">
+                      {trackingData.items.map((item, index) => (
+                        <div key={index} className="flex items-center gap-3">
+                          {item.image && (
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{item.name}</p>
+                            <p className="text-xs text-gray-500">Quantity: {item.quantity}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Shipping Address */}
+                {trackingData.shippingAddress && (
+                  <div className="mt-6 pt-6 border-t">
+                    <h4 className="font-semibold mb-2">Shipping Address</h4>
+                    <div className="text-sm text-gray-600">
+                      <p>{trackingData.shippingAddress.name}</p>
+                      <p>{trackingData.shippingAddress.street}</p>
+                      <p>
+                        {trackingData.shippingAddress.city}, {trackingData.shippingAddress.state} {trackingData.shippingAddress.postalCode}
+                      </p>
+                      <p>{trackingData.shippingAddress.country}</p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
         )}
 
         {/* Help Text */}
-        {!showResults && (
+        {!trackingData && !error && (
           <div className="text-center text-gray-500 mt-8">
             <p className="mb-2">Can&apos;t find your order number?</p>
             <p className="text-sm">

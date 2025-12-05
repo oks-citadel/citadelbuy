@@ -162,7 +162,7 @@ export class BulkUploadController {
 
     // Process in background
     this.bulkUploadService.processBulkUpload(job.id, profile.id, products).catch((err) => {
-      console.error('Bulk upload failed:', err);
+      // Bulk upload error logged by service
     });
 
     return {
@@ -191,7 +191,7 @@ export class BulkUploadController {
 
     // Process in background
     this.bulkUploadService.processBulkUpload(job.id, profile.id, dto.products).catch((err) => {
-      console.error('Bulk upload failed:', err);
+      // Bulk upload error logged by service
     });
 
     return {

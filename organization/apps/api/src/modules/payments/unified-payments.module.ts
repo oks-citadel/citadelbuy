@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '@/common/prisma/prisma.module';
+import { RedisModule } from '@/common/redis/redis.module';
 
 // Providers
 import {
@@ -16,10 +17,12 @@ import {
 import { PaymentOrchestratorService } from './services/payment-orchestrator.service';
 import { UnifiedWebhookService } from './services/unified-webhook.service';
 import { WalletService } from './services/wallet.service';
+import { WebhookIdempotencyService } from '@/modules/webhooks/webhook-idempotency.service';
 
 // Controllers
 import { UnifiedPaymentsController } from './controllers/unified-payments.controller';
 import { UnifiedWebhooksController } from './controllers/unified-webhooks.controller';
+import { PaymentsWebhookController } from './payments-webhook.controller';
 
 /**
  * Unified Payments Module
@@ -28,17 +31,19 @@ import { UnifiedWebhooksController } from './controllers/unified-webhooks.contro
  * - Multiple payment providers (Stripe, PayPal, Flutterwave, Paystack)
  * - In-App Purchase validation (Apple StoreKit, Google Play Billing)
  * - Wallet/Credits management
- * - Unified webhook handling
+ * - Unified webhook handling with idempotency
  * - Subscription management
  */
 @Module({
   imports: [
     ConfigModule,
     PrismaModule,
+    RedisModule,
   ],
   controllers: [
     UnifiedPaymentsController,
     UnifiedWebhooksController,
+    PaymentsWebhookController,
   ],
   providers: [
     // Payment Providers
@@ -53,6 +58,7 @@ import { UnifiedWebhooksController } from './controllers/unified-webhooks.contro
     PaymentOrchestratorService,
     UnifiedWebhookService,
     WalletService,
+    WebhookIdempotencyService,
   ],
   exports: [
     // Export providers for use in other modules
@@ -67,6 +73,7 @@ import { UnifiedWebhooksController } from './controllers/unified-webhooks.contro
     PaymentOrchestratorService,
     UnifiedWebhookService,
     WalletService,
+    WebhookIdempotencyService,
   ],
 })
 export class UnifiedPaymentsModule {}

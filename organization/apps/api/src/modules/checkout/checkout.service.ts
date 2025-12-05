@@ -3,6 +3,7 @@ import { PrismaService } from '@/common/prisma/prisma.service';
 import { PaymentsService } from '../payments/payments.service';
 import { OrdersService } from '../orders/orders.service';
 import { CouponsService } from '../coupons/coupons.service';
+import { CartAbandonmentService } from '../cart/cart-abandonment.service';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 
@@ -79,6 +80,7 @@ export class CheckoutService {
     private paymentsService: PaymentsService,
     private ordersService: OrdersService,
     private couponsService: CouponsService,
+    private cartAbandonmentService: CartAbandonmentService,
     private configService: ConfigService,
   ) {
     const apiKey = this.configService.get('STRIPE_SECRET_KEY');
@@ -455,18 +457,34 @@ export class CheckoutService {
       throw new BadRequestException('No shipping address found. Please add an address first.');
     }
 
-    // Apply coupon if provided
+    // Apply coupon if provided (try recovery discount first, then regular coupons)
     let discount = 0;
-    if (request.couponCode) {
-      const validation = await this.couponsService.validateCoupon({
-        code: request.couponCode,
-        userId,
-        subtotal,
-        productIds: items.map((i) => i.productId),
-      });
+    let appliedCouponCode: string | null = null;
 
-      if (validation.valid && validation.discountAmount) {
-        discount = validation.discountAmount;
+    if (request.couponCode) {
+      // Try recovery discount first
+      const recoveryDiscount = await this.cartAbandonmentService.validateRecoveryDiscount(
+        request.couponCode,
+        subtotal,
+      );
+
+      if (recoveryDiscount.valid) {
+        discount = recoveryDiscount.discount;
+        appliedCouponCode = request.couponCode;
+        this.logger.log(`Applied recovery discount: ${request.couponCode} for ${discount}`);
+      } else {
+        // Fall back to regular coupon
+        const validation = await this.couponsService.validateCoupon({
+          code: request.couponCode,
+          userId,
+          subtotal,
+          productIds: items.map((i) => i.productId),
+        });
+
+        if (validation.valid && validation.discountAmount) {
+          discount = validation.discountAmount;
+          appliedCouponCode = request.couponCode;
+        }
       }
     }
 
@@ -535,22 +553,49 @@ export class CheckoutService {
         paymentMethod: 'card',
       });
 
-      // Clear cart if used
+      // Clear cart and track recovery if used
       if (request.cartId) {
+        // Mark cart as recovered if it was abandoned
+        await this.cartAbandonmentService.markCartRecovered(request.cartId, order.id).catch((err) => {
+          this.logger.warn('Failed to mark cart as recovered:', err);
+          // Don't fail the checkout if tracking fails
+        });
+
+        // Mark cart as converted to order
+        await this.prisma.cart.update({
+          where: { id: request.cartId },
+          data: { convertedToOrder: true },
+        });
+
+        // Clear cart items
         await this.prisma.cartItem.deleteMany({
           where: { cartId: request.cartId },
         });
       }
 
-      // Apply coupon usage
-      if (request.couponCode && discount > 0) {
-        await this.couponsService.applyCoupon({
-          code: request.couponCode,
-          userId,
-          subtotal,
-          productIds: items.map((i) => i.productId),
-          orderId: order.id,
-        });
+      // Apply coupon usage (only for regular coupons, not recovery discounts)
+      if (appliedCouponCode && discount > 0) {
+        // Check if it's not a recovery discount by trying to validate as regular coupon
+        try {
+          const validation = await this.couponsService.validateCoupon({
+            code: appliedCouponCode,
+            userId,
+            subtotal,
+            productIds: items.map((i) => i.productId),
+          });
+
+          if (validation.valid) {
+            await this.couponsService.applyCoupon({
+              code: appliedCouponCode,
+              userId,
+              subtotal,
+              productIds: items.map((i) => i.productId),
+              orderId: order.id,
+            });
+          }
+        } catch (error) {
+          this.logger.warn('Coupon application skipped (may be recovery discount):', error.message);
+        }
       }
 
       return {
@@ -574,8 +619,10 @@ export class CheckoutService {
 
   /**
    * Guest checkout - checkout without account
+   * @param request - Guest checkout request data
+   * @param userId - Optional user ID if user is authenticated (allows logged-in users to use guest checkout)
    */
-  async guestCheckout(request: GuestCheckoutRequest) {
+  async guestCheckout(request: GuestCheckoutRequest, userId?: string | null) {
     const { items, shippingAddress, guestEmail, couponCode } = request;
 
     // Validate items
@@ -633,9 +680,10 @@ export class CheckoutService {
     const total = subtotal - discount + shipping + tax;
 
     // Create a guest order
+    // If userId is provided, associate the order with the user (logged-in guest checkout)
     const order = await this.prisma.order.create({
       data: {
-        // No userId for guest orders
+        userId: userId || undefined, // Associate with user if authenticated
         status: 'PENDING',
         total,
         subtotal,
@@ -644,7 +692,7 @@ export class CheckoutService {
         shippingAddress: JSON.stringify(shippingAddress),
         guestEmail,
         guestPhone: shippingAddress.phone,
-        isGuestOrder: true,
+        isGuestOrder: !userId, // Only mark as guest order if no user is authenticated
         items: {
           create: items.map((item) => ({
             productId: item.productId,
@@ -762,22 +810,36 @@ export class CheckoutService {
     // Get payment methods
     const paymentMethods = await this.getSavedPaymentMethods(userId);
 
-    // Apply coupon
+    // Apply coupon (try recovery discount first, then regular coupons)
     let discount = 0;
     let couponValid = false;
     let couponMessage = '';
 
     if (params.couponCode) {
-      const validation = await this.couponsService.validateCoupon({
-        code: params.couponCode,
-        userId,
+      // Try recovery discount first
+      const recoveryDiscount = await this.cartAbandonmentService.validateRecoveryDiscount(
+        params.couponCode,
         subtotal,
-        productIds: items.map((i) => i.productId),
-      });
+      );
 
-      couponValid = validation.valid;
-      couponMessage = validation.message || '';
-      discount = validation.discountAmount || 0;
+      if (recoveryDiscount.valid) {
+        couponValid = true;
+        discount = recoveryDiscount.discount;
+        couponMessage = recoveryDiscount.message;
+        this.logger.log(`Recovery discount validated: ${params.couponCode}`);
+      } else {
+        // Fall back to regular coupon
+        const validation = await this.couponsService.validateCoupon({
+          code: params.couponCode,
+          userId,
+          subtotal,
+          productIds: items.map((i) => i.productId),
+        });
+
+        couponValid = validation.valid;
+        couponMessage = validation.message || '';
+        discount = validation.discountAmount || 0;
+      }
     }
 
     // Calculate totals

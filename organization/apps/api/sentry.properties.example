@@ -1,0 +1,36 @@
+# Sentry Configuration File for CitadelBuy Backend API
+# ========================================================
+# This file configures the Sentry CLI for creating releases and managing deployments.
+# Copy this file to sentry.properties and update with your actual values.
+#
+# IMPORTANT: Do NOT commit sentry.properties with actual values to version control!
+# The auth token should come from environment variables in CI/CD.
+
+# Sentry API endpoint
+defaults.url=https://sentry.io/
+
+# Your Sentry organization slug
+# Get this from: https://sentry.io/settings/
+# Example: citadelbuy
+defaults.org=your-organization-slug
+
+# Your Sentry project slug for the backend API
+# Get this from: https://sentry.io/settings/projects/
+# Example: citadelbuy-backend-prod
+defaults.project=citadelbuy-backend-prod
+
+# Authentication token for creating releases
+# Get from: https://sentry.io/settings/account/api/auth-tokens/
+# Permissions needed: project:releases, project:write, org:read
+#
+# SECURITY: This token should come from environment variable in production
+# The ${SENTRY_AUTH_TOKEN} syntax reads from the environment variable
+# Never hardcode the actual token here!
+auth.token=${SENTRY_AUTH_TOKEN}
+
+# Optional: Specify the Sentry CLI version
+# cli.executable=/path/to/sentry-cli
+
+# Optional: Log level for Sentry CLI
+# Options: trace, debug, info, warn, error
+# log.level=info

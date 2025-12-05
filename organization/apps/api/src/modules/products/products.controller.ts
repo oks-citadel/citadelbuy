@@ -17,14 +17,40 @@ import { ProductsService } from './products.service';
 import { QueryProductsDto } from './dto/query-products.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 
-@ApiTags('products')
+@ApiTags('Products')
 @Controller('products')
 export class ProductsController {
   constructor(private productsService: ProductsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all products with filtering and pagination' })
-  @ApiResponse({ status: 200, description: 'Returns paginated products' })
+  @ApiOperation({
+    summary: 'Get all products with filtering and pagination',
+    description: 'Retrieves a paginated list of products with optional filtering by category, price range, and search term.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved paginated products',
+    schema: {
+      example: {
+        products: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174000',
+            name: 'Wireless Bluetooth Headphones',
+            description: 'Premium wireless headphones with active noise cancellation',
+            price: 149.99,
+            images: ['https://cdn.citadelbuy.com/products/headphones-main.jpg'],
+            stock: 150,
+            category: { id: '...', name: 'Electronics' },
+            vendor: { id: '...', name: 'AudioTech Pro' },
+          },
+        ],
+        total: 100,
+        page: 1,
+        limit: 12,
+        totalPages: 9,
+      },
+    },
+  })
   async findAll(@Query() query: QueryProductsDto) {
     return this.productsService.findAll(query);
   }
@@ -60,8 +86,45 @@ export class ProductsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get product by ID' })
-  @ApiResponse({ status: 200, description: 'Returns product details' })
+  @ApiOperation({
+    summary: 'Get product by ID',
+    description: 'Retrieves detailed information about a specific product including inventory, reviews, and vendor details.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved product details',
+    schema: {
+      example: {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        name: 'Wireless Bluetooth Headphones',
+        description: 'Premium wireless headphones with active noise cancellation, 30-hour battery life',
+        price: 149.99,
+        images: [
+          'https://cdn.citadelbuy.com/products/headphones-main.jpg',
+          'https://cdn.citadelbuy.com/products/headphones-side.jpg',
+        ],
+        stock: 150,
+        sku: 'WBH-2024-BLK',
+        weight: 0.25,
+        dimensions: '20 x 15 x 8',
+        brand: 'AudioTech Pro',
+        category: {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          name: 'Electronics',
+          slug: 'electronics',
+        },
+        vendor: {
+          id: '123e4567-e89b-12d3-a456-426614174002',
+          name: 'AudioTech Pro',
+          rating: 4.8,
+        },
+        averageRating: 4.5,
+        reviewCount: 128,
+        createdAt: '2024-01-15T10:30:00Z',
+        updatedAt: '2024-02-20T14:45:00Z',
+      },
+    },
+  })
   @ApiResponse({ status: 404, description: 'Product not found' })
   async findOne(@Param('id') id: string) {
     return this.productsService.findOne(id);

@@ -1,11 +1,15 @@
 import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { QueryProductsDto, SortBy } from './dto/query-products.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
 
   async findAll(query: QueryProductsDto) {
     const { search, category, minPrice, maxPrice, sortBy, page = 1, limit = 12 } = query;
@@ -333,7 +337,7 @@ export class ProductsService {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
-    return this.prisma.product.create({
+    const product = await this.prisma.product.create({
       data: {
         ...data,
         slug: `${slug}-${Date.now()}`,
@@ -342,22 +346,37 @@ export class ProductsService {
         category: true,
       },
     });
+
+    // Emit event for search indexing
+    this.eventEmitter.emit('product.created', { productId: product.id });
+
+    return product;
   }
 
   async update(id: string, data: Partial<CreateProductDto>) {
-    return this.prisma.product.update({
+    const product = await this.prisma.product.update({
       where: { id },
       data,
       include: {
         category: true,
       },
     });
+
+    // Emit event for search re-indexing
+    this.eventEmitter.emit('product.updated', { productId: product.id });
+
+    return product;
   }
 
   async delete(id: string) {
-    return this.prisma.product.delete({
+    const product = await this.prisma.product.delete({
       where: { id },
     });
+
+    // Emit event for search index removal
+    this.eventEmitter.emit('product.deleted', { productId: product.id });
+
+    return product;
   }
 
   async getProductStats() {

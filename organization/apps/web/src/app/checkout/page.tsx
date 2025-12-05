@@ -189,8 +189,12 @@ export default function CheckoutPage() {
           };
           const stateCode = shippingAddress.state.toUpperCase();
           setTaxRate(stateTaxRates[stateCode] || 0.08);
-        } catch (error) {
+        } catch (error: any) {
+          const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch shipping rates';
           console.error('Failed to fetch shipping rates:', error);
+          toast.error(errorMessage, {
+            description: 'Using default shipping options',
+          });
           // Keep default shipping options on error
         } finally {
           setLoadingShippingRates(false);
@@ -224,8 +228,12 @@ export default function CheckoutPage() {
             riskLevel: result.decision === 'DECLINE' ? 'high' : result.decision === 'REVIEW' ? 'medium' : 'low',
             recommendation: result.recommendations[0] || 'Transaction looks safe.',
           });
-        } catch (error) {
+        } catch (error: any) {
+          const errorMessage = error?.response?.data?.message || error?.message || 'Fraud check temporarily unavailable';
           console.error('Fraud check failed:', error);
+          toast.warning(errorMessage, {
+            description: 'Your transaction will proceed with additional verification',
+          });
         }
       }
     };
@@ -296,7 +304,7 @@ export default function CheckoutPage() {
         savedAddress = await addressesApi.create(addressData);
       } catch (addressError) {
         // Address might already exist, continue with checkout
-        console.log('Using existing address data');
+        // Using existing address data
       }
 
       // Step 2: Create checkout session

@@ -395,6 +395,22 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Get keys matching a pattern
+   */
+  async keys(pattern: string): Promise<string[]> {
+    if (!this.isConnected) {
+      return [];
+    }
+
+    try {
+      return await this.client.keys(pattern);
+    } catch (error) {
+      this.logger.error(`Error getting keys matching pattern ${pattern}:`, error);
+      return [];
+    }
+  }
+
+  /**
    * Get cache statistics
    */
   async getStats(): Promise<{

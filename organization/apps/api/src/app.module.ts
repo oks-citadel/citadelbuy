@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './common/prisma/prisma.module';
@@ -31,6 +32,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { ShippingModule } from './modules/shipping/shipping.module';
 import { ReturnsModule } from './modules/returns/returns.module';
 import { TrackingModule } from './modules/tracking/tracking.module';
+import { OrderTrackingModule } from './modules/order-tracking/order-tracking.module';
 import { TaxModule } from './modules/tax/tax.module';
 import { VariantsModule } from './modules/variants/variants.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
@@ -45,12 +47,25 @@ import { SeoModule } from './modules/seo/seo.module';
 import { PlatformModule } from './modules/platform/platform.module';
 import { CheckoutModule } from './modules/checkout/checkout.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { OrganizationModule } from './modules/organization/organization.module';
+import { OrganizationRolesModule } from './modules/organization-roles/organization-roles.module';
+import { OrganizationAuditModule } from './modules/organization-audit/organization-audit.module';
+import { OrganizationKycModule } from './modules/organization-kyc/organization-kyc.module';
+import { OrganizationBillingModule } from './modules/organization-billing/organization-billing.module';
+import { WebhookModule } from './modules/webhooks/webhook.module';
+import { PrivacyModule } from './modules/privacy/privacy.module';
+import { validate } from './common/config/config-validation';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      validate, // Add configuration validation
+      validationOptions: {
+        allowUnknown: true, // Allow extra env vars not in schema
+        abortEarly: false, // Show all validation errors, not just first one
+      },
     }),
     ThrottlerModule.forRoot([
       {
@@ -58,6 +73,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
         limit: 100, // 100 requests per minute
       },
     ]),
+    ScheduleModule.forRoot(),
     PrismaModule,
     RedisModule,
     AuthModule,
@@ -85,6 +101,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     InventoryModule,
     ShippingModule,
     ReturnsModule,
+    OrderTrackingModule,
     TrackingModule,
     TaxModule,
     VariantsModule,
@@ -100,6 +117,13 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     PlatformModule,
     CheckoutModule,
     NotificationsModule,
+    OrganizationModule,
+    OrganizationRolesModule,
+    OrganizationAuditModule,
+    OrganizationKycModule,
+    WebhookModule,
+    OrganizationBillingModule,
+    PrivacyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

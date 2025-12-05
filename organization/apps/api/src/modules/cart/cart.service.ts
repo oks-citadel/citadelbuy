@@ -725,6 +725,7 @@ export class CartService {
         subtotal,
         tax,
         total,
+        lastActivityAt: new Date(), // Update activity timestamp on any cart change
       },
     });
   }

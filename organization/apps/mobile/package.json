@@ -42,7 +42,9 @@
     "react-native-svg": "14.1.0",
     "zustand": "^4.4.7",
     "expo-notifications": "~0.27.6",
-    "expo-media-library": "~15.9.1"
+    "expo-media-library": "~15.9.1",
+    "expo-in-app-purchases": "~14.5.0",
+    "@sentry/react-native": "~5.17.0"
   },
   "devDependencies": {
     "@babel/core": "^7.23.7",

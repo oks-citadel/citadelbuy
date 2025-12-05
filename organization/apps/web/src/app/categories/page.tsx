@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Grid3X3, List, ChevronRight, Search, Sparkles, Package } from 'lucide-react';
+import { Grid3X3, List, ChevronRight, Search, Sparkles, Package, AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { toast } from 'sonner';
 
 interface Category {
   id: string;
@@ -46,15 +47,32 @@ export default function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
+      setError(null);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/categories`);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+        const res = await fetch(`${apiUrl}/categories`);
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
         const data = await res.json();
         setCategories(data.data || []);
-      } catch (error) {
+      } catch (error: any) {
+        const errorMessage = error?.message || 'Failed to fetch categories';
         console.error('Failed to fetch categories:', error);
+        setError(errorMessage);
+        toast.error('Failed to load categories', {
+          description: errorMessage,
+          action: {
+            label: 'Retry',
+            onClick: () => window.location.reload(),
+          },
+        });
       } finally {
         setIsLoading(false);
       }
@@ -93,6 +111,34 @@ export default function CategoriesPage() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error && categories.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white border-b">
+          <div className="container mx-auto px-4 py-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Browse Categories</h1>
+          </div>
+        </div>
+        <div className="container mx-auto px-4 py-8">
+          <Card className="bg-red-50 border-red-200">
+            <CardContent className="p-12 text-center">
+              <AlertTriangle className="w-16 h-16 text-red-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-red-900 mb-2">
+                Failed to Load Categories
+              </h3>
+              <p className="text-red-700 mb-6">{error}</p>
+              <Button onClick={() => window.location.reload()} variant="outline">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

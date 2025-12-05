@@ -4,6 +4,14 @@ version: '3.8'
 # CitadelBuy Complete Docker Stack
 # Includes: App Services, Database, Cache, Monitoring
 #===========================================
+# CRITICAL SECURITY WARNING:
+# - ALL passwords MUST be set via environment variables in .env file
+# - Required variables: POSTGRES_PASSWORD, GRAFANA_ADMIN_PASSWORD, PGADMIN_PASSWORD
+# - NEVER use default passwords in production or staging environments
+# - See .env.docker.example in project root for required environment variables
+# - Generate secure passwords: openssl rand -base64 32
+# - Default fallback passwords below are WEAK and for development only!
+#===========================================
 
 services:
   #-----------------------------------------
@@ -16,8 +24,9 @@ services:
     ports:
       - '5432:5432'
     environment:
+      # Set POSTGRES_PASSWORD in .env file - do not use the default!
       POSTGRES_USER: ${POSTGRES_USER:-citadelbuy}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-citadelbuy123}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env file}
       POSTGRES_DB: ${POSTGRES_DB:-citadelbuy_dev}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
@@ -79,7 +88,8 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 4000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-citadelbuy}:${POSTGRES_PASSWORD:-citadelbuy123}@postgres:5432/${POSTGRES_DB:-citadelbuy_dev}
+      # DATABASE_URL uses POSTGRES_PASSWORD from .env file
+      DATABASE_URL: postgresql://${POSTGRES_USER:-citadelbuy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-citadelbuy_dev}
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
@@ -197,8 +207,9 @@ services:
     ports:
       - '3001:3000'
     environment:
+      # Set GRAFANA_ADMIN_PASSWORD in .env file - do not use the default!
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin123}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set in .env file}
       GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
       GF_USERS_ALLOW_SIGN_UP: false
     volumes:
@@ -269,8 +280,9 @@ services:
     ports:
       - '5050:80'
     environment:
+      # Set PGADMIN_PASSWORD in .env file - do not use the default!
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@citadelbuy.com}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?PGADMIN_PASSWORD must be set in .env file}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     volumes:
       - pgadmin-data:/var/lib/pgadmin
