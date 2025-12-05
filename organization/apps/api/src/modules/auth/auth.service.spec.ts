@@ -7,6 +7,9 @@ import { UnauthorizedException, ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EmailService } from '../email/email.service';
+import { ServerTrackingService } from '../tracking/server-tracking.service';
+import { AccountLockoutService } from './account-lockout.service';
+import { TokenBlacklistService } from './token-blacklist.service';
 
 jest.mock('bcrypt');
 
@@ -42,6 +45,25 @@ describe('AuthService', () => {
     get: jest.fn(),
   };
 
+  const mockServerTrackingService = {
+    trackEvent: jest.fn().mockResolvedValue(undefined),
+    trackLogin: jest.fn().mockResolvedValue(undefined),
+    trackRegistration: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockAccountLockoutService = {
+    recordFailedAttempt: jest.fn().mockResolvedValue(undefined),
+    resetFailedAttempts: jest.fn().mockResolvedValue(undefined),
+    isLocked: jest.fn().mockResolvedValue(false),
+    getLockoutStatus: jest.fn().mockResolvedValue({ isLocked: false, attempts: 0 }),
+    checkLockout: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockTokenBlacklistService = {
+    blacklistToken: jest.fn().mockResolvedValue(undefined),
+    isBlacklisted: jest.fn().mockResolvedValue(false),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -65,6 +87,18 @@ describe('AuthService', () => {
         {
           provide: ConfigService,
           useValue: mockConfigService,
+        },
+        {
+          provide: ServerTrackingService,
+          useValue: mockServerTrackingService,
+        },
+        {
+          provide: AccountLockoutService,
+          useValue: mockAccountLockoutService,
+        },
+        {
+          provide: TokenBlacklistService,
+          useValue: mockTokenBlacklistService,
         },
       ],
     }).compile();

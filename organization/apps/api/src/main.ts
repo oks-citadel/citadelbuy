@@ -61,7 +61,7 @@ async function bootstrap() {
     allowedOrigins = corsOrigin.split(',').map(origin => origin.trim()).filter(Boolean);
 
     logger.log('🔒 CORS Configuration (Production):');
-    logger.log(`   Allowed Origins: ${allowedOrigins.join(\', \')}`);
+    logger.log(`   Allowed Origins: ${allowedOrigins.join(', ')}`);
     logger.log(`   Credentials: enabled`);
     logger.log(`   HTTPS-only cookies: enabled`);
   } else {
@@ -71,7 +71,7 @@ async function bootstrap() {
       : ['http://localhost:3000', 'http://localhost:3001'];
 
     logger.log('🔧 CORS Configuration (Development):');
-    logger.log(`   Allowed Origins: ${allowedOrigins.join(\', \')}`);
+    logger.log(`   Allowed Origins: ${allowedOrigins.join(', ')}`);
   }
 
   app.enableCors({

@@ -41,7 +41,7 @@ export class StripeService {
     }
 
     this.stripe = new Stripe(apiKey, {
-      apiVersion: '2023-10-16',
+      apiVersion: '2024-12-18.acacia',
     });
 
     this.logger.log('Stripe initialized successfully');

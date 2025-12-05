@@ -77,7 +77,7 @@ describe('StripeService', () => {
       }).compile();
 
       expect(Stripe).toHaveBeenCalledWith('sk_test_validkey123', {
-        apiVersion: '2023-10-16',
+        apiVersion: '2024-12-18.acacia',
       });
     });
 

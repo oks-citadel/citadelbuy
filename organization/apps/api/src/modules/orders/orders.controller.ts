@@ -186,7 +186,6 @@ export class OrdersController {
   async create(@Request() req: any, @Body() createOrderDto: CreateOrderDto) {
     return this.ordersService.create(req.user.id, createOrderDto);
   }
-}
 
   @Get(':id/tracking')
   @ApiOperation({

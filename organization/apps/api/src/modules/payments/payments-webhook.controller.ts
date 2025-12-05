@@ -62,7 +62,7 @@ export class PaymentsWebhookController {
     const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     if (stripeSecretKey) {
       this.stripe = new Stripe(stripeSecretKey, {
-        apiVersion: '2024-11-20.acacia',
+        apiVersion: '2024-12-18.acacia',
       });
     }
   }

@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as Sentry from '@sentry/node';
-import { ProfilingIntegration } from '@sentry/profiling-node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
 /**
  * Sentry Service
@@ -42,19 +42,8 @@ export class SentryService implements OnModuleInit {
         profilesSampleRate: environment === 'production' ? 0.1 : 1.0, // Profile 10% of transactions
 
         integrations: [
-          // Performance profiling
-          new ProfilingIntegration(),
-
-          // HTTP integration for tracing HTTP requests
-          new Sentry.Integrations.Http({ tracing: true }),
-
-          // Express integration
-          new Sentry.Integrations.Express({ app: undefined }),
-
-          // Additional integrations
-          new Sentry.Integrations.OnUncaughtException(),
-          new Sentry.Integrations.OnUnhandledRejection(),
-          new Sentry.Integrations.RequestData(),
+          // Performance profiling (new API)
+          nodeProfilingIntegration(),
         ],
 
         // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
@@ -75,13 +64,14 @@ export class SentryService implements OnModuleInit {
             }
 
             // Sanitize query params that might contain sensitive data
-            if (event.request.query_string) {
+            if (event.request.query_string && typeof event.request.query_string === 'string') {
               const sensitiveParams = ['password', 'token', 'secret', 'api_key', 'apiKey'];
-              const queryString = event.request.query_string;
+              let queryString = event.request.query_string;
               sensitiveParams.forEach(param => {
                 const regex = new RegExp(`${param}=[^&]*`, 'gi');
-                event.request!.query_string = queryString.replace(regex, `${param}=[REDACTED]`);
+                queryString = queryString.replace(regex, `${param}=[REDACTED]`);
               });
+              event.request.query_string = queryString;
             }
           }
 
@@ -214,10 +204,10 @@ export class SentryService implements OnModuleInit {
   }
 
   /**
-   * Start a transaction for performance monitoring
+   * Start a span for performance monitoring (new API)
    */
-  startTransaction(context: Sentry.TransactionContext): Sentry.Transaction {
-    return Sentry.startTransaction(context);
+  startSpan<T>(options: { name: string; op?: string }, callback: () => T): T {
+    return Sentry.startSpan(options, callback);
   }
 
   /**

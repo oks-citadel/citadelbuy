@@ -42,7 +42,7 @@ import { TrackingModule } from '../tracking/tracking.module';
         if (isProduction) {
           if (jwtSecret.length < 64) {
             logger.error(
-              \`JWT_SECRET is too short for production (\${jwtSecret.length} chars). \` +
+              `JWT_SECRET is too short for production (${jwtSecret.length} chars). ` +
               'Minimum required: 64 characters. Generate a secure secret with: openssl rand -base64 64'
             );
             throw new Error(
@@ -68,7 +68,7 @@ import { TrackingModule } from '../tracking/tracking.module';
 
           if (foundInsecurePattern) {
             logger.error(
-              \`JWT_SECRET contains insecure pattern "\${foundInsecurePattern}". \` +
+              `JWT_SECRET contains insecure pattern "${foundInsecurePattern}". ` +
               'Use a cryptographically random secret. Generate with: openssl rand -base64 64'
             );
             throw new Error(

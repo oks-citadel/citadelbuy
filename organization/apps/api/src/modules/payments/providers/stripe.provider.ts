@@ -26,7 +26,7 @@ export class StripeProvider implements IPaymentProvider, ISubscriptionProvider {
     const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     if (secretKey) {
       this.stripe = new Stripe(secretKey, {
-        apiVersion: '2023-10-16',
+        apiVersion: '2024-12-18.acacia',
       });
     }
   }

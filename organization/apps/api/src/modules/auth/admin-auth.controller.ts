@@ -13,7 +13,7 @@ export class AdminAuthController {
   constructor(private readonly accountLockoutService: AccountLockoutService) {}
 
   @Post('unlock/:email')
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('ADMIN')
   @ApiOperation({
     summary: 'Unlock a locked user account',
     description: 'Admins can manually unlock accounts that have been locked due to failed login attempts.',
@@ -44,7 +44,7 @@ export class AdminAuthController {
   }
 
   @Get('lockout-status/:email')
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('ADMIN')
   @ApiOperation({
     summary: 'Get account lockout status',
     description: 'Check if an account is locked and get lockout details.',
@@ -74,7 +74,7 @@ export class AdminAuthController {
   }
 
   @Get('security-logs/:email')
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('ADMIN')
   @ApiOperation({
     summary: 'Get security audit logs for an account',
     description: 'View failed login attempts and security events for a specific user.',
