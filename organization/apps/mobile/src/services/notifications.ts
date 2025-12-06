@@ -7,12 +7,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { api } from './api';
 import Constants from 'expo-constants';
-
-// Placeholder for Device since expo-device is not in package.json
-const Device = {
-  isDevice: true,
-  deviceName: 'Unknown Device',
-};
+import * as Device from 'expo-device';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({

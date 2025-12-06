@@ -18,7 +18,8 @@ export class ReviewsService {
    * Create a new review
    */
   async create(userId: string, createReviewDto: CreateReviewDto) {
-    const { productId, rating, comment, images } = createReviewDto;
+    // Note: images field from DTO is not stored yet - Review model doesn't have images column
+    const { productId, rating, comment } = createReviewDto;
 
     // Check if product exists
     const product = await this.prisma.product.findUnique({
@@ -113,11 +114,10 @@ export class ReviewsService {
       where.isVerifiedPurchase = true;
     }
 
-    if (filters?.withPhotos) {
-      where.images = {
-        isEmpty: false,
-      };
-    }
+    // Note: withPhotos filter disabled - images field not yet in Review model
+    // if (filters?.withPhotos) {
+    //   where.images = { isEmpty: false };
+    // }
 
     if (filters?.minRating) {
       where.rating = {

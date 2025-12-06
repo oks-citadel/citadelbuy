@@ -1,0 +1,215 @@
+# Network Policies for CitadelBuy Staging Environment
+# Implements network segmentation and zero-trust networking
+
+---
+# Allow DNS Resolution for all pods
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: citadelbuy-staging
+  labels:
+    environment: staging
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# Allow Web Frontend to API Backend
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-web-to-api
+  namespace: citadelbuy-staging
+  labels:
+    environment: staging
+spec:
+  podSelector:
+    matchLabels:
+      app: citadelbuy-api
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: citadelbuy-web
+      ports:
+        - protocol: TCP
+          port: 4000
+
+---
+# Allow Ingress Controller to Web and API
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-controller
+  namespace: citadelbuy-staging
+  labels:
+    environment: staging
+spec:
+  podSelector:
+    matchLabels:
+      tier: frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+
+---
+# Allow Ingress to API
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-api
+  namespace: citadelbuy-staging
+  labels:
+    environment: staging
+spec:
+  podSelector:
+    matchLabels:
+      app: citadelbuy-api
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 4000
+
+---
+# Allow API to PostgreSQL
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-to-postgres
+  namespace: citadelbuy-staging
+  labels:
+    environment: staging
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: citadelbuy-api
+      ports:
+        - protocol: TCP
+          port: 5432
+
+---
+# Allow API to Redis
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-to-redis
+  namespace: citadelbuy-staging
+  labels:
+    environment: staging
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: citadelbuy-api
+      ports:
+        - protocol: TCP
+          port: 6379
+
+---
+# Allow API Egress to External Services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-external-egress
+  namespace: citadelbuy-staging
+  labels:
+    environment: staging
+spec:
+  podSelector:
+    matchLabels:
+      app: citadelbuy-api
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+
+---
+# Allow Web Egress to API and External Services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-web-egress
+  namespace: citadelbuy-staging
+  labels:
+    environment: staging
+spec:
+  podSelector:
+    matchLabels:
+      app: citadelbuy-web
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: citadelbuy-api
+      ports:
+        - protocol: TCP
+          port: 4000
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80

@@ -1,0 +1,70 @@
+# PersistentVolumeClaims for CitadelBuy Staging Environment
+
+---
+# PVC for PostgreSQL Data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: citadelbuy-staging
+  labels:
+    app: postgres
+    tier: database
+    environment: staging
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: standard  # Change to your storage class (gp3, premium-rwo, etc.)
+  # volumeMode: Filesystem
+
+---
+# PVC for Redis Data (if persistence is enabled)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: citadelbuy-staging
+  labels:
+    app: redis
+    tier: cache
+    environment: staging
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard
+
+---
+# PVC for Elasticsearch Data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-pvc
+  namespace: citadelbuy-staging
+  labels:
+    app: elasticsearch
+    tier: search
+    environment: staging
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+
+---
+# STAGING STORAGE NOTES:
+# 1. Storage classes vary by cloud provider:
+#    - AWS EKS: gp3, gp2, io1, io2
+#    - GCP GKE: standard, premium-rwo, standard-rwo
+#    - Azure AKS: default, managed-premium, azurefile
+# 2. Backup strategy should be implemented for databases
+# 3. Consider using cloud-native database services for production
+# 4. Monitor disk usage and set up alerts for >80% capacity
+# 5. Test restore procedures regularly

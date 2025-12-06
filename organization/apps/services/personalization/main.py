@@ -12,6 +12,7 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import logging
 import uvicorn
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -601,10 +602,12 @@ async def ab_test_personalization(request: ABTestRequest):
 
 
 if __name__ == "__main__":
+    import os
+    port = int(os.getenv("PORT", "8010"))
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=port,
         reload=True,
         log_level="info"
     )

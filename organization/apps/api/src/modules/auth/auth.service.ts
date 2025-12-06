@@ -320,14 +320,15 @@ export class AuthService {
       const randomPassword = crypto.randomBytes(32).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
-      user = await this.usersService.create({
+      const createdUser = await this.usersService.create({
         email: profile.email,
         password: hashedPassword,
         name: profile.name,
-      }) as typeof user;
+      });
+      user = createdUser as NonNullable<typeof user>;
 
       // Send welcome email (async, don't block login)
-      this.emailService.sendWelcomeEmail(user.email, user.name).catch((error) => {
+      this.emailService.sendWelcomeEmail(createdUser.email, createdUser.name).catch((error) => {
         this.logger.error('Failed to send welcome email:', error);
       });
 
@@ -345,8 +346,8 @@ export class AuthService {
         const ttclid = request.query?.ttclid || request.cookies?.ttclid;
 
         this.serverTrackingService.trackRegistration({
-          userId: user.id,
-          email: user.email,
+          userId: createdUser.id,
+          email: createdUser.email,
           phone: undefined,
           firstName,
           lastName,
@@ -365,10 +366,10 @@ export class AuthService {
     // Step 3: Generate JWT tokens
     // User from create() is already sanitized (no password in select)
     // User from findByEmail() includes password but we can safely spread
-    const safeUser = { id: user.id, email: user.email, name: user.name, role: user.role, createdAt: user.createdAt, updatedAt: user.updatedAt };
+    const safeUser = { id: user!.id, email: user!.email, name: user!.name, role: user!.role, createdAt: user!.createdAt, updatedAt: user!.updatedAt };
 
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    const refreshPayload = { sub: user.id, type: 'refresh' };
+    const payload = { sub: user!.id, email: user!.email, role: user!.role };
+    const refreshPayload = { sub: user!.id, type: 'refresh' };
 
     return {
       user: safeUser,

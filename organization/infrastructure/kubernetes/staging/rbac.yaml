@@ -1,0 +1,157 @@
+# RBAC Configuration for CitadelBuy Staging Environment
+# Implements least privilege access control
+
+---
+# Service Account for API
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: citadelbuy-api
+  namespace: citadelbuy-staging
+  labels:
+    app: citadelbuy-api
+    tier: backend
+    environment: staging
+automountServiceAccountToken: true
+
+---
+# Service Account for Web Frontend
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: citadelbuy-web
+  namespace: citadelbuy-staging
+  labels:
+    app: citadelbuy-web
+    tier: frontend
+    environment: staging
+automountServiceAccountToken: true
+
+---
+# Service Account for PostgreSQL
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: postgres
+  namespace: citadelbuy-staging
+  labels:
+    app: postgres
+    tier: database
+    environment: staging
+automountServiceAccountToken: false
+
+---
+# Service Account for Redis
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: redis
+  namespace: citadelbuy-staging
+  labels:
+    app: redis
+    tier: cache
+    environment: staging
+automountServiceAccountToken: false
+
+---
+# Role for API Backend
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: citadelbuy-api-role
+  namespace: citadelbuy-staging
+  labels:
+    app: citadelbuy-api
+    environment: staging
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+    resourceNames: ["citadelbuy-config", "deployment-info"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+    resourceNames: ["citadelbuy-secrets"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list"]
+
+---
+# RoleBinding for API Backend
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: citadelbuy-api-rolebinding
+  namespace: citadelbuy-staging
+  labels:
+    app: citadelbuy-api
+    environment: staging
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: citadelbuy-api-role
+subjects:
+  - kind: ServiceAccount
+    name: citadelbuy-api
+    namespace: citadelbuy-staging
+
+---
+# Role for Web Frontend
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: citadelbuy-web-role
+  namespace: citadelbuy-staging
+  labels:
+    app: citadelbuy-web
+    environment: staging
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+    resourceNames: ["citadelbuy-config"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list"]
+
+---
+# RoleBinding for Web Frontend
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: citadelbuy-web-rolebinding
+  namespace: citadelbuy-staging
+  labels:
+    app: citadelbuy-web
+    environment: staging
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: citadelbuy-web-role
+subjects:
+  - kind: ServiceAccount
+    name: citadelbuy-web
+    namespace: citadelbuy-staging
+
+---
+# Role for viewing pod logs (debugging in staging)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pod-log-reader
+  namespace: citadelbuy-staging
+  labels:
+    environment: staging
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]

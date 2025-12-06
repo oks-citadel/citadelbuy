@@ -3,6 +3,7 @@ Notification AI Service
 FastAPI microservice for AI-powered notification personalization and optimization
 """
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -17,24 +18,6 @@ import numpy as np
 # Configure logging
 logging.basicConfig(level=os.getenv('LOG_LEVEL', 'INFO'))
 logger = logging.getLogger(__name__)
-
-# Initialize FastAPI app
-app = FastAPI(
-    title="CitadelBuy Notification AI Service",
-    description="AI-powered notification personalization, timing optimization, and user segmentation",
-    version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
-)
-
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 # ============================================
@@ -505,6 +488,40 @@ class UserSegmenter:
         return engagement_map.get(segment, 0.40)
 
 
+# ============================================
+# Lifespan Manager
+# ============================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager."""
+    # Startup
+    logger.info("Notification AI Service starting up...")
+    logger.info("AI services initialized successfully")
+    yield
+    # Shutdown
+    logger.info("Notification AI Service shutting down...")
+
+
+# Initialize FastAPI app with lifespan
+app = FastAPI(
+    title="CitadelBuy Notification AI Service",
+    description="AI-powered notification personalization, timing optimization, and user segmentation",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    lifespan=lifespan
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Initialize AI services
 personalizer = NotificationPersonalizer()
 timing_optimizer = TimingOptimizer()
@@ -631,23 +648,6 @@ async def root():
             "docs": "/docs"
         }
     }
-
-
-# ============================================
-# Startup/Shutdown Events
-# ============================================
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize services on startup."""
-    logger.info("Notification AI Service starting up...")
-    logger.info("AI services initialized successfully")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown."""
-    logger.info("Notification AI Service shutting down...")
 
 
 if __name__ == "__main__":

@@ -240,7 +240,7 @@ export class PushNotificationService {
       // Handle failed tokens
       const errors: string[] = [];
       if (response.failureCount > 0) {
-        response.responses.forEach((resp, idx) => {
+        response.responses.forEach((resp: any, idx: number) => {
           if (!resp.success) {
             const token = tokens[idx];
             const error = resp.error;

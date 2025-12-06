@@ -186,7 +186,7 @@ module "security" {
 
   # Identity
   aks_identity_principal_id = module.compute.aks_identity_principal_id
-  app_service_principal_id  = null
+  app_service_principal_id  = ""
 
   # Secrets
   database_connection_string = module.database.postgresql_connection_string

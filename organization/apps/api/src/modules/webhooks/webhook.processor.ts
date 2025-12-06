@@ -34,7 +34,9 @@ export class WebhookProcessor {
    */
   @Process('deliver')
   async processDelivery(job: Job<WebhookDeliveryJobData>) {
-    const { deliveryId, url, secret, eventType, eventId, payload, attempt } = job.data;
+    const { url, endpointUrl, secret, eventType, eventId, payload, attempt } = job.data;
+    const deliveryId = job.data.deliveryId || job.id?.toString() || 'unknown';
+    const webhookUrl = url || endpointUrl;
 
     this.logger.log(
       `Processing webhook delivery ${deliveryId} (attempt ${attempt}/${5})`,
@@ -45,7 +47,7 @@ export class WebhookProcessor {
       await job.progress(10);
 
       // Create webhook headers with signature
-      const headers = createWebhookHeaders(payload, secret, eventType, eventId);
+      const headers = createWebhookHeaders(payload, secret, eventType || 'webhook', eventId || deliveryId);
 
       await job.progress(30);
 
@@ -53,7 +55,7 @@ export class WebhookProcessor {
       const startTime = Date.now();
 
       const response = await firstValueFrom(
-        this.httpService.post(url, payload, {
+        this.httpService.post(webhookUrl!, payload, {
           headers,
           timeout: this.REQUEST_TIMEOUT,
           validateStatus: (status) => status >= 200 && status < 300,
@@ -186,15 +188,16 @@ export class WebhookProcessor {
 
     // This should rarely happen since we handle errors in processDelivery
     // But if it does, mark the delivery as failed
+    const failedDeliveryId = job.data.deliveryId || job.id?.toString() || 'unknown';
     try {
       await this.webhookService.handleDeliveryFailure(
-        job.data.deliveryId,
+        failedDeliveryId,
         null,
         `Job processing error: ${error.message}`,
       );
     } catch (handlingError) {
       this.logger.error(
-        `Failed to handle job failure for delivery ${job.data.deliveryId}`,
+        `Failed to handle job failure for delivery ${failedDeliveryId}`,
         handlingError,
       );
     }

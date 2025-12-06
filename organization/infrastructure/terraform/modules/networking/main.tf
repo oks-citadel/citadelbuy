@@ -12,24 +12,13 @@ terraform {
   }
 }
 
-# Resource Group
-resource "azurerm_resource_group" "main" {
-  name     = "${var.project_name}-${var.environment}-rg"
-  location = var.location
-
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.project_name}-${var.environment}-rg"
-    }
-  )
-}
+# Note: Resource Group is managed at the environment level, not in this module
 
 # Virtual Network
 resource "azurerm_virtual_network" "main" {
   name                = "${var.project_name}-${var.environment}-vnet"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  resource_group_name = var.resource_group_name
   address_space       = [var.vnet_cidr]
 
   tags = merge(
@@ -44,7 +33,7 @@ resource "azurerm_virtual_network" "main" {
 resource "azurerm_subnet" "public" {
   count                = length(var.availability_zones)
   name                 = "${var.project_name}-${var.environment}-public-${count.index + 1}"
-  resource_group_name  = azurerm_resource_group.main.name
+  resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = [cidrsubnet(var.vnet_cidr, 8, count.index)]
 
@@ -55,7 +44,7 @@ resource "azurerm_subnet" "public" {
 resource "azurerm_subnet" "private" {
   count                = length(var.availability_zones)
   name                 = "${var.project_name}-${var.environment}-private-${count.index + 1}"
-  resource_group_name  = azurerm_resource_group.main.name
+  resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = [cidrsubnet(var.vnet_cidr, 8, count.index + 10)]
 
@@ -75,7 +64,7 @@ resource "azurerm_subnet" "private" {
 resource "azurerm_subnet" "database" {
   count                = length(var.availability_zones)
   name                 = "${var.project_name}-${var.environment}-database-${count.index + 1}"
-  resource_group_name  = azurerm_resource_group.main.name
+  resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = [cidrsubnet(var.vnet_cidr, 8, count.index + 20)]
 
@@ -96,7 +85,7 @@ resource "azurerm_subnet" "database" {
 # AKS Subnet
 resource "azurerm_subnet" "aks" {
   name                 = "${var.project_name}-${var.environment}-aks"
-  resource_group_name  = azurerm_resource_group.main.name
+  resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = [cidrsubnet(var.vnet_cidr, 4, 1)]
 
@@ -106,7 +95,7 @@ resource "azurerm_subnet" "aks" {
 # Azure Container Instances Subnet
 resource "azurerm_subnet" "aci" {
   name                 = "${var.project_name}-${var.environment}-aci"
-  resource_group_name  = azurerm_resource_group.main.name
+  resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = [cidrsubnet(var.vnet_cidr, 8, 30)]
 
@@ -124,8 +113,8 @@ resource "azurerm_subnet" "aci" {
 resource "azurerm_public_ip" "nat" {
   count               = var.enable_nat_gateway ? 1 : 0
   name                = "${var.project_name}-${var.environment}-nat-pip"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  resource_group_name = var.resource_group_name
   allocation_method   = "Static"
   sku                 = "Standard"
   zones               = var.availability_zones
@@ -142,8 +131,8 @@ resource "azurerm_public_ip" "nat" {
 resource "azurerm_nat_gateway" "main" {
   count               = var.enable_nat_gateway ? 1 : 0
   name                = "${var.project_name}-${var.environment}-nat"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  resource_group_name = var.resource_group_name
   sku_name            = "Standard"
   zones               = var.availability_zones
 
@@ -172,8 +161,8 @@ resource "azurerm_subnet_nat_gateway_association" "private" {
 # Network Security Group - Application Load Balancer
 resource "azurerm_network_security_group" "alb" {
   name                = "${var.project_name}-${var.environment}-alb-nsg"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  resource_group_name = var.resource_group_name
 
   security_rule {
     name                       = "allow-http"
@@ -210,8 +199,8 @@ resource "azurerm_network_security_group" "alb" {
 # Network Security Group - Application
 resource "azurerm_network_security_group" "app" {
   name                = "${var.project_name}-${var.environment}-app-nsg"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  resource_group_name = var.resource_group_name
 
   security_rule {
     name                       = "allow-frontend"
@@ -248,8 +237,8 @@ resource "azurerm_network_security_group" "app" {
 # Network Security Group - Database
 resource "azurerm_network_security_group" "database" {
   name                = "${var.project_name}-${var.environment}-db-nsg"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  resource_group_name = var.resource_group_name
 
   security_rule {
     name                       = "allow-postgresql"
@@ -274,8 +263,8 @@ resource "azurerm_network_security_group" "database" {
 # Network Security Group - Redis
 resource "azurerm_network_security_group" "redis" {
   name                = "${var.project_name}-${var.environment}-redis-nsg"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location
+  resource_group_name = var.resource_group_name
 
   security_rule {
     name                       = "allow-redis"
@@ -321,14 +310,14 @@ resource "azurerm_subnet_network_security_group_association" "database" {
 # Azure DNS Zone (optional)
 resource "azurerm_private_dns_zone" "postgresql" {
   name                = "${var.project_name}-${var.environment}.postgres.database.azure.com"
-  resource_group_name = azurerm_resource_group.main.name
+  resource_group_name = var.resource_group_name
 
   tags = var.tags
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "postgresql" {
   name                  = "${var.project_name}-${var.environment}-postgres-link"
-  resource_group_name   = azurerm_resource_group.main.name
+  resource_group_name   = var.resource_group_name
   private_dns_zone_name = azurerm_private_dns_zone.postgresql.name
   virtual_network_id    = azurerm_virtual_network.main.id
 
@@ -338,37 +327,16 @@ resource "azurerm_private_dns_zone_virtual_network_link" "postgresql" {
 # Key Vault Private DNS Zone
 resource "azurerm_private_dns_zone" "keyvault" {
   name                = "privatelink.vaultcore.azure.net"
-  resource_group_name = azurerm_resource_group.main.name
+  resource_group_name = var.resource_group_name
 
   tags = var.tags
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "keyvault" {
   name                  = "${var.project_name}-${var.environment}-keyvault-link"
-  resource_group_name   = azurerm_resource_group.main.name
+  resource_group_name   = var.resource_group_name
   private_dns_zone_name = azurerm_private_dns_zone.keyvault.name
   virtual_network_id    = azurerm_virtual_network.main.id
-
-  tags = var.tags
-}
-
-# Application Insights for monitoring
-resource "azurerm_application_insights" "main" {
-  name                = "${var.project_name}-${var.environment}-appinsights"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  application_type    = "web"
-
-  tags = var.tags
-}
-
-# Log Analytics Workspace
-resource "azurerm_log_analytics_workspace" "main" {
-  name                = "${var.project_name}-${var.environment}-logs"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  sku                 = "PerGB2018"
-  retention_in_days   = var.log_retention_days
 
   tags = var.tags
 }
