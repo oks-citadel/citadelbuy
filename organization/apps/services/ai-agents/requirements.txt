@@ -46,7 +46,7 @@ selenium==4.17.2
 playwright==1.41.2
 
 # Translation and Localization
-googletrans==4.0.0rc1
+# googletrans removed - using deep-translator instead
 deep-translator==1.11.4
 
 # Monitoring and Logging
