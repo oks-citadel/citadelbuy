@@ -79,7 +79,7 @@ export default function TrackOrderPage() {
             })
           : undefined,
         orderDate: response.orderDate,
-        timeline: response.timeline.map(event => ({
+        timeline: response.timeline.map((event: any) => ({
           status: event.description,
           description: event.description,
           location: event.location,

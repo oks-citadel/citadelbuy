@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { RedisModule } from './common/redis/redis.module';
+import { LoggerModule } from './common/logger/logger.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
@@ -54,6 +55,7 @@ import { OrganizationKycModule } from './modules/organization-kyc/organization-k
 import { OrganizationBillingModule } from './modules/organization-billing/organization-billing.module';
 import { WebhookModule } from './modules/webhooks/webhook.module';
 import { PrivacyModule } from './modules/privacy/privacy.module';
+import { AutomationModule } from './modules/automation/automation.module';
 import { validate } from './common/config/config-validation';
 
 @Module({
@@ -74,6 +76,7 @@ import { validate } from './common/config/config-validation';
       },
     ]),
     ScheduleModule.forRoot(),
+    LoggerModule,
     PrismaModule,
     RedisModule,
     AuthModule,
@@ -121,9 +124,10 @@ import { validate } from './common/config/config-validation';
     OrganizationRolesModule,
     OrganizationAuditModule,
     OrganizationKycModule,
-    WebhookModule,
     OrganizationBillingModule,
+    WebhookModule,
     PrivacyModule,
+    AutomationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

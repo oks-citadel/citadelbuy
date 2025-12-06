@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { WishlistService } from './wishlist.service';
+import { WishlistNotificationService } from './wishlist-notification.service';
 import { AddToWishlistDto } from './dto/add-to-wishlist.dto';
 import { CreateWishlistCollectionDto } from './dto/create-wishlist-collection.dto';
 import { AddToWishlistCollectionDto } from './dto/add-to-wishlist-collection.dto';
@@ -23,7 +24,10 @@ import { AuthRequest } from '../../common/types/auth-request.types';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class WishlistController {
-  constructor(private readonly wishlistService: WishlistService) {}
+  constructor(
+    private readonly wishlistService: WishlistService,
+    private readonly wishlistNotificationService: WishlistNotificationService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get user wishlist' })
@@ -181,6 +185,13 @@ export class WishlistController {
   @ApiResponse({ status: 200, description: 'Share link created successfully' })
   createShareLink(@Request() req: AuthRequest, @Param('collectionId') collectionId: string) {
     return this.wishlistService.createShareLink(collectionId, req.user.id);
+  }
+
+  @Post('notifications/check-price-drops')
+  @ApiOperation({ summary: 'Manually check for price drops on wishlist items' })
+  @ApiResponse({ status: 200, description: 'Price drop check completed' })
+  async checkPriceDrops(@Request() req: AuthRequest) {
+    return this.wishlistNotificationService.checkUserPriceDrops(req.user.id);
   }
 }
 

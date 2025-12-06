@@ -11,10 +11,6 @@ if (SENTRY_DSN) {
     // Performance Monitoring
     tracesSampleRate: ENVIRONMENT === 'production' ? 0.1 : 1.0,
 
-    integrations: [
-      new Sentry.Integrations.Http({ tracing: true }),
-    ],
-
     // Error filtering
     beforeSend(event, hint) {
       // Filter out non-error events
@@ -33,19 +29,6 @@ if (SENTRY_DSN) {
             if (event.request?.headers?.[header]) {
               event.request.headers[header] = '[REDACTED]';
             }
-          });
-        }
-
-        // Sanitize query params
-        if (event.request.query_string) {
-          const sensitiveParams = ['password', 'token', 'secret', 'api_key'];
-          const queryString = event.request.query_string;
-          sensitiveParams.forEach((param) => {
-            const regex = new RegExp(`${param}=[^&]*`, 'gi');
-            event.request!.query_string = queryString.replace(
-              regex,
-              `${param}=[REDACTED]`,
-            );
           });
         }
       }

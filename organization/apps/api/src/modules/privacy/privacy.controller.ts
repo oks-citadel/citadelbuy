@@ -384,4 +384,57 @@ export class PrivacyController {
   async getAgreedTerms(@Request() req: any) {
     return this.privacyService.getAgreedTerms(req.user.id);
   }
+
+  /**
+   * GDPR Article 30: Right to access consent history
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('consent/history')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get consent history',
+    description:
+      'Retrieve the complete history of consent changes for the authenticated user. Provides an audit trail of all consent modifications as required by GDPR Article 30.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Consent history retrieved successfully',
+    schema: {
+      example: {
+        userId: '123e4567-e89b-12d3-a456-426614174000',
+        totalRecords: 3,
+        history: [
+          {
+            consent: {
+              dataProcessing: true,
+              marketing: false,
+              analytics: true,
+              thirdPartySharing: false,
+            },
+            timestamp: '2024-02-20T10:30:00Z',
+            ipAddress: '192.168.1.1',
+            userAgent: 'Mozilla/5.0...',
+            version: '1.0',
+          },
+          {
+            consent: {
+              dataProcessing: true,
+              marketing: true,
+              analytics: true,
+              thirdPartySharing: false,
+            },
+            timestamp: '2024-01-15T08:00:00Z',
+            ipAddress: '192.168.1.1',
+            userAgent: 'Mozilla/5.0...',
+            version: '1.0',
+          },
+        ],
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getConsentHistory(@Request() req: any) {
+    return this.privacyService.getConsentHistory(req.user.id);
+  }
 }

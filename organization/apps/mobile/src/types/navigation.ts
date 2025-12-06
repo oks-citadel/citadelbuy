@@ -9,11 +9,15 @@ export type RootStackParamList = {
   ProductDetail: { productId: string };
   Cart: undefined;
   Checkout: undefined;
+  Payment: { amount: number; currency: string; orderId?: string; items?: any[] };
   OrderDetail: { orderId: string };
-  WriteReview: { productId: string; orderId?: string };
+  WriteReview: { productId: string; productName?: string; productImage?: string; orderId?: string };
   EditReview: { reviewId: string };
   AIAssistant: undefined;
   ARTryOn: { productId?: string; category?: string };
+  Subscription: undefined;
+  CreditPackages: undefined;
+  Wallet: undefined;
   Search: { query?: string };
   Categories: { categoryId?: string };
 };

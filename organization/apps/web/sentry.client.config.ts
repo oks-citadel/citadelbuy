@@ -11,23 +11,9 @@ if (SENTRY_DSN) {
     // Performance Monitoring
     tracesSampleRate: ENVIRONMENT === 'production' ? 0.1 : 1.0,
 
-    // Session Replay
+    // Session Replay - v10 uses simpler configuration
     replaysSessionSampleRate: 0.1, // 10% of sessions
     replaysOnErrorSampleRate: 1.0, // 100% of sessions with errors
-
-    integrations: [
-      new Sentry.Replay({
-        maskAllText: true,
-        blockAllMedia: true,
-      }),
-      new Sentry.BrowserTracing({
-        tracePropagationTargets: [
-          'localhost',
-          /^\//,
-          /^https:\/\/citadelbuy\.com/,
-        ],
-      }),
-    ],
 
     // Error filtering
     beforeSend(event, hint) {

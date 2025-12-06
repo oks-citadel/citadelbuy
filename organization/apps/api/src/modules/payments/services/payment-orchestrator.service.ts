@@ -58,6 +58,7 @@ export class PaymentOrchestratorService {
 
     // Subscription providers
     this.subscriptionProviders.set(PaymentProviderType.STRIPE, this.stripeProvider);
+    this.subscriptionProviders.set(PaymentProviderType.PAYPAL, this.paypalProvider);
     this.subscriptionProviders.set(PaymentProviderType.PAYSTACK, this.paystackProvider);
 
     // IAP providers

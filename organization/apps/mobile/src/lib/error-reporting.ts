@@ -328,7 +328,7 @@ class ErrorReportingService {
   /**
    * Start a performance transaction
    */
-  startTransaction(name: string, operation: string): Sentry.Transaction | null {
+  startTransaction(name: string, operation: string): any | null {
     if (!this.initialized) {
       return null;
     }
@@ -337,7 +337,7 @@ class ErrorReportingService {
       return Sentry.startTransaction({
         name,
         op: operation,
-      }) as Sentry.Transaction;
+      });
     } catch (err) {
       console.error('[ErrorReporting] Failed to start transaction:', err);
       return null;
@@ -446,7 +446,7 @@ class ErrorReportingService {
    * Native crash handling
    */
   nativeCrash(): void {
-    if (this.initialized) {
+    if (this.initialized && typeof Sentry.nativeCrash === 'function') {
       Sentry.nativeCrash();
     }
   }

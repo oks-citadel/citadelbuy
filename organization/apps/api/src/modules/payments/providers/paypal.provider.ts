@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   IPaymentProvider,
+  ISubscriptionProvider,
   PaymentProviderType,
   PaymentStatus,
   CreatePaymentRequest,
@@ -9,10 +10,13 @@ import {
   RefundRequest,
   RefundResult,
   WebhookValidationResult,
+  SubscriptionPlanConfig,
+  CreateSubscriptionRequest,
+  SubscriptionResult,
 } from '../interfaces';
 
 @Injectable()
-export class PayPalProvider implements IPaymentProvider {
+export class PayPalProvider implements IPaymentProvider, ISubscriptionProvider {
   private readonly logger = new Logger(PayPalProvider.name);
   private accessToken: string | null = null;
   private tokenExpiry: number = 0;
@@ -443,5 +447,442 @@ export class PayPalProvider implements IPaymentProvider {
         preferred_payment_method: 'VENMO',
       },
     });
+  }
+
+  // ==================== Subscription Methods ====================
+
+  /**
+   * Create a subscription plan in PayPal
+   */
+  async createPlan(config: SubscriptionPlanConfig): Promise<{ planId: string; providerPlanId: string }> {
+    if (!this.isConfigured()) {
+      throw new Error('PayPal not configured');
+    }
+
+    try {
+      const token = await this.getAccessToken();
+
+      // Create product first
+      const productResponse = await fetch(`${this.baseUrl}/v1/catalogs/products`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: config.name,
+          description: config.description || config.name,
+          type: 'SERVICE',
+          category: 'SOFTWARE',
+        }),
+      });
+
+      const productData = await productResponse.json();
+
+      if (!productResponse.ok) {
+        this.logger.error(`PayPal create product error: ${JSON.stringify(productData)}`);
+        throw new Error(productData.message || 'Failed to create product');
+      }
+
+      const productId = productData.id;
+
+      // Create billing plan
+      const intervalMap: Record<string, string> = {
+        day: 'DAY',
+        week: 'WEEK',
+        month: 'MONTH',
+        year: 'YEAR',
+      };
+
+      const planPayload = {
+        product_id: productId,
+        name: config.name,
+        description: config.description,
+        billing_cycles: [
+          {
+            frequency: {
+              interval_unit: intervalMap[config.interval] || 'MONTH',
+              interval_count: config.intervalCount || 1,
+            },
+            tenure_type: 'REGULAR',
+            sequence: 1,
+            total_cycles: 0, // Infinite
+            pricing_scheme: {
+              fixed_price: {
+                value: config.amount.toFixed(2),
+                currency_code: config.currency,
+              },
+            },
+          },
+        ],
+        payment_preferences: {
+          auto_bill_outstanding: true,
+          setup_fee_failure_action: 'CONTINUE',
+          payment_failure_threshold: 3,
+        },
+      };
+
+      // Add trial period if specified
+      if (config.trialDays && config.trialDays > 0) {
+        planPayload.billing_cycles.unshift({
+          frequency: {
+            interval_unit: 'DAY',
+            interval_count: config.trialDays,
+          },
+          tenure_type: 'TRIAL',
+          sequence: 1,
+          total_cycles: 1,
+          pricing_scheme: {
+            fixed_price: {
+              value: '0',
+              currency_code: config.currency,
+            },
+          },
+        });
+        // Update regular cycle sequence
+        planPayload.billing_cycles[1].sequence = 2;
+      }
+
+      const planResponse = await fetch(`${this.baseUrl}/v1/billing/plans`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(planPayload),
+      });
+
+      const planData = await planResponse.json();
+
+      if (!planResponse.ok) {
+        this.logger.error(`PayPal create plan error: ${JSON.stringify(planData)}`);
+        throw new Error(planData.message || 'Failed to create plan');
+      }
+
+      return {
+        planId: config.id,
+        providerPlanId: planData.id,
+      };
+    } catch (error: any) {
+      this.logger.error(`PayPal createPlan error: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a subscription for a customer
+   */
+  async createSubscription(request: CreateSubscriptionRequest): Promise<SubscriptionResult> {
+    if (!this.isConfigured()) {
+      return {
+        success: false,
+        subscriptionId: '',
+        providerSubscriptionId: '',
+        status: 'UNPAID',
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(),
+        cancelAtPeriodEnd: false,
+        error: { code: 'NOT_CONFIGURED', message: 'PayPal not configured' },
+      };
+    }
+
+    try {
+      const token = await this.getAccessToken();
+
+      const subscriptionPayload: any = {
+        plan_id: request.planId,
+        start_time: new Date().toISOString(),
+        quantity: '1',
+        custom_id: request.customerId,
+      };
+
+      const response = await fetch(`${this.baseUrl}/v1/billing/subscriptions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(subscriptionPayload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        this.logger.error(`PayPal createSubscription error: ${JSON.stringify(data)}`);
+        return {
+          success: false,
+          subscriptionId: '',
+          providerSubscriptionId: '',
+          status: 'UNPAID',
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(),
+          cancelAtPeriodEnd: false,
+          error: { code: data.name || 'SUBSCRIPTION_ERROR', message: data.message || 'Subscription creation failed' },
+        };
+      }
+
+      // Parse billing info
+      const startTime = new Date(data.start_time || data.create_time);
+      const billingInfo = data.billing_info;
+      const nextBillingTime = billingInfo?.next_billing_time ? new Date(billingInfo.next_billing_time) : new Date(startTime.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+      return {
+        success: true,
+        subscriptionId: data.id,
+        providerSubscriptionId: data.id,
+        status: this.mapPayPalSubscriptionStatus(data.status),
+        currentPeriodStart: startTime,
+        currentPeriodEnd: nextBillingTime,
+        cancelAtPeriodEnd: false,
+      };
+    } catch (error: any) {
+      this.logger.error(`PayPal createSubscription error: ${error.message}`);
+      return {
+        success: false,
+        subscriptionId: '',
+        providerSubscriptionId: '',
+        status: 'UNPAID',
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(),
+        cancelAtPeriodEnd: false,
+        error: { code: 'SUBSCRIPTION_ERROR', message: error.message },
+      };
+    }
+  }
+
+  /**
+   * Cancel a subscription
+   */
+  async cancelSubscription(subscriptionId: string, immediately = false): Promise<SubscriptionResult> {
+    if (!this.isConfigured()) {
+      return {
+        success: false,
+        subscriptionId: '',
+        providerSubscriptionId: '',
+        status: 'CANCELLED',
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(),
+        cancelAtPeriodEnd: false,
+        error: { code: 'NOT_CONFIGURED', message: 'PayPal not configured' },
+      };
+    }
+
+    try {
+      const token = await this.getAccessToken();
+
+      const response = await fetch(`${this.baseUrl}/v1/billing/subscriptions/${subscriptionId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reason: 'Customer requested cancellation',
+        }),
+      });
+
+      if (!response.ok && response.status !== 204) {
+        const error = await response.json();
+        this.logger.error(`PayPal cancelSubscription error: ${JSON.stringify(error)}`);
+        return {
+          success: false,
+          subscriptionId: '',
+          providerSubscriptionId: '',
+          status: 'CANCELLED',
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(),
+          cancelAtPeriodEnd: false,
+          error: { code: error.name || 'CANCEL_ERROR', message: error.message || 'Cancellation failed' },
+        };
+      }
+
+      // Get subscription details after cancellation
+      const detailsResponse = await fetch(`${this.baseUrl}/v1/billing/subscriptions/${subscriptionId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const subscription = await detailsResponse.json();
+
+      return {
+        success: true,
+        subscriptionId: subscription.id,
+        providerSubscriptionId: subscription.id,
+        status: 'CANCELLED',
+        currentPeriodStart: new Date(subscription.start_time || subscription.create_time),
+        currentPeriodEnd: new Date(subscription.billing_info?.next_billing_time || Date.now()),
+        cancelAtPeriodEnd: true,
+      };
+    } catch (error: any) {
+      this.logger.error(`PayPal cancelSubscription error: ${error.message}`);
+      return {
+        success: false,
+        subscriptionId: '',
+        providerSubscriptionId: '',
+        status: 'CANCELLED',
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(),
+        cancelAtPeriodEnd: false,
+        error: { code: 'CANCEL_ERROR', message: error.message },
+      };
+    }
+  }
+
+  /**
+   * Update subscription (change plan, payment method, etc.)
+   */
+  async updateSubscription(
+    subscriptionId: string,
+    updates: Partial<CreateSubscriptionRequest>,
+  ): Promise<SubscriptionResult> {
+    if (!this.isConfigured()) {
+      return {
+        success: false,
+        subscriptionId: '',
+        providerSubscriptionId: '',
+        status: 'UNPAID',
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(),
+        cancelAtPeriodEnd: false,
+        error: { code: 'NOT_CONFIGURED', message: 'PayPal not configured' },
+      };
+    }
+
+    try {
+      const token = await this.getAccessToken();
+
+      // PayPal requires plan revision for plan changes
+      if (updates.planId) {
+        const revisionPayload = {
+          plan_id: updates.planId,
+        };
+
+        const response = await fetch(`${this.baseUrl}/v1/billing/subscriptions/${subscriptionId}/revise`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(revisionPayload),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          this.logger.error(`PayPal updateSubscription error: ${JSON.stringify(data)}`);
+          return {
+            success: false,
+            subscriptionId: '',
+            providerSubscriptionId: '',
+            status: 'UNPAID',
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: new Date(),
+            cancelAtPeriodEnd: false,
+            error: { code: data.name || 'UPDATE_ERROR', message: data.message || 'Update failed' },
+          };
+        }
+      }
+
+      return this.getSubscriptionStatus(subscriptionId);
+    } catch (error: any) {
+      this.logger.error(`PayPal updateSubscription error: ${error.message}`);
+      return {
+        success: false,
+        subscriptionId: '',
+        providerSubscriptionId: '',
+        status: 'UNPAID',
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(),
+        cancelAtPeriodEnd: false,
+        error: { code: 'UPDATE_ERROR', message: error.message },
+      };
+    }
+  }
+
+  /**
+   * Get subscription status
+   */
+  async getSubscriptionStatus(subscriptionId: string): Promise<SubscriptionResult> {
+    if (!this.isConfigured()) {
+      return {
+        success: false,
+        subscriptionId: '',
+        providerSubscriptionId: '',
+        status: 'UNPAID',
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(),
+        cancelAtPeriodEnd: false,
+        error: { code: 'NOT_CONFIGURED', message: 'PayPal not configured' },
+      };
+    }
+
+    try {
+      const token = await this.getAccessToken();
+
+      const response = await fetch(`${this.baseUrl}/v1/billing/subscriptions/${subscriptionId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        this.logger.error(`PayPal getSubscriptionStatus error: ${JSON.stringify(data)}`);
+        return {
+          success: false,
+          subscriptionId: '',
+          providerSubscriptionId: '',
+          status: 'UNPAID',
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(),
+          cancelAtPeriodEnd: false,
+          error: { code: data.name || 'STATUS_ERROR', message: data.message || 'Failed to get status' },
+        };
+      }
+
+      const startTime = new Date(data.start_time || data.create_time);
+      const nextBillingTime = data.billing_info?.next_billing_time
+        ? new Date(data.billing_info.next_billing_time)
+        : new Date(startTime.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+      return {
+        success: true,
+        subscriptionId: data.id,
+        providerSubscriptionId: data.id,
+        status: this.mapPayPalSubscriptionStatus(data.status),
+        currentPeriodStart: startTime,
+        currentPeriodEnd: nextBillingTime,
+        cancelAtPeriodEnd: data.status === 'CANCELLED',
+      };
+    } catch (error: any) {
+      this.logger.error(`PayPal getSubscriptionStatus error: ${error.message}`);
+      return {
+        success: false,
+        subscriptionId: '',
+        providerSubscriptionId: '',
+        status: 'UNPAID',
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(),
+        cancelAtPeriodEnd: false,
+        error: { code: 'STATUS_ERROR', message: error.message },
+      };
+    }
+  }
+
+  // Helper methods
+  private mapPayPalSubscriptionStatus(
+    status: string,
+  ): 'ACTIVE' | 'TRIALING' | 'PAST_DUE' | 'CANCELLED' | 'UNPAID' {
+    const statusMap: Record<string, 'ACTIVE' | 'TRIALING' | 'PAST_DUE' | 'CANCELLED' | 'UNPAID'> = {
+      APPROVAL_PENDING: 'UNPAID',
+      APPROVED: 'ACTIVE',
+      ACTIVE: 'ACTIVE',
+      SUSPENDED: 'PAST_DUE',
+      CANCELLED: 'CANCELLED',
+      EXPIRED: 'CANCELLED',
+    };
+    return statusMap[status] || 'UNPAID';
   }
 }

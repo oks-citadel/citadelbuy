@@ -7,9 +7,9 @@ import {
   SafeAreaView,
   ScrollView,
   Platform,
-  Clipboard,
   Alert,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { errorReporting } from '../lib/error-reporting';
 
@@ -166,9 +166,9 @@ function DefaultErrorFallback({
   const isDevelopment = __DEV__;
   const [showDetails, setShowDetails] = React.useState(false);
 
-  const handleCopyErrorId = () => {
+  const handleCopyErrorId = async () => {
     if (eventId) {
-      Clipboard.setString(eventId);
+      await Clipboard.setStringAsync(eventId);
       Alert.alert('Copied', 'Error ID copied to clipboard');
     }
   };

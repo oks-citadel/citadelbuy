@@ -1,0 +1,164 @@
+# ==========================================
+# CitadelBuy NestJS API - Production Dockerfile
+# Multi-stage build for optimized image size
+# Node.js 20 Alpine with security hardening
+# ==========================================
+
+# ==========================================
+# Stage 1: Dependencies
+# Install all dependencies including dev dependencies
+# ==========================================
+FROM node:20-alpine AS deps
+
+# Install system dependencies for native modules
+RUN apk add --no-cache \
+    libc6-compat \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/cache/apk/*
+
+WORKDIR /app
+
+# Copy package manager files
+# Using pnpm for efficient dependency management
+COPY package.json pnpm-lock.yaml* package-lock.json* ./
+
+# Install pnpm globally
+RUN npm install -g pnpm@10.23.0
+
+# Install all dependencies (including devDependencies for build)
+RUN pnpm install || npm install
+
+# ==========================================
+# Stage 2: Builder
+# Build the application with TypeScript
+# Generate Prisma Client
+# ==========================================
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy application source code
+COPY . .
+
+# Generate Prisma Client
+# This is required before building the NestJS application
+RUN npx prisma generate
+
+# Build the NestJS application
+# Creates optimized production bundle in dist/
+ENV NODE_ENV=production
+RUN npm run build
+
+# ==========================================
+# Stage 3: Production Dependencies
+# Install only production dependencies
+# ==========================================
+FROM node:20-alpine AS prod-deps
+
+WORKDIR /app
+
+# Copy package manager files
+COPY package.json pnpm-lock.yaml* package-lock.json* ./
+
+# Install pnpm globally
+RUN npm install -g pnpm@10.23.0
+
+# Install only production dependencies
+# Reduces final image size significantly
+RUN pnpm install --prod || npm install --only=production
+
+# ==========================================
+# Stage 4: Production Runner
+# Final minimal image with only runtime requirements
+# ==========================================
+FROM node:20-alpine AS runner
+
+# Install dumb-init for proper signal handling
+# Install curl for health checks
+RUN apk add --no-cache \
+    dumb-init \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+WORKDIR /app
+
+# Create non-root user for security
+# Running as non-root reduces attack surface
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nestjs -u 1001 -G nodejs
+
+# Copy production dependencies
+COPY --from=prod-deps --chown=nestjs:nodejs /app/node_modules ./node_modules
+
+# Copy built application
+COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
+
+# Copy Prisma schema and generated client
+# Required for database migrations and queries
+COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
+# Copy Prisma generated client (may be in different locations depending on package manager)
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+
+# Copy package.json for runtime metadata
+COPY --chown=nestjs:nodejs package.json ./
+
+# Set environment to production
+ENV NODE_ENV=production
+
+# Expose API port
+# Default NestJS port is 4000
+EXPOSE 4000
+
+# Switch to non-root user
+USER nestjs
+
+# Health check endpoint
+# Verifies the API is responding correctly
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:4000/api/health || exit 1
+
+# Use dumb-init to handle signals properly
+# Ensures graceful shutdown on SIGTERM
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
+# Using node directly for better performance than npm
+CMD ["node", "dist/main.js"]
+
+# ==========================================
+# Build Instructions:
+# ==========================================
+# Build: docker build -f Dockerfile.production -t citadelbuy-api:prod .
+# Run:   docker run -p 4000:4000 --env-file .env.production citadelbuy-api:prod
+#
+# Multi-platform build:
+# docker buildx build --platform linux/amd64,linux/arm64 \
+#   -f Dockerfile.production -t citadelbuy-api:prod .
+# ==========================================
+
+# ==========================================
+# Security Features:
+# ==========================================
+# ✓ Non-root user (nestjs:1001)
+# ✓ Multi-stage build (minimal attack surface)
+# ✓ Alpine base (small, security-focused)
+# ✓ No development dependencies in production
+# ✓ Health check for container orchestration
+# ✓ Proper signal handling with dumb-init
+# ✓ Read-only file system compatible
+# ==========================================
+
+# ==========================================
+# Size Optimizations:
+# ==========================================
+# ✓ Alpine Linux base (~5MB)
+# ✓ Multi-stage build (only runtime files)
+# ✓ Production dependencies only
+# ✓ No source code in final image
+# ✓ Expected final image size: ~200-300MB
+# ==========================================

@@ -59,70 +59,70 @@ interface FurnitureVisualizationResponse { resultUrl: string; placement: { x: nu
 
 export const recommendationService = {
   async getPersonalized(userId: string, limit: number = 10): Promise<Recommendation> {
-    const response = await apiClient.get<RecommendationApiResponse>(
+    const response = await apiClient.get<Recommendation>(
       `/ai/recommendations/personalized?userId=${userId}&limit=${limit}`
     );
     return response.data;
   },
 
   async getSimilar(productId: string, limit: number = 10): Promise<Product[]> {
-    const response = await apiClient.get<ProductArrayApiResponse>(
+    const response = await apiClient.get<Product[]>(
       `/ai/recommendations/similar/${productId}?limit=${limit}`
     );
     return response.data;
   },
 
   async getFrequentlyBoughtTogether(productId: string): Promise<Product[]> {
-    const response = await apiClient.get<ProductArrayApiResponse>(
+    const response = await apiClient.get<Product[]>(
       `/ai/recommendations/frequently-bought/${productId}`
     );
     return response.data;
   },
 
   async getCrossSell(cartItems: string[]): Promise<Product[]> {
-    const response = await apiClient.post<ProductArrayApiResponse>('/ai/recommendations/cross-sell', {
+    const response = await apiClient.post<Product[]>('/ai/recommendations/cross-sell', {
       productIds: cartItems,
     });
     return response.data;
   },
 
   async getUpsell(productId: string): Promise<Product[]> {
-    const response = await apiClient.get<ProductArrayApiResponse>(
+    const response = await apiClient.get<any>(
       `/ai/recommendations/upsell/${productId}`
     );
     return response.data;
   },
 
   async getCompleteTheLook(productId: string): Promise<Product[]> {
-    const response = await apiClient.get<ProductArrayApiResponse>(
+    const response = await apiClient.get<any>(
       `/ai/recommendations/complete-look/${productId}`
     );
     return response.data;
   },
 
   async getTrending(limit: number = 10): Promise<Recommendation> {
-    const response = await apiClient.get<RecommendationApiResponse>(
+    const response = await apiClient.get<any>(
       `/ai/recommendations/trending?limit=${limit}`
     );
     return response.data;
   },
 
   async getNewArrivals(limit: number = 10): Promise<Recommendation> {
-    const response = await apiClient.get<RecommendationApiResponse>(
+    const response = await apiClient.get<any>(
       `/ai/recommendations/new-arrivals?limit=${limit}`
     );
     return response.data;
   },
 
   async getRecentlyViewed(userId: string, limit: number = 10): Promise<Recommendation> {
-    const response = await apiClient.get<RecommendationApiResponse>(
+    const response = await apiClient.get<any>(
       `/ai/recommendations/recently-viewed?userId=${userId}&limit=${limit}`
     );
     return response.data;
   },
 
   async getTrendingSearches(): Promise<string[]> {
-    const response = await apiClient.get<StringArrayApiResponse>('/ai/recommendations/trending-searches');
+    const response = await apiClient.get<any>('/ai/recommendations/trending-searches');
     return response.data;
   },
 
@@ -131,7 +131,7 @@ export const recommendationService = {
     context: { userId?: string; productId?: string; categoryId?: string },
     limit: number = 10
   ): Promise<Recommendation> {
-    const response = await apiClient.post<RecommendationApiResponse>('/ai/recommendations/by-type', {
+    const response = await apiClient.post<any>('/ai/recommendations/by-type', {
       type,
       context,
       limit,
@@ -175,21 +175,21 @@ export const visualSearchService = {
   },
 
   async searchByUrl(imageUrl: string): Promise<VisualSearchResult> {
-    const response = await apiClient.post<VisualSearchApiResponse>('/ai/visual-search/url', {
+    const response = await apiClient.post<any>('/ai/visual-search/url', {
       imageUrl,
     });
     return response.data;
   },
 
   async searchByCamera(imageData: string): Promise<VisualSearchResult> {
-    const response = await apiClient.post<VisualSearchApiResponse>('/ai/visual-search/camera', {
+    const response = await apiClient.post<any>('/ai/visual-search/camera', {
       imageData,
     });
     return response.data;
   },
 
   async findSimilarStyle(productId: string): Promise<Product[]> {
-    const response = await apiClient.get<ProductArrayApiResponse>(
+    const response = await apiClient.get<any>(
       `/ai/visual-search/similar-style/${productId}`
     );
     return response.data;
@@ -242,7 +242,7 @@ export const smartSearchService = {
     limit?: number;
     sortBy?: string;
   }): Promise<SearchResult> {
-    const response = await apiClient.post<SearchResultApiResponse>('/ai/search', {
+    const response = await apiClient.post<any>('/ai/search', {
       query,
       ...options,
     });
@@ -250,7 +250,7 @@ export const smartSearchService = {
   },
 
   async semanticSearch(query: string, limit: number = 20): Promise<Product[]> {
-    const response = await apiClient.post<ProductArrayApiResponse>('/ai/search/semantic', {
+    const response = await apiClient.post<any>('/ai/search/semantic', {
       query,
       limit,
     });
@@ -258,40 +258,40 @@ export const smartSearchService = {
   },
 
   async getAutocomplete(query: string): Promise<{ suggestions: AISearchSuggestion[] }> {
-    const response = await apiClient.get<AutocompleteApiResponse>(
+    const response = await apiClient.get<any>(
       `/ai/search/autocomplete?q=${encodeURIComponent(query)}`
     );
     return response.data;
   },
 
   async getTrending(): Promise<string[]> {
-    const response = await apiClient.get<StringArrayApiResponse>('/ai/search/trending');
+    const response = await apiClient.get<any>('/ai/search/trending');
     return response.data;
   },
 
   async correctSpelling(query: string): Promise<string> {
-    const response = await apiClient.get<SpellCheckApiResponse>(
+    const response = await apiClient.get<any>(
       `/ai/search/spell-check?q=${encodeURIComponent(query)}`
     );
     return response.data.corrected;
   },
 
   async expandQuery(query: string): Promise<string[]> {
-    const response = await apiClient.get<RecommendationApiResponse>(
+    const response = await apiClient.get<any>(
       `/ai/search/expand?q=${encodeURIComponent(query)}`
     );
     return response.data;
   },
 
   async getSynonyms(term: string): Promise<string[]> {
-    const response = await apiClient.get<RecommendationApiResponse>(
+    const response = await apiClient.get<any>(
       `/ai/search/synonyms?term=${encodeURIComponent(term)}`
     );
     return response.data;
   },
 
   async getRelatedSearches(query: string): Promise<string[]> {
-    const response = await apiClient.get<RecommendationApiResponse>(
+    const response = await apiClient.get<any>(
       `/ai/search/related?q=${encodeURIComponent(query)}`
     );
     return response.data;
@@ -301,7 +301,7 @@ export const smartSearchService = {
     results: Product[],
     userId: string
   ): Promise<Product[]> {
-    const response = await apiClient.post<ProductArrayApiResponse>('/ai/search/personalize', {
+    const response = await apiClient.post<any>('/ai/search/personalize', {
       products: results.map((p) => p.id),
       userId,
     });
@@ -350,7 +350,7 @@ export const voiceSearchService = {
   },
 
   async getVoiceCommands(): Promise<{ command: string; description: string }[]> {
-    const response = await apiClient.get<VoiceCommandsListApiResponse>(
+    const response = await apiClient.get<any>(
       '/ai/voice/commands'
     );
     return response.data;
@@ -393,7 +393,7 @@ export const chatbotService = {
       viewedProducts?: string[];
     }
   ): Promise<ChatMessage> {
-    const response = await apiClient.post<ChatMessageApiResponse>('/ai/chatbot/message', {
+    const response = await apiClient.post<any>('/ai/chatbot/message', {
       message,
       sessionId,
       context,
@@ -402,14 +402,14 @@ export const chatbotService = {
   },
 
   async getConversationHistory(sessionId: string): Promise<ChatMessage[]> {
-    const response = await apiClient.get<ChatMessageArrayApiResponse>(
+    const response = await apiClient.get<any>(
       `/ai/chatbot/history/${sessionId}`
     );
     return response.data;
   },
 
   async startSession(userId?: string): Promise<{ sessionId: string; greeting: ChatMessage }> {
-    const response = await apiClient.post<ChatSessionApiResponse>(
+    const response = await apiClient.post<any>(
       '/ai/chatbot/start',
       { userId }
     );
@@ -433,7 +433,7 @@ export const chatbotService = {
   },
 
   async getProductInfo(productId: string, question: string): Promise<string> {
-    const response = await apiClient.post<ProductQuestionApiResponse>('/ai/chatbot/product-qa', {
+    const response = await apiClient.post<any>('/ai/chatbot/product-qa', {
       productId,
       question,
     });
@@ -445,7 +445,7 @@ export const chatbotService = {
     categoryId?: string;
     page?: string;
   }): Promise<string[]> {
-    const response = await apiClient.post<StringArrayApiResponse>(
+    const response = await apiClient.post<any>(
       '/ai/chatbot/suggested-questions',
       context
     );
@@ -457,7 +457,7 @@ export const chatbotService = {
     confidence: number;
     entities: Array<{ type: string; value: string }>;
   }> {
-    const response = await apiClient.post<IntentAnalysisApiResponse>('/ai/chatbot/analyze-intent', { message });
+    const response = await apiClient.post<any>('/ai/chatbot/analyze-intent', { message });
     return response.data;
   },
 };
@@ -491,7 +491,7 @@ export const virtualTryOnService = {
     productId: string,
     avatarId: string
   ): Promise<VirtualTryOnResult> {
-    const response = await apiClient.post<VirtualTryOnApiResponse>(
+    const response = await apiClient.post<any>(
       '/ai/virtual-tryon/avatar',
       { productId, avatarId }
     );

@@ -648,7 +648,25 @@ export const analyticsApi = {
   },
 };
 
-// Tracking API (Guest and Authenticated)export const trackingApi = {  trackGuestOrder: async (orderNumber: string, email: string) => {    const response = await apiClient.post<any>('/tracking/guest', { orderNumber, email });    return response.data;  },  trackByOrderNumber: async (orderNumber: string) => {    const response = await apiClient.get<any>(`/tracking/order/${orderNumber}`);    return response.data;  },  trackByTrackingNumber: async (trackingNumber: string) => {    const response = await apiClient.get<any>(`/tracking/tracking-number/${trackingNumber}`);    return response.data;  },  getShipmentTracking: async (trackingNumber: string) => {    const response = await apiClient.get<any>(`/tracking/shipment/${trackingNumber}`);    return response.data;  },};
+// Tracking API (Guest and Authenticated)
+export const trackingApi = {
+  trackGuestOrder: async (orderNumber: string, email: string) => {
+    const response = await apiClient.post<any>('/tracking/guest', { orderNumber, email });
+    return response.data;
+  },
+  trackByOrderNumber: async (orderNumber: string) => {
+    const response = await apiClient.get<any>(`/tracking/order/${orderNumber}`);
+    return response.data;
+  },
+  trackByTrackingNumber: async (trackingNumber: string) => {
+    const response = await apiClient.get<any>(`/tracking/tracking-number/${trackingNumber}`);
+    return response.data;
+  },
+  getShipmentTracking: async (trackingNumber: string) => {
+    const response = await apiClient.get<any>(`/tracking/shipment/${trackingNumber}`);
+    return response.data;
+  },
+};
 // Health Check
 export const healthApi = {
   check: async () => {

@@ -143,22 +143,64 @@ export class CheckoutTaxHelper {
   }
 
   /**
-   * Estimate shipping cost (placeholder - implement actual shipping calculation)
+   * Estimate shipping cost based on weight, destination, and quantity
    */
   estimateShipping(
     items: CheckoutItem[],
     address: CheckoutAddress,
   ): number {
-    // Simple flat rate for now - replace with actual shipping calculation
+    // Calculate total weight (assuming each item weighs approximately the same)
     const totalWeight = items.reduce((sum, item) => sum + item.quantity, 0);
 
-    // Domestic shipping
-    if (address.country === 'US') {
-      return 9.99;
+    // Calculate base shipping cost
+    let baseShipping = 0;
+
+    // Domestic shipping (US)
+    if (address.country === 'US' || address.country === 'USA' || address.country === 'United States') {
+      // Base rate for first pound
+      baseShipping = 5.99;
+
+      // Additional cost per pound
+      if (totalWeight > 1) {
+        baseShipping += (totalWeight - 1) * 1.50;
+      }
+
+      // Premium states (AK, HI) have higher shipping costs
+      if (address.state === 'AK' || address.state === 'HI') {
+        baseShipping *= 1.5;
+      }
+
+      // Free shipping threshold
+      const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      if (subtotal >= 50) {
+        return 0; // Free shipping on orders over $50
+      }
+
+      return Math.round(baseShipping * 100) / 100;
     }
 
-    // International shipping
-    return 24.99;
+    // Canada shipping
+    if (address.country === 'CA' || address.country === 'Canada') {
+      baseShipping = 12.99;
+      if (totalWeight > 1) {
+        baseShipping += (totalWeight - 1) * 2.50;
+      }
+      return Math.round(baseShipping * 100) / 100;
+    }
+
+    // International shipping (rest of world)
+    baseShipping = 19.99;
+    if (totalWeight > 1) {
+      baseShipping += (totalWeight - 1) * 3.50;
+    }
+
+    // European countries get slightly better rate
+    const europeanCountries = ['GB', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'CH', 'AT', 'SE', 'NO', 'DK', 'FI', 'IE'];
+    if (europeanCountries.includes(address.country)) {
+      baseShipping *= 0.9;
+    }
+
+    return Math.round(baseShipping * 100) / 100;
   }
 
   /**

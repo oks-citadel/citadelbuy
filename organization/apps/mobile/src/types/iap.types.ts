@@ -24,7 +24,7 @@ export enum PurchaseState {
 // ==================== Purchase Error ====================
 
 export interface PurchaseError {
-  code: string;
+  code: IAPErrorCode | string;
   message: string;
   userCancelled?: boolean;
   networkError?: boolean;

@@ -1,0 +1,27 @@
+# FastAPI and Web Framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+python-multipart==0.0.6
+
+# Machine Learning and Data Science
+numpy==1.26.3
+scikit-learn==1.4.0
+pandas==2.1.4
+
+# Statistics and Time Series
+scipy==1.11.4
+statsmodels==0.14.1
+
+# Database (Optional - for storing predictions/models)
+sqlalchemy==2.0.25
+asyncpg==0.29.0
+
+# Caching
+redis==5.0.1
+hiredis==2.3.2
+
+# Utilities
+python-dotenv==1.0.0
+httpx==0.26.0

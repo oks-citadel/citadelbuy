@@ -28,11 +28,11 @@ import {
 import type {
   PurchaseResult,
   PurchaseError,
-  IAPErrorCode,
   EnrichedProduct,
   SubscriptionStatus,
   IAPLogEntry,
 } from '../types/iap.types';
+import { IAPErrorCode } from '../types/iap.types';
 
 // ==================== Types ====================
 
@@ -41,8 +41,10 @@ export type PaymentProvider = 'STRIPE' | 'PAYPAL' | 'FLUTTERWAVE' | 'PAYSTACK' |
 export interface PaymentResult {
   success: boolean;
   transactionId?: string;
-  provider: PaymentProvider;
-  error?: string;
+  provider?: PaymentProvider;
+  error?: PurchaseError;
+  purchase?: InAppPurchase;
+  cancelled?: boolean;
 }
 
 export interface CheckoutRequest {
@@ -606,13 +608,13 @@ class BillingService {
       return {
         success: false,
         provider: request.provider || 'STRIPE',
-        error: response.error?.message || 'Failed to create payment',
+        error: createPurchaseError('UNKNOWN_ERROR', response.error?.message || 'Failed to create payment'),
       };
     } catch (error: any) {
       return {
         success: false,
         provider: request.provider || 'STRIPE',
-        error: error.message || 'Payment failed',
+        error: createPurchaseError('UNKNOWN_ERROR', error.message || 'Payment failed'),
       };
     }
   }
@@ -651,13 +653,13 @@ class BillingService {
       return {
         success: false,
         provider: 'STRIPE',
-        error: response.error?.message || 'Failed to create subscription',
+        error: createPurchaseError('UNKNOWN_ERROR', response.error?.message || 'Failed to create subscription'),
       };
     } catch (error: any) {
       return {
         success: false,
         provider: 'STRIPE',
-        error: error.message || 'Subscription failed',
+        error: createPurchaseError('UNKNOWN_ERROR', error.message || 'Subscription failed'),
       };
     }
   }
@@ -702,7 +704,7 @@ class BillingService {
       return {
         success: false,
         provider: 'APPLE_IAP',
-        error: error.message || 'Apple IAP failed',
+        error: createPurchaseError('UNKNOWN_ERROR', error.message || 'Apple IAP failed'),
       };
     }
   }
@@ -747,7 +749,7 @@ class BillingService {
       return {
         success: false,
         provider: 'GOOGLE_IAP',
-        error: error.message || 'Google Play Billing failed',
+        error: createPurchaseError('UNKNOWN_ERROR', error.message || 'Google Play Billing failed'),
       };
     }
   }
@@ -857,13 +859,13 @@ class BillingService {
       return {
         success: false,
         provider: 'STRIPE',
-        error: response.error?.message || 'Failed to purchase package',
+        error: createPurchaseError('UNKNOWN_ERROR', response.error?.message || 'Failed to purchase package'),
       };
     } catch (error: any) {
       return {
         success: false,
         provider: 'STRIPE',
-        error: error.message || 'Purchase failed',
+        error: createPurchaseError('UNKNOWN_ERROR', error.message || 'Purchase failed'),
       };
     }
   }

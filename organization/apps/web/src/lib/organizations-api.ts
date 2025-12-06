@@ -187,7 +187,7 @@ export const organizationsApi = {
       total: number;
       limit: number;
       offset: number;
-    }>(\`/api/organizations/\${orgId}/audit\`, { params });
+    }>(`/api/organizations/${orgId}/audit`, { params });
     return response.data;
   },
 
@@ -201,7 +201,7 @@ export const organizationsApi = {
         end: string;
         days: number;
       };
-    }>(\`/api/organizations/\${orgId}/audit/stats\`, {
+    }>(`/api/organizations/${orgId}/audit/stats`, {
       params: { days },
     });
     return response.data;
@@ -221,7 +221,7 @@ export const organizationsApi = {
       ipAddress?: string;
       userAgent?: string;
       createdAt: string;
-    }>>(\`/api/organizations/\${orgId}/audit/recent\`, {
+    }>>(`/api/organizations/${orgId}/audit/recent`, {
       params: { limit },
     });
     return response.data;
@@ -241,7 +241,7 @@ export const organizationsApi = {
       ipAddress?: string;
       userAgent?: string;
       createdAt: string;
-    }>>(\`/api/organizations/\${orgId}/audit/resource/\${resource}/\${resourceId}\`);
+    }>>(`/api/organizations/${orgId}/audit/resource/${resource}/${resourceId}`);
     return response.data;
   },
 
@@ -259,7 +259,7 @@ export const organizationsApi = {
       ipAddress?: string;
       userAgent?: string;
       createdAt: string;
-    }>>(\`/api/organizations/\${orgId}/audit/user/\${userId}\`, {
+    }>>(`/api/organizations/${orgId}/audit/user/${userId}`, {
       params: { limit },
     });
     return response.data;

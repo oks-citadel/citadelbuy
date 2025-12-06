@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 import { SentryExceptionFilter } from './common/filters/sentry-exception.filter';
 import { validateStartupConfiguration } from './common/config/config-validation';
@@ -38,7 +39,7 @@ async function bootstrap() {
   // Security Headers Middleware (PCI DSS compliant)
   // This replaces the previous helmet configuration with more comprehensive security headers
   const securityHeadersMiddleware = new SecurityHeadersMiddleware(configService);
-  app.use((req, res, next) => securityHeadersMiddleware.use(req, res, next));
+  app.use((req: Request, res: Response, next: NextFunction) => securityHeadersMiddleware.use(req, res, next));
 
   // CORS Configuration with Production Hardening
   // SECURITY: In production, CORS_ORIGIN environment variable is REQUIRED
@@ -129,7 +130,7 @@ async function bootstrap() {
   // - Server sets 'csrf-token' cookie (httpOnly: false, so client can read)
   // - Client must send token in 'X-CSRF-Token' header or '_csrf' body field
   // - Token is validated against cookie value
-  app.use((req: any, res: any, next: any) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     const path = req.path;
     const method = req.method;
 

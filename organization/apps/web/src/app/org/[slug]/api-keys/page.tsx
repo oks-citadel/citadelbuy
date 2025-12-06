@@ -40,7 +40,7 @@ export default function ApiKeysPage() {
       const mappedKeys: ApiKey[] = response.data.map((key: any) => ({
         id: key.id,
         name: key.name,
-        key: key.keyPrefix || '••••••••',
+        prefix: key.keyPrefix || '••••••••',
         permissions: key.permissions || [],
         status: key.isActive ? 'active' as const : 'revoked' as const,
         created: new Date(key.createdAt),
@@ -51,6 +51,11 @@ export default function ApiKeysPage() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load API keys';
       toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleCreateKey = async (
     name: string,
     permissions: string[]
@@ -66,7 +71,7 @@ export default function ApiKeysPage() {
       const newKey: ApiKey = {
         id: response.data.id,
         name: response.data.name,
-        key: response.data.keyPrefix || '••••••••',
+        prefix: response.data.keyPrefix || '••••••••',
         permissions: response.data.permissions || [],
         status: 'active' as const,
         created: new Date(response.data.createdAt),
@@ -82,15 +87,6 @@ export default function ApiKeysPage() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create API key';
       toast.error(errorMessage);
-      throw err;
-    }
-  };
-        .toString(36)
-        .substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
-
-      return mockApiKey;
-    } catch (err) {
-      toast.error('Failed to create API key');
       throw err;
     }
   };

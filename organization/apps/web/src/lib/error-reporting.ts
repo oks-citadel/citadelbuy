@@ -250,21 +250,19 @@ class ErrorReportingService {
   }
 
   /**
-   * Start a performance transaction
+   * Start a performance span
    */
-  startTransaction(name: string, operation: string): Sentry.Transaction | null {
+  startSpan(name: string, operation: string): void {
     if (!this.initialized) {
-      return null;
+      return;
     }
 
     try {
-      return Sentry.startTransaction({
-        name,
-        op: operation,
+      Sentry.startSpan({ name, op: operation }, () => {
+        // Span will be finished automatically when callback completes
       });
     } catch (err) {
-      console.error('[ErrorReporting] Failed to start transaction:', err);
-      return null;
+      console.error('[ErrorReporting] Failed to start span:', err);
     }
   }
 
@@ -282,11 +280,11 @@ class ErrorReportingService {
     }
 
     try {
-      Sentry.captureUserFeedback({
-        event_id: eventId,
+      Sentry.captureFeedback({
+        associatedEventId: eventId,
         name,
         email,
-        comments,
+        message: comments,
       });
     } catch (err) {
       console.error('[ErrorReporting] Failed to capture user feedback:', err);

@@ -6,12 +6,18 @@ import {
   UpdateNotificationPreferencesDto,
   SendPushNotificationDto,
 } from './dto';
+import { PushNotificationService } from './push-notification.service';
+import { SmsService } from './sms.service';
 
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private pushNotificationService: PushNotificationService,
+    private smsService: SmsService,
+  ) {}
 
   /**
    * Create a new notification for a user
@@ -166,7 +172,7 @@ export class NotificationsService {
    * Send a push notification to a user
    */
   async sendPushNotification(dto: SendPushNotificationDto) {
-    const { userId, title, body, category, data } = dto;
+    const { userId, title, body, category, data, imageUrl, actionUrl } = dto;
 
     // Get user's push tokens
     const tokens = await this.prisma.pushNotificationToken.findMany({
@@ -184,21 +190,42 @@ export class NotificationsService {
       body,
       category,
       data,
+      imageUrl,
+      actionUrl,
     });
 
-    // In a real implementation, you would send to FCM/APNs here
-    // For now, we'll just mark it as sent
+    // Send push notification using the PushNotificationService
+    const pushResult = await this.pushNotificationService.sendToUser(userId, {
+      title,
+      body,
+      data,
+      imageUrl,
+      actionUrl,
+      priority: (dto as any).priority === NotificationPriority.HIGH ? 'high' : 'normal',
+    });
+
+    // Update notification record based on result
     await this.prisma.mobileNotification.update({
       where: { id: notification.id },
-      data: { isSent: true, sentAt: new Date() },
+      data: {
+        isSent: pushResult.success,
+        sentAt: pushResult.success ? new Date() : null,
+        deliveryStatus: pushResult.success ? 'sent' : 'failed',
+        failureReason: pushResult.errors?.join(', '),
+      },
     });
 
-    this.logger.log(`Push notification sent to user ${userId}: ${title}`);
+    this.logger.log(
+      `Push notification ${pushResult.success ? 'sent' : 'failed'} to user ${userId}: ${title}`,
+    );
 
     return {
-      sent: true,
+      sent: pushResult.success,
       notificationId: notification.id,
       tokenCount: tokens.length,
+      sentCount: pushResult.sentCount,
+      failedCount: pushResult.failedCount,
+      errors: pushResult.errors,
     };
   }
 
@@ -292,6 +319,96 @@ export class NotificationsService {
     return this.prisma.pushNotificationToken.updateMany({
       where: { userId, deviceId },
       data: { isActive: false },
+    });
+  }
+
+  /**
+   * Send SMS notification to a user
+   */
+  async sendSmsNotification(
+    userId: string,
+    message: string,
+    smsType: string = 'general',
+  ) {
+    return this.smsService.sendSmsToUser(userId, message, smsType);
+  }
+
+  /**
+   * Send order update SMS
+   */
+  async sendOrderUpdateSms(
+    userId: string,
+    orderNumber: string,
+    status: string,
+    trackingNumber?: string,
+  ) {
+    // Note: phoneNumber field is not in the User model yet
+    // This is a placeholder for when the field is added
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true },
+    });
+
+    if (!user) {
+      return { success: false, error: 'User not found' };
+    }
+
+    // TODO: Add phoneNumber to User model and use it here
+    this.logger.warn(`SMS not sent - phoneNumber field not yet available for user ${userId}`);
+    return { success: false, error: 'Phone number not available in user profile' };
+  }
+
+  /**
+   * Send delivery notification SMS
+   */
+  async sendDeliveryNotificationSms(
+    userId: string,
+    orderNumber: string,
+    estimatedDelivery?: string,
+  ) {
+    // Note: phoneNumber field is not in the User model yet
+    // This is a placeholder for when the field is added
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true },
+    });
+
+    if (!user) {
+      return { success: false, error: 'User not found' };
+    }
+
+    // TODO: Add phoneNumber to User model and use it here
+    this.logger.warn(`SMS not sent - phoneNumber field not yet available for user ${userId}`);
+    return { success: false, error: 'Phone number not available in user profile' };
+  }
+
+  /**
+   * Subscribe user to push notification topic
+   */
+  async subscribeToTopic(userId: string, topic: string) {
+    return this.pushNotificationService.subscribeToTopic(userId, topic);
+  }
+
+  /**
+   * Unsubscribe user from push notification topic
+   */
+  async unsubscribeFromTopic(userId: string, topic: string) {
+    return this.pushNotificationService.unsubscribeFromTopic(userId, topic);
+  }
+
+  /**
+   * Send push notification to a topic
+   */
+  async sendPushToTopic(
+    topic: string,
+    title: string,
+    body: string,
+    data?: Record<string, any>,
+  ) {
+    return this.pushNotificationService.sendToTopic(topic, {
+      title,
+      body,
+      data,
     });
   }
 }

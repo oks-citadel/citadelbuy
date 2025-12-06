@@ -339,7 +339,7 @@ export class AlertService {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `*Level:* ${notification.level.toUpperCase()} | *Source:* ${notification.source} | *Time:* ${notification.timestamp.toISOString()}`,
+          text: `*Level:* ${notification.level.toUpperCase()} | *Source:* ${notification.source || 'unknown'} | *Time:* ${notification.timestamp ? notification.timestamp.toISOString() : new Date().toISOString()}`,
         },
       });
 
@@ -378,8 +378,8 @@ export class AlertService {
         payload: {
           summary: `${notification.title}: ${notification.message}`,
           severity,
-          source: notification.source,
-          timestamp: notification.timestamp.toISOString(),
+          source: notification.source || 'citadelbuy-api',
+          timestamp: notification.timestamp ? notification.timestamp.toISOString() : new Date().toISOString(),
           custom_details: notification.details,
         },
       };
@@ -496,7 +496,7 @@ export class AlertService {
 
           <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #ddd; color: #666; font-size: 12px;">
             <p style="margin: 5px 0;"><strong>Source:</strong> ${notification.source}</p>
-            <p style="margin: 5px 0;"><strong>Timestamp:</strong> ${notification.timestamp.toLocaleString()}</p>
+            <p style="margin: 5px 0;"><strong>Timestamp:</strong> ${notification.timestamp ? notification.timestamp.toLocaleString() : new Date().toLocaleString()}</p>
             <p style="margin: 5px 0;"><strong>Level:</strong> ${notification.level.toUpperCase()}</p>
           </div>
         </div>
@@ -533,7 +533,7 @@ Message: ${notification.message}
 
     text += `
 Source: ${notification.source}
-Timestamp: ${notification.timestamp.toISOString()}
+Timestamp: ${notification.timestamp ? notification.timestamp.toISOString() : new Date().toISOString()}
 
 ---
 This is an automated alert from CitadelBuy
