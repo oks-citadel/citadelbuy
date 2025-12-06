@@ -276,3 +276,55 @@ npm run docker:logs
 ## License
 
 This project is proprietary. See [LICENSE](./documentation/LICENSE) for details.
+
+---
+
+## Production Documentation
+
+### Operations Guides
+
+**Production Deployment**
+- [Production Deployment Guide](./docs/PRODUCTION_DEPLOYMENT_GUIDE.md) - Complete deployment procedures for Azure
+- [Deployment Runbook](./docs/DEPLOYMENT_RUNBOOK.md) - Step-by-step deployment checklist
+- [Disaster Recovery Plan](./docs/DISASTER_RECOVERY.md) - Backup and recovery procedures (RPO: 15min, RTO: 1hr)
+- [Database Backup Strategy](./docs/DATABASE_BACKUP_STRATEGY.md) - Automated backup procedures
+
+**Monitoring & Operations**
+- [Monitoring and Alerting](./docs/MONITORING_AND_ALERTING.md) - Prometheus, Grafana, alert configuration
+- [Incident Response Guide](./docs/INCIDENT_RESPONSE.md) - Emergency response procedures
+- [Scaling Guide](./docs/SCALING_GUIDE.md) - Horizontal and vertical scaling procedures
+- [Database Maintenance](./docs/DATABASE_MAINTENANCE.md) - Routine maintenance procedures
+
+**Security & Compliance**
+- [Security Setup](./docs/SECURITY_SETUP.md) - Production security hardening
+- [PCI DSS Compliance](./docs/PCI_DSS_COMPLIANCE.md) - Payment card industry compliance
+- [Privacy Compliance](./docs/PRIVACY_COMPLIANCE.md) - GDPR, CCPA compliance
+- [Payment Security](./docs/PAYMENT_SECURITY.md) - Payment processing security
+- [Security Audit Checklist](./docs/SECURITY_AUDIT_CHECKLIST.md) - Pre-deployment security audit
+
+### Production Readiness Checklist
+
+Before deploying to production:
+
+- [ ] All tests passing (400+ unit, integration, and E2E tests)
+- [ ] Security audit completed
+- [ ] Database migrations tested in staging
+- [ ] Backup and recovery procedures tested
+- [ ] Monitoring and alerting configured
+- [ ] SSL certificates installed and configured
+- [ ] Environment variables secured in Azure Key Vault
+- [ ] Payment providers (Stripe, PayPal) configured and tested
+- [ ] CDN configured for static assets
+- [ ] Auto-scaling policies configured (HPA + Cluster Autoscaler)
+- [ ] Disaster recovery plan reviewed and tested
+- [ ] On-call rotation established in PagerDuty
+- [ ] Documentation reviewed and updated
+
+### Support & Contacts
+
+- **Technical Documentation**: [docs/](./docs/)
+- **API Documentation**: https://api.citadelbuy.com/docs (Swagger/OpenAPI)
+- **Status Page**: https://status.citadelbuy.com
+- **Support Email**: support@citadelbuy.com
+- **Emergency Hotline**: See [Emergency Contacts](./docs/PRODUCTION_DEPLOYMENT_GUIDE.md#emergency-contacts)
+

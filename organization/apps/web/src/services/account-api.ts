@@ -1,4 +1,36 @@
-import api from './api';
+import { apiClient } from '@/lib/api-client';
+
+// Helper wrapper to match the old api interface
+const api = {
+  get: async <T>(url: string, config?: any) => {
+    const response = await apiClient.get<T>(url, config);
+    return response.data;
+  },
+  post: async <T>(url: string, data?: any, config?: any) => {
+    const response = await apiClient.post<T>(url, data, config);
+    return response.data;
+  },
+  put: async <T>(url: string, data?: any, config?: any) => {
+    const response = await apiClient.put<T>(url, data, config);
+    return response.data;
+  },
+  patch: async <T>(url: string, data?: any, config?: any) => {
+    const response = await apiClient.patch<T>(url, data, config);
+    return response.data;
+  },
+  delete: async (url: string, config?: any) => {
+    const response = await apiClient.delete(url, config);
+    return response.data;
+  },
+  upload: async (url: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post(url, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+};
 import type {
   WishlistItem,
   WishlistCollection,

@@ -821,4 +821,127 @@ export class EmailService {
       userId,
     );
   }
+
+  // ==================== KYC Notification Methods ====================
+
+  /**
+   * Send KYC verification approved email
+   */
+  async sendKycApproved(data: {
+    email: string;
+    organizationName: string;
+    applicationId: string;
+    verificationScore?: number;
+    approvedDate: string;
+    idVerified?: boolean;
+    addressVerified?: boolean;
+    businessVerified?: boolean;
+  }): Promise<void> {
+    try {
+      const frontendUrl = this.configService.get('FRONTEND_URL') || 'https://citadelbuy.com';
+      const supportEmail = this.configService.get('SUPPORT_EMAIL') || 'support@citadelbuy.com';
+
+      await this.sendEmail({
+        to: data.email,
+        subject: `KYC Verification Approved - ${data.organizationName}`,
+        template: 'kyc-approved',
+        context: {
+          organizationName: data.organizationName,
+          applicationId: data.applicationId,
+          verificationScore: data.verificationScore || 'N/A',
+          approvedDate: data.approvedDate,
+          idVerified: data.idVerified,
+          addressVerified: data.addressVerified,
+          businessVerified: data.businessVerified,
+          verifiedComponents: data.idVerified || data.addressVerified || data.businessVerified,
+          dashboardUrl: `${frontendUrl}/org/dashboard`,
+          supportEmail,
+          currentYear: new Date().getFullYear(),
+        },
+      });
+
+      this.logger.log(`KYC approved email sent to ${data.email} for ${data.organizationName}`);
+    } catch (error) {
+      this.logger.error(`Failed to send KYC approved email to ${data.email}`, error);
+      // Don't throw error - email failures shouldn't break the KYC process
+    }
+  }
+
+  /**
+   * Send KYC verification rejected email
+   */
+  async sendKycRejected(data: {
+    email: string;
+    organizationName: string;
+    applicationId: string;
+    submittedDate: string;
+    reviewedDate: string;
+    rejectionReasons?: string[];
+  }): Promise<void> {
+    try {
+      const frontendUrl = this.configService.get('FRONTEND_URL') || 'https://citadelbuy.com';
+      const supportEmail = this.configService.get('SUPPORT_EMAIL') || 'support@citadelbuy.com';
+
+      await this.sendEmail({
+        to: data.email,
+        subject: `KYC Verification Update - ${data.organizationName}`,
+        template: 'kyc-rejected',
+        context: {
+          organizationName: data.organizationName,
+          applicationId: data.applicationId,
+          submittedDate: data.submittedDate,
+          reviewedDate: data.reviewedDate,
+          rejectionReasons: data.rejectionReasons || [
+            'Document verification did not meet requirements',
+            'Please ensure all documents are clear, valid, and match your organization information',
+          ],
+          resubmitUrl: `${frontendUrl}/org/kyc`,
+          supportUrl: `${frontendUrl}/support`,
+          supportEmail,
+          currentYear: new Date().getFullYear(),
+        },
+      });
+
+      this.logger.log(`KYC rejected email sent to ${data.email} for ${data.organizationName}`);
+    } catch (error) {
+      this.logger.error(`Failed to send KYC rejected email to ${data.email}`, error);
+      // Don't throw error - email failures shouldn't break the KYC process
+    }
+  }
+
+  /**
+   * Send KYC verification pending review email
+   */
+  async sendKycPendingReview(data: {
+    email: string;
+    organizationName: string;
+    applicationId: string;
+    submittedDate: string;
+    estimatedReviewTime?: string;
+  }): Promise<void> {
+    try {
+      const frontendUrl = this.configService.get('FRONTEND_URL') || 'https://citadelbuy.com';
+      const supportEmail = this.configService.get('SUPPORT_EMAIL') || 'support@citadelbuy.com';
+
+      await this.sendEmail({
+        to: data.email,
+        subject: `KYC Verification Under Review - ${data.organizationName}`,
+        template: 'kyc-pending-review',
+        context: {
+          organizationName: data.organizationName,
+          applicationId: data.applicationId,
+          submittedDate: data.submittedDate,
+          estimatedReviewTime: data.estimatedReviewTime || '1-3 business days',
+          statusUrl: `${frontendUrl}/org/kyc/status`,
+          supportEmail,
+          currentYear: new Date().getFullYear(),
+        },
+      });
+
+      this.logger.log(`KYC pending review email sent to ${data.email} for ${data.organizationName}`);
+    } catch (error) {
+      this.logger.error(`Failed to send KYC pending review email to ${data.email}`, error);
+      // Don't throw error - email failures shouldn't break the KYC process
+    }
+  }
 }

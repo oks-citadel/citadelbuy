@@ -39,6 +39,8 @@ interface SearchState {
   startVoiceSearch: () => Promise<void>;
   stopVoiceSearch: () => void;
   addToRecentSearches: (query: string) => void;
+  addRecentSearch: (query: string) => void;
+  removeRecentSearch: (query: string) => void;
   clearRecentSearches: () => void;
   clearError: () => void;
   reset: () => void;
@@ -171,9 +173,9 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     }
 
     try {
-      const suggestions = await smartSearchService.getAutocomplete(query);
-      set({ suggestions });
-      return suggestions;
+      const result = await smartSearchService.getAutocomplete(query);
+      set({ suggestions: result.suggestions });
+      return result.suggestions;
     } catch {
       return [];
     }
@@ -266,6 +268,22 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     );
     const updated = [query, ...filtered].slice(0, MAX_RECENT_SEARCHES);
 
+    set({ recentSearches: updated });
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('recentSearches', JSON.stringify(updated));
+    }
+  },
+
+  // Alias for addToRecentSearches
+  addRecentSearch: (query: string) => {
+    get().addToRecentSearches(query);
+  },
+
+  removeRecentSearch: (query: string) => {
+    const { recentSearches } = get();
+    const updated = recentSearches.filter(
+      (s) => s.toLowerCase() !== query.toLowerCase()
+    );
     set({ recentSearches: updated });
     if (typeof window !== 'undefined') {
       localStorage.setItem('recentSearches', JSON.stringify(updated));

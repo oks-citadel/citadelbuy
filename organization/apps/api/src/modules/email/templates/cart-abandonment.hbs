@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>You left items in your cart</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: #f4f4f4;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 600;
+    }
+    .content {
+      padding: 40px 30px;
+    }
+    .greeting {
+      font-size: 18px;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .message {
+      font-size: 16px;
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+    .cart-items {
+      margin: 30px 0;
+      border-top: 2px solid #f0f0f0;
+      border-bottom: 2px solid #f0f0f0;
+      padding: 20px 0;
+    }
+    .cart-item {
+      display: flex;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .cart-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    .item-image {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-right: 20px;
+    }
+    .item-details {
+      flex: 1;
+    }
+    .item-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    .item-variant {
+      font-size: 14px;
+      color: #777;
+      margin-bottom: 5px;
+    }
+    .item-price {
+      font-size: 18px;
+      font-weight: 700;
+      color: #667eea;
+    }
+    .cart-total {
+      text-align: right;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 2px solid #333;
+    }
+    .total-label {
+      font-size: 18px;
+      color: #333;
+      font-weight: 600;
+    }
+    .total-amount {
+      font-size: 24px;
+      font-weight: 700;
+      color: #667eea;
+      margin-top: 5px;
+    }
+    .cta-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-decoration: none;
+      padding: 16px 40px;
+      border-radius: 30px;
+      font-size: 18px;
+      font-weight: 600;
+      text-align: center;
+      margin: 20px 0;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    .cta-button:hover {
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+    .incentive {
+      background-color: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .incentive-text {
+      color: #856404;
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+    }
+    .features {
+      margin: 30px 0;
+      padding: 20px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+    }
+    .feature {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .feature-icon {
+      font-size: 24px;
+      margin-right: 15px;
+    }
+    .feature-text {
+      font-size: 14px;
+      color: #555;
+    }
+    .footer {
+      background-color: #f8f9fa;
+      padding: 30px;
+      text-align: center;
+      font-size: 14px;
+      color: #777;
+    }
+    .footer a {
+      color: #667eea;
+      text-decoration: none;
+    }
+    @media only screen and (max-width: 600px) {
+      .cart-item {
+        flex-direction: column;
+      }
+      .item-image {
+        margin-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <h1>🛒 Don't Forget Your Cart!</h1>
+    </div>
+
+    <div class="content">
+      <div class="greeting">
+        Hi {{customerName}},
+      </div>
+
+      <div class="message">
+        We noticed you left some great items in your cart. Don't worry, we've saved them for you!
+      </div>
+
+      {{#if hasDiscount}}
+      <div class="incentive">
+        <p class="incentive-text">
+          ⚡ Complete your purchase in the next {{expiryHours}} hours and get {{discountPercent}}% off!
+        </p>
+      </div>
+      {{/if}}
+
+      <div class="cart-items">
+        {{#each items}}
+        <div class="cart-item">
+          {{#if image}}
+          <img src="{{image}}" alt="{{name}}" class="item-image">
+          {{/if}}
+          <div class="item-details">
+            <div class="item-name">{{name}}</div>
+            {{#if variant}}
+            <div class="item-variant">{{variant}}</div>
+            {{/if}}
+            <div class="item-price">{{currency}}{{price}}</div>
+          </div>
+        </div>
+        {{/each}}
+
+        <div class="cart-total">
+          <div class="total-label">Cart Total:</div>
+          <div class="total-amount">{{currency}}{{total}}</div>
+        </div>
+      </div>
+
+      <center>
+        <a href="{{recoveryLink}}" class="cta-button">Complete Your Purchase</a>
+      </center>
+
+      <div class="features">
+        <div class="feature">
+          <span class="feature-icon">🚚</span>
+          <span class="feature-text">Free shipping on orders over $50</span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">🔒</span>
+          <span class="feature-text">Secure checkout with SSL encryption</span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">↩️</span>
+          <span class="feature-text">Easy 30-day returns</span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">💳</span>
+          <span class="feature-text">Multiple payment options available</span>
+        </div>
+      </div>
+
+      <div class="message">
+        Need help? Our customer support team is here for you 24/7.
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>
+        <strong>CitadelBuy</strong><br>
+        Your trusted online shopping destination
+      </p>
+      <p>
+        <a href="{{helpUrl}}">Help Center</a> |
+        <a href="{{unsubscribeUrl}}">Unsubscribe</a> |
+        <a href="{{privacyUrl}}">Privacy Policy</a>
+      </p>
+      <p style="font-size: 12px; color: #999; margin-top: 20px;">
+        This email was sent to {{email}} because you started a purchase on CitadelBuy.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

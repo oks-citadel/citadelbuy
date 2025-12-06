@@ -352,7 +352,7 @@ export interface Review {
 
 export interface Recommendation {
   productId: string;
-  score: float;
+  score: number;
   reason: string;
   category: string;
 }

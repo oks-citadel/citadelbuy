@@ -124,6 +124,62 @@ export class CalculateRateDto {
   insurance?: number;
 }
 
+// ==================== Customs Information ====================
+
+export class CustomsItemDto {
+  @IsString()
+  description: string;
+
+  @IsNumber()
+  @Min(0)
+  quantity: number;
+
+  @IsNumber()
+  @Min(0)
+  value: number;
+
+  @IsNumber()
+  @Min(0)
+  weight: number;
+
+  @IsOptional()
+  @IsString()
+  hsCode?: string; // Harmonized System Code
+
+  @IsString()
+  countryOfOrigin: string;
+}
+
+export class CustomsDeclarationDto {
+  @IsString()
+  contentType: string; // MERCHANDISE, GIFT, DOCUMENTS, SAMPLE, RETURN
+
+  @IsOptional()
+  @IsString()
+  contentDescription?: string;
+
+  @IsOptional()
+  @IsString()
+  incoterm?: string; // DAP, DDP, etc.
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CustomsItemDto)
+  items: CustomsItemDto[];
+
+  @IsOptional()
+  @IsString()
+  invoiceNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  exportReason?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isCommercial?: boolean;
+}
+
 // ==================== Label Generation ====================
 
 export class CreateShipmentDto {
@@ -167,6 +223,11 @@ export class CreateShipmentDto {
   @IsOptional()
   @IsNumber()
   customsValue?: number;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CustomsDeclarationDto)
+  customsDeclaration?: CustomsDeclarationDto;
 
   @IsOptional()
   @IsString()
@@ -446,6 +507,19 @@ export class UpdateShippingRuleDto {
   @IsOptional()
   @IsNumber()
   priority?: number;
+}
+
+// ==================== Rate Comparison ====================
+
+export class CompareRatesDto {
+  @ValidateNested()
+  @Type(() => CalculateRateDto)
+  rateRequest: CalculateRateDto;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  cartTotal?: number;
 }
 
 // ==================== Delivery Confirmation ====================

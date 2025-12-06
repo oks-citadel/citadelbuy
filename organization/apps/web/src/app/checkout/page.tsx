@@ -27,6 +27,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { fraudDetectionService, pricingService } from '@/services/ai';
 import { formatCurrency, cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { checkoutApi, addressesApi } from '@/lib/api-client';
 
 type CheckoutStep = 'shipping' | 'payment' | 'review';
 
@@ -126,6 +127,9 @@ export default function CheckoutPage() {
 
   const [giftWrap, setGiftWrap] = React.useState(false);
   const [giftMessage, setGiftMessage] = React.useState('');
+  const [taxRate, setTaxRate] = React.useState(0.08); // Default 8%
+  const [loadingShippingRates, setLoadingShippingRates] = React.useState(false);
+  const [dynamicShippingOptions, setDynamicShippingOptions] = React.useState<ShippingOption[]>(shippingOptions);
 
   // Redirect if cart is empty
   React.useEffect(() => {
@@ -140,6 +144,66 @@ export default function CheckoutPage() {
       router.push('/auth/login?redirect=/checkout');
     }
   }, [isAuthenticated, router]);
+
+  // Fetch dynamic shipping rates and tax when address changes
+  React.useEffect(() => {
+    const fetchShippingAndTax = async () => {
+      if (shippingAddress.zipCode && shippingAddress.city && shippingAddress.state) {
+        setLoadingShippingRates(true);
+        try {
+          // Fetch dynamic shipping rates from API
+          const rates = await checkoutApi.getShippingRates({
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+            zipCode: shippingAddress.zipCode,
+            country: shippingAddress.country,
+          });
+
+          if (rates && rates.length > 0) {
+            // Map API rates to our shipping options format
+            const mappedRates: ShippingOption[] = rates.map((rate: any) => ({
+              id: rate.id || rate.serviceCode,
+              name: rate.name || rate.serviceName,
+              description: rate.description || `Delivery via ${rate.carrier}`,
+              price: rate.price || rate.amount,
+              estimatedDays: rate.estimatedDays || rate.deliveryDays || '3-5 business days',
+              icon: rate.isExpress ? <Zap className="h-5 w-5" /> : <Truck className="h-5 w-5" />,
+              recommended: rate.recommended || false,
+            }));
+            setDynamicShippingOptions(mappedRates);
+          }
+
+          // Calculate tax rate based on state (US tax rates)
+          const stateTaxRates: Record<string, number> = {
+            'CA': 0.0725, 'NY': 0.08, 'TX': 0.0625, 'FL': 0.06, 'WA': 0.065,
+            'PA': 0.06, 'IL': 0.0625, 'OH': 0.0575, 'GA': 0.04, 'NC': 0.0475,
+            'MI': 0.06, 'NJ': 0.06625, 'VA': 0.053, 'AZ': 0.056, 'MA': 0.0625,
+            'TN': 0.07, 'IN': 0.07, 'MO': 0.04225, 'MD': 0.06, 'WI': 0.05,
+            'CO': 0.029, 'MN': 0.06875, 'SC': 0.06, 'AL': 0.04, 'LA': 0.0445,
+            'KY': 0.06, 'OR': 0, 'OK': 0.045, 'CT': 0.0635, 'UT': 0.0485,
+            'IA': 0.06, 'NV': 0.0685, 'AR': 0.065, 'MS': 0.07, 'KS': 0.065,
+            'NM': 0.05125, 'NE': 0.055, 'WV': 0.06, 'ID': 0.06, 'HI': 0.04,
+            'NH': 0, 'ME': 0.055, 'MT': 0, 'RI': 0.07, 'DE': 0,
+            'SD': 0.045, 'ND': 0.05, 'AK': 0, 'VT': 0.06, 'DC': 0.06,
+            'WY': 0.04,
+          };
+          const stateCode = shippingAddress.state.toUpperCase();
+          setTaxRate(stateTaxRates[stateCode] || 0.08);
+        } catch (error: any) {
+          const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch shipping rates';
+          console.error('Failed to fetch shipping rates:', error);
+          toast.error(errorMessage, {
+            description: 'Using default shipping options',
+          });
+          // Keep default shipping options on error
+        } finally {
+          setLoadingShippingRates(false);
+        }
+      }
+    };
+
+    fetchShippingAndTax();
+  }, [shippingAddress.zipCode, shippingAddress.city, shippingAddress.state, shippingAddress.country]);
 
   // Run fraud detection when payment info changes
   React.useEffect(() => {
@@ -164,8 +228,12 @@ export default function CheckoutPage() {
             riskLevel: result.decision === 'DECLINE' ? 'high' : result.decision === 'REVIEW' ? 'medium' : 'low',
             recommendation: result.recommendations[0] || 'Transaction looks safe.',
           });
-        } catch (error) {
+        } catch (error: any) {
+          const errorMessage = error?.response?.data?.message || error?.message || 'Fraud check temporarily unavailable';
           console.error('Fraud check failed:', error);
+          toast.warning(errorMessage, {
+            description: 'Your transaction will proceed with additional verification',
+          });
         }
       }
     };
@@ -173,11 +241,17 @@ export default function CheckoutPage() {
   }, [paymentMethod.cardNumber, user?.id]);
 
   const getShippingCost = () => {
-    const option = shippingOptions.find((o) => o.id === selectedShipping);
+    const option = dynamicShippingOptions.find((o) => o.id === selectedShipping);
     if (!option) return 0;
     // Free shipping for orders over $50
     if ((cart?.subtotal || 0) >= 50) return 0;
     return option.price;
+  };
+
+  const calculateTax = () => {
+    const subtotal = cart?.subtotal || 0;
+    const discount = cart?.discount || 0;
+    return (subtotal - discount) * taxRate;
   };
 
   const calculateTotal = () => {
@@ -185,7 +259,7 @@ export default function CheckoutPage() {
     const discount = cart?.discount || 0;
     const shipping = getShippingCost();
     const giftWrapCost = giftWrap ? 4.99 : 0;
-    const tax = (subtotal - discount) * 0.08; // 8% tax
+    const tax = calculateTax();
     return subtotal - discount + shipping + giftWrapCost + tax;
   };
 
@@ -203,15 +277,125 @@ export default function CheckoutPage() {
     setIsProcessing(true);
 
     try {
-      // Simulate order processing
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Check for high risk fraud detection
+      if (fraudCheckResult?.riskLevel === 'high') {
+        toast.error('Transaction declined due to security concerns. Please contact support.');
+        setIsProcessing(false);
+        return;
+      }
 
-      // Clear cart and redirect to success
-      await clearCart();
-      router.push('/checkout/success?orderId=' + Date.now());
-      toast.success('Order placed successfully!');
-    } catch (error) {
-      toast.error('Failed to place order. Please try again.');
+      // Step 1: Create or get shipping address
+      const addressData = {
+        firstName: shippingAddress.firstName,
+        lastName: shippingAddress.lastName,
+        email: shippingAddress.email,
+        phone: shippingAddress.phone,
+        street: shippingAddress.address1,
+        street2: shippingAddress.address2,
+        city: shippingAddress.city,
+        state: shippingAddress.state,
+        zipCode: shippingAddress.zipCode,
+        country: shippingAddress.country,
+      };
+
+      // Save shipping address
+      let savedAddress;
+      try {
+        savedAddress = await addressesApi.create(addressData);
+      } catch (addressError) {
+        // Address might already exist, continue with checkout
+        // Using existing address data
+      }
+
+      // Step 2: Create checkout session
+      const checkoutItems = cart!.items.map((item) => ({
+        productId: item.product.id,
+        quantity: item.quantity,
+        variantId: item.variant?.id,
+      }));
+
+      const sessionData = await checkoutApi.createSession({
+        items: checkoutItems,
+        shippingAddress: addressData,
+        billingAddress: addressData,
+        shippingMethod: selectedShipping,
+      });
+
+      // Step 3: Process payment based on payment method
+      let paymentResult;
+
+      if (paymentMethod.type === 'card') {
+        // For card payments, we send the card details to be processed
+        // In production, this should use Stripe Elements for PCI compliance
+        paymentResult = await checkoutApi.processPayment(sessionData.sessionId, {
+          type: 'card',
+          cardNumber: paymentMethod.cardNumber,
+          cardExpiry: paymentMethod.cardExpiry,
+          cardCvc: paymentMethod.cardCvc,
+          cardName: paymentMethod.cardName,
+          amount: calculateTotal(),
+          currency: 'USD',
+        });
+      } else if (paymentMethod.type === 'paypal') {
+        // For PayPal, initiate PayPal checkout
+        paymentResult = await checkoutApi.processPayment(sessionData.sessionId, {
+          type: 'paypal',
+          amount: calculateTotal(),
+          currency: 'USD',
+          returnUrl: `${window.location.origin}/checkout/success`,
+          cancelUrl: `${window.location.origin}/checkout`,
+        });
+
+        // If PayPal returns a redirect URL, redirect the user
+        if (paymentResult.redirectUrl) {
+          window.location.href = paymentResult.redirectUrl;
+          return;
+        }
+      } else if (paymentMethod.type === 'applepay' || paymentMethod.type === 'googlepay') {
+        // For Apple Pay / Google Pay, use the native payment request
+        paymentResult = await checkoutApi.processPayment(sessionData.sessionId, {
+          type: paymentMethod.type,
+          amount: calculateTotal(),
+          currency: 'USD',
+        });
+      } else if (paymentMethod.type === 'klarna') {
+        // For Klarna BNPL
+        paymentResult = await checkoutApi.processPayment(sessionData.sessionId, {
+          type: 'klarna',
+          amount: calculateTotal(),
+          currency: 'USD',
+          returnUrl: `${window.location.origin}/checkout/success`,
+          cancelUrl: `${window.location.origin}/checkout`,
+        });
+
+        if (paymentResult.redirectUrl) {
+          window.location.href = paymentResult.redirectUrl;
+          return;
+        }
+      }
+
+      // Step 4: Handle successful payment
+      if (paymentResult?.orderId) {
+        // Clear cart
+        await clearCart();
+
+        // Redirect to success page with order ID
+        router.push(`/checkout/success?orderId=${paymentResult.orderId}`);
+        toast.success('Order placed successfully!');
+      } else {
+        throw new Error('Payment processing failed - no order ID returned');
+      }
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+
+      // Display user-friendly error message
+      const errorMessage = error?.message || 'Failed to place order. Please try again.';
+      toast.error(errorMessage);
+
+      // If payment was declined, suggest trying a different payment method
+      if (errorMessage.includes('declined') || errorMessage.includes('insufficient')) {
+        toast.error('Please try a different payment method.');
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -368,9 +552,16 @@ export default function CheckoutPage() {
 
                         {/* Shipping Options */}
                         <div className="pt-4 border-t mt-6">
-                          <h3 className="font-medium mb-4">Shipping Method</h3>
+                          <h3 className="font-medium mb-4">
+                            Shipping Method
+                            {loadingShippingRates && (
+                              <span className="ml-2 text-sm text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin inline" /> Loading rates...
+                              </span>
+                            )}
+                          </h3>
                           <div className="space-y-3">
-                            {shippingOptions.map((option) => (
+                            {dynamicShippingOptions.map((option) => (
                               <label
                                 key={option.id}
                                 className={cn(
@@ -788,9 +979,11 @@ export default function CheckoutPage() {
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Tax (8%)</span>
+                    <span className="text-muted-foreground">
+                      Tax ({(taxRate * 100).toFixed(1)}%)
+                    </span>
                     <span>
-                      {formatCurrency(((cart.subtotal || 0) - (cart.discount || 0)) * 0.08)}
+                      {formatCurrency(calculateTax())}
                     </span>
                   </div>
                 </div>

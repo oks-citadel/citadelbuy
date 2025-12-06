@@ -1,0 +1,412 @@
+# CitadelBuy - Organization Module CI/CD
+# Converted from GitHub Actions organization-module.yml
+# Tests and deploys organization-related modules
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - 'apps/api/src/modules/organizations/**'
+      - 'apps/api/src/modules/banking/**'
+      - 'apps/api/src/modules/escrow/**'
+      - 'apps/api/src/modules/compliance/**'
+      - 'apps/web/src/components/organizations/**'
+      - 'infrastructure/kubernetes/organization/**'
+      - 'infrastructure/docker/Dockerfile.organization'
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - 'apps/api/src/modules/organizations/**'
+      - 'apps/api/src/modules/banking/**'
+      - 'apps/api/src/modules/escrow/**'
+      - 'apps/api/src/modules/compliance/**'
+
+variables:
+  - name: REGISTRY
+    value: 'ghcr.io'
+  - name: IMAGE_NAME
+    value: 'citadelplatforms/citadelbuy-organization'
+  - name: NODE_VERSION
+    value: '20'
+  - name: PNPM_VERSION
+    value: '8'
+
+stages:
+  # ============================================
+  # STAGE 1: Lint
+  # ============================================
+  - stage: Lint
+    displayName: 'Lint Organization Module'
+    jobs:
+      - job: LintOrganizationModule
+        displayName: 'Run Linting'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: NodeTool@0
+            displayName: 'Setup Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              npm install -g pnpm@$(PNPM_VERSION)
+            displayName: 'Setup pnpm'
+
+          - bash: |
+              cd apps/api
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - bash: |
+              cd apps/api
+              pnpm eslint "src/modules/organizations/**/*.ts" \
+                "src/modules/banking/**/*.ts" \
+                "src/modules/escrow/**/*.ts" \
+                "src/modules/compliance/**/*.ts" \
+                --max-warnings=0
+            displayName: 'Run ESLint on organization modules'
+
+          - bash: |
+              cd apps/api
+              pnpm run typecheck
+            displayName: 'Run TypeScript type check'
+
+  # ============================================
+  # STAGE 2: Test
+  # ============================================
+  - stage: Test
+    displayName: 'Test Organization Module'
+    dependsOn: Lint
+    condition: succeeded()
+    jobs:
+      - job: TestOrganizationModule
+        displayName: 'Run Tests'
+        pool:
+          vmImage: 'ubuntu-latest'
+        services:
+          postgres:
+            image: postgres:16-alpine
+            ports:
+              - 5432:5432
+            env:
+              POSTGRES_USER: test
+              POSTGRES_PASSWORD: test
+              POSTGRES_DB: citadelbuy_test
+            options: >-
+              --health-cmd pg_isready
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
+          redis:
+            image: redis:7-alpine
+            ports:
+              - 6379:6379
+            options: >-
+              --health-cmd "redis-cli ping"
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: NodeTool@0
+            displayName: 'Setup Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              npm install -g pnpm@$(PNPM_VERSION)
+            displayName: 'Setup pnpm'
+
+          - bash: |
+              cd apps/api
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - bash: |
+              cd apps/api
+              npx prisma generate
+            displayName: 'Generate Prisma Client'
+
+          - bash: |
+              cd apps/api
+              npx prisma migrate deploy
+            displayName: 'Run database migrations'
+            env:
+              DATABASE_URL: postgresql://test:test@localhost:5432/citadelbuy_test?schema=public
+
+          - bash: |
+              cd apps/api
+              pnpm test -- \
+                --testPathPattern="(organizations|banking|escrow|compliance)" \
+                --coverage \
+                --coveragePathIgnorePatterns="node_modules" \
+                --maxWorkers=2
+            displayName: 'Run organization module tests'
+            env:
+              DATABASE_URL: postgresql://test:test@localhost:5432/citadelbuy_test?schema=public
+              REDIS_URL: redis://localhost:6379
+              JWT_SECRET: test-jwt-secret-for-ci
+              BANKING_ENCRYPTION_KEY: test-encryption-key-32-characters
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Upload coverage to Codecov'
+            condition: always()
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/apps/api/coverage/cobertura-coverage.xml'
+              reportDirectory: '$(System.DefaultWorkingDirectory)/apps/api/coverage'
+
+  # ============================================
+  # STAGE 3: Build
+  # ============================================
+  - stage: Build
+    displayName: 'Build TypeScript'
+    dependsOn: Test
+    condition: succeeded()
+    jobs:
+      - job: BuildTypeScript
+        displayName: 'Build Application'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: NodeTool@0
+            displayName: 'Setup Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              npm install -g pnpm@$(PNPM_VERSION)
+            displayName: 'Setup pnpm'
+
+          - bash: |
+              cd apps/api
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - bash: |
+              cd apps/api
+              pnpm run build
+            displayName: 'Build TypeScript'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Upload build artifacts'
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)/apps/api/dist'
+              artifact: 'dist'
+              publishLocation: 'pipeline'
+
+  # ============================================
+  # STAGE 4: Docker Build
+  # ============================================
+  - stage: DockerBuild
+    displayName: 'Build Docker Image'
+    dependsOn:
+      - Lint
+      - Test
+      - Build
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - job: BuildDockerImage
+        displayName: 'Build and Push Docker Image'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: Docker@2
+            displayName: 'Login to GitHub Container Registry'
+            inputs:
+              command: 'login'
+              containerRegistry: 'GitHubContainerRegistry'
+
+          - bash: |
+              SHA=$(echo $(Build.SourceVersion) | cut -c1-7)
+              BRANCH=$(echo $(Build.SourceBranchName) | tr '/' '-')
+              echo "##vso[task.setvariable variable=SHA_TAG]$SHA"
+              echo "##vso[task.setvariable variable=BRANCH_TAG]$BRANCH"
+            displayName: 'Extract metadata'
+
+          - task: Docker@2
+            displayName: 'Build and push Docker image'
+            inputs:
+              command: 'buildAndPush'
+              repository: '$(IMAGE_NAME)'
+              dockerfile: '$(System.DefaultWorkingDirectory)/infrastructure/docker/Dockerfile.organization'
+              buildContext: '$(System.DefaultWorkingDirectory)/apps/api'
+              tags: |
+                $(BRANCH_TAG)-$(SHA_TAG)
+                latest
+              arguments: |
+                --build-arg NODE_ENV=production
+                --build-arg BUILD_DATE=$(Build.BuildNumber)
+                --build-arg VCS_REF=$(Build.SourceVersion)
+
+          - bash: |
+              echo "Image digest: $(docker images --digests | head -2)"
+            displayName: 'Image digest'
+
+  # ============================================
+  # STAGE 5: Deploy to Staging
+  # ============================================
+  - stage: DeployStaging
+    displayName: 'Deploy to Staging'
+    dependsOn: DockerBuild
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployOrgToStaging
+        displayName: 'Deploy Organization Service'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'staging'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: 'Checkout code'
+
+                - task: KubernetesManifest@0
+                  displayName: 'Setup kubectl'
+                  inputs:
+                    action: 'deploy'
+                    kubernetesServiceConnection: 'Kubernetes-Staging'
+                    namespace: 'staging'
+
+                - bash: |
+                    SHA=$(echo $(Build.SourceVersion) | cut -c1-7)
+                    kubectl set image deployment/organization-service \
+                      organization-service=$(REGISTRY)/$(IMAGE_NAME):main-${SHA} \
+                      -n staging
+                  displayName: 'Update image tag'
+
+                - bash: |
+                    kubectl rollout status deployment/organization-service \
+                      -n staging \
+                      --timeout=300s
+                  displayName: 'Wait for rollout'
+
+                - bash: |
+                    POD=$(kubectl get pod -n staging -l app=organization-service -o jsonpath='{.items[0].metadata.name}')
+                    kubectl exec -n staging $POD -- npx prisma migrate deploy
+                  displayName: 'Run database migrations'
+
+                - bash: |
+                    INGRESS_IP=$(kubectl get ingress organization-ingress -n staging -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+                    curl -f "http://$INGRESS_IP/api/organizations/health" || exit 1
+                    echo "Staging deployment verified successfully!"
+                  displayName: 'Verify deployment'
+
+                - bash: |
+                    INGRESS_IP=$(kubectl get ingress organization-ingress -n staging -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+                    # Test organization endpoints
+                    curl -f "http://$INGRESS_IP/api/organizations/health" || exit 1
+                    echo "Smoke tests passed!"
+                  displayName: 'Run smoke tests'
+
+  # ============================================
+  # STAGE 6: Deploy to Production
+  # ============================================
+  - stage: DeployProduction
+    displayName: 'Deploy to Production'
+    dependsOn: DeployStaging
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployOrgToProduction
+        displayName: 'Deploy to Production'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: 'Checkout code'
+
+                - task: KubernetesManifest@0
+                  displayName: 'Setup kubectl'
+                  inputs:
+                    action: 'deploy'
+                    kubernetesServiceConnection: 'Kubernetes-Production'
+                    namespace: 'production'
+
+                - bash: |
+                    SHA=$(echo $(Build.SourceVersion) | cut -c1-7)
+                    kubectl set image deployment/organization-service \
+                      organization-service=$(REGISTRY)/$(IMAGE_NAME):main-${SHA} \
+                      -n production
+                  displayName: 'Update image tag'
+
+                - bash: |
+                    kubectl rollout status deployment/organization-service \
+                      -n production \
+                      --timeout=300s
+                  displayName: 'Wait for rollout'
+
+                - bash: |
+                    POD=$(kubectl get pod -n production -l app=organization-service -o jsonpath='{.items[0].metadata.name}')
+                    kubectl exec -n production $POD -- npx prisma migrate deploy
+                  displayName: 'Run database migrations'
+
+                - bash: |
+                    sleep 30
+                    curl -f https://citadelbuy.com/api/organizations/health || exit 1
+                    echo "Production deployment verified successfully!"
+                  displayName: 'Verify production deployment'
+
+                - task: InvokeRESTAPI@1
+                  displayName: 'Notify deployment success'
+                  inputs:
+                    connectionType: 'connectedServiceName'
+                    serviceConnection: 'SlackWebhook'
+                    method: 'POST'
+                    body: |
+                      {
+                        "text": "Organization Module Deployed to Production",
+                        "blocks": [
+                          {
+                            "type": "header",
+                            "text": {
+                              "type": "plain_text",
+                              "text": "Organization Module - Production Deployment"
+                            }
+                          },
+                          {
+                            "type": "section",
+                            "text": {
+                              "type": "mrkdwn",
+                              "text": "*Status:* Deployment Successful\n*Commit:* $(Build.SourceVersion)\n*Author:* $(Build.RequestedFor)\n*Environment:* Production"
+                            }
+                          },
+                          {
+                            "type": "section",
+                            "fields": [
+                              {
+                                "type": "mrkdwn",
+                                "text": "*Branch:*\n$(Build.SourceBranchName)"
+                              },
+                              {
+                                "type": "mrkdwn",
+                                "text": "*Workflow:*\n<$(System.CollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)|View Run>"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                  continueOnError: true

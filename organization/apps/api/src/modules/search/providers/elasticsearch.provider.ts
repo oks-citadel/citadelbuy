@@ -30,23 +30,36 @@ export class ElasticsearchProvider implements SearchProviderInterface {
     const elasticsearchNode = process.env.ELASTICSEARCH_NODE || 'http://localhost:9200';
     const elasticsearchUsername = process.env.ELASTICSEARCH_USERNAME;
     const elasticsearchPassword = process.env.ELASTICSEARCH_PASSWORD;
+    const requestTimeout = parseInt(process.env.ELASTICSEARCH_REQUEST_TIMEOUT || '30000', 10);
 
     try {
-      this.client = new Client({
+      const clientConfig: any = {
         node: elasticsearchNode,
-        ...(elasticsearchUsername &&
-          elasticsearchPassword && {
-            auth: {
-              username: elasticsearchUsername,
-              password: elasticsearchPassword,
-            },
-          }),
-      });
+        requestTimeout,
+        maxRetries: 3,
+        sniffOnStart: false,
+      };
 
-      // Test connection
-      await this.client.ping();
+      // Add authentication if provided
+      if (elasticsearchUsername && elasticsearchPassword) {
+        clientConfig.auth = {
+          username: elasticsearchUsername,
+          password: elasticsearchPassword,
+        };
+      }
+
+      this.client = new Client(clientConfig);
+
+      // Test connection with timeout
+      const pingResult = await Promise.race([
+        this.client.ping(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Connection timeout')), 5000)
+        ),
+      ]);
+
       this.available = true;
-      this.logger.log('Elasticsearch connection established');
+      this.logger.log('Elasticsearch connection established successfully');
 
       // Ensure index exists
       await this.ensureIndex();
@@ -71,14 +84,20 @@ export class ElasticsearchProvider implements SearchProviderInterface {
           settings: {
             number_of_shards: 1,
             number_of_replicas: 0,
+            max_result_window: 10000,
             analysis: {
               analyzer: {
                 autocomplete: {
                   tokenizer: 'autocomplete',
-                  filter: ['lowercase'],
+                  filter: ['lowercase', 'asciifolding'],
                 },
                 autocomplete_search: {
                   tokenizer: 'lowercase',
+                  filter: ['lowercase', 'asciifolding'],
+                },
+                standard_analyzer: {
+                  type: 'standard',
+                  stopwords: '_english_',
                 },
               },
               tokenizer: {
@@ -87,6 +106,16 @@ export class ElasticsearchProvider implements SearchProviderInterface {
                   min_gram: 2,
                   max_gram: 20,
                   token_chars: ['letter', 'digit'],
+                },
+              },
+              filter: {
+                english_stop: {
+                  type: 'stop',
+                  stopwords: '_english_',
+                },
+                english_stemmer: {
+                  type: 'stemmer',
+                  language: 'english',
                 },
               },
             },
@@ -100,9 +129,13 @@ export class ElasticsearchProvider implements SearchProviderInterface {
                 search_analyzer: 'autocomplete_search',
                 fields: {
                   keyword: { type: 'keyword' },
+                  standard: { type: 'text', analyzer: 'standard' },
                 },
               },
-              description: { type: 'text' },
+              description: {
+                type: 'text',
+                analyzer: 'standard',
+              },
               price: { type: 'float' },
               compareAtPrice: { type: 'float' },
               sku: { type: 'keyword' },
@@ -138,9 +171,68 @@ export class ElasticsearchProvider implements SearchProviderInterface {
         });
 
         this.logger.log(`Created Elasticsearch index: ${this.indexName}`);
+      } else {
+        this.logger.debug(`Elasticsearch index already exists: ${this.indexName}`);
       }
     } catch (error) {
       this.logger.error(`Failed to ensure index: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete the entire index (use with caution!)
+   */
+  async deleteIndex(): Promise<void> {
+    if (!this.client || !this.available) return;
+
+    try {
+      const exists = await this.client.indices.exists({ index: this.indexName });
+      if (exists) {
+        await this.client.indices.delete({ index: this.indexName });
+        this.logger.log(`Deleted Elasticsearch index: ${this.indexName}`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to delete index: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Refresh the index to make recent changes searchable
+   */
+  async refreshIndex(): Promise<void> {
+    if (!this.client || !this.available) return;
+
+    try {
+      await this.client.indices.refresh({ index: this.indexName });
+      this.logger.debug(`Refreshed Elasticsearch index: ${this.indexName}`);
+    } catch (error) {
+      this.logger.error(`Failed to refresh index: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get index statistics
+   */
+  async getIndexStats(): Promise<any> {
+    if (!this.client || !this.available) {
+      return null;
+    }
+
+    try {
+      const stats = await this.client.indices.stats({ index: this.indexName });
+      const count = await this.client.count({ index: this.indexName });
+
+      return {
+        indexName: this.indexName,
+        documentCount: count.count,
+        storeSizeBytes: stats._all?.primaries?.store?.size_in_bytes || 0,
+        ...stats._all?.primaries,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get index stats: ${error.message}`);
+      return null;
     }
   }
 
@@ -167,18 +259,52 @@ export class ElasticsearchProvider implements SearchProviderInterface {
   }
 
   async bulkIndexProducts(products: ProductDocument[]): Promise<void> {
-    if (!this.client || !this.available) return;
+    if (!this.client || !this.available || products.length === 0) return;
+
+    const bulkSize = parseInt(process.env.ELASTICSEARCH_BULK_SIZE || '1000', 10);
 
     try {
-      const body = products.flatMap((product) => [
-        { index: { _index: this.indexName, _id: product.id } },
-        product,
-      ]);
+      // Process in chunks to avoid overwhelming ES
+      for (let i = 0; i < products.length; i += bulkSize) {
+        const chunk = products.slice(i, i + bulkSize);
+        const body = chunk.flatMap((product) => [
+          { index: { _index: this.indexName, _id: product.id } },
+          product,
+        ]);
 
-      await this.client.bulk({ body });
-      this.logger.log(`Bulk indexed ${products.length} products`);
+        const response = await this.client.bulk({ body, refresh: false });
+
+        if (response.errors) {
+          const erroredDocuments: any[] = [];
+          response.items.forEach((action: any, i: number) => {
+            const operation = Object.keys(action)[0];
+            if (action[operation].error) {
+              erroredDocuments.push({
+                status: action[operation].status,
+                error: action[operation].error,
+                document: chunk[i],
+              });
+            }
+          });
+
+          this.logger.error(
+            `Bulk index had errors. Failed ${erroredDocuments.length} of ${chunk.length} documents`,
+          );
+          erroredDocuments.slice(0, 5).forEach((doc) => {
+            this.logger.error(`Error indexing product ${doc.document.id}: ${JSON.stringify(doc.error)}`);
+          });
+        }
+
+        this.logger.log(`Bulk indexed chunk ${i / bulkSize + 1}: ${chunk.length} products`);
+      }
+
+      // Refresh index after bulk operation
+      await this.refreshIndex();
+
+      this.logger.log(`Successfully bulk indexed ${products.length} products total`);
     } catch (error) {
       this.logger.error(`Failed to bulk index products: ${error.message}`);
+      throw error;
     }
   }
 

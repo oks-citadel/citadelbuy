@@ -66,6 +66,24 @@ export class ReviewsController {
     enum: ['date', 'rating', 'helpful'],
     description: 'Sort reviews by (default: date)',
   })
+  @ApiQuery({
+    name: 'verifiedOnly',
+    required: false,
+    type: Boolean,
+    description: 'Show only verified purchase reviews',
+  })
+  @ApiQuery({
+    name: 'withPhotos',
+    required: false,
+    type: Boolean,
+    description: 'Show only reviews with photos',
+  })
+  @ApiQuery({
+    name: 'minRating',
+    required: false,
+    type: Number,
+    description: 'Minimum rating filter (1-5)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Reviews retrieved successfully with pagination and stats',
@@ -79,8 +97,16 @@ export class ReviewsController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('sortBy', new DefaultValuePipe('date')) sortBy: 'date' | 'rating' | 'helpful',
+    @Query('verifiedOnly') verifiedOnly?: boolean,
+    @Query('withPhotos') withPhotos?: boolean,
+    @Query('minRating') minRating?: number,
   ) {
-    return this.reviewsService.findByProduct(productId, page, limit, sortBy);
+    const filters = {
+      verifiedOnly: verifiedOnly === true || verifiedOnly === 'true' as any,
+      withPhotos: withPhotos === true || withPhotos === 'true' as any,
+      minRating: minRating ? Number(minRating) : undefined,
+    };
+    return this.reviewsService.findByProduct(productId, page, limit, sortBy, filters);
   }
 
   @Get('product/:productId/stats')

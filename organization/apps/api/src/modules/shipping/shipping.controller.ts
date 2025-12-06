@@ -29,6 +29,23 @@ export class ShippingController {
     return this.shippingService.calculateRates(dto);
   }
 
+  @Post('rates/compare')
+  async compareRates(@Body() body: { rateRequest: CalculateRateDto; cartTotal?: number }) {
+    return this.shippingService.compareRates(body.rateRequest, body.cartTotal);
+  }
+
+  @Post('rates/clear-cache')
+  @Roles('ADMIN')
+  async clearRateCache() {
+    await this.shippingService.clearRateCache();
+    return { message: 'Rate cache cleared successfully' };
+  }
+
+  @Post('package/calculate-dimensions')
+  async calculatePackageDimensions(@Body() body: { productIds: string[] }) {
+    return this.shippingService.calculatePackageDimensions(body.productIds);
+  }
+
   // ==================== Shipments & Labels ====================
 
   @Post('shipments')

@@ -51,7 +51,7 @@ output "acr_login_server" {
 
 output "app_service_hostname" {
   description = "App Service hostname"
-  value       = module.compute.app_service_default_hostname
+  value       = module.compute.api_app_default_hostname
 }
 
 # Security

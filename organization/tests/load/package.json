@@ -1,0 +1,28 @@
+{
+  "name": "@citadelbuy/load-tests",
+  "version": "1.0.0",
+  "description": "Load testing suite for CitadelBuy using k6",
+  "scripts": {
+    "test:auth": "k6 run scenarios/auth.js",
+    "test:checkout": "k6 run scenarios/checkout.js",
+    "test:search": "k6 run scenarios/search.js",
+    "test:stress": "k6 run scenarios/api-stress.js",
+    "test:all": "npm run test:auth && npm run test:checkout && npm run test:search",
+    "test:smoke": "k6 run --vus 1 --duration 1m scenarios/auth.js",
+    "test:load": "k6 run --vus 10 --duration 5m scenarios/checkout.js",
+    "test:spike": "k6 run --stage 1m:10 --stage 30s:100 --stage 3m:100 --stage 1m:10 scenarios/search.js",
+    "test:soak": "k6 run --vus 20 --duration 30m scenarios/api-stress.js",
+    "test:ci": "k6 run --quiet --no-color scenarios/auth.js && k6 run --quiet --no-color scenarios/checkout.js"
+  },
+  "keywords": [
+    "k6",
+    "load-testing",
+    "performance",
+    "citadelbuy"
+  ],
+  "author": "CitadelBuy Team",
+  "license": "MIT",
+  "devDependencies": {
+    "k6": "^0.0.0"
+  }
+}

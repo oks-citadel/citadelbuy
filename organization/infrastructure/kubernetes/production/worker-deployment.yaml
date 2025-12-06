@@ -1,0 +1,587 @@
+---
+# Email Queue Worker Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: email-worker
+  namespace: citadelbuy-production
+  labels:
+    app: email-worker
+    tier: worker
+    environment: production
+    component: background-jobs
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: email-worker
+      tier: worker
+  template:
+    metadata:
+      labels:
+        app: email-worker
+        tier: worker
+        environment: production
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: citadelbuy-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: worker
+        image: ghcr.io/citadelplatforms/citadelbuy-api:production-latest
+        command: ["node", "dist/workers/email.worker.js"]
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: WORKER_TYPE
+          value: "email"
+        - name: WORKER_CONCURRENCY
+          value: "10"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: citadelbuy-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: citadelbuy-config
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: REDIS_PASSWORD
+        - name: SENDGRID_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: SENDGRID_API_KEY
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: SENTRY_DSN
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 512Mi
+---
+# Cart Abandonment Worker Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart-abandonment-worker
+  namespace: citadelbuy-production
+  labels:
+    app: cart-abandonment-worker
+    tier: worker
+    environment: production
+    component: background-jobs
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: cart-abandonment-worker
+      tier: worker
+  template:
+    metadata:
+      labels:
+        app: cart-abandonment-worker
+        tier: worker
+        environment: production
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: citadelbuy-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: worker
+        image: ghcr.io/citadelplatforms/citadelbuy-api:production-latest
+        command: ["node", "dist/workers/cart-abandonment.worker.js"]
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: WORKER_TYPE
+          value: "cart-abandonment"
+        - name: WORKER_CONCURRENCY
+          value: "5"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: citadelbuy-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: citadelbuy-config
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: REDIS_PASSWORD
+        - name: SENDGRID_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: SENDGRID_API_KEY
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: SENTRY_DSN
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        resources:
+          requests:
+            memory: "384Mi"
+            cpu: "200m"
+          limits:
+            memory: "768Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 512Mi
+---
+# Order Processing Worker Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-processing-worker
+  namespace: citadelbuy-production
+  labels:
+    app: order-processing-worker
+    tier: worker
+    environment: production
+    component: background-jobs
+spec:
+  replicas: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: order-processing-worker
+      tier: worker
+  template:
+    metadata:
+      labels:
+        app: order-processing-worker
+        tier: worker
+        environment: production
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: citadelbuy-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - order-processing-worker
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: worker
+        image: ghcr.io/citadelplatforms/citadelbuy-api:production-latest
+        command: ["node", "dist/workers/order-processing.worker.js"]
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: WORKER_TYPE
+          value: "order-processing"
+        - name: WORKER_CONCURRENCY
+          value: "10"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: citadelbuy-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: citadelbuy-config
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: REDIS_PASSWORD
+        - name: STRIPE_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: STRIPE_SECRET_KEY
+        - name: SENDGRID_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: SENDGRID_API_KEY
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: SENTRY_DSN
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        resources:
+          requests:
+            memory: "768Mi"
+            cpu: "500m"
+          limits:
+            memory: "1536Mi"
+            cpu: "1500m"
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 512Mi
+---
+# Search Indexing Worker Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search-indexing-worker
+  namespace: citadelbuy-production
+  labels:
+    app: search-indexing-worker
+    tier: worker
+    environment: production
+    component: background-jobs
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: search-indexing-worker
+      tier: worker
+  template:
+    metadata:
+      labels:
+        app: search-indexing-worker
+        tier: worker
+        environment: production
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: citadelbuy-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: worker
+        image: ghcr.io/citadelplatforms/citadelbuy-api:production-latest
+        command: ["node", "dist/workers/search-indexing.worker.js"]
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: WORKER_TYPE
+          value: "search-indexing"
+        - name: WORKER_CONCURRENCY
+          value: "5"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: citadelbuy-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: citadelbuy-config
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: REDIS_PASSWORD
+        - name: ELASTICSEARCH_NODE
+          valueFrom:
+            configMapKeyRef:
+              name: citadelbuy-config
+              key: ELASTICSEARCH_NODE
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: SENTRY_DSN
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "300m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 512Mi
+---
+# Scheduled Cron Jobs Worker Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduled-jobs-worker
+  namespace: citadelbuy-production
+  labels:
+    app: scheduled-jobs-worker
+    tier: worker
+    environment: production
+    component: background-jobs
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: scheduled-jobs-worker
+      tier: worker
+  template:
+    metadata:
+      labels:
+        app: scheduled-jobs-worker
+        tier: worker
+        environment: production
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: citadelbuy-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: worker
+        image: ghcr.io/citadelplatforms/citadelbuy-api:production-latest
+        command: ["node", "dist/workers/scheduled-jobs.worker.js"]
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: WORKER_TYPE
+          value: "scheduled-jobs"
+        - name: WORKER_CONCURRENCY
+          value: "3"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: citadelbuy-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: citadelbuy-config
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: REDIS_PASSWORD
+        - name: SENDGRID_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: SENDGRID_API_KEY
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: citadelbuy-secrets
+              key: SENTRY_DSN
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        resources:
+          requests:
+            memory: "384Mi"
+            cpu: "200m"
+          limits:
+            memory: "768Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 512Mi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: citadelbuy-worker
+  namespace: citadelbuy-production
+  labels:
+    app: citadelbuy-worker
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/citadelbuy-worker-production
+---
+# Pod Disruption Budget for Order Processing Workers
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: order-processing-worker-pdb
+  namespace: citadelbuy-production
+  labels:
+    app: order-processing-worker
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: order-processing-worker
+      tier: worker

@@ -1,0 +1,118 @@
+# ==================================
+# CitadelBuy - Reusable Build Template
+# Docker build and push to Azure Container Registry
+# ==================================
+
+parameters:
+  - name: appName
+    type: string
+    displayName: 'Application name'
+  - name: dockerfilePath
+    type: string
+    displayName: 'Path to Dockerfile'
+  - name: dockerContext
+    type: string
+    displayName: 'Docker build context'
+  - name: imageName
+    type: string
+    displayName: 'Docker image name'
+  - name: buildArgs
+    type: string
+    default: ''
+    displayName: 'Docker build arguments'
+  - name: pushToRegistry
+    type: boolean
+    default: true
+    displayName: 'Push image to registry'
+
+steps:
+  - checkout: self
+    clean: true
+    displayName: 'Checkout code'
+
+  - task: Docker@2
+    displayName: 'Login to Azure Container Registry'
+    inputs:
+      command: 'login'
+      containerRegistry: '$(ACR_SERVICE_CONNECTION)'
+
+  - task: Docker@2
+    displayName: 'Build Docker image'
+    inputs:
+      command: 'build'
+      repository: '${{ parameters.imageName }}'
+      dockerfile: '${{ parameters.dockerfilePath }}'
+      buildContext: '${{ parameters.dockerContext }}'
+      tags: |
+        $(Build.BuildId)
+        $(Build.SourceVersion)
+        latest
+      arguments: |
+        --build-arg NODE_ENV=production
+        --build-arg BUILD_DATE=$(Build.BuildId)
+        --build-arg VCS_REF=$(Build.SourceVersion)
+        ${{ parameters.buildArgs }}
+      ${{ if eq(parameters.pushToRegistry, true) }}:
+        addPipelineData: true
+        addBaseImageData: true
+
+  - task: Docker@2
+    displayName: 'Push image to ACR'
+    condition: and(succeeded(), eq('${{ parameters.pushToRegistry }}', true))
+    inputs:
+      command: 'push'
+      containerRegistry: '$(ACR_SERVICE_CONNECTION)'
+      repository: '${{ parameters.imageName }}'
+      tags: |
+        $(Build.BuildId)
+        $(Build.SourceVersion)
+        latest
+
+  - task: Docker@2
+    displayName: 'Tag with short SHA'
+    condition: and(succeeded(), eq('${{ parameters.pushToRegistry }}', true))
+    inputs:
+      command: 'push'
+      containerRegistry: '$(ACR_SERVICE_CONNECTION)'
+      repository: '${{ parameters.imageName }}'
+      tags: |
+        $(Build.SourceVersion)
+
+  - script: |
+      echo "Docker image built and pushed successfully!"
+      echo "Image: $(AZURE_CONTAINER_REGISTRY)/${{ parameters.imageName }}:$(Build.BuildId)"
+      echo "Tags: $(Build.BuildId), $(Build.SourceVersion), latest"
+    displayName: 'Build summary'
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish image metadata'
+    inputs:
+      targetPath: '$(System.DefaultWorkingDirectory)'
+      artifact: '${{ parameters.appName }}-image-info'
+      publishLocation: 'pipeline'
+
+  # Scan image with Trivy
+  - script: |
+      # Install Trivy if not available
+      if ! command -v trivy &> /dev/null; then
+        wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+        echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+        sudo apt-get update
+        sudo apt-get install trivy
+      fi
+
+      # Scan the image
+      trivy image --exit-code 0 --severity HIGH,CRITICAL \
+        --format sarif \
+        --output trivy-${{ parameters.appName }}.sarif \
+        $(AZURE_CONTAINER_REGISTRY)/${{ parameters.imageName }}:$(Build.BuildId)
+    displayName: 'Scan image with Trivy'
+    continueOnError: true
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish security scan results'
+    condition: always()
+    inputs:
+      PathtoPublish: '$(System.DefaultWorkingDirectory)/trivy-${{ parameters.appName }}.sarif'
+      ArtifactName: 'trivy-scan-${{ parameters.appName }}'
+      publishLocation: 'Container'

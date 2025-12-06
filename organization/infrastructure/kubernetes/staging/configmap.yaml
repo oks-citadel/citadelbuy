@@ -1,0 +1,174 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: citadelbuy-config
+  namespace: citadelbuy-staging
+  labels:
+    app: citadelbuy
+    environment: staging
+data:
+  # Node Environment
+  NODE_ENV: "staging"
+
+  # Server Configuration
+  PORT: "4000"
+
+  # Database Configuration
+  POSTGRES_DB: "citadelbuy_staging"
+  POSTGRES_USER: "citadelbuy"
+
+  # Redis Configuration
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+
+  # Elasticsearch Configuration
+  ELASTICSEARCH_NODE: "http://elasticsearch:9200"
+  ELASTICSEARCH_INDEX: "citadelbuy-staging"
+
+  # Frontend Configuration
+  NEXT_PUBLIC_API_URL: "https://staging-api.citadelbuy.com"
+  CORS_ORIGIN: "https://staging.citadelbuy.com"
+
+  # Feature Flags
+  ENABLE_ANALYTICS: "true"
+  ENABLE_CACHING: "true"
+  ENABLE_RATE_LIMITING: "true"
+
+  # Logging
+  LOG_LEVEL: "debug"
+  LOG_FORMAT: "json"
+
+  # Email Configuration
+  SENDGRID_FROM_EMAIL: "staging@citadelbuy.com"
+  SENDGRID_FROM_NAME: "CitadelBuy Staging"
+
+  # JWT Configuration
+  JWT_EXPIRATION: "1h"
+  JWT_REFRESH_EXPIRATION: "7d"
+
+  # Rate Limiting
+  RATE_LIMIT_WINDOW: "900000"
+  RATE_LIMIT_MAX: "100"
+
+  # File Upload
+  MAX_FILE_SIZE: "10485760"
+  ALLOWED_FILE_TYPES: "image/jpeg,image/png,image/gif,image/webp"
+
+  # Search Configuration
+  SEARCH_RESULTS_PER_PAGE: "20"
+  SEARCH_MAX_RESULTS: "1000"
+
+  # Cache Configuration
+  CACHE_TTL: "3600"
+  CACHE_MAX_ITEMS: "1000"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: citadelbuy-staging
+  labels:
+    app: postgres
+    environment: staging
+data:
+  POSTGRES_DB: "citadelbuy_staging"
+  POSTGRES_USER: "citadelbuy"
+  max_connections: "100"
+  shared_buffers: "128MB"
+  effective_cache_size: "512MB"
+  maintenance_work_mem: "32MB"
+  checkpoint_completion_target: "0.9"
+  wal_buffers: "8MB"
+  default_statistics_target: "100"
+  random_page_cost: "1.1"
+  effective_io_concurrency: "200"
+  work_mem: "2621kB"
+  min_wal_size: "512MB"
+  max_wal_size: "2GB"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: citadelbuy-staging
+  labels:
+    app: nginx
+    environment: staging
+data:
+  nginx.conf: |
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log warn;
+    pid /var/run/nginx.pid;
+
+    events {
+        worker_connections 1024;
+    }
+
+    http {
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+
+        log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                        '$status $body_bytes_sent "$http_referer" '
+                        '"$http_user_agent" "$http_x_forwarded_for"';
+
+        access_log /var/log/nginx/access.log main;
+
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 65;
+        types_hash_max_size 2048;
+
+        gzip on;
+        gzip_vary on;
+        gzip_proxied any;
+        gzip_comp_level 6;
+        gzip_types text/plain text/css text/xml text/javascript
+                   application/json application/javascript application/xml+rss
+                   application/rss+xml font/truetype font/opentype
+                   application/vnd.ms-fontobject image/svg+xml;
+
+        upstream api {
+            server citadelbuy-api:4000;
+        }
+
+        upstream web {
+            server citadelbuy-web:3000;
+        }
+
+        server {
+            listen 80;
+            server_name staging-api.citadelbuy.com;
+
+            location / {
+                proxy_pass http://api;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_cache_bypass $http_upgrade;
+            }
+        }
+
+        server {
+            listen 80;
+            server_name staging.citadelbuy.com;
+
+            location / {
+                proxy_pass http://web;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_cache_bypass $http_upgrade;
+            }
+        }
+    }

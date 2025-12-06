@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shipping Update - Order #{{orderNumber}}</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: #f4f4f4;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 600;
+    }
+    .status-badge {
+      display: inline-block;
+      background-color: rgba(255, 255, 255, 0.2);
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    .content {
+      padding: 40px 30px;
+    }
+    .greeting {
+      font-size: 18px;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .message {
+      font-size: 16px;
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+    .tracking-section {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 25px;
+      margin: 30px 0;
+      text-align: center;
+    }
+    .tracking-label {
+      font-size: 14px;
+      color: #777;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .tracking-number {
+      font-size: 24px;
+      font-weight: 700;
+      color: #667eea;
+      font-family: 'Courier New', monospace;
+      margin-bottom: 15px;
+    }
+    .carrier-info {
+      font-size: 16px;
+      color: #555;
+      margin-bottom: 20px;
+    }
+    .track-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-decoration: none;
+      padding: 14px 35px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    .timeline {
+      margin: 30px 0;
+      position: relative;
+    }
+    .timeline-item {
+      display: flex;
+      margin-bottom: 25px;
+      position: relative;
+    }
+    .timeline-marker {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #e9ecef;
+      border: 3px solid #dee2e6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-right: 20px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 2;
+    }
+    .timeline-marker.completed {
+      background-color: #667eea;
+      border-color: #667eea;
+      color: white;
+    }
+    .timeline-marker.current {
+      background-color: #ffc107;
+      border-color: #ffc107;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+      50% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+    }
+    .timeline-content {
+      flex: 1;
+      padding-top: 5px;
+    }
+    .timeline-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    .timeline-date {
+      font-size: 14px;
+      color: #777;
+    }
+    .timeline-description {
+      font-size: 14px;
+      color: #555;
+      margin-top: 5px;
+    }
+    .delivery-estimate {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-left: 4px solid #667eea;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 30px 0;
+    }
+    .delivery-label {
+      font-size: 14px;
+      color: #777;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .delivery-date {
+      font-size: 22px;
+      font-weight: 700;
+      color: #333;
+    }
+    .order-summary {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 30px 0;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .summary-label {
+      color: #777;
+    }
+    .summary-value {
+      color: #333;
+      font-weight: 600;
+    }
+    .shipping-address {
+      background-color: #ffffff;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .address-title {
+      font-size: 14px;
+      color: #777;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .address-content {
+      font-size: 15px;
+      color: #333;
+      line-height: 1.6;
+    }
+    .help-section {
+      background-color: #e7f3ff;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 30px 0;
+      text-align: center;
+    }
+    .help-text {
+      font-size: 15px;
+      color: #555;
+      margin-bottom: 15px;
+    }
+    .help-link {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .footer {
+      background-color: #f8f9fa;
+      padding: 30px;
+      text-align: center;
+      font-size: 14px;
+      color: #777;
+    }
+    .footer a {
+      color: #667eea;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <h1>📦 Your Order is on the Way!</h1>
+      <div class="status-badge">{{statusText}}</div>
+    </div>
+
+    <div class="content">
+      <div class="greeting">
+        Hi {{customerName}},
+      </div>
+
+      <div class="message">
+        Great news! Your order <strong>#{{orderNumber}}</strong> has shipped and is on its way to you.
+      </div>
+
+      {{#if trackingNumber}}
+      <div class="tracking-section">
+        <div class="tracking-label">Tracking Number</div>
+        <div class="tracking-number">{{trackingNumber}}</div>
+        <div class="carrier-info">Shipped via {{carrier}}</div>
+        {{#if trackingUrl}}
+        <a href="{{trackingUrl}}" class="track-button">Track Your Package</a>
+        {{/if}}
+      </div>
+      {{/if}}
+
+      {{#if estimatedDelivery}}
+      <div class="delivery-estimate">
+        <div class="delivery-label">Estimated Delivery</div>
+        <div class="delivery-date">{{estimatedDelivery}}</div>
+      </div>
+      {{/if}}
+
+      {{#if timeline}}
+      <div class="timeline">
+        {{#each timeline}}
+        <div class="timeline-item">
+          <div class="timeline-marker {{status}}">
+            {{#if (eq status 'completed')}}✓{{/if}}
+            {{#if (eq status 'current')}}●{{/if}}
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-title">{{title}}</div>
+            {{#if date}}
+            <div class="timeline-date">{{date}}</div>
+            {{/if}}
+            {{#if description}}
+            <div class="timeline-description">{{description}}</div>
+            {{/if}}
+          </div>
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+
+      <div class="order-summary">
+        <div class="summary-row">
+          <span class="summary-label">Order Number:</span>
+          <span class="summary-value">{{orderNumber}}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Order Date:</span>
+          <span class="summary-value">{{orderDate}}</span>
+        </div>
+        {{#if itemCount}}
+        <div class="summary-row">
+          <span class="summary-label">Items:</span>
+          <span class="summary-value">{{itemCount}}</span>
+        </div>
+        {{/if}}
+      </div>
+
+      {{#if shippingAddress}}
+      <div class="shipping-address">
+        <div class="address-title">Shipping Address</div>
+        <div class="address-content">
+          {{shippingAddress.name}}<br>
+          {{shippingAddress.line1}}<br>
+          {{#if shippingAddress.line2}}{{shippingAddress.line2}}<br>{{/if}}
+          {{shippingAddress.city}}, {{shippingAddress.state}} {{shippingAddress.postalCode}}<br>
+          {{shippingAddress.country}}
+        </div>
+      </div>
+      {{/if}}
+
+      <div class="help-section">
+        <div class="help-text">
+          Have questions about your order?
+        </div>
+        <a href="{{helpUrl}}" class="help-link">Visit our Help Center</a> |
+        <a href="{{orderUrl}}" class="help-link">View Order Details</a>
+      </div>
+
+      <div class="message">
+        Thank you for shopping with CitadelBuy! We hope you love your purchase.
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>
+        <strong>CitadelBuy</strong><br>
+        Your trusted online shopping destination
+      </p>
+      <p>
+        <a href="{{helpUrl}}">Help Center</a> |
+        <a href="{{returnUrl}}">Returns</a> |
+        <a href="{{contactUrl}}">Contact Us</a>
+      </p>
+      <p style="font-size: 12px; color: #999; margin-top: 20px;">
+        This email was sent to {{email}} regarding order #{{orderNumber}}.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

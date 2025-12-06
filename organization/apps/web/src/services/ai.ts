@@ -1,4 +1,4 @@
-import api from './api';
+import { apiClient } from '@/lib/api-client';
 import {
   Product,
   Recommendation,
@@ -11,7 +11,47 @@ import {
   AISearchSuggestion,
 } from '@/types';
 
-const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:8000';
+const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || '/ai';
+
+// ============================================================================
+// AI SERVICE RESPONSE TYPES
+// ============================================================================
+
+/** Generic API response wrapper */
+interface ApiResponse<T> { data: T; }
+
+/** Recommendation API responses */
+interface RecommendationApiResponse extends ApiResponse<Recommendation> {}
+interface ProductArrayApiResponse extends ApiResponse<Product[]> {}
+interface StringArrayApiResponse extends ApiResponse<string[]> {}
+
+/** Visual Search API responses */
+interface VisualSearchApiResponse extends ApiResponse<VisualSearchResult> {}
+interface ColorDetectionResponse { colors: string[]; }
+interface PatternRecognitionResponse { patterns: string[]; }
+
+/** Smart Search API responses */
+interface SearchResultApiResponse extends ApiResponse<SearchResult> {}
+interface AutocompleteApiResponse extends ApiResponse<{ suggestions: AISearchSuggestion[] }> {}
+interface SpellCheckApiResponse extends ApiResponse<{ corrected: string }> {}
+
+/** Voice Search API responses */
+interface VoiceTranscriptionResponse { text: string; }
+interface VoiceCommandResponse { intent: string; action: string; parameters: Record<string, unknown>; }
+interface VoiceCommandsListApiResponse extends ApiResponse<Array<{ command: string; description: string }>> {}
+
+/** Chatbot API responses */
+interface ChatMessageApiResponse extends ApiResponse<ChatMessage> {}
+interface ChatMessageArrayApiResponse extends ApiResponse<ChatMessage[]> {}
+interface ChatSessionApiResponse extends ApiResponse<{ sessionId: string; greeting: ChatMessage }> {}
+interface ProductQuestionApiResponse extends ApiResponse<{ answer: string }> {}
+interface IntentAnalysisApiResponse extends ApiResponse<{ intent: string; confidence: number; entities: Array<{ type: string; value: string }>; }> {}
+
+/** Virtual Try-On API responses */
+interface VirtualTryOnApiResponse extends ApiResponse<VirtualTryOnResult> {}
+interface AvatarCreationResponse { avatarId: string; avatarUrl: string; }
+interface FitRecommendationApiResponse extends ApiResponse<FitRecommendation> {}
+interface FurnitureVisualizationResponse { resultUrl: string; placement: { x: number; y: number; scale: number }; }
 
 // ============================================================================
 // RECOMMENDATION SERVICE
@@ -19,71 +59,71 @@ const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localho
 
 export const recommendationService = {
   async getPersonalized(userId: string, limit: number = 10): Promise<Recommendation> {
-    const response = await api.get<Recommendation>(
+    const response = await apiClient.get<Recommendation>(
       `/ai/recommendations/personalized?userId=${userId}&limit=${limit}`
     );
-    return response.data!;
+    return response.data;
   },
 
   async getSimilar(productId: string, limit: number = 10): Promise<Product[]> {
-    const response = await api.get<Product[]>(
+    const response = await apiClient.get<Product[]>(
       `/ai/recommendations/similar/${productId}?limit=${limit}`
     );
-    return response.data!;
+    return response.data;
   },
 
   async getFrequentlyBoughtTogether(productId: string): Promise<Product[]> {
-    const response = await api.get<Product[]>(
+    const response = await apiClient.get<Product[]>(
       `/ai/recommendations/frequently-bought/${productId}`
     );
-    return response.data!;
+    return response.data;
   },
 
   async getCrossSell(cartItems: string[]): Promise<Product[]> {
-    const response = await api.post<Product[]>('/ai/recommendations/cross-sell', {
+    const response = await apiClient.post<Product[]>('/ai/recommendations/cross-sell', {
       productIds: cartItems,
     });
-    return response.data!;
+    return response.data;
   },
 
   async getUpsell(productId: string): Promise<Product[]> {
-    const response = await api.get<Product[]>(
+    const response = await apiClient.get<any>(
       `/ai/recommendations/upsell/${productId}`
     );
-    return response.data!;
+    return response.data;
   },
 
   async getCompleteTheLook(productId: string): Promise<Product[]> {
-    const response = await api.get<Product[]>(
+    const response = await apiClient.get<any>(
       `/ai/recommendations/complete-look/${productId}`
     );
-    return response.data!;
+    return response.data;
   },
 
   async getTrending(limit: number = 10): Promise<Recommendation> {
-    const response = await api.get<Recommendation>(
+    const response = await apiClient.get<any>(
       `/ai/recommendations/trending?limit=${limit}`
     );
-    return response.data!;
+    return response.data;
   },
 
   async getNewArrivals(limit: number = 10): Promise<Recommendation> {
-    const response = await api.get<Recommendation>(
+    const response = await apiClient.get<any>(
       `/ai/recommendations/new-arrivals?limit=${limit}`
     );
-    return response.data!;
+    return response.data;
   },
 
   async getRecentlyViewed(userId: string, limit: number = 10): Promise<Recommendation> {
-    const response = await api.get<Recommendation>(
+    const response = await apiClient.get<any>(
       `/ai/recommendations/recently-viewed?userId=${userId}&limit=${limit}`
     );
-    return response.data!;
+    return response.data;
   },
 
   async getTrendingSearches(): Promise<string[]> {
-    const response = await api.get<string[]>('/ai/recommendations/trending-searches');
-    return response.data!;
+    const response = await apiClient.get<any>('/ai/recommendations/trending-searches');
+    return response.data;
   },
 
   async getByType(
@@ -91,12 +131,12 @@ export const recommendationService = {
     context: { userId?: string; productId?: string; categoryId?: string },
     limit: number = 10
   ): Promise<Recommendation> {
-    const response = await api.post<Recommendation>('/ai/recommendations/by-type', {
+    const response = await apiClient.post<any>('/ai/recommendations/by-type', {
       type,
       context,
       limit,
     });
-    return response.data!;
+    return response.data;
   },
 
   async trackInteraction(
@@ -104,7 +144,7 @@ export const recommendationService = {
     productId: string,
     type: 'view' | 'click' | 'add_to_cart' | 'purchase' | 'wishlist'
   ): Promise<void> {
-    await api.post('/ai/recommendations/track', {
+    await apiClient.post('/ai/recommendations/track', {
       userId,
       productId,
       interactionType: type,
@@ -135,24 +175,24 @@ export const visualSearchService = {
   },
 
   async searchByUrl(imageUrl: string): Promise<VisualSearchResult> {
-    const response = await api.post<VisualSearchResult>('/ai/visual-search/url', {
+    const response = await apiClient.post<any>('/ai/visual-search/url', {
       imageUrl,
     });
-    return response.data!;
+    return response.data;
   },
 
   async searchByCamera(imageData: string): Promise<VisualSearchResult> {
-    const response = await api.post<VisualSearchResult>('/ai/visual-search/camera', {
+    const response = await apiClient.post<any>('/ai/visual-search/camera', {
       imageData,
     });
-    return response.data!;
+    return response.data;
   },
 
   async findSimilarStyle(productId: string): Promise<Product[]> {
-    const response = await api.get<Product[]>(
+    const response = await apiClient.get<any>(
       `/ai/visual-search/similar-style/${productId}`
     );
-    return response.data!;
+    return response.data;
   },
 
   async detectColors(image: File | Blob): Promise<string[]> {
@@ -168,7 +208,7 @@ export const visualSearchService = {
       throw new Error('Color detection failed');
     }
 
-    const data = await response.json();
+    const data: ColorDetectionResponse = await response.json();
     return data.colors;
   },
 
@@ -185,7 +225,7 @@ export const visualSearchService = {
       throw new Error('Pattern recognition failed');
     }
 
-    const data = await response.json();
+    const data: PatternRecognitionResponse = await response.json();
     return data.patterns;
   },
 };
@@ -202,70 +242,70 @@ export const smartSearchService = {
     limit?: number;
     sortBy?: string;
   }): Promise<SearchResult> {
-    const response = await api.post<SearchResult>('/ai/search', {
+    const response = await apiClient.post<any>('/ai/search', {
       query,
       ...options,
     });
-    return response.data!;
+    return response.data;
   },
 
   async semanticSearch(query: string, limit: number = 20): Promise<Product[]> {
-    const response = await api.post<Product[]>('/ai/search/semantic', {
+    const response = await apiClient.post<any>('/ai/search/semantic', {
       query,
       limit,
     });
-    return response.data!;
+    return response.data;
   },
 
   async getAutocomplete(query: string): Promise<{ suggestions: AISearchSuggestion[] }> {
-    const response = await api.get<{ suggestions: AISearchSuggestion[] }>(
+    const response = await apiClient.get<any>(
       `/ai/search/autocomplete?q=${encodeURIComponent(query)}`
     );
-    return response.data!;
+    return response.data;
   },
 
   async getTrending(): Promise<string[]> {
-    const response = await api.get<string[]>('/ai/search/trending');
-    return response.data!;
+    const response = await apiClient.get<any>('/ai/search/trending');
+    return response.data;
   },
 
   async correctSpelling(query: string): Promise<string> {
-    const response = await api.get<{ corrected: string }>(
+    const response = await apiClient.get<any>(
       `/ai/search/spell-check?q=${encodeURIComponent(query)}`
     );
-    return response.data!.corrected;
+    return response.data.corrected;
   },
 
   async expandQuery(query: string): Promise<string[]> {
-    const response = await api.get<string[]>(
+    const response = await apiClient.get<any>(
       `/ai/search/expand?q=${encodeURIComponent(query)}`
     );
-    return response.data!;
+    return response.data;
   },
 
   async getSynonyms(term: string): Promise<string[]> {
-    const response = await api.get<string[]>(
+    const response = await apiClient.get<any>(
       `/ai/search/synonyms?term=${encodeURIComponent(term)}`
     );
-    return response.data!;
+    return response.data;
   },
 
   async getRelatedSearches(query: string): Promise<string[]> {
-    const response = await api.get<string[]>(
+    const response = await apiClient.get<any>(
       `/ai/search/related?q=${encodeURIComponent(query)}`
     );
-    return response.data!;
+    return response.data;
   },
 
   async personalizeResults(
     results: Product[],
     userId: string
   ): Promise<Product[]> {
-    const response = await api.post<Product[]>('/ai/search/personalize', {
+    const response = await apiClient.post<any>('/ai/search/personalize', {
       products: results.map((p) => p.id),
       userId,
     });
-    return response.data!;
+    return response.data;
   },
 
   async trackSearchEvent(
@@ -273,7 +313,7 @@ export const smartSearchService = {
     userId?: string,
     clickedProductId?: string
   ): Promise<void> {
-    await api.post('/ai/search/track', {
+    await apiClient.post('/ai/search/track', {
       query,
       userId,
       clickedProductId,
@@ -300,7 +340,7 @@ export const voiceSearchService = {
       throw new Error('Voice transcription failed');
     }
 
-    const data = await response.json();
+    const data: VoiceTranscriptionResponse = await response.json();
     return data.text;
   },
 
@@ -310,10 +350,10 @@ export const voiceSearchService = {
   },
 
   async getVoiceCommands(): Promise<{ command: string; description: string }[]> {
-    const response = await api.get<{ command: string; description: string }[]>(
+    const response = await apiClient.get<any>(
       '/ai/voice/commands'
     );
-    return response.data!;
+    return response.data;
   },
 
   async processCommand(audio: Blob): Promise<{
@@ -333,7 +373,8 @@ export const voiceSearchService = {
       throw new Error('Voice command processing failed');
     }
 
-    return response.json();
+    const data: VoiceCommandResponse = await response.json();
+    return data;
   },
 };
 
@@ -352,31 +393,31 @@ export const chatbotService = {
       viewedProducts?: string[];
     }
   ): Promise<ChatMessage> {
-    const response = await api.post<ChatMessage>('/ai/chatbot/message', {
+    const response = await apiClient.post<any>('/ai/chatbot/message', {
       message,
       sessionId,
       context,
     });
-    return response.data!;
+    return response.data;
   },
 
   async getConversationHistory(sessionId: string): Promise<ChatMessage[]> {
-    const response = await api.get<ChatMessage[]>(
+    const response = await apiClient.get<any>(
       `/ai/chatbot/history/${sessionId}`
     );
-    return response.data!;
+    return response.data;
   },
 
   async startSession(userId?: string): Promise<{ sessionId: string; greeting: ChatMessage }> {
-    const response = await api.post<{ sessionId: string; greeting: ChatMessage }>(
+    const response = await apiClient.post<any>(
       '/ai/chatbot/start',
       { userId }
     );
-    return response.data!;
+    return response.data;
   },
 
   async endSession(sessionId: string): Promise<void> {
-    await api.post(`/ai/chatbot/end/${sessionId}`);
+    await apiClient.post(`/ai/chatbot/end/${sessionId}`);
   },
 
   async provideFeedback(
@@ -384,7 +425,7 @@ export const chatbotService = {
     messageId: string,
     feedback: 'helpful' | 'not_helpful'
   ): Promise<void> {
-    await api.post('/ai/chatbot/feedback', {
+    await apiClient.post('/ai/chatbot/feedback', {
       sessionId,
       messageId,
       feedback,
@@ -392,11 +433,11 @@ export const chatbotService = {
   },
 
   async getProductInfo(productId: string, question: string): Promise<string> {
-    const response = await api.post<{ answer: string }>('/ai/chatbot/product-qa', {
+    const response = await apiClient.post<any>('/ai/chatbot/product-qa', {
       productId,
       question,
     });
-    return response.data!.answer;
+    return response.data.answer;
   },
 
   async getSuggestedQuestions(context: {
@@ -404,11 +445,11 @@ export const chatbotService = {
     categoryId?: string;
     page?: string;
   }): Promise<string[]> {
-    const response = await api.post<string[]>(
+    const response = await apiClient.post<any>(
       '/ai/chatbot/suggested-questions',
       context
     );
-    return response.data!;
+    return response.data;
   },
 
   async analyzeIntent(message: string): Promise<{
@@ -416,12 +457,8 @@ export const chatbotService = {
     confidence: number;
     entities: Array<{ type: string; value: string }>;
   }> {
-    const response = await api.post<{
-      intent: string;
-      confidence: number;
-      entities: Array<{ type: string; value: string }>;
-    }>('/ai/chatbot/analyze-intent', { message });
-    return response.data!;
+    const response = await apiClient.post<any>('/ai/chatbot/analyze-intent', { message });
+    return response.data;
   },
 };
 
@@ -454,11 +491,11 @@ export const virtualTryOnService = {
     productId: string,
     avatarId: string
   ): Promise<VirtualTryOnResult> {
-    const response = await api.post<VirtualTryOnResult>(
+    const response = await apiClient.post<any>(
       '/ai/virtual-tryon/avatar',
       { productId, avatarId }
     );
-    return response.data!;
+    return response.data;
   },
 
   async createAvatar(userImage: File | Blob): Promise<{ avatarId: string; avatarUrl: string }> {
@@ -474,7 +511,8 @@ export const virtualTryOnService = {
       throw new Error('Avatar creation failed');
     }
 
-    return response.json();
+    const data: AvatarCreationResponse = await response.json();
+    return data;
   },
 
   async getFitRecommendation(
@@ -487,11 +525,11 @@ export const virtualTryOnService = {
       hips?: number;
     }
   ): Promise<FitRecommendation> {
-    const response = await api.post<FitRecommendation>(
+    const response = await apiClient.post<FitRecommendation>(
       '/ai/virtual-tryon/fit-recommendation',
       { productId, measurements }
     );
-    return response.data!;
+    return response.data;
   },
 
   async analyzeFit(
@@ -550,7 +588,7 @@ export const personalizationService = {
     }>;
     deals: Product[];
   }> {
-    const response = await api.get<{
+    const response = await apiClient.get<{
       banners: Array<{ id: string; imageUrl: string; link: string }>;
       sections: Array<{
         id: string;
@@ -560,7 +598,7 @@ export const personalizationService = {
       }>;
       deals: Product[];
     }>(`/ai/personalization/homepage/${userId}`);
-    return response.data!;
+    return response.data;
   },
 
   async getUserSegment(userId: string): Promise<{
@@ -570,14 +608,14 @@ export const personalizationService = {
     priceRange: { min: number; max: number };
     shoppingBehavior: string;
   }> {
-    const response = await api.get<{
+    const response = await apiClient.get<{
       segment: string;
       traits: string[];
       preferredCategories: string[];
       priceRange: { min: number; max: number };
       shoppingBehavior: string;
     }>(`/ai/personalization/segment/${userId}`);
-    return response.data!;
+    return response.data;
   },
 
   async getPurchasePrediction(userId: string): Promise<{
@@ -586,13 +624,13 @@ export const personalizationService = {
     predictedTimeframe: string;
     confidence: number;
   }> {
-    const response = await api.get<{
+    const response = await apiClient.get<{
       likelihood: number;
       predictedProducts: Product[];
       predictedTimeframe: string;
       confidence: number;
     }>(`/ai/personalization/purchase-prediction/${userId}`);
-    return response.data!;
+    return response.data;
   },
 
   async getChurnRisk(userId: string): Promise<{
@@ -601,13 +639,13 @@ export const personalizationService = {
     factors: string[];
     suggestedActions: string[];
   }> {
-    const response = await api.get<{
+    const response = await apiClient.get<{
       risk: 'LOW' | 'MEDIUM' | 'HIGH';
       score: number;
       factors: string[];
       suggestedActions: string[];
     }>(`/ai/personalization/churn-risk/${userId}`);
-    return response.data!;
+    return response.data;
   },
 
   async getOptimalEngagementTime(userId: string): Promise<{
@@ -615,12 +653,12 @@ export const personalizationService = {
     bestDay: string;
     channels: Array<{ channel: string; score: number }>;
   }> {
-    const response = await api.get<{
+    const response = await apiClient.get<{
       bestTime: string;
       bestDay: string;
       channels: Array<{ channel: string; score: number }>;
     }>(`/ai/personalization/engagement-time/${userId}`);
-    return response.data!;
+    return response.data;
   },
 
   async updatePreferences(
@@ -632,7 +670,7 @@ export const personalizationService = {
       styles: string[];
     }>
   ): Promise<void> {
-    await api.post(`/ai/personalization/preferences/${userId}`, preferences);
+    await apiClient.post(`/ai/personalization/preferences/${userId}`, preferences);
   },
 };
 
@@ -664,13 +702,13 @@ export const fraudDetectionService = {
     riskFactors: string[];
     recommendations: string[];
   }> {
-    const response = await api.post<{
+    const response = await apiClient.post<{
       riskScore: number;
       decision: 'APPROVE' | 'REVIEW' | 'DECLINE';
       riskFactors: string[];
       recommendations: string[];
     }>('/ai/fraud/analyze', transaction);
-    return response.data!;
+    return response.data;
   },
 
   async checkAccountRisk(userId: string): Promise<{
@@ -678,12 +716,12 @@ export const fraudDetectionService = {
     flags: string[];
     lastIncident?: string;
   }> {
-    const response = await api.get<{
+    const response = await apiClient.get<{
       riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
       flags: string[];
       lastIncident?: string;
     }>(`/ai/fraud/account-risk/${userId}`);
-    return response.data!;
+    return response.data;
   },
 
   async reportFraud(
@@ -691,7 +729,7 @@ export const fraudDetectionService = {
     type: string,
     description: string
   ): Promise<void> {
-    await api.post('/ai/fraud/report', {
+    await apiClient.post('/ai/fraud/report', {
       transactionId,
       type,
       description,
@@ -711,14 +749,14 @@ export const pricingService = {
     competitorPrices: Array<{ competitor: string; price: number }>;
     demandLevel: 'LOW' | 'MEDIUM' | 'HIGH';
   }> {
-    const response = await api.get<{
+    const response = await apiClient.get<{
       suggestedPrice: number;
       minPrice: number;
       maxPrice: number;
       competitorPrices: Array<{ competitor: string; price: number }>;
       demandLevel: 'LOW' | 'MEDIUM' | 'HIGH';
     }>(`/ai/pricing/optimal/${productId}`);
-    return response.data!;
+    return response.data;
   },
 
   async getPersonalizedPrice(
@@ -729,12 +767,12 @@ export const pricingService = {
     originalPrice: number;
     discountReason?: string;
   }> {
-    const response = await api.get<{
+    const response = await apiClient.get<{
       price: number;
       originalPrice: number;
       discountReason?: string;
     }>(`/ai/pricing/personalized/${productId}?userId=${userId}`);
-    return response.data!;
+    return response.data;
   },
 
   async getBundlePrice(productIds: string[]): Promise<{
@@ -743,22 +781,22 @@ export const pricingService = {
     savings: number;
     savingsPercentage: number;
   }> {
-    const response = await api.post<{
+    const response = await apiClient.post<{
       bundlePrice: number;
       individualTotal: number;
       savings: number;
       savingsPercentage: number;
     }>('/ai/pricing/bundle', { productIds });
-    return response.data!;
+    return response.data;
   },
 
   async getPriceHistory(productId: string, days: number = 30): Promise<
     Array<{ date: string; price: number }>
   > {
-    const response = await api.get<Array<{ date: string; price: number }>>(
+    const response = await apiClient.get<Array<{ date: string; price: number }>>(
       `/ai/pricing/history/${productId}?days=${days}`
     );
-    return response.data!;
+    return response.data;
   },
 
   async getPriceDropAlert(
@@ -766,12 +804,12 @@ export const pricingService = {
     targetPrice: number,
     userId: string
   ): Promise<{ alertId: string }> {
-    const response = await api.post<{ alertId: string }>('/ai/pricing/alert', {
+    const response = await apiClient.post<{ alertId: string }>('/ai/pricing/alert', {
       productId,
       targetPrice,
       userId,
     });
-    return response.data!;
+    return response.data;
   },
 };
 
@@ -785,7 +823,7 @@ export const analyticsService = {
     properties: Record<string, unknown>,
     userId?: string
   ): Promise<void> {
-    await api.post('/ai/analytics/track', {
+    await apiClient.post('/ai/analytics/track', {
       event: eventName,
       properties,
       userId,
@@ -799,13 +837,13 @@ export const analyticsService = {
     confidence: number;
     factors: string[];
   }> {
-    const response = await api.get<{
+    const response = await apiClient.get<{
       currentValue: number;
       predictedValue: number;
       confidence: number;
       factors: string[];
     }>(`/ai/analytics/clv/${userId}`);
-    return response.data!;
+    return response.data;
   },
 
   async getProductInsights(productId: string): Promise<{
@@ -817,7 +855,7 @@ export const analyticsService = {
     cartAbandonments: number;
     sentiment: number;
   }> {
-    const response = await api.get<{
+    const response = await apiClient.get<{
       views: number;
       conversions: number;
       conversionRate: number;
@@ -826,7 +864,7 @@ export const analyticsService = {
       cartAbandonments: number;
       sentiment: number;
     }>(`/ai/analytics/product/${productId}`);
-    return response.data!;
+    return response.data;
   },
 
   async predictTrends(category?: string): Promise<
@@ -838,7 +876,7 @@ export const analyticsService = {
     }>
   > {
     const params = category ? `?category=${category}` : '';
-    const response = await api.get<
+    const response = await apiClient.get<
       Array<{
         trend: string;
         direction: 'UP' | 'DOWN' | 'STABLE';
@@ -846,7 +884,7 @@ export const analyticsService = {
         relatedProducts: string[];
       }>
     >(`/ai/analytics/trends${params}`);
-    return response.data!;
+    return response.data;
   },
 };
 

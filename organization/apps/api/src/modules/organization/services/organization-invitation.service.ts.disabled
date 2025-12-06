@@ -1,0 +1,293 @@
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { PrismaService } from '@/common/prisma/prisma.service';
+import { EmailService } from '../../email/email.service';
+import { MemberJoinedEvent } from '../events';
+import * as crypto from 'crypto';
+
+@Injectable()
+export class OrganizationInvitationService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+    private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  async findAll(orgId: string) {
+    const invitations = await this.prisma.organizationInvitation.findMany({
+      where: {
+        organizationId: orgId,
+        status: 'pending',
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return invitations;
+  }
+
+  async getByToken(token: string) {
+    const invitation = await this.prisma.organizationInvitation.findUnique({
+      where: { token },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logoUrl: true,
+          },
+        },
+      },
+    });
+
+    if (!invitation) {
+      throw new NotFoundException('Invitation not found');
+    }
+
+    if (invitation.status !== 'pending') {
+      throw new BadRequestException('Invitation has already been used');
+    }
+
+    if (invitation.expiresAt < new Date()) {
+      throw new BadRequestException('Invitation has expired');
+    }
+
+    return {
+      id: invitation.id,
+      email: invitation.email,
+      organization: invitation.organization,
+      expiresAt: invitation.expiresAt,
+      message: invitation.message,
+    };
+  }
+
+  async accept(token: string, userId: string) {
+    // Validate invitation
+    const invitation = await this.prisma.organizationInvitation.findUnique({
+      where: { token },
+      include: {
+        organization: true,
+      },
+    });
+
+    if (!invitation) {
+      throw new NotFoundException('Invitation not found');
+    }
+
+    if (invitation.status !== 'pending') {
+      throw new BadRequestException('Invitation has already been used');
+    }
+
+    if (invitation.expiresAt < new Date()) {
+      throw new BadRequestException('Invitation has expired');
+    }
+
+    // Verify email matches
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (user?.email.toLowerCase() !== invitation.email.toLowerCase()) {
+      throw new BadRequestException('Invitation was sent to a different email address');
+    }
+
+    // Check if already a member
+    const existingMember = await this.prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: invitation.organizationId,
+          userId,
+        },
+      },
+    });
+
+    if (existingMember) {
+      throw new BadRequestException('You are already a member of this organization');
+    }
+
+    // Get default role if not specified
+    let roleId = invitation.roleId;
+    if (!roleId) {
+      const defaultRole = await this.prisma.organizationRole.findFirst({
+        where: {
+          OR: [
+            { organizationId: invitation.organizationId, isDefault: true },
+            { organizationId: null, name: 'Viewer', isSystem: true },
+          ],
+        },
+      });
+      roleId = defaultRole?.id ?? null;
+    }
+
+    // Accept invitation and create membership
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Update invitation status
+      await tx.organizationInvitation.update({
+        where: { id: invitation.id },
+        data: {
+          status: 'accepted',
+          acceptedAt: new Date(),
+        },
+      });
+
+      // Create membership
+      const member = await tx.organizationMember.create({
+        data: {
+          organizationId: invitation.organizationId,
+          userId,
+          roleId,
+          departmentId: invitation.departmentId,
+          teamId: invitation.teamId,
+          status: 'ACTIVE',
+          invitedBy: invitation.invitedById,
+        },
+        include: {
+          organization: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          role: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      return member;
+    });
+
+    // Emit event
+    this.eventEmitter.emit(
+      'organization.member.joined',
+      new MemberJoinedEvent(invitation.organizationId, userId, invitation.invitedById),
+    );
+
+    return {
+      success: true,
+      organization: result.organization,
+      role: result.role,
+    };
+  }
+
+  async cancel(orgId: string, inviteId: string) {
+    const invitation = await this.prisma.organizationInvitation.findFirst({
+      where: {
+        id: inviteId,
+        organizationId: orgId,
+        status: 'pending',
+      },
+    });
+
+    if (!invitation) {
+      throw new NotFoundException('Invitation not found');
+    }
+
+    await this.prisma.organizationInvitation.update({
+      where: { id: inviteId },
+      data: { status: 'cancelled' },
+    });
+
+    return { success: true };
+  }
+
+  async resend(orgId: string, inviteId: string) {
+    const invitation = await this.prisma.organizationInvitation.findFirst({
+      where: {
+        id: inviteId,
+        organizationId: orgId,
+        status: 'pending',
+      },
+      include: {
+        organization: {
+          select: {
+            name: true,
+            slug: true,
+          },
+        },
+        invitedBy: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!invitation) {
+      throw new NotFoundException('Invitation not found');
+    }
+
+    // Generate new token and extend expiry
+    const newToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    const updatedInvitation = await this.prisma.organizationInvitation.update({
+      where: { id: inviteId },
+      data: {
+        token: newToken,
+        expiresAt,
+      },
+    });
+
+    // Resend invitation email
+    try {
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+      const invitationUrl = `${frontendUrl}/organizations/invite/${newToken}`;
+
+      await this.emailService.sendEmail({
+        to: invitation.email,
+        subject: `Reminder: You've been invited to join ${invitation.organization.name} on CitadelBuy`,
+        template: 'organization-invitation',
+        context: {
+          organizationName: invitation.organization.name,
+          inviterName: invitation.invitedBy.name,
+          invitationUrl,
+          message: invitation.message,
+          expiresAt: updatedInvitation.expiresAt,
+          isResend: true,
+        },
+      });
+    } catch (error) {
+      // Log error but don't fail the resend operation
+      // Email error logged by EmailService
+    }
+
+    return { success: true, expiresAt };
+  }
+
+  async findForEmail(email: string) {
+    const invitations = await this.prisma.organizationInvitation.findMany({
+      where: {
+        email: { equals: email, mode: 'insensitive' },
+        status: 'pending',
+        expiresAt: { gt: new Date() },
+      },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logoUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return invitations;
+  }
+}

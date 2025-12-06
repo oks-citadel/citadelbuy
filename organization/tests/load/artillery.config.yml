@@ -1,0 +1,174 @@
+# CitadelBuy Load Testing Configuration
+# Run: artillery run tests/load/artillery.config.yml
+
+config:
+  target: "http://localhost:4000"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp up load"
+    - duration: 300
+      arrivalRate: 50
+      name: "Sustained load"
+    - duration: 60
+      arrivalRate: 50
+      rampTo: 5
+      name: "Ramp down"
+
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+  plugins:
+    expect: {}
+    metrics-by-endpoint: {}
+
+  variables:
+    testEmail: "loadtest@citadelbuy.com"
+    testPassword: "LoadTest123!"
+
+scenarios:
+  - name: "Browse Products"
+    weight: 40
+    flow:
+      - get:
+          url: "/api/products"
+          expect:
+            - statusCode: 200
+      - think: 2
+      - get:
+          url: "/api/products?page=1&limit=20"
+          capture:
+            - json: "$.data[0].id"
+              as: "productId"
+          expect:
+            - statusCode: 200
+      - think: 1
+      - get:
+          url: "/api/products/{{ productId }}"
+          expect:
+            - statusCode:
+                - 200
+                - 404
+
+  - name: "Search Products"
+    weight: 25
+    flow:
+      - get:
+          url: "/api/search?q=laptop"
+          expect:
+            - statusCode: 200
+      - think: 2
+      - get:
+          url: "/api/search?q=phone&category=electronics"
+          expect:
+            - statusCode: 200
+      - think: 1
+      - get:
+          url: "/api/search/autocomplete?q=sho"
+          expect:
+            - statusCode: 200
+
+  - name: "Browse Categories"
+    weight: 15
+    flow:
+      - get:
+          url: "/api/categories"
+          expect:
+            - statusCode: 200
+      - think: 1
+      - get:
+          url: "/api/categories/electronics"
+          expect:
+            - statusCode:
+                - 200
+                - 404
+      - think: 2
+      - get:
+          url: "/api/categories/electronics/products"
+          expect:
+            - statusCode:
+                - 200
+                - 404
+
+  - name: "User Authentication Flow"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "customer@citadelbuy.com"
+            password: "password123"
+          capture:
+            - json: "$.accessToken"
+              as: "authToken"
+          expect:
+            - statusCode:
+                - 200
+                - 401
+      - think: 1
+      - get:
+          url: "/api/auth/me"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode:
+                - 200
+                - 401
+      - think: 2
+      - get:
+          url: "/api/users/profile"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode:
+                - 200
+                - 401
+
+  - name: "Shopping Cart Operations"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "customer@citadelbuy.com"
+            password: "password123"
+          capture:
+            - json: "$.accessToken"
+              as: "authToken"
+      - think: 1
+      - get:
+          url: "/api/cart"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode:
+                - 200
+                - 401
+      - think: 1
+      - post:
+          url: "/api/cart/items"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            productId: "test-product-id"
+            quantity: 1
+          expect:
+            - statusCode:
+                - 200
+                - 201
+                - 400
+                - 401
+                - 404
+
+  - name: "Health Check"
+    weight: 5
+    flow:
+      - get:
+          url: "/api/health"
+          expect:
+            - statusCode: 200

@@ -1,0 +1,72 @@
+# =========================================================
+# CitadelBuy Kibana Production Configuration
+# =========================================================
+
+# ========== Server Settings ==========
+server.name: citadelbuy-kibana
+server.host: "0.0.0.0"
+server.port: 5601
+
+# ========== Elasticsearch Connection ==========
+elasticsearch.hosts: ["http://elasticsearch-01:9200"]
+elasticsearch.username: "elastic"
+# Password set via environment variable ELASTICSEARCH_PASSWORD
+
+# ========== Security Settings ==========
+xpack.security.enabled: true
+xpack.security.encryptionKey: "${KIBANA_ENCRYPTION_KEY}"
+xpack.security.sessionTimeout: 600000  # 10 minutes
+
+# ========== Monitoring ==========
+xpack.monitoring.enabled: true
+xpack.monitoring.ui.enabled: true
+xpack.monitoring.kibana.collection.enabled: true
+xpack.monitoring.ui.container.elasticsearch.enabled: true
+
+# ========== Reporting ==========
+xpack.reporting.enabled: true
+xpack.reporting.encryptionKey: "${KIBANA_REPORTING_ENCRYPTION_KEY}"
+
+# ========== Default Settings ==========
+kibana.index: ".kibana"
+kibana.defaultAppId: "dashboard"
+
+# ========== Logging ==========
+logging.dest: stdout
+logging.silent: false
+logging.quiet: false
+logging.verbose: false
+
+# ========== Saved Objects ==========
+savedObjects.maxImportPayloadBytes: 26214400  # 25MB
+
+# ========== Server Settings ==========
+server.maxPayloadBytes: 1048576  # 1MB
+
+# ========== Telemetry ==========
+telemetry.enabled: false
+telemetry.optIn: false
+
+# ========== UI Settings ==========
+server.rewriteBasePath: false
+
+# ========== Maps ==========
+xpack.maps.enabled: true
+
+# ========== Canvas ==========
+xpack.canvas.enabled: true
+
+# ========== Graph ==========
+xpack.graph.enabled: false
+
+# ========== Alerting ==========
+xpack.alerting.enabled: true
+
+# ========== Machine Learning ==========
+xpack.ml.enabled: false
+
+# ========== Index Management ==========
+xpack.index_management.enabled: true
+
+# ========== License Management ==========
+xpack.license_management.enabled: true

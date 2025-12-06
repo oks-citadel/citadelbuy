@@ -44,17 +44,21 @@
     "infra:destroy": "cd infrastructure/terraform/environments/prod && terraform destroy",
     "k8s:deploy": "kubectl apply -k infrastructure/kubernetes/overlays/production",
     "helm:install": "helm install citadelbuy infrastructure/helm/citadelbuy -f infrastructure/helm/values/production.yaml",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "audit": "pnpm audit --audit-level=high",
+    "audit:fix": "pnpm audit --fix",
+    "deps:check": "bash scripts/check-deps.sh",
+    "deps:outdated": "pnpm outdated"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "artillery": "^2.0.0",
-    "concurrently": "^8.2.2",
-    "husky": "^8.0.3",
-    "lint-staged": "^15.2.0",
-    "prettier": "^3.1.0",
-    "turbo": "^2.0.0",
-    "typescript": "^5.3.3"
+    "@types/node": "^20.19.25",
+    "artillery": "^2.0.18",
+    "concurrently": "^9.2.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.4",
+    "turbo": "^2.6.2",
+    "typescript": "^5.7.2"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
@@ -67,6 +71,14 @@
   },
   "engines": {
     "node": ">=20.0.0",
-    "npm": ">=10.0.0"
+    "npm": ">=10.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "packageManager": "pnpm@10.23.0",
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^18.3.12",
+      "@types/react-dom": "^18.3.1"
+    }
   }
 }

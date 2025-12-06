@@ -1,0 +1,353 @@
+{
+  "environment": "staging",
+  "endpoints": {
+    "api": {
+      "baseUrl": "https://staging-api.citadelbuy.com",
+      "timeout": 10000,
+      "retries": 3,
+      "paths": {
+        "health": "/api/health",
+        "healthReady": "/api/health/ready",
+        "healthLive": "/api/health/live",
+        "healthDetailed": "/api/health/detailed",
+        "authLogin": "/api/auth/login",
+        "authRegister": "/api/auth/register",
+        "authRefresh": "/api/auth/refresh",
+        "products": "/api/products",
+        "productSearch": "/api/products/search",
+        "categories": "/api/categories",
+        "cart": "/api/cart",
+        "cartAdd": "/api/cart/items",
+        "checkout": "/api/checkout",
+        "orders": "/api/orders",
+        "adminOrders": "/api/admin/orders",
+        "adminProducts": "/api/admin/products",
+        "users": "/api/users",
+        "vendors": "/api/vendors",
+        "analytics": "/api/analytics"
+      }
+    },
+    "web": {
+      "baseUrl": "https://staging.citadelbuy.com",
+      "timeout": 15000,
+      "retries": 3,
+      "paths": {
+        "home": "/",
+        "products": "/products",
+        "categories": "/categories",
+        "deals": "/deals",
+        "cart": "/cart",
+        "checkout": "/checkout",
+        "login": "/auth/login",
+        "register": "/auth/register",
+        "account": "/account",
+        "admin": "/admin"
+      }
+    }
+  },
+  "expectedResponses": {
+    "health": {
+      "statusCode": 200,
+      "schema": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["ok", "healthy"]
+          },
+          "database": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": ["up", "down"]
+              }
+            }
+          },
+          "redis": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": ["up", "down"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "healthDetailed": {
+      "statusCode": 200,
+      "schema": {
+        "type": "object",
+        "required": ["status", "checks"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["healthy", "unhealthy"]
+          },
+          "checks": {
+            "type": "object",
+            "required": ["database", "redis"],
+            "properties": {
+              "database": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "type": "string"
+                  },
+                  "responseTime": {
+                    "type": "number"
+                  }
+                }
+              },
+              "redis": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "type": "string"
+                  },
+                  "responseTime": {
+                    "type": "number"
+                  }
+                }
+              },
+              "memory": {
+                "type": "object",
+                "properties": {
+                  "heap": {
+                    "type": "number"
+                  },
+                  "rss": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "authLogin": {
+      "statusCode": [200, 401, 400],
+      "schema": {
+        "anyOf": [
+          {
+            "type": "object",
+            "required": ["accessToken"],
+            "properties": {
+              "accessToken": {
+                "type": "string"
+              },
+              "refreshToken": {
+                "type": "string"
+              },
+              "user": {
+                "type": "object"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["message"],
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "statusCode": {
+                "type": "number"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "products": {
+      "statusCode": 200,
+      "schema": {
+        "anyOf": [
+          {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array"
+              },
+              "total": {
+                "type": "number"
+              },
+              "page": {
+                "type": "number"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "cart": {
+      "statusCode": [200, 401, 404],
+      "schema": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "items": {
+                "type": "array"
+              },
+              "total": {
+                "type": "number"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["message"],
+            "properties": {
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "performance": {
+    "thresholds": {
+      "healthCheck": {
+        "maxResponseTime": 500,
+        "description": "Health check should respond within 500ms"
+      },
+      "apiEndpoint": {
+        "maxResponseTime": 2000,
+        "description": "API endpoints should respond within 2 seconds"
+      },
+      "webPage": {
+        "maxResponseTime": 3000,
+        "description": "Web pages should load within 3 seconds"
+      },
+      "databaseQuery": {
+        "maxResponseTime": 100,
+        "description": "Database queries should complete within 100ms"
+      }
+    }
+  },
+  "testData": {
+    "validUser": {
+      "email": "smoketest@citadelbuy.com",
+      "password": "SmokeTest123!@#",
+      "name": "Smoke Test User"
+    },
+    "invalidUser": {
+      "email": "invalid@example.com",
+      "password": "wrongpassword"
+    },
+    "testProduct": {
+      "name": "Smoke Test Product",
+      "sku": "SMOKE-TEST-001",
+      "price": 99.99
+    },
+    "searchQueries": [
+      "laptop",
+      "phone",
+      "test",
+      "electronics"
+    ]
+  },
+  "criticalPaths": [
+    {
+      "name": "User Registration Flow",
+      "steps": [
+        {
+          "name": "Navigate to register page",
+          "endpoint": "/auth/register",
+          "method": "GET"
+        },
+        {
+          "name": "Submit registration",
+          "endpoint": "/api/auth/register",
+          "method": "POST"
+        }
+      ]
+    },
+    {
+      "name": "Product Browse and Search",
+      "steps": [
+        {
+          "name": "List products",
+          "endpoint": "/api/products",
+          "method": "GET"
+        },
+        {
+          "name": "Search products",
+          "endpoint": "/api/products/search",
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "name": "Shopping Cart Flow",
+      "steps": [
+        {
+          "name": "View cart",
+          "endpoint": "/api/cart",
+          "method": "GET"
+        },
+        {
+          "name": "Add to cart",
+          "endpoint": "/api/cart/items",
+          "method": "POST"
+        }
+      ]
+    },
+    {
+      "name": "Checkout Flow",
+      "steps": [
+        {
+          "name": "Initiate checkout",
+          "endpoint": "/api/checkout",
+          "method": "POST"
+        }
+      ]
+    }
+  ],
+  "notifications": {
+    "slack": {
+      "enabled": false,
+      "webhookUrl": "",
+      "channels": ["#staging-alerts", "#deployments"]
+    },
+    "email": {
+      "enabled": false,
+      "recipients": ["ops@citadelbuy.com"]
+    }
+  },
+  "reporting": {
+    "generateHtmlReport": true,
+    "generateJsonReport": true,
+    "saveLogs": true,
+    "logRetentionDays": 30
+  }
+}

@@ -15,8 +15,8 @@ export function NewArrivals() {
   React.useEffect(() => {
     const fetchNewArrivals = async () => {
       try {
-        const data = await recommendationService.getNewArrivals(undefined, 8);
-        setProducts(data);
+        const data = await recommendationService.getNewArrivals(8);
+        setProducts(data.products);
       } catch (error) {
         console.error('Failed to fetch new arrivals:', error);
       } finally {

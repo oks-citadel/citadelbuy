@@ -149,12 +149,12 @@ export default function ProductDetailScreen() {
               setSelectedImage(index);
             }}
           >
-            {productData.images.map((image, index) => (
+            {productData.images.map((image: string, index: number) => (
               <Image key={index} source={{ uri: image }} style={styles.mainImage} />
             ))}
           </ScrollView>
           <View style={styles.imageDots}>
-            {productData.images.map((_, index) => (
+            {productData.images.map((_: unknown, index: number) => (
               <View
                 key={index}
                 style={[styles.dot, selectedImage === index && styles.activeDot]}
@@ -227,7 +227,7 @@ export default function ProductDetailScreen() {
           <View style={styles.variantsSection}>
             <Text style={styles.sectionTitle}>Color</Text>
             <View style={styles.variantOptions}>
-              {productData.variants.map((variant) => (
+              {productData.variants.map((variant: any) => (
                 <TouchableOpacity
                   key={variant.id}
                   style={[
@@ -282,7 +282,7 @@ export default function ProductDetailScreen() {
           {/* Features */}
           <View style={styles.featuresSection}>
             <Text style={styles.sectionTitle}>Features</Text>
-            {productData.features.map((feature, index) => (
+            {productData.features.map((feature: string, index: number) => (
               <View key={index} style={styles.featureItem}>
                 <Ionicons name="checkmark-circle" size={18} color="#10b981" />
                 <Text style={styles.featureText}>{feature}</Text>
@@ -293,7 +293,7 @@ export default function ProductDetailScreen() {
           {/* Specifications */}
           <View style={styles.specificationsSection}>
             <Text style={styles.sectionTitle}>Specifications</Text>
-            {productData.specifications.map((spec, index) => (
+            {productData.specifications.map((spec: { label: string; value: string }, index: number) => (
               <View key={index} style={styles.specRow}>
                 <Text style={styles.specLabel}>{spec.label}</Text>
                 <Text style={styles.specValue}>{spec.value}</Text>

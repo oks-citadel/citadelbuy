@@ -42,14 +42,7 @@ export default function WishlistPage() {
   }, [fetchWishlist, fetchCollections]);
 
   const handleAddToCart = (item: typeof items[0]) => {
-    addItem({
-      id: item.product.id,
-      product: item.product,
-      quantity: 1,
-      price: item.product.price,
-      total: item.product.price,
-      addedAt: new Date().toISOString(),
-    });
+    addItem(item.product, undefined, 1);
   };
 
   const handleCreateCollection = async () => {

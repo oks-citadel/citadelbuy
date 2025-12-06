@@ -7,30 +7,38 @@ import {
   SafeAreaView,
   ScrollView,
   Platform,
+  Alert,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
+import { errorReporting } from '../lib/error-reporting';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
   fallback?: React.ComponentType<ErrorFallbackProps>;
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+  componentName?: string;
 }
 
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
   errorInfo: React.ErrorInfo | null;
+  eventId: string | undefined;
 }
 
 interface ErrorFallbackProps {
   error: Error | null;
   errorInfo: React.ErrorInfo | null;
   resetError: () => void;
+  eventId?: string;
+  componentName?: string;
 }
 
 /**
  * Error Boundary Component for React Native Mobile Application
  * Catches JavaScript errors anywhere in the component tree and displays a fallback UI
+ * Automatically reports errors to Sentry with full context
  */
 export class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
@@ -42,6 +50,7 @@ export class ErrorBoundary extends React.Component<
       hasError: false,
       error: null,
       errorInfo: null,
+      eventId: undefined,
     };
   }
 
@@ -54,31 +63,72 @@ export class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-    // Log error details to console (can be extended to external error tracking service)
+    // Log error details to console
     console.error('Error Boundary caught an error:', error);
     console.error('Error Info:', errorInfo);
     console.error('Component Stack:', errorInfo.componentStack);
-
-    // Update state with error info
-    this.setState({
-      errorInfo,
-    });
 
     // Call custom error handler if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
 
-    // TODO: Send error to external monitoring service (e.g., Sentry, Bugsnag)
-    // Example:
-    // Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } });
+    // Report error to Sentry with full context
+    try {
+      const eventId = errorReporting.captureException(
+        error,
+        'error',
+        {
+          react: {
+            componentStack: errorInfo.componentStack,
+          },
+        },
+        {
+          component: this.props.componentName || 'ErrorBoundary',
+          action: 'componentDidCatch',
+          errorBoundary: 'true',
+          platform: Platform.OS,
+        }
+      );
+
+      // Add breadcrumb for context
+      errorReporting.addBreadcrumb(
+        'error-boundary',
+        `Error caught in ${this.props.componentName || 'ErrorBoundary'}`,
+        'error',
+        {
+          errorMessage: error.message,
+          errorName: error.name,
+          platform: Platform.OS,
+        }
+      );
+
+      // Update state with error info and event ID
+      this.setState({
+        errorInfo,
+        eventId,
+      });
+    } catch (reportingError) {
+      console.error('Failed to report error to Sentry:', reportingError);
+      this.setState({
+        errorInfo,
+      });
+    }
   }
 
   resetError = (): void => {
+    // Track error recovery attempt
+    errorReporting.trackEvent('error-boundary-reset', {
+      component: this.props.componentName,
+      hadEventId: !!this.state.eventId,
+      platform: Platform.OS,
+    });
+
     this.setState({
       hasError: false,
       error: null,
       errorInfo: null,
+      eventId: undefined,
     });
   };
 
@@ -92,6 +142,8 @@ export class ErrorBoundary extends React.Component<
           error={this.state.error}
           errorInfo={this.state.errorInfo}
           resetError={this.resetError}
+          eventId={this.state.eventId}
+          componentName={this.props.componentName}
         />
       );
     }
@@ -108,9 +160,27 @@ function DefaultErrorFallback({
   error,
   errorInfo,
   resetError,
+  eventId,
+  componentName,
 }: ErrorFallbackProps): React.ReactElement {
   const isDevelopment = __DEV__;
   const [showDetails, setShowDetails] = React.useState(false);
+
+  const handleCopyErrorId = async () => {
+    if (eventId) {
+      await Clipboard.setStringAsync(eventId);
+      Alert.alert('Copied', 'Error ID copied to clipboard');
+    }
+  };
+
+  const handleRetry = () => {
+    errorReporting.trackEvent('error-retry-clicked', {
+      component: componentName,
+      eventId,
+      platform: Platform.OS,
+    });
+    resetError();
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -131,19 +201,38 @@ function DefaultErrorFallback({
         {/* Error Message */}
         <Text style={styles.message}>
           We're sorry for the inconvenience. An unexpected error occurred while loading this screen.
+          {eventId && ' Our team has been automatically notified and will investigate the issue.'}
         </Text>
 
         {/* Action Buttons */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={resetError}
+            onPress={handleRetry}
             activeOpacity={0.8}
           >
             <Ionicons name="refresh" size={20} color="#fff" style={styles.buttonIcon} />
             <Text style={styles.primaryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Error ID Display */}
+        {eventId && (
+          <View style={styles.errorIdContainer}>
+            <Text style={styles.errorIdLabel}>Error ID:</Text>
+            <TouchableOpacity
+              style={styles.errorIdBox}
+              onPress={handleCopyErrorId}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.errorIdText}>{eventId}</Text>
+              <Ionicons name="copy-outline" size={16} color="#6b7280" />
+            </TouchableOpacity>
+            <Text style={styles.errorIdHint}>
+              Tap to copy • Reference this when contacting support
+            </Text>
+          </View>
+        )}
 
         {/* Development Error Details */}
         {isDevelopment && error && (
@@ -207,7 +296,7 @@ function DefaultErrorFallback({
 
         {/* Support Message */}
         <Text style={styles.supportText}>
-          If the problem persists, please contact our support team.
+          If the problem persists, please contact our support team at support@citadelbuy.com
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -341,6 +430,40 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
     textAlign: 'center',
     marginTop: 24,
+  },
+  errorIdContainer: {
+    width: '100%',
+    marginTop: 16,
+    paddingHorizontal: 16,
+  },
+  errorIdLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  errorIdBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#f9fafb',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  errorIdText: {
+    flex: 1,
+    fontSize: 11,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    color: '#374151',
+  },
+  errorIdHint: {
+    fontSize: 10,
+    color: '#9ca3af',
+    textAlign: 'center',
   },
 });
 

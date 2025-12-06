@@ -1,5 +1,4 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { CouponsService } from './coupons.service';
 import { CouponsController, AutomaticDiscountsController } from './coupons.controller';
 import { VendorCouponsService } from './vendor-coupons.service';
@@ -12,7 +11,6 @@ import { VendorsModule } from '../vendors/vendors.module';
 @Module({
   imports: [
     PrismaModule,
-    ScheduleModule.forRoot(),
     forwardRef(() => VendorsModule),
   ],
   controllers: [

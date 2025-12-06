@@ -6,7 +6,7 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 // API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 const API_TIMEOUT = 30000;
 
 // Token storage keys
@@ -67,54 +67,111 @@ const createApiClient = (): AxiosInstance => {
     withCredentials: true,
   });
 
-  // Request interceptor - Add auth token
+  // Request interceptor - Add auth token and CSRF token
   client.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
+      // Add auth token
       const token = tokenManager.getAccessToken();
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+
+      // Add CSRF token for state-changing requests
+      if (typeof window !== 'undefined' && config.headers) {
+        const method = config.method?.toUpperCase();
+        if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+          // Get CSRF token from cookie
+          const csrfToken = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('csrf-token='))
+            ?.split('=')[1];
+          if (csrfToken) {
+            config.headers['x-csrf-token'] = csrfToken;
+          }
+        }
+      }
+
       return config;
     },
     (error) => Promise.reject(error)
   );
 
-  // Response interceptor - Handle errors and token refresh
+  // Response interceptor - Handle errors with token refresh on 401
+  let isRefreshing = false;
+  let failedQueue: Array<{
+    resolve: (value: any) => void;
+    reject: (error: any) => void;
+  }> = [];
+
+  const processQueue = (error: Error | null, token: string | null = null) => {
+    failedQueue.forEach((prom) => {
+      if (error) {
+        prom.reject(error);
+      } else {
+        prom.resolve(token);
+      }
+    });
+    failedQueue = [];
+  };
+
   client.interceptors.response.use(
     (response) => response,
     async (error: AxiosError<ApiError>) => {
       const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-      // Handle 401 - Attempt token refresh
+      // Handle 401 Unauthorized - attempt token refresh
       if (error.response?.status === 401 && !originalRequest._retry) {
+        const refreshToken = tokenManager.getRefreshToken();
+
+        // If no refresh token or this is the refresh endpoint itself, clear tokens and reject
+        if (!refreshToken || originalRequest.url?.includes('/auth/refresh')) {
+          tokenManager.clearTokens();
+          const errorMessage = error.response?.data?.message || 'Session expired. Please login again.';
+          return Promise.reject(new Error(errorMessage));
+        }
+
+        if (isRefreshing) {
+          // Queue request while refresh is in progress
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          })
+            .then((token) => {
+              if (originalRequest.headers) {
+                originalRequest.headers.Authorization = `Bearer ${token}`;
+              }
+              return client(originalRequest);
+            })
+            .catch((err) => Promise.reject(err));
+        }
+
         originalRequest._retry = true;
+        isRefreshing = true;
 
         try {
-          const refreshToken = tokenManager.getRefreshToken();
-          if (refreshToken) {
-            const response = await axios.post<TokenResponse>(
-              `${API_BASE_URL}/auth/refresh`,
-              { refresh_token: refreshToken }
-            );
+          // Attempt to refresh the token
+          const response = await axios.post<TokenResponse>(`${API_BASE_URL}/auth/refresh`, {
+            refreshToken,
+          });
 
-            const { access_token, refresh_token } = response.data;
-            tokenManager.setTokens(access_token, refresh_token);
+          const { access_token, refresh_token } = response.data;
+          tokenManager.setTokens(access_token, refresh_token);
 
-            if (originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${access_token}`;
-            }
+          processQueue(null, access_token);
 
-            return client(originalRequest);
+          // Retry original request with new token
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${access_token}`;
           }
+          return client(originalRequest);
         } catch (refreshError) {
+          processQueue(refreshError as Error, null);
           tokenManager.clearTokens();
-          if (typeof window !== 'undefined') {
-            window.location.href = '/auth/login';
-          }
+          return Promise.reject(new Error('Session expired. Please login again.'));
+        } finally {
+          isRefreshing = false;
         }
       }
 
-      // Format error message
       const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
       return Promise.reject(new Error(errorMessage));
     }
@@ -132,17 +189,17 @@ export const apiClient = createApiClient();
 // Auth API
 export const authApi = {
   login: async (email: string, password: string) => {
-    const response = await apiClient.post<{ user: any; access_token: string }>('/auth/login', {
+    const response = await apiClient.post<{ user: any; access_token: string; refresh_token?: string }>('/auth/login', {
       email,
       password,
     });
-    tokenManager.setTokens(response.data.access_token);
+    tokenManager.setTokens(response.data.access_token, response.data.refresh_token);
     return response.data;
   },
 
   register: async (data: { name: string; email: string; password: string; phone?: string }) => {
-    const response = await apiClient.post<{ user: any; access_token: string }>('/auth/register', data);
-    tokenManager.setTokens(response.data.access_token);
+    const response = await apiClient.post<{ user: any; access_token: string; refresh_token?: string }>('/auth/register', data);
+    tokenManager.setTokens(response.data.access_token, response.data.refresh_token);
     return response.data;
   },
 
@@ -168,20 +225,20 @@ export const authApi = {
   },
 
   getProfile: async () => {
-    const response = await apiClient.get<any>('/auth/profile');
+    const response = await apiClient.get<any>('/users/profile');
     return response.data;
   },
 
   updateProfile: async (data: Partial<{ name: string; email: string; phone: string; avatar: string }>) => {
-    const response = await apiClient.patch<any>('/auth/profile', data);
+    const response = await apiClient.patch<any>('/users/profile', data);
     return response.data;
   },
 
   socialLogin: async (provider: 'google' | 'facebook' | 'apple', token: string) => {
-    const response = await apiClient.post<{ user: any; access_token: string }>(`/auth/${provider}`, {
+    const response = await apiClient.post<{ user: any; access_token: string; refresh_token?: string }>(`/auth/${provider}`, {
       token,
     });
-    tokenManager.setTokens(response.data.access_token);
+    tokenManager.setTokens(response.data.access_token, response.data.refresh_token);
     return response.data;
   },
 };
@@ -446,7 +503,7 @@ export const checkoutApi = {
   },
 
   processPayment: async (sessionId: string, paymentDetails: any) => {
-    const response = await apiClient.post<{ orderId: string; status: string }>(
+    const response = await apiClient.post<{ orderId: string; status: string; redirectUrl?: string }>(
       `/checkout/session/${sessionId}/pay`,
       paymentDetails
     );
@@ -591,6 +648,25 @@ export const analyticsApi = {
   },
 };
 
+// Tracking API (Guest and Authenticated)
+export const trackingApi = {
+  trackGuestOrder: async (orderNumber: string, email: string) => {
+    const response = await apiClient.post<any>('/tracking/guest', { orderNumber, email });
+    return response.data;
+  },
+  trackByOrderNumber: async (orderNumber: string) => {
+    const response = await apiClient.get<any>(`/tracking/order/${orderNumber}`);
+    return response.data;
+  },
+  trackByTrackingNumber: async (trackingNumber: string) => {
+    const response = await apiClient.get<any>(`/tracking/tracking-number/${trackingNumber}`);
+    return response.data;
+  },
+  getShipmentTracking: async (trackingNumber: string) => {
+    const response = await apiClient.get<any>(`/tracking/shipment/${trackingNumber}`);
+    return response.data;
+  },
+};
 // Health Check
 export const healthApi = {
   check: async () => {

@@ -12,6 +12,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { EmailService } from './email.service';
+import { EmailQueueService, EmailPriority } from './email-queue.service';
+import { EmailProcessor } from './email.processor';
 import { SendEmailDto } from './dto/send-email.dto';
 import { CreateTemplateDto } from './dto/create-template.dto';
 import { UpdateNotificationPreferencesDto } from './dto/update-notification-preferences.dto';
@@ -24,7 +26,11 @@ import { AuthRequest } from '@/common/types/auth-request.types';
 @ApiTags('Email & Notifications')
 @Controller('email')
 export class EmailController {
-  constructor(private readonly emailService: EmailService) {}
+  constructor(
+    private readonly emailService: EmailService,
+    private readonly emailQueueService: EmailQueueService,
+    private readonly emailProcessor: EmailProcessor,
+  ) {}
 
   @Post('send')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -187,5 +193,125 @@ export class EmailController {
       status,
       type,
     });
+  }
+
+  // ==================== Queue Management ====================
+
+  @Get('queue/stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get email queue statistics (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Queue statistics retrieved successfully' })
+  async getQueueStats() {
+    return this.emailQueueService.getQueueStats();
+  }
+
+  @Get('queue/health')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get email queue health status (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Queue health retrieved successfully' })
+  async getQueueHealth() {
+    return this.emailQueueService.getQueueHealth();
+  }
+
+  @Get('queue/job/:jobId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get job status by ID (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Job status retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Job not found' })
+  async getJobStatus(@Param('jobId') jobId: string) {
+    return this.emailQueueService.getJobStatus(jobId);
+  }
+
+  @Post('queue/job/:jobId/retry')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Retry failed job (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Job retried successfully' })
+  @ApiResponse({ status: 404, description: 'Job not found' })
+  async retryFailedJob(@Param('jobId') jobId: string) {
+    await this.emailQueueService.retryFailedJob(jobId);
+    return { message: 'Job retried successfully', jobId };
+  }
+
+  @Get('queue/failed')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get failed jobs (Admin only)' })
+  @ApiQuery({ name: 'start', required: false, type: Number })
+  @ApiQuery({ name: 'end', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Failed jobs retrieved successfully' })
+  async getFailedJobs(
+    @Query('start') start?: number,
+    @Query('end') end?: number,
+  ) {
+    return this.emailQueueService.getFailedJobs(
+      start ? Number(start) : 0,
+      end ? Number(end) : 10,
+    );
+  }
+
+  @Post('queue/pause')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Pause email queue (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Queue paused successfully' })
+  async pauseQueue() {
+    await this.emailQueueService.pauseQueue();
+    return { message: 'Email queue paused' };
+  }
+
+  @Post('queue/resume')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Resume email queue (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Queue resumed successfully' })
+  async resumeQueue() {
+    await this.emailQueueService.resumeQueue();
+    return { message: 'Email queue resumed' };
+  }
+
+  @Post('queue/clear-completed')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Clear completed jobs from queue (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Completed jobs cleared successfully' })
+  async clearCompleted() {
+    await this.emailQueueService.clearCompleted();
+    return { message: 'Completed jobs cleared from queue' };
+  }
+
+  @Delete('queue/job/:jobId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove job from queue (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Job removed successfully' })
+  async removeJob(@Param('jobId') jobId: string) {
+    await this.emailQueueService.removeJob(jobId);
+    return { message: 'Job removed from queue', jobId };
+  }
+
+  // ==================== Dead Letter Queue ====================
+
+  @Post('dead-letter/:id/retry')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Retry email from dead letter queue (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Email retried successfully' })
+  @ApiResponse({ status: 404, description: 'Dead letter entry not found' })
+  async retryFromDeadLetterQueue(@Param('id') id: string) {
+    return this.emailProcessor.retryFromDeadLetterQueue(id);
   }
 }

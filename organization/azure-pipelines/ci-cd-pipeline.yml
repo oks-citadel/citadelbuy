@@ -1,0 +1,498 @@
+# CitadelBuy - Full CI/CD Pipeline
+# Converted from GitHub Actions ci-cd.yml
+# Full deployment pipeline for Azure infrastructure
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    exclude:
+      - '*.md'
+      - 'docs/**'
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+
+parameters:
+  - name: environment
+    displayName: 'Deployment Environment'
+    type: string
+    default: 'staging'
+    values:
+      - staging
+      - production
+
+variables:
+  - name: AZURE_CONTAINER_REGISTRY
+    value: 'citadelbuyacr.azurecr.io'
+  - name: NODE_VERSION
+    value: '20'
+  - name: PNPM_VERSION
+    value: '8'
+  - name: AKS_STAGING_RG
+    value: 'citadelbuy-staging-rg'
+  - name: AKS_STAGING_NAME
+    value: 'citadelbuy-staging-aks'
+  - name: AKS_PROD_RG
+    value: 'citadelbuy-prod-rg'
+  - name: AKS_PROD_NAME
+    value: 'citadelbuy-prod-aks'
+
+stages:
+  # ============================================
+  # STAGE 1: Lint & Type Check
+  # ============================================
+  - stage: LintAndTypeCheck
+    displayName: 'Lint & Type Check'
+    jobs:
+      - job: LintTypeCheck
+        displayName: 'Run Linting and Type Checking'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: NodeTool@0
+            displayName: 'Setup Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              npm install -g pnpm@$(PNPM_VERSION)
+              pnpm --version
+            displayName: 'Setup pnpm'
+
+          - task: Cache@2
+            displayName: 'Cache pnpm dependencies'
+            inputs:
+              key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
+              path: '$(PNPM_HOME)/store'
+              restoreKeys: |
+                pnpm | "$(Agent.OS)"
+
+          - script: |
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - script: |
+              pnpm lint
+            displayName: 'Run ESLint'
+
+          - script: |
+              pnpm type-check
+            displayName: 'Run TypeScript check'
+
+  # ============================================
+  # STAGE 2: Unit Tests
+  # ============================================
+  - stage: UnitTests
+    displayName: 'Unit Tests'
+    dependsOn: LintAndTypeCheck
+    condition: succeeded()
+    jobs:
+      - job: Test
+        displayName: 'Run Unit Tests'
+        pool:
+          vmImage: 'ubuntu-latest'
+        services:
+          postgres:
+            image: postgres:16-alpine
+            ports:
+              - 5432:5432
+            env:
+              POSTGRES_USER: test
+              POSTGRES_PASSWORD: test
+              POSTGRES_DB: test
+            options: >-
+              --health-cmd pg_isready
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
+          redis:
+            image: redis:7-alpine
+            ports:
+              - 6379:6379
+            options: >-
+              --health-cmd "redis-cli ping"
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: NodeTool@0
+            displayName: 'Setup Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              npm install -g pnpm@$(PNPM_VERSION)
+            displayName: 'Setup pnpm'
+
+          - script: |
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          - script: |
+              cd apps/api
+              npx prisma migrate deploy
+            displayName: 'Run API migrations'
+            env:
+              DATABASE_URL: postgresql://test:test@localhost:5432/test?schema=public
+
+          - script: |
+              cd apps/api
+              pnpm test:cov
+            displayName: 'Run API tests'
+            env:
+              DATABASE_URL: postgresql://test:test@localhost:5432/test?schema=public
+              REDIS_URL: redis://localhost:6379
+              JWT_SECRET: test-jwt-secret
+
+          - script: |
+              cd apps/web
+              pnpm test
+            displayName: 'Run Web tests'
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Publish coverage results'
+            condition: always()
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/apps/api/coverage/cobertura-coverage.xml'
+              reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
+
+  # ============================================
+  # STAGE 3: Build Docker Images
+  # ============================================
+  - stage: BuildDockerImages
+    displayName: 'Build Docker Images'
+    dependsOn: UnitTests
+    condition: and(succeeded(), or(eq(variables['Build.Reason'], 'IndividualCI'), eq(variables['Build.Reason'], 'Manual')))
+    jobs:
+      - job: Build
+        displayName: 'Build and Push Images'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: AzureCLI@2
+            displayName: 'Login to Azure Container Registry'
+            inputs:
+              azureSubscription: 'Azure-ServiceConnection'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az acr login --name citadelbuyacr
+
+          - bash: |
+              SHA=$(echo $(Build.SourceVersion) | cut -c1-7)
+              BRANCH=$(echo $(Build.SourceBranchName) | tr '/' '-')
+              TIMESTAMP=$(date +%Y%m%d%H%M%S)
+              echo "##vso[task.setvariable variable=SHA_TAG]$SHA"
+              echo "##vso[task.setvariable variable=BRANCH_TAG]$BRANCH"
+              echo "##vso[task.setvariable variable=TIMESTAMP]$TIMESTAMP"
+            displayName: 'Generate image tags'
+
+          - task: Docker@2
+            displayName: 'Build and push API image'
+            inputs:
+              command: 'buildAndPush'
+              containerRegistry: 'AzureContainerRegistry'
+              repository: 'citadelbuy-api'
+              dockerfile: '$(System.DefaultWorkingDirectory)/apps/api/Dockerfile'
+              buildContext: '$(System.DefaultWorkingDirectory)/apps/api'
+              tags: |
+                $(SHA_TAG)
+                $(BRANCH_TAG)
+                latest
+              arguments: '--build-arg NODE_ENV=production'
+
+          - task: Docker@2
+            displayName: 'Build and push Web image'
+            inputs:
+              command: 'buildAndPush'
+              containerRegistry: 'AzureContainerRegistry'
+              repository: 'citadelbuy-web'
+              dockerfile: '$(System.DefaultWorkingDirectory)/apps/web/Dockerfile'
+              buildContext: '$(System.DefaultWorkingDirectory)/apps/web'
+              tags: |
+                $(SHA_TAG)
+                $(BRANCH_TAG)
+                latest
+              arguments: |
+                --build-arg NODE_ENV=production
+                --build-arg NEXT_PUBLIC_API_URL=$(API_URL)
+
+  # ============================================
+  # STAGE 4: Deploy to Staging
+  # ============================================
+  - stage: DeployStaging
+    displayName: 'Deploy to Staging'
+    dependsOn: BuildDockerImages
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+    jobs:
+      - deployment: DeployToStaging
+        displayName: 'Deploy to Staging Environment'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'staging'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: 'Checkout code'
+
+                - task: AzureCLI@2
+                  displayName: 'Get AKS credentials'
+                  inputs:
+                    azureSubscription: 'Azure-ServiceConnection'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      az aks get-credentials \
+                        --resource-group $(AKS_STAGING_RG) \
+                        --name $(AKS_STAGING_NAME) \
+                        --overwrite-existing
+
+                - task: Kubernetes@1
+                  displayName: 'Apply Kubernetes manifests'
+                  inputs:
+                    connectionType: 'Azure Resource Manager'
+                    azureSubscriptionEndpoint: 'Azure-ServiceConnection'
+                    azureResourceGroup: '$(AKS_STAGING_RG)'
+                    kubernetesCluster: '$(AKS_STAGING_NAME)'
+                    command: 'apply'
+                    arguments: '-f infrastructure/kubernetes/staging/'
+
+                - bash: |
+                    SHA=$(echo $(Build.SourceVersion) | cut -c1-7)
+                    kubectl set image deployment/api \
+                      api=$(AZURE_CONTAINER_REGISTRY)/citadelbuy-api:$SHA \
+                      -n citadelbuy-staging
+                    kubectl set image deployment/web \
+                      web=$(AZURE_CONTAINER_REGISTRY)/citadelbuy-web:$SHA \
+                      -n citadelbuy-staging
+                  displayName: 'Update deployment images'
+
+                - task: Kubernetes@1
+                  displayName: 'Wait for API rollout'
+                  inputs:
+                    connectionType: 'Azure Resource Manager'
+                    azureSubscriptionEndpoint: 'Azure-ServiceConnection'
+                    azureResourceGroup: '$(AKS_STAGING_RG)'
+                    kubernetesCluster: '$(AKS_STAGING_NAME)'
+                    command: 'rollout'
+                    arguments: 'status deployment/api -n citadelbuy-staging --timeout=300s'
+
+                - task: Kubernetes@1
+                  displayName: 'Wait for Web rollout'
+                  inputs:
+                    connectionType: 'Azure Resource Manager'
+                    azureSubscriptionEndpoint: 'Azure-ServiceConnection'
+                    azureResourceGroup: '$(AKS_STAGING_RG)'
+                    kubernetesCluster: '$(AKS_STAGING_NAME)'
+                    command: 'rollout'
+                    arguments: 'status deployment/web -n citadelbuy-staging --timeout=300s'
+
+                - bash: |
+                    kubectl exec -n citadelbuy-staging \
+                      $(kubectl get pod -n citadelbuy-staging -l app=api -o jsonpath='{.items[0].metadata.name}') \
+                      -- npx prisma migrate deploy
+                  displayName: 'Run database migrations'
+
+                - bash: |
+                    curl -f https://staging.citadelbuy.com/api/health || exit 1
+                  displayName: 'Verify deployment'
+
+  # ============================================
+  # STAGE 5: Deploy to Production
+  # ============================================
+  - stage: DeployProduction
+    displayName: 'Deploy to Production'
+    dependsOn: BuildDockerImages
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployToProduction
+        displayName: 'Deploy to Production Environment'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: 'Checkout code'
+
+                - task: AzureCLI@2
+                  displayName: 'Get AKS credentials'
+                  inputs:
+                    azureSubscription: 'Azure-ServiceConnection'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      az aks get-credentials \
+                        --resource-group $(AKS_PROD_RG) \
+                        --name $(AKS_PROD_NAME) \
+                        --overwrite-existing
+
+                - bash: |
+                    SHA=$(echo $(Build.SourceVersion) | cut -c1-7)
+                    kubectl apply -f infrastructure/kubernetes/production/
+                    kubectl set image deployment/api-green \
+                      api=$(AZURE_CONTAINER_REGISTRY)/citadelbuy-api:$SHA \
+                      -n citadelbuy-prod
+                    kubectl set image deployment/web-green \
+                      web=$(AZURE_CONTAINER_REGISTRY)/citadelbuy-web:$SHA \
+                      -n citadelbuy-prod
+                  displayName: 'Blue-Green deployment'
+
+                - task: Kubernetes@1
+                  displayName: 'Wait for green deployment'
+                  inputs:
+                    connectionType: 'Azure Resource Manager'
+                    azureSubscriptionEndpoint: 'Azure-ServiceConnection'
+                    azureResourceGroup: '$(AKS_PROD_RG)'
+                    kubernetesCluster: '$(AKS_PROD_NAME)'
+                    command: 'rollout'
+                    arguments: 'status deployment/api-green -n citadelbuy-prod --timeout=300s && kubectl rollout status deployment/web-green -n citadelbuy-prod --timeout=300s'
+
+                - bash: |
+                    kubectl exec -n citadelbuy-prod \
+                      $(kubectl get pod -n citadelbuy-prod -l app=api-green -o jsonpath='{.items[0].metadata.name}') \
+                      -- npx prisma migrate deploy
+                  displayName: 'Run database migrations'
+
+                - bash: |
+                    GREEN_URL="https://green.citadelbuy.com"
+                    curl -f "$GREEN_URL/api/health" || exit 1
+                  displayName: 'Smoke tests'
+
+                - bash: |
+                    kubectl patch service api-service -n citadelbuy-prod \
+                      -p '{"spec":{"selector":{"app":"api-green"}}}'
+                    kubectl patch service web-service -n citadelbuy-prod \
+                      -p '{"spec":{"selector":{"app":"web-green"}}}'
+                  displayName: 'Switch traffic to green'
+
+                - bash: |
+                    sleep 30
+                    curl -f https://citadelbuy.com/api/health || exit 1
+                    curl -f https://citadelbuy.com || exit 1
+                  displayName: 'Verify production'
+
+  # ============================================
+  # STAGE 6: E2E Tests (after staging deployment)
+  # ============================================
+  - stage: E2ETests
+    displayName: 'E2E Tests'
+    dependsOn: DeployStaging
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+    jobs:
+      - job: E2ETest
+        displayName: 'Run E2E Tests'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: NodeTool@0
+            displayName: 'Setup Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              npm install -g pnpm@$(PNPM_VERSION)
+            displayName: 'Setup pnpm'
+
+          - script: |
+              pnpm install --frozen-lockfile
+              npx playwright install --with-deps
+            displayName: 'Install Playwright'
+
+          - script: |
+              cd tests/e2e
+              pnpm test:e2e
+            displayName: 'Run E2E tests'
+            env:
+              BASE_URL: https://staging.citadelbuy.com
+              TEST_USER_EMAIL: $(TEST_USER_EMAIL)
+              TEST_USER_PASSWORD: $(TEST_USER_PASSWORD)
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Upload test results'
+            condition: always()
+            inputs:
+              targetPath: 'tests/e2e/playwright-report/'
+              artifact: 'playwright-report'
+              publishLocation: 'pipeline'
+
+  # ============================================
+  # STAGE 7: Terraform (Infrastructure as Code)
+  # ============================================
+  - stage: Terraform
+    displayName: 'Terraform Plan/Apply'
+    dependsOn: []
+    condition: or(eq(variables['Build.Reason'], 'PullRequest'), and(eq(variables['Build.Reason'], 'IndividualCI'), eq(variables['Build.SourceBranch'], 'refs/heads/main')))
+    jobs:
+      - job: TerraformPlan
+        displayName: 'Terraform Plan'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: TerraformInstaller@0
+            displayName: 'Install Terraform'
+            inputs:
+              terraformVersion: '1.6.0'
+
+          - task: AzureCLI@2
+            displayName: 'Terraform Init'
+            inputs:
+              azureSubscription: 'Azure-ServiceConnection'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              workingDirectory: 'infrastructure/terraform/environments/prod'
+              inlineScript: |
+                terraform init
+
+          - task: AzureCLI@2
+            displayName: 'Terraform Plan'
+            inputs:
+              azureSubscription: 'Azure-ServiceConnection'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              workingDirectory: 'infrastructure/terraform/environments/prod'
+              inlineScript: |
+                terraform plan -no-color -out=tfplan
+            env:
+              TF_VAR_subscription_id: $(AZURE_SUBSCRIPTION_ID)
+              TF_VAR_tenant_id: $(AZURE_TENANT_ID)
+              TF_VAR_db_admin_username: $(DB_ADMIN_USERNAME)
+              TF_VAR_db_admin_password: $(DB_ADMIN_PASSWORD)
+              TF_VAR_jwt_secret: $(JWT_SECRET)
+
+          - task: AzureCLI@2
+            displayName: 'Terraform Apply'
+            condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), ne(variables['Build.Reason'], 'PullRequest'))
+            inputs:
+              azureSubscription: 'Azure-ServiceConnection'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              workingDirectory: 'infrastructure/terraform/environments/prod'
+              inlineScript: |
+                terraform apply -auto-approve tfplan

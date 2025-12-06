@@ -8,6 +8,11 @@ export { SmartSearchBar } from './smart-search/smart-search-bar';
 export { DynamicPricingLabel } from './dynamic-pricing/dynamic-pricing-label';
 export type { DynamicPricingInfo } from './dynamic-pricing/dynamic-pricing-label';
 
-// Re-export existing components
-export { ChatWidget } from '../chatbot/chat-widget';
-export { VisualSearchPage } from '../../app/(shop)/visual-search/visual-search-page';
+// Recommendations
+export { RecommendationCarousel } from './recommendations';
+
+// Virtual Try-On
+export { VirtualTryOn } from './virtual-tryon';
+
+// Voice Search
+export { VoiceSearch } from './voice';

@@ -1,0 +1,615 @@
+# ==================================
+# CitadelBuy E-Commerce Platform
+# SECURE Production Docker Compose Configuration
+# Version: 2.1.0 - Security Hardened
+# ==================================
+# ⚠️  CRITICAL PRODUCTION SECURITY NOTICE  ⚠️
+# ==================================
+# This file implements security best practices for production deployment.
+# ALL sensitive data MUST be provided via environment variables.
+# NEVER hardcode passwords, secrets, or keys in this file.
+#
+# Required environment variables (set via .env file or secrets manager):
+#   - POSTGRES_PASSWORD, MONGO_PASSWORD, REDIS_PASSWORD
+#   - ELASTICSEARCH_PASSWORD
+#   - JWT_SECRET, JWT_REFRESH_SECRET, ENCRYPTION_KEY
+#   - STRIPE_SECRET_KEY, PAYPAL_CLIENT_SECRET
+#   - AWS_SECRET_ACCESS_KEY, ALGOLIA_API_KEY
+#   - RABBITMQ_PASSWORD, GRAFANA_ADMIN_PASSWORD
+#   - All other *_PASSWORD, *_SECRET, *_KEY variables
+#
+# Generate secure secrets:
+#   - Passwords: openssl rand -base64 32
+#   - JWT Secrets: openssl rand -base64 64
+#   - Encryption Keys: openssl rand -hex 32
+#
+# See .env.docker.example for complete list
+# See docs/DOCKER_SECURITY.md for security guidelines
+# ==================================
+
+version: '3.9'
+
+# ==================================
+# Networks - Segregated for Security
+# ==================================
+networks:
+  citadelbuy-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+  monitoring-network:
+    driver: bridge
+    internal: false  # Set to true to isolate monitoring from external access
+
+# ==================================
+# Volumes - Use Named Volumes for Data
+# ==================================
+volumes:
+  postgres-data:
+    driver: local
+  mongodb-data:
+    driver: local
+  redis-data:
+    driver: local
+  rabbitmq-data:
+    driver: local
+  elasticsearch-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  nginx-logs:
+    driver: local
+
+# ==================================
+# Services
+# ==================================
+services:
+  # ==================================
+  # NGINX API Gateway & Load Balancer
+  # ==================================
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: citadelbuy-nginx-prod
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx-logs:/var/log/nginx
+    networks:
+      - citadelbuy-network
+    depends_on:
+      - frontend
+      - backend
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.citadelbuy.service=nginx"
+      - "com.citadelbuy.description=API Gateway and Load Balancer"
+    # Security: Run as non-root user
+    user: "101:101"
+    # Security: Read-only root filesystem
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+
+  # ==================================
+  # Frontend (Next.js)
+  # ==================================
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost/api}
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost/ws}
+        NEXT_PUBLIC_STRIPE_PUBLIC_KEY: ${NEXT_PUBLIC_STRIPE_PUBLIC_KEY}
+        NEXT_PUBLIC_GOOGLE_ANALYTICS_ID: ${NEXT_PUBLIC_GOOGLE_ANALYTICS_ID}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN}
+        NEXT_PUBLIC_CDN_URL: ${NEXT_PUBLIC_CDN_URL}
+    image: citadelplatforms/citadelbuy-ecommerce:frontend-latest
+    container_name: citadelbuy-frontend-prod
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    networks:
+      - citadelbuy-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.citadelbuy.service=frontend"
+      - "com.citadelbuy.description=Next.js Frontend Application"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    # Security: Read-only root filesystem (except for Next.js cache)
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache
+    # Security: Drop all capabilities
+    cap_drop:
+      - ALL
+
+  # ==================================
+  # Backend (NestJS)
+  # ==================================
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    image: citadelplatforms/citadelbuy-ecommerce:backend-latest
+    container_name: citadelbuy-backend-prod
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    environment:
+      # Application
+      - NODE_ENV=production
+      - PORT=4000
+      - API_PREFIX=api
+
+      # Database
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-citadelbuy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-citadelbuy_prod}
+      - DATABASE_CONNECTION_LIMIT=${DATABASE_CONNECTION_LIMIT:-20}
+      - DATABASE_POOL_TIMEOUT=${DATABASE_POOL_TIMEOUT:-10}
+
+      # Redis (with authentication)
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+
+      # JWT & Security
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-1h}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+
+      # Email
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - EMAIL_FROM=${EMAIL_FROM}
+
+      # Payment Providers
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID}
+      - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET}
+
+      # Elasticsearch (with authentication)
+      - ELASTICSEARCH_NODE=http://elastic:${ELASTICSEARCH_PASSWORD}@elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+
+      # External Services
+      - ALGOLIA_APP_ID=${ALGOLIA_APP_ID}
+      - ALGOLIA_API_KEY=${ALGOLIA_API_KEY}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+
+      # Monitoring
+      - SENTRY_DSN=${SENTRY_DSN}
+      - GOOGLE_ANALYTICS_ID=${GOOGLE_ANALYTICS_ID}
+
+      # CORS
+      - CORS_ORIGIN=${CORS_ORIGIN:-https://yourdomain.com}
+
+      # RabbitMQ
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-citadelbuy}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+    networks:
+      - citadelbuy-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:4000/api/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.citadelbuy.service=backend"
+      - "com.citadelbuy.description=NestJS Backend API"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+      replicas: 2
+    # Security: Drop unnecessary capabilities
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    # Security: Read-only root filesystem
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/uploads:mode=1777,size=1G
+
+  # ==================================
+  # PostgreSQL Database
+  # ==================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: citadelbuy-postgres-prod
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:5432:5432'  # Bind to localhost only for security
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-citadelbuy}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      - POSTGRES_DB=${POSTGRES_DB:-citadelbuy_prod}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - citadelbuy-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-citadelbuy}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    labels:
+      - "com.citadelbuy.service=postgres"
+      - "com.citadelbuy.description=PostgreSQL Database"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    # Security: Run as postgres user
+    user: postgres
+    # Security: Enable connection logging and tuned performance
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "shared_buffers=512MB"
+      - "-c"
+      - "effective_cache_size=2GB"
+      - "-c"
+      - "maintenance_work_mem=128MB"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "wal_buffers=16MB"
+      - "-c"
+      - "default_statistics_target=100"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "effective_io_concurrency=200"
+      - "-c"
+      - "work_mem=2621kB"
+      - "-c"
+      - "min_wal_size=1GB"
+      - "-c"
+      - "max_wal_size=4GB"
+      - "-c"
+      - "log_connections=on"
+      - "-c"
+      - "log_disconnections=on"
+      - "-c"
+      - "log_duration=on"
+      - "-c"
+      - "log_line_prefix=%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h "
+
+  # ==================================
+  # MongoDB (Document Store)
+  # ==================================
+  mongodb:
+    image: mongo:7
+    container_name: citadelbuy-mongodb-prod
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:27017:27017'  # Bind to localhost only for security
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-citadelbuy}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:?MONGO_PASSWORD must be set}
+      - MONGO_INITDB_DATABASE=citadelbuy
+    volumes:
+      - mongodb-data:/data/db
+      - ./mongodb/init.js:/docker-entrypoint-initdb.d/init.js:ro
+    networks:
+      - citadelbuy-network
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.adminCommand("ping").ok']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    labels:
+      - "com.citadelbuy.service=mongodb"
+      - "com.citadelbuy.description=MongoDB Document Store"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    # Security: Run as mongodb user
+    user: mongodb
+
+  # ==================================
+  # Redis (Cache & Sessions)
+  # ==================================
+  redis:
+    image: redis:7-alpine
+    container_name: citadelbuy-redis-prod
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:6379:6379'  # Bind to localhost only for security
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+    volumes:
+      - redis-data:/data
+      - ./redis/redis-production.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - citadelbuy-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD}', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    labels:
+      - "com.citadelbuy.service=redis"
+      - "com.citadelbuy.description=Redis Cache and Session Store"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    # Security: Enable password authentication and rename dangerous commands
+    command: >
+      redis-server /usr/local/etc/redis/redis.conf
+      --requirepass "${REDIS_PASSWORD}"
+      --rename-command CONFIG ""
+      --rename-command DEBUG ""
+      --rename-command SHUTDOWN SHUTDOWN_SECRET_${REDIS_PASSWORD}
+      --rename-command FLUSHALL ""
+      --rename-command FLUSHDB ""
+    # Security: Run as redis user
+    user: redis
+
+  # ==================================
+  # RabbitMQ (Message Queue)
+  # ==================================
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: citadelbuy-rabbitmq-prod
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:5672:5672'   # AMQP - Bind to localhost
+      - '127.0.0.1:15672:15672' # Management UI - Bind to localhost
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-citadelbuy}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set}
+      - RABBITMQ_DEFAULT_VHOST=citadelbuy
+      # Security: Disable guest user
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit loopback_users []
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - citadelbuy-network
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    labels:
+      - "com.citadelbuy.service=rabbitmq"
+      - "com.citadelbuy.description=RabbitMQ Message Queue"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # ==================================
+  # Elasticsearch (Search Engine)
+  # ==================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: citadelbuy-elasticsearch-prod
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:9200:9200'  # Bind to localhost only for security
+      - '127.0.0.1:9300:9300'  # Bind to localhost only for security
+    environment:
+      - discovery.type=single-node
+      # Security: Enable X-Pack security
+      - xpack.security.enabled=true
+      - xpack.security.enrollment.enabled=false
+      # Note: For production, enable TLS/SSL
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+      - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD:?ELASTICSEARCH_PASSWORD must be set}
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=true
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - citadelbuy-network
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -u elastic:${ELASTICSEARCH_PASSWORD} -f http://localhost:9200/_cluster/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    labels:
+      - "com.citadelbuy.service=elasticsearch"
+      - "com.citadelbuy.description=Elasticsearch Search Engine"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    # Security: Run as elasticsearch user
+    user: "1000:1000"
+
+  # ==================================
+  # Prometheus (Metrics Collection)
+  # ==================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: citadelbuy-prometheus-prod
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:9090:9090'  # Bind to localhost only for security
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - citadelbuy-network
+      - monitoring-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    labels:
+      - "com.citadelbuy.service=prometheus"
+      - "com.citadelbuy.description=Prometheus Metrics"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    # Security: Run as nobody user
+    user: "65534:65534"
+
+  # ==================================
+  # Grafana (Monitoring Dashboard)
+  # ==================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: citadelbuy-grafana-prod
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:3001:3000'  # Bind to localhost only for security
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel
+      # Security: Disable sign-ups
+      - GF_USERS_ALLOW_SIGN_UP=false
+      # Security: Disable anonymous access
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      # Security: Force HTTPS (if behind reverse proxy)
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-https://yourdomain.com/grafana}
+      # Security: Enable cookie security
+      - GF_SECURITY_COOKIE_SECURE=true
+      - GF_SECURITY_COOKIE_SAMESITE=strict
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - monitoring-network
+    depends_on:
+      - prometheus
+    labels:
+      - "com.citadelbuy.service=grafana"
+      - "com.citadelbuy.description=Grafana Monitoring Dashboard"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    # Security: Run as grafana user
+    user: "472:472"
+
+# ==================================
+# Production Security Checklist:
+# ==================================
+# [ ] All passwords set via environment variables
+# [ ] Strong passwords generated (32+ characters)
+# [ ] .env file added to .gitignore
+# [ ] SSL certificates configured in NGINX
+# [ ] Database ports bound to localhost only (127.0.0.1)
+# [ ] Redis password authentication enabled
+# [ ] Elasticsearch X-Pack security enabled
+# [ ] RabbitMQ guest user disabled
+# [ ] All services running as non-root users
+# [ ] Resource limits configured for all services
+# [ ] Health checks enabled for all services
+# [ ] Log aggregation configured
+# [ ] Backup strategy implemented
+# [ ] Secrets stored in secrets manager (production)
+# [ ] Network segmentation reviewed
+# [ ] Firewall rules configured
+# [ ] Security scanning enabled (Trivy, Snyk, etc.)
+# [ ] Regular security updates scheduled
+#
+# For complete security guidelines, see:
+# - docs/DOCKER_SECURITY.md
+# - .env.docker.example
+# ==================================

@@ -26,7 +26,6 @@ import * as crypto from 'crypto';
 @Injectable()
 export class VendorsService {
   private readonly ENCRYPTION_ALGORITHM = 'aes-256-cbc';
-  private readonly ENCRYPTION_KEY = process.env.BANKING_ENCRYPTION_KEY || '';
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -296,10 +295,10 @@ export class VendorsService {
   // ==================== HELPER METHODS ====================
 
   private encryptData(data: string): string {
-    const ENCRYPTION_KEY = process.env.BANKING_ENCRYPTION_KEY || 'default-key-change-in-production-32b';
+    const ENCRYPTION_KEY = process.env.BANKING_ENCRYPTION_KEY;
 
-    if (ENCRYPTION_KEY === 'default-key-change-in-production-32b') {
-      console.warn('Using default encryption key. Please set BANKING_ENCRYPTION_KEY in production!');
+    if (!ENCRYPTION_KEY) {
+      throw new Error('BANKING_ENCRYPTION_KEY environment variable is required for encrypting banking data');
     }
 
     const iv = crypto.randomBytes(16);
@@ -316,7 +315,12 @@ export class VendorsService {
   }
 
   private decryptData(encryptedData: string): string {
-    const ENCRYPTION_KEY = process.env.BANKING_ENCRYPTION_KEY || 'default-key-change-in-production-32b';
+    const ENCRYPTION_KEY = process.env.BANKING_ENCRYPTION_KEY;
+
+    if (!ENCRYPTION_KEY) {
+      throw new Error('BANKING_ENCRYPTION_KEY environment variable is required for decrypting banking data');
+    }
+
     const parts = encryptedData.split(':');
     const iv = Buffer.from(parts[0], 'hex');
     const encrypted = parts[1];

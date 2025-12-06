@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule } from '@nestjs/config';
 import { VendorsController } from './vendors.controller';
 import { VendorsService } from './vendors.service';
@@ -18,7 +17,7 @@ import { FeaturedListingsService } from './featured-listings.service';
 import { PrismaModule } from '@/common/prisma/prisma.module';
 
 @Module({
-  imports: [PrismaModule, ScheduleModule.forRoot(), ConfigModule],
+  imports: [PrismaModule, ConfigModule],
   controllers: [
     VendorsController,
     VendorAnalyticsController,

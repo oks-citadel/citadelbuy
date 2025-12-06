@@ -26,12 +26,25 @@ import AddressesScreen from '../screens/account/AddressesScreen';
 import SettingsScreen from '../screens/account/SettingsScreen';
 import NotificationsScreen from '../screens/account/NotificationsScreen';
 
-// Review Screens
-import WriteReviewScreen from '../screens/reviews/WriteReviewScreen';
-import MyReviewsScreen from '../screens/reviews/MyReviewsScreen';
 
 // AI Features
 import AIAssistantScreen from '../screens/ai-features/AIAssistantScreen';
+
+// AR Features
+import ARTryOnScreen from '../screens/ar/ARTryOnScreen';
+
+// Payment Screens
+import PaymentScreen from '../screens/payments/PaymentScreen';
+import WalletScreen from '../screens/payments/WalletScreen';
+
+// Subscription & Credits Screens
+import SubscriptionScreen from '../screens/subscriptions/SubscriptionScreen';
+import CreditPackagesScreen from '../screens/credits/CreditPackagesScreen';
+
+// Review Screens
+import WriteReviewScreen from '../screens/reviews/WriteReviewScreen';
+import EditReviewScreen from '../screens/reviews/EditReviewScreen';
+import MyReviewsScreen from '../screens/reviews/MyReviewsScreen';
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -39,9 +52,15 @@ export type RootStackParamList = {
   ProductDetail: { productId: string };
   Cart: undefined;
   Checkout: undefined;
+  Payment: { amount: number; currency: string; orderId?: string; items?: any[] };
   OrderDetail: { orderId: string };
   AIAssistant: undefined;
-  WriteReview: { productId: string; productName: string; productImage: string };
+  ARTryOn: { productId?: string; category?: string };
+  WriteReview: { productId: string; productName?: string; productImage?: string; orderId?: string };
+  EditReview: { reviewId: string };
+  Subscription: undefined;
+  CreditPackages: undefined;
+  Wallet: undefined;
 };
 
 export type AuthStackParamList = {
@@ -185,9 +204,39 @@ export default function RootNavigator() {
             options={{ headerShown: true, title: 'AI Shopping Assistant' }}
           />
           <Stack.Screen
+            name="ARTryOn"
+            component={ARTryOnScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
             name="WriteReview"
             component={WriteReviewScreen}
             options={{ headerShown: true, title: 'Write Review' }}
+          />
+          <Stack.Screen
+            name="EditReview"
+            component={EditReviewScreen}
+            options={{ headerShown: true, title: 'Edit Review' }}
+          />
+          <Stack.Screen
+            name="Payment"
+            component={PaymentScreen}
+            options={{ headerShown: true, title: 'Payment' }}
+          />
+          <Stack.Screen
+            name="Subscription"
+            component={SubscriptionScreen}
+            options={{ headerShown: true, title: 'Subscription Plans' }}
+          />
+          <Stack.Screen
+            name="CreditPackages"
+            component={CreditPackagesScreen}
+            options={{ headerShown: true, title: 'Buy Credits' }}
+          />
+          <Stack.Screen
+            name="Wallet"
+            component={WalletScreen}
+            options={{ headerShown: true, title: 'Wallet' }}
           />
         </>
       )}

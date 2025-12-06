@@ -20,6 +20,7 @@ interface AuthState {
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
+  updateUser: (data: Partial<User>) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, password: string) => Promise<void>;
   verifyEmail: (token: string) => Promise<void>;
@@ -125,6 +126,11 @@ export const useAuthStore = create<AuthState>()(
           set({ error: message, isLoading: false });
           throw error;
         }
+      },
+
+      // Alias for updateProfile
+      updateUser: async (data: Partial<User>) => {
+        return get().updateProfile(data);
       },
 
       forgotPassword: async (email: string) => {

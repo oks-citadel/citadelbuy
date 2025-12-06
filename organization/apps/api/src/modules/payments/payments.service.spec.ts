@@ -67,7 +67,7 @@ describe('PaymentsService', () => {
 
     // Assert
     expect(Stripe).toHaveBeenCalledWith('sk_test_dummy', {
-      apiVersion: '2023-10-16',
+      apiVersion: '2024-12-18.acacia',
     });
   });
 

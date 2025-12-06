@@ -9,11 +9,13 @@ import {
   Check,
   Shield,
   AlertTriangle,
+  RefreshCw,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { SavedPaymentMethod } from '@/types/extended';
+import { toast } from 'sonner';
 
 const cardBrands: Record<string, { color: string; icon: string }> = {
   visa: { color: 'bg-blue-600', icon: 'V' },
@@ -27,6 +29,9 @@ export default function PaymentMethodsPage() {
   const [paymentMethods, setPaymentMethods] = useState<SavedPaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddCard, setShowAddCard] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [settingDefaultId, setSettingDefaultId] = useState<string | null>(null);
 
   useEffect(() => {
     loadPaymentMethods();
@@ -34,11 +39,21 @@ export default function PaymentMethodsPage() {
 
   const loadPaymentMethods = async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
-      const response = await paymentMethodsApi.getPaymentMethods();
-      setPaymentMethods(response.data || []);
-    } catch (error) {
-      console.error('Failed to load payment methods');
+      const data = await paymentMethodsApi.getPaymentMethods();
+      setPaymentMethods(data || []);
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to load payment methods';
+      console.error('Failed to load payment methods:', error);
+      setLoadError(errorMessage);
+      toast.error(errorMessage, {
+        description: 'Please try refreshing the page',
+        action: {
+          label: 'Retry',
+          onClick: () => loadPaymentMethods(),
+        },
+      });
     } finally {
       setIsLoading(false);
     }
@@ -46,15 +61,29 @@ export default function PaymentMethodsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to remove this payment method?')) return;
+
+    setDeletingId(id);
     try {
       await paymentMethodsApi.deletePaymentMethod(id);
       setPaymentMethods(paymentMethods.filter((pm) => pm.id !== id));
-    } catch (error) {
-      console.error('Failed to delete payment method');
+      toast.success('Payment method removed successfully');
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to delete payment method';
+      console.error('Failed to delete payment method:', error);
+      toast.error(errorMessage, {
+        description: 'Please try again or contact support if the issue persists',
+        action: {
+          label: 'Retry',
+          onClick: () => handleDelete(id),
+        },
+      });
+    } finally {
+      setDeletingId(null);
     }
   };
 
   const handleSetDefault = async (id: string) => {
+    setSettingDefaultId(id);
     try {
       await paymentMethodsApi.setDefaultPaymentMethod(id);
       setPaymentMethods(
@@ -63,8 +92,19 @@ export default function PaymentMethodsPage() {
           isDefault: pm.id === id,
         }))
       );
-    } catch (error) {
-      console.error('Failed to set default payment method');
+      toast.success('Default payment method updated');
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to set default payment method';
+      console.error('Failed to set default payment method:', error);
+      toast.error(errorMessage, {
+        description: 'Please try again or contact support if the issue persists',
+        action: {
+          label: 'Retry',
+          onClick: () => handleSetDefault(id),
+        },
+      });
+    } finally {
+      setSettingDefaultId(null);
     }
   };
 
@@ -90,6 +130,30 @@ export default function PaymentMethodsPage() {
             </div>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  // Error state UI
+  if (loadError && paymentMethods.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h1 className="text-2xl font-bold text-gray-900">Payment Methods</h1>
+        </div>
+        <Card className="bg-red-50 border-red-200">
+          <CardContent className="p-8 text-center">
+            <AlertTriangle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-red-900 mb-2">
+              Failed to Load Payment Methods
+            </h3>
+            <p className="text-red-700 mb-4">{loadError}</p>
+            <Button onClick={loadPaymentMethods} variant="outline">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -281,8 +345,13 @@ export default function PaymentMethodsPage() {
                       size="icon"
                       className="h-8 w-8 text-red-600"
                       onClick={() => handleDelete(method.id)}
+                      disabled={deletingId === method.id}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      {deletingId === method.id ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
 
@@ -292,8 +361,13 @@ export default function PaymentMethodsPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleSetDefault(method.id)}
+                        disabled={settingDefaultId === method.id}
                       >
-                        <Check className="w-3 h-3 mr-1" />
+                        {settingDefaultId === method.id ? (
+                          <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                        ) : (
+                          <Check className="w-3 h-3 mr-1" />
+                        )}
                         Set as Default
                       </Button>
                     </div>

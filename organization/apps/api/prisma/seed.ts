@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
+import { seedOrganizations } from './seeds/organization.seed';
 
 const prisma = new PrismaClient();
 
@@ -484,6 +485,9 @@ async function main() {
   });
 
   console.log('✅ Orders created');
+
+  // Seed Organization Module
+  await seedOrganizations();
 
   console.log(`
 ╔════════════════════════════════════════════════════════════════╗

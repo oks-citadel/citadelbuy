@@ -1,0 +1,278 @@
+# CitadelBuy - Terraform Infrastructure Pipeline
+# Manages Azure infrastructure provisioning and updates
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - 'infrastructure/terraform/**'
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - 'infrastructure/terraform/**'
+
+parameters:
+  - name: environment
+    displayName: 'Target Environment'
+    type: string
+    default: 'staging'
+    values:
+      - dev
+      - staging
+      - prod
+
+  - name: action
+    displayName: 'Terraform Action'
+    type: string
+    default: 'plan'
+    values:
+      - plan
+      - apply
+      - destroy
+
+variables:
+  - name: TF_VERSION
+    value: '1.6.0'
+  - name: WORKING_DIR
+    value: 'infrastructure/terraform/environments/${{ parameters.environment }}'
+  - group: 'CitadelBuy-Terraform-${{ parameters.environment }}'
+
+stages:
+  # ============================================
+  # STAGE 1: Terraform Validate
+  # ============================================
+  - stage: Validate
+    displayName: 'Terraform Validate'
+    jobs:
+      - job: Validate
+        displayName: 'Validate Terraform Configuration'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: TerraformInstaller@1
+            displayName: 'Install Terraform $(TF_VERSION)'
+            inputs:
+              terraformVersion: '$(TF_VERSION)'
+
+          - task: AzureCLI@2
+            displayName: 'Terraform Init'
+            inputs:
+              azureSubscription: 'Azure-ServiceConnection'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              workingDirectory: '$(WORKING_DIR)'
+              inlineScript: |
+                terraform init -backend=false
+
+          - bash: |
+              terraform fmt -check -recursive
+            displayName: 'Terraform Format Check'
+            workingDirectory: '$(WORKING_DIR)'
+
+          - bash: |
+              terraform validate
+            displayName: 'Terraform Validate'
+            workingDirectory: '$(WORKING_DIR)'
+
+  # ============================================
+  # STAGE 2: Terraform Plan
+  # ============================================
+  - stage: Plan
+    displayName: 'Terraform Plan'
+    dependsOn: Validate
+    condition: succeeded()
+    jobs:
+      - job: Plan
+        displayName: 'Generate Terraform Plan'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: TerraformInstaller@1
+            displayName: 'Install Terraform $(TF_VERSION)'
+            inputs:
+              terraformVersion: '$(TF_VERSION)'
+
+          - task: AzureCLI@2
+            displayName: 'Terraform Init'
+            inputs:
+              azureSubscription: 'Azure-ServiceConnection'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              workingDirectory: '$(WORKING_DIR)'
+              inlineScript: |
+                terraform init \
+                  -backend-config="resource_group_name=$(TF_STATE_RG)" \
+                  -backend-config="storage_account_name=$(TF_STATE_STORAGE)" \
+                  -backend-config="container_name=$(TF_STATE_CONTAINER)" \
+                  -backend-config="key=${{ parameters.environment }}.terraform.tfstate"
+
+          - task: AzureCLI@2
+            displayName: 'Terraform Plan'
+            inputs:
+              azureSubscription: 'Azure-ServiceConnection'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              workingDirectory: '$(WORKING_DIR)'
+              inlineScript: |
+                terraform plan \
+                  -var="subscription_id=$(AZURE_SUBSCRIPTION_ID)" \
+                  -var="tenant_id=$(AZURE_TENANT_ID)" \
+                  -var="db_admin_username=$(DB_ADMIN_USERNAME)" \
+                  -var="db_admin_password=$(DB_ADMIN_PASSWORD)" \
+                  -var="jwt_secret=$(JWT_SECRET)" \
+                  -var="oncall_email=$(ONCALL_EMAIL)" \
+                  -var="team_email=$(TEAM_EMAIL)" \
+                  -var="aks_admin_group_ids=$(AKS_ADMIN_GROUP_IDS)" \
+                  -out=tfplan \
+                  -no-color
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Terraform Plan'
+            inputs:
+              targetPath: '$(WORKING_DIR)/tfplan'
+              artifact: 'terraform-plan-${{ parameters.environment }}'
+              publishLocation: 'pipeline'
+
+  # ============================================
+  # STAGE 3: Terraform Apply (Manual Approval Required)
+  # ============================================
+  - stage: Apply
+    displayName: 'Terraform Apply'
+    dependsOn: Plan
+    condition: and(succeeded(), eq('${{ parameters.action }}', 'apply'))
+    jobs:
+      - deployment: Apply
+        displayName: 'Apply Terraform Changes'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: '${{ parameters.environment }}-infrastructure'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: 'Checkout code'
+
+                - task: DownloadPipelineArtifact@2
+                  displayName: 'Download Terraform Plan'
+                  inputs:
+                    artifact: 'terraform-plan-${{ parameters.environment }}'
+                    path: '$(WORKING_DIR)'
+
+                - task: TerraformInstaller@1
+                  displayName: 'Install Terraform $(TF_VERSION)'
+                  inputs:
+                    terraformVersion: '$(TF_VERSION)'
+
+                - task: AzureCLI@2
+                  displayName: 'Terraform Init'
+                  inputs:
+                    azureSubscription: 'Azure-ServiceConnection'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    workingDirectory: '$(WORKING_DIR)'
+                    inlineScript: |
+                      terraform init \
+                        -backend-config="resource_group_name=$(TF_STATE_RG)" \
+                        -backend-config="storage_account_name=$(TF_STATE_STORAGE)" \
+                        -backend-config="container_name=$(TF_STATE_CONTAINER)" \
+                        -backend-config="key=${{ parameters.environment }}.terraform.tfstate"
+
+                - task: AzureCLI@2
+                  displayName: 'Terraform Apply'
+                  inputs:
+                    azureSubscription: 'Azure-ServiceConnection'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    workingDirectory: '$(WORKING_DIR)'
+                    inlineScript: |
+                      terraform apply -auto-approve tfplan
+
+                - task: AzureCLI@2
+                  displayName: 'Export Outputs'
+                  inputs:
+                    azureSubscription: 'Azure-ServiceConnection'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    workingDirectory: '$(WORKING_DIR)'
+                    inlineScript: |
+                      echo "## Terraform Outputs" >> $(System.DefaultWorkingDirectory)/outputs.md
+                      terraform output -json >> $(System.DefaultWorkingDirectory)/outputs.json
+                      echo "Infrastructure deployment completed successfully!"
+
+                - task: PublishPipelineArtifact@1
+                  displayName: 'Publish Terraform Outputs'
+                  inputs:
+                    targetPath: '$(System.DefaultWorkingDirectory)/outputs.json'
+                    artifact: 'terraform-outputs-${{ parameters.environment }}'
+                    publishLocation: 'pipeline'
+
+  # ============================================
+  # STAGE 4: Terraform Destroy (Emergency Only)
+  # ============================================
+  - stage: Destroy
+    displayName: 'Terraform Destroy (DANGER)'
+    dependsOn: Plan
+    condition: and(succeeded(), eq('${{ parameters.action }}', 'destroy'))
+    jobs:
+      - deployment: Destroy
+        displayName: 'Destroy Terraform Resources'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: '${{ parameters.environment }}-infrastructure-destroy'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: 'Checkout code'
+
+                - task: TerraformInstaller@1
+                  displayName: 'Install Terraform $(TF_VERSION)'
+                  inputs:
+                    terraformVersion: '$(TF_VERSION)'
+
+                - task: AzureCLI@2
+                  displayName: 'Terraform Init'
+                  inputs:
+                    azureSubscription: 'Azure-ServiceConnection'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    workingDirectory: '$(WORKING_DIR)'
+                    inlineScript: |
+                      terraform init \
+                        -backend-config="resource_group_name=$(TF_STATE_RG)" \
+                        -backend-config="storage_account_name=$(TF_STATE_STORAGE)" \
+                        -backend-config="container_name=$(TF_STATE_CONTAINER)" \
+                        -backend-config="key=${{ parameters.environment }}.terraform.tfstate"
+
+                - task: AzureCLI@2
+                  displayName: 'Terraform Destroy'
+                  inputs:
+                    azureSubscription: 'Azure-ServiceConnection'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    workingDirectory: '$(WORKING_DIR)'
+                    inlineScript: |
+                      terraform destroy \
+                        -var="subscription_id=$(AZURE_SUBSCRIPTION_ID)" \
+                        -var="tenant_id=$(AZURE_TENANT_ID)" \
+                        -var="db_admin_username=$(DB_ADMIN_USERNAME)" \
+                        -var="db_admin_password=$(DB_ADMIN_PASSWORD)" \
+                        -var="jwt_secret=$(JWT_SECRET)" \
+                        -var="oncall_email=$(ONCALL_EMAIL)" \
+                        -var="team_email=$(TEAM_EMAIL)" \
+                        -var="aks_admin_group_ids=$(AKS_ADMIN_GROUP_IDS)" \
+                        -auto-approve

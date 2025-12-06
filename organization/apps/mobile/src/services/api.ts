@@ -94,3 +94,14 @@ export const aiApi = {
   searchProducts: (query: string) =>
     api.post('/ai/search', { query }),
 };
+
+// Payment Methods API
+export const paymentMethodsApi = {
+  getPaymentMethods: () => api.get('/payment-methods'),
+  addPaymentMethod: (data: any) => api.post('/payment-methods', data),
+  deletePaymentMethod: (id: string) => api.delete(`/payment-methods/${id}`),
+  setDefault: (id: string) => api.post(`/payment-methods/${id}/default`),
+};
+
+// Re-export billing service for convenience
+export { billingService, paymentsApi, subscriptionsApi, iapApi, walletApi } from './billing';

@@ -66,13 +66,15 @@ describe('AuthController', () => {
 
       mockAuthService.register.mockResolvedValue(mockAuthResponse);
 
-      const result = await controller.register(registerDto);
+      const mockRequest = {};
+      const result = await controller.register(registerDto, mockRequest);
 
       expect(result).toEqual(mockAuthResponse);
       expect(mockAuthService.register).toHaveBeenCalledWith(
         'newuser@example.com',
         'SecurePassword123!',
-        'New User'
+        'New User',
+        mockRequest
       );
     });
 
@@ -88,12 +90,14 @@ describe('AuthController', () => {
         user: { ...mockUser, email: 'another@example.com', name: 'Another User' },
       });
 
-      await controller.register(registerDto);
+      const mockRequest = {};
+      await controller.register(registerDto, mockRequest);
 
       expect(mockAuthService.register).toHaveBeenCalledWith(
         'another@example.com',
         'Password456!',
-        'Another User'
+        'Another User',
+        mockRequest
       );
     });
   });

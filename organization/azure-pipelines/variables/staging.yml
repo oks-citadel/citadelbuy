@@ -1,0 +1,113 @@
+# ==================================
+# CitadelBuy - Staging Environment Variables
+# Variables specific to staging environment
+# ==================================
+
+variables:
+  # Environment
+  ENVIRONMENT: 'staging'
+  ENV_SHORT: 'stg'
+
+  # Azure Resources
+  AKS_RESOURCE_GROUP: 'citadelbuy-staging-rg'
+  AKS_CLUSTER_NAME: 'citadelbuy-staging-aks'
+
+  # Kubernetes
+  K8S_NAMESPACE: 'citadelbuy-staging'
+  K8S_REPLICAS: '2'
+
+  # URLs
+  STAGING_WEB_URL: 'https://staging.citadelbuy.com'
+  STAGING_API_URL: 'https://staging.citadelbuy.com/api'
+
+  # Application Configuration
+  NEXT_PUBLIC_API_URL: 'https://staging.citadelbuy.com/api'
+  API_PORT: '4000'
+  WEB_PORT: '3000'
+
+  # Database Configuration
+  DATABASE_SSL: 'true'
+  DB_POOL_MIN: '5'
+  DB_POOL_MAX: '20'
+  DB_CONNECTION_TIMEOUT: '10000'
+
+  # Redis Configuration
+  REDIS_MAX_CONNECTIONS: '20'
+  REDIS_TLS: 'true'
+
+  # Logging
+  LOG_LEVEL: 'info'
+  LOG_FORMAT: 'json'
+
+  # Feature Flags
+  ENABLE_DEBUG_MODE: 'false'
+  ENABLE_HOT_RELOAD: 'false'
+  ENABLE_SWAGGER: 'true'
+
+  # Performance
+  API_RATE_LIMIT: '500'
+  CACHE_TTL: '600'
+
+  # Security
+  JWT_EXPIRES_IN: '24h'
+  CORS_ORIGIN: 'https://staging.citadelbuy.com'
+  ENABLE_HELMET: 'true'
+  ENABLE_RATE_LIMITING: 'true'
+
+  # Monitoring
+  ENABLE_METRICS: 'true'
+  ENABLE_TRACING: 'true'
+  ENABLE_APM: 'true'
+
+  # External Services
+  STRIPE_MODE: 'test'
+  PAYMENT_PROVIDER: 'stripe-test'
+
+  # Email
+  EMAIL_PROVIDER: 'sendgrid'
+  EMAIL_FROM: 'noreply-staging@citadelbuy.com'
+
+  # Storage
+  STORAGE_PROVIDER: 'azure-blob'
+  AZURE_STORAGE_CONTAINER: 'citadelbuy-staging'
+  UPLOAD_MAX_SIZE: '52428800'
+
+  # CDN
+  CDN_URL: 'https://cdn-staging.citadelbuy.com'
+  ENABLE_CDN: 'true'
+
+  # AI Services
+  AI_ENGINE_URL: 'http://ai-engine-service.citadelbuy-staging.svc.cluster.local:8002'
+  SUPPLIER_INTEGRATION_URL: 'http://supplier-integration-service.citadelbuy-staging.svc.cluster.local:8001'
+
+  # Dropshipping
+  ENABLE_DROPSHIPPING: 'true'
+  DROPSHIPPING_AUTO_SYNC: 'true'
+  SUPPLIER_SYNC_INTERVAL: '3600000'
+
+  # Organization Module
+  ENABLE_ORGANIZATIONS: 'true'
+  ENABLE_BANKING: 'true'
+  ENABLE_ESCROW: 'true'
+
+  # Health Checks
+  HEALTH_CHECK_INTERVAL: '30'
+  READINESS_PROBE_DELAY: '10'
+  LIVENESS_PROBE_DELAY: '30'
+
+  # Scaling
+  HPA_MIN_REPLICAS: '2'
+  HPA_MAX_REPLICAS: '5'
+  HPA_CPU_THRESHOLD: '70'
+  HPA_MEMORY_THRESHOLD: '80'
+
+  # Resources
+  API_CPU_REQUEST: '500m'
+  API_CPU_LIMIT: '1000m'
+  API_MEMORY_REQUEST: '512Mi'
+  API_MEMORY_LIMIT: '1Gi'
+
+  WEB_CPU_REQUEST: '250m'
+  WEB_CPU_LIMIT: '500m'
+  WEB_MEMORY_REQUEST: '256Mi'
+  WEB_MEMORY_LIMIT: '512Mi'

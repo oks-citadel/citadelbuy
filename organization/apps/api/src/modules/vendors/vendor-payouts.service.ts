@@ -49,7 +49,7 @@ export class VendorPayoutsService {
   ) {
     const apiKey = this.configService.get('STRIPE_SECRET_KEY');
     this.stripe = new Stripe(apiKey || 'sk_test_dummy', {
-      apiVersion: '2023-10-16',
+      apiVersion: '2024-12-18.acacia',
     });
   }
 

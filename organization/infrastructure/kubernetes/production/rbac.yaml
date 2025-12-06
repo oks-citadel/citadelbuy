@@ -1,0 +1,280 @@
+# RBAC Configuration for CitadelBuy Production Environment
+# Implements strict least privilege access control with enhanced security
+
+---
+# Service Account for API Backend
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: citadelbuy-api
+  namespace: citadelbuy-production
+  labels:
+    app: citadelbuy-api
+    tier: backend
+    environment: production
+  annotations:
+    # IRSA annotation for AWS EKS
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/citadelbuy-api-production
+automountServiceAccountToken: true
+
+---
+# Service Account for Web Frontend
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: citadelbuy-web
+  namespace: citadelbuy-production
+  labels:
+    app: citadelbuy-web
+    tier: frontend
+    environment: production
+  annotations:
+    # IRSA annotation for AWS EKS
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/citadelbuy-web-production
+automountServiceAccountToken: true
+
+---
+# Service Account for Worker Pods
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: citadelbuy-worker
+  namespace: citadelbuy-production
+  labels:
+    app: citadelbuy-worker
+    tier: worker
+    environment: production
+  annotations:
+    # IRSA annotation for AWS EKS
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/citadelbuy-worker-production
+automountServiceAccountToken: true
+
+---
+# Service Account for PostgreSQL
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: postgres
+  namespace: citadelbuy-production
+  labels:
+    app: postgres
+    tier: database
+    environment: production
+automountServiceAccountToken: false
+
+---
+# Service Account for Redis
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: redis
+  namespace: citadelbuy-production
+  labels:
+    app: redis
+    tier: cache
+    environment: production
+automountServiceAccountToken: false
+
+---
+# Role for API Backend - Strict production permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: citadelbuy-api-role
+  namespace: citadelbuy-production
+  labels:
+    app: citadelbuy-api
+    environment: production
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+    resourceNames: ["citadelbuy-config", "deployment-info"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+    resourceNames: ["citadelbuy-secrets"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "list"]
+
+---
+# RoleBinding for API Backend
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: citadelbuy-api-rolebinding
+  namespace: citadelbuy-production
+  labels:
+    app: citadelbuy-api
+    environment: production
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: citadelbuy-api-role
+subjects:
+  - kind: ServiceAccount
+    name: citadelbuy-api
+    namespace: citadelbuy-production
+
+---
+# Role for Web Frontend
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: citadelbuy-web-role
+  namespace: citadelbuy-production
+  labels:
+    app: citadelbuy-web
+    environment: production
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+    resourceNames: ["citadelbuy-config"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list"]
+
+---
+# RoleBinding for Web Frontend
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: citadelbuy-web-rolebinding
+  namespace: citadelbuy-production
+  labels:
+    app: citadelbuy-web
+    environment: production
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: citadelbuy-web-role
+subjects:
+  - kind: ServiceAccount
+    name: citadelbuy-web
+    namespace: citadelbuy-production
+
+---
+# Role for Worker Pods
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: citadelbuy-worker-role
+  namespace: citadelbuy-production
+  labels:
+    app: citadelbuy-worker
+    environment: production
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+    resourceNames: ["citadelbuy-config", "deployment-info"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+    resourceNames: ["citadelbuy-secrets"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list"]
+
+---
+# RoleBinding for Worker Pods
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: citadelbuy-worker-rolebinding
+  namespace: citadelbuy-production
+  labels:
+    app: citadelbuy-worker
+    environment: production
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: citadelbuy-worker-role
+subjects:
+  - kind: ServiceAccount
+    name: citadelbuy-worker
+    namespace: citadelbuy-production
+
+---
+# Role for external-secrets operator in production namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: external-secrets-role
+  namespace: citadelbuy-production
+  labels:
+    app: external-secrets
+    environment: production
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  - apiGroups: ["external-secrets.io"]
+    resources: ["secretstores", "externalsecrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["external-secrets.io"]
+    resources: ["externalsecrets/status", "secretstores/status"]
+    verbs: ["get", "patch", "update"]
+
+---
+# Service Account for External Secrets in production
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: external-secrets
+  namespace: citadelbuy-production
+  labels:
+    app: external-secrets
+    environment: production
+  annotations:
+    # IRSA annotation for AWS Secrets Manager access
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/citadelbuy-external-secrets-production
+
+---
+# RoleBinding for External Secrets Operator
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: external-secrets-rolebinding
+  namespace: citadelbuy-production
+  labels:
+    app: external-secrets
+    environment: production
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: external-secrets-role
+subjects:
+  - kind: ServiceAccount
+    name: external-secrets
+    namespace: citadelbuy-production
+
+---
+# PRODUCTION RBAC SECURITY NOTES:
+# 1. Service accounts are annotated with IAM roles for IRSA (EKS) or Workload Identity (GKE)
+# 2. Database service accounts have automountServiceAccountToken: false for security
+# 3. All permissions are scoped to specific resource names where possible
+# 4. No cluster-level permissions for application service accounts
+# 5. External Secrets Operator has limited permissions to manage secrets
+# 6. Worker pods have separate service account from API pods
+# 7. Audit logging should be enabled for all RBAC changes
+# 8. Regular RBAC reviews should be conducted quarterly
+# 9. Use least privilege principle - only grant necessary permissions
+# 10. Monitor for RBAC permission escalation attempts

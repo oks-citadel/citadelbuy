@@ -18,6 +18,7 @@ export class ReviewsService {
    * Create a new review
    */
   async create(userId: string, createReviewDto: CreateReviewDto) {
+    // Note: images field from DTO is not stored yet - Review model doesn't have images column
     const { productId, rating, comment } = createReviewDto;
 
     // Check if product exists
@@ -54,7 +55,8 @@ export class ReviewsService {
       },
     });
 
-    // Create review
+    // Create review with photo support
+    // Note: images field not in Review model yet - storing in separate table or skipping
     const review = await this.prisma.review.create({
       data: {
         userId,
@@ -85,6 +87,11 @@ export class ReviewsService {
     page: number = 1,
     limit: number = 10,
     sortBy: 'date' | 'rating' | 'helpful' = 'date',
+    filters?: {
+      verifiedOnly?: boolean;
+      withPhotos?: boolean;
+      minRating?: number;
+    },
   ) {
     // Verify product exists
     const product = await this.prisma.product.findUnique({
@@ -97,6 +104,27 @@ export class ReviewsService {
 
     const skip = (page - 1) * limit;
 
+    // Build where clause with filters
+    const where: any = {
+      productId,
+      status: 'APPROVED',
+    };
+
+    if (filters?.verifiedOnly) {
+      where.isVerifiedPurchase = true;
+    }
+
+    // Note: withPhotos filter disabled - images field not yet in Review model
+    // if (filters?.withPhotos) {
+    //   where.images = { isEmpty: false };
+    // }
+
+    if (filters?.minRating) {
+      where.rating = {
+        gte: filters.minRating,
+      };
+    }
+
     // Build orderBy clause
     let orderBy: any = { createdAt: 'desc' };
     if (sortBy === 'rating') {
@@ -108,10 +136,7 @@ export class ReviewsService {
     // Get reviews
     const [reviews, total, stats] = await Promise.all([
       this.prisma.review.findMany({
-        where: {
-          productId,
-          status: 'APPROVED',
-        },
+        where,
         include: {
           user: {
             select: {
@@ -125,10 +150,7 @@ export class ReviewsService {
         take: limit,
       }),
       this.prisma.review.count({
-        where: {
-          productId,
-          status: 'APPROVED',
-        },
+        where,
       }),
       this.getProductRatingStats(productId),
     ]);

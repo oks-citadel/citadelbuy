@@ -1,4 +1,4 @@
-import { IsString, IsInt, Min, Max, IsOptional, MinLength } from 'class-validator';
+import { IsString, IsInt, Min, Max, IsOptional, MinLength, IsArray, IsUrl, ArrayMaxSize } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateReviewDto {
@@ -29,4 +29,15 @@ export class CreateReviewDto {
   @IsString()
   @MinLength(10, { message: 'Comment must be at least 10 characters long' })
   comment?: string;
+
+  @ApiPropertyOptional({
+    description: 'Optional array of image URLs for photo reviews (max 5 images)',
+    example: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMaxSize(5, { message: 'Maximum 5 images allowed per review' })
+  images?: string[];
 }

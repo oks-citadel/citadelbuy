@@ -165,7 +165,7 @@ export default function AdminProductsPage() {
     return styles[status];
   };
 
-  const categories = [...new Set(products.map((p) => p.category))];
+  const categories = Array.from(new Set(products.map((p) => p.category)));
   const totalProducts = products.length;
   const activeProducts = products.filter((p) => p.status === 'ACTIVE').length;
   const lowStockProducts = products.filter((p) => p.stock > 0 && p.stock < 50).length;

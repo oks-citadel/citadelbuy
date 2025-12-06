@@ -51,8 +51,8 @@ export const useOrdersStore = create<OrdersState>((set) => ({
   fetchOrders: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await ordersApi.getOrders();
-      set({ orders: response.data || [], isLoading: false });
+      const data = await ordersApi.getOrders();
+      set({ orders: data || [], isLoading: false });
     } catch (error) {
       set({ error: 'Failed to fetch orders', isLoading: false });
     }
@@ -61,8 +61,8 @@ export const useOrdersStore = create<OrdersState>((set) => ({
   fetchOrderById: async (id: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await ordersApi.getOrderById(id);
-      set({ currentOrder: response.data || null, isLoading: false });
+      const data = await ordersApi.getOrderById(id);
+      set({ currentOrder: data || null, isLoading: false });
     } catch (error) {
       set({ error: 'Failed to fetch order', isLoading: false });
     }
@@ -111,13 +111,13 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
   fetchWishlist: async () => {
     set({ isLoading: true, error: null });
     try {
-      const [wishlistRes, countRes] = await Promise.all([
+      const [wishlistData, countData] = await Promise.all([
         wishlistApi.getWishlist(),
         wishlistApi.getWishlistCount(),
       ]);
       set({
-        items: wishlistRes.data || [],
-        count: countRes.data?.count || 0,
+        items: wishlistData || [],
+        count: countData?.count || 0,
         isLoading: false,
       });
     } catch (error) {
@@ -127,8 +127,8 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
 
   fetchCollections: async () => {
     try {
-      const response = await wishlistApi.getCollections();
-      set({ collections: response.data || [] });
+      const data = await wishlistApi.getCollections();
+      set({ collections: data || [] });
     } catch (error) {
       set({ error: 'Failed to fetch collections' });
     }
@@ -136,10 +136,10 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
 
   addToWishlist: async (productId: string, note?: string) => {
     try {
-      const response = await wishlistApi.addToWishlist({ productId, note });
-      if (response.data) {
+      const data = await wishlistApi.addToWishlist({ productId, note });
+      if (data) {
         set((state) => ({
-          items: [...state.items, response.data!],
+          items: [...state.items, data!],
           count: state.count + 1,
         }));
       }
@@ -171,10 +171,10 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
 
   createCollection: async (name: string, description?: string) => {
     try {
-      const response = await wishlistApi.createCollection({ name, description });
-      if (response.data) {
+      const data = await wishlistApi.createCollection({ name, description });
+      if (data) {
         set((state) => ({
-          collections: [...state.collections, response.data!],
+          collections: [...state.collections, data!],
         }));
       }
     } catch (error) {
@@ -195,8 +195,8 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
 
   checkInWishlist: async (productId: string) => {
     try {
-      const response = await wishlistApi.checkInWishlist(productId);
-      return response.data?.inWishlist || false;
+      const data = await wishlistApi.checkInWishlist(productId);
+      return data?.inWishlist || false;
     } catch {
       return false;
     }
@@ -226,20 +226,20 @@ export const useReviewsStore = create<ReviewsState>((set) => ({
   fetchMyReviews: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await reviewsApi.getMyReviews();
-      set({ myReviews: response.data || [], isLoading: false });
+      const data = await reviewsApi.getMyReviews();
+      set({ myReviews: data || [], isLoading: false });
     } catch (error) {
       set({ error: 'Failed to fetch reviews', isLoading: false });
     }
   },
 
-  createReview: async (data) => {
+  createReview: async (reviewData) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await reviewsApi.createReview(data);
-      if (response.data) {
+      const data = await reviewsApi.createReview(reviewData);
+      if (data) {
         set((state) => ({
-          myReviews: [...state.myReviews, response.data!],
+          myReviews: [...state.myReviews, data!],
           isLoading: false,
         }));
       }
@@ -285,8 +285,8 @@ export const useReturnsStore = create<ReturnsState>((set) => ({
   fetchReturns: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await returnsApi.getMyReturns();
-      set({ returns: response.data || [], isLoading: false });
+      const data = await returnsApi.getMyReturns();
+      set({ returns: data || [], isLoading: false });
     } catch (error) {
       set({ error: 'Failed to fetch returns', isLoading: false });
     }
@@ -295,20 +295,20 @@ export const useReturnsStore = create<ReturnsState>((set) => ({
   fetchReturnById: async (id: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await returnsApi.getReturnById(id);
-      set({ currentReturn: response.data || null, isLoading: false });
+      const data = await returnsApi.getReturnById(id);
+      set({ currentReturn: data || null, isLoading: false });
     } catch (error) {
       set({ error: 'Failed to fetch return', isLoading: false });
     }
   },
 
-  createReturn: async (data) => {
+  createReturn: async (returnData) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await returnsApi.createReturn(data);
-      if (response.data) {
+      const data = await returnsApi.createReturn(returnData);
+      if (data) {
         set((state) => ({
-          returns: [...state.returns, response.data!],
+          returns: [...state.returns, data!],
           isLoading: false,
         }));
       }
@@ -356,8 +356,8 @@ export const useSupportStore = create<SupportState>((set) => ({
   fetchTickets: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await supportApi.getTickets();
-      set({ tickets: response.data || [], isLoading: false });
+      const data = await supportApi.getTickets();
+      set({ tickets: data || [], isLoading: false });
     } catch (error) {
       set({ error: 'Failed to fetch tickets', isLoading: false });
     }
@@ -366,20 +366,20 @@ export const useSupportStore = create<SupportState>((set) => ({
   fetchTicketById: async (id: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await supportApi.getTicketById(id);
-      set({ currentTicket: response.data || null, isLoading: false });
+      const data = await supportApi.getTicketById(id);
+      set({ currentTicket: data || null, isLoading: false });
     } catch (error) {
       set({ error: 'Failed to fetch ticket', isLoading: false });
     }
   },
 
-  createTicket: async (data) => {
+  createTicket: async (ticketData) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await supportApi.createTicket(data);
-      if (response.data) {
+      const data = await supportApi.createTicket(ticketData);
+      if (data) {
         set((state) => ({
-          tickets: [...state.tickets, response.data!],
+          tickets: [...state.tickets, data!],
           isLoading: false,
         }));
       }
@@ -392,8 +392,8 @@ export const useSupportStore = create<SupportState>((set) => ({
     try {
       await supportApi.addMessage(ticketId, { content });
       // Refresh ticket to get updated messages
-      const response = await supportApi.getTicketById(ticketId);
-      set({ currentTicket: response.data || null });
+      const data = await supportApi.getTicketById(ticketId);
+      set({ currentTicket: data || null });
     } catch (error) {
       set({ error: 'Failed to add message' });
     }
@@ -411,7 +411,11 @@ interface GiftCardsState {
   purchaseGiftCard: (data: {
     amount: number;
     recipientEmail: string;
+    recipientName?: string;
+    senderName?: string;
     message?: string;
+    designTemplate?: string;
+    scheduledDeliveryDate?: string;
   }) => Promise<void>;
   redeemGiftCard: (code: string) => Promise<{ success: boolean; creditsAdded: number }>;
   checkBalance: (code: string) => Promise<{ balance: number; currency: string } | null>;
@@ -426,8 +430,8 @@ export const useGiftCardsStore = create<GiftCardsState>((set) => ({
   fetchMyGiftCards: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await giftCardsApi.getMyPurchases();
-      set({ myGiftCards: response.data || [], isLoading: false });
+      const data = await giftCardsApi.getMyPurchases();
+      set({ myGiftCards: data || [], isLoading: false });
     } catch (error) {
       set({ error: 'Failed to fetch gift cards', isLoading: false });
     }
@@ -435,20 +439,20 @@ export const useGiftCardsStore = create<GiftCardsState>((set) => ({
 
   fetchStoreCredit: async () => {
     try {
-      const response = await giftCardsApi.getStoreCredit();
-      set({ storeCredit: response.data || null });
+      const data = await giftCardsApi.getStoreCredit();
+      set({ storeCredit: data || null });
     } catch (error) {
       set({ error: 'Failed to fetch store credit' });
     }
   },
 
-  purchaseGiftCard: async (data) => {
+  purchaseGiftCard: async (giftCardData) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await giftCardsApi.purchaseGiftCard(data);
-      if (response.data) {
+      const data = await giftCardsApi.purchaseGiftCard(giftCardData);
+      if (data) {
         set((state) => ({
-          myGiftCards: [...state.myGiftCards, response.data!],
+          myGiftCards: [...state.myGiftCards, data!],
           isLoading: false,
         }));
       }
@@ -459,13 +463,13 @@ export const useGiftCardsStore = create<GiftCardsState>((set) => ({
 
   redeemGiftCard: async (code: string) => {
     try {
-      const response = await giftCardsApi.redeemGiftCard(code);
-      if (response.data?.success) {
+      const data = await giftCardsApi.redeemGiftCard(code);
+      if (data?.success) {
         // Refresh store credit
-        const creditResponse = await giftCardsApi.getStoreCredit();
-        set({ storeCredit: creditResponse.data || null });
+        const creditData = await giftCardsApi.getStoreCredit();
+        set({ storeCredit: creditData || null });
       }
-      return response.data || { success: false, creditsAdded: 0 };
+      return data || { success: false, creditsAdded: 0 };
     } catch (error) {
       set({ error: 'Failed to redeem gift card' });
       return { success: false, creditsAdded: 0 };
@@ -474,8 +478,8 @@ export const useGiftCardsStore = create<GiftCardsState>((set) => ({
 
   checkBalance: async (code: string) => {
     try {
-      const response = await giftCardsApi.checkBalance(code);
-      return response.data || null;
+      const data = await giftCardsApi.checkBalance(code);
+      return data || null;
     } catch {
       return null;
     }
@@ -503,8 +507,8 @@ export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
   fetchSubscription: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await subscriptionsApi.getMySubscription();
-      set({ subscription: response.data || null, isLoading: false });
+      const data = await subscriptionsApi.getMySubscription();
+      set({ subscription: data || null, isLoading: false });
     } catch (error) {
       set({ subscription: null, isLoading: false });
     }
@@ -513,8 +517,8 @@ export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
   fetchPlans: async (type) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await subscriptionsApi.getPlans(type);
-      set({ plans: response.data || [], isLoading: false });
+      const data = await subscriptionsApi.getPlans(type);
+      set({ plans: data || [], isLoading: false });
     } catch (error) {
       set({ error: 'Failed to fetch plans', isLoading: false });
     }
@@ -523,8 +527,8 @@ export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
   subscribe: async (planId, billingCycle) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await subscriptionsApi.subscribe({ planId, billingCycle });
-      set({ subscription: response.data || null, isLoading: false });
+      const data = await subscriptionsApi.subscribe({ planId, billingCycle });
+      set({ subscription: data || null, isLoading: false });
     } catch (error) {
       set({ error: 'Failed to subscribe', isLoading: false });
     }
@@ -576,8 +580,8 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
   fetchAccount: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await loyaltyApi.getMyAccount();
-      set({ account: response.data || null, isLoading: false });
+      const data = await loyaltyApi.getMyAccount();
+      set({ account: data || null, isLoading: false });
     } catch (error) {
       set({ account: null, isLoading: false });
     }
@@ -585,8 +589,8 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
 
   fetchRewards: async () => {
     try {
-      const response = await loyaltyApi.getAvailableRewards();
-      set({ rewards: response.data || [] });
+      const data = await loyaltyApi.getAvailableRewards();
+      set({ rewards: data || [] });
     } catch (error) {
       set({ error: 'Failed to fetch rewards' });
     }
@@ -594,8 +598,8 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
 
   fetchRedemptions: async () => {
     try {
-      const response = await loyaltyApi.getMyRedemptions();
-      set({ redemptions: response.data || [] });
+      const data = await loyaltyApi.getMyRedemptions();
+      set({ redemptions: data || [] });
     } catch (error) {
       set({ error: 'Failed to fetch redemptions' });
     }
@@ -603,8 +607,8 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
 
   fetchReferrals: async () => {
     try {
-      const response = await loyaltyApi.getMyReferrals();
-      set({ referrals: response.data || [] });
+      const data = await loyaltyApi.getMyReferrals();
+      set({ referrals: data || [] });
     } catch (error) {
       set({ error: 'Failed to fetch referrals' });
     }
@@ -613,15 +617,15 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
   redeemReward: async (rewardId: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await loyaltyApi.redeemReward(rewardId);
-      if (response.data) {
+      const data = await loyaltyApi.redeemReward(rewardId);
+      if (data) {
         set((state) => ({
-          redemptions: [...state.redemptions, response.data!],
+          redemptions: [...state.redemptions, data!],
           isLoading: false,
         }));
         // Refresh account to update points
-        const accountResponse = await loyaltyApi.getMyAccount();
-        set({ account: accountResponse.data || null });
+        const accountData = await loyaltyApi.getMyAccount();
+        set({ account: accountData || null });
       }
     } catch (error) {
       set({ error: 'Failed to redeem reward', isLoading: false });
@@ -630,10 +634,10 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
 
   createReferral: async (email: string) => {
     try {
-      const response = await loyaltyApi.createReferral(email);
-      if (response.data) {
+      const data = await loyaltyApi.createReferral(email);
+      if (data) {
         set((state) => ({
-          referrals: [...state.referrals, response.data!],
+          referrals: [...state.referrals, data!],
         }));
       }
     } catch (error) {
@@ -663,20 +667,20 @@ export const useAddressStore = create<AddressState>((set) => ({
   fetchAddresses: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await addressApi.getAddresses();
-      set({ addresses: response.data || [], isLoading: false });
+      const data = await addressApi.getAddresses();
+      set({ addresses: data || [], isLoading: false });
     } catch (error) {
       set({ error: 'Failed to fetch addresses', isLoading: false });
     }
   },
 
-  addAddress: async (data) => {
+  addAddress: async (addressData) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await addressApi.addAddress(data);
-      if (response.data) {
+      const data = await addressApi.addAddress(addressData);
+      if (data) {
         set((state) => ({
-          addresses: [...state.addresses, response.data!],
+          addresses: [...state.addresses, data!],
           isLoading: false,
         }));
       }
@@ -685,13 +689,13 @@ export const useAddressStore = create<AddressState>((set) => ({
     }
   },
 
-  updateAddress: async (id, data) => {
+  updateAddress: async (id, updates) => {
     try {
-      const response = await addressApi.updateAddress(id, data);
-      if (response.data) {
+      const data = await addressApi.updateAddress(id, updates);
+      if (data) {
         set((state) => ({
           addresses: state.addresses.map((a) =>
-            a.id === id ? response.data! : a
+            a.id === id ? data! : a
           ),
         }));
       }

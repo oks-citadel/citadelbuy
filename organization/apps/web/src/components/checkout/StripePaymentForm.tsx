@@ -13,7 +13,7 @@ import { Loader2, CreditCard, Lock, AlertCircle, CheckCircle2 } from 'lucide-rea
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { api } from '@/services/api';
+import { apiClient as api } from '@/lib/api-client';
 
 // Initialize Stripe (memoized to avoid recreating on every render)
 const stripePromise = loadStripe(
@@ -107,7 +107,7 @@ function StripePaymentFormInternal({
           metadata,
         });
 
-        if (response.success && response.data) {
+        if (response.data?.clientSecret) {
           setClientSecret(response.data.clientSecret);
         } else {
           setPaymentError('Failed to initialize payment. Please try again.');
@@ -180,7 +180,7 @@ function StripePaymentFormInternal({
       } else {
         // Unexpected state
         setPaymentError('Payment status is uncertain. Please contact support.');
-        onError?('Unexpected payment status');
+        onError?.('Unexpected payment status');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';

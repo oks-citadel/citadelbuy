@@ -1,0 +1,190 @@
+# Checkout Flow Stress Test
+# Simulates high load on checkout process
+
+config:
+  target: "http://localhost:4000"
+  phases:
+    - duration: 30
+      arrivalRate: 2
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 5
+      rampTo: 20
+      name: "Ramp up"
+    - duration: 180
+      arrivalRate: 20
+      name: "Peak load"
+    - duration: 60
+      arrivalRate: 20
+      rampTo: 2
+      name: "Cool down"
+
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+  plugins:
+    expect: {}
+
+scenarios:
+  - name: "Complete Checkout Flow"
+    flow:
+      # Step 1: Login
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "customer@citadelbuy.com"
+            password: "password123"
+          capture:
+            - json: "$.accessToken"
+              as: "authToken"
+          expect:
+            - statusCode: 200
+      - think: 1
+
+      # Step 2: Get Products
+      - get:
+          url: "/api/products?limit=5"
+          capture:
+            - json: "$.data[0].id"
+              as: "productId"
+          expect:
+            - statusCode: 200
+      - think: 1
+
+      # Step 3: Add to Cart
+      - post:
+          url: "/api/cart/items"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            productId: "{{ productId }}"
+            quantity: 1
+          expect:
+            - statusCode:
+                - 200
+                - 201
+      - think: 1
+
+      # Step 4: Get Cart
+      - get:
+          url: "/api/cart"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          capture:
+            - json: "$.id"
+              as: "cartId"
+            - json: "$.total"
+              as: "cartTotal"
+          expect:
+            - statusCode: 200
+      - think: 1
+
+      # Step 5: Calculate Shipping
+      - post:
+          url: "/api/shipping/calculate"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            cartId: "{{ cartId }}"
+            addressId: "default"
+          expect:
+            - statusCode:
+                - 200
+                - 400
+      - think: 1
+
+      # Step 6: Apply Coupon (optional)
+      - post:
+          url: "/api/coupons/apply"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            code: "TESTDISCOUNT"
+            cartId: "{{ cartId }}"
+          expect:
+            - statusCode:
+                - 200
+                - 400
+                - 404
+      - think: 1
+
+      # Step 7: Create Order
+      - post:
+          url: "/api/orders"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            cartId: "{{ cartId }}"
+            shippingAddress:
+              fullName: "Load Test User"
+              addressLine1: "123 Test Street"
+              city: "Test City"
+              state: "TS"
+              zipCode: "12345"
+              country: "USA"
+            paymentMethod: "card"
+          capture:
+            - json: "$.id"
+              as: "orderId"
+          expect:
+            - statusCode:
+                - 200
+                - 201
+                - 400
+      - think: 2
+
+      # Step 8: Create Payment Intent
+      - post:
+          url: "/api/payments/create-intent"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            orderId: "{{ orderId }}"
+            amount: "{{ cartTotal }}"
+          expect:
+            - statusCode:
+                - 200
+                - 400
+
+  - name: "Cart Abandonment Simulation"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "customer@citadelbuy.com"
+            password: "password123"
+          capture:
+            - json: "$.accessToken"
+              as: "authToken"
+      - think: 1
+      - get:
+          url: "/api/products?limit=3"
+          capture:
+            - json: "$.data[0].id"
+              as: "productId1"
+            - json: "$.data[1].id"
+              as: "productId2"
+      - think: 1
+      - post:
+          url: "/api/cart/items"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            productId: "{{ productId1 }}"
+            quantity: 2
+      - think: 2
+      - post:
+          url: "/api/cart/items"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            productId: "{{ productId2 }}"
+            quantity: 1
+      - think: 3
+      # User abandons cart here (no checkout completion)
+      - get:
+          url: "/api/cart"
+          headers:
+            Authorization: "Bearer {{ authToken }}"

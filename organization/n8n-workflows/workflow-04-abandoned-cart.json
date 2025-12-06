@@ -1,0 +1,684 @@
+{
+  "name": "CitadelBuy Abandoned Cart Recovery",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.citadelbuy.com/v1/carts/abandoned",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+      "name": "Fetch Abandoned Carts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1",
+          "name": "CitadelBuy API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "carts",
+        "options": {}
+      },
+      "id": "3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+      "name": "Split Carts",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition1",
+              "leftValue": "={{ $json.customer_email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "condition2",
+              "leftValue": "={{ $json.recovery_stage }}",
+              "rightValue": 4,
+              "operator": {
+                "type": "number",
+                "operation": "smaller"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f9a",
+      "name": "Filter Valid Carts",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate time since cart was last updated\nconst updatedAt = new Date($input.item.json.updated_at);\nconst now = new Date();\nconst hoursSinceUpdate = (now - updatedAt) / (1000 * 60 * 60);\nconst daysSinceUpdate = hoursSinceUpdate / 24;\n\nconst recoveryStage = $input.item.json.recovery_stage || 0;\n\n// Determine next action based on recovery stage and time elapsed\nlet shouldSendEmail = false;\nlet emailStage = 0;\nlet stageName = '';\nlet discountCode = null;\nlet urgencyMessage = '';\n\n// Stage 1: 1 hour after abandonment\nif (recoveryStage === 0 && hoursSinceUpdate >= 1) {\n  shouldSendEmail = true;\n  emailStage = 1;\n  stageName = 'reminder';\n  urgencyMessage = 'Your cart is waiting for you!';\n}\n\n// Stage 2: 24 hours after abandonment\nif (recoveryStage === 1 && hoursSinceUpdate >= 24) {\n  shouldSendEmail = true;\n  emailStage = 2;\n  stageName = 'urgency';\n  urgencyMessage = 'Still thinking? These items are popular and may sell out soon.';\n}\n\n// Stage 3: 72 hours (3 days) after abandonment\nif (recoveryStage === 2 && hoursSinceUpdate >= 72) {\n  shouldSendEmail = true;\n  emailStage = 3;\n  stageName = 'discount';\n  discountCode = 'COMEBACK10';\n  urgencyMessage = 'Special offer just for you! Get 10% off your cart.';\n}\n\n// Stage 4: 7 days (168 hours) after abandonment\nif (recoveryStage === 3 && hoursSinceUpdate >= 168) {\n  shouldSendEmail = true;\n  emailStage = 4;\n  stageName = 'final';\n  urgencyMessage = 'Last chance! Check out these alternatives you might love.';\n}\n\nreturn {\n  ...($input.item.json),\n  _metadata: {\n    hoursSinceUpdate,\n    daysSinceUpdate,\n    shouldSendEmail,\n    emailStage,\n    stageName,\n    discountCode,\n    urgencyMessage,\n    currentRecoveryStage: recoveryStage\n  }\n};"
+      },
+      "id": "5e6f7a8b-9c0d-1e2f-3a4b-5c6d7e8f9a0b",
+      "name": "Calculate Recovery Stage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition1",
+              "leftValue": "={{ $json._metadata.shouldSendEmail }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6f7a8b9c-0d1e-2f3a-4b5c-6d7e8f9a0b1c",
+      "name": "Should Send Email?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.citadelbuy.com/v1/orders",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customer_id",
+              "value": "={{ $json.customer_id }}"
+            },
+            {
+              "name": "created_after",
+              "value": "={{ $json.created_at }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+      "name": "Check Recent Orders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1560, 180],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1",
+          "name": "CitadelBuy API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://a.klaviyo.com/api/v2/list/{{ $env.KLAVIYO_SUPPRESSION_LIST_ID }}/members",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "emails",
+              "value": "={{ $json.customer_email }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "8b9c0d1e-2f3a-4b5c-6d7e-8f9a0b1c2d3e",
+      "name": "Check Klaviyo Suppression",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1560, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "2",
+          "name": "Klaviyo API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.zendesk.com/api/v2/search.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ 'type:ticket requester:' + $json.customer_email + ' status<solved' }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "9c0d1e2f-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
+      "name": "Check Zendesk Tickets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1560, 420],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "3",
+          "name": "Zendesk API Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge exclusion check results\nconst cartData = $input.first().json;\nconst orderCheck = $input.all()[0].json;\nconst klaviyoCheck = $input.all()[1].json;\nconst zendeskCheck = $input.all()[2].json;\n\n// Check exclusion conditions\nconst hasRecentOrder = orderCheck.orders && orderCheck.orders.length > 0;\nconst isSuppressed = klaviyoCheck.records && klaviyoCheck.records.length > 0;\nconst hasOpenTicket = zendeskCheck.results && zendeskCheck.results.length > 0;\n\nconst shouldExclude = hasRecentOrder || isSuppressed || hasOpenTicket;\n\nreturn {\n  ...cartData,\n  _exclusionChecks: {\n    hasRecentOrder,\n    isSuppressed,\n    hasOpenTicket,\n    shouldExclude,\n    exclusionReason: hasRecentOrder ? 'recent_order' : \n                     isSuppressed ? 'suppression_list' :\n                     hasOpenTicket ? 'open_support_ticket' : null\n  }\n};"
+      },
+      "id": "0d1e2f3a-4b5c-6d7e-8f9a-0b1c2d3e4f5a",
+      "name": "Merge Exclusion Checks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition1",
+              "leftValue": "={{ $json._exclusionChecks.shouldExclude }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "false"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1e2f3a4b-5c6d-7e8f-9a0b-1c2d3e4f5a6b",
+      "name": "Filter Excluded Carts",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://{{ $env.ALGOLIA_APP_ID }}-dsn.algolia.net/1/indexes/citadelbuy_products/query",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Algolia-API-Key",
+              "value": "={{ $env.ALGOLIA_API_KEY }}"
+            },
+            {
+              "name": "X-Algolia-Application-Id",
+              "value": "={{ $env.ALGOLIA_APP_ID }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": ""
+            },
+            {
+              "name": "filters",
+              "value": "={{ 'category:' + $json.items[0].category + ' AND NOT sku:' + $json.items[0].sku }}"
+            },
+            {
+              "name": "hitsPerPage",
+              "value": "4"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "2f3a4b5c-6d7e-8f9a-0b1c-2d3e4f5a6b7c",
+      "name": "Get Related Products (Algolia)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2220, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare email data with personalization\nconst cart = $input.first().json;\nconst algoliaResults = $input.last().json;\n\nconst emailStage = cart._metadata.emailStage;\nconst stageName = cart._metadata.stageName;\n\n// Build email template data\nconst emailData = {\n  customer_email: cart.customer_email,\n  customer_first_name: cart.customer_first_name || 'Valued Customer',\n  cart_id: cart.cart_id,\n  customer_id: cart.customer_id,\n  \n  // Cart details\n  cart_items: cart.items.map(item => ({\n    name: item.name,\n    sku: item.sku,\n    image_url: item.image_url,\n    price: item.price.toFixed(2),\n    quantity: item.quantity,\n    subtotal: (item.price * item.quantity).toFixed(2)\n  })),\n  \n  cart_total: cart.total_value.toFixed(2),\n  item_count: cart.item_count,\n  \n  // Stage-specific content\n  email_stage: emailStage,\n  stage_name: stageName,\n  urgency_message: cart._metadata.urgencyMessage,\n  discount_code: cart._metadata.discountCode,\n  \n  // Related products for stages 2 and 4\n  related_products: algoliaResults.hits ? algoliaResults.hits.slice(0, 4).map(hit => ({\n    name: hit.name,\n    sku: hit.sku,\n    image_url: hit.image_url,\n    price: hit.price.toFixed(2),\n    url: `https://citadelbuy.com/products/${hit.slug}`\n  })) : [],\n  \n  // Email metadata\n  cart_url: `https://citadelbuy.com/cart/${cart.cart_id}`,\n  checkout_url: `https://citadelbuy.com/checkout/${cart.cart_id}`,\n  \n  // Tracking\n  campaign_name: `abandoned_cart_stage_${emailStage}`,\n  \n  // Original cart data for updates\n  _original: cart\n};\n\nreturn emailData;"
+      },
+      "id": "3a4b5c6d-7e8f-9a0b-1c2d-3e4f5a6b7c8d",
+      "name": "Prepare Email Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2440, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://a.klaviyo.com/api/v1/track",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify({\n  token: $env.KLAVIYO_PUBLIC_API_KEY,\n  event: 'Abandoned Cart Email',\n  customer_properties: {\n    $email: $json.customer_email,\n    $first_name: $json.customer_first_name,\n    customer_id: $json.customer_id\n  },\n  properties: {\n    stage: $json.email_stage,\n    stage_name: $json.stage_name,\n    cart_id: $json.cart_id,\n    cart_total: $json.cart_total,\n    item_count: $json.item_count,\n    discount_code: $json.discount_code,\n    cart_items: $json.cart_items,\n    related_products: $json.related_products,\n    urgency_message: $json.urgency_message,\n    cart_url: $json.cart_url,\n    checkout_url: $json.checkout_url\n  },\n  time: Math.floor(Date.now() / 1000)\n}) }}",
+        "options": {}
+      },
+      "id": "4b5c6d7e-8f9a-0b1c-2d3e-4f5a6b7c8d9e",
+      "name": "Send Email via Klaviyo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2660, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "2",
+          "name": "Klaviyo API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ 'https://api.citadelbuy.com/v1/carts/' + $json.cart_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify({\n  recovery_stage: $json.email_stage,\n  last_recovery_email_sent: new Date().toISOString(),\n  recovery_campaign: $json.campaign_name\n}) }}",
+        "options": {}
+      },
+      "id": "5c6d7e8f-9a0b-1c2d-3e4f-5a6b7c8d9e0f",
+      "name": "Update Cart Recovery Stage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2880, 180],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1",
+          "name": "CitadelBuy API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mixpanel.com/track",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify([{\n  event: 'Abandoned Cart Email Sent',\n  properties: {\n    token: $env.MIXPANEL_PROJECT_TOKEN,\n    distinct_id: $json.customer_id,\n    email: $json.customer_email,\n    cart_id: $json.cart_id,\n    email_stage: $json.email_stage,\n    stage_name: $json.stage_name,\n    cart_value: parseFloat($json.cart_total),\n    item_count: $json.item_count,\n    discount_offered: $json.discount_code || null,\n    campaign: $json.campaign_name,\n    time: Math.floor(Date.now() / 1000)\n  }\n}]) }}",
+        "options": {}
+      },
+      "id": "6d7e8f9a-0b1c-2d3e-4f5a-6b7c8d9e0f1a",
+      "name": "Track Email Sent (Mixpanel)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2880, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mixpanel.com/track",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify([{\n  event: 'Cart Excluded from Recovery',\n  properties: {\n    token: $env.MIXPANEL_PROJECT_TOKEN,\n    distinct_id: $json.customer_id,\n    email: $json.customer_email,\n    cart_id: $json.cart_id,\n    exclusion_reason: $json._exclusionChecks.exclusionReason,\n    has_recent_order: $json._exclusionChecks.hasRecentOrder,\n    is_suppressed: $json._exclusionChecks.isSuppressed,\n    has_open_ticket: $json._exclusionChecks.hasOpenTicket,\n    cart_value: $json.total_value,\n    time: Math.floor(Date.now() / 1000)\n  }\n}]) }}",
+        "options": {}
+      },
+      "id": "7e8f9a0b-1c2d-3e4f-5a6b-7c8d9e0f1a2b",
+      "name": "Track Exclusion (Mixpanel)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2000, 480]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Summary of workflow execution\nconst allItems = $input.all();\n\nconst summary = {\n  execution_time: new Date().toISOString(),\n  total_carts_processed: allItems.length,\n  emails_sent: allItems.filter(item => item.json.email_stage).length,\n  excluded_carts: allItems.filter(item => item.json._exclusionChecks?.shouldExclude).length,\n  by_stage: {\n    stage_1: allItems.filter(item => item.json.email_stage === 1).length,\n    stage_2: allItems.filter(item => item.json.email_stage === 2).length,\n    stage_3: allItems.filter(item => item.json.email_stage === 3).length,\n    stage_4: allItems.filter(item => item.json.email_stage === 4).length\n  },\n  exclusion_reasons: {\n    recent_order: allItems.filter(item => item.json._exclusionChecks?.exclusionReason === 'recent_order').length,\n    suppression_list: allItems.filter(item => item.json._exclusionChecks?.exclusionReason === 'suppression_list').length,\n    open_ticket: allItems.filter(item => item.json._exclusionChecks?.exclusionReason === 'open_support_ticket').length\n  },\n  total_cart_value: allItems.reduce((sum, item) => sum + (item.json.total_value || 0), 0).toFixed(2)\n};\n\nconsole.log('Abandoned Cart Recovery Summary:', JSON.stringify(summary, null, 2));\n\nreturn summary;"
+      },
+      "id": "8f9a0b1c-2d3e-4f5a-6b7c-8d9e0f1a2b3c",
+      "name": "Execution Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3100, 300]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Abandoned Carts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Abandoned Carts": {
+      "main": [
+        [
+          {
+            "node": "Split Carts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Carts": {
+      "main": [
+        [
+          {
+            "node": "Filter Valid Carts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Valid Carts": {
+      "main": [
+        [
+          {
+            "node": "Calculate Recovery Stage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Recovery Stage": {
+      "main": [
+        [
+          {
+            "node": "Should Send Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Send Email?": {
+      "main": [
+        [
+          {
+            "node": "Check Recent Orders",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Klaviyo Suppression",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Zendesk Tickets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Recent Orders": {
+      "main": [
+        [
+          {
+            "node": "Merge Exclusion Checks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Klaviyo Suppression": {
+      "main": [
+        [
+          {
+            "node": "Merge Exclusion Checks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Zendesk Tickets": {
+      "main": [
+        [
+          {
+            "node": "Merge Exclusion Checks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Exclusion Checks": {
+      "main": [
+        [
+          {
+            "node": "Filter Excluded Carts",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Track Exclusion (Mixpanel)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Excluded Carts": {
+      "main": [
+        [
+          {
+            "node": "Get Related Products (Algolia)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Related Products (Algolia)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Email Data": {
+      "main": [
+        [
+          {
+            "node": "Send Email via Klaviyo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email via Klaviyo": {
+      "main": [
+        [
+          {
+            "node": "Update Cart Recovery Stage",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Track Email Sent (Mixpanel)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Cart Recovery Stage": {
+      "main": [
+        [
+          {
+            "node": "Execution Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Track Email Sent (Mixpanel)": {
+      "main": [
+        [
+          {
+            "node": "Execution Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Track Exclusion (Mixpanel)": {
+      "main": [
+        [
+          {
+            "node": "Execution Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "error-handler-workflow"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2024-01-15T10:00:00.000Z",
+      "updatedAt": "2024-01-15T10:00:00.000Z",
+      "id": "1",
+      "name": "citadelbuy"
+    },
+    {
+      "createdAt": "2024-01-15T10:00:00.000Z",
+      "updatedAt": "2024-01-15T10:00:00.000Z",
+      "id": "2",
+      "name": "abandoned-cart"
+    },
+    {
+      "createdAt": "2024-01-15T10:00:00.000Z",
+      "updatedAt": "2024-01-15T10:00:00.000Z",
+      "id": "3",
+      "name": "email-marketing"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-15T10:00:00.000Z",
+  "versionId": "1"
+}
