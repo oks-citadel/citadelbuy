@@ -136,9 +136,9 @@ export class AuthService {
       });
     }
 
-    const { password: _, ...result } = user;
+    // The user from create() is already sanitized (no password in select)
     return {
-      user: result,
+      user,
       access_token: this.generateToken({ sub: user.id, email: user.email, role: user.role }),
     };
   }
@@ -269,7 +269,7 @@ export class AuthService {
         email: profile.email,
         password: hashedPassword,
         name: profile.name,
-      });
+      }) as typeof user;
 
       // Send welcome email (async, don't block login)
       this.emailService.sendWelcomeEmail(user.email, user.name).catch((error) => {
@@ -308,13 +308,15 @@ export class AuthService {
     }
 
     // Step 3: Generate JWT tokens
-    const { password: _, ...result } = user;
+    // User from create() is already sanitized (no password in select)
+    // User from findByEmail() includes password but we can safely spread
+    const safeUser = { id: user.id, email: user.email, name: user.name, role: user.role, createdAt: user.createdAt, updatedAt: user.updatedAt };
 
     const payload = { sub: user.id, email: user.email, role: user.role };
     const refreshPayload = { sub: user.id, type: 'refresh' };
 
     return {
-      user: result,
+      user: safeUser,
       access_token: this.generateToken(payload),
       refresh_token: this.generateToken(refreshPayload, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET') || this.configService.get<string>('JWT_SECRET'),
