@@ -1,0 +1,43 @@
+{
+  "common": {
+    "welcome": "Willkommen",
+    "loading": "Lädt...",
+    "error": "Fehler",
+    "success": "Erfolg",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "create": "Erstellen",
+    "update": "Aktualisieren",
+    "search": "Suchen",
+    "yes": "Ja",
+    "no": "Nein",
+    "back": "Zurück",
+    "next": "Weiter",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "register": "Registrieren"
+  },
+  "nav": {
+    "home": "Startseite",
+    "products": "Produkte",
+    "cart": "Warenkorb",
+    "orders": "Bestellungen",
+    "dashboard": "Dashboard"
+  },
+  "products": {
+    "title": "Produkte",
+    "addToCart": "In den Warenkorb",
+    "buyNow": "Jetzt kaufen"
+  },
+  "cart": {
+    "title": "Warenkorb",
+    "emptyCart": "Ihr Warenkorb ist leer"
+  },
+  "enterprise": {
+    "title": "Unternehmenslösungen"
+  }
+}
