@@ -1,4 +1,4 @@
-# Production Environment Variables Example
+# Staging Environment Variables Example
 # Copy this file to terraform.tfvars and fill in the values
 
 # Azure Credentials (get from Azure Portal or az account show)
@@ -7,43 +7,25 @@ tenant_id       = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
 # Database Configuration
 db_admin_username = "citadelbuy_admin"
-db_admin_password = "CHANGE_ME_STRONG_PASSWORD_HERE"
+db_admin_password = "CHANGE_ME_STAGING_PASSWORD"
 
 # AKS Admin Group (Azure AD Group Object IDs)
 aks_admin_group_ids = [
-  "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # Platform Admin Group
+  "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # Dev Team Group
 ]
 
 # Security Configuration
 allowed_ip_ranges = [
   # Office IP ranges
-  # "203.0.113.0/24",
-]
-
-blocked_ip_ranges = [
-  # Known bad actors
-]
-
-blocked_countries = [
-  # Countries to block (ISO 3166-1 alpha-2)
-  # "KP",  # North Korea
-  # "IR",  # Iran
+  # Development IPs
 ]
 
 # JWT Secret (use a strong random string)
-jwt_secret = "CHANGE_ME_USE_STRONG_RANDOM_STRING_AT_LEAST_256_BITS"
+jwt_secret = "CHANGE_ME_STAGING_JWT_SECRET"
 
 # Monitoring Configuration
-oncall_email = "oncall@citadelbuy.com"
+oncall_email = "dev-team@citadelbuy.com"
 team_email   = "platform-team@citadelbuy.com"
-
-additional_alert_emails = [
-  # "cto@citadelbuy.com",
-  # "security@citadelbuy.com"
-]
-
-# PagerDuty Integration (optional)
-pagerduty_webhook_url = ""
 
 # Slack Integration (optional)
 slack_webhook_url = ""

@@ -105,3 +105,8 @@ output "log_analytics_workspace_key" {
   value       = azurerm_log_analytics_workspace.main.primary_shared_key
   sensitive   = true
 }
+
+output "keyvault_private_dns_zone_id" {
+  description = "Key Vault private DNS zone ID"
+  value       = azurerm_private_dns_zone.keyvault.id
+}

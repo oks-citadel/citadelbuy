@@ -335,6 +335,23 @@ resource "azurerm_private_dns_zone_virtual_network_link" "postgresql" {
   tags = var.tags
 }
 
+# Key Vault Private DNS Zone
+resource "azurerm_private_dns_zone" "keyvault" {
+  name                = "privatelink.vaultcore.azure.net"
+  resource_group_name = azurerm_resource_group.main.name
+
+  tags = var.tags
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "keyvault" {
+  name                  = "${var.project_name}-${var.environment}-keyvault-link"
+  resource_group_name   = azurerm_resource_group.main.name
+  private_dns_zone_name = azurerm_private_dns_zone.keyvault.name
+  virtual_network_id    = azurerm_virtual_network.main.id
+
+  tags = var.tags
+}
+
 # Application Insights for monitoring
 resource "azurerm_application_insights" "main" {
   name                = "${var.project_name}-${var.environment}-appinsights"
