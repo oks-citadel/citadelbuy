@@ -18,7 +18,7 @@ export class UpdateProfileDto {
   })
   @IsString()
   @IsOptional()
-  phone?: string;
+  phoneNumber?: string;
 
   @ApiProperty({
     description: 'Avatar URL',

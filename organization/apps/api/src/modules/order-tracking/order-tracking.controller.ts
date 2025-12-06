@@ -4,7 +4,6 @@ import {
   Post,
   Body,
   Param,
-  Query,
   UseGuards,
   Request,
   HttpCode,
@@ -16,16 +15,14 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
-  ApiQuery,
 } from '@nestjs/swagger';
 import { OrderTrackingService } from './order-tracking.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
   GuestTrackingDto,
-  TrackByOrderNumberDto,
-  TrackByTrackingNumberDto,
   TrackingResponseDto,
 } from './dto/tracking.dto';
+import { TrackingWebhookDto } from './dto/update-tracking.dto';
 
 @ApiTags('Tracking')
 @Controller('tracking')
@@ -151,5 +148,24 @@ export class OrderTrackingController {
   })
   async quickTrackingCheck(@Body() dto: GuestTrackingDto): Promise<TrackingResponseDto> {
     return this.trackingService.trackByOrderNumberAndEmail(dto.orderNumber, dto.email);
+  }
+
+  @Post('webhook')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Carrier tracking webhook',
+    description: 'Webhook endpoint for receiving tracking updates from shipping carriers. Used by UPS, FedEx, USPS, etc.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Webhook processed successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid webhook payload',
+  })
+  async handleTrackingWebhook(@Body() dto: TrackingWebhookDto): Promise<{ success: boolean }> {
+    await this.trackingService.handleTrackingWebhook(dto);
+    return { success: true };
   }
 }

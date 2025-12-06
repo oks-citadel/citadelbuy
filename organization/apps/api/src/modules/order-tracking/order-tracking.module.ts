@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
-// Module temporarily disabled due to schema mismatch issues
-// TODO: Fix order-tracking.service.ts to match Prisma schema
+import { OrderTrackingController } from './order-tracking.controller';
+import { OrderTrackingService } from './order-tracking.service';
+import { PrismaModule } from '../../common/prisma/prisma.module';
+import { ShippingModule } from '../shipping/shipping.module';
 
 @Module({
-  imports: [],
-  controllers: [],
-  providers: [],
-  exports: [],
+  imports: [PrismaModule, ShippingModule],
+  controllers: [OrderTrackingController],
+  providers: [OrderTrackingService],
+  exports: [OrderTrackingService],
 })
 export class OrderTrackingModule {}

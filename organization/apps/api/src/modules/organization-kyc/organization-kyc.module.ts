@@ -13,6 +13,8 @@ import { KycVerificationProcessor } from './processors/kyc-verification.processo
 
 // Providers
 import { OnfidoProvider } from './providers/onfido.provider';
+import { JumioProvider } from './providers/jumio.provider';
+import { SumsubProvider } from './providers/sumsub.provider';
 
 // Common
 import { PrismaModule } from '@/common/prisma/prisma.module';
@@ -39,6 +41,8 @@ import { EmailModule } from '../email/email.module';
     KycProviderService,
     KycVerificationProcessor,
     OnfidoProvider,
+    JumioProvider,
+    SumsubProvider,
   ],
   exports: [
     KycService,

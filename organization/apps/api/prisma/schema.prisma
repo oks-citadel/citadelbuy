@@ -24,13 +24,16 @@ enum OrderStatus {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      UserRole @default(CUSTOMER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(uuid())
+  email           String   @unique
+  phoneNumber     String?
+  phoneVerified   Boolean  @default(false)
+  phoneVerifiedAt DateTime?
+  password        String
+  name            String
+  role            UserRole @default(CUSTOMER)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relations
   orders                 Order[]

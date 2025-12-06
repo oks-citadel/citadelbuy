@@ -295,11 +295,15 @@ export class SmsService {
       };
     }
 
-    // Note: phoneNumber field is not in the User model yet
-    // This is a placeholder for when the field is added
+    // Fetch user with phone number
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true },
+      select: {
+        id: true,
+        email: true,
+        phoneNumber: true,
+        phoneVerified: true,
+      },
     });
 
     if (!user) {
@@ -309,12 +313,23 @@ export class SmsService {
       };
     }
 
-    // TODO: Add phoneNumber to User model and use it here
-    this.logger.warn(`SMS not sent - phoneNumber field not yet available for user ${userId}`);
-    return {
-      success: false,
-      error: 'Phone number not available in user profile',
-    };
+    if (!user.phoneNumber) {
+      this.logger.log(`User ${userId} does not have a phone number configured`);
+      return {
+        success: false,
+        error: 'Phone number not available in user profile',
+      };
+    }
+
+    // Optional: Check if phone is verified for non-critical messages
+    if (!user.phoneVerified && smsType !== 'verification') {
+      this.logger.warn(`User ${userId} phone number not verified, sending anyway`);
+    }
+
+    return this.sendSms({
+      to: user.phoneNumber,
+      message,
+    });
   }
 
   /**
@@ -403,6 +418,65 @@ export class SmsService {
     } catch (error) {
       return {
         valid: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Update user phone verification status
+   */
+  async markPhoneAsVerified(userId: string): Promise<boolean> {
+    try {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          phoneVerified: true,
+          phoneVerifiedAt: new Date(),
+        },
+      });
+      this.logger.log(`Phone verified for user ${userId}`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to mark phone as verified for user ${userId}`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Update user phone number
+   */
+  async updateUserPhoneNumber(
+    userId: string,
+    phoneNumber: string,
+  ): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    // Validate phone number first
+    const validation = await this.validatePhoneNumber(phoneNumber);
+    if (!validation.valid) {
+      return {
+        success: false,
+        error: validation.error || 'Invalid phone number',
+      };
+    }
+
+    try {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          phoneNumber: validation.formatted || phoneNumber,
+          phoneVerified: false, // Reset verification when phone changes
+          phoneVerifiedAt: null,
+        },
+      });
+      this.logger.log(`Phone number updated for user ${userId}`);
+      return { success: true };
+    } catch (error) {
+      this.logger.error(`Failed to update phone number for user ${userId}`, error);
+      return {
+        success: false,
         error: error.message,
       };
     }

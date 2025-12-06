@@ -75,8 +75,13 @@ export class KycWebhookController {
       const rawBody = (req as RawBodyRequest<Request>).rawBody;
       const payloadString = rawBody ? rawBody.toString('utf8') : JSON.stringify(payload);
 
-      // Process webhook through provider service
-      await this.kycProviderService.processWebhook(payload, signature);
+      // Process webhook through provider service with provider-specific handling
+      await this.kycProviderService.processWebhook(
+        payload,
+        signature,
+        undefined,
+        'onfido',
+      );
 
       this.logger.log('Onfido webhook processed successfully');
 
@@ -91,7 +96,8 @@ export class KycWebhookController {
   }
 
   /**
-   * Jumio webhook endpoint (placeholder)
+   * Jumio webhook endpoint
+   * Receives verification status updates from Jumio
    */
   @Post('jumio')
   @HttpCode(HttpStatus.OK)
@@ -101,30 +107,58 @@ export class KycWebhookController {
   })
   @ApiHeader({
     name: 'X-Jumio-Signature',
-    description: 'HMAC signature of the webhook payload',
-    required: false,
+    description: 'HMAC SHA-256 signature of the webhook payload',
+    required: true,
   })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Webhook processed successfully',
   })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid signature or payload',
+  })
   async handleJumioWebhook(
     @Body() payload: any,
     @Headers('x-jumio-signature') signature: string,
+    @Req() req: Request,
   ) {
     this.logger.log('Received Jumio webhook');
 
-    // Jumio implementation would go here
-    this.logger.warn('Jumio webhook handler not yet implemented');
+    // Validate signature
+    if (!signature) {
+      this.logger.warn('Jumio webhook received without signature');
+      throw new BadRequestException('Missing webhook signature');
+    }
 
-    return {
-      success: true,
-      message: 'Jumio webhook received (not yet implemented)',
-    };
+    try {
+      // Get raw body for signature verification
+      const rawBody = (req as RawBodyRequest<Request>).rawBody;
+      const payloadString = rawBody ? rawBody.toString('utf8') : JSON.stringify(payload);
+
+      // Process webhook through provider service with provider-specific handling
+      await this.kycProviderService.processWebhook(
+        payload,
+        signature,
+        undefined,
+        'jumio',
+      );
+
+      this.logger.log('Jumio webhook processed successfully');
+
+      return {
+        success: true,
+        message: 'Webhook processed',
+      };
+    } catch (error) {
+      this.logger.error('Failed to process Jumio webhook', error);
+      throw new BadRequestException('Failed to process webhook');
+    }
   }
 
   /**
-   * Sumsub webhook endpoint (placeholder)
+   * Sumsub webhook endpoint
+   * Receives verification status updates from Sumsub (Sum&Substance)
    */
   @Post('sumsub')
   @HttpCode(HttpStatus.OK)
@@ -134,26 +168,53 @@ export class KycWebhookController {
   })
   @ApiHeader({
     name: 'X-Payload-Digest',
-    description: 'HMAC signature of the webhook payload',
-    required: false,
+    description: 'HMAC SHA-256 signature of the webhook payload',
+    required: true,
   })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Webhook processed successfully',
   })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid signature or payload',
+  })
   async handleSumsubWebhook(
     @Body() payload: any,
     @Headers('x-payload-digest') signature: string,
+    @Req() req: Request,
   ) {
     this.logger.log('Received Sumsub webhook');
 
-    // Sumsub implementation would go here
-    this.logger.warn('Sumsub webhook handler not yet implemented');
+    // Validate signature
+    if (!signature) {
+      this.logger.warn('Sumsub webhook received without signature');
+      throw new BadRequestException('Missing webhook signature');
+    }
 
-    return {
-      success: true,
-      message: 'Sumsub webhook received (not yet implemented)',
-    };
+    try {
+      // Get raw body for signature verification
+      const rawBody = (req as RawBodyRequest<Request>).rawBody;
+      const payloadString = rawBody ? rawBody.toString('utf8') : JSON.stringify(payload);
+
+      // Process webhook through provider service with provider-specific handling
+      await this.kycProviderService.processWebhook(
+        payload,
+        signature,
+        undefined,
+        'sumsub',
+      );
+
+      this.logger.log('Sumsub webhook processed successfully');
+
+      return {
+        success: true,
+        message: 'Webhook processed',
+      };
+    } catch (error) {
+      this.logger.error('Failed to process Sumsub webhook', error);
+      throw new BadRequestException('Failed to process webhook');
+    }
   }
 
   /**

@@ -4,6 +4,8 @@ import { PrismaService } from '@/common/prisma/prisma.service';
 import { AuditService } from '../../organization-audit/services/audit.service';
 import { EmailService } from '../../email/email.service';
 import { OnfidoProvider } from '../providers/onfido.provider';
+import { JumioProvider } from '../providers/jumio.provider';
+import { SumsubProvider } from '../providers/sumsub.provider';
 import {
   IKycProvider,
   KycProviderType,
@@ -25,6 +27,7 @@ export class KycProviderService {
   private readonly logger = new Logger(KycProviderService.name);
   private readonly provider: IKycProvider;
   private readonly providerType: KycProviderType;
+  private readonly providers: Map<KycProviderType, IKycProvider>;
 
   constructor(
     private readonly configService: ConfigService,
@@ -32,8 +35,16 @@ export class KycProviderService {
     private readonly auditService: AuditService,
     private readonly emailService: EmailService,
     private readonly onfidoProvider: OnfidoProvider,
+    private readonly jumioProvider: JumioProvider,
+    private readonly sumsubProvider: SumsubProvider,
   ) {
-    // Select provider based on configuration
+    // Initialize provider map
+    this.providers = new Map<KycProviderType, IKycProvider>();
+    this.providers.set(KycProviderType.ONFIDO, this.onfidoProvider);
+    this.providers.set(KycProviderType.JUMIO, this.jumioProvider);
+    this.providers.set(KycProviderType.SUMSUB, this.sumsubProvider);
+
+    // Select primary provider based on configuration
     this.providerType = this.configService.get<KycProviderType>(
       'KYC_PROVIDER',
       KycProviderType.MOCK,
@@ -43,6 +54,12 @@ export class KycProviderService {
     switch (this.providerType) {
       case KycProviderType.ONFIDO:
         this.provider = this.onfidoProvider;
+        break;
+      case KycProviderType.JUMIO:
+        this.provider = this.jumioProvider;
+        break;
+      case KycProviderType.SUMSUB:
+        this.provider = this.sumsubProvider;
         break;
       case KycProviderType.MOCK:
       default:
@@ -379,9 +396,25 @@ export class KycProviderService {
     payload: any,
     signature: string,
     organizationId?: string,
+    providerName?: string,
   ): Promise<void> {
+    // Determine which provider to use
+    let targetProvider: IKycProvider = this.provider;
+
+    if (providerName) {
+      const providerType = providerName.toLowerCase() as KycProviderType;
+      const specificProvider = this.providers.get(providerType);
+
+      if (specificProvider) {
+        targetProvider = specificProvider;
+        this.logger.log(`Using specific provider for webhook: ${providerType}`);
+      } else {
+        this.logger.warn(`Unknown provider specified: ${providerName}, using default`);
+      }
+    }
+
     // Verify webhook signature
-    const isValid = this.provider.verifyWebhookSignature(
+    const isValid = targetProvider.verifyWebhookSignature(
       JSON.stringify(payload),
       signature,
     );
@@ -392,7 +425,7 @@ export class KycProviderService {
     }
 
     // Parse webhook
-    const webhookData = this.provider.parseWebhook(payload);
+    const webhookData = targetProvider.parseWebhook(payload);
 
     this.logger.log(
       `Processing webhook for check ${webhookData.checkId}: ${webhookData.status}`,
@@ -541,6 +574,20 @@ export class KycProviderService {
    */
   getProviderType(): KycProviderType {
     return this.providerType;
+  }
+
+  /**
+   * Get a specific provider by type
+   */
+  getProviderByType(providerType: KycProviderType): IKycProvider | undefined {
+    return this.providers.get(providerType);
+  }
+
+  /**
+   * Get all available providers
+   */
+  getAvailableProviders(): KycProviderType[] {
+    return Array.from(this.providers.keys());
   }
 
   /**

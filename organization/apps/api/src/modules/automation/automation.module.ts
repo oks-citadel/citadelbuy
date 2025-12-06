@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
+import { HttpModule } from '@nestjs/axios';
 import { WorkflowEngineService } from './workflow-engine.service';
 import { AutomationRulesService } from './automation-rules.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -77,6 +79,11 @@ import { PrismaService } from '../../common/prisma/prisma.service';
       verboseMemoryLeak: true,
       // Disable throwing uncaughtException if an error event is emitted and it has no listeners
       ignoreErrors: false,
+    }),
+    ScheduleModule.forRoot(),
+    HttpModule.register({
+      timeout: 10000,
+      maxRedirects: 5,
     }),
   ],
   providers: [

@@ -75,7 +75,9 @@
       "Bash(git checkout:*)",
       "Bash(git pull:*)",
       "Bash(git merge:*)",
-      "Bash(git stash push:*)"
+      "Bash(git stash push:*)",
+      "Bash(for module in auth payments notifications orders users products checkout)",
+      "Bash(do echo \"=== $module MODULE ===\" ls -la \"C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api/src/modules/$module/\")"
     ],
     "deny": [],
     "ask": []

@@ -23,6 +23,8 @@ export class UsersService {
         select: {
           id: true,
           email: true,
+          phoneNumber: true,
+          phoneVerified: true,
           name: true,
           role: true,
           createdAt: true,
@@ -50,6 +52,9 @@ export class UsersService {
       select: {
         id: true,
         email: true,
+        phoneNumber: true,
+        phoneVerified: true,
+        phoneVerifiedAt: true,
         name: true,
         role: true,
         createdAt: true,
@@ -114,6 +119,9 @@ export class UsersService {
       select: {
         id: true,
         email: true,
+        phoneNumber: true,
+        phoneVerified: true,
+        phoneVerifiedAt: true,
         name: true,
         role: true,
         createdAt: true,
@@ -187,6 +195,57 @@ export class UsersService {
     });
 
     return { message: 'User account deleted successfully' };
+  }
+
+  /**
+   * Update user phone number
+   */
+  async updatePhoneNumber(id: string, phoneNumber: string) {
+    await this.findById(id);
+
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        phoneNumber,
+        phoneVerified: false, // Reset verification when phone changes
+        phoneVerifiedAt: null,
+      },
+      select: {
+        id: true,
+        email: true,
+        phoneNumber: true,
+        phoneVerified: true,
+        phoneVerifiedAt: true,
+        name: true,
+        role: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  /**
+   * Mark phone as verified
+   */
+  async markPhoneAsVerified(id: string) {
+    await this.findById(id);
+
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        phoneVerified: true,
+        phoneVerifiedAt: new Date(),
+      },
+      select: {
+        id: true,
+        email: true,
+        phoneNumber: true,
+        phoneVerified: true,
+        phoneVerifiedAt: true,
+        name: true,
+        role: true,
+        updatedAt: true,
+      },
+    });
   }
 
   /**

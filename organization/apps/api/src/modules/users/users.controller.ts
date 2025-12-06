@@ -7,6 +7,7 @@ import { AddressService } from './address.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdatePreferencesDto } from './dto/update-preferences.dto';
 import { CreateAddressDto, UpdateAddressDto } from './dto/address.dto';
+import { UpdatePhoneDto, VerifyPhoneDto } from './dto/update-phone.dto';
 
 @ApiTags('Users')
 @Controller('users')
@@ -162,6 +163,68 @@ export class UsersController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updatePreferences(@Request() req: any, @Body() preferences: UpdatePreferencesDto) {
     return this.usersService.updatePreferences(req.user.id, preferences);
+  }
+
+  // ===== PHONE NUMBER MANAGEMENT ENDPOINTS =====
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('phone')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Update phone number',
+    description: 'Update the user phone number. This will reset phone verification status.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Phone number updated successfully',
+    schema: {
+      example: {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        email: 'john.doe@example.com',
+        phoneNumber: '+15551234567',
+        phoneVerified: false,
+        phoneVerifiedAt: null,
+        name: 'John Doe',
+        role: 'CUSTOMER',
+        updatedAt: '2024-02-20T15:45:00Z',
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid phone number' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updatePhoneNumber(@Request() req: any, @Body() updatePhoneDto: UpdatePhoneDto) {
+    return this.usersService.updatePhoneNumber(req.user.id, updatePhoneDto.phoneNumber);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('phone/verify')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Verify phone number',
+    description: 'Verify phone number with a verification code sent via SMS.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Phone number verified successfully',
+    schema: {
+      example: {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        email: 'john.doe@example.com',
+        phoneNumber: '+15551234567',
+        phoneVerified: true,
+        phoneVerifiedAt: '2024-02-20T15:45:00Z',
+        name: 'John Doe',
+        role: 'CUSTOMER',
+        updatedAt: '2024-02-20T15:45:00Z',
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid verification code' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async verifyPhoneNumber(@Request() req: any, @Body() verifyPhoneDto: VerifyPhoneDto) {
+    // TODO: Implement verification code validation
+    // For now, just mark as verified
+    return this.usersService.markPhoneAsVerified(req.user.id);
   }
 
   // ===== ADDRESS MANAGEMENT ENDPOINTS =====

@@ -65,13 +65,19 @@ export class OrderTrackingService {
     // Find order - support both guest orders and authenticated orders
     const order = await this.prisma.order.findFirst({
       where: {
-        OR: [
-          { id: { endsWith: orderNumber.replace(/^CB-\d{4}-/, '') } },
-          { id: orderNumber },
-        ],
-        OR: [
-          { guestEmail: email },
-          { user: { email } },
+        AND: [
+          {
+            OR: [
+              { id: { endsWith: orderNumber.replace(/^CB-\d{4}-/, '') } },
+              { id: orderNumber },
+            ],
+          },
+          {
+            OR: [
+              { guestEmail: email },
+              { user: { email } },
+            ],
+          },
         ],
       },
       include: {
@@ -179,7 +185,7 @@ export class OrderTrackingService {
           status: this.mapShipmentStatusToTrackingStatus(event.status),
           description: event.description,
           location: event.location || 'Unknown',
-          timestamp: event.timestamp.toISOString(),
+          timestamp: event.timestamp instanceof Date ? event.timestamp.toISOString() : event.timestamp,
           completed: this.isEventCompleted(event.status, tracking.status),
         })),
         estimatedDelivery: shipment.estimatedDelivery?.toISOString(),
@@ -338,8 +344,6 @@ export class OrderTrackingService {
 
     // Add future events if not delivered
     if (order.status !== 'DELIVERED' && order.status !== 'CANCELLED') {
-      const lastCompletedIndex = timeline.length - 1;
-
       if (!timeline.some(e => e.status === TrackingStatusEnum.OUT_FOR_DELIVERY)) {
         timeline.push({
           status: TrackingStatusEnum.OUT_FOR_DELIVERY,
@@ -377,7 +381,6 @@ export class OrderTrackingService {
       SHIPPED: TrackingStatusEnum.IN_TRANSIT,
       DELIVERED: TrackingStatusEnum.DELIVERED,
       CANCELLED: TrackingStatusEnum.CANCELLED,
-      REFUNDED: TrackingStatusEnum.RETURNED,
     };
 
     return statusMap[orderStatus] || TrackingStatusEnum.PROCESSING;
@@ -428,7 +431,6 @@ export class OrderTrackingService {
       SHIPPED: 'Package has been shipped',
       DELIVERED: 'Package delivered successfully',
       CANCELLED: 'Order has been cancelled',
-      REFUNDED: 'Order has been refunded',
     };
 
     return descriptions[status] || 'Status updated';
@@ -477,5 +479,123 @@ export class OrderTrackingService {
     const deliveryDate = new Date(orderDate);
     deliveryDate.setDate(deliveryDate.getDate() + 7 + daysOffset);
     return deliveryDate;
+  }
+
+  /**
+   * Update order tracking information (for webhooks/admin)
+   */
+  async updateOrderTracking(
+    orderId: string,
+    data: {
+      trackingNumber?: string;
+      carrier?: string;
+      shippingMethod?: string;
+      status?: OrderStatus;
+      estimatedDeliveryDate?: Date;
+      actualDeliveryDate?: Date;
+    },
+  ): Promise<void> {
+    this.logger.log(`Updating tracking info for order: ${orderId}`);
+
+    const updateData: any = {};
+
+    if (data.trackingNumber) updateData.trackingNumber = data.trackingNumber;
+    if (data.carrier) updateData.carrier = data.carrier;
+    if (data.shippingMethod) updateData.shippingMethod = data.shippingMethod;
+    if (data.status) updateData.status = data.status;
+    if (data.estimatedDeliveryDate) updateData.estimatedDeliveryDate = data.estimatedDeliveryDate;
+    if (data.actualDeliveryDate) updateData.actualDeliveryDate = data.actualDeliveryDate;
+
+    // Update status history if status is changing
+    if (data.status) {
+      const order = await this.prisma.order.findUnique({
+        where: { id: orderId },
+        select: { statusHistory: true, status: true },
+      });
+
+      if (order && order.status !== data.status) {
+        const statusHistory = Array.isArray(order.statusHistory) ? order.statusHistory : [];
+        statusHistory.push({
+          status: data.status,
+          timestamp: new Date().toISOString(),
+          note: `Status updated to ${data.status}`,
+        });
+        updateData.statusHistory = statusHistory;
+      }
+    }
+
+    await this.prisma.order.update({
+      where: { id: orderId },
+      data: updateData,
+    });
+  }
+
+  /**
+   * Handle tracking webhook from carrier
+   */
+  async handleTrackingWebhook(payload: any): Promise<void> {
+    this.logger.log('Processing tracking webhook');
+
+    const { trackingNumber, status, events } = payload;
+
+    if (!trackingNumber) {
+      throw new BadRequestException('Tracking number is required');
+    }
+
+    // Find order by tracking number
+    const order = await this.prisma.order.findFirst({
+      where: { trackingNumber },
+    });
+
+    if (!order) {
+      this.logger.warn(`Order not found for tracking number: ${trackingNumber}`);
+      return;
+    }
+
+    // Update order status based on shipment status
+    let orderStatus: OrderStatus | undefined;
+
+    switch (status) {
+      case 'DELIVERED':
+        orderStatus = OrderStatus.DELIVERED;
+        await this.updateOrderTracking(order.id, {
+          status: orderStatus,
+          actualDeliveryDate: new Date(),
+        });
+        break;
+      case 'IN_TRANSIT':
+      case 'OUT_FOR_DELIVERY':
+        if (order.status === OrderStatus.PROCESSING || order.status === OrderStatus.PENDING) {
+          orderStatus = OrderStatus.SHIPPED;
+          await this.updateOrderTracking(order.id, {
+            status: orderStatus,
+          });
+        }
+        break;
+    }
+
+    // Update shipment tracking events if shipment exists
+    const shipment = await this.prisma.shipment.findUnique({
+      where: { trackingNumber },
+    });
+
+    if (shipment && events && Array.isArray(events)) {
+      for (const event of events) {
+        await this.prisma.trackingEvent.create({
+          data: {
+            shipmentId: shipment.id,
+            status: event.status,
+            description: event.description,
+            location: event.location || 'Unknown',
+            timestamp: new Date(event.timestamp),
+          },
+        });
+      }
+
+      await this.prisma.shipment.update({
+        where: { id: shipment.id },
+        data: { status: status as any },
+      });
+    }
   }
 }
