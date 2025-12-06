@@ -70,7 +70,12 @@
       "Bash(for svc in apps/services/*/)",
       "Bash(cut:*)",
       "Bash(for dir in */)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(git merge:*)",
+      "Bash(git stash push:*)"
     ],
     "deny": [],
     "ask": []

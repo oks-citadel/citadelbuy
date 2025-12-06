@@ -1,0 +1,34 @@
+{
+  "common": {
+    "welcome": "Káàbọ̀",
+    "loading": "N lọ lọwọ...",
+    "error": "Àṣìṣe",
+    "success": "Àṣeyọrí",
+    "save": "Fi pamọ",
+    "cancel": "Fagile",
+    "delete": "Pajẹrẹ",
+    "edit": "Ṣatunṣe",
+    "yes": "Bẹẹni",
+    "no": "Rara",
+    "email": "Imeeli",
+    "password": "Ọrọigbaniwọle",
+    "login": "Wọle",
+    "logout": "Jade",
+    "register": "Forukọsilẹ"
+  },
+  "nav": {
+    "home": "Ile",
+    "products": "Awọn ọja",
+    "cart": "Apoti rira",
+    "orders": "Awọn ibere"
+  },
+  "products": {
+    "title": "Awọn ọja",
+    "addToCart": "Fi kun apoti",
+    "buyNow": "Ra ni bayi"
+  },
+  "cart": {
+    "title": "Apoti rira",
+    "emptyCart": "Apoti rẹ ṣofo"
+  }
+}
