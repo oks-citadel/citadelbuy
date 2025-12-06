@@ -1,0 +1,477 @@
+# Access Control Policy
+# CitadelBuy Global B2B Marketplace
+# Version: 2.0
+# Last Updated: 2025-12-06
+
+metadata:
+  policy_name: Role-Based Access Control (RBAC) Policy
+  owner: Chief Information Security Officer
+  approved_by: Chief Technology Officer
+  effective_date: 2025-01-01
+  review_frequency: Quarterly
+  next_review: 2026-03-01
+
+purpose: |
+  Define access control requirements for all CitadelBuy systems,
+  applications, data, and infrastructure based on principle of
+  least privilege and need-to-know.
+
+scope:
+  - All production systems and environments
+  - All staging and development environments
+  - All databases and data stores
+  - All cloud infrastructure (AWS, Azure, GCP)
+  - All applications and services
+  - All administrative and privileged access
+  - All third-party integrations
+
+access_control_principles:
+  least_privilege:
+    description: Users granted minimum access required for their role
+    implementation: Default deny, explicit allow
+    review_frequency: Quarterly
+
+  need_to_know:
+    description: Access limited to data/systems necessary for job function
+    enforcement: Data classification-based access
+    justification: Business justification required for access requests
+
+  separation_of_duties:
+    description: Critical functions require multiple people
+    examples:
+      - Code deployment: Developer write + DevOps approve
+      - Financial transactions: Initiate + Approve
+      - User access: Request + Approve
+      - Production changes: Change + Review
+
+  defense_in_depth:
+    description: Multiple layers of access controls
+    layers:
+      - Network layer (VPC, security groups)
+      - Application layer (authentication, authorization)
+      - Data layer (encryption, column-level security)
+      - Physical layer (data center access)
+
+authentication:
+  password_requirements:
+    minimum_length: 12 characters
+    complexity:
+      - Uppercase letters (A-Z)
+      - Lowercase letters (a-z)
+      - Numbers (0-9)
+      - Special characters (!@#$%^&*)
+    prohibited:
+      - Common passwords (checked against breach databases)
+      - Dictionary words
+      - Repeating characters (aaa, 111)
+      - Sequential characters (abc, 123)
+    expiry: 90 days
+    history: Cannot reuse last 12 passwords
+    lockout: 5 failed attempts = 30-minute lockout
+
+  multi_factor_authentication:
+    required_for:
+      - All administrative access
+      - All production system access
+      - All database access
+      - All VPN connections
+      - Financial system access
+      - Customer data access
+    approved_methods:
+      - Hardware tokens (YubiKey, FIDO2)
+      - Authenticator apps (Google Authenticator, Authy)
+      - Biometrics (for mobile devices)
+    prohibited_methods:
+      - SMS-based OTP (SIM swap risk)
+      - Email-based OTP
+
+  single_sign_on:
+    provider: Okta / Azure AD
+    protocol: SAML 2.0 or OpenID Connect
+    session_timeout: 8 hours
+    reauthentication: Required for sensitive operations
+
+  service_accounts:
+    authentication: Certificate-based or API keys (not passwords)
+    key_rotation: Every 90 days
+    scoped_permissions: Minimum required permissions
+    monitoring: All service account activity logged
+
+authorization:
+  role_based_access_control:
+    implementation: AWS IAM, Azure RBAC, Kubernetes RBAC
+    role_assignment: Based on job function
+    role_review: Quarterly
+    role_documentation: All roles documented with responsibilities
+
+  user_roles:
+    - role: Customer
+      description: End users purchasing products
+      access:
+        - Own account data (read/write)
+        - Product catalog (read)
+        - Order history (read)
+        - Payment methods (read/write own)
+      restrictions:
+        - Cannot access other customer data
+        - Cannot access vendor data
+        - Cannot access admin functions
+
+    - role: Vendor
+      description: Sellers on the platform
+      access:
+        - Own vendor profile (read/write)
+        - Own products (read/write)
+        - Own orders (read)
+        - Own analytics (read)
+        - Own financial data (read)
+      restrictions:
+        - Cannot access other vendor data
+        - Cannot access customer PII
+        - Cannot modify orders
+        - Cannot access platform configuration
+
+    - role: Customer_Support
+      description: Customer service representatives
+      access:
+        - Customer profiles (read, limited write)
+        - Order details (read, limited write)
+        - Support tickets (read/write)
+        - Refund initiation (write, requires approval)
+      restrictions:
+        - Cannot access payment card numbers (tokenized view only)
+        - Cannot access financial reports
+        - Cannot modify platform settings
+      mfa_required: true
+      session_timeout: 4 hours
+
+    - role: Vendor_Support
+      description: Vendor support specialists
+      access:
+        - Vendor profiles (read, limited write)
+        - Vendor products (read)
+        - Vendor orders (read)
+        - Verification documents (read)
+      restrictions:
+        - Cannot access financial data
+        - Cannot approve verifications
+        - Cannot access other business units
+      mfa_required: true
+
+    - role: Financial_Analyst
+      description: Finance team members
+      access:
+        - Financial reports (read)
+        - Transaction data (read)
+        - Vendor payouts (read, write with approval)
+        - Revenue analytics (read)
+      restrictions:
+        - Cannot access customer PII beyond transaction needs
+        - Cannot modify customer data
+        - Cannot access source code
+      mfa_required: true
+      ip_restriction: Office network only
+
+    - role: Compliance_Officer
+      description: Compliance and risk management
+      access:
+        - All compliance data (read)
+        - KYB/KYC records (read)
+        - Sanctions screening results (read)
+        - Audit logs (read)
+        - Compliance reports (read/write)
+      restrictions:
+        - Cannot modify customer/vendor data
+        - Cannot access source code
+        - Cannot deploy changes
+      mfa_required: true
+      all_access_logged: true
+
+    - role: Developer
+      description: Software engineers
+      access:
+        - Source code repositories (read/write)
+        - Development environment (read/write)
+        - Staging environment (read/write)
+        - CI/CD pipelines (read)
+        - Application logs (read)
+      restrictions:
+        - NO production database access
+        - NO production deployment (DevOps only)
+        - NO customer PII (use synthetic data)
+      mfa_required: true
+
+    - role: DevOps_Engineer
+      description: Infrastructure and deployment
+      access:
+        - All environments (read/write)
+        - Infrastructure as code (read/write)
+        - Production deployment (write with approval)
+        - Monitoring and alerting (read/write)
+        - Cloud infrastructure (read/write)
+      restrictions:
+        - Database writes require change approval
+        - Production changes require peer review
+      mfa_required: true
+      just_in_time_access: Enabled
+
+    - role: Database_Administrator
+      description: Database management
+      access:
+        - All databases (read/write)
+        - Database configuration (write)
+        - Backup and restore (write)
+        - Performance tuning (write)
+      restrictions:
+        - All queries logged
+        - PII queries require justification
+        - Production writes require change ticket
+      mfa_required: true
+      privileged_access_management: Enabled
+
+    - role: Security_Engineer
+      description: Security operations
+      access:
+        - Security tools (read/write)
+        - All logs (read)
+        - Security configuration (write)
+        - Vulnerability scanners (read/write)
+        - Incident response tools (read/write)
+      mfa_required: true
+      all_access_logged: true
+
+    - role: System_Administrator
+      description: System-level access
+      access:
+        - All systems (read/write)
+        - All configurations (write)
+        - User management (write)
+        - Privileged access (write)
+      restrictions:
+        - Requires approval for production changes
+        - All actions logged
+        - Time-limited access (JIT)
+      mfa_required: true
+      privileged_access_management: Required
+      session_recording: Enabled
+
+    - role: Auditor
+      description: Internal and external auditors
+      access:
+        - All audit logs (read-only)
+        - Compliance reports (read-only)
+        - System configurations (read-only)
+        - Security controls (read-only)
+      restrictions:
+        - Absolutely NO write access
+        - Cannot modify data
+        - Cannot execute commands
+      mfa_required: true
+      all_access_logged: true
+      ip_restriction: Office or VPN only
+
+privileged_access_management:
+  implementation: CyberArk / HashiCorp Vault
+  requirements:
+    - Just-in-time (JIT) access provisioning
+    - Time-limited sessions (maximum 4 hours)
+    - Approval workflow for production access
+    - Session recording for all privileged sessions
+    - Automatic deprovisioning after session
+
+  break_glass_accounts:
+    purpose: Emergency access when IAM unavailable
+    storage: Sealed envelope in physical safe
+    access_procedure:
+      - Two executives must approve
+      - Physical safe combination required
+      - Use logged and audited
+      - Password changed immediately after use
+    rotation: Every 90 days (even if unused)
+
+network_access_control:
+  network_segmentation:
+    production_vpc:
+      cidr: 10.0.0.0/16
+      subnets:
+        - public: Web tier (10.0.1.0/24)
+        - private: App tier (10.0.2.0/24)
+        - data: Database tier (10.0.3.0/24)
+      security_groups: Restrictive, minimum required access
+
+    management_vpc:
+      cidr: 10.1.0.0/16
+      purpose: Bastion hosts, admin access
+      access: VPN only
+
+  bastion_hosts:
+    mfa_required: true
+    session_recording: Enabled
+    allowed_ips: Office + VPN only
+    log_forwarding: SIEM
+
+  vpn_access:
+    protocol: IPsec or WireGuard
+    authentication: Certificate + MFA
+    split_tunneling: Disabled
+    session_timeout: 8 hours
+    ip_whitelist: Dynamic based on geolocation
+
+  zero_trust_architecture:
+    principle: Never trust, always verify
+    implementation:
+      - Verify identity (MFA)
+      - Verify device (endpoint security)
+      - Verify location (geofencing)
+      - Verify context (time, behavior)
+      - Continuous authentication
+
+data_access_control:
+  database_access:
+    production:
+      read_access: Application service accounts only
+      write_access: Application service accounts + approved DBAs
+      direct_access: Prohibited (use read replicas for reporting)
+      query_logging: All queries logged with user identity
+
+    encryption:
+      at_rest: AES-256
+      in_transit: TLS 1.3
+      column_level: For PII and financial data
+
+  api_access:
+    authentication: OAuth 2.0 / API keys
+    rate_limiting: Enforced per role
+    ip_whitelisting: For high-value APIs
+    logging: All API calls logged
+
+access_request_process:
+  request:
+    - User submits request via ticketing system
+    - Business justification required
+    - Manager approval required
+    - Duration specified (temporary access)
+
+  approval:
+    - Manager approval: Required for all requests
+    - Security review: Required for privileged access
+    - CISO approval: Required for production database access
+
+  provisioning:
+    - Automated via IAM
+    - Time-limited (default 90 days for temporary access)
+    - Access grant notification sent
+
+  review:
+    - Quarterly access reviews
+    - Annual user recertification
+    - Orphaned account cleanup
+
+access_revocation:
+  employee_termination:
+    - immediate: Disable all accounts
+    - 1_hour: Revoke all access
+    - 4_hours: Retrieve all company devices
+    - 24_hours: Change all shared credentials known to user
+    - 7_days: Delete accounts and data (per retention policy)
+
+  role_change:
+    - Remove old role access
+    - Add new role access
+    - Manager approval for both actions
+
+  inactivity:
+    - 90_days: Flag account as inactive
+    - 120_days: Disable account
+    - 180_days: Delete account (per retention policy)
+
+monitoring_and_audit:
+  logging:
+    scope: All access attempts (successful and failed)
+    retention: 7 years (compliance requirement)
+    elements:
+      - User identity
+      - Timestamp
+      - Action performed
+      - Resource accessed
+      - Source IP
+      - Result (success/failure)
+      - Changed data (for write operations)
+
+  alerts:
+    - Failed login attempts (>5 in 5 minutes)
+    - Privileged access usage
+    - After-hours access
+    - Unusual data access patterns
+    - Access from unexpected locations
+    - Privilege escalation attempts
+
+  siem_integration:
+    - Real-time log forwarding to SIEM
+    - Correlation with threat intelligence
+    - Automated incident response
+
+compliance:
+  standards:
+    - SOC 2 Type II (Access Controls)
+    - ISO 27001 (A.9 Access Control)
+    - GDPR Article 32 (Access Restrictions)
+    - PCI-DSS Requirement 7 (Restrict Access)
+    - NIST SP 800-53 (Access Control Family)
+
+  audit_frequency:
+    - Quarterly: Access review
+    - Semi-annual: Privileged access audit
+    - Annual: Comprehensive access control audit
+    - Annual: Third-party penetration testing
+
+exceptions:
+  process:
+    - Request: Formal exception with business case
+    - Risk assessment: Security team evaluation
+    - Compensating controls: Identified and implemented
+    - Approval: CISO approval required
+    - Duration: Time-limited (max 6 months)
+    - Review: Monthly exception review
+
+training:
+  required_for: All employees
+  frequency: Annual + onboarding
+  topics:
+    - Access control principles
+    - Password best practices
+    - MFA usage
+    - Phishing awareness
+    - Data classification and access
+    - Incident reporting
+
+responsibilities:
+  users:
+    - Protect credentials
+    - Report suspicious activity
+    - Logout when done
+    - Do not share accounts
+
+  managers:
+    - Approve access requests
+    - Review team access quarterly
+    - Report terminations immediately
+
+  security_team:
+    - Define access policies
+    - Review access requests
+    - Monitor access logs
+    - Conduct access audits
+    - Respond to access incidents
+
+  system_owners:
+    - Implement access controls
+    - Classify data
+    - Document access requirements
+    - Participate in access reviews
+
+review_log:
+  - date: 2025-12-06
+    version: "2.0"
+    changes: Added zero trust architecture, updated MFA requirements
+    approved_by: Chief Information Security Officer
