@@ -1,0 +1,645 @@
+{
+  "campaignTemplates": [
+    {
+      "id": "new-buyer-welcome",
+      "name": "New Buyer Welcome Campaign",
+      "description": "Onboarding campaign for new U.S./Global buyers",
+      "targetAudience": "buyers",
+      "region": "global",
+      "type": "onboarding",
+      "duration": "14 days",
+      "goals": {
+        "primary": "First RFQ submission",
+        "secondary": "Platform feature adoption",
+        "kpis": [
+          "RFQ submission rate: 40%",
+          "Supplier search engagement: 70%",
+          "Trade finance awareness: 50%"
+        ]
+      },
+      "channels": ["email", "in-app", "sms"],
+      "triggerEvent": "user.signup.buyer",
+      "workflow": [
+        {
+          "step": 1,
+          "name": "Welcome Email",
+          "delay": "immediate",
+          "channel": "email",
+          "template": "buyer-welcome-email",
+          "subject": "Welcome to CitadelBuy - Your Gateway to African Suppliers",
+          "content": {
+            "headline": "Start Sourcing from Verified African Suppliers Today",
+            "cta": "Browse Suppliers",
+            "highlights": [
+              "10,000+ verified suppliers",
+              "Save 20-30% on sourcing costs",
+              "Integrated trade finance and logistics"
+            ]
+          }
+        },
+        {
+          "step": 2,
+          "name": "Platform Tour (In-App)",
+          "delay": "1 hour",
+          "channel": "in-app",
+          "template": "interactive-tour",
+          "content": {
+            "steps": [
+              "Search suppliers by category",
+              "Submit an RFQ",
+              "Review supplier profiles",
+              "Track shipments"
+            ]
+          }
+        },
+        {
+          "step": 3,
+          "name": "Success Story Email",
+          "delay": "2 days",
+          "channel": "email",
+          "template": "case-study-highlight",
+          "subject": "How [Similar Company] Saved 28% with African Suppliers",
+          "content": {
+            "caseStudyId": "xyz-retail-success",
+            "cta": "Read Full Story"
+          }
+        },
+        {
+          "step": 4,
+          "name": "RFQ Tutorial Email",
+          "delay": "4 days",
+          "channel": "email",
+          "template": "feature-tutorial",
+          "subject": "How to Submit Your First RFQ (Step-by-Step Guide)",
+          "content": {
+            "videoUrl": "https://citadelbuy.com/videos/rfq-tutorial",
+            "cta": "Submit Your First RFQ"
+          }
+        },
+        {
+          "step": 5,
+          "name": "Trade Finance Intro",
+          "delay": "7 days",
+          "channel": "email",
+          "template": "feature-highlight",
+          "subject": "Preserve Cash Flow with BNPL and Trade Finance",
+          "content": {
+            "features": ["BNPL (Buy Now Pay Later)", "Invoice Factoring", "Letter of Credit"],
+            "cta": "Learn More About Trade Finance"
+          }
+        },
+        {
+          "step": 6,
+          "name": "Check-In (Low Engagement)",
+          "delay": "10 days",
+          "channel": "email",
+          "condition": "rfq_submitted == false",
+          "template": "personal-outreach",
+          "subject": "Need help getting started?",
+          "content": {
+            "personalNote": "Hi {{firstName}}, I noticed you haven't submitted an RFQ yet. Would you like a quick call to walk through the process?",
+            "cta": "Schedule a 15-Minute Call"
+          }
+        },
+        {
+          "step": 7,
+          "name": "Completion Celebration",
+          "delay": "14 days",
+          "channel": "email",
+          "condition": "rfq_submitted == true",
+          "template": "milestone-celebration",
+          "subject": "You're off to a great start!",
+          "content": {
+            "milestone": "First RFQ submitted",
+            "nextSteps": [
+              "Review supplier quotes",
+              "Schedule supplier calls",
+              "Place your first order"
+            ]
+          }
+        }
+      ],
+      "abTestVariants": [
+        {
+          "variant": "A",
+          "description": "Standard timing (current workflow)"
+        },
+        {
+          "variant": "B",
+          "description": "Accelerated timing (50% faster email cadence)",
+          "changes": ["Reduce delay between emails by 50%"]
+        }
+      ]
+    },
+    {
+      "id": "new-exporter-welcome",
+      "name": "New African Exporter Welcome Campaign",
+      "description": "Onboarding campaign for African exporters",
+      "targetAudience": "exporters",
+      "region": "africa",
+      "type": "onboarding",
+      "duration": "21 days",
+      "goals": {
+        "primary": "First product listing created",
+        "secondary": "Supplier verification completed",
+        "kpis": [
+          "Product listing completion: 60%",
+          "Verification submission: 80%",
+          "RFQ response rate: 30%"
+        ]
+      },
+      "channels": ["email", "in-app", "sms", "whatsapp"],
+      "triggerEvent": "user.signup.exporter",
+      "workflow": [
+        {
+          "step": 1,
+          "name": "Welcome Email (Localized)",
+          "delay": "immediate",
+          "channel": "email",
+          "template": "exporter-welcome-email",
+          "subject": "Welcome to CitadelBuy - Start Exporting to Global Markets",
+          "languages": ["en", "fr"],
+          "content": {
+            "headline": "Connect with International Buyers",
+            "cta": "Complete Your Profile",
+            "highlights": [
+              "Access to 10,000+ verified buyers",
+              "Trade finance support",
+              "Integrated logistics"
+            ]
+          }
+        },
+        {
+          "step": 2,
+          "name": "WhatsApp Welcome Message",
+          "delay": "1 hour",
+          "channel": "whatsapp",
+          "template": "whatsapp-welcome",
+          "content": {
+            "message": "Welcome to CitadelBuy! Reply YES to get personalized tips on growing your export business.",
+            "quickReplies": ["YES", "Learn More", "Contact Support"]
+          }
+        },
+        {
+          "step": 3,
+          "name": "Verification Guide",
+          "delay": "1 day",
+          "channel": "email",
+          "template": "verification-guide",
+          "subject": "How to Get Verified on CitadelBuy (Required Documents)",
+          "content": {
+            "documentsRequired": [
+              "Business registration certificate",
+              "Export license (if applicable)",
+              "Product certifications (ISO, FDA, etc.)",
+              "Bank account verification"
+            ],
+            "cta": "Upload Documents"
+          }
+        },
+        {
+          "step": 4,
+          "name": "Product Listing Tutorial",
+          "delay": "3 days",
+          "channel": "email",
+          "template": "listing-tutorial",
+          "subject": "How to Create High-Converting Product Listings",
+          "content": {
+            "videoUrl": "https://citadelbuy.com/videos/create-listing",
+            "tips": [
+              "Use high-quality product photos",
+              "Write detailed descriptions",
+              "Set competitive pricing",
+              "Specify MOQ and lead times"
+            ],
+            "cta": "Create Your First Listing"
+          }
+        },
+        {
+          "step": 5,
+          "name": "Success Story - Local Exporter",
+          "delay": "5 days",
+          "channel": "email",
+          "template": "case-study-regional",
+          "subject": "How a Nigerian Exporter Grew to $2M in U.S. Sales",
+          "content": {
+            "caseStudyId": "nigerian-textiles-success",
+            "localizedQuotes": true,
+            "cta": "Read Their Story"
+          }
+        },
+        {
+          "step": 6,
+          "name": "RFQ Response Training",
+          "delay": "7 days",
+          "channel": "email",
+          "template": "rfq-response-guide",
+          "subject": "How to Win RFQs: Best Practices for Responding to Buyers",
+          "content": {
+            "bestPractices": [
+              "Respond within 24 hours",
+              "Provide detailed pricing breakdown",
+              "Include certifications and samples",
+              "Be transparent about lead times"
+            ],
+            "cta": "View Active RFQs"
+          }
+        },
+        {
+          "step": 7,
+          "name": "Trade Finance Education",
+          "delay": "10 days",
+          "channel": "email",
+          "template": "trade-finance-exporter",
+          "subject": "Get Paid Faster with Invoice Factoring",
+          "content": {
+            "features": ["Invoice factoring", "Export credit insurance", "Working capital loans"],
+            "cta": "Apply for Trade Finance"
+          }
+        },
+        {
+          "step": 8,
+          "name": "Engagement Check-In",
+          "delay": "14 days",
+          "channel": "whatsapp",
+          "condition": "product_listings == 0",
+          "template": "personal-outreach-whatsapp",
+          "content": {
+            "message": "Hi {{firstName}}, need help creating your first product listing? Our team can assist. Reply YES for support.",
+            "quickReplies": ["YES", "I'm working on it", "Not now"]
+          }
+        },
+        {
+          "step": 9,
+          "name": "Logistics Integration Guide",
+          "delay": "17 days",
+          "channel": "email",
+          "template": "logistics-guide",
+          "subject": "Shipping Made Easy: Our Logistics Partners",
+          "content": {
+            "partners": ["DHL Global Forwarding", "Maersk", "MSC"],
+            "benefits": ["Real-time tracking", "Customs clearance", "Competitive rates"],
+            "cta": "Get Shipping Quote"
+          }
+        },
+        {
+          "step": 10,
+          "name": "21-Day Milestone",
+          "delay": "21 days",
+          "channel": "email",
+          "template": "milestone-celebration",
+          "subject": "You're Now Live on CitadelBuy!",
+          "content": {
+            "milestone": "Profile verified and active",
+            "stats": {
+              "profileViews": "{{profileViews}}",
+              "rfqsReceived": "{{rfqsReceived}}"
+            },
+            "nextSteps": [
+              "Optimize your listings",
+              "Respond to RFQs promptly",
+              "Engage with buyers"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rfq-nurture-buyer",
+      "name": "RFQ Nurture Campaign (Buyer)",
+      "description": "Nurture buyers who submitted RFQs but haven't placed orders",
+      "targetAudience": "buyers",
+      "type": "nurture",
+      "duration": "30 days",
+      "goals": {
+        "primary": "Convert RFQ to order",
+        "secondary": "Educate on supplier evaluation",
+        "kpis": [
+          "RFQ to order conversion: 25%",
+          "Supplier call scheduling: 40%"
+        ]
+      },
+      "channels": ["email", "in-app"],
+      "triggerEvent": "rfq.submitted",
+      "workflow": [
+        {
+          "step": 1,
+          "name": "RFQ Confirmation",
+          "delay": "immediate",
+          "channel": "email",
+          "template": "rfq-confirmation",
+          "subject": "Your RFQ Has Been Sent to {{supplierCount}} Suppliers",
+          "content": {
+            "rfqDetails": true,
+            "expectedResponseTime": "48 hours",
+            "cta": "Track RFQ Status"
+          }
+        },
+        {
+          "step": 2,
+          "name": "Supplier Response Notification",
+          "delay": "upon_event",
+          "channel": "email",
+          "triggerEvent": "rfq.response_received",
+          "template": "rfq-response-notification",
+          "subject": "New Quote Received for Your RFQ",
+          "content": {
+            "supplierDetails": true,
+            "quotePreview": true,
+            "cta": "Review Quote"
+          }
+        },
+        {
+          "step": 3,
+          "name": "Supplier Evaluation Guide",
+          "delay": "3 days",
+          "channel": "email",
+          "condition": "order_placed == false",
+          "template": "supplier-evaluation-guide",
+          "subject": "How to Evaluate Supplier Quotes (Checklist)",
+          "content": {
+            "checklist": [
+              "Price competitiveness",
+              "Quality certifications",
+              "Production capacity",
+              "Delivery timeline",
+              "Payment terms"
+            ],
+            "cta": "Compare Quotes"
+          }
+        },
+        {
+          "step": 4,
+          "name": "Trade Finance Reminder",
+          "delay": "7 days",
+          "channel": "email",
+          "condition": "order_placed == false && rfq_value > 10000",
+          "template": "trade-finance-offer",
+          "subject": "Preserve Cash Flow with BNPL on Your Order",
+          "content": {
+            "bnplTerms": "60 days",
+            "estimatedSavings": "{{calculatedSavings}}",
+            "cta": "Apply for BNPL"
+          }
+        },
+        {
+          "step": 5,
+          "name": "Account Manager Outreach",
+          "delay": "10 days",
+          "channel": "email",
+          "condition": "order_placed == false && rfq_value > 50000",
+          "template": "personal-sales-outreach",
+          "subject": "Need Help Evaluating Suppliers?",
+          "content": {
+            "personalNote": "Hi {{firstName}}, I'm {{accountManagerName}}, your dedicated account manager. I'd love to help you evaluate the quotes for your RFQ. Can we schedule a quick call?",
+            "cta": "Schedule Call"
+          }
+        }
+      ]
+    },
+    {
+      "id": "cart-abandonment-b2b",
+      "name": "B2B Cart Abandonment Campaign",
+      "description": "Re-engage buyers who added items to cart but didn't complete purchase",
+      "targetAudience": "buyers",
+      "type": "conversion",
+      "duration": "7 days",
+      "goals": {
+        "primary": "Complete purchase",
+        "kpis": ["Cart recovery rate: 15%"]
+      },
+      "channels": ["email"],
+      "triggerEvent": "cart.abandoned",
+      "workflow": [
+        {
+          "step": 1,
+          "name": "Cart Reminder (1 hour)",
+          "delay": "1 hour",
+          "channel": "email",
+          "template": "cart-reminder-1hr",
+          "subject": "You Left Items in Your Cart",
+          "content": {
+            "cartSummary": true,
+            "urgency": "Supplier availability not guaranteed",
+            "cta": "Complete Your Order"
+          }
+        },
+        {
+          "step": 2,
+          "name": "Cart Reminder with Incentive (24 hours)",
+          "delay": "24 hours",
+          "channel": "email",
+          "condition": "order_placed == false",
+          "template": "cart-reminder-24hr-incentive",
+          "subject": "Still Interested? Here's an Exclusive Offer",
+          "content": {
+            "incentive": "Waived platform fee on first order",
+            "expirationTime": "48 hours",
+            "cta": "Claim Offer & Complete Order"
+          }
+        },
+        {
+          "step": 3,
+          "name": "Final Reminder (72 hours)",
+          "delay": "72 hours",
+          "channel": "email",
+          "condition": "order_placed == false",
+          "template": "cart-final-reminder",
+          "subject": "Last Chance: Your Cart Expires in 24 Hours",
+          "content": {
+            "urgency": "Cart reserved for {{hoursLeft}} hours",
+            "alternativeSuppliers": true,
+            "cta": "Complete Your Order Now"
+          }
+        }
+      ]
+    },
+    {
+      "id": "post-purchase-review",
+      "name": "Post-Purchase Review & Upsell Campaign",
+      "description": "Request reviews and drive repeat purchases",
+      "targetAudience": "buyers",
+      "type": "retention",
+      "duration": "60 days",
+      "goals": {
+        "primary": "Get supplier review",
+        "secondary": "Drive repeat purchase",
+        "kpis": [
+          "Review submission rate: 40%",
+          "Repeat purchase rate: 30%"
+        ]
+      },
+      "channels": ["email", "in-app"],
+      "triggerEvent": "order.delivered",
+      "workflow": [
+        {
+          "step": 1,
+          "name": "Delivery Confirmation",
+          "delay": "upon_event",
+          "channel": "email",
+          "template": "delivery-confirmation",
+          "subject": "Your Order Has Been Delivered",
+          "content": {
+            "orderSummary": true,
+            "trackingDetails": true,
+            "cta": "Confirm Receipt"
+          }
+        },
+        {
+          "step": 2,
+          "name": "Review Request",
+          "delay": "7 days",
+          "channel": "email",
+          "template": "review-request",
+          "subject": "How Was Your Experience with {{supplierName}}?",
+          "content": {
+            "supplierDetails": true,
+            "reviewIncentive": "Help other buyers make informed decisions",
+            "cta": "Write a Review"
+          }
+        },
+        {
+          "step": 3,
+          "name": "Reorder Suggestion",
+          "delay": "30 days",
+          "channel": "email",
+          "template": "reorder-suggestion",
+          "subject": "Time to Reorder from {{supplierName}}?",
+          "content": {
+            "previousOrderSummary": true,
+            "oneClickReorder": true,
+            "cta": "Reorder Now"
+          }
+        },
+        {
+          "step": 4,
+          "name": "Cross-Sell Recommendation",
+          "delay": "45 days",
+          "channel": "email",
+          "template": "cross-sell-recommendation",
+          "subject": "Buyers Like You Also Source These Products",
+          "content": {
+            "recommendedProducts": true,
+            "aiPersonalization": true,
+            "cta": "Explore Recommendations"
+          }
+        },
+        {
+          "step": 5,
+          "name": "Loyalty Program Invite",
+          "delay": "60 days",
+          "channel": "email",
+          "condition": "total_orders >= 3",
+          "template": "loyalty-program-invite",
+          "subject": "You're Invited: CitadelBuy Preferred Buyer Program",
+          "content": {
+            "benefits": [
+              "Reduced transaction fees",
+              "Priority supplier matching",
+              "Dedicated account manager",
+              "Exclusive supplier previews"
+            ],
+            "cta": "Join Preferred Program"
+          }
+        }
+      ]
+    },
+    {
+      "id": "seasonal-promotional",
+      "name": "End-of-Year Procurement Campaign",
+      "description": "Drive Q4 purchasing before year-end budgets expire",
+      "targetAudience": "buyers",
+      "region": "us",
+      "type": "promotional",
+      "duration": "30 days",
+      "startDate": "2026-11-15",
+      "endDate": "2026-12-15",
+      "goals": {
+        "primary": "Drive Q4 transaction volume",
+        "kpis": [
+          "GMV increase: 40% vs. Q3 monthly average",
+          "New buyer activation: 500+"
+        ]
+      },
+      "channels": ["email", "linkedin", "display-ads"],
+      "triggerEvent": "manual_campaign_launch",
+      "workflow": [
+        {
+          "step": 1,
+          "name": "Campaign Announcement",
+          "delay": "immediate",
+          "channel": "email",
+          "template": "seasonal-announcement",
+          "subject": "Use Your 2026 Budget Before It's Gone - Q4 Sourcing Event",
+          "content": {
+            "offer": "Waived platform fees on orders >$10K",
+            "deadline": "December 15, 2026",
+            "cta": "Browse Suppliers"
+          }
+        },
+        {
+          "step": 2,
+          "name": "Supplier Spotlight Email",
+          "delay": "7 days",
+          "channel": "email",
+          "template": "supplier-spotlight",
+          "subject": "Featured African Suppliers for Q4 Procurement",
+          "content": {
+            "featuredSuppliers": 10,
+            "categories": ["Textiles", "Food & Beverage", "Manufacturing Components"],
+            "cta": "View All Featured Suppliers"
+          }
+        },
+        {
+          "step": 3,
+          "name": "Urgency Email",
+          "delay": "21 days",
+          "channel": "email",
+          "template": "urgency-promotion",
+          "subject": "Only 10 Days Left to Use Your 2026 Budget",
+          "content": {
+            "countdown": true,
+            "fastShipping": "Rush shipping available",
+            "cta": "Start Sourcing Now"
+          }
+        },
+        {
+          "step": 4,
+          "name": "Final Call",
+          "delay": "28 days",
+          "channel": "email",
+          "template": "final-call",
+          "subject": "Final Hours: Q4 Sourcing Event Ends Tonight",
+          "content": {
+            "urgency": "Event ends at 11:59 PM EST",
+            "extendedOffer": "Place order today, pay in 60 days with BNPL",
+            "cta": "Last Chance - Order Now"
+          }
+        }
+      ],
+      "linkedinAds": {
+        "budget": "$30000",
+        "targeting": {
+          "jobTitles": ["VP of Procurement", "Sourcing Director", "Procurement Manager"],
+          "industries": ["Retail", "Manufacturing", "Distribution"],
+          "companySize": ["51-200", "201-500", "501-1000", "1001-5000", "5001+"]
+        },
+        "creatives": [
+          {
+            "format": "sponsored-content",
+            "headline": "Use Your 2026 Budget - Source from Africa Today",
+            "copy": "Don't let year-end budgets go to waste. Connect with verified African suppliers and save 20-30% on sourcing costs.",
+            "cta": "Browse Suppliers",
+            "image": "campaign-creative-q4-2026.jpg"
+          }
+        ]
+      }
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "lastUpdated": "2025-12-06",
+    "owner": "Marketing Team",
+    "reviewCycle": "Quarterly"
+  }
+}

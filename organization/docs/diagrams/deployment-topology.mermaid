@@ -1,0 +1,203 @@
+```mermaid
+graph TB
+    subgraph "Multi-Region Deployment"
+        subgraph "Primary Region - East US"
+            subgraph "AKS Cluster - Primary"
+                direction TB
+                API_PRIMARY[API Pods<br/>Min: 3, Max: 20]
+                WEB_PRIMARY[Web Pods<br/>Min: 2, Max: 10]
+                WORKER_PRIMARY[Worker Pods<br/>Min: 2, Max: 5]
+            end
+
+            DB_PRIMARY[(PostgreSQL Primary<br/>Read/Write)]
+            REDIS_PRIMARY[(Redis Primary)]
+            BLOB_PRIMARY[Blob Storage<br/>Primary]
+
+            subgraph "Monitoring Stack"
+                PROM[Prometheus]
+                GRAF[Grafana]
+            end
+        end
+
+        subgraph "Secondary Region - West Europe"
+            subgraph "AKS Cluster - Secondary"
+                direction TB
+                API_SECONDARY[API Pods<br/>Standby]
+                WEB_SECONDARY[Web Pods<br/>Standby]
+                WORKER_SECONDARY[Worker Pods<br/>Standby]
+            end
+
+            DB_SECONDARY[(PostgreSQL Replica<br/>Read-Only)]
+            REDIS_SECONDARY[(Redis Replica)]
+            BLOB_SECONDARY[Blob Storage<br/>Geo-Replicated]
+        end
+    end
+
+    subgraph "Global Services"
+        TM[Azure Traffic Manager<br/>DNS-based LB]
+        CDN_GLOBAL[Azure CDN<br/>Global PoPs]
+        WAF_GLOBAL[Azure Front Door<br/>WAF + SSL]
+    end
+
+    subgraph "External Services"
+        STRIPE_EXT[Stripe]
+        SENDGRID_EXT[SendGrid]
+        SENTRY_EXT[Sentry]
+    end
+
+    %% Global routing
+    USERS[Global Users] --> TM
+    TM --> WAF_GLOBAL
+    WAF_GLOBAL --> CDN_GLOBAL
+    CDN_GLOBAL --> |Primary Traffic| API_PRIMARY
+    CDN_GLOBAL -.Failover.-> API_SECONDARY
+
+    %% Primary region connections
+    API_PRIMARY --> DB_PRIMARY
+    API_PRIMARY --> REDIS_PRIMARY
+    API_PRIMARY --> BLOB_PRIMARY
+    WEB_PRIMARY --> API_PRIMARY
+    WORKER_PRIMARY --> REDIS_PRIMARY
+
+    %% Replication
+    DB_PRIMARY -.Async Replication.-> DB_SECONDARY
+    REDIS_PRIMARY -.Sync.-> REDIS_SECONDARY
+    BLOB_PRIMARY -.Geo-Replication.-> BLOB_SECONDARY
+
+    %% Secondary region connections (standby)
+    API_SECONDARY -.->|Failover Mode| DB_SECONDARY
+    API_SECONDARY -.-> REDIS_SECONDARY
+    WEB_SECONDARY -.-> API_SECONDARY
+
+    %% Monitoring
+    API_PRIMARY -.Metrics.-> PROM
+    PROM --> GRAF
+    API_PRIMARY -.Errors.-> SENTRY_EXT
+
+    %% External services
+    API_PRIMARY --> STRIPE_EXT
+    WORKER_PRIMARY --> SENDGRID_EXT
+    API_SECONDARY -.Failover.-> STRIPE_EXT
+
+    classDef primaryStyle fill:#2196F3,stroke:#1565C0,stroke-width:3px,color:#fff
+    classDef secondaryStyle fill:#9E9E9E,stroke:#616161,stroke-width:2px,color:#fff,stroke-dasharray: 5 5
+    classDef globalStyle fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff
+    classDef dataStyle fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff
+    classDef externalStyle fill:#F44336,stroke:#C62828,stroke-width:2px,color:#fff
+
+    class API_PRIMARY,WEB_PRIMARY,WORKER_PRIMARY,DB_PRIMARY,REDIS_PRIMARY primaryStyle
+    class API_SECONDARY,WEB_SECONDARY,WORKER_SECONDARY,DB_SECONDARY,REDIS_SECONDARY secondaryStyle
+    class TM,CDN_GLOBAL,WAF_GLOBAL globalStyle
+    class BLOB_PRIMARY,BLOB_SECONDARY dataStyle
+    class STRIPE_EXT,SENDGRID_EXT,SENTRY_EXT externalStyle
+```
+
+# CitadelBuy Deployment Topology
+
+## Multi-Region Architecture
+
+### Primary Region: East US
+**Purpose**: Active production traffic handling
+**Components**:
+- **AKS Cluster**: Auto-scaling Kubernetes cluster
+  - API Pods: 3-20 replicas based on load
+  - Web Pods: 2-10 replicas
+  - Worker Pods: 2-5 replicas for background jobs
+- **PostgreSQL**: Primary database (read/write)
+- **Redis**: Primary cache cluster
+- **Blob Storage**: Primary file storage
+- **Monitoring**: Prometheus + Grafana stack
+
+### Secondary Region: West Europe
+**Purpose**: Disaster recovery and geo-redundancy
+**Components**:
+- **AKS Cluster**: Standby cluster for failover
+- **PostgreSQL Replica**: Async replication from primary
+- **Redis Replica**: Synchronized cache replica
+- **Blob Storage**: Geo-replicated storage
+
+### Global Services
+- **Azure Traffic Manager**: DNS-based global load balancing
+- **Azure CDN**: Content delivery with 100+ global PoPs
+- **Azure Front Door**: WAF, SSL termination, DDoS protection
+
+## Failover Strategy
+
+### Automatic Failover Triggers
+1. Primary region health check failure
+2. Database primary failure
+3. Network connectivity issues
+4. Manual failover initiation
+
+### Failover Process
+1. Traffic Manager detects primary failure
+2. DNS updated to point to secondary region
+3. PostgreSQL replica promoted to primary
+4. Secondary AKS cluster scaled up
+5. Applications reconfigured to new primary DB
+
+**RTO (Recovery Time Objective)**: 5 minutes
+**RPO (Recovery Point Objective)**: < 30 seconds (async replication lag)
+
+## Scalability
+
+### Horizontal Pod Autoscaling
+- Metrics: CPU utilization (70%), Memory (80%)
+- Scale up: Instant (new pods in 30s)
+- Scale down: Gradual (5min stabilization window)
+
+### Database Scaling
+- Read replicas for read-heavy operations
+- Connection pooling with PgBouncer
+- Vertical scaling for compute/memory
+
+### Cache Scaling
+- Redis cluster mode for distributed caching
+- Sentinel for high availability
+- Auto-failover in < 1 second
+
+## Deployment Zones
+
+### Availability Zones
+- Pods distributed across 3 AZs
+- Database in multiple AZs
+- Zone-redundant load balancing
+
+### Resource Quotas
+**Production**:
+- vCPU: 64 cores total
+- Memory: 256 GB total
+- Storage: 10 TB total
+
+**Staging**:
+- vCPU: 16 cores
+- Memory: 64 GB
+- Storage: 1 TB
+
+## Network Architecture
+
+### Ingress
+- Azure Front Door (global entry point)
+- SSL/TLS termination
+- WAF rules for security
+- DDoS protection
+
+### Internal Networking
+- Private Virtual Network (VNet)
+- Network Security Groups (NSGs)
+- Service endpoints for Azure services
+- Private Link for database connections
+
+## Security Boundaries
+
+### Network Segmentation
+- Public subnet: Load balancers only
+- Private subnet: Application pods
+- Data subnet: Databases and caches
+- Management subnet: Monitoring and admin tools
+
+### Firewall Rules
+- Ingress: Only 443, 80 allowed
+- Inter-service: Internal network only
+- Database: No public access
+- Redis: Internal network only

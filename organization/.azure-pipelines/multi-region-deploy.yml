@@ -1,0 +1,448 @@
+# Multi-Region Deployment Pipeline
+# Deploys applications to multiple regions with intelligent rollout strategy
+
+name: Multi-Region-Deploy-$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  branches:
+    include:
+      - main
+      - release/*
+  paths:
+    include:
+      - organization/apps/**
+      - organization/infrastructure/**
+    exclude:
+      - '**/*.md'
+      - '**/docs/**'
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - organization/apps/**
+      - organization/infrastructure/**
+
+variables:
+  - group: global-deployment-vars
+  - name: dockerRegistryServiceConnection
+    value: 'citadelbuy-acr'
+  - name: imageRepository
+    value: 'citadelbuy'
+  - name: containerRegistry
+    value: 'citadelbuy.azurecr.io'
+  - name: dockerfilePath
+    value: '$(Build.SourcesDirectory)/organization/apps'
+  - name: tag
+    value: '$(Build.BuildId)'
+  - name: vmImageName
+    value: 'ubuntu-latest'
+
+stages:
+  # Stage 1: Build and Test
+  - stage: Build
+    displayName: 'Build and Test'
+    jobs:
+      - job: BuildImages
+        displayName: 'Build Docker Images'
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - task: Docker@2
+            displayName: 'Build API Image'
+            inputs:
+              command: build
+              repository: $(imageRepository)/api
+              dockerfile: $(dockerfilePath)/api/Dockerfile
+              containerRegistry: $(dockerRegistryServiceConnection)
+              tags: |
+                $(tag)
+                latest
+
+          - task: Docker@2
+            displayName: 'Build Web Image'
+            inputs:
+              command: build
+              repository: $(imageRepository)/web
+              dockerfile: $(dockerfilePath)/web/Dockerfile
+              containerRegistry: $(dockerRegistryServiceConnection)
+              tags: |
+                $(tag)
+                latest
+
+          - task: Docker@2
+            displayName: 'Build Marketing Service Image'
+            inputs:
+              command: build
+              repository: $(imageRepository)/marketing-service
+              dockerfile: $(Build.SourcesDirectory)/organization/infrastructure/docker/marketing-service/Dockerfile
+              containerRegistry: $(dockerRegistryServiceConnection)
+              tags: |
+                $(tag)
+                latest
+
+          - task: Docker@2
+            displayName: 'Build Growth Service Image'
+            inputs:
+              command: build
+              repository: $(imageRepository)/growth-service
+              dockerfile: $(Build.SourcesDirectory)/organization/infrastructure/docker/growth-service/Dockerfile
+              containerRegistry: $(dockerRegistryServiceConnection)
+              tags: |
+                $(tag)
+                latest
+
+          - task: Docker@2
+            displayName: 'Build Cross-Border Service Image'
+            inputs:
+              command: build
+              repository: $(imageRepository)/cross-border-service
+              dockerfile: $(Build.SourcesDirectory)/organization/infrastructure/docker/cross-border-service/Dockerfile
+              containerRegistry: $(dockerRegistryServiceConnection)
+              tags: |
+                $(tag)
+                latest
+
+          - task: Docker@2
+            displayName: 'Build AI Agents Service Image'
+            inputs:
+              command: build
+              repository: $(imageRepository)/ai-agents-service
+              dockerfile: $(Build.SourcesDirectory)/organization/infrastructure/docker/ai-agents-service/Dockerfile
+              containerRegistry: $(dockerRegistryServiceConnection)
+              tags: |
+                $(tag)
+                latest
+
+          - task: Docker@2
+            displayName: 'Push All Images'
+            inputs:
+              command: push
+              containerRegistry: $(dockerRegistryServiceConnection)
+              tags: |
+                $(tag)
+                latest
+
+      - job: SecurityScanning
+        displayName: 'Security Scanning'
+        dependsOn: BuildImages
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - task: AzureCLI@2
+            displayName: 'Scan Images with Trivy'
+            inputs:
+              azureSubscription: 'citadelbuy-production'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Install Trivy
+                wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+                echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+                sudo apt-get update
+                sudo apt-get install trivy
+
+                # Scan all images
+                trivy image --severity HIGH,CRITICAL $(containerRegistry)/$(imageRepository)/api:$(tag)
+                trivy image --severity HIGH,CRITICAL $(containerRegistry)/$(imageRepository)/web:$(tag)
+                trivy image --severity HIGH,CRITICAL $(containerRegistry)/$(imageRepository)/marketing-service:$(tag)
+                trivy image --severity HIGH,CRITICAL $(containerRegistry)/$(imageRepository)/growth-service:$(tag)
+                trivy image --severity HIGH,CRITICAL $(containerRegistry)/$(imageRepository)/cross-border-service:$(tag)
+                trivy image --severity HIGH,CRITICAL $(containerRegistry)/$(imageRepository)/ai-agents-service:$(tag)
+
+  # Stage 2: Deploy to Canary Region (US East - 5% traffic)
+  - stage: DeployCanaryUSEast
+    displayName: 'Deploy Canary - US East'
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployUSEastCanary
+        displayName: 'Deploy to US East (Canary)'
+        pool:
+          vmImage: $(vmImageName)
+        environment: 'production-us-east-canary'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: KubernetesManifest@0
+                  displayName: 'Deploy to AKS - US East Canary'
+                  inputs:
+                    action: 'deploy'
+                    kubernetesServiceConnection: 'aks-us-east-prod'
+                    namespace: 'production'
+                    manifests: |
+                      $(Build.SourcesDirectory)/organization/infrastructure/kubernetes/production/*.yaml
+                    containers: |
+                      $(containerRegistry)/$(imageRepository)/api:$(tag)
+                      $(containerRegistry)/$(imageRepository)/web:$(tag)
+                    imagePullSecrets: 'acr-secret'
+                    rolloutStatusTimeout: '600'
+
+                - task: Bash@3
+                  displayName: 'Configure Canary Traffic (5%)'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      kubectl set image deployment/api api=$(containerRegistry)/$(imageRepository)/api:$(tag) -n production
+                      kubectl set image deployment/web web=$(containerRegistry)/$(imageRepository)/web:$(tag) -n production
+                      # Set canary traffic split to 5%
+                      kubectl patch virtualservice api-vs -n production --type merge -p '{"spec":{"http":[{"match":[{"headers":{"x-canary":{"exact":"true"}}}],"route":[{"destination":{"host":"api-canary"},"weight":5},{"destination":{"host":"api-stable"},"weight":95}]}]}}'
+
+                - task: Bash@3
+                  displayName: 'Monitor Canary Metrics'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      # Wait 10 minutes and check error rates
+                      sleep 600
+                      # Query Prometheus for error rate
+                      ERROR_RATE=$(curl -s 'http://prometheus.monitoring.svc.cluster.local:9090/api/v1/query?query=rate(http_requests_total{status=~"5.."}[5m])' | jq '.data.result[0].value[1]' | tr -d '"')
+                      if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )); then
+                        echo "Error rate too high: $ERROR_RATE"
+                        exit 1
+                      fi
+
+  # Stage 3: Deploy to Primary Regions (20% traffic)
+  - stage: DeployPrimaryRegions
+    displayName: 'Deploy Primary Regions'
+    dependsOn: DeployCanaryUSEast
+    condition: succeeded()
+    jobs:
+      - deployment: DeployEuropeWest
+        displayName: 'Deploy to Europe West'
+        pool:
+          vmImage: $(vmImageName)
+        environment: 'production-eu-west'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: KubernetesManifest@0
+                  displayName: 'Deploy to AKS - Europe West'
+                  inputs:
+                    action: 'deploy'
+                    kubernetesServiceConnection: 'aks-eu-west-prod'
+                    namespace: 'production'
+                    manifests: |
+                      $(Build.SourcesDirectory)/organization/infrastructure/kubernetes/production/*.yaml
+                    containers: |
+                      $(containerRegistry)/$(imageRepository)/api:$(tag)
+                      $(containerRegistry)/$(imageRepository)/web:$(tag)
+                    imagePullSecrets: 'acr-secret'
+
+      - deployment: DeployAfricaSouth
+        displayName: 'Deploy to Africa South'
+        pool:
+          vmImage: $(vmImageName)
+        environment: 'production-af-south'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: KubernetesManifest@0
+                  displayName: 'Deploy to AKS - Africa South'
+                  inputs:
+                    action: 'deploy'
+                    kubernetesServiceConnection: 'aks-af-south-prod'
+                    namespace: 'production'
+                    manifests: |
+                      $(Build.SourcesDirectory)/organization/infrastructure/kubernetes/production/*.yaml
+                    containers: |
+                      $(containerRegistry)/$(imageRepository)/api:$(tag)
+                      $(containerRegistry)/$(imageRepository)/web:$(tag)
+                    imagePullSecrets: 'acr-secret'
+
+  # Stage 4: Deploy to APAC Regions
+  - stage: DeployAPACRegions
+    displayName: 'Deploy APAC Regions'
+    dependsOn: DeployPrimaryRegions
+    condition: succeeded()
+    jobs:
+      - deployment: DeploySingapore
+        displayName: 'Deploy to Singapore'
+        pool:
+          vmImage: $(vmImageName)
+        environment: 'production-ap-southeast'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: KubernetesManifest@0
+                  displayName: 'Deploy to AKS - Singapore'
+                  inputs:
+                    action: 'deploy'
+                    kubernetesServiceConnection: 'aks-ap-southeast-prod'
+                    namespace: 'production'
+                    manifests: |
+                      $(Build.SourcesDirectory)/organization/infrastructure/kubernetes/production/*.yaml
+                    containers: |
+                      $(containerRegistry)/$(imageRepository)/api:$(tag)
+                      $(containerRegistry)/$(imageRepository)/web:$(tag)
+                    imagePullSecrets: 'acr-secret'
+
+      - deployment: DeploySydney
+        displayName: 'Deploy to Sydney'
+        pool:
+          vmImage: $(vmImageName)
+        environment: 'production-ap-sydney'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: KubernetesManifest@0
+                  displayName: 'Deploy to AKS - Sydney'
+                  inputs:
+                    action: 'deploy'
+                    kubernetesServiceConnection: 'aks-ap-sydney-prod'
+                    namespace: 'production'
+                    manifests: |
+                      $(Build.SourcesDirectory)/organization/infrastructure/kubernetes/production/*.yaml
+                    containers: |
+                      $(containerRegistry)/$(imageRepository)/api:$(tag)
+                      $(containerRegistry)/$(imageRepository)/web:$(tag)
+                    imagePullSecrets: 'acr-secret'
+
+      - deployment: DeployTokyo
+        displayName: 'Deploy to Tokyo'
+        pool:
+          vmImage: $(vmImageName)
+        environment: 'production-ap-tokyo'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: KubernetesManifest@0
+                  displayName: 'Deploy to AKS - Tokyo'
+                  inputs:
+                    action: 'deploy'
+                    kubernetesServiceConnection: 'aks-ap-tokyo-prod'
+                    namespace: 'production'
+                    manifests: |
+                      $(Build.SourcesDirectory)/organization/infrastructure/kubernetes/production/*.yaml
+                    containers: |
+                      $(containerRegistry)/$(imageRepository)/api:$(tag)
+                      $(containerRegistry)/$(imageRepository)/web:$(tag)
+                    imagePullSecrets: 'acr-secret'
+
+  # Stage 5: Full Rollout to US East (100% traffic)
+  - stage: FullRolloutUSEast
+    displayName: 'Full Rollout - US East'
+    dependsOn: DeployAPACRegions
+    condition: succeeded()
+    jobs:
+      - deployment: CompleteUSEastRollout
+        displayName: 'Complete US East Rollout'
+        pool:
+          vmImage: $(vmImageName)
+        environment: 'production-us-east'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: Bash@3
+                  displayName: 'Shift to 100% Traffic'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      # Shift all traffic to new version
+                      kubectl patch virtualservice api-vs -n production --type merge -p '{"spec":{"http":[{"route":[{"destination":{"host":"api-canary"},"weight":100}]}]}}'
+                      # Wait for stabilization
+                      sleep 300
+
+  # Stage 6: Post-Deployment Validation
+  - stage: PostDeploymentValidation
+    displayName: 'Post-Deployment Validation'
+    dependsOn: FullRolloutUSEast
+    condition: succeeded()
+    jobs:
+      - job: SmokeTests
+        displayName: 'Run Smoke Tests'
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - task: Bash@3
+            displayName: 'Execute Smoke Tests - All Regions'
+            inputs:
+              targetType: 'inline'
+              script: |
+                # Test all regional endpoints
+                regions=("us-east" "eu-west" "af-south" "ap-southeast" "ap-sydney" "ap-tokyo")
+                for region in "${regions[@]}"; do
+                  echo "Testing $region..."
+                  response=$(curl -s -o /dev/null -w "%{http_code}" https://api-$region.citadelbuy.com/health)
+                  if [ $response -ne 200 ]; then
+                    echo "Health check failed for $region"
+                    exit 1
+                  fi
+                done
+
+      - job: PerformanceTests
+        displayName: 'Performance Validation'
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - task: Bash@3
+            displayName: 'Check Response Times'
+            inputs:
+              targetType: 'inline'
+              script: |
+                # Check average response time across regions
+                regions=("us-east" "eu-west" "af-south" "ap-southeast")
+                for region in "${regions[@]}"; do
+                  avg_time=$(curl -o /dev/null -s -w '%{time_total}' https://api-$region.citadelbuy.com/health)
+                  echo "Average response time for $region: ${avg_time}s"
+                  if (( $(echo "$avg_time > 2.0" | bc -l) )); then
+                    echo "Response time too high for $region"
+                    exit 1
+                  fi
+                done
+
+  # Stage 7: Update Global CDN
+  - stage: UpdateGlobalCDN
+    displayName: 'Update Global CDN'
+    dependsOn: PostDeploymentValidation
+    condition: succeeded()
+    jobs:
+      - job: ConfigureFrontDoor
+        displayName: 'Configure Azure Front Door'
+        pool:
+          vmImage: $(vmImageName)
+        steps:
+          - task: AzureCLI@2
+            displayName: 'Update Front Door Origins'
+            inputs:
+              azureSubscription: 'citadelbuy-production'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Update Front Door backend pools with new deployment
+                az afd origin update \
+                  --resource-group citadelbuy-prod-global-rg \
+                  --profile-name citadelbuy-prod-afd \
+                  --origin-group-name primary-origin-group \
+                  --origin-name us-east-origin \
+                  --host-name api-us-east.citadelbuy.com \
+                  --enabled true
+
+                # Enable health probes
+                az afd origin-group update \
+                  --resource-group citadelbuy-prod-global-rg \
+                  --profile-name citadelbuy-prod-afd \
+                  --origin-group-name primary-origin-group \
+                  --probe-path "/health" \
+                  --probe-protocol Https \
+                  --probe-interval 30
+
+          - task: Bash@3
+            displayName: 'Warm Up CDN Cache'
+            inputs:
+              targetType: 'inline'
+              script: |
+                # Warm up CDN cache for common endpoints
+                endpoints=("/api/products" "/api/categories" "/api/vendors")
+                for endpoint in "${endpoints[@]}"; do
+                  curl -s "https://api.citadelbuy.com$endpoint" > /dev/null
+                done
