@@ -255,7 +255,7 @@ export function Header() {
                               Addresses
                             </Link>
                             <Link
-                              href="/account/payments"
+                              href="/account/payment-methods"
                               className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-accent transition-colors"
                               onClick={() => setIsUserMenuOpen(false)}
                             >
