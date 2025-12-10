@@ -36,20 +36,31 @@ resource "azurerm_container_registry" "main" {
     }
   }
 
-  # Network rules
+  # Network rules - Secured with VNet and specific IP restrictions
   network_rule_set {
     default_action = "Deny"
 
-    ip_rule {
-      action   = "Allow"
-      ip_range = "0.0.0.0/0"  # Will be restricted in production
+    # Allow from AKS subnet for pulling container images
+    virtual_network {
+      action    = "Allow"
+      subnet_id = var.aks_subnet_id
     }
 
+    # Allow from additional approved subnets (app, private, etc.)
     dynamic "virtual_network" {
       for_each = var.allowed_subnet_ids
       content {
         action    = "Allow"
         subnet_id = virtual_network.value
+      }
+    }
+
+    # Allow specific trusted IP ranges (Azure DevOps agents, office IPs, CI/CD pipelines)
+    dynamic "ip_rule" {
+      for_each = var.acr_trusted_ip_ranges
+      content {
+        action   = "Allow"
+        ip_range = ip_rule.value
       }
     }
   }
