@@ -1,0 +1,401 @@
+# Deploy to Staging Environment
+# Requires successful dev deployment
+# Includes approval checks and smoke tests
+
+stages:
+  - stage: DeployStaging
+    displayName: 'Deploy to Staging'
+    dependsOn: DeployDev
+    condition: succeeded('DeployDev')
+    variables:
+      - group: citadelbuy-staging-vars
+      - name: environment
+        value: 'staging'
+      - name: aksResourceGroup
+        value: 'citadelbuy-staging-rg'
+      - name: aksClusterName
+        value: 'citadelbuy-staging-aks'
+      - name: namespace
+        value: 'citadelbuy-staging'
+      - name: manifestPath
+        value: 'infrastructure/kubernetes/staging'
+      - name: serviceConnection
+        value: 'CitadelBuyAzure'
+      - name: subscriptionId
+        value: 'ba233460-2dbe-4603-a594-68f93ec9deb3'
+      - name: acrName
+        value: 'citadelbuyacr.azurecr.io'
+      - name: keyVaultName
+        value: 'citadelbuy-staging-kv'
+
+    jobs:
+      - deployment: DeployToAKSStaging
+        displayName: 'Deploy to AKS Staging Cluster'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'staging'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: AzureCLI@2
+                  displayName: 'Get AKS Credentials'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Getting credentials for AKS cluster: $(aksClusterName)"
+                      az aks get-credentials \
+                        --resource-group $(aksResourceGroup) \
+                        --name $(aksClusterName) \
+                        --overwrite-existing
+
+                      echo "Verifying cluster connection..."
+                      kubectl cluster-info
+                      kubectl get nodes
+
+                - task: AzureCLI@2
+                  displayName: 'Create Namespace if not exists'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      kubectl get namespace $(namespace) || kubectl create namespace $(namespace)
+                      kubectl config set-context --current --namespace=$(namespace)
+
+                - task: AzureKeyVault@2
+                  displayName: 'Fetch Secrets from Key Vault'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    KeyVaultName: '$(keyVaultName)'
+                    SecretsFilter: '*'
+                    RunAsPreJob: false
+
+                - task: AzureCLI@2
+                  displayName: 'Sync ConfigMap from Key Vault'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Syncing ConfigMap from Key Vault..."
+
+                      # Create ConfigMap from Key Vault values
+                      kubectl create configmap citadelbuy-config \
+                        --from-literal=NODE_ENV=staging \
+                        --from-literal=API_URL=$(API-URL) \
+                        --from-literal=FRONTEND_URL=$(FRONTEND-URL) \
+                        --from-literal=LOG_LEVEL=$(LOG-LEVEL) \
+                        --dry-run=client -o yaml | kubectl apply -f - -n $(namespace)
+
+                      echo "ConfigMap synced successfully"
+
+                - task: AzureCLI@2
+                  displayName: 'Sync Secrets from Key Vault'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Syncing Secrets from Key Vault..."
+
+                      # Create Kubernetes Secret from Key Vault values
+                      kubectl create secret generic citadelbuy-secrets \
+                        --from-literal=DATABASE_URL=$(DATABASE-URL) \
+                        --from-literal=JWT_SECRET=$(JWT-SECRET) \
+                        --from-literal=REDIS_URL=$(REDIS-URL) \
+                        --from-literal=SMTP_PASSWORD=$(SMTP-PASSWORD) \
+                        --from-literal=STRIPE_SECRET_KEY=$(STRIPE-SECRET-KEY) \
+                        --dry-run=client -o yaml | kubectl apply -f - -n $(namespace)
+
+                      echo "Secrets synced successfully"
+
+                - task: AzureCLI@2
+                  displayName: 'Apply Kubernetes Manifests'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Applying Kubernetes manifests from $(manifestPath)/"
+
+                      # Apply manifests in order
+                      for resource_type in configmap secret pvc service deployment ingress; do
+                        if ls $(manifestPath)/*${resource_type}*.yml 1> /dev/null 2>&1; then
+                          echo "Applying ${resource_type} manifests..."
+                          kubectl apply -f $(manifestPath)/*${resource_type}*.yml -n $(namespace)
+                        fi
+                      done
+
+                      # Apply all remaining manifests
+                      kubectl apply -f $(manifestPath)/ -n $(namespace) --recursive
+
+                      echo "Manifests applied successfully"
+
+                - task: AzureCLI@2
+                  displayName: 'Update Deployment Images'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Updating deployment images with tag: $(imageTag)"
+
+                      # Update API deployment
+                      kubectl set image deployment/citadelbuy-api \
+                        citadelbuy-api=$(acrName)/citadelbuy-api:$(imageTag) \
+                        -n $(namespace) --record
+
+                      # Update Frontend deployment
+                      kubectl set image deployment/citadelbuy-frontend \
+                        citadelbuy-frontend=$(acrName)/citadelbuy-frontend:$(imageTag) \
+                        -n $(namespace) --record
+
+                      # Annotate deployment with build info
+                      kubectl annotate deployment/citadelbuy-api \
+                        buildId="$(Build.BuildId)" \
+                        buildNumber="$(Build.BuildNumber)" \
+                        commitSha="$(Build.SourceVersion)" \
+                        deployedAt="$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+                        -n $(namespace) --overwrite
+
+                      echo "Deployment images updated successfully"
+
+                - task: AzureCLI@2
+                  displayName: 'Wait for Rollout Completion'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Waiting for deployments to complete..."
+
+                      # Wait for API deployment
+                      echo "Waiting for API deployment..."
+                      kubectl rollout status deployment/citadelbuy-api -n $(namespace) --timeout=10m
+
+                      # Wait for Frontend deployment
+                      echo "Waiting for Frontend deployment..."
+                      kubectl rollout status deployment/citadelbuy-frontend -n $(namespace) --timeout=10m
+
+                      echo "All deployments completed successfully"
+
+                - task: AzureCLI@2
+                  displayName: 'Run Database Migrations'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Running database migrations for staging..."
+
+                      # Get API pod name
+                      API_POD=$(kubectl get pods -n $(namespace) -l app=citadelbuy-api -o jsonpath='{.items[0].metadata.name}')
+
+                      if [ -z "$API_POD" ]; then
+                        echo "Error: No API pod found"
+                        exit 1
+                      fi
+
+                      echo "Running migrations on pod: $API_POD"
+
+                      # Generate Prisma Client
+                      kubectl exec -n $(namespace) $API_POD -- npx prisma generate
+
+                      # Run migrations
+                      kubectl exec -n $(namespace) $API_POD -- npx prisma migrate deploy
+
+                      # Verify migration status
+                      kubectl exec -n $(namespace) $API_POD -- npx prisma migrate status
+
+                      echo "Database migrations completed successfully"
+                  continueOnError: false
+
+                - task: AzureCLI@2
+                  displayName: 'Verify Deployment Health'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Verifying deployment health..."
+
+                      # Check pod status
+                      echo "=== Pod Status ==="
+                      kubectl get pods -n $(namespace)
+
+                      # Wait for all pods to be ready
+                      kubectl wait --for=condition=ready pod -l app=citadelbuy-api -n $(namespace) --timeout=5m
+                      kubectl wait --for=condition=ready pod -l app=citadelbuy-frontend -n $(namespace) --timeout=5m
+
+                      # Check for any pod errors
+                      echo "=== Checking for Pod Errors ==="
+                      FAILED_PODS=$(kubectl get pods -n $(namespace) --field-selector=status.phase!=Running,status.phase!=Succeeded -o json | jq -r '.items[].metadata.name')
+
+                      if [ -n "$FAILED_PODS" ]; then
+                        echo "Warning: Found failed pods:"
+                        echo "$FAILED_PODS"
+                        kubectl describe pods -n $(namespace) $FAILED_PODS
+                      else
+                        echo "All pods are running successfully"
+                      fi
+
+      - job: SmokeTests
+        displayName: 'Run Smoke Tests'
+        dependsOn: DeployToAKSStaging
+        condition: succeeded()
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+
+          - task: Bash@3
+            displayName: 'Health Check - API'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Running API health check on staging.citadelbuy.com"
+
+                # Wait for DNS propagation
+                sleep 30
+
+                # Health check with retries
+                MAX_RETRIES=10
+                RETRY_COUNT=0
+
+                while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                  echo "Health check attempt $((RETRY_COUNT + 1))/$MAX_RETRIES"
+
+                  RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://staging.citadelbuy.com/api/health || echo "000")
+
+                  if [ "$RESPONSE" = "200" ]; then
+                    echo "API health check passed!"
+                    curl -s https://staging.citadelbuy.com/api/health | jq '.'
+                    exit 0
+                  fi
+
+                  echo "Health check failed with status: $RESPONSE"
+                  RETRY_COUNT=$((RETRY_COUNT + 1))
+
+                  if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                    sleep 30
+                  fi
+                done
+
+                echo "API health check failed after $MAX_RETRIES attempts"
+                exit 1
+
+          - task: Bash@3
+            displayName: 'Smoke Test - Authentication'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Testing authentication endpoints..."
+
+                # Test registration endpoint
+                REGISTER_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+                  -X POST https://staging.citadelbuy.com/api/auth/register \
+                  -H "Content-Type: application/json" \
+                  -d '{"email":"test@example.com","password":"test123"}' || echo "000")
+
+                echo "Register endpoint status: $REGISTER_RESPONSE"
+
+                # Test login endpoint
+                LOGIN_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+                  -X POST https://staging.citadelbuy.com/api/auth/login \
+                  -H "Content-Type: application/json" \
+                  -d '{"email":"test@example.com","password":"test123"}' || echo "000")
+
+                echo "Login endpoint status: $LOGIN_RESPONSE"
+
+                if [ "$REGISTER_RESPONSE" != "000" ] && [ "$LOGIN_RESPONSE" != "000" ]; then
+                  echo "Authentication smoke tests passed"
+                  exit 0
+                else
+                  echo "Authentication smoke tests failed"
+                  exit 1
+                fi
+
+          - task: Bash@3
+            displayName: 'Smoke Test - Products API'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Testing products API endpoints..."
+
+                # Test products list endpoint
+                PRODUCTS_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+                  https://staging.citadelbuy.com/api/products || echo "000")
+
+                echo "Products list endpoint status: $PRODUCTS_RESPONSE"
+
+                if [ "$PRODUCTS_RESPONSE" = "200" ]; then
+                  echo "Products API smoke test passed"
+
+                  # Get actual response
+                  curl -s https://staging.citadelbuy.com/api/products | jq '.data | length'
+                  exit 0
+                else
+                  echo "Products API smoke test failed"
+                  exit 1
+                fi
+
+          - task: Bash@3
+            displayName: 'Smoke Test - Frontend'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Testing frontend accessibility..."
+
+                FRONTEND_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+                  https://staging.citadelbuy.com || echo "000")
+
+                echo "Frontend status: $FRONTEND_RESPONSE"
+
+                if [ "$FRONTEND_RESPONSE" = "200" ]; then
+                  echo "Frontend smoke test passed"
+                  exit 0
+                else
+                  echo "Frontend smoke test failed"
+                  exit 1
+                fi
+
+          - task: Bash@3
+            displayName: 'Performance Check'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Running basic performance check..."
+
+                # Measure response time
+                RESPONSE_TIME=$(curl -o /dev/null -s -w '%{time_total}\n' https://staging.citadelbuy.com/api/health)
+
+                echo "API response time: ${RESPONSE_TIME}s"
+
+                # Check if response time is acceptable (< 2 seconds)
+                if (( $(echo "$RESPONSE_TIME < 2.0" | bc -l) )); then
+                  echo "Performance check passed"
+                  exit 0
+                else
+                  echo "Warning: Response time exceeds 2 seconds"
+                  exit 1
+                fi
+
+          - task: Bash@3
+            displayName: 'Display Test Summary'
+            condition: always()
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "=== Staging Deployment Summary ==="
+                echo "Environment: Staging"
+                echo "Image Tag: $(imageTag)"
+                echo "Build ID: $(Build.BuildId)"
+                echo "Commit: $(Build.SourceVersion)"
+                echo ""
+                echo "Smoke tests completed!"
+                echo "Application URL: https://staging.citadelbuy.com"

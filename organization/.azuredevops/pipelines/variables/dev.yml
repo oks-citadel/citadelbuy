@@ -1,0 +1,33 @@
+# Development Environment Variables
+# These variables are specific to the development environment
+
+variables:
+  # Environment Identifier
+  ENVIRONMENT_NAME: 'development'
+  ENVIRONMENT_SHORT: 'dev'
+
+  # Azure Kubernetes Service (AKS) Configuration
+  AKS_RESOURCE_GROUP: 'citadelbuy-dev-rg'
+  AKS_CLUSTER_NAME: 'citadelbuy-dev-aks'
+  K8S_NAMESPACE: 'citadelbuy-dev'
+
+  # Application URLs
+  API_URL: 'https://dev-api.citadelbuy.com'
+  WEB_URL: 'https://dev.citadelbuy.com'
+
+  # Docker Image Tags
+  IMAGE_TAG: 'dev-$(Build.BuildId)'
+  IMAGE_TAG_LATEST: 'dev-latest'
+
+  # Deployment Configuration
+  DEPLOYMENT_REPLICAS: '1'
+
+  # Feature Flags
+  ENABLE_DEBUG_LOGGING: 'true'
+  ENABLE_HOT_RELOAD: 'true'
+
+  # Resource Limits (for K8s)
+  CPU_REQUEST: '100m'
+  CPU_LIMIT: '500m'
+  MEMORY_REQUEST: '256Mi'
+  MEMORY_LIMIT: '1Gi'

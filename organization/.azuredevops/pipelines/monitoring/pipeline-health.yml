@@ -1,0 +1,445 @@
+trigger: none
+
+schedules:
+  - cron: '0 */4 * * *'
+    displayName: 'Every 4 hours'
+    branches:
+      include:
+        - main
+    always: true
+
+variables:
+  - group: monitoring-variables
+  - name: maxBuildDurationMinutes
+    value: 30
+  - name: failureAnalysisWindowHours
+    value: 24
+  - name: healthReportPath
+    value: '$(Build.ArtifactStagingDirectory)/health-report.json'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+  - stage: MonitorPipelineHealth
+    displayName: 'Monitor Pipeline Health'
+    jobs:
+      - job: CheckStaleBuilds
+        displayName: 'Check for Stale Builds'
+        steps:
+          - checkout: none
+
+          - task: AzureCLI@2
+            displayName: 'Find Stale Builds'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Checking for builds running longer than $(maxBuildDurationMinutes) minutes..."
+
+                # Get organization and project from environment
+                ORG_URL="$(System.CollectionUri)"
+                PROJECT="$(System.TeamProject)"
+
+                # Get current time and cutoff time
+                CURRENT_TIME=$(date -u +%s)
+                CUTOFF_TIME=$((CURRENT_TIME - $(maxBuildDurationMinutes) * 60))
+                CUTOFF_DATE=$(date -u -d "@$CUTOFF_TIME" +%Y-%m-%dT%H:%M:%SZ)
+
+                echo "Searching for builds started before: $CUTOFF_DATE"
+
+                # Query running builds using Azure DevOps REST API
+                STALE_BUILDS=$(az pipelines runs list \
+                  --organization "$ORG_URL" \
+                  --project "$PROJECT" \
+                  --status inProgress \
+                  --query "[?queueTime<'$CUTOFF_DATE'].{id:id,buildNumber:buildNumber,definition:definition.name,duration:queueTime,url:_links.web.href}" \
+                  -o json)
+
+                echo "$STALE_BUILDS" | jq '.'
+
+                STALE_COUNT=$(echo "$STALE_BUILDS" | jq 'length')
+                echo "Found $STALE_COUNT stale builds"
+
+                # Save stale builds for next steps
+                echo "$STALE_BUILDS" > $(Build.ArtifactStagingDirectory)/stale-builds.json
+                echo "##vso[task.setvariable variable=staleBuildsCount;isOutput=true]$STALE_COUNT"
+            name: findStale
+
+          - task: PowerShell@2
+            displayName: 'Cancel Stale Builds'
+            condition: and(succeeded(), gt(variables['findStale.staleBuildsCount'], 0))
+            inputs:
+              targetType: 'inline'
+              script: |
+                $staleBuilds = Get-Content "$(Build.ArtifactStagingDirectory)/stale-builds.json" | ConvertFrom-Json
+
+                foreach ($build in $staleBuilds) {
+                  Write-Host "Cancelling stale build: $($build.buildNumber) - $($build.definition)"
+
+                  az pipelines runs update `
+                    --id $build.id `
+                    --organization "$(System.CollectionUri)" `
+                    --project "$(System.TeamProject)" `
+                    --status cancelled `
+                    --reason "Automatically cancelled: exceeded maximum duration of $(maxBuildDurationMinutes) minutes"
+
+                  if ($LASTEXITCODE -eq 0) {
+                    Write-Host "##[section]Successfully cancelled build $($build.buildNumber)"
+                  } else {
+                    Write-Host "##[warning]Failed to cancel build $($build.buildNumber)"
+                  }
+                }
+
+          - template: ../templates/jobs/notify.yml
+            parameters:
+              channel: 'teams'
+              webhookUrl: '$(teamsWebhookUrl)'
+              message: "Found and cancelled ${{ variables['findStale.staleBuildsCount'] }} stale builds exceeding $(maxBuildDurationMinutes) minutes"
+              severity: 'warning'
+
+      - job: CheckFailedBuilds
+        displayName: 'Analyze Failed Builds'
+        dependsOn: []
+        steps:
+          - checkout: none
+
+          - task: AzureCLI@2
+            displayName: 'Query Recent Failures'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Analyzing build failures in the last $(failureAnalysisWindowHours) hours..."
+
+                # Calculate time window
+                HOURS_AGO=$(date -u -d "$(failureAnalysisWindowHours) hours ago" +%Y-%m-%dT%H:%M:%SZ)
+
+                # Query failed builds
+                FAILED_BUILDS=$(az pipelines runs list \
+                  --organization "$(System.CollectionUri)" \
+                  --project "$(System.TeamProject)" \
+                  --status failed \
+                  --query "[?finishTime>='$HOURS_AGO'].{id:id,buildNumber:buildNumber,definition:definition.name,reason:result,finishTime:finishTime,url:_links.web.href}" \
+                  -o json)
+
+                echo "$FAILED_BUILDS" | jq '.'
+
+                FAILED_COUNT=$(echo "$FAILED_BUILDS" | jq 'length')
+                echo "Found $FAILED_COUNT failed builds"
+
+                # Group failures by pipeline definition
+                FAILURE_PATTERNS=$(echo "$FAILED_BUILDS" | jq 'group_by(.definition) | map({pipeline: .[0].definition, count: length, builds: map(.buildNumber)}) | sort_by(.count) | reverse')
+
+                echo "Failure patterns by pipeline:"
+                echo "$FAILURE_PATTERNS" | jq '.'
+
+                # Save analysis results
+                echo "$FAILED_BUILDS" > $(Build.ArtifactStagingDirectory)/failed-builds.json
+                echo "$FAILURE_PATTERNS" > $(Build.ArtifactStagingDirectory)/failure-patterns.json
+
+                echo "##vso[task.setvariable variable=failedBuildsCount;isOutput=true]$FAILED_COUNT"
+
+                # Check for repeated failures in same pipeline
+                REPEATED_FAILURES=$(echo "$FAILURE_PATTERNS" | jq '[.[] | select(.count >= 3)] | length')
+                echo "##vso[task.setvariable variable=repeatedFailures;isOutput=true]$REPEATED_FAILURES"
+            name: analyzeFailures
+
+          - task: PowerShell@2
+            displayName: 'Generate Failure Report'
+            inputs:
+              targetType: 'inline'
+              script: |
+                $failedBuilds = Get-Content "$(Build.ArtifactStagingDirectory)/failed-builds.json" | ConvertFrom-Json
+                $patterns = Get-Content "$(Build.ArtifactStagingDirectory)/failure-patterns.json" | ConvertFrom-Json
+
+                Write-Host "##[section]Build Failure Analysis Report"
+                Write-Host "=========================================="
+                Write-Host "Total failures in last $(failureAnalysisWindowHours) hours: $($failedBuilds.Count)"
+                Write-Host ""
+                Write-Host "Top failing pipelines:"
+
+                foreach ($pattern in $patterns | Select-Object -First 5) {
+                  Write-Host "  - $($pattern.pipeline): $($pattern.count) failures"
+                  Write-Host "    Builds: $($pattern.builds -join ', ')"
+                }
+
+                # Create detailed report
+                $report = @{
+                  timestamp = Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ"
+                  analysisWindow = "$(failureAnalysisWindowHours) hours"
+                  totalFailures = $failedBuilds.Count
+                  patterns = $patterns
+                  builds = $failedBuilds
+                }
+
+                $report | ConvertTo-Json -Depth 10 | Out-File "$(Build.ArtifactStagingDirectory)/failure-report.json"
+
+          - task: PowerShell@2
+            displayName: 'Alert on Repeated Failures'
+            condition: and(succeeded(), gt(variables['analyzeFailures.repeatedFailures'], 0))
+            inputs:
+              targetType: 'inline'
+              script: |
+                $patterns = Get-Content "$(Build.ArtifactStagingDirectory)/failure-patterns.json" | ConvertFrom-Json
+                $critical = $patterns | Where-Object { $_.count -ge 3 }
+
+                Write-Host "##[error]Critical: Found pipelines with 3+ consecutive failures!"
+
+                foreach ($item in $critical) {
+                  Write-Host "##[error]Pipeline '$($item.pipeline)' has failed $($item.count) times"
+
+                  # Create work item for investigation
+                  $title = "Investigate repeated failures in $($item.pipeline)"
+                  $description = "Pipeline has failed $($item.count) times in the last $(failureAnalysisWindowHours) hours. Failed builds: $($item.builds -join ', ')"
+
+                  az boards work-item create `
+                    --title "$title" `
+                    --type "Bug" `
+                    --area "$(System.TeamProject)\DevOps" `
+                    --assigned-to "$(Build.RequestedForEmail)" `
+                    --description "$description" `
+                    --organization "$(System.CollectionUri)" `
+                    --project "$(System.TeamProject)"
+                }
+
+      - job: CheckAgentHealth
+        displayName: 'Check Agent Health'
+        dependsOn: []
+        steps:
+          - checkout: none
+
+          - task: AzureCLI@2
+            displayName: 'Check Agent Pools'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Checking agent pool health..."
+
+                # Get all agent pools
+                POOLS=$(az pipelines pool list \
+                  --organization "$(System.CollectionUri)" \
+                  --query "[].{id:id,name:name}" \
+                  -o json)
+
+                echo "$POOLS" | jq '.'
+
+                # Check each pool
+                for pool_id in $(echo "$POOLS" | jq -r '.[].id'); do
+                  pool_name=$(echo "$POOLS" | jq -r ".[] | select(.id==$pool_id) | .name")
+
+                  echo "Checking pool: $pool_name (ID: $pool_id)"
+
+                  # Get agents in pool
+                  AGENTS=$(az pipelines agent list \
+                    --pool-id $pool_id \
+                    --organization "$(System.CollectionUri)" \
+                    --query "[].{id:id,name:name,status:status,enabled:enabled,version:version}" \
+                    -o json)
+
+                  echo "Agents in $pool_name:"
+                  echo "$AGENTS" | jq '.'
+
+                  # Count offline agents
+                  OFFLINE_COUNT=$(echo "$AGENTS" | jq '[.[] | select(.status=="offline")] | length')
+                  TOTAL_COUNT=$(echo "$AGENTS" | jq 'length')
+
+                  echo "Pool $pool_name: $OFFLINE_COUNT offline out of $TOTAL_COUNT agents"
+
+                  if [ $OFFLINE_COUNT -gt 0 ]; then
+                    echo "##[warning]Pool '$pool_name' has $OFFLINE_COUNT offline agents"
+                  fi
+                done
+
+                # Save agent health data
+                echo "$POOLS" > $(Build.ArtifactStagingDirectory)/agent-pools.json
+
+          - task: PowerShell@2
+            displayName: 'Attempt Agent Recovery'
+            inputs:
+              targetType: 'inline'
+              script: |
+                Write-Host "Checking for agents that need recovery..."
+
+                # In Azure DevOps, agent restart typically requires agent-side automation
+                # This step would coordinate with agent management scripts
+
+                Write-Host "Agent recovery actions would be triggered here"
+                Write-Host "This typically involves:"
+                Write-Host "  1. Checking agent service status"
+                Write-Host "  2. Restarting agent service if hung"
+                Write-Host "  3. Clearing agent working directories"
+                Write-Host "  4. Notifying administrators for offline agents"
+
+      - job: CheckArtifacts
+        displayName: 'Check Artifact Storage'
+        dependsOn: []
+        steps:
+          - checkout: none
+
+          - task: AzureCLI@2
+            displayName: 'Check Artifact Storage Usage'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Checking artifact storage usage..."
+
+                # Check Azure Storage account usage
+                STORAGE_ACCOUNT="$(artifactStorageAccount)"
+                RESOURCE_GROUP="$(artifactResourceGroup)"
+
+                if [ -n "$STORAGE_ACCOUNT" ] && [ -n "$RESOURCE_GROUP" ]; then
+                  echo "Checking storage account: $STORAGE_ACCOUNT"
+
+                  # Get storage account usage
+                  USAGE=$(az storage account show \
+                    --name "$STORAGE_ACCOUNT" \
+                    --resource-group "$RESOURCE_GROUP" \
+                    --query "{used:primaryEndpoints.blob,sku:sku.name}" \
+                    -o json)
+
+                  echo "$USAGE" | jq '.'
+
+                  # Get blob storage size
+                  az storage blob list \
+                    --account-name "$STORAGE_ACCOUNT" \
+                    --container-name "artifacts" \
+                    --query "sum([].properties.contentLength)" \
+                    --auth-mode login \
+                    -o tsv > $(Build.ArtifactStagingDirectory)/storage-size.txt || true
+
+                  TOTAL_SIZE=$(cat $(Build.ArtifactStagingDirectory)/storage-size.txt)
+                  TOTAL_SIZE_GB=$(echo "scale=2; $TOTAL_SIZE / 1024 / 1024 / 1024" | bc)
+
+                  echo "Total artifact storage: ${TOTAL_SIZE_GB}GB"
+                  echo "##vso[task.setvariable variable=artifactSizeGB;isOutput=true]$TOTAL_SIZE_GB"
+
+                  # Check if approaching limit (warning at 80%)
+                  LIMIT_GB=1000
+                  USAGE_PERCENT=$(echo "scale=2; $TOTAL_SIZE_GB / $LIMIT_GB * 100" | bc)
+
+                  if (( $(echo "$USAGE_PERCENT > 80" | bc -l) )); then
+                    echo "##[warning]Artifact storage is at ${USAGE_PERCENT}% capacity"
+                  fi
+                else
+                  echo "##[warning]Storage account configuration not found"
+                fi
+
+                # Check pipeline artifact retention
+                echo "Checking artifact retention policies..."
+
+                # Query old builds with artifacts
+                THIRTY_DAYS_AGO=$(date -u -d "30 days ago" +%Y-%m-%dT%H:%M:%SZ)
+
+                OLD_BUILDS=$(az pipelines runs list \
+                  --organization "$(System.CollectionUri)" \
+                  --project "$(System.TeamProject)" \
+                  --query "[?finishTime<'$THIRTY_DAYS_AGO'].{id:id,buildNumber:buildNumber,finishTime:finishTime}" \
+                  -o json)
+
+                OLD_COUNT=$(echo "$OLD_BUILDS" | jq 'length')
+                echo "Found $OLD_COUNT builds older than 30 days with potential artifacts"
+            name: checkStorage
+
+      - job: GenerateHealthReport
+        displayName: 'Generate Health Report'
+        dependsOn:
+          - CheckStaleBuilds
+          - CheckFailedBuilds
+          - CheckAgentHealth
+          - CheckArtifacts
+        condition: always()
+        variables:
+          staleCount: $[ dependencies.CheckStaleBuilds.outputs['findStale.staleBuildsCount'] ]
+          failedCount: $[ dependencies.CheckFailedBuilds.outputs['analyzeFailures.failedBuildsCount'] ]
+          repeatedFailures: $[ dependencies.CheckFailedBuilds.outputs['analyzeFailures.repeatedFailures'] ]
+          artifactSize: $[ dependencies.CheckArtifacts.outputs['checkStorage.artifactSizeGB'] ]
+        steps:
+          - checkout: none
+
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download Job Outputs'
+            condition: succeededOrFailed()
+            inputs:
+              buildType: 'current'
+              targetPath: '$(Build.ArtifactStagingDirectory)/reports'
+            continueOnError: true
+
+          - task: PowerShell@2
+            displayName: 'Generate Consolidated Report'
+            inputs:
+              targetType: 'inline'
+              script: |
+                Write-Host "##[section]Pipeline Health Dashboard"
+                Write-Host "====================================="
+                Write-Host ""
+                Write-Host "Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss UTC')"
+                Write-Host "Analysis Period: Last $(failureAnalysisWindowHours) hours"
+                Write-Host ""
+
+                # Collect metrics
+                $healthReport = @{
+                  timestamp = Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ"
+                  analysisWindow = "$(failureAnalysisWindowHours) hours"
+                  metrics = @{
+                    staleBuilds = "$(staleCount)"
+                    failedBuilds = "$(failedCount)"
+                    repeatedFailures = "$(repeatedFailures)"
+                    artifactStorageGB = "$(artifactSize)"
+                  }
+                  status = "healthy"
+                  issues = @()
+                }
+
+                Write-Host "Metrics:"
+                Write-Host "  - Stale builds found and cancelled: $(staleCount)"
+                Write-Host "  - Failed builds: $(failedCount)"
+                Write-Host "  - Pipelines with repeated failures: $(repeatedFailures)"
+                Write-Host "  - Artifact storage usage: $(artifactSize) GB"
+                Write-Host ""
+
+                # Determine overall health status
+                if ("$(repeatedFailures)" -gt 0) {
+                  $healthReport.status = "critical"
+                  $healthReport.issues += "Critical: $($repeatedFailures) pipelines have repeated failures"
+                  Write-Host "##[error]Status: CRITICAL - Repeated failures detected"
+                } elseif ("$(failedCount)" -gt 5) {
+                  $healthReport.status = "degraded"
+                  $healthReport.issues += "Warning: High failure rate ($($failedCount) failures)"
+                  Write-Host "##[warning]Status: DEGRADED - High failure rate"
+                } else {
+                  Write-Host "##[section]Status: HEALTHY"
+                }
+
+                # Save report
+                $healthReport | ConvertTo-Json -Depth 10 | Out-File "$(healthReportPath)"
+
+                Write-Host ""
+                Write-Host "Full report saved to: $(healthReportPath)"
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Health Report'
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)'
+              artifact: 'pipeline-health-report'
+              publishLocation: 'pipeline'
+
+          - template: ../templates/jobs/notify.yml
+            parameters:
+              channel: 'teams'
+              webhookUrl: '$(teamsWebhookUrl)'
+              message: |
+                Pipeline Health Report
+
+                Stale builds: $(staleCount)
+                Failed builds: $(failedCount)
+                Repeated failures: $(repeatedFailures)
+
+                Status: $(healthReport.status)
+              severity: 'info'

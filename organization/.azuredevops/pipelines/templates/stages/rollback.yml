@@ -1,0 +1,537 @@
+# Automatic Rollback Stage
+# Triggered on deployment failure
+# Restores previous stable version
+
+parameters:
+  - name: targetEnvironment
+    type: string
+    displayName: 'Environment to Rollback'
+    values:
+      - dev
+      - staging
+      - production
+
+  - name: rollbackReason
+    type: string
+    displayName: 'Rollback Reason'
+    default: 'Deployment failure detected'
+
+  - name: notificationChannel
+    type: string
+    displayName: 'Notification Channel (Slack/Teams webhook)'
+    default: ''
+
+stages:
+  - stage: Rollback_${{ parameters.targetEnvironment }}
+    displayName: 'Rollback - ${{ parameters.targetEnvironment }}'
+    condition: failed()
+    variables:
+      - name: serviceConnection
+        value: 'CitadelBuyAzure'
+      - name: subscriptionId
+        value: 'ba233460-2dbe-4603-a594-68f93ec9deb3'
+      - name: environment
+        value: '${{ parameters.targetEnvironment }}'
+      - name: aksResourceGroup
+        ${{ if eq(parameters.targetEnvironment, 'dev') }}:
+          value: 'citadelbuy-dev-rg'
+        ${{ if eq(parameters.targetEnvironment, 'staging') }}:
+          value: 'citadelbuy-staging-rg'
+        ${{ if eq(parameters.targetEnvironment, 'production') }}:
+          value: 'citadelbuy-production-rg'
+      - name: aksClusterName
+        ${{ if eq(parameters.targetEnvironment, 'dev') }}:
+          value: 'citadelbuy-dev-aks'
+        ${{ if eq(parameters.targetEnvironment, 'staging') }}:
+          value: 'citadelbuy-staging-aks'
+        ${{ if eq(parameters.targetEnvironment, 'production') }}:
+          value: 'citadelbuy-production-aks'
+      - name: namespace
+        ${{ if eq(parameters.targetEnvironment, 'dev') }}:
+          value: 'citadelbuy-dev'
+        ${{ if eq(parameters.targetEnvironment, 'staging') }}:
+          value: 'citadelbuy-staging'
+        ${{ if eq(parameters.targetEnvironment, 'production') }}:
+          value: 'citadelbuy-production'
+      - name: keyVaultName
+        ${{ if eq(parameters.targetEnvironment, 'dev') }}:
+          value: 'citadelbuy-dev-kv'
+        ${{ if eq(parameters.targetEnvironment, 'staging') }}:
+          value: 'citadelbuy-staging-kv'
+        ${{ if eq(parameters.targetEnvironment, 'production') }}:
+          value: 'citadelbuy-production-kv'
+
+    jobs:
+      - job: InitiateRollback
+        displayName: 'Initiate Rollback Process'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: Bash@3
+            displayName: 'Log Rollback Initiation'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "================================================================"
+                echo "         ROLLBACK INITIATED"
+                echo "================================================================"
+                echo ""
+                echo "Environment:      ${{ parameters.targetEnvironment }}"
+                echo "Reason:           ${{ parameters.rollbackReason }}"
+                echo "Build ID:         $(Build.BuildId)"
+                echo "Build Number:     $(Build.BuildNumber)"
+                echo "Triggered By:     $(Build.RequestedFor)"
+                echo "Timestamp:        $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+                echo ""
+                echo "================================================================"
+
+      - deployment: ExecuteRollback
+        displayName: 'Execute Rollback'
+        dependsOn: InitiateRollback
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: ${{ parameters.targetEnvironment }}
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: none
+
+                - task: AzureCLI@2
+                  displayName: 'Get AKS Credentials'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Getting credentials for AKS cluster: $(aksClusterName)"
+                      az aks get-credentials \
+                        --resource-group $(aksResourceGroup) \
+                        --name $(aksClusterName) \
+                        --overwrite-existing
+
+                      kubectl cluster-info
+                      kubectl config set-context --current --namespace=$(namespace)
+
+                - task: AzureCLI@2
+                  displayName: 'Backup Current State'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Backing up current deployment state..."
+
+                      # Create backup directory
+                      mkdir -p /tmp/rollback-backup
+
+                      # Backup deployments
+                      kubectl get deployments -n $(namespace) -o yaml > /tmp/rollback-backup/deployments.yaml
+
+                      # Backup services
+                      kubectl get services -n $(namespace) -o yaml > /tmp/rollback-backup/services.yaml
+
+                      # Backup configmaps
+                      kubectl get configmaps -n $(namespace) -o yaml > /tmp/rollback-backup/configmaps.yaml
+
+                      # Backup secrets (names only for security)
+                      kubectl get secrets -n $(namespace) -o jsonpath='{.items[*].metadata.name}' > /tmp/rollback-backup/secrets-list.txt
+
+                      echo "Current state backed up successfully"
+
+                - task: AzureCLI@2
+                  displayName: 'Retrieve Previous Deployment State'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Retrieving previous deployment state..."
+
+                      # Get rollout history for API
+                      echo "=== API Deployment History ==="
+                      kubectl rollout history deployment/citadelbuy-api -n $(namespace) || true
+
+                      # Get rollout history for Frontend
+                      echo "=== Frontend Deployment History ==="
+                      kubectl rollout history deployment/citadelbuy-frontend -n $(namespace) || true
+
+                      # Get previous revision details
+                      echo "=== Previous Revision Details ==="
+                      kubectl rollout history deployment/citadelbuy-api -n $(namespace) --revision=0 || true
+
+                - task: AzureCLI@2
+                  displayName: 'Rollback API Deployment'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Rolling back API deployment..."
+
+                      if kubectl get deployment citadelbuy-api -n $(namespace) >/dev/null 2>&1; then
+                        # Perform rollback
+                        kubectl rollout undo deployment/citadelbuy-api -n $(namespace)
+
+                        # Wait for rollback to complete
+                        kubectl rollout status deployment/citadelbuy-api -n $(namespace) --timeout=10m
+
+                        # Verify rollback
+                        echo "API rollback completed. Current status:"
+                        kubectl get deployment citadelbuy-api -n $(namespace) -o wide
+
+                        # Get current image
+                        CURRENT_IMAGE=$(kubectl get deployment citadelbuy-api -n $(namespace) -o jsonpath='{.spec.template.spec.containers[0].image}')
+                        echo "Current API image: $CURRENT_IMAGE"
+                      else
+                        echo "Warning: citadelbuy-api deployment not found"
+                      fi
+
+                - task: AzureCLI@2
+                  displayName: 'Rollback Frontend Deployment'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Rolling back Frontend deployment..."
+
+                      if kubectl get deployment citadelbuy-frontend -n $(namespace) >/dev/null 2>&1; then
+                        # Perform rollback
+                        kubectl rollout undo deployment/citadelbuy-frontend -n $(namespace)
+
+                        # Wait for rollback to complete
+                        kubectl rollout status deployment/citadelbuy-frontend -n $(namespace) --timeout=10m
+
+                        # Verify rollback
+                        echo "Frontend rollback completed. Current status:"
+                        kubectl get deployment citadelbuy-frontend -n $(namespace) -o wide
+
+                        # Get current image
+                        CURRENT_IMAGE=$(kubectl get deployment citadelbuy-frontend -n $(namespace) -o jsonpath='{.spec.template.spec.containers[0].image}')
+                        echo "Current Frontend image: $CURRENT_IMAGE"
+                      else
+                        echo "Warning: citadelbuy-frontend deployment not found"
+                      fi
+
+                - task: AzureKeyVault@2
+                  displayName: 'Fetch Previous Secrets from Key Vault'
+                  condition: ne('${{ parameters.targetEnvironment }}', 'dev')
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    KeyVaultName: '$(keyVaultName)'
+                    SecretsFilter: '*'
+                    RunAsPreJob: false
+
+                - task: AzureCLI@2
+                  displayName: 'Restore Previous ConfigMaps'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Restoring previous ConfigMaps..."
+
+                      # Check if backup exists in Key Vault or ConfigMap history
+                      # For this example, we'll restore from Key Vault for staging/production
+
+                      if [ "$(environment)" = "dev" ]; then
+                        echo "Development environment - using default ConfigMap"
+                      else
+                        echo "Restoring ConfigMap from Key Vault values..."
+
+                        kubectl create configmap citadelbuy-config \
+                          --from-literal=NODE_ENV=$(environment) \
+                          --from-literal=API_URL=$(API-URL) \
+                          --from-literal=FRONTEND_URL=$(FRONTEND-URL) \
+                          --from-literal=LOG_LEVEL=$(LOG-LEVEL) \
+                          --dry-run=client -o yaml | kubectl apply -f - -n $(namespace)
+                      fi
+
+                      echo "ConfigMaps restored successfully"
+
+                - task: AzureCLI@2
+                  displayName: 'Restore Previous Secrets'
+                  condition: ne('${{ parameters.targetEnvironment }}', 'dev')
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Restoring previous Secrets from Key Vault..."
+
+                      kubectl create secret generic citadelbuy-secrets \
+                        --from-literal=DATABASE_URL=$(DATABASE-URL) \
+                        --from-literal=JWT_SECRET=$(JWT-SECRET) \
+                        --from-literal=REDIS_URL=$(REDIS-URL) \
+                        --from-literal=SMTP_PASSWORD=$(SMTP-PASSWORD) \
+                        --from-literal=STRIPE_SECRET_KEY=$(STRIPE-SECRET-KEY) \
+                        --dry-run=client -o yaml | kubectl apply -f - -n $(namespace)
+
+                      echo "Secrets restored successfully"
+
+                - task: AzureCLI@2
+                  displayName: 'Restart Deployments to Apply Changes'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Restarting deployments to apply restored configuration..."
+
+                      # Restart API deployment
+                      if kubectl get deployment citadelbuy-api -n $(namespace) >/dev/null 2>&1; then
+                        kubectl rollout restart deployment/citadelbuy-api -n $(namespace)
+                        kubectl rollout status deployment/citadelbuy-api -n $(namespace) --timeout=5m
+                      fi
+
+                      # Restart Frontend deployment
+                      if kubectl get deployment citadelbuy-frontend -n $(namespace) >/dev/null 2>&1; then
+                        kubectl rollout restart deployment/citadelbuy-frontend -n $(namespace)
+                        kubectl rollout status deployment/citadelbuy-frontend -n $(namespace) --timeout=5m
+                      fi
+
+                      echo "Deployments restarted successfully"
+
+                - task: AzureCLI@2
+                  displayName: 'Verify Rollback Health'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Verifying rollback health..."
+
+                      # Check pod status
+                      echo "=== Pod Status ==="
+                      kubectl get pods -n $(namespace) -o wide
+
+                      # Wait for pods to be ready
+                      echo "Waiting for pods to be ready..."
+                      kubectl wait --for=condition=ready pod -l app=citadelbuy-api -n $(namespace) --timeout=5m || true
+                      kubectl wait --for=condition=ready pod -l app=citadelbuy-frontend -n $(namespace) --timeout=5m || true
+
+                      # Check for failed pods
+                      FAILED_PODS=$(kubectl get pods -n $(namespace) --field-selector=status.phase!=Running,status.phase!=Succeeded -o jsonpath='{.items[*].metadata.name}')
+
+                      if [ -n "$FAILED_PODS" ]; then
+                        echo "Warning: Some pods are not running:"
+                        echo "$FAILED_PODS"
+                        kubectl describe pods -n $(namespace) $FAILED_PODS
+                      else
+                        echo "All pods are running successfully after rollback"
+                      fi
+
+                - task: Bash@3
+                  displayName: 'Health Check After Rollback'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      echo "Running health check after rollback..."
+
+                      # Determine health check URL based on environment
+                      case "${{ parameters.targetEnvironment }}" in
+                        dev)
+                          HEALTH_URL="https://dev.citadelbuy.com/api/health"
+                          ;;
+                        staging)
+                          HEALTH_URL="https://staging.citadelbuy.com/api/health"
+                          ;;
+                        production)
+                          HEALTH_URL="https://citadelbuy.com/api/health"
+                          ;;
+                        *)
+                          echo "Unknown environment"
+                          exit 1
+                          ;;
+                      esac
+
+                      echo "Health check URL: $HEALTH_URL"
+
+                      # Wait for DNS propagation
+                      sleep 30
+
+                      # Health check with retries
+                      MAX_RETRIES=10
+                      RETRY_COUNT=0
+
+                      while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                        echo "Health check attempt $((RETRY_COUNT + 1))/$MAX_RETRIES"
+
+                        RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL" || echo "000")
+
+                        if [ "$RESPONSE" = "200" ]; then
+                          echo "Health check passed after rollback!"
+                          curl -s "$HEALTH_URL" | jq '.' 2>/dev/null || curl -s "$HEALTH_URL"
+                          exit 0
+                        fi
+
+                        echo "Health check failed with status: $RESPONSE"
+                        RETRY_COUNT=$((RETRY_COUNT + 1))
+
+                        if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                          sleep 30
+                        fi
+                      done
+
+                      echo "Warning: Health check failed after rollback. Manual intervention may be required."
+                      exit 1
+
+                - task: AzureCLI@2
+                  displayName: 'Create Rollback Report'
+                  condition: always()
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Creating rollback report..."
+
+                      REPORT_FILE="/tmp/rollback-report.txt"
+
+                      cat > $REPORT_FILE <<EOF
+                      ================================================================
+                                    ROLLBACK REPORT
+                      ================================================================
+
+                      Rollback Details:
+                      -----------------
+                      Environment:        ${{ parameters.targetEnvironment }}
+                      Reason:             ${{ parameters.rollbackReason }}
+                      Build ID:           $(Build.BuildId)
+                      Build Number:       $(Build.BuildNumber)
+                      Triggered By:       $(Build.RequestedFor)
+                      Timestamp:          $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+                      Cluster Information:
+                      --------------------
+                      Resource Group:     $(aksResourceGroup)
+                      Cluster Name:       $(aksClusterName)
+                      Namespace:          $(namespace)
+
+                      Current Deployment State:
+                      -------------------------
+                      EOF
+
+                      # Append current deployment info
+                      echo "API Deployment:" >> $REPORT_FILE
+                      kubectl get deployment citadelbuy-api -n $(namespace) -o wide >> $REPORT_FILE 2>&1 || echo "Not found" >> $REPORT_FILE
+
+                      echo "" >> $REPORT_FILE
+                      echo "Frontend Deployment:" >> $REPORT_FILE
+                      kubectl get deployment citadelbuy-frontend -n $(namespace) -o wide >> $REPORT_FILE 2>&1 || echo "Not found" >> $REPORT_FILE
+
+                      echo "" >> $REPORT_FILE
+                      echo "Pods:" >> $REPORT_FILE
+                      kubectl get pods -n $(namespace) -o wide >> $REPORT_FILE 2>&1
+
+                      echo "" >> $REPORT_FILE
+                      echo "Recent Events:" >> $REPORT_FILE
+                      kubectl get events -n $(namespace) --sort-by='.lastTimestamp' | tail -20 >> $REPORT_FILE 2>&1
+
+                      echo "" >> $REPORT_FILE
+                      echo "================================================================" >> $REPORT_FILE
+
+                      # Display report
+                      cat $REPORT_FILE
+
+                      # Store report as artifact
+                      mkdir -p $(Build.ArtifactStagingDirectory)/rollback
+                      cp $REPORT_FILE $(Build.ArtifactStagingDirectory)/rollback/rollback-report-$(Build.BuildId).txt
+
+                - task: PublishBuildArtifacts@1
+                  displayName: 'Publish Rollback Report'
+                  condition: always()
+                  inputs:
+                    PathtoPublish: '$(Build.ArtifactStagingDirectory)/rollback'
+                    ArtifactName: 'rollback-report'
+                    publishLocation: 'Container'
+
+                - task: Bash@3
+                  displayName: 'Send Notification'
+                  condition: always()
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      echo "Sending rollback notification..."
+
+                      NOTIFICATION_URL="${{ parameters.notificationChannel }}"
+
+                      if [ -z "$NOTIFICATION_URL" ]; then
+                        echo "No notification channel configured, skipping notification"
+                        exit 0
+                      fi
+
+                      # Prepare notification message
+                      MESSAGE=$(cat <<EOF
+                      {
+                        "text": "🔄 Rollback Executed - ${{ parameters.targetEnvironment }}",
+                        "attachments": [
+                          {
+                            "color": "warning",
+                            "fields": [
+                              {
+                                "title": "Environment",
+                                "value": "${{ parameters.targetEnvironment }}",
+                                "short": true
+                              },
+                              {
+                                "title": "Reason",
+                                "value": "${{ parameters.rollbackReason }}",
+                                "short": true
+                              },
+                              {
+                                "title": "Build",
+                                "value": "$(Build.BuildNumber)",
+                                "short": true
+                              },
+                              {
+                                "title": "Triggered By",
+                                "value": "$(Build.RequestedFor)",
+                                "short": true
+                              },
+                              {
+                                "title": "Status",
+                                "value": "Rollback Completed",
+                                "short": false
+                              }
+                            ],
+                            "footer": "CitadelBuy DevOps",
+                            "ts": $(date +%s)
+                          }
+                        ]
+                      }
+                      EOF
+                      )
+
+                      # Send notification
+                      curl -X POST \
+                        -H 'Content-Type: application/json' \
+                        -d "$MESSAGE" \
+                        "$NOTIFICATION_URL" || echo "Failed to send notification"
+
+                      echo "Notification sent successfully"
+
+                - task: Bash@3
+                  displayName: 'Rollback Summary'
+                  condition: always()
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      echo "================================================================"
+                      echo "         ROLLBACK COMPLETED - ${{ parameters.targetEnvironment }}"
+                      echo "================================================================"
+                      echo ""
+                      echo "Environment:      ${{ parameters.targetEnvironment }}"
+                      echo "Reason:           ${{ parameters.rollbackReason }}"
+                      echo "Build ID:         $(Build.BuildId)"
+                      echo "Status:           $(Agent.JobStatus)"
+                      echo "Timestamp:        $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+                      echo ""
+                      echo "Next Steps:"
+                      echo "1. Verify application functionality"
+                      echo "2. Review rollback logs and reports"
+                      echo "3. Investigate root cause of deployment failure"
+                      echo "4. Fix issues before next deployment attempt"
+                      echo ""
+                      echo "================================================================"

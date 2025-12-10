@@ -1,0 +1,194 @@
+# Docker Build and Push Job Template
+# Reusable job for building, scanning, and pushing Docker images to ACR
+
+parameters:
+  - name: imageName
+    type: string
+    displayName: 'Image name (without registry prefix)'
+
+  - name: dockerfilePath
+    type: string
+    displayName: 'Path to Dockerfile'
+
+  - name: dockerContext
+    type: string
+    displayName: 'Docker build context path'
+
+  - name: buildArgs
+    type: string
+    default: ''
+    displayName: 'Docker build arguments (optional)'
+
+  - name: scanImage
+    type: boolean
+    default: true
+    displayName: 'Run Trivy security scan'
+
+  - name: registry
+    type: string
+    default: 'citadelbuyacr.azurecr.io'
+    displayName: 'Container registry'
+
+  - name: serviceConnection
+    type: string
+    default: 'CitadelBuyACR'
+    displayName: 'ACR service connection name'
+
+jobs:
+  - job: Build_${{ replace(replace(parameters.imageName, '-', '_'), '/', '_') }}
+    displayName: 'Build and Push ${{ parameters.imageName }}'
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    variables:
+      - name: shortSha
+        value: $[format('{0}', substring(variables['Build.SourceVersion'], 0, 7))]
+      - name: branchName
+        value: $[replace(variables['Build.SourceBranchName'], '/', '-')]
+      - name: buildTimestamp
+        value: $[format('{0:yyyyMMddHHmmss}', pipeline.startTime)]
+      - name: imageTags
+        value: |
+          ${{ parameters.registry }}/${{ parameters.imageName }}:$(shortSha)
+          ${{ parameters.registry }}/${{ parameters.imageName }}:$(branchName)
+          ${{ parameters.registry }}/${{ parameters.imageName }}:latest
+          ${{ parameters.registry }}/${{ parameters.imageName }}:$(Build.BuildId)
+
+    steps:
+      - checkout: self
+        displayName: 'Checkout source code'
+        fetchDepth: 1
+
+      - task: Docker@2
+        displayName: 'Login to Azure Container Registry'
+        inputs:
+          command: 'login'
+          containerRegistry: '${{ parameters.serviceConnection }}'
+
+      - pwsh: |
+          Write-Host "##[section]Generating image tags"
+          $shortSha = "$(Build.SourceVersion)".Substring(0, 7)
+          $branchName = "$(Build.SourceBranchName)" -replace '/', '-'
+          $buildId = "$(Build.BuildId)"
+
+          Write-Host "Short SHA: $shortSha"
+          Write-Host "Branch Name: $branchName"
+          Write-Host "Build ID: $buildId"
+          Write-Host "Build Timestamp: $(buildTimestamp)"
+
+          Write-Host "##vso[task.setvariable variable=shortSha]$shortSha"
+          Write-Host "##vso[task.setvariable variable=branchName]$branchName"
+
+          # Generate tags list
+          $tags = @(
+            "${{ parameters.registry }}/${{ parameters.imageName }}:$shortSha",
+            "${{ parameters.registry }}/${{ parameters.imageName }}:$branchName",
+            "${{ parameters.registry }}/${{ parameters.imageName }}:latest",
+            "${{ parameters.registry }}/${{ parameters.imageName }}:$buildId"
+          )
+
+          $tagsString = $tags -join "`n"
+          Write-Host "##[section]Image Tags:"
+          $tags | ForEach-Object { Write-Host "  - $_" }
+
+          Write-Host "##vso[task.setvariable variable=imageTags]$tagsString"
+        displayName: 'Generate Image Tags'
+
+      - task: Docker@2
+        displayName: 'Build Docker Image'
+        inputs:
+          command: 'build'
+          repository: '${{ parameters.registry }}/${{ parameters.imageName }}'
+          dockerfile: '${{ parameters.dockerfilePath }}'
+          buildContext: '${{ parameters.dockerContext }}'
+          tags: |
+            $(shortSha)
+            $(branchName)
+            latest
+            $(Build.BuildId)
+          ${{ if ne(parameters.buildArgs, '') }}:
+            arguments: '${{ parameters.buildArgs }}'
+
+      - task: Docker@2
+        displayName: 'Push Docker Image to ACR'
+        inputs:
+          command: 'push'
+          containerRegistry: '${{ parameters.serviceConnection }}'
+          repository: '${{ parameters.imageName }}'
+          tags: |
+            $(shortSha)
+            $(branchName)
+            latest
+            $(Build.BuildId)
+
+      - ${{ if eq(parameters.scanImage, true) }}:
+        - script: |
+            echo "##[section]Installing Trivy Security Scanner"
+            wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+            echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+            sudo apt-get update
+            sudo apt-get install -y trivy
+            trivy --version
+          displayName: 'Install Trivy Scanner'
+
+        - script: |
+            echo "##[section]Scanning Docker Image: ${{ parameters.registry }}/${{ parameters.imageName }}:$(shortSha)"
+
+            # Run Trivy scan with multiple output formats
+            trivy image \
+              --severity CRITICAL,HIGH,MEDIUM \
+              --format json \
+              --output $(Build.ArtifactStagingDirectory)/trivy-${{ replace(parameters.imageName, '/', '-') }}-report.json \
+              ${{ parameters.registry }}/${{ parameters.imageName }}:$(shortSha)
+
+            trivy image \
+              --severity CRITICAL,HIGH,MEDIUM \
+              --format table \
+              --output $(Build.ArtifactStagingDirectory)/trivy-${{ replace(parameters.imageName, '/', '-') }}-report.txt \
+              ${{ parameters.registry }}/${{ parameters.imageName }}:$(shortSha)
+
+            # Generate SARIF format for Azure DevOps integration
+            trivy image \
+              --severity CRITICAL,HIGH,MEDIUM \
+              --format sarif \
+              --output $(Build.ArtifactStagingDirectory)/trivy-${{ replace(parameters.imageName, '/', '-') }}-report.sarif \
+              ${{ parameters.registry }}/${{ parameters.imageName }}:$(shortSha)
+
+            echo "##[section]Vulnerability Scan Summary"
+            trivy image \
+              --severity CRITICAL,HIGH,MEDIUM \
+              --format table \
+              ${{ parameters.registry }}/${{ parameters.imageName }}:$(shortSha)
+
+            # Exit code handling - fail on CRITICAL vulnerabilities
+            trivy image \
+              --severity CRITICAL \
+              --exit-code 1 \
+              ${{ parameters.registry }}/${{ parameters.imageName }}:$(shortSha) || {
+              echo "##vso[task.logissue type=error]CRITICAL vulnerabilities found in image!"
+              echo "##vso[task.complete result=Failed;]Image contains CRITICAL vulnerabilities"
+            }
+          displayName: 'Run Trivy Security Scan'
+          continueOnError: true
+
+        - task: PublishBuildArtifacts@1
+          displayName: 'Publish Trivy Scan Results'
+          inputs:
+            pathToPublish: '$(Build.ArtifactStagingDirectory)'
+            artifactName: 'trivy-scan-${{ replace(parameters.imageName, '/', '-') }}'
+            publishLocation: 'Container'
+          condition: always()
+
+      - pwsh: |
+          Write-Host "##[section]Build Summary for ${{ parameters.imageName }}"
+          Write-Host "Image: ${{ parameters.registry }}/${{ parameters.imageName }}"
+          Write-Host "Dockerfile: ${{ parameters.dockerfilePath }}"
+          Write-Host "Context: ${{ parameters.dockerContext }}"
+          Write-Host ""
+          Write-Host "Published Tags:"
+          Write-Host "  - $(shortSha) (commit SHA)"
+          Write-Host "  - $(branchName) (branch)"
+          Write-Host "  - latest"
+          Write-Host "  - $(Build.BuildId) (build ID)"
+        displayName: 'Build Summary'
+        condition: always()

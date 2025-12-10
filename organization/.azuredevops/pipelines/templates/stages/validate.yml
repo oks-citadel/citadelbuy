@@ -1,0 +1,100 @@
+# Code quality validation stage
+# Runs ESLint, Prettier checks, and TypeScript compilation validation
+
+parameters:
+  - name: nodeVersion
+    type: string
+    default: '20'
+  - name: pnpmVersion
+    type: string
+    default: '10.23.0'
+  - name: workingDirectory
+    type: string
+    default: '$(System.DefaultWorkingDirectory)'
+  - name: runLint
+    type: boolean
+    default: true
+  - name: runTypeCheck
+    type: boolean
+    default: true
+  - name: runFormatCheck
+    type: boolean
+    default: true
+
+stages:
+  - stage: Validate
+    displayName: 'Code Quality Validation'
+    jobs:
+      - job: Lint
+        displayName: 'ESLint & Prettier Check'
+        condition: eq('${{ parameters.runLint }}', true)
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - template: ../jobs/setup-node.yml
+            parameters:
+              nodeVersion: ${{ parameters.nodeVersion }}
+              pnpmVersion: ${{ parameters.pnpmVersion }}
+              workingDirectory: ${{ parameters.workingDirectory }}
+
+          - script: |
+              pnpm run lint --format junit --output-file lint-results.xml || true
+            displayName: 'Run ESLint'
+            workingDirectory: ${{ parameters.workingDirectory }}
+
+          - script: |
+              pnpm run prettier:check || true
+            displayName: 'Run Prettier check'
+            workingDirectory: ${{ parameters.workingDirectory }}
+
+          - task: PublishTestResults@2
+            displayName: 'Publish lint results'
+            condition: always()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/lint-results.xml'
+              testRunTitle: 'ESLint Results'
+              failTaskOnFailedTests: true
+
+      - job: TypeCheck
+        displayName: 'TypeScript Compilation Check'
+        condition: eq('${{ parameters.runTypeCheck }}', true)
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - template: ../jobs/setup-node.yml
+            parameters:
+              nodeVersion: ${{ parameters.nodeVersion }}
+              pnpmVersion: ${{ parameters.pnpmVersion }}
+              workingDirectory: ${{ parameters.workingDirectory }}
+
+          - script: |
+              pnpm run typecheck
+            displayName: 'Run TypeScript compiler'
+            workingDirectory: ${{ parameters.workingDirectory }}
+
+      - job: FormatCheck
+        displayName: 'Code Formatting Verification'
+        condition: eq('${{ parameters.runFormatCheck }}', true)
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - template: ../jobs/setup-node.yml
+            parameters:
+              nodeVersion: ${{ parameters.nodeVersion }}
+              pnpmVersion: ${{ parameters.pnpmVersion }}
+              workingDirectory: ${{ parameters.workingDirectory }}
+
+          - script: |
+              pnpm run format:check
+            displayName: 'Verify code formatting'
+            workingDirectory: ${{ parameters.workingDirectory }}

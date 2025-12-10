@@ -1,0 +1,257 @@
+# Deploy to Development Environment
+# Triggered on develop branch or manual trigger
+# No approval required for dev deployments
+
+stages:
+  - stage: DeployDev
+    displayName: 'Deploy to Development'
+    condition: |
+      or(
+        eq(variables['Build.SourceBranch'], 'refs/heads/develop'),
+        eq(variables['Build.Reason'], 'Manual')
+      )
+    variables:
+      - group: citadelbuy-dev-vars
+      - name: environment
+        value: 'dev'
+      - name: aksResourceGroup
+        value: 'citadelbuy-dev-rg'
+      - name: aksClusterName
+        value: 'citadelbuy-dev-aks'
+      - name: namespace
+        value: 'citadelbuy-dev'
+      - name: manifestPath
+        value: 'infrastructure/kubernetes/dev'
+      - name: serviceConnection
+        value: 'CitadelBuyAzure'
+      - name: subscriptionId
+        value: 'ba233460-2dbe-4603-a594-68f93ec9deb3'
+      - name: acrName
+        value: 'citadelbuyacr.azurecr.io'
+
+    jobs:
+      - deployment: DeployToAKSDev
+        displayName: 'Deploy to AKS Dev Cluster'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'development'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: AzureCLI@2
+                  displayName: 'Get AKS Credentials'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Getting credentials for AKS cluster: $(aksClusterName)"
+                      az aks get-credentials \
+                        --resource-group $(aksResourceGroup) \
+                        --name $(aksClusterName) \
+                        --overwrite-existing
+
+                      echo "Verifying cluster connection..."
+                      kubectl cluster-info
+                      kubectl get nodes
+
+                - task: AzureCLI@2
+                  displayName: 'Create Namespace if not exists'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      kubectl get namespace $(namespace) || kubectl create namespace $(namespace)
+                      kubectl config set-context --current --namespace=$(namespace)
+
+                - task: AzureCLI@2
+                  displayName: 'Apply Kubernetes Manifests'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Applying Kubernetes manifests from $(manifestPath)/"
+
+                      # Apply ConfigMaps and Secrets first
+                      if [ -f "$(manifestPath)/configmap.yml" ]; then
+                        kubectl apply -f $(manifestPath)/configmap.yml -n $(namespace)
+                      fi
+
+                      if [ -f "$(manifestPath)/secrets.yml" ]; then
+                        kubectl apply -f $(manifestPath)/secrets.yml -n $(namespace)
+                      fi
+
+                      # Apply PVCs
+                      if [ -f "$(manifestPath)/pvc.yml" ]; then
+                        kubectl apply -f $(manifestPath)/pvc.yml -n $(namespace)
+                      fi
+
+                      # Apply Services
+                      if [ -f "$(manifestPath)/service.yml" ]; then
+                        kubectl apply -f $(manifestPath)/service.yml -n $(namespace)
+                      fi
+
+                      # Apply all other manifests
+                      kubectl apply -f $(manifestPath)/ -n $(namespace) --recursive
+
+                      echo "Manifests applied successfully"
+
+                - task: AzureCLI@2
+                  displayName: 'Update Deployment Images'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Updating deployment images with tag: $(imageTag)"
+
+                      # Update API deployment
+                      kubectl set image deployment/citadelbuy-api \
+                        citadelbuy-api=$(acrName)/citadelbuy-api:$(imageTag) \
+                        -n $(namespace) --record
+
+                      # Update Frontend deployment
+                      kubectl set image deployment/citadelbuy-frontend \
+                        citadelbuy-frontend=$(acrName)/citadelbuy-frontend:$(imageTag) \
+                        -n $(namespace) --record
+
+                      echo "Deployment images updated successfully"
+
+                - task: AzureCLI@2
+                  displayName: 'Wait for Rollout Completion'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Waiting for deployments to complete..."
+
+                      # Wait for API deployment
+                      kubectl rollout status deployment/citadelbuy-api -n $(namespace) --timeout=10m
+
+                      # Wait for Frontend deployment
+                      kubectl rollout status deployment/citadelbuy-frontend -n $(namespace) --timeout=10m
+
+                      echo "All deployments completed successfully"
+
+                - task: AzureCLI@2
+                  displayName: 'Run Prisma Migrations'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Running Prisma database migrations..."
+
+                      # Get API pod name
+                      API_POD=$(kubectl get pods -n $(namespace) -l app=citadelbuy-api -o jsonpath='{.items[0].metadata.name}')
+
+                      if [ -z "$API_POD" ]; then
+                        echo "Error: No API pod found"
+                        exit 1
+                      fi
+
+                      echo "Running migrations on pod: $API_POD"
+
+                      # Run Prisma migrations
+                      kubectl exec -n $(namespace) $API_POD -- npx prisma migrate deploy
+
+                      echo "Database migrations completed successfully"
+                  continueOnError: false
+
+                - task: AzureCLI@2
+                  displayName: 'Verify Deployment Health'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Verifying deployment health..."
+
+                      # Get pod status
+                      echo "=== Pod Status ==="
+                      kubectl get pods -n $(namespace) -l app=citadelbuy-api
+                      kubectl get pods -n $(namespace) -l app=citadelbuy-frontend
+
+                      # Check pod health
+                      echo "=== Checking Pod Health ==="
+                      kubectl wait --for=condition=ready pod -l app=citadelbuy-api -n $(namespace) --timeout=5m
+                      kubectl wait --for=condition=ready pod -l app=citadelbuy-frontend -n $(namespace) --timeout=5m
+
+                      echo "All pods are healthy"
+
+                - task: Bash@3
+                  displayName: 'Health Check API Endpoint'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      echo "Running health check on dev.citadelbuy.com/api/health"
+
+                      # Wait for DNS/ingress to be ready
+                      sleep 30
+
+                      # Health check with retries
+                      MAX_RETRIES=10
+                      RETRY_COUNT=0
+
+                      while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                        echo "Health check attempt $((RETRY_COUNT + 1))/$MAX_RETRIES"
+
+                        RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://dev.citadelbuy.com/api/health || echo "000")
+
+                        if [ "$RESPONSE" = "200" ]; then
+                          echo "Health check passed! API is responding with status 200"
+
+                          # Get detailed response
+                          curl -s https://dev.citadelbuy.com/api/health | jq '.' || echo "Response received"
+                          exit 0
+                        fi
+
+                        echo "Health check failed with status: $RESPONSE"
+                        RETRY_COUNT=$((RETRY_COUNT + 1))
+
+                        if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                          echo "Retrying in 30 seconds..."
+                          sleep 30
+                        fi
+                      done
+
+                      echo "Health check failed after $MAX_RETRIES attempts"
+                      exit 1
+
+                - task: AzureCLI@2
+                  displayName: 'Display Deployment Info'
+                  inputs:
+                    azureSubscription: '$(serviceConnection)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "=== Deployment Summary ==="
+                      echo "Environment: Development"
+                      echo "Namespace: $(namespace)"
+                      echo "Image Tag: $(imageTag)"
+                      echo ""
+
+                      echo "=== Deployments ==="
+                      kubectl get deployments -n $(namespace)
+                      echo ""
+
+                      echo "=== Services ==="
+                      kubectl get services -n $(namespace)
+                      echo ""
+
+                      echo "=== Ingress ==="
+                      kubectl get ingress -n $(namespace)
+                      echo ""
+
+                      echo "=== Recent Events ==="
+                      kubectl get events -n $(namespace) --sort-by='.lastTimestamp' | tail -20
+
+                      echo ""
+                      echo "Development deployment completed successfully!"
+                      echo "Application URL: https://dev.citadelbuy.com"

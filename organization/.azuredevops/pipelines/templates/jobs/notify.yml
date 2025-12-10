@@ -1,0 +1,328 @@
+parameters:
+  - name: channel
+    type: string
+    displayName: 'Notification Channel'
+    default: 'teams'
+    values:
+      - slack
+      - teams
+      - email
+
+  - name: webhookUrl
+    type: string
+    displayName: 'Webhook URL'
+    default: ''
+
+  - name: message
+    type: string
+    displayName: 'Message Content'
+    default: ''
+
+  - name: severity
+    type: string
+    displayName: 'Message Severity'
+    default: 'info'
+    values:
+      - info
+      - warning
+      - critical
+
+  - name: includeDetails
+    type: boolean
+    displayName: 'Include Pipeline Details'
+    default: true
+
+steps:
+  - task: Bash@3
+    displayName: 'Send ${{ parameters.channel }} notification (${{ parameters.severity }})'
+    condition: and(succeeded(), ne('${{ parameters.webhookUrl }}', ''))
+    inputs:
+      targetType: 'inline'
+      script: |
+        echo "Preparing notification for ${{ parameters.channel }}..."
+
+        # Set color/theme based on severity
+        case "${{ parameters.severity }}" in
+          critical)
+            COLOR="#DC143C"  # Crimson
+            EMOJI="🔴"
+            THEME_COLOR="attention"
+            ;;
+          warning)
+            COLOR="#FFA500"  # Orange
+            EMOJI="⚠️"
+            THEME_COLOR="warning"
+            ;;
+          info|*)
+            COLOR="#0078D4"  # Azure Blue
+            EMOJI="ℹ️"
+            THEME_COLOR="default"
+            ;;
+        esac
+
+        echo "Severity: ${{ parameters.severity }} (Color: $COLOR)"
+
+        # Prepare common details
+        PIPELINE_NAME="$(Build.DefinitionName)"
+        BUILD_NUMBER="$(Build.BuildNumber)"
+        BUILD_URL="$(System.CollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)"
+        TRIGGERED_BY="$(Build.RequestedFor)"
+        TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+        # Prepare message content
+        MESSAGE_TEXT=$(cat <<'EOF'
+        ${{ parameters.message }}
+        EOF
+        )
+
+        # Send notification based on channel
+        case "${{ parameters.channel }}" in
+          teams)
+            echo "Sending Microsoft Teams notification..."
+
+            # Build Teams adaptive card
+            TEAMS_PAYLOAD=$(cat <<EOF
+        {
+          "type": "message",
+          "attachments": [
+            {
+              "contentType": "application/vnd.microsoft.card.adaptive",
+              "content": {
+                "type": "AdaptiveCard",
+                "body": [
+                  {
+                    "type": "TextBlock",
+                    "size": "large",
+                    "weight": "bolder",
+                    "text": "$EMOJI ${{ parameters.severity | upper }} Alert",
+                    "color": "$THEME_COLOR"
+                  },
+                  {
+                    "type": "TextBlock",
+                    "text": "${MESSAGE_TEXT}",
+                    "wrap": true
+                  },
+                  {
+                    "type": "FactSet",
+                    "facts": [
+                      {
+                        "title": "Pipeline:",
+                        "value": "$PIPELINE_NAME"
+                      },
+                      {
+                        "title": "Build:",
+                        "value": "$BUILD_NUMBER"
+                      },
+                      {
+                        "title": "Triggered by:",
+                        "value": "$TRIGGERED_BY"
+                      },
+                      {
+                        "title": "Time:",
+                        "value": "$TIMESTAMP"
+                      }
+                    ]
+                  }
+                ],
+                "actions": [
+                  {
+                    "type": "Action.OpenUrl",
+                    "title": "View Pipeline",
+                    "url": "$BUILD_URL"
+                  }
+                ],
+                "\$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                "version": "1.4"
+              }
+            }
+          ]
+        }
+        EOF
+        )
+
+            # Send to Teams webhook
+            HTTP_STATUS=$(curl -s -o /tmp/teams-response.txt -w "%{http_code}" \
+              -X POST \
+              -H "Content-Type: application/json" \
+              -d "$TEAMS_PAYLOAD" \
+              "${{ parameters.webhookUrl }}")
+
+            if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+              echo "##[section]Successfully sent Teams notification (HTTP $HTTP_STATUS)"
+            else
+              echo "##[warning]Failed to send Teams notification (HTTP $HTTP_STATUS)"
+              cat /tmp/teams-response.txt
+            fi
+            ;;
+
+          slack)
+            echo "Sending Slack notification..."
+
+            # Determine Slack color
+            case "${{ parameters.severity }}" in
+              critical)
+                SLACK_COLOR="danger"
+                ;;
+              warning)
+                SLACK_COLOR="warning"
+                ;;
+              info|*)
+                SLACK_COLOR="good"
+                ;;
+            esac
+
+            # Build Slack message
+            SLACK_PAYLOAD=$(cat <<EOF
+        {
+          "attachments": [
+            {
+              "color": "$SLACK_COLOR",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "$EMOJI ${{ parameters.severity | upper }} Alert"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${MESSAGE_TEXT}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Pipeline:*\n$PIPELINE_NAME"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Build:*\n$BUILD_NUMBER"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Triggered by:*\n$TRIGGERED_BY"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Time:*\n$TIMESTAMP"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Pipeline"
+                      },
+                      "url": "$BUILD_URL",
+                      "style": "primary"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+        EOF
+        )
+
+            # Send to Slack webhook
+            HTTP_STATUS=$(curl -s -o /tmp/slack-response.txt -w "%{http_code}" \
+              -X POST \
+              -H "Content-Type: application/json" \
+              -d "$SLACK_PAYLOAD" \
+              "${{ parameters.webhookUrl }}")
+
+            if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+              echo "##[section]Successfully sent Slack notification (HTTP $HTTP_STATUS)"
+            else
+              echo "##[warning]Failed to send Slack notification (HTTP $HTTP_STATUS)"
+              cat /tmp/slack-response.txt
+            fi
+            ;;
+
+          email)
+            echo "Sending email notification..."
+
+            # Build email content
+            EMAIL_SUBJECT="[${{ parameters.severity | upper }}] $PIPELINE_NAME - $BUILD_NUMBER"
+            EMAIL_BODY=$(cat <<EOF
+        $EMOJI ${{ parameters.severity | upper }} Alert
+
+        $MESSAGE_TEXT
+
+        Pipeline Details:
+        - Pipeline: $PIPELINE_NAME
+        - Build: $BUILD_NUMBER
+        - Triggered by: $TRIGGERED_BY
+        - Time: $TIMESTAMP
+
+        View full details: $BUILD_URL
+        EOF
+        )
+
+            # In Azure DevOps, use SendEmail REST API or Logic App
+            # For now, log the email content
+            echo "Email would be sent with subject: $EMAIL_SUBJECT"
+            echo ""
+            echo "Content:"
+            echo "$EMAIL_BODY"
+
+            # Note: Actual email sending would require additional Azure DevOps service connections
+            # or integration with Azure Logic Apps/SendGrid
+            ;;
+
+          *)
+            echo "##[error]Unknown notification channel: ${{ parameters.channel }}"
+            exit 1
+            ;;
+        esac
+
+        echo "Notification sent successfully"
+
+  - task: PowerShell@2
+    displayName: 'Log Notification'
+    condition: always()
+    inputs:
+      targetType: 'inline'
+      script: |
+        $notificationLog = @{
+          timestamp = Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ"
+          channel = "${{ parameters.channel }}"
+          severity = "${{ parameters.severity }}"
+          pipeline = "$(Build.DefinitionName)"
+          buildNumber = "$(Build.BuildNumber)"
+          message = @"
+        ${{ parameters.message }}
+        "@
+          success = $true
+        }
+
+        # Create log directory if it doesn't exist
+        $logDir = "$(Build.ArtifactStagingDirectory)/notifications"
+        if (!(Test-Path $logDir)) {
+          New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+        }
+
+        # Save notification log
+        $logFile = "$logDir/notification-$(Get-Date -Format 'yyyyMMdd-HHmmss').json"
+        $notificationLog | ConvertTo-Json -Depth 10 | Out-File $logFile
+
+        Write-Host "Notification logged to: $logFile"
+
+  - task: PublishPipelineArtifact@1
+    displayName: 'Publish Notification Logs'
+    condition: always()
+    inputs:
+      targetPath: '$(Build.ArtifactStagingDirectory)/notifications'
+      artifact: 'notification-logs-$(System.JobId)'
+      publishLocation: 'pipeline'
+    continueOnError: true

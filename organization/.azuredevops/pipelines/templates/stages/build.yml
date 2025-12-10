@@ -1,0 +1,116 @@
+# Application build stage
+# Builds all Node.js packages and generates Prisma client
+
+parameters:
+  - name: nodeVersion
+    type: string
+    default: '20'
+  - name: pnpmVersion
+    type: string
+    default: '10.23.0'
+  - name: workingDirectory
+    type: string
+    default: '$(System.DefaultWorkingDirectory)'
+  - name: buildCommand
+    type: string
+    default: 'build'
+  - name: publishArtifacts
+    type: boolean
+    default: true
+  - name: artifactName
+    type: string
+    default: 'build-artifacts'
+
+stages:
+  - stage: Build
+    displayName: 'Application Build'
+    jobs:
+      - job: BuildPackages
+        displayName: 'Build All Node.js Packages'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - template: ../jobs/setup-node.yml
+            parameters:
+              nodeVersion: ${{ parameters.nodeVersion }}
+              pnpmVersion: ${{ parameters.pnpmVersion }}
+              workingDirectory: ${{ parameters.workingDirectory }}
+
+          - script: |
+              pnpm --filter @citadelbuy/api run prisma:generate
+            displayName: 'Generate Prisma client'
+            workingDirectory: ${{ parameters.workingDirectory }}
+
+          - script: |
+              pnpm run ${{ parameters.buildCommand }}
+            displayName: 'Build all packages'
+            workingDirectory: ${{ parameters.workingDirectory }}
+
+          - task: CopyFiles@2
+            displayName: 'Copy API build artifacts'
+            condition: eq('${{ parameters.publishArtifacts }}', true)
+            inputs:
+              SourceFolder: '${{ parameters.workingDirectory }}/apps/api/dist'
+              Contents: '**'
+              TargetFolder: '$(Build.ArtifactStagingDirectory)/api/dist'
+              CleanTargetFolder: false
+
+          - task: CopyFiles@2
+            displayName: 'Copy API Prisma artifacts'
+            condition: eq('${{ parameters.publishArtifacts }}', true)
+            inputs:
+              SourceFolder: '${{ parameters.workingDirectory }}/apps/api/prisma'
+              Contents: '**'
+              TargetFolder: '$(Build.ArtifactStagingDirectory)/api/prisma'
+              CleanTargetFolder: false
+
+          - task: CopyFiles@2
+            displayName: 'Copy API node_modules (Prisma client)'
+            condition: eq('${{ parameters.publishArtifacts }}', true)
+            inputs:
+              SourceFolder: '${{ parameters.workingDirectory }}/apps/api/node_modules/.prisma'
+              Contents: '**'
+              TargetFolder: '$(Build.ArtifactStagingDirectory)/api/node_modules/.prisma'
+              CleanTargetFolder: false
+
+          - task: CopyFiles@2
+            displayName: 'Copy Web build artifacts'
+            condition: eq('${{ parameters.publishArtifacts }}', true)
+            inputs:
+              SourceFolder: '${{ parameters.workingDirectory }}/apps/web/.next'
+              Contents: '**'
+              TargetFolder: '$(Build.ArtifactStagingDirectory)/web/.next'
+              CleanTargetFolder: false
+
+          - task: CopyFiles@2
+            displayName: 'Copy Web public assets'
+            condition: eq('${{ parameters.publishArtifacts }}', true)
+            inputs:
+              SourceFolder: '${{ parameters.workingDirectory }}/apps/web/public'
+              Contents: '**'
+              TargetFolder: '$(Build.ArtifactStagingDirectory)/web/public'
+              CleanTargetFolder: false
+
+          - task: CopyFiles@2
+            displayName: 'Copy package.json files'
+            condition: eq('${{ parameters.publishArtifacts }}', true)
+            inputs:
+              SourceFolder: '${{ parameters.workingDirectory }}'
+              Contents: |
+                package.json
+                pnpm-lock.yaml
+                pnpm-workspace.yaml
+                apps/*/package.json
+              TargetFolder: '$(Build.ArtifactStagingDirectory)'
+              CleanTargetFolder: false
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish build artifacts'
+            condition: eq('${{ parameters.publishArtifacts }}', true)
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              ArtifactName: '${{ parameters.artifactName }}'
+              publishLocation: 'Container'

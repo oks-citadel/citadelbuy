@@ -1,0 +1,628 @@
+trigger: none
+
+schedules:
+  - cron: '*/15 * * * *'
+    displayName: 'Every 15 minutes'
+    branches:
+      include:
+        - main
+    always: true
+
+variables:
+  - group: monitoring-variables
+  - group: kubernetes-config
+  - group: terraform-variables
+  - name: aksClusterName
+    value: 'citadelbuy-aks-prod'
+  - name: aksResourceGroup
+    value: 'citadelbuy-prod-rg'
+  - name: acrName
+    value: 'citadelbuyacr'
+  - name: keyVaultName
+    value: 'citadelbuy-kv-prod'
+  - name: terraformWorkspace
+    value: 'production'
+  - name: reportPath
+    value: '$(Build.ArtifactStagingDirectory)/deployment-health.json'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+  - stage: MonitorDeployments
+    displayName: 'Monitor Deployment Health'
+    jobs:
+      - job: CheckAKSHealth
+        displayName: 'Check AKS Cluster Health'
+        steps:
+          - checkout: none
+
+          - task: AzureCLI@2
+            displayName: 'Connect to AKS Cluster'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Connecting to AKS cluster: $(aksClusterName)"
+
+                az aks get-credentials \
+                  --resource-group "$(aksResourceGroup)" \
+                  --name "$(aksClusterName)" \
+                  --overwrite-existing
+
+                echo "Successfully connected to cluster"
+
+          - task: Kubernetes@1
+            displayName: 'Check Pod Status'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: '$(azureServiceConnection)'
+              azureResourceGroup: '$(aksResourceGroup)'
+              kubernetesCluster: '$(aksClusterName)'
+              command: 'get'
+              arguments: 'pods --all-namespaces -o json'
+              outputFormat: 'json'
+
+          - task: Bash@3
+            displayName: 'Analyze Pod Health'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Analyzing pod health across all namespaces..."
+
+                # Get all pods
+                kubectl get pods --all-namespaces -o json > $(Build.ArtifactStagingDirectory)/all-pods.json
+
+                # Check for unhealthy pods
+                CRASH_LOOP=$(kubectl get pods --all-namespaces --field-selector=status.phase=Running -o json | \
+                  jq '[.items[] | select(.status.containerStatuses[]? | .restartCount > 5)] | length')
+
+                NOT_READY=$(kubectl get pods --all-namespaces --field-selector=status.phase!=Running,status.phase!=Succeeded -o json | \
+                  jq '.items | length')
+
+                PENDING=$(kubectl get pods --all-namespaces --field-selector=status.phase=Pending -o json | \
+                  jq '.items | length')
+
+                FAILED=$(kubectl get pods --all-namespaces --field-selector=status.phase=Failed -o json | \
+                  jq '.items | length')
+
+                echo "Pod Health Summary:"
+                echo "  CrashLoopBackOff (>5 restarts): $CRASH_LOOP"
+                echo "  Not Ready: $NOT_READY"
+                echo "  Pending: $PENDING"
+                echo "  Failed: $FAILED"
+
+                # Export variables
+                echo "##vso[task.setvariable variable=crashLoopCount;isOutput=true]$CRASH_LOOP"
+                echo "##vso[task.setvariable variable=notReadyCount;isOutput=true]$NOT_READY"
+                echo "##vso[task.setvariable variable=pendingCount;isOutput=true]$PENDING"
+                echo "##vso[task.setvariable variable=failedCount;isOutput=true]$FAILED"
+
+                # Get details of problematic pods
+                kubectl get pods --all-namespaces --field-selector=status.phase!=Running,status.phase!=Succeeded -o json | \
+                  jq '[.items[] | {namespace: .metadata.namespace, name: .metadata.name, phase: .status.phase, reason: .status.reason, message: .status.message}]' > \
+                  $(Build.ArtifactStagingDirectory)/unhealthy-pods.json
+
+                # Check for CrashLoopBackOff specifically
+                kubectl get pods --all-namespaces -o json | \
+                  jq '[.items[] | select(.status.containerStatuses[]? | .state.waiting.reason == "CrashLoopBackOff") | {namespace: .metadata.namespace, name: .metadata.name, restarts: .status.containerStatuses[0].restartCount}]' > \
+                  $(Build.ArtifactStagingDirectory)/crashloop-pods.json
+
+                cat $(Build.ArtifactStagingDirectory)/unhealthy-pods.json | jq '.'
+                cat $(Build.ArtifactStagingDirectory)/crashloop-pods.json | jq '.'
+
+                # Alert on critical issues
+                if [ $CRASH_LOOP -gt 0 ]; then
+                  echo "##[error]Found $CRASH_LOOP pods in CrashLoopBackOff state!"
+                fi
+
+                if [ $NOT_READY -gt 3 ]; then
+                  echo "##[warning]Found $NOT_READY pods not in Ready state"
+                fi
+            name: analyzePods
+
+          - task: Bash@3
+            displayName: 'Check HPA Status'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Checking Horizontal Pod Autoscaler status..."
+
+                # Get all HPAs
+                kubectl get hpa --all-namespaces -o json > $(Build.ArtifactStagingDirectory)/hpa-status.json
+
+                # Analyze HPA metrics
+                HPA_COUNT=$(kubectl get hpa --all-namespaces -o json | jq '.items | length')
+                echo "Found $HPA_COUNT HPA configurations"
+
+                if [ $HPA_COUNT -gt 0 ]; then
+                  # Check if any HPA is unable to get metrics
+                  UNHEALTHY_HPA=$(kubectl get hpa --all-namespaces -o json | \
+                    jq '[.items[] | select(.status.conditions[]? | .type == "AbleToScale" and .status == "False")] | length')
+
+                  echo "Unhealthy HPAs: $UNHEALTHY_HPA"
+
+                  if [ $UNHEALTHY_HPA -gt 0 ]; then
+                    echo "##[warning]Found $UNHEALTHY_HPA HPAs unable to scale"
+                    kubectl get hpa --all-namespaces -o json | \
+                      jq '[.items[] | select(.status.conditions[]? | .type == "AbleToScale" and .status == "False") | {namespace: .metadata.namespace, name: .metadata.name, reason: .status.conditions[0].reason, message: .status.conditions[0].message}]' | \
+                      jq '.'
+                  fi
+
+                  # Check for HPAs at max replicas
+                  AT_MAX=$(kubectl get hpa --all-namespaces -o json | \
+                    jq '[.items[] | select(.status.currentReplicas == .spec.maxReplicas)] | length')
+
+                  if [ $AT_MAX -gt 0 ]; then
+                    echo "##[warning]$AT_MAX HPAs are at maximum replica count - consider increasing limits"
+                  fi
+                fi
+
+                echo "##vso[task.setvariable variable=hpaCount;isOutput=true]$HPA_COUNT"
+                echo "##vso[task.setvariable variable=unhealthyHpaCount;isOutput=true]$UNHEALTHY_HPA"
+            name: checkHpa
+
+          - task: Bash@3
+            displayName: 'Check Node Health'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Checking AKS node health..."
+
+                # Get node status
+                kubectl get nodes -o json > $(Build.ArtifactStagingDirectory)/node-status.json
+
+                # Count nodes by status
+                TOTAL_NODES=$(kubectl get nodes -o json | jq '.items | length')
+                READY_NODES=$(kubectl get nodes -o json | jq '[.items[] | select(.status.conditions[] | .type == "Ready" and .status == "True")] | length')
+                NOT_READY_NODES=$((TOTAL_NODES - READY_NODES))
+
+                echo "Node Status:"
+                echo "  Total nodes: $TOTAL_NODES"
+                echo "  Ready nodes: $READY_NODES"
+                echo "  Not ready nodes: $NOT_READY_NODES"
+
+                if [ $NOT_READY_NODES -gt 0 ]; then
+                  echo "##[error]Found $NOT_READY_NODES nodes not in Ready state!"
+                  kubectl get nodes -o json | \
+                    jq '[.items[] | select(.status.conditions[] | .type == "Ready" and .status != "True") | {name: .metadata.name, status: .status.conditions}]' | \
+                    jq '.'
+                fi
+
+                # Check node resource utilization
+                kubectl top nodes > $(Build.ArtifactStagingDirectory)/node-metrics.txt || echo "Metrics server not available"
+                cat $(Build.ArtifactStagingDirectory)/node-metrics.txt
+
+                echo "##vso[task.setvariable variable=totalNodes;isOutput=true]$TOTAL_NODES"
+                echo "##vso[task.setvariable variable=readyNodes;isOutput=true]$READY_NODES"
+            name: checkNodes
+
+      - job: CheckImageVersions
+        displayName: 'Check Image Versions and Drift'
+        dependsOn: []
+        steps:
+          - checkout: self
+
+          - task: AzureCLI@2
+            displayName: 'Get Latest ACR Images'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Fetching latest image tags from ACR: $(acrName)"
+
+                # Get latest tags for each repository
+                REPOS=$(az acr repository list --name "$(acrName)" -o json)
+                echo "Repositories: $REPOS"
+
+                declare -A LATEST_IMAGES
+
+                for repo in $(echo "$REPOS" | jq -r '.[]'); do
+                  echo "Checking repository: $repo"
+
+                  # Get latest tag (excluding 'latest' tag, get most recent semantic version or build number)
+                  LATEST_TAG=$(az acr repository show-tags \
+                    --name "$(acrName)" \
+                    --repository "$repo" \
+                    --orderby time_desc \
+                    --top 1 \
+                    --query "[?@ != 'latest'] | [0]" \
+                    -o tsv)
+
+                  if [ -n "$LATEST_TAG" ]; then
+                    FULL_IMAGE="$(acrName).azurecr.io/${repo}:${LATEST_TAG}"
+                    echo "Latest image: $FULL_IMAGE"
+                    LATEST_IMAGES[$repo]=$FULL_IMAGE
+                  fi
+                done
+
+                # Save latest images
+                for repo in "${!LATEST_IMAGES[@]}"; do
+                  echo "$repo=${LATEST_IMAGES[$repo]}"
+                done > $(Build.ArtifactStagingDirectory)/latest-images.txt
+
+                cat $(Build.ArtifactStagingDirectory)/latest-images.txt
+
+          - task: AzureCLI@2
+            displayName: 'Get Deployed Images from AKS'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Connecting to AKS cluster..."
+
+                az aks get-credentials \
+                  --resource-group "$(aksResourceGroup)" \
+                  --name "$(aksClusterName)" \
+                  --overwrite-existing
+
+                echo "Fetching deployed images from all namespaces..."
+
+                # Get all deployed images
+                kubectl get pods --all-namespaces -o json | \
+                  jq -r '.items[] | .spec.containers[] | .image' | \
+                  sort -u > $(Build.ArtifactStagingDirectory)/deployed-images.txt
+
+                echo "Deployed images:"
+                cat $(Build.ArtifactStagingDirectory)/deployed-images.txt
+
+          - task: Bash@3
+            displayName: 'Detect Image Drift'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Analyzing image version drift..."
+
+                DRIFT_FOUND=0
+                DRIFT_DETAILS=""
+
+                # Compare latest ACR images with deployed images
+                while IFS='=' read -r repo latest_image; do
+                  echo "Checking $repo..."
+
+                  # Extract image name without registry
+                  DEPLOYED_IMAGE=$(grep "$repo" $(Build.ArtifactStagingDirectory)/deployed-images.txt | head -1)
+
+                  if [ -n "$DEPLOYED_IMAGE" ]; then
+                    if [ "$DEPLOYED_IMAGE" != "$latest_image" ]; then
+                      echo "##[warning]Drift detected for $repo"
+                      echo "  Latest in ACR: $latest_image"
+                      echo "  Deployed in AKS: $DEPLOYED_IMAGE"
+                      DRIFT_FOUND=$((DRIFT_FOUND + 1))
+                      DRIFT_DETAILS="${DRIFT_DETAILS}${repo}: ${DEPLOYED_IMAGE} (should be ${latest_image})\n"
+                    else
+                      echo "  ✓ $repo is up to date"
+                    fi
+                  else
+                    echo "  ! $repo not found in deployed images"
+                  fi
+                done < $(Build.ArtifactStagingDirectory)/latest-images.txt
+
+                echo ""
+                echo "Drift Summary: $DRIFT_FOUND image(s) out of sync"
+
+                if [ $DRIFT_FOUND -gt 0 ]; then
+                  echo "##[warning]Found $DRIFT_FOUND images with version drift"
+                  echo -e "$DRIFT_DETAILS" > $(Build.ArtifactStagingDirectory)/drift-details.txt
+                fi
+
+                echo "##vso[task.setvariable variable=driftCount;isOutput=true]$DRIFT_FOUND"
+            name: detectDrift
+
+          - task: Bash@3
+            displayName: 'Check Image Pull Errors'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Checking for image pull errors..."
+
+                # Find pods with ImagePullBackOff
+                kubectl get pods --all-namespaces -o json | \
+                  jq '[.items[] | select(.status.containerStatuses[]? | .state.waiting.reason == "ImagePullBackOff" or .state.waiting.reason == "ErrImagePull") | {namespace: .metadata.namespace, name: .metadata.name, image: .spec.containers[0].image, reason: .status.containerStatuses[0].state.waiting.reason, message: .status.containerStatuses[0].state.waiting.message}]' > \
+                  $(Build.ArtifactStagingDirectory)/image-pull-errors.json
+
+                PULL_ERROR_COUNT=$(cat $(Build.ArtifactStagingDirectory)/image-pull-errors.json | jq 'length')
+
+                if [ $PULL_ERROR_COUNT -gt 0 ]; then
+                  echo "##[error]Found $PULL_ERROR_COUNT pods with image pull errors!"
+                  cat $(Build.ArtifactStagingDirectory)/image-pull-errors.json | jq '.'
+                else
+                  echo "No image pull errors found"
+                fi
+
+      - job: CheckSecretsSync
+        displayName: 'Check Secrets Synchronization'
+        dependsOn: []
+        steps:
+          - checkout: none
+
+          - task: AzureCLI@2
+            displayName: 'Connect to AKS'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az aks get-credentials \
+                  --resource-group "$(aksResourceGroup)" \
+                  --name "$(aksClusterName)" \
+                  --overwrite-existing
+
+          - task: AzureCLI@2
+            displayName: 'Check Key Vault Secrets'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Fetching secrets from Key Vault: $(keyVaultName)"
+
+                # List all secrets in Key Vault
+                az keyvault secret list \
+                  --vault-name "$(keyVaultName)" \
+                  --query "[].{name:name,updated:attributes.updated}" \
+                  -o json > $(Build.ArtifactStagingDirectory)/keyvault-secrets.json
+
+                KV_SECRET_COUNT=$(cat $(Build.ArtifactStagingDirectory)/keyvault-secrets.json | jq 'length')
+                echo "Found $KV_SECRET_COUNT secrets in Key Vault"
+
+                cat $(Build.ArtifactStagingDirectory)/keyvault-secrets.json | jq '.'
+
+          - task: Bash@3
+            displayName: 'Check Kubernetes Secrets'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Checking Kubernetes secrets..."
+
+                # Get secrets in application namespaces
+                for namespace in citadelbuy-prod citadelbuy-staging default; do
+                  if kubectl get namespace "$namespace" &> /dev/null; then
+                    echo "Checking secrets in namespace: $namespace"
+
+                    kubectl get secrets -n "$namespace" -o json | \
+                      jq --arg ns "$namespace" '[.items[] | {namespace: $ns, name: .metadata.name, type: .type, created: .metadata.creationTimestamp}]' >> \
+                      $(Build.ArtifactStagingDirectory)/k8s-secrets.json
+                  fi
+                done
+
+                # Format JSON properly
+                jq -s 'add' $(Build.ArtifactStagingDirectory)/k8s-secrets.json > $(Build.ArtifactStagingDirectory)/k8s-secrets-formatted.json
+
+                K8S_SECRET_COUNT=$(cat $(Build.ArtifactStagingDirectory)/k8s-secrets-formatted.json | jq 'length')
+                echo "Found $K8S_SECRET_COUNT secrets in Kubernetes"
+
+          - task: Bash@3
+            displayName: 'Verify CSI Secret Driver'
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Checking Azure Key Vault CSI driver status..."
+
+                # Check if CSI driver is installed
+                if kubectl get csidriver secrets-store.csi.k8s.io &> /dev/null; then
+                  echo "✓ CSI driver is installed"
+
+                  # Check SecretProviderClass resources
+                  kubectl get secretproviderclass --all-namespaces -o json > \
+                    $(Build.ArtifactStagingDirectory)/secret-provider-class.json
+
+                  SPC_COUNT=$(cat $(Build.ArtifactStagingDirectory)/secret-provider-class.json | jq '.items | length')
+                  echo "Found $SPC_COUNT SecretProviderClass resources"
+
+                  if [ $SPC_COUNT -eq 0 ]; then
+                    echo "##[warning]No SecretProviderClass resources found - secrets may not be syncing from Key Vault"
+                  fi
+
+                  # Check for sync errors
+                  kubectl get events --all-namespaces --field-selector type=Warning -o json | \
+                    jq '[.items[] | select(.reason | contains("FailedMount") or contains("SecretSync"))]' > \
+                    $(Build.ArtifactStagingDirectory)/secret-sync-errors.json
+
+                  ERROR_COUNT=$(cat $(Build.ArtifactStagingDirectory)/secret-sync-errors.json | jq 'length')
+
+                  if [ $ERROR_COUNT -gt 0 ]; then
+                    echo "##[error]Found $ERROR_COUNT secret sync errors!"
+                    cat $(Build.ArtifactStagingDirectory)/secret-sync-errors.json | jq '.'
+                  else
+                    echo "No secret sync errors detected"
+                  fi
+                else
+                  echo "##[warning]Azure Key Vault CSI driver not found - manual secret management in use"
+                fi
+
+      - job: CheckTerraformDrift
+        displayName: 'Check Terraform Drift'
+        dependsOn: []
+        steps:
+          - checkout: self
+
+          - task: TerraformInstaller@0
+            displayName: 'Install Terraform'
+            inputs:
+              terraformVersion: 'latest'
+
+          - task: AzureCLI@2
+            displayName: 'Initialize Terraform'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+              inlineScript: |
+                echo "Initializing Terraform..."
+
+                # Configure Azure backend
+                terraform init \
+                  -backend-config="resource_group_name=$(terraformStateResourceGroup)" \
+                  -backend-config="storage_account_name=$(terraformStateStorageAccount)" \
+                  -backend-config="container_name=$(terraformStateContainer)" \
+                  -backend-config="key=$(terraformStateKey)"
+
+                # Select workspace
+                terraform workspace select "$(terraformWorkspace)" || terraform workspace new "$(terraformWorkspace)"
+
+          - task: AzureCLI@2
+            displayName: 'Run Terraform Plan'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+              inlineScript: |
+                echo "Running Terraform plan to detect drift..."
+
+                # Run plan with detailed output
+                terraform plan -detailed-exitcode -out=tfplan 2>&1 | tee $(Build.ArtifactStagingDirectory)/terraform-plan.txt
+
+                PLAN_EXIT_CODE=${PIPESTATUS[0]}
+
+                echo "Terraform plan exit code: $PLAN_EXIT_CODE"
+
+                # Exit code 0 = no changes, 1 = error, 2 = changes detected
+                if [ $PLAN_EXIT_CODE -eq 0 ]; then
+                  echo "##[section]No infrastructure drift detected"
+                  echo "##vso[task.setvariable variable=driftDetected;isOutput=true]false"
+                elif [ $PLAN_EXIT_CODE -eq 2 ]; then
+                  echo "##[warning]Infrastructure drift detected!"
+
+                  # Generate JSON plan for detailed analysis
+                  terraform show -json tfplan > $(Build.ArtifactStagingDirectory)/terraform-plan.json
+
+                  # Count changes
+                  CHANGES=$(cat $(Build.ArtifactStagingDirectory)/terraform-plan.json | \
+                    jq '[.resource_changes[] | select(.change.actions | length > 0)] | length')
+
+                  echo "Total resource changes: $CHANGES"
+                  echo "##vso[task.setvariable variable=driftDetected;isOutput=true]true"
+                  echo "##vso[task.setvariable variable=changeCount;isOutput=true]$CHANGES"
+
+                  # Summarize changes
+                  cat $(Build.ArtifactStagingDirectory)/terraform-plan.json | \
+                    jq '[.resource_changes[] | {resource: .address, actions: .change.actions}]' | \
+                    jq '.' > $(Build.ArtifactStagingDirectory)/terraform-changes.json
+
+                  echo "Change summary:"
+                  cat $(Build.ArtifactStagingDirectory)/terraform-changes.json
+                else
+                  echo "##[error]Terraform plan failed with exit code $PLAN_EXIT_CODE"
+                  exit 1
+                fi
+            name: terraformPlan
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Terraform Plan'
+            condition: always()
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)'
+              artifact: 'terraform-drift-report'
+              publishLocation: 'pipeline'
+
+          - task: PowerShell@2
+            displayName: 'Alert on Critical Drift'
+            condition: and(succeeded(), eq(variables['terraformPlan.driftDetected'], 'true'))
+            inputs:
+              targetType: 'inline'
+              script: |
+                Write-Host "##[warning]Terraform drift detected - infrastructure state does not match code"
+
+                if (Test-Path "$(Build.ArtifactStagingDirectory)/terraform-changes.json") {
+                  $changes = Get-Content "$(Build.ArtifactStagingDirectory)/terraform-changes.json" | ConvertFrom-Json
+
+                  Write-Host ""
+                  Write-Host "Affected resources:"
+
+                  foreach ($change in $changes) {
+                    $actions = $change.actions -join ", "
+                    Write-Host "  - $($change.resource): $actions"
+
+                    # Alert on destructive changes
+                    if ($change.actions -contains "delete" -or $change.actions -contains "replace") {
+                      Write-Host "##[error]Critical: Resource $($change.resource) will be deleted or replaced!"
+                    }
+                  }
+                }
+
+      - job: GenerateDeploymentReport
+        displayName: 'Generate Deployment Health Report'
+        dependsOn:
+          - CheckAKSHealth
+          - CheckImageVersions
+          - CheckSecretsSync
+          - CheckTerraformDrift
+        condition: always()
+        variables:
+          crashLoopPods: $[ dependencies.CheckAKSHealth.outputs['analyzePods.crashLoopCount'] ]
+          notReadyPods: $[ dependencies.CheckAKSHealth.outputs['analyzePods.notReadyCount'] ]
+          imageDrift: $[ dependencies.CheckImageVersions.outputs['detectDrift.driftCount'] ]
+          terraformDrift: $[ dependencies.CheckTerraformDrift.outputs['terraformPlan.driftDetected'] ]
+        steps:
+          - checkout: none
+
+          - task: PowerShell@2
+            displayName: 'Generate Consolidated Report'
+            inputs:
+              targetType: 'inline'
+              script: |
+                Write-Host "##[section]Deployment Health Report"
+                Write-Host "===================================="
+                Write-Host ""
+                Write-Host "Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss UTC')"
+                Write-Host ""
+
+                $report = @{
+                  timestamp = Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ"
+                  cluster = "$(aksClusterName)"
+                  metrics = @{
+                    crashLoopPods = "$(crashLoopPods)"
+                    notReadyPods = "$(notReadyPods)"
+                    imageDrift = "$(imageDrift)"
+                    terraformDrift = "$(terraformDrift)"
+                  }
+                  status = "healthy"
+                  issues = @()
+                }
+
+                Write-Host "Metrics:"
+                Write-Host "  - CrashLoopBackOff pods: $(crashLoopPods)"
+                Write-Host "  - Not ready pods: $(notReadyPods)"
+                Write-Host "  - Images with drift: $(imageDrift)"
+                Write-Host "  - Terraform drift detected: $(terraformDrift)"
+                Write-Host ""
+
+                # Determine overall status
+                if ("$(crashLoopPods)" -gt 0) {
+                  $report.status = "critical"
+                  $report.issues += "Critical: $(crashLoopPods) pods in CrashLoopBackOff"
+                  Write-Host "##[error]Status: CRITICAL"
+                } elseif ("$(notReadyPods)" -gt 3 -or "$(terraformDrift)" -eq "true") {
+                  $report.status = "degraded"
+                  Write-Host "##[warning]Status: DEGRADED"
+                } else {
+                  Write-Host "##[section]Status: HEALTHY"
+                }
+
+                $report | ConvertTo-Json -Depth 10 | Out-File "$(reportPath)"
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Health Report'
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)'
+              artifact: 'deployment-health-report'
+              publishLocation: 'pipeline'
+
+          - template: ../templates/jobs/notify.yml
+            parameters:
+              channel: 'teams'
+              webhookUrl: '$(teamsWebhookUrl)'
+              message: |
+                Deployment Health Check
+
+                CrashLoop pods: $(crashLoopPods)
+                Not ready pods: $(notReadyPods)
+                Image drift: $(imageDrift)
+                Terraform drift: $(terraformDrift)
+              severity: 'info'

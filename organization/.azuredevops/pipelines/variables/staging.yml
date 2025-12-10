@@ -1,0 +1,36 @@
+# Staging Environment Variables
+# These variables are specific to the staging environment
+
+variables:
+  # Environment Identifier
+  ENVIRONMENT_NAME: 'staging'
+  ENVIRONMENT_SHORT: 'staging'
+
+  # Azure Kubernetes Service (AKS) Configuration
+  AKS_RESOURCE_GROUP: 'citadelbuy-staging-rg'
+  AKS_CLUSTER_NAME: 'citadelbuy-staging-aks'
+  K8S_NAMESPACE: 'citadelbuy-staging'
+
+  # Application URLs
+  API_URL: 'https://staging-api.citadelbuy.com'
+  WEB_URL: 'https://staging.citadelbuy.com'
+
+  # Docker Image Tags
+  IMAGE_TAG: 'staging-$(Build.BuildId)'
+  IMAGE_TAG_LATEST: 'staging-latest'
+
+  # Deployment Configuration
+  DEPLOYMENT_REPLICAS: '2'
+
+  # Feature Flags
+  ENABLE_DEBUG_LOGGING: 'true'
+  ENABLE_HOT_RELOAD: 'false'
+
+  # Resource Limits (for K8s)
+  CPU_REQUEST: '200m'
+  CPU_LIMIT: '1000m'
+  MEMORY_REQUEST: '512Mi'
+  MEMORY_LIMIT: '2Gi'
+
+  # Performance Testing
+  ENABLE_PERFORMANCE_TESTS: 'true'

@@ -1,0 +1,372 @@
+# Container Security Stage
+# Comprehensive security scanning for containers and filesystems
+
+parameters:
+  - name: registry
+    type: string
+    default: 'citadelbuyacr.azurecr.io'
+    displayName: 'Container registry'
+
+  - name: serviceConnection
+    type: string
+    default: 'CitadelBuyACR'
+    displayName: 'ACR service connection name'
+
+  - name: scanFilesystem
+    type: boolean
+    default: true
+    displayName: 'Run filesystem vulnerability scan'
+
+  - name: generateSBOM
+    type: boolean
+    default: true
+    displayName: 'Generate Software Bill of Materials'
+
+  - name: imagesToScan
+    type: object
+    default:
+      - 'citadelbuy/api'
+      - 'citadelbuy/web'
+      - 'citadelbuy/inventory-service'
+      - 'citadelbuy/media-service'
+      - 'citadelbuy/notification-service'
+      - 'citadelbuy/personalization-service'
+
+  - name: severityThreshold
+    type: string
+    default: 'CRITICAL,HIGH'
+    displayName: 'Vulnerability severity threshold'
+
+stages:
+  - stage: ContainerSecurity
+    displayName: 'Container Security Scanning'
+    dependsOn: []
+
+    jobs:
+      # Filesystem Security Scan
+      - ${{ if eq(parameters.scanFilesystem, true) }}:
+        - job: FilesystemScan
+          displayName: 'Filesystem Vulnerability Scan'
+          pool:
+            vmImage: 'ubuntu-latest'
+
+          steps:
+            - checkout: self
+              displayName: 'Checkout source code'
+              fetchDepth: 1
+
+            - script: |
+                echo "##[section]Installing Trivy Security Scanner"
+                wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+                echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+                sudo apt-get update
+                sudo apt-get install -y trivy
+                trivy --version
+              displayName: 'Install Trivy Scanner'
+
+            - script: |
+                echo "##[section]Scanning Filesystem for Vulnerabilities"
+
+                # Scan repository filesystem
+                trivy fs \
+                  --severity ${{ parameters.severityThreshold }},MEDIUM \
+                  --format json \
+                  --output $(Build.ArtifactStagingDirectory)/trivy-filesystem-report.json \
+                  $(Build.SourcesDirectory)/CitadelBuy/organization
+
+                trivy fs \
+                  --severity ${{ parameters.severityThreshold }},MEDIUM \
+                  --format table \
+                  --output $(Build.ArtifactStagingDirectory)/trivy-filesystem-report.txt \
+                  $(Build.SourcesDirectory)/CitadelBuy/organization
+
+                trivy fs \
+                  --severity ${{ parameters.severityThreshold }},MEDIUM \
+                  --format sarif \
+                  --output $(Build.ArtifactStagingDirectory)/trivy-filesystem-report.sarif \
+                  $(Build.SourcesDirectory)/CitadelBuy/organization
+
+                echo "##[section]Filesystem Scan Results"
+                trivy fs \
+                  --severity ${{ parameters.severityThreshold }},MEDIUM \
+                  --format table \
+                  $(Build.SourcesDirectory)/CitadelBuy/organization
+              displayName: 'Run Filesystem Vulnerability Scan'
+              continueOnError: true
+
+            - script: |
+                echo "##[section]Scanning for Secrets and Credentials"
+
+                trivy fs \
+                  --scanners secret \
+                  --format json \
+                  --output $(Build.ArtifactStagingDirectory)/trivy-secrets-report.json \
+                  $(Build.SourcesDirectory)/CitadelBuy/organization
+
+                trivy fs \
+                  --scanners secret \
+                  --format table \
+                  --output $(Build.ArtifactStagingDirectory)/trivy-secrets-report.txt \
+                  $(Build.SourcesDirectory)/CitadelBuy/organization
+
+                echo "##[section]Secret Scan Results"
+                trivy fs \
+                  --scanners secret \
+                  --format table \
+                  $(Build.SourcesDirectory)/CitadelBuy/organization || {
+                  echo "##vso[task.logissue type=error]Secrets or credentials detected in repository!"
+                }
+              displayName: 'Scan for Secrets'
+              continueOnError: true
+
+            - script: |
+                echo "##[section]Scanning for Misconfigurations"
+
+                trivy fs \
+                  --scanners config \
+                  --severity ${{ parameters.severityThreshold }},MEDIUM \
+                  --format json \
+                  --output $(Build.ArtifactStagingDirectory)/trivy-config-report.json \
+                  $(Build.SourcesDirectory)/CitadelBuy/organization
+
+                trivy fs \
+                  --scanners config \
+                  --severity ${{ parameters.severityThreshold }},MEDIUM \
+                  --format table \
+                  --output $(Build.ArtifactStagingDirectory)/trivy-config-report.txt \
+                  $(Build.SourcesDirectory)/CitadelBuy/organization
+
+                echo "##[section]Configuration Scan Results"
+                trivy fs \
+                  --scanners config \
+                  --severity ${{ parameters.severityThreshold }},MEDIUM \
+                  --format table \
+                  $(Build.SourcesDirectory)/CitadelBuy/organization
+              displayName: 'Scan for Misconfigurations'
+              continueOnError: true
+
+            - task: PublishBuildArtifacts@1
+              displayName: 'Publish Filesystem Scan Results'
+              inputs:
+                pathToPublish: '$(Build.ArtifactStagingDirectory)'
+                artifactName: 'trivy-filesystem-scan'
+                publishLocation: 'Container'
+              condition: always()
+
+      # Container Image Security Scans
+      - job: ContainerImageScan
+        displayName: 'Container Image Vulnerability Scan'
+        pool:
+          vmImage: 'ubuntu-latest'
+
+        steps:
+          - script: |
+              echo "##[section]Installing Trivy Security Scanner"
+              wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+              echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+              sudo apt-get update
+              sudo apt-get install -y trivy
+              trivy --version
+            displayName: 'Install Trivy Scanner'
+
+          - task: Docker@2
+            displayName: 'Login to Azure Container Registry'
+            inputs:
+              command: 'login'
+              containerRegistry: '${{ parameters.serviceConnection }}'
+
+          - pwsh: |
+              $shortSha = "$(Build.SourceVersion)".Substring(0, 7)
+              Write-Host "##vso[task.setvariable variable=shortSha]$shortSha"
+            displayName: 'Get Short SHA'
+
+          - ${{ each image in parameters.imagesToScan }}:
+            - script: |
+                echo "##[section]Scanning Image: ${{ parameters.registry }}/${{ image }}:$(shortSha)"
+
+                IMAGE_NAME="${{ image }}"
+                SAFE_IMAGE_NAME=$(echo "$IMAGE_NAME" | tr '/' '-')
+
+                # Pull the image
+                docker pull ${{ parameters.registry }}/${{ image }}:$(shortSha)
+
+                # Run comprehensive Trivy scan
+                trivy image \
+                  --severity ${{ parameters.severityThreshold }},MEDIUM \
+                  --format json \
+                  --output $(Build.ArtifactStagingDirectory)/trivy-${SAFE_IMAGE_NAME}-scan.json \
+                  ${{ parameters.registry }}/${{ image }}:$(shortSha)
+
+                trivy image \
+                  --severity ${{ parameters.severityThreshold }},MEDIUM \
+                  --format table \
+                  --output $(Build.ArtifactStagingDirectory)/trivy-${SAFE_IMAGE_NAME}-scan.txt \
+                  ${{ parameters.registry }}/${{ image }}:$(shortSha)
+
+                trivy image \
+                  --severity ${{ parameters.severityThreshold }},MEDIUM \
+                  --format sarif \
+                  --output $(Build.ArtifactStagingDirectory)/trivy-${SAFE_IMAGE_NAME}-scan.sarif \
+                  ${{ parameters.registry }}/${{ image }}:$(shortSha)
+
+                # Display results
+                echo "##[section]Vulnerability Scan Results for ${{ image }}"
+                trivy image \
+                  --severity ${{ parameters.severityThreshold }},MEDIUM \
+                  --format table \
+                  ${{ parameters.registry }}/${{ image }}:$(shortSha)
+
+                # Check for CRITICAL vulnerabilities
+                trivy image \
+                  --severity CRITICAL \
+                  --exit-code 1 \
+                  ${{ parameters.registry }}/${{ image }}:$(shortSha) || {
+                  echo "##vso[task.logissue type=warning]CRITICAL vulnerabilities found in ${{ image }}"
+                }
+              displayName: 'Scan ${{ image }}'
+              continueOnError: true
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Container Scan Results'
+            inputs:
+              pathToPublish: '$(Build.ArtifactStagingDirectory)'
+              artifactName: 'trivy-container-scans'
+              publishLocation: 'Container'
+            condition: always()
+
+      # Software Bill of Materials (SBOM) Generation
+      - ${{ if eq(parameters.generateSBOM, true) }}:
+        - job: SBOMGeneration
+          displayName: 'Generate Software Bill of Materials'
+          pool:
+            vmImage: 'ubuntu-latest'
+
+          steps:
+            - script: |
+                echo "##[section]Installing Trivy and SBOM Tools"
+                wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+                echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+                sudo apt-get update
+                sudo apt-get install -y trivy
+
+                # Install Syft for SBOM generation
+                curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
+                trivy --version
+                syft version
+              displayName: 'Install SBOM Tools'
+
+            - task: Docker@2
+              displayName: 'Login to Azure Container Registry'
+              inputs:
+                command: 'login'
+                containerRegistry: '${{ parameters.serviceConnection }}'
+
+            - pwsh: |
+                $shortSha = "$(Build.SourceVersion)".Substring(0, 7)
+                Write-Host "##vso[task.setvariable variable=shortSha]$shortSha"
+              displayName: 'Get Short SHA'
+
+            - ${{ each image in parameters.imagesToScan }}:
+              - script: |
+                  echo "##[section]Generating SBOM for: ${{ parameters.registry }}/${{ image }}:$(shortSha)"
+
+                  IMAGE_NAME="${{ image }}"
+                  SAFE_IMAGE_NAME=$(echo "$IMAGE_NAME" | tr '/' '-')
+
+                  # Pull the image
+                  docker pull ${{ parameters.registry }}/${{ image }}:$(shortSha)
+
+                  # Generate SBOM with Trivy (CycloneDX format)
+                  trivy image \
+                    --format cyclonedx \
+                    --output $(Build.ArtifactStagingDirectory)/sbom-${SAFE_IMAGE_NAME}-cyclonedx.json \
+                    ${{ parameters.registry }}/${{ image }}:$(shortSha)
+
+                  # Generate SBOM with Trivy (SPDX format)
+                  trivy image \
+                    --format spdx-json \
+                    --output $(Build.ArtifactStagingDirectory)/sbom-${SAFE_IMAGE_NAME}-spdx.json \
+                    ${{ parameters.registry }}/${{ image }}:$(shortSha)
+
+                  # Generate SBOM with Syft (multiple formats)
+                  syft ${{ parameters.registry }}/${{ image }}:$(shortSha) \
+                    -o cyclonedx-json \
+                    --file $(Build.ArtifactStagingDirectory)/sbom-${SAFE_IMAGE_NAME}-syft-cyclonedx.json
+
+                  syft ${{ parameters.registry }}/${{ image }}:$(shortSha) \
+                    -o spdx-json \
+                    --file $(Build.ArtifactStagingDirectory)/sbom-${SAFE_IMAGE_NAME}-syft-spdx.json
+
+                  syft ${{ parameters.registry }}/${{ image }}:$(shortSha) \
+                    -o table \
+                    --file $(Build.ArtifactStagingDirectory)/sbom-${SAFE_IMAGE_NAME}-table.txt
+
+                  echo "##[section]SBOM generated successfully for ${{ image }}"
+                displayName: 'Generate SBOM for ${{ image }}'
+                continueOnError: true
+
+            - task: PublishBuildArtifacts@1
+              displayName: 'Publish SBOM Artifacts'
+              inputs:
+                pathToPublish: '$(Build.ArtifactStagingDirectory)'
+                artifactName: 'sbom-reports'
+                publishLocation: 'Container'
+              condition: always()
+
+      # Security Report Consolidation
+      - job: SecurityReportConsolidation
+        displayName: 'Consolidate Security Reports'
+        dependsOn:
+          - ${{ if eq(parameters.scanFilesystem, true) }}:
+            - FilesystemScan
+          - ContainerImageScan
+          - ${{ if eq(parameters.generateSBOM, true) }}:
+            - SBOMGeneration
+        pool:
+          vmImage: 'ubuntu-latest'
+        condition: always()
+
+        steps:
+          - download: current
+            displayName: 'Download All Security Artifacts'
+
+          - pwsh: |
+              Write-Host "##[section]================================================"
+              Write-Host "##[section]CitadelBuy Container Security Summary"
+              Write-Host "##[section]================================================"
+              Write-Host ""
+              Write-Host "Build ID: $(Build.BuildId)"
+              Write-Host "Source Version: $(Build.SourceVersion)"
+              Write-Host "Branch: $(Build.SourceBranchName)"
+              Write-Host "Scan Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+              Write-Host ""
+              Write-Host "##[section]Security Scans Performed:"
+              Write-Host "  - Filesystem vulnerability scan: ${{ parameters.scanFilesystem }}"
+              Write-Host "  - Container image vulnerability scan: true"
+              Write-Host "  - SBOM generation: ${{ parameters.generateSBOM }}"
+              Write-Host "  - Secret detection: ${{ parameters.scanFilesystem }}"
+              Write-Host "  - Configuration scanning: ${{ parameters.scanFilesystem }}"
+              Write-Host ""
+              Write-Host "##[section]Images Scanned:"
+              ${{ each image in parameters.imagesToScan }}:
+                Write-Host "  - ${{ image }}"
+              Write-Host ""
+              Write-Host "##[section]Severity Threshold: ${{ parameters.severityThreshold }}"
+              Write-Host ""
+              Write-Host "##[section]Artifacts Published:"
+              Write-Host "  - trivy-filesystem-scan (if enabled)"
+              Write-Host "  - trivy-container-scans"
+              Write-Host "  - sbom-reports (if enabled)"
+              Write-Host ""
+              Write-Host "##[section]Review the published artifacts for detailed findings."
+              Write-Host "##[section]================================================"
+            displayName: 'Generate Security Summary Report'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Consolidated Security Report'
+            inputs:
+              pathToPublish: '$(Pipeline.Workspace)'
+              artifactName: 'security-scan-results'
+              publishLocation: 'Container'
+            condition: always()

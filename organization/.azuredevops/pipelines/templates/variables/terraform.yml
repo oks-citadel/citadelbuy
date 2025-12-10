@@ -1,0 +1,249 @@
+# Terraform Pipeline Variables
+# Centralized configuration for Terraform operations across all environments
+
+variables:
+  # Terraform Configuration
+  TF_VERSION: '1.6.0'
+  TF_IN_AUTOMATION: 'true'
+  TF_INPUT: 'false'
+  TF_CLI_ARGS: '-no-color'
+
+  # Azure Subscription
+  ARM_SUBSCRIPTION_ID: 'ba233460-2dbe-4603-a594-68f93ec9deb3'
+
+  # Backend Configuration - State Storage
+  TF_BACKEND_RESOURCE_GROUP: 'citadelbuy-tfstate-rg'
+  TF_BACKEND_STORAGE_ACCOUNT: 'citadelbuytfstate'
+  TF_BACKEND_CONTAINER: 'tfstate'
+  TF_BACKEND_KEY: 'terraform.tfstate'
+
+  # State File Naming Convention
+  # Format: {environment}/{component}/terraform.tfstate
+  # Examples:
+  #   - dev/infrastructure/terraform.tfstate
+  #   - staging/aks/terraform.tfstate
+  #   - prod/networking/terraform.tfstate
+
+  # Working Directories by Environment
+  TF_WORKING_DIR_DEV: '$(Build.SourcesDirectory)/infrastructure/terraform/environments/dev'
+  TF_WORKING_DIR_STAGING: '$(Build.SourcesDirectory)/infrastructure/terraform/environments/staging'
+  TF_WORKING_DIR_PROD: '$(Build.SourcesDirectory)/infrastructure/terraform/environments/prod'
+
+  # Base Working Directory
+  TF_WORKING_DIR: '$(Build.SourcesDirectory)/infrastructure/terraform'
+
+  # Terraform Modules Directory
+  TF_MODULES_DIR: '$(Build.SourcesDirectory)/infrastructure/terraform/modules'
+
+  # Environment-Specific Backend Configurations
+  # DEV Environment
+  TF_BACKEND_KEY_DEV: 'dev/terraform.tfstate'
+  TF_STATE_DEV: 'dev/infrastructure/terraform.tfstate'
+
+  # STAGING Environment
+  TF_BACKEND_KEY_STAGING: 'staging/terraform.tfstate'
+  TF_STATE_STAGING: 'staging/infrastructure/terraform.tfstate'
+
+  # PROD Environment
+  TF_BACKEND_KEY_PROD: 'prod/terraform.tfstate'
+  TF_STATE_PROD: 'prod/infrastructure/terraform.tfstate'
+
+  # Component-Specific State Files
+  # Networking
+  TF_STATE_NETWORKING_DEV: 'dev/networking/terraform.tfstate'
+  TF_STATE_NETWORKING_STAGING: 'staging/networking/terraform.tfstate'
+  TF_STATE_NETWORKING_PROD: 'prod/networking/terraform.tfstate'
+
+  # AKS Cluster
+  TF_STATE_AKS_DEV: 'dev/aks/terraform.tfstate'
+  TF_STATE_AKS_STAGING: 'staging/aks/terraform.tfstate'
+  TF_STATE_AKS_PROD: 'prod/aks/terraform.tfstate'
+
+  # Database
+  TF_STATE_DATABASE_DEV: 'dev/database/terraform.tfstate'
+  TF_STATE_DATABASE_STAGING: 'staging/database/terraform.tfstate'
+  TF_STATE_DATABASE_PROD: 'prod/database/terraform.tfstate'
+
+  # Storage
+  TF_STATE_STORAGE_DEV: 'dev/storage/terraform.tfstate'
+  TF_STATE_STORAGE_STAGING: 'staging/storage/terraform.tfstate'
+  TF_STATE_STORAGE_PROD: 'prod/storage/terraform.tfstate'
+
+  # Key Vault
+  TF_STATE_KEYVAULT_DEV: 'dev/keyvault/terraform.tfstate'
+  TF_STATE_KEYVAULT_STAGING: 'staging/keyvault/terraform.tfstate'
+  TF_STATE_KEYVAULT_PROD: 'prod/keyvault/terraform.tfstate'
+
+  # Application Insights
+  TF_STATE_APPINSIGHTS_DEV: 'dev/appinsights/terraform.tfstate'
+  TF_STATE_APPINSIGHTS_STAGING: 'staging/appinsights/terraform.tfstate'
+  TF_STATE_APPINSIGHTS_PROD: 'prod/appinsights/terraform.tfstate'
+
+  # Terraform Validation Settings
+  TF_FMT_CHECK: 'true'
+  TF_VALIDATE_ENABLED: 'true'
+
+  # Security Scanning
+  CHECKOV_ENABLED: 'true'
+  CHECKOV_SOFT_FAIL: 'true'
+  TFLINT_ENABLED: 'true'
+
+  # Cost Estimation
+  INFRACOST_ENABLED: 'true'
+  INFRACOST_CURRENCY: 'USD'
+
+  # Terraform Plan Settings
+  TF_PLAN_FILE: 'tfplan'
+  TF_PLAN_OUTPUT_FILE: 'tfplan.txt'
+  TF_PLAN_JSON_FILE: 'tfplan.json'
+
+  # Terraform Logs
+  TF_LOG: ''  # Options: TRACE, DEBUG, INFO, WARN, ERROR (leave empty for default)
+  TF_LOG_PATH: '$(Build.ArtifactStagingDirectory)/terraform.log'
+
+  # Parallelism Settings
+  TF_PARALLELISM: '10'  # Number of concurrent operations
+
+  # Retry Settings
+  TF_MAX_RETRIES: '3'
+
+  # Lock Configuration
+  TF_LOCK: 'true'
+  TF_LOCK_TIMEOUT: '5m'
+
+  # Provider Plugin Cache
+  TF_PLUGIN_CACHE_DIR: '$(Pipeline.Workspace)/.terraform.d/plugin-cache'
+
+  # Azure Provider Configuration
+  AZURE_PROVIDER_VERSION: '~> 3.0'
+  AZUREAD_PROVIDER_VERSION: '~> 2.0'
+  AZURERM_PROVIDER_VERSION: '~> 3.0'
+
+  # Resource Naming Convention
+  # Format: {project}-{environment}-{resource_type}-{suffix}
+  # Example: citadelbuy-dev-aks-01
+  RESOURCE_PREFIX: 'citadelbuy'
+
+  # Tags to Apply to All Resources
+  TF_VAR_common_tags: |
+    {
+      "Project": "CitadelBuy",
+      "ManagedBy": "Terraform",
+      "Environment": "$(environment)",
+      "CostCenter": "Engineering",
+      "Repository": "$(Build.Repository.Name)",
+      "Pipeline": "$(System.DefinitionId)"
+    }
+
+  # Azure Regions
+  AZURE_REGION_PRIMARY: 'eastus'
+  AZURE_REGION_SECONDARY: 'westus2'
+
+  # Environment-Specific Regions
+  AZURE_REGION_DEV: 'eastus'
+  AZURE_REGION_STAGING: 'eastus'
+  AZURE_REGION_PROD: 'eastus'
+
+  # Backup and Disaster Recovery
+  TF_STATE_BACKUP_ENABLED: 'true'
+  TF_STATE_BACKUP_RETENTION_DAYS: '30'
+
+  # Plan Artifact Retention
+  TF_PLAN_RETENTION_DAYS: '7'
+
+  # Output Variables
+  TF_OUTPUT_FORMAT: 'json'
+
+  # Terraform Workspace Configuration
+  TF_WORKSPACE_DEV: 'dev'
+  TF_WORKSPACE_STAGING: 'staging'
+  TF_WORKSPACE_PROD: 'prod'
+
+  # Feature Flags
+  ENABLE_DRIFT_DETECTION: 'false'
+  ENABLE_COMPLIANCE_SCAN: 'true'
+  ENABLE_COST_ALERTS: 'true'
+
+  # Notification Settings
+  NOTIFY_ON_PLAN: 'true'
+  NOTIFY_ON_APPLY: 'true'
+  NOTIFY_ON_DESTROY: 'true'
+  NOTIFY_ON_FAILURE: 'true'
+
+  # Pipeline Timeout Settings
+  TF_PLAN_TIMEOUT: '30'  # minutes
+  TF_APPLY_TIMEOUT: '60'  # minutes
+
+  # Environment URLs (for reference)
+  AZURE_PORTAL_DEV: 'https://portal.azure.com/#@/resource/subscriptions/ba233460-2dbe-4603-a594-68f93ec9deb3/resourceGroups/citadelbuy-dev-rg'
+  AZURE_PORTAL_STAGING: 'https://portal.azure.com/#@/resource/subscriptions/ba233460-2dbe-4603-a594-68f93ec9deb3/resourceGroups/citadelbuy-staging-rg'
+  AZURE_PORTAL_PROD: 'https://portal.azure.com/#@/resource/subscriptions/ba233460-2dbe-4603-a594-68f93ec9deb3/resourceGroups/citadelbuy-prod-rg'
+
+  # Documentation Links
+  TF_DOCS_URL: 'https://www.terraform.io/docs'
+  AZURE_PROVIDER_DOCS: 'https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs'
+
+  # Service Connection Names
+  AZURE_SERVICE_CONNECTION_DEV: 'CitadelBuy-Azure-ServiceConnection-Dev'
+  AZURE_SERVICE_CONNECTION_STAGING: 'CitadelBuy-Azure-ServiceConnection-Staging'
+  AZURE_SERVICE_CONNECTION_PROD: 'CitadelBuy-Azure-ServiceConnection-Prod'
+  AZURE_SERVICE_CONNECTION_DEFAULT: 'CitadelBuy-Azure-ServiceConnection'
+
+  # Variable Groups (to be created in Azure DevOps)
+  # These should contain sensitive values like ARM_CLIENT_SECRET
+  VARIABLE_GROUP_DEV: 'citadelbuy-dev-terraform'
+  VARIABLE_GROUP_STAGING: 'citadelbuy-staging-terraform'
+  VARIABLE_GROUP_PROD: 'citadelbuy-prod-terraform'
+  VARIABLE_GROUP_SHARED: 'citadelbuy-terraform-shared'
+
+  # Required Variables in Variable Groups:
+  # - ARM_CLIENT_ID: Azure Service Principal Client ID
+  # - ARM_CLIENT_SECRET: Azure Service Principal Client Secret (secure)
+  # - ARM_TENANT_ID: Azure Tenant ID
+  # - AZURE_TENANT_ID: Azure Tenant ID (alias)
+  # - AZURE_CLIENT_ID: Azure Client ID (alias)
+  # - INFRACOST_API_KEY: Infracost API key (optional, secure)
+
+  # Terraform Module Sources
+  # Can be local paths, Git URLs, or Terraform Registry
+  TF_MODULE_SOURCE_NETWORKING: './modules/networking'
+  TF_MODULE_SOURCE_AKS: './modules/aks'
+  TF_MODULE_SOURCE_DATABASE: './modules/database'
+  TF_MODULE_SOURCE_STORAGE: './modules/storage'
+  TF_MODULE_SOURCE_KEYVAULT: './modules/keyvault'
+
+  # Environment-Specific Settings
+  # DEV
+  TF_VAR_instance_count_dev: '1'
+  TF_VAR_instance_size_dev: 'Standard_B2s'
+  TF_VAR_enable_backup_dev: 'false'
+
+  # STAGING
+  TF_VAR_instance_count_staging: '2'
+  TF_VAR_instance_size_staging: 'Standard_D2s_v3'
+  TF_VAR_enable_backup_staging: 'true'
+
+  # PROD
+  TF_VAR_instance_count_prod: '3'
+  TF_VAR_instance_size_prod: 'Standard_D4s_v3'
+  TF_VAR_enable_backup_prod: 'true'
+
+  # Compliance and Governance
+  AZURE_POLICY_ENABLED: 'true'
+  RBAC_ENABLED: 'true'
+  NETWORK_SECURITY_ENABLED: 'true'
+
+  # Monitoring and Alerting
+  ENABLE_MONITORING: 'true'
+  ENABLE_ALERTING: 'true'
+  LOG_ANALYTICS_RETENTION_DAYS: '30'
+
+  # Auto-Scaling Configuration
+  ENABLE_AUTO_SCALING: 'true'
+  MIN_INSTANCES: '1'
+  MAX_INSTANCES: '10'
+
+  # High Availability
+  ENABLE_HA_DEV: 'false'
+  ENABLE_HA_STAGING: 'true'
+  ENABLE_HA_PROD: 'true'

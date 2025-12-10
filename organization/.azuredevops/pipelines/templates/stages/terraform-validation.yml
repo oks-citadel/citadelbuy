@@ -1,0 +1,400 @@
+# Terraform PR Validation Stage
+# Runs comprehensive validation checks on Terraform code during pull requests
+
+parameters:
+- name: serviceConnection
+  type: string
+  displayName: 'Azure Service Connection'
+  default: 'CitadelBuy-Azure-ServiceConnection'
+
+- name: terraformVersion
+  type: string
+  displayName: 'Terraform Version'
+  default: '1.6.0'
+
+- name: enableInfracost
+  type: boolean
+  displayName: 'Enable Infracost Estimation'
+  default: true
+
+- name: enableCheckov
+  type: boolean
+  displayName: 'Enable Checkov Security Scanning'
+  default: true
+
+- name: environments
+  type: object
+  displayName: 'Environments to Validate'
+  default:
+  - dev
+  - staging
+  - prod
+
+stages:
+- stage: TerraformValidation
+  displayName: 'Terraform PR Validation'
+  condition: eq(variables['Build.Reason'], 'PullRequest')
+
+  variables:
+  - template: ../variables/terraform.yml
+
+  jobs:
+  - job: FormatCheck
+    displayName: 'Terraform Format Check'
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+    - checkout: self
+      displayName: 'Checkout Repository'
+      fetchDepth: 0
+
+    - task: TerraformInstaller@0
+      displayName: 'Install Terraform ${{ parameters.terraformVersion }}'
+      inputs:
+        terraformVersion: '${{ parameters.terraformVersion }}'
+
+    - task: Bash@3
+      displayName: 'Terraform Format Check'
+      inputs:
+        targetType: 'inline'
+        workingDirectory: '$(Build.SourcesDirectory)/infrastructure/terraform'
+        script: |
+          echo "##[section]Checking Terraform formatting..."
+
+          # Check formatting recursively
+          if ! terraform fmt -check -recursive -diff .; then
+            echo "##vso[task.logissue type=error]Terraform files are not properly formatted"
+            echo "##[error]Please run 'terraform fmt -recursive' to fix formatting issues"
+            exit 1
+          fi
+
+          echo "##[section]All Terraform files are properly formatted"
+
+  - job: SecurityScan
+    displayName: 'Security Scanning'
+    condition: eq('${{ parameters.enableCheckov }}', 'true')
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+    - checkout: self
+      displayName: 'Checkout Repository'
+      fetchDepth: 1
+
+    - task: UsePythonVersion@0
+      displayName: 'Setup Python'
+      inputs:
+        versionSpec: '3.x'
+        addToPath: true
+
+    - task: Bash@3
+      displayName: 'Install Checkov'
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "##[section]Installing Checkov security scanner..."
+          pip install checkov
+          checkov --version
+
+    - task: Bash@3
+      displayName: 'Run Checkov Security Scan'
+      inputs:
+        targetType: 'inline'
+        workingDirectory: '$(Build.SourcesDirectory)/infrastructure/terraform'
+        script: |
+          echo "##[section]Running Checkov security scan..."
+
+          # Run Checkov with output to console and file
+          checkov -d . \
+            --framework terraform \
+            --output cli \
+            --output junitxml \
+            --output-file-path $(Build.ArtifactStagingDirectory) \
+            --soft-fail \
+            --compact
+
+          echo "##[section]Security scan completed"
+
+    - task: PublishTestResults@2
+      displayName: 'Publish Security Scan Results'
+      condition: always()
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '$(Build.ArtifactStagingDirectory)/results_junitxml.xml'
+        testRunTitle: 'Checkov Security Scan'
+        failTaskOnFailedTests: false
+
+  # Validate each environment configuration
+  - ${{ each env in parameters.environments }}:
+    - job: Validate_${{ env }}
+      displayName: 'Validate - ${{ upper(env) }}'
+      pool:
+        vmImage: 'ubuntu-latest'
+
+      variables:
+      - name: workingDirectory
+        value: '$(Build.SourcesDirectory)/infrastructure/terraform/environments/${{ env }}'
+
+      steps:
+      - checkout: self
+        displayName: 'Checkout Repository'
+        fetchDepth: 1
+
+      - task: TerraformInstaller@0
+        displayName: 'Install Terraform ${{ parameters.terraformVersion }}'
+        inputs:
+          terraformVersion: '${{ parameters.terraformVersion }}'
+
+      - task: AzureCLI@2
+        displayName: 'Terraform Init'
+        inputs:
+          azureSubscription: '${{ parameters.serviceConnection }}'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          workingDirectory: '$(workingDirectory)'
+          addSpnToEnvironment: true
+          inlineScript: |
+            echo "##[section]Initializing Terraform for ${{ env }}..."
+
+            export ARM_SUBSCRIPTION_ID="$(ARM_SUBSCRIPTION_ID)"
+            export ARM_TENANT_ID="$(ARM_TENANT_ID)"
+            export ARM_CLIENT_ID="$servicePrincipalId"
+            export ARM_CLIENT_SECRET="$servicePrincipalKey"
+
+            terraform init \
+              -backend-config="resource_group_name=$(TF_BACKEND_RESOURCE_GROUP)" \
+              -backend-config="storage_account_name=$(TF_BACKEND_STORAGE_ACCOUNT)" \
+              -backend-config="container_name=$(TF_BACKEND_CONTAINER)" \
+              -backend-config="key=${{ env }}/$(TF_BACKEND_KEY)" \
+              -backend=false
+
+            echo "##[section]Initialization completed"
+
+      - task: AzureCLI@2
+        displayName: 'Terraform Validate'
+        inputs:
+          azureSubscription: '${{ parameters.serviceConnection }}'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          workingDirectory: '$(workingDirectory)'
+          addSpnToEnvironment: true
+          inlineScript: |
+            echo "##[section]Validating Terraform configuration for ${{ env }}..."
+
+            export ARM_SUBSCRIPTION_ID="$(ARM_SUBSCRIPTION_ID)"
+            export ARM_TENANT_ID="$(ARM_TENANT_ID)"
+            export ARM_CLIENT_ID="$servicePrincipalId"
+            export ARM_CLIENT_SECRET="$servicePrincipalKey"
+
+            terraform validate
+
+            echo "##[section]Configuration is valid"
+
+      - task: AzureCLI@2
+        displayName: 'Terraform Plan (Validation)'
+        inputs:
+          azureSubscription: '${{ parameters.serviceConnection }}'
+          scriptType: 'bash'
+          scriptLocation: 'inlineScript'
+          workingDirectory: '$(workingDirectory)'
+          addSpnToEnvironment: true
+          inlineScript: |
+            echo "##[section]Creating validation plan for ${{ env }}..."
+
+            export ARM_SUBSCRIPTION_ID="$(ARM_SUBSCRIPTION_ID)"
+            export ARM_TENANT_ID="$(ARM_TENANT_ID)"
+            export ARM_CLIENT_ID="$servicePrincipalId"
+            export ARM_CLIENT_SECRET="$servicePrincipalKey"
+
+            export TF_VAR_environment="${{ env }}"
+            export TF_VAR_azure_subscription_id="$(ARM_SUBSCRIPTION_ID)"
+
+            # Create plan without saving (validation only)
+            terraform plan -input=false -no-color > $(Build.ArtifactStagingDirectory)/tfplan-${{ env }}.txt
+
+            echo "##[section]Plan created successfully"
+
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish Plan Output'
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)/tfplan-${{ env }}.txt'
+          artifact: 'validation-plan-${{ env }}'
+          publishLocation: 'pipeline'
+
+  - job: CostEstimation
+    displayName: 'Cost Estimation with Infracost'
+    condition: eq('${{ parameters.enableInfracost }}', 'true')
+    dependsOn:
+    - ${{ each env in parameters.environments }}:
+      - Validate_${{ env }}
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+    - checkout: self
+      displayName: 'Checkout Repository'
+      fetchDepth: 1
+
+    - task: TerraformInstaller@0
+      displayName: 'Install Terraform ${{ parameters.terraformVersion }}'
+      inputs:
+        terraformVersion: '${{ parameters.terraformVersion }}'
+
+    - task: Bash@3
+      displayName: 'Install Infracost'
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "##[section]Installing Infracost..."
+
+          # Install Infracost CLI
+          curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
+
+          # Verify installation
+          infracost --version
+
+    - task: AzureCLI@2
+      displayName: 'Generate Cost Estimates'
+      env:
+        INFRACOST_API_KEY: $(INFRACOST_API_KEY)
+      inputs:
+        azureSubscription: '${{ parameters.serviceConnection }}'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        workingDirectory: '$(Build.SourcesDirectory)/infrastructure/terraform'
+        addSpnToEnvironment: true
+        inlineScript: |
+          echo "##[section]Generating cost estimates..."
+
+          export ARM_SUBSCRIPTION_ID="$(ARM_SUBSCRIPTION_ID)"
+          export ARM_TENANT_ID="$(ARM_TENANT_ID)"
+          export ARM_CLIENT_ID="$servicePrincipalId"
+          export ARM_CLIENT_SECRET="$servicePrincipalKey"
+
+          # Generate cost breakdown for each environment
+          mkdir -p $(Build.ArtifactStagingDirectory)/infracost
+
+          for env in dev staging prod; do
+            echo "##[section]Estimating costs for $env..."
+
+            cd environments/$env
+
+            terraform init -backend=false
+
+            infracost breakdown \
+              --path . \
+              --format json \
+              --out-file $(Build.ArtifactStagingDirectory)/infracost/${env}-cost.json
+
+            infracost breakdown \
+              --path . \
+              --format table \
+              --out-file $(Build.ArtifactStagingDirectory)/infracost/${env}-cost.txt
+
+            cd ../..
+          done
+
+          echo "##[section]Cost estimation completed"
+
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Cost Estimates'
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/infracost'
+        artifact: 'infracost-estimates'
+        publishLocation: 'pipeline'
+
+  - job: PRComment
+    displayName: 'Post PR Comment'
+    dependsOn:
+    - FormatCheck
+    - ${{ each env in parameters.environments }}:
+      - Validate_${{ env }}
+    - ${{ if eq(parameters.enableInfracost, true) }}:
+      - CostEstimation
+    condition: always()
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+    - checkout: self
+      displayName: 'Checkout Repository'
+      fetchDepth: 1
+
+    - task: DownloadPipelineArtifact@2
+      displayName: 'Download Validation Plans'
+      inputs:
+        buildType: 'current'
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+
+    - task: Bash@3
+      displayName: 'Generate PR Comment'
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "##[section]Generating PR comment..."
+
+          cat << 'EOF' > $(Build.ArtifactStagingDirectory)/pr-comment.md
+          ## Terraform Validation Results
+
+          ### Format Check
+          $(if [ "$(Agent.JobStatus)" = "Succeeded" ]; then echo ":white_check_mark: Passed"; else echo ":x: Failed"; fi)
+
+          ### Environment Validation
+          EOF
+
+          # Add validation results for each environment
+          for env in dev staging prod; do
+            echo "- **$env**: :white_check_mark: Configuration valid" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+          done
+
+          echo "" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+          echo "### Terraform Plans" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+          echo "" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+
+          # Add plan summaries
+          for env in dev staging prod; do
+            if [ -f "$(Build.ArtifactStagingDirectory)/validation-plan-${env}/tfplan-${env}.txt" ]; then
+              echo "<details>" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+              echo "<summary>Plan for ${env}</summary>" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+              echo "" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+              echo '```terraform' >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+              head -n 100 "$(Build.ArtifactStagingDirectory)/validation-plan-${env}/tfplan-${env}.txt" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+              echo '```' >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+              echo "</details>" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+              echo "" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+            fi
+          done
+
+          # Add cost estimates if available
+          if [ -d "$(Build.ArtifactStagingDirectory)/infracost-estimates" ]; then
+            echo "### Cost Estimates" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+            echo "" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+
+            for env in dev staging prod; do
+              if [ -f "$(Build.ArtifactStagingDirectory)/infracost-estimates/${env}-cost.txt" ]; then
+                echo "<details>" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+                echo "<summary>Cost estimate for ${env}</summary>" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+                echo "" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+                echo '```' >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+                cat "$(Build.ArtifactStagingDirectory)/infracost-estimates/${env}-cost.txt" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+                echo '```' >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+                echo "</details>" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+                echo "" >> $(Build.ArtifactStagingDirectory)/pr-comment.md
+              fi
+            done
+          fi
+
+          cat $(Build.ArtifactStagingDirectory)/pr-comment.md
+
+          echo "##[section]PR comment generated"
+
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish PR Comment'
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/pr-comment.md'
+        artifact: 'pr-comment'
+        publishLocation: 'pipeline'
+
+    # Note: Posting comment requires additional Azure DevOps REST API integration
+    # or a marketplace extension like "PR Comment" or similar

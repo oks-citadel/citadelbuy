@@ -1,0 +1,44 @@
+# Production Environment Variables
+# These variables are specific to the production environment
+
+variables:
+  # Environment Identifier
+  ENVIRONMENT_NAME: 'production'
+  ENVIRONMENT_SHORT: 'prod'
+
+  # Azure Kubernetes Service (AKS) Configuration
+  AKS_RESOURCE_GROUP: 'citadelbuy-prod-rg'
+  AKS_CLUSTER_NAME: 'citadelbuy-prod-aks'
+  K8S_NAMESPACE: 'citadelbuy-prod'
+
+  # Application URLs
+  API_URL: 'https://api.citadelbuy.com'
+  WEB_URL: 'https://citadelbuy.com'
+
+  # Docker Image Tags
+  IMAGE_TAG: 'prod-$(Build.BuildId)'
+  IMAGE_TAG_LATEST: 'prod-latest'
+
+  # Deployment Configuration
+  DEPLOYMENT_REPLICAS: '3'
+  DEPLOYMENT_STRATEGY: 'RollingUpdate'
+  MAX_SURGE: '1'
+  MAX_UNAVAILABLE: '0'
+
+  # Feature Flags
+  ENABLE_DEBUG_LOGGING: 'false'
+  ENABLE_HOT_RELOAD: 'false'
+
+  # Resource Limits (for K8s)
+  CPU_REQUEST: '500m'
+  CPU_LIMIT: '2000m'
+  MEMORY_REQUEST: '1Gi'
+  MEMORY_LIMIT: '4Gi'
+
+  # Monitoring & Alerts
+  ENABLE_MONITORING: 'true'
+  ENABLE_ALERTS: 'true'
+
+  # Backup & Recovery
+  ENABLE_BACKUP: 'true'
+  BACKUP_RETENTION_DAYS: '30'

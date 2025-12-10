@@ -1,0 +1,420 @@
+# Reusable Trivy Security Scan Job
+# Flexible vulnerability scanning for filesystems, container images, and IaC configurations
+# Supports multiple output formats and configurable severity levels
+
+parameters:
+  - name: scanTarget
+    type: string
+    default: 'fs'
+    values:
+      - fs          # Filesystem scan
+      - image       # Container image scan
+      - config      # IaC configuration scan
+      - rootfs      # Root filesystem scan
+  - name: targetPath
+    type: string
+    default: '$(System.DefaultWorkingDirectory)'
+  - name: severityLevel
+    type: string
+    default: 'CRITICAL,HIGH,MEDIUM,LOW'
+  - name: exitCode
+    type: number
+    default: 0
+    values:
+      - 0   # Continue on vulnerabilities
+      - 1   # Fail on vulnerabilities
+  - name: outputFormat
+    type: string
+    default: 'sarif'
+    values:
+      - sarif
+      - json
+      - table
+      - cyclonedx
+      - spdx
+  - name: imageName
+    type: string
+    default: ''
+  - name: imageTag
+    type: string
+    default: 'latest'
+  - name: skipDirs
+    type: string
+    default: 'node_modules,dist,build,.git'
+  - name: skipFiles
+    type: string
+    default: ''
+  - name: scanners
+    type: string
+    default: 'vuln,secret,misconfig'
+  - name: timeout
+    type: string
+    default: '10m'
+  - name: artifactName
+    type: string
+    default: 'trivy-scan-results'
+  - name: publishResults
+    type: boolean
+    default: true
+  - name: trivyVersion
+    type: string
+    default: 'latest'
+
+jobs:
+  - job: TrivyScan
+    displayName: 'Trivy Security Scan - ${{ parameters.scanTarget }}'
+    pool:
+      vmImage: 'ubuntu-latest'
+    timeoutInMinutes: 30
+
+    steps:
+      - checkout: self
+        fetchDepth: 1
+
+      # Step 1: Install Trivy
+      - script: |
+          echo "Installing Trivy vulnerability scanner..."
+          echo "Version: ${{ parameters.trivyVersion }}"
+
+          # Install Trivy from official repository
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+
+          if [ "${{ parameters.trivyVersion }}" = "latest" ]; then
+            sudo apt-get install -y trivy
+          else
+            sudo apt-get install -y trivy=${{ parameters.trivyVersion }}
+          fi
+
+          # Verify installation
+          trivy --version
+
+          echo "Trivy installed successfully"
+        displayName: 'Install Trivy Scanner'
+
+      # Step 2: Update Trivy Database
+      - script: |
+          echo "Updating Trivy vulnerability database..."
+          trivy image --download-db-only
+
+          echo "Database updated successfully"
+        displayName: 'Update Trivy Database'
+
+      # Step 3: Run Trivy Filesystem Scan
+      - script: |
+          echo "Running Trivy filesystem scan..."
+          echo "Target: ${{ parameters.targetPath }}"
+          echo "Severity: ${{ parameters.severityLevel }}"
+          echo "Scanners: ${{ parameters.scanners }}"
+
+          mkdir -p $(Build.ArtifactStagingDirectory)/trivy
+
+          # Build skip-dirs argument
+          SKIP_DIRS_ARG=""
+          if [ -n "${{ parameters.skipDirs }}" ]; then
+            IFS=',' read -ra DIRS <<< "${{ parameters.skipDirs }}"
+            for dir in "${DIRS[@]}"; do
+              SKIP_DIRS_ARG="$SKIP_DIRS_ARG --skip-dirs $dir"
+            done
+          fi
+
+          # Build skip-files argument
+          SKIP_FILES_ARG=""
+          if [ -n "${{ parameters.skipFiles }}" ]; then
+            IFS=',' read -ra FILES <<< "${{ parameters.skipFiles }}"
+            for file in "${FILES[@]}"; do
+              SKIP_FILES_ARG="$SKIP_FILES_ARG --skip-files $file"
+            done
+          fi
+
+          # Run scan with primary output format
+          trivy fs \
+            --format ${{ parameters.outputFormat }} \
+            --output $(Build.ArtifactStagingDirectory)/trivy/trivy-results.${{ parameters.outputFormat }} \
+            --severity ${{ parameters.severityLevel }} \
+            --scanners ${{ parameters.scanners }} \
+            --timeout ${{ parameters.timeout }} \
+            $SKIP_DIRS_ARG \
+            $SKIP_FILES_ARG \
+            --exit-code ${{ parameters.exitCode }} \
+            ${{ parameters.targetPath }}
+
+          echo "Filesystem scan completed"
+        displayName: 'Run Trivy Filesystem Scan'
+        condition: and(succeeded(), eq('${{ parameters.scanTarget }}', 'fs'))
+        continueOnError: ${{ eq(parameters.exitCode, 0) }}
+
+      # Step 4: Run Trivy Container Image Scan
+      - script: |
+          echo "Running Trivy container image scan..."
+          echo "Image: ${{ parameters.imageName }}:${{ parameters.imageTag }}"
+          echo "Severity: ${{ parameters.severityLevel }}"
+
+          mkdir -p $(Build.ArtifactStagingDirectory)/trivy
+
+          if [ -z "${{ parameters.imageName }}" ]; then
+            echo "##vso[task.logissue type=error]Image name is required for image scan"
+            exit 1
+          fi
+
+          # Run image scan
+          trivy image \
+            --format ${{ parameters.outputFormat }} \
+            --output $(Build.ArtifactStagingDirectory)/trivy/trivy-results.${{ parameters.outputFormat }} \
+            --severity ${{ parameters.severityLevel }} \
+            --scanners ${{ parameters.scanners }} \
+            --timeout ${{ parameters.timeout }} \
+            --exit-code ${{ parameters.exitCode }} \
+            ${{ parameters.imageName }}:${{ parameters.imageTag }}
+
+          echo "Image scan completed"
+        displayName: 'Run Trivy Image Scan'
+        condition: and(succeeded(), eq('${{ parameters.scanTarget }}', 'image'))
+        continueOnError: ${{ eq(parameters.exitCode, 0) }}
+
+      # Step 5: Run Trivy Config Scan (IaC)
+      - script: |
+          echo "Running Trivy configuration scan..."
+          echo "Target: ${{ parameters.targetPath }}"
+          echo "Scanning Infrastructure as Code files..."
+
+          mkdir -p $(Build.ArtifactStagingDirectory)/trivy
+
+          # Build skip-dirs argument
+          SKIP_DIRS_ARG=""
+          if [ -n "${{ parameters.skipDirs }}" ]; then
+            IFS=',' read -ra DIRS <<< "${{ parameters.skipDirs }}"
+            for dir in "${DIRS[@]}"; do
+              SKIP_DIRS_ARG="$SKIP_DIRS_ARG --skip-dirs $dir"
+            done
+          fi
+
+          # Run config scan
+          trivy config \
+            --format ${{ parameters.outputFormat }} \
+            --output $(Build.ArtifactStagingDirectory)/trivy/trivy-results.${{ parameters.outputFormat }} \
+            --severity ${{ parameters.severityLevel }} \
+            --timeout ${{ parameters.timeout }} \
+            $SKIP_DIRS_ARG \
+            --exit-code ${{ parameters.exitCode }} \
+            ${{ parameters.targetPath }}
+
+          echo "Configuration scan completed"
+        displayName: 'Run Trivy Config Scan'
+        condition: and(succeeded(), eq('${{ parameters.scanTarget }}', 'config'))
+        continueOnError: ${{ eq(parameters.exitCode, 0) }}
+
+      # Step 6: Generate Additional Report Formats
+      - script: |
+          echo "Generating additional report formats..."
+
+          # Always generate JSON for analysis
+          if [ "${{ parameters.outputFormat }}" != "json" ]; then
+            echo "Generating JSON report..."
+
+            if [ "${{ parameters.scanTarget }}" = "fs" ]; then
+              trivy fs \
+                --format json \
+                --output $(Build.ArtifactStagingDirectory)/trivy/trivy-results.json \
+                --severity ${{ parameters.severityLevel }} \
+                --scanners ${{ parameters.scanners }} \
+                --skip-dirs ${{ parameters.skipDirs }} \
+                ${{ parameters.targetPath }} || true
+            elif [ "${{ parameters.scanTarget }}" = "image" ]; then
+              trivy image \
+                --format json \
+                --output $(Build.ArtifactStagingDirectory)/trivy/trivy-results.json \
+                --severity ${{ parameters.severityLevel }} \
+                --scanners ${{ parameters.scanners }} \
+                ${{ parameters.imageName }}:${{ parameters.imageTag }} || true
+            elif [ "${{ parameters.scanTarget }}" = "config" ]; then
+              trivy config \
+                --format json \
+                --output $(Build.ArtifactStagingDirectory)/trivy/trivy-results.json \
+                --severity ${{ parameters.severityLevel }} \
+                ${{ parameters.targetPath }} || true
+            fi
+          fi
+
+          # Always generate table for human readability
+          if [ "${{ parameters.outputFormat }}" != "table" ]; then
+            echo "Generating table report..."
+
+            if [ "${{ parameters.scanTarget }}" = "fs" ]; then
+              trivy fs \
+                --format table \
+                --output $(Build.ArtifactStagingDirectory)/trivy/trivy-results.txt \
+                --severity ${{ parameters.severityLevel }} \
+                --scanners ${{ parameters.scanners }} \
+                --skip-dirs ${{ parameters.skipDirs }} \
+                ${{ parameters.targetPath }} || true
+            elif [ "${{ parameters.scanTarget }}" = "image" ]; then
+              trivy image \
+                --format table \
+                --output $(Build.ArtifactStagingDirectory)/trivy/trivy-results.txt \
+                --severity ${{ parameters.severityLevel }} \
+                --scanners ${{ parameters.scanners }} \
+                ${{ parameters.imageName }}:${{ parameters.imageTag }} || true
+            elif [ "${{ parameters.scanTarget }}" = "config" ]; then
+              trivy config \
+                --format table \
+                --output $(Build.ArtifactStagingDirectory)/trivy/trivy-results.txt \
+                --severity ${{ parameters.severityLevel }} \
+                ${{ parameters.targetPath }} || true
+            fi
+          fi
+
+          echo "Additional reports generated"
+        displayName: 'Generate Additional Report Formats'
+        continueOnError: true
+
+      # Step 7: Analyze Scan Results
+      - script: |
+          echo "Analyzing Trivy scan results..."
+
+          if [ ! -f "$(Build.ArtifactStagingDirectory)/trivy/trivy-results.json" ]; then
+            echo "##vso[task.logissue type=warning]JSON results not found, skipping analysis"
+            exit 0
+          fi
+
+          # Parse vulnerability counts by severity
+          CRITICAL_COUNT=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length' $(Build.ArtifactStagingDirectory)/trivy/trivy-results.json 2>/dev/null || echo "0")
+          HIGH_COUNT=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="HIGH")] | length' $(Build.ArtifactStagingDirectory)/trivy/trivy-results.json 2>/dev/null || echo "0")
+          MEDIUM_COUNT=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="MEDIUM")] | length' $(Build.ArtifactStagingDirectory)/trivy/trivy-results.json 2>/dev/null || echo "0")
+          LOW_COUNT=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="LOW")] | length' $(Build.ArtifactStagingDirectory)/trivy/trivy-results.json 2>/dev/null || echo "0")
+
+          # Parse misconfiguration counts
+          MISCONFIG_COUNT=$(jq '[.Results[]?.Misconfigurations[]?] | length' $(Build.ArtifactStagingDirectory)/trivy/trivy-results.json 2>/dev/null || echo "0")
+
+          # Parse secret counts
+          SECRET_COUNT=$(jq '[.Results[]?.Secrets[]?] | length' $(Build.ArtifactStagingDirectory)/trivy/trivy-results.json 2>/dev/null || echo "0")
+
+          TOTAL_VULNS=$((CRITICAL_COUNT + HIGH_COUNT + MEDIUM_COUNT + LOW_COUNT))
+
+          echo "================================================"
+          echo "          TRIVY SCAN RESULTS SUMMARY           "
+          echo "================================================"
+          echo ""
+          echo "Scan Target:     ${{ parameters.scanTarget }}"
+          echo "Scan Path:       ${{ parameters.targetPath }}"
+          if [ "${{ parameters.scanTarget }}" = "image" ]; then
+            echo "Image:           ${{ parameters.imageName }}:${{ parameters.imageTag }}"
+          fi
+          echo ""
+          echo "VULNERABILITIES:"
+          echo "  Critical:      $CRITICAL_COUNT"
+          echo "  High:          $HIGH_COUNT"
+          echo "  Medium:        $MEDIUM_COUNT"
+          echo "  Low:           $LOW_COUNT"
+          echo "  Total:         $TOTAL_VULNS"
+          echo ""
+          echo "OTHER FINDINGS:"
+          echo "  Misconfigurations: $MISCONFIG_COUNT"
+          echo "  Secrets:           $SECRET_COUNT"
+          echo ""
+          echo "================================================"
+
+          # Set pipeline variables for downstream jobs
+          echo "##vso[task.setvariable variable=TRIVY_CRITICAL_COUNT;isOutput=true]$CRITICAL_COUNT"
+          echo "##vso[task.setvariable variable=TRIVY_HIGH_COUNT;isOutput=true]$HIGH_COUNT"
+          echo "##vso[task.setvariable variable=TRIVY_MEDIUM_COUNT;isOutput=true]$MEDIUM_COUNT"
+          echo "##vso[task.setvariable variable=TRIVY_LOW_COUNT;isOutput=true]$LOW_COUNT"
+          echo "##vso[task.setvariable variable=TRIVY_TOTAL_VULNS;isOutput=true]$TOTAL_VULNS"
+          echo "##vso[task.setvariable variable=TRIVY_MISCONFIG_COUNT;isOutput=true]$MISCONFIG_COUNT"
+          echo "##vso[task.setvariable variable=TRIVY_SECRET_COUNT;isOutput=true]$SECRET_COUNT"
+
+          # Log issues to Azure DevOps
+          if [ "$CRITICAL_COUNT" -gt 0 ]; then
+            echo "##vso[task.logissue type=error]Found $CRITICAL_COUNT CRITICAL vulnerabilities"
+          fi
+
+          if [ "$HIGH_COUNT" -gt 0 ]; then
+            echo "##vso[task.logissue type=warning]Found $HIGH_COUNT HIGH vulnerabilities"
+          fi
+
+          if [ "$SECRET_COUNT" -gt 0 ]; then
+            echo "##vso[task.logissue type=error]Found $SECRET_COUNT exposed secrets"
+          fi
+
+          if [ "$MISCONFIG_COUNT" -gt 0 ]; then
+            echo "##vso[task.logissue type=warning]Found $MISCONFIG_COUNT misconfigurations"
+          fi
+
+          # Create summary file
+          cat > $(Build.ArtifactStagingDirectory)/trivy/scan-summary.txt << EOF
+          Trivy Security Scan Summary
+          ===========================
+
+          Scan Type: ${{ parameters.scanTarget }}
+          Target: ${{ parameters.targetPath }}
+          Severity Filter: ${{ parameters.severityLevel }}
+          Scanners: ${{ parameters.scanners }}
+
+          Results:
+          --------
+          Critical Vulnerabilities: $CRITICAL_COUNT
+          High Vulnerabilities: $HIGH_COUNT
+          Medium Vulnerabilities: $MEDIUM_COUNT
+          Low Vulnerabilities: $LOW_COUNT
+          Total Vulnerabilities: $TOTAL_VULNS
+
+          Misconfigurations: $MISCONFIG_COUNT
+          Secrets Found: $SECRET_COUNT
+
+          Scan completed at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          EOF
+
+          echo "Analysis completed"
+        displayName: 'Analyze Trivy Results'
+        name: TrivyAnalysis
+        continueOnError: true
+
+      # Step 8: Display Top Vulnerabilities
+      - script: |
+          echo "Top vulnerabilities found:"
+
+          if [ ! -f "$(Build.ArtifactStagingDirectory)/trivy/trivy-results.json" ]; then
+            echo "No results to display"
+            exit 0
+          fi
+
+          # Display top 10 critical/high vulnerabilities
+          echo ""
+          echo "=== TOP 10 CRITICAL/HIGH VULNERABILITIES ==="
+          jq -r '.Results[]? | .Vulnerabilities[]? | select(.Severity=="CRITICAL" or .Severity=="HIGH") | "\(.Severity): \(.VulnerabilityID) - \(.PkgName) \(.InstalledVersion) -> \(.FixedVersion // "no fix")"' \
+            $(Build.ArtifactStagingDirectory)/trivy/trivy-results.json 2>/dev/null | head -10 || echo "No critical/high vulnerabilities found"
+
+          echo ""
+        displayName: 'Display Top Vulnerabilities'
+        condition: always()
+        continueOnError: true
+
+      # Step 9: Publish SARIF to Azure DevOps Code Scanning
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish SARIF for Code Scanning'
+        condition: and(always(), eq('${{ parameters.outputFormat }}', 'sarif'))
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)/trivy/trivy-results.sarif'
+          artifact: 'CodeAnalysisLogs'
+          publishLocation: 'pipeline'
+
+      # Step 10: Publish All Scan Results
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Trivy Scan Results'
+        condition: and(always(), eq('${{ parameters.publishResults }}', true))
+        inputs:
+          PathtoPublish: '$(Build.ArtifactStagingDirectory)/trivy'
+          ArtifactName: '${{ parameters.artifactName }}'
+          publishLocation: 'Container'
+
+      # Step 11: Publish Test Results (if available)
+      - task: PublishTestResults@2
+        displayName: 'Publish Vulnerability Test Results'
+        condition: and(always(), eq('${{ parameters.outputFormat }}', 'json'))
+        continueOnError: true
+        inputs:
+          testResultsFormat: 'JUnit'
+          testResultsFiles: '$(Build.ArtifactStagingDirectory)/trivy/trivy-results.json'
+          testRunTitle: 'Trivy Security Scan Results'
+          failTaskOnFailedTests: false
