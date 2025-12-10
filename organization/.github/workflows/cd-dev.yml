@@ -1,0 +1,280 @@
+name: Deploy to Development AKS
+
+on:
+  push:
+    branches:
+      - develop
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (default: latest from develop)'
+        required: false
+        type: string
+
+env:
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  AKS_CLUSTER_NAME: citadelbuy-dev-aks
+  AKS_RESOURCE_GROUP: citadelbuy-dev-rg
+  KUBERNETES_NAMESPACE: citadelbuy-dev
+  CONTAINER_REGISTRY: ghcr.io/citadelplatforms
+  KUSTOMIZE_VERSION: 'v5.3.0'
+
+permissions:
+  id-token: write
+  contents: read
+  packages: read
+
+jobs:
+  deploy:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    environment:
+      name: development
+      url: https://dev.citadelbuy.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./apps/api
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v4
+        with:
+          resource-group: ${{ env.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
+          admin: 'false'
+
+      - name: Install kubelogin
+        run: |
+          curl -LO https://github.com/Azure/kubelogin/releases/download/v0.1.1/kubelogin-linux-amd64.zip
+          unzip kubelogin-linux-amd64.zip
+          sudo mv bin/linux_amd64/kubelogin /usr/local/bin/
+          rm -rf bin kubelogin-linux-amd64.zip
+
+      - name: Configure kubectl with kubelogin
+        run: |
+          kubelogin convert-kubeconfig -l azurecli
+          kubectl config set-context --current --namespace=${{ env.KUBERNETES_NAMESPACE }}
+
+      - name: Verify cluster connection
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Install Kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash -s -- ${{ env.KUSTOMIZE_VERSION }}
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Determine image tag
+        id: image-tag
+        run: |
+          if [ "${{ github.event.inputs.image_tag }}" != "" ]; then
+            echo "tag=${{ github.event.inputs.image_tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=dev-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update Kustomize image tags
+        run: |
+          cd infrastructure/kubernetes/base
+          kustomize edit set image \
+            ${{ env.CONTAINER_REGISTRY }}/citadelbuy-api:${{ steps.image-tag.outputs.tag }} \
+            ${{ env.CONTAINER_REGISTRY }}/citadelbuy-web:${{ steps.image-tag.outputs.tag }} \
+            ${{ env.CONTAINER_REGISTRY }}/citadelbuy-worker:${{ steps.image-tag.outputs.tag }}
+
+      - name: Create namespace if not exists
+        run: |
+          kubectl create namespace ${{ env.KUBERNETES_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+        run: |
+          cd apps/api
+          npx prisma migrate deploy --schema=./prisma/schema.prisma
+          npx prisma migrate deploy --schema=./prisma/schema-organization.prisma
+          npx prisma migrate deploy --schema=./prisma/schema-dropshipping.prisma
+          npx prisma migrate deploy --schema=./prisma/schema-privacy.prisma
+        continue-on-error: false
+
+      - name: Generate Prisma clients
+        run: |
+          cd apps/api
+          npx prisma generate --schema=./prisma/schema.prisma
+          npx prisma generate --schema=./prisma/schema-organization.prisma
+          npx prisma generate --schema=./prisma/schema-dropshipping.prisma
+          npx prisma generate --schema=./prisma/schema-privacy.prisma
+
+      - name: Build Kustomize manifests
+        run: |
+          kustomize build infrastructure/kubernetes/base > deployment.yaml
+          cat deployment.yaml
+
+      - name: Deploy to AKS
+        run: |
+          kubectl apply -f deployment.yaml
+          kubectl rollout status deployment/citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=5m
+          kubectl rollout status deployment/citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=5m
+
+      - name: Verify API deployment
+        run: |
+          kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l app=citadelbuy-api
+          kubectl get services -n ${{ env.KUBERNETES_NAMESPACE }}
+
+      - name: Health check - API
+        run: |
+          echo "Waiting for API to be ready..."
+          sleep 30
+          API_POD=$(kubectl get pod -n ${{ env.KUBERNETES_NAMESPACE }} -l app=citadelbuy-api -o jsonpath="{.items[0].metadata.name}")
+          kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} $API_POD -- curl -f http://localhost:4000/api/health/live || exit 1
+          kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} $API_POD -- curl -f http://localhost:4000/api/health/ready || exit 1
+
+      - name: Health check - Web
+        run: |
+          WEB_POD=$(kubectl get pod -n ${{ env.KUBERNETES_NAMESPACE }} -l app=citadelbuy-web -o jsonpath="{.items[0].metadata.name}")
+          kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} $WEB_POD -- curl -f http://localhost:3000/health || exit 1
+
+      - name: Get deployment info
+        run: |
+          echo "=== Deployment Summary ==="
+          kubectl get deployments -n ${{ env.KUBERNETES_NAMESPACE }}
+          kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }}
+          kubectl get services -n ${{ env.KUBERNETES_NAMESPACE }}
+          kubectl get ingress -n ${{ env.KUBERNETES_NAMESPACE }}
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deployment failed, rolling back..."
+          kubectl rollout undo deployment/citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }}
+          kubectl rollout undo deployment/citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }}
+          kubectl rollout status deployment/citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=3m
+          kubectl rollout status deployment/citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=3m
+
+      - name: Notify on success
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Development Deployment Successful",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":white_check_mark: *Development Deployment Successful*\n*Environment:* Development\n*Commit:* ${{ github.sha }}\n*Actor:* ${{ github.actor }}\n*Image Tag:* ${{ steps.image-tag.outputs.tag }}\n*URL:* https://dev.citadelbuy.com"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Notify on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Development Deployment Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":x: *Development Deployment Failed*\n*Environment:* Development\n*Commit:* ${{ github.sha }}\n*Actor:* ${{ github.actor }}\n*Workflow:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Upload deployment artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-manifests-dev
+          path: |
+            deployment.yaml
+            infrastructure/kubernetes/base/
+          retention-days: 30
+
+  post-deployment-tests:
+    name: Post-Deployment Tests
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: success()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run smoke tests
+        run: |
+          cd tests
+          npm ci
+          npm run test:smoke -- --environment=development
+        env:
+          API_URL: https://api-dev.citadelbuy.com
+          WEB_URL: https://dev.citadelbuy.com
+
+      - name: Test API endpoints
+        run: |
+          curl -f https://api-dev.citadelbuy.com/api/health/live
+          curl -f https://api-dev.citadelbuy.com/api/health/ready
+          curl -f https://dev.citadelbuy.com/health
+
+      - name: Notify test results
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Post-deployment tests completed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ job.status == 'success' && ':white_check_mark:' || ':x:' }} *Post-Deployment Tests*\n*Environment:* Development\n*Status:* ${{ job.status }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

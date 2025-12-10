@@ -1,0 +1,487 @@
+name: Terraform Drift Detection
+
+on:
+  schedule:
+    # Run daily at 6:00 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to check for drift'
+        required: true
+        type: choice
+        options:
+          - all
+          - dev
+          - staging
+          - prod
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
+env:
+  ARM_SUBSCRIPTION_ID: ba233460-2dbe-4603-a594-68f93ec9deb3
+  ARM_RESOURCE_GROUP: citadelbuy-tfstate-rg
+  ARM_STORAGE_ACCOUNT: citadelbuytfstate
+  ARM_CONTAINER_NAME: tfstate
+  TF_VERSION: "1.6.0"
+
+jobs:
+  detect-drift-dev:
+    name: Drift Detection - Dev
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event.inputs.environment == 'all' || github.event.inputs.environment == 'dev'
+    outputs:
+      drift_detected: ${{ steps.plan.outputs.drift_detected }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        working-directory: infrastructure/terraform/environments/dev
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ env.ARM_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ env.ARM_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ env.ARM_CONTAINER_NAME }}" \
+            -backend-config="key=dev.terraform.tfstate"
+
+      - name: Terraform Plan (Drift Check)
+        id: plan
+        working-directory: infrastructure/terraform/environments/dev
+        env:
+          TF_VAR_azure_subscription_id: ${{ env.ARM_SUBSCRIPTION_ID }}
+          TF_VAR_azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          TF_VAR_cloud_provider: azure
+          TF_VAR_db_admin_password: ${{ secrets.DB_ADMIN_PASSWORD }}
+          TF_VAR_oncall_email: ${{ secrets.ONCALL_EMAIL }}
+          TF_VAR_team_email: ${{ secrets.TEAM_EMAIL }}
+        run: |
+          terraform plan -detailed-exitcode -no-color 2>&1 | tee drift-output.txt
+          exitcode=$?
+
+          if [ $exitcode -eq 2 ]; then
+            echo "drift_detected=true" >> $GITHUB_OUTPUT
+            echo "⚠️ DRIFT DETECTED in dev environment"
+          elif [ $exitcode -eq 0 ]; then
+            echo "drift_detected=false" >> $GITHUB_OUTPUT
+            echo "✅ No drift detected in dev environment"
+          else
+            echo "drift_detected=error" >> $GITHUB_OUTPUT
+            echo "❌ Error checking for drift in dev environment"
+            exit 1
+          fi
+
+      - name: Upload Drift Report
+        if: steps.plan.outputs.drift_detected == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-report-dev-${{ github.run_id }}
+          path: infrastructure/terraform/environments/dev/drift-output.txt
+          retention-days: 30
+
+      - name: Update Summary
+        if: always()
+        run: |
+          echo "## Drift Detection - Dev Environment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.plan.outputs.drift_detected }}" == "true" ]; then
+            echo "⚠️ **DRIFT DETECTED**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "<details><summary>View Drift Details</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```hcl' >> $GITHUB_STEP_SUMMARY
+            tail -100 infrastructure/terraform/environments/dev/drift-output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.plan.outputs.drift_detected }}" == "false" ]; then
+            echo "✅ No drift detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Error during drift detection" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  detect-drift-staging:
+    name: Drift Detection - Staging
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event.inputs.environment == 'all' || github.event.inputs.environment == 'staging'
+    outputs:
+      drift_detected: ${{ steps.plan.outputs.drift_detected }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        working-directory: infrastructure/terraform/environments/staging
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ env.ARM_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ env.ARM_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ env.ARM_CONTAINER_NAME }}" \
+            -backend-config="key=staging.terraform.tfstate"
+
+      - name: Terraform Plan (Drift Check)
+        id: plan
+        working-directory: infrastructure/terraform/environments/staging
+        env:
+          TF_VAR_azure_subscription_id: ${{ env.ARM_SUBSCRIPTION_ID }}
+          TF_VAR_azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          TF_VAR_cloud_provider: azure
+          TF_VAR_db_admin_password: ${{ secrets.DB_ADMIN_PASSWORD }}
+          TF_VAR_oncall_email: ${{ secrets.ONCALL_EMAIL }}
+          TF_VAR_team_email: ${{ secrets.TEAM_EMAIL }}
+        run: |
+          terraform plan -detailed-exitcode -no-color 2>&1 | tee drift-output.txt
+          exitcode=$?
+
+          if [ $exitcode -eq 2 ]; then
+            echo "drift_detected=true" >> $GITHUB_OUTPUT
+            echo "⚠️ DRIFT DETECTED in staging environment"
+          elif [ $exitcode -eq 0 ]; then
+            echo "drift_detected=false" >> $GITHUB_OUTPUT
+            echo "✅ No drift detected in staging environment"
+          else
+            echo "drift_detected=error" >> $GITHUB_OUTPUT
+            echo "❌ Error checking for drift in staging environment"
+            exit 1
+          fi
+
+      - name: Upload Drift Report
+        if: steps.plan.outputs.drift_detected == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-report-staging-${{ github.run_id }}
+          path: infrastructure/terraform/environments/staging/drift-output.txt
+          retention-days: 30
+
+      - name: Update Summary
+        if: always()
+        run: |
+          echo "## Drift Detection - Staging Environment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.plan.outputs.drift_detected }}" == "true" ]; then
+            echo "⚠️ **DRIFT DETECTED**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "<details><summary>View Drift Details</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```hcl' >> $GITHUB_STEP_SUMMARY
+            tail -100 infrastructure/terraform/environments/staging/drift-output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.plan.outputs.drift_detected }}" == "false" ]; then
+            echo "✅ No drift detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Error during drift detection" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  detect-drift-prod:
+    name: Drift Detection - Production
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event.inputs.environment == 'all' || github.event.inputs.environment == 'prod'
+    outputs:
+      drift_detected: ${{ steps.plan.outputs.drift_detected }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        working-directory: infrastructure/terraform/environments/prod
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ env.ARM_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ env.ARM_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ env.ARM_CONTAINER_NAME }}" \
+            -backend-config="key=prod.terraform.tfstate"
+
+      - name: Terraform Plan (Drift Check)
+        id: plan
+        working-directory: infrastructure/terraform/environments/prod
+        env:
+          TF_VAR_azure_subscription_id: ${{ env.ARM_SUBSCRIPTION_ID }}
+          TF_VAR_azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          TF_VAR_cloud_provider: azure
+          TF_VAR_db_admin_password: ${{ secrets.DB_ADMIN_PASSWORD_PROD }}
+          TF_VAR_oncall_email: ${{ secrets.ONCALL_EMAIL }}
+          TF_VAR_team_email: ${{ secrets.TEAM_EMAIL }}
+        run: |
+          terraform plan -detailed-exitcode -no-color 2>&1 | tee drift-output.txt
+          exitcode=$?
+
+          if [ $exitcode -eq 2 ]; then
+            echo "drift_detected=true" >> $GITHUB_OUTPUT
+            echo "🚨 DRIFT DETECTED in PRODUCTION environment"
+          elif [ $exitcode -eq 0 ]; then
+            echo "drift_detected=false" >> $GITHUB_OUTPUT
+            echo "✅ No drift detected in production environment"
+          else
+            echo "drift_detected=error" >> $GITHUB_OUTPUT
+            echo "❌ Error checking for drift in production environment"
+            exit 1
+          fi
+
+      - name: Upload Drift Report
+        if: steps.plan.outputs.drift_detected == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-report-prod-${{ github.run_id }}
+          path: infrastructure/terraform/environments/prod/drift-output.txt
+          retention-days: 90
+
+      - name: Update Summary
+        if: always()
+        run: |
+          echo "## Drift Detection - Production Environment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.plan.outputs.drift_detected }}" == "true" ]; then
+            echo "🚨 **DRIFT DETECTED IN PRODUCTION**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "<details><summary>View Drift Details</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```hcl' >> $GITHUB_STEP_SUMMARY
+            tail -100 infrastructure/terraform/environments/prod/drift-output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.plan.outputs.drift_detected }}" == "false" ]; then
+            echo "✅ No drift detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Error during drift detection" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  create-drift-issue:
+    name: Create Drift Alert Issue
+    runs-on: ubuntu-latest
+    needs: [detect-drift-dev, detect-drift-staging, detect-drift-prod]
+    if: |
+      always() && (
+        needs.detect-drift-dev.outputs.drift_detected == 'true' ||
+        needs.detect-drift-staging.outputs.drift_detected == 'true' ||
+        needs.detect-drift-prod.outputs.drift_detected == 'true'
+      )
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const driftResults = {
+              dev: '${{ needs.detect-drift-dev.outputs.drift_detected }}',
+              staging: '${{ needs.detect-drift-staging.outputs.drift_detected }}',
+              prod: '${{ needs.detect-drift-prod.outputs.drift_detected }}'
+            };
+
+            let driftEnvironments = [];
+            let criticalDrift = false;
+
+            if (driftResults.dev === 'true') driftEnvironments.push('Dev');
+            if (driftResults.staging === 'true') driftEnvironments.push('Staging');
+            if (driftResults.prod === 'true') {
+              driftEnvironments.push('**Production**');
+              criticalDrift = true;
+            }
+
+            const priority = criticalDrift ? '🚨 CRITICAL' : '⚠️ WARNING';
+            const title = `${priority}: Terraform Drift Detected - ${driftEnvironments.join(', ')}`;
+
+            const body = `## Terraform Drift Detection Alert
+
+            **Priority:** ${priority}
+            **Detected:** ${new Date().toISOString()}
+            **Workflow Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            ### Environments with Drift
+
+            ${driftResults.dev === 'true' ? '- ⚠️ **Dev Environment**' : ''}
+            ${driftResults.staging === 'true' ? '- ⚠️ **Staging Environment**' : ''}
+            ${driftResults.prod === 'true' ? '- 🚨 **Production Environment** (CRITICAL)' : ''}
+
+            ### What is Terraform Drift?
+
+            Drift occurs when the actual infrastructure state differs from the Terraform state. This can happen when:
+            - Manual changes are made to resources outside of Terraform
+            - Resources are created/modified through Azure Portal or CLI
+            - Other automation tools modify the infrastructure
+            - Resources are deleted manually
+
+            ### Action Required
+
+            1. Review the drift detection artifacts in the workflow run
+            2. Identify the source of the drift
+            3. Determine if changes should be:
+               - Imported into Terraform state
+               - Reverted to match Terraform configuration
+               - Updated in Terraform to match current state
+
+            ${criticalDrift ? `
+            ### ⚠️ PRODUCTION DRIFT
+
+            **This is a critical alert.** Production infrastructure has drifted from its defined state.
+            Please investigate and resolve immediately to ensure infrastructure consistency and prevent unexpected issues.
+            ` : ''}
+
+            ### Next Steps
+
+            1. Download drift reports from the workflow artifacts
+            2. Review the planned changes in the drift output
+            3. Create a plan to reconcile the drift
+            4. Update Terraform configurations or apply corrections as needed
+            5. Close this issue once drift is resolved
+
+            ---
+            *This issue was automatically created by the Drift Detection workflow.*
+            *Run ID: ${{ github.run_id }}*
+            `;
+
+            const labels = ['terraform', 'drift-detection', 'infrastructure'];
+            if (criticalDrift) {
+              labels.push('priority:critical', 'production');
+            } else {
+              labels.push('priority:medium');
+            }
+
+            // Check if a drift issue already exists
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'terraform,drift-detection'
+            });
+
+            if (existingIssues.data.length === 0) {
+              // Create new issue
+              const issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: labels
+              });
+
+              console.log(`Created drift alert issue: #${issue.data.number}`);
+            } else {
+              // Update existing issue with comment
+              const existingIssue = existingIssues.data[0];
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                body: `## New Drift Detected - ${new Date().toISOString()}\n\n${body}`
+              });
+
+              console.log(`Updated existing drift issue: #${existingIssue.number}`);
+            }
+
+  summary:
+    name: Drift Detection Summary
+    runs-on: ubuntu-latest
+    needs: [detect-drift-dev, detect-drift-staging, detect-drift-prod]
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "# Terraform Drift Detection Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Run Time:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Results by Environment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | Status | Drift Detected |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------------|--------|----------------|" >> $GITHUB_STEP_SUMMARY
+
+          dev_status="${{ needs.detect-drift-dev.result }}"
+          staging_status="${{ needs.detect-drift-staging.result }}"
+          prod_status="${{ needs.detect-drift-prod.result }}"
+
+          dev_drift="${{ needs.detect-drift-dev.outputs.drift_detected }}"
+          staging_drift="${{ needs.detect-drift-staging.outputs.drift_detected }}"
+          prod_drift="${{ needs.detect-drift-prod.outputs.drift_detected }}"
+
+          dev_icon="⏭️"
+          staging_icon="⏭️"
+          prod_icon="⏭️"
+
+          if [ "$dev_status" == "success" ]; then
+            if [ "$dev_drift" == "true" ]; then
+              dev_icon="⚠️"
+            else
+              dev_icon="✅"
+            fi
+          elif [ "$dev_status" == "failure" ]; then
+            dev_icon="❌"
+          fi
+
+          if [ "$staging_status" == "success" ]; then
+            if [ "$staging_drift" == "true" ]; then
+              staging_icon="⚠️"
+            else
+              staging_icon="✅"
+            fi
+          elif [ "$staging_status" == "failure" ]; then
+            staging_icon="❌"
+          fi
+
+          if [ "$prod_status" == "success" ]; then
+            if [ "$prod_drift" == "true" ]; then
+              prod_icon="🚨"
+            else
+              prod_icon="✅"
+            fi
+          elif [ "$prod_status" == "failure" ]; then
+            prod_icon="❌"
+          fi
+
+          echo "| Dev | $dev_icon $dev_status | $dev_drift |" >> $GITHUB_STEP_SUMMARY
+          echo "| Staging | $staging_icon $staging_status | $staging_drift |" >> $GITHUB_STEP_SUMMARY
+          echo "| Production | $prod_icon $prod_status | $prod_drift |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$dev_drift" == "true" ] || [ "$staging_drift" == "true" ] || [ "$prod_drift" == "true" ]; then
+            echo "⚠️ **Action Required:** Drift has been detected. Check the drift reports and created issues." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ **All Clear:** No drift detected in any environment." >> $GITHUB_STEP_SUMMARY
+          fi

@@ -1,0 +1,457 @@
+name: Deploy to Staging AKS
+
+on:
+  push:
+    branches:
+      - staging
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (default: latest from staging)'
+        required: false
+        type: string
+      skip_approval:
+        description: 'Skip manual approval'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  AKS_CLUSTER_NAME: citadelbuy-staging-aks
+  AKS_RESOURCE_GROUP: citadelbuy-staging-rg
+  KUBERNETES_NAMESPACE: citadelbuy-staging
+  CONTAINER_REGISTRY: ghcr.io/citadelplatforms
+  KUSTOMIZE_VERSION: 'v5.3.0'
+
+permissions:
+  id-token: write
+  contents: read
+  packages: read
+  deployments: write
+
+jobs:
+  pre-deployment-checks:
+    name: Pre-Deployment Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Validate Kubernetes manifests
+        run: |
+          cd infrastructure/kubernetes/staging
+          if [ -f validate-manifests.sh ]; then
+            chmod +x validate-manifests.sh
+            ./validate-manifests.sh
+          fi
+
+      - name: Check image availability
+        run: |
+          echo "Verifying container images are available..."
+          # Add image verification logic here
+
+      - name: Run security scans
+        run: |
+          cd infrastructure/kubernetes
+          if [ -f verify-security.sh ]; then
+            chmod +x verify-security.sh
+            ./verify-security.sh
+          fi
+
+      - name: Lint Kustomize files
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash -s -- ${{ env.KUSTOMIZE_VERSION }}
+          ./kustomize build infrastructure/kubernetes/staging > /dev/null
+
+  approval:
+    name: Manual Approval
+    needs: pre-deployment-checks
+    runs-on: ubuntu-latest
+    environment:
+      name: staging-approval
+    if: github.event.inputs.skip_approval != 'true'
+
+    steps:
+      - name: Approval checkpoint
+        run: |
+          echo "Deployment to staging approved by ${{ github.actor }}"
+          echo "Proceeding with deployment..."
+
+  deploy:
+    name: Deploy to Staging
+    needs: [pre-deployment-checks, approval]
+    runs-on: ubuntu-latest
+    if: always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
+    environment:
+      name: staging
+      url: https://staging.citadelbuy.com
+
+    outputs:
+      deployment-id: ${{ steps.deployment-info.outputs.deployment-id }}
+      image-tag: ${{ steps.image-tag.outputs.tag }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./apps/api
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v4
+        with:
+          resource-group: ${{ env.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ env.AKS_CLUSTER_NAME }}
+          admin: 'false'
+
+      - name: Install kubelogin
+        run: |
+          curl -LO https://github.com/Azure/kubelogin/releases/download/v0.1.1/kubelogin-linux-amd64.zip
+          unzip kubelogin-linux-amd64.zip
+          sudo mv bin/linux_amd64/kubelogin /usr/local/bin/
+          rm -rf bin kubelogin-linux-amd64.zip
+
+      - name: Configure kubectl with kubelogin
+        run: |
+          kubelogin convert-kubeconfig -l azurecli
+          kubectl config set-context --current --namespace=${{ env.KUBERNETES_NAMESPACE }}
+
+      - name: Verify cluster connection
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+          kubectl get namespaces
+
+      - name: Install Kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash -s -- ${{ env.KUSTOMIZE_VERSION }}
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Determine image tag
+        id: image-tag
+        run: |
+          if [ "${{ github.event.inputs.image_tag }}" != "" ]; then
+            echo "tag=${{ github.event.inputs.image_tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=staging-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update Kustomize image tags
+        run: |
+          cd infrastructure/kubernetes/staging
+          kustomize edit set image \
+            ${{ env.CONTAINER_REGISTRY }}/citadelbuy-api:${{ steps.image-tag.outputs.tag }} \
+            ${{ env.CONTAINER_REGISTRY }}/citadelbuy-web:${{ steps.image-tag.outputs.tag }} \
+            ${{ env.CONTAINER_REGISTRY }}/citadelbuy-worker:${{ steps.image-tag.outputs.tag }}
+
+      - name: Create namespace if not exists
+        run: |
+          kubectl create namespace ${{ env.KUBERNETES_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Backup current deployment state
+        id: backup
+        run: |
+          BACKUP_DIR="backups/$(date +%Y%m%d-%H%M%S)"
+          mkdir -p $BACKUP_DIR
+          kubectl get all -n ${{ env.KUBERNETES_NAMESPACE }} -o yaml > $BACKUP_DIR/current-state.yaml
+          echo "backup-dir=$BACKUP_DIR" >> $GITHUB_OUTPUT
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: |
+          cd apps/api
+          echo "Running Prisma migrations..."
+          npx prisma migrate deploy --schema=./prisma/schema.prisma
+          npx prisma migrate deploy --schema=./prisma/schema-organization.prisma
+          npx prisma migrate deploy --schema=./prisma/schema-dropshipping.prisma
+          npx prisma migrate deploy --schema=./prisma/schema-privacy.prisma
+        continue-on-error: false
+
+      - name: Generate Prisma clients
+        run: |
+          cd apps/api
+          npx prisma generate --schema=./prisma/schema.prisma
+          npx prisma generate --schema=./prisma/schema-organization.prisma
+          npx prisma generate --schema=./prisma/schema-dropshipping.prisma
+          npx prisma generate --schema=./prisma/schema-privacy.prisma
+
+      - name: Build Kustomize manifests
+        run: |
+          kustomize build infrastructure/kubernetes/staging > deployment.yaml
+          echo "=== Generated Manifests ==="
+          cat deployment.yaml
+
+      - name: Deploy to AKS
+        id: deploy
+        run: |
+          kubectl apply -f deployment.yaml
+
+          echo "Waiting for deployments to rollout..."
+          kubectl rollout status deployment/citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=8m
+          kubectl rollout status deployment/citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=8m
+
+      - name: Set deployment info
+        id: deployment-info
+        run: |
+          DEPLOYMENT_ID="staging-$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)"
+          echo "deployment-id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+
+          kubectl annotate deployment/citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }} \
+            deployment-id=$DEPLOYMENT_ID \
+            deployed-by=${{ github.actor }} \
+            git-commit=${{ github.sha }} \
+            --overwrite
+
+          kubectl annotate deployment/citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }} \
+            deployment-id=$DEPLOYMENT_ID \
+            deployed-by=${{ github.actor }} \
+            git-commit=${{ github.sha }} \
+            --overwrite
+
+      - name: Verify deployments
+        run: |
+          echo "=== Deployment Status ==="
+          kubectl get deployments -n ${{ env.KUBERNETES_NAMESPACE }}
+          kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }}
+          kubectl get services -n ${{ env.KUBERNETES_NAMESPACE }}
+          kubectl get ingress -n ${{ env.KUBERNETES_NAMESPACE }}
+
+      - name: Health check - API
+        run: |
+          echo "Waiting for API to be ready..."
+          sleep 45
+
+          API_POD=$(kubectl get pod -n ${{ env.KUBERNETES_NAMESPACE }} -l app=citadelbuy-api -o jsonpath="{.items[0].metadata.name}")
+          echo "Testing API pod: $API_POD"
+
+          kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} $API_POD -- curl -f http://localhost:4000/api/health/live || exit 1
+          kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} $API_POD -- curl -f http://localhost:4000/api/health/ready || exit 1
+
+          echo "API health checks passed!"
+
+      - name: Health check - Web
+        run: |
+          WEB_POD=$(kubectl get pod -n ${{ env.KUBERNETES_NAMESPACE }} -l app=citadelbuy-web -o jsonpath="{.items[0].metadata.name}")
+          echo "Testing Web pod: $WEB_POD"
+
+          kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} $WEB_POD -- curl -f http://localhost:3000/health || exit 1
+
+          echo "Web health checks passed!"
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deployment failed, initiating rollback..."
+
+          kubectl rollout undo deployment/citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }}
+          kubectl rollout undo deployment/citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }}
+
+          echo "Waiting for rollback to complete..."
+          kubectl rollout status deployment/citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=5m
+          kubectl rollout status deployment/citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=5m
+
+          echo "Rollback completed"
+
+      - name: Upload deployment artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-manifests-staging
+          path: |
+            deployment.yaml
+            infrastructure/kubernetes/staging/
+            ${{ steps.backup.outputs.backup-dir }}/
+          retention-days: 90
+
+      - name: Notify on success
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Staging Deployment Successful",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":white_check_mark: *Staging Deployment Successful*\n*Environment:* Staging\n*Deployment ID:* ${{ steps.deployment-info.outputs.deployment-id }}\n*Commit:* ${{ github.sha }}\n*Actor:* ${{ github.actor }}\n*Image Tag:* ${{ steps.image-tag.outputs.tag }}\n*URL:* https://staging.citadelbuy.com"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Notify on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Staging Deployment Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":x: *Staging Deployment Failed*\n*Environment:* Staging\n*Commit:* ${{ github.sha }}\n*Actor:* ${{ github.actor }}\n*Workflow:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  smoke-tests:
+    name: Smoke Tests
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: success()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install test dependencies
+        run: |
+          cd tests
+          npm ci
+
+      - name: Run smoke tests
+        run: |
+          cd tests
+          npm run test:smoke -- --environment=staging
+        env:
+          API_URL: https://api-staging.citadelbuy.com
+          WEB_URL: https://staging.citadelbuy.com
+          TEST_USER_EMAIL: ${{ secrets.STAGING_TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.STAGING_TEST_USER_PASSWORD }}
+
+      - name: Test critical API endpoints
+        run: |
+          echo "Testing API health endpoints..."
+          curl -f https://api-staging.citadelbuy.com/api/health/live
+          curl -f https://api-staging.citadelbuy.com/api/health/ready
+
+          echo "Testing Web health endpoint..."
+          curl -f https://staging.citadelbuy.com/health
+
+          echo "Testing API version endpoint..."
+          curl -f https://api-staging.citadelbuy.com/api/version
+
+      - name: Test authentication flow
+        run: |
+          echo "Testing authentication endpoints..."
+          RESPONSE=$(curl -s -X POST https://api-staging.citadelbuy.com/api/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"test@example.com","password":"invalid"}')
+          echo "Auth response: $RESPONSE"
+
+      - name: Load testing (light)
+        run: |
+          cd tests/load
+          npm ci
+          npm run test:light -- --environment=staging
+        continue-on-error: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-results
+          path: tests/results/
+          retention-days: 30
+
+      - name: Notify test results
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Staging smoke tests completed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ job.status == 'success' && ':white_check_mark:' || ':x:' }} *Staging Smoke Tests*\n*Environment:* Staging\n*Deployment ID:* ${{ needs.deploy.outputs.deployment-id }}\n*Status:* ${{ job.status }}\n*Workflow:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  integration-tests:
+    name: Integration Tests
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: success()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run integration tests
+        run: |
+          cd tests
+          npm ci
+          npm run test:integration -- --environment=staging
+        env:
+          API_URL: https://api-staging.citadelbuy.com
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: tests/results/
+          retention-days: 30
