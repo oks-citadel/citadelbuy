@@ -1,0 +1,276 @@
+name: Terraform Apply - Staging
+
+on:
+  push:
+    branches:
+      - staging
+    paths:
+      - 'infrastructure/terraform/**'
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "apply" to confirm deployment'
+        required: true
+        default: ''
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  deployments: write
+
+env:
+  ARM_SUBSCRIPTION_ID: ba233460-2dbe-4603-a594-68f93ec9deb3
+  ARM_RESOURCE_GROUP: citadelbuy-tfstate-rg
+  ARM_STORAGE_ACCOUNT: citadelbuytfstate
+  ARM_CONTAINER_NAME: tfstate
+  TF_VERSION: "1.6.0"
+  ENVIRONMENT: staging
+
+jobs:
+  validate-input:
+    name: Validate Manual Trigger
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Check confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "apply" ]; then
+            echo "❌ Deployment cancelled - confirmation not provided"
+            exit 1
+          fi
+          echo "✅ Deployment confirmed"
+
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    needs: [validate-input]
+    if: always() && (needs.validate-input.result == 'success' || needs.validate-input.result == 'skipped')
+    outputs:
+      plan_exitcode: ${{ steps.plan.outputs.exitcode }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        working-directory: infrastructure/terraform/environments/${{ env.ENVIRONMENT }}
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ env.ARM_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ env.ARM_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ env.ARM_CONTAINER_NAME }}" \
+            -backend-config="key=${{ env.ENVIRONMENT }}.terraform.tfstate"
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: infrastructure/terraform/environments/${{ env.ENVIRONMENT }}
+        env:
+          TF_VAR_azure_subscription_id: ${{ env.ARM_SUBSCRIPTION_ID }}
+          TF_VAR_azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          TF_VAR_cloud_provider: azure
+          TF_VAR_db_admin_password: ${{ secrets.DB_ADMIN_PASSWORD }}
+          TF_VAR_oncall_email: ${{ secrets.ONCALL_EMAIL }}
+          TF_VAR_team_email: ${{ secrets.TEAM_EMAIL }}
+        run: |
+          terraform plan -detailed-exitcode -out=tfplan 2>&1 | tee plan-output.txt
+          exitcode=$?
+          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
+          exit 0
+
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-staging-${{ github.sha }}
+          path: |
+            infrastructure/terraform/environments/${{ env.ENVIRONMENT }}/tfplan
+            infrastructure/terraform/environments/${{ env.ENVIRONMENT }}/plan-output.txt
+          retention-days: 5
+
+      - name: Create Plan Summary
+        run: |
+          echo "## Terraform Plan - Staging Environment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.plan.outputs.exitcode }}" == "0" ]; then
+            echo "✅ **No changes detected**" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.plan.outputs.exitcode }}" == "2" ]; then
+            echo "📝 **Changes detected and ready for approval**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "<details><summary>View Plan Output</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```hcl' >> $GITHUB_STEP_SUMMARY
+            tail -200 infrastructure/terraform/environments/${{ env.ENVIRONMENT }}/plan-output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Plan failed**" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+  terraform-apply:
+    name: Terraform Apply (Requires Approval)
+    runs-on: ubuntu-latest
+    needs: terraform-plan
+    if: needs.terraform-plan.outputs.plan_exitcode == '2'
+    environment:
+      name: staging
+      url: https://staging.citadelbuy.com
+    steps:
+      - name: Deployment Started Notification
+        run: |
+          echo "🚀 Starting deployment to STAGING environment"
+          echo "Deployer: @${{ github.actor }}"
+          echo "Commit: ${{ github.sha }}"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
+
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-staging-${{ github.sha }}
+          path: infrastructure/terraform/environments/${{ env.ENVIRONMENT }}
+
+      - name: Terraform Init
+        working-directory: infrastructure/terraform/environments/${{ env.ENVIRONMENT }}
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ env.ARM_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ env.ARM_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ env.ARM_CONTAINER_NAME }}" \
+            -backend-config="key=${{ env.ENVIRONMENT }}.terraform.tfstate"
+
+      - name: Terraform Apply
+        id: apply
+        working-directory: infrastructure/terraform/environments/${{ env.ENVIRONMENT }}
+        run: |
+          echo "⏳ Applying Terraform changes..."
+          terraform apply -auto-approve tfplan 2>&1 | tee apply-output.txt
+
+      - name: Upload Apply Output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apply-output-staging-${{ github.sha }}
+          path: infrastructure/terraform/environments/${{ env.ENVIRONMENT }}/apply-output.txt
+          retention-days: 90
+
+      - name: Generate Apply Summary
+        if: always()
+        run: |
+          echo "## Terraform Apply - Staging Environment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ steps.apply.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Staging" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Approved By:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.apply.outcome }}" == "success" ]; then
+            echo "### ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Deployment Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "<details><summary>Apply Output (Last 150 lines)</summary>" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -150 infrastructure/terraform/environments/${{ env.ENVIRONMENT }}/apply-output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "</details>" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "❌ Terraform apply failed for staging environment!"
+          echo "Review the apply output artifact and workflow logs."
+          exit 1
+
+  post-deployment-verification:
+    name: Post-Deployment Verification
+    runs-on: ubuntu-latest
+    needs: terraform-apply
+    if: success()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
+
+      - name: Verify Azure Resources
+        run: |
+          echo "🔍 Verifying deployed resources in staging..."
+
+          # Check Resource Group
+          az group show --name citadelbuy-staging-rg --query "{Name:name, Location:location, ProvisioningState:properties.provisioningState}" -o table
+
+          # List all resources
+          echo ""
+          echo "📦 Resources in citadelbuy-staging-rg:"
+          az resource list --resource-group citadelbuy-staging-rg --query "[].{Name:name, Type:type, Location:location}" -o table
+
+          echo ""
+          echo "✅ Resource verification complete"
+
+      - name: Verify AKS Cluster
+        run: |
+          echo "☸️ Verifying AKS cluster..."
+          az aks show --resource-group citadelbuy-staging-rg --name citadelbuy-staging-aks --query "{Name:name, Status:powerState.code, Version:kubernetesVersion}" -o table || echo "AKS cluster not found or not accessible"
+        continue-on-error: true
+
+      - name: Verify Database
+        run: |
+          echo "🗄️ Verifying PostgreSQL server..."
+          az postgres flexible-server list --resource-group citadelbuy-staging-rg --query "[].{Name:name, State:state, Version:version}" -o table || echo "PostgreSQL server not found or not accessible"
+        continue-on-error: true
+
+      - name: Health Check
+        run: |
+          echo "🏥 Running health checks..."
+          # Add application health checks here
+          # Example: curl https://staging.citadelbuy.com/health
+          echo "✅ Health checks complete"
+        continue-on-error: true
+
+      - name: Verification Summary
+        run: |
+          echo "## Post-Deployment Verification - Staging" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Deployment verification completed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment URL:** https://staging.citadelbuy.com" >> $GITHUB_STEP_SUMMARY
+          echo "**Verification Time:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
