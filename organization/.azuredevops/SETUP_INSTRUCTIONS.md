@@ -27,6 +27,20 @@
 - **Storage Account**: `citadelbuytfstate`
 - **Container**: `tfstate`
 
+### Azure Container Registry Created
+- **Resource Group**: `citadelbuy-acr-rg` (East US)
+- **Registry Name**: `citadelbuyacr`
+- **SKU**: Standard
+
+### AKS Clusters Created
+| Cluster | Resource Group | Nodes | VM Size | Autoscale |
+|---------|----------------|-------|---------|-----------|
+| citadelbuy-dev-aks | citadelbuy-dev-rg | 2 | Standard_B2s | No |
+| citadelbuy-staging-aks | citadelbuy-staging-rg | 2 | Standard_B2ms | No |
+| citadelbuy-prod-aks | citadelbuy-prod-rg | 1-3 | Standard_B2s | Yes |
+
+**Note**: Production cluster was created with reduced capacity due to vCPU quota limits. To scale up production, request quota increase at: https://learn.microsoft.com/en-us/azure/quotas/view-quotas
+
 ---
 
 ## Manual Steps Required
@@ -130,75 +144,7 @@ Update placeholder values:
 
 ---
 
-### 4. Create Azure Container Registry (if not exists)
-
-```bash
-# Create resource group for ACR
-az group create --name citadelbuy-acr-rg --location eastus
-
-# Create ACR
-az acr create \
-  --name citadelbuyacr \
-  --resource-group citadelbuy-acr-rg \
-  --sku Standard \
-  --admin-enabled true
-
-# Get ACR credentials (for service connection)
-az acr credential show --name citadelbuyacr
-```
-
----
-
-### 5. Create AKS Clusters (if not exists)
-
-#### Development AKS
-```bash
-az group create --name citadelbuy-dev-rg --location eastus
-
-az aks create \
-  --name citadelbuy-dev-aks \
-  --resource-group citadelbuy-dev-rg \
-  --node-count 2 \
-  --node-vm-size Standard_B2s \
-  --enable-managed-identity \
-  --attach-acr citadelbuyacr \
-  --generate-ssh-keys
-```
-
-#### Staging AKS
-```bash
-az group create --name citadelbuy-staging-rg --location eastus
-
-az aks create \
-  --name citadelbuy-staging-aks \
-  --resource-group citadelbuy-staging-rg \
-  --node-count 2 \
-  --node-vm-size Standard_B2ms \
-  --enable-managed-identity \
-  --attach-acr citadelbuyacr \
-  --generate-ssh-keys
-```
-
-#### Production AKS
-```bash
-az group create --name citadelbuy-prod-rg --location eastus
-
-az aks create \
-  --name citadelbuy-prod-aks \
-  --resource-group citadelbuy-prod-rg \
-  --node-count 3 \
-  --node-vm-size Standard_D2s_v3 \
-  --enable-managed-identity \
-  --attach-acr citadelbuyacr \
-  --enable-cluster-autoscaler \
-  --min-count 3 \
-  --max-count 10 \
-  --generate-ssh-keys
-```
-
----
-
-### 6. Verify Pipeline Configuration
+### 4. Verify Pipeline Configuration
 
 After completing the manual steps:
 
