@@ -35,7 +35,7 @@ env:
   AKS_CLUSTER_NAME: citadelbuy-prod-aks
   AKS_RESOURCE_GROUP: citadelbuy-prod-rg
   KUBERNETES_NAMESPACE: citadelbuy-production
-  CONTAINER_REGISTRY: ghcr.io/citadelplatforms
+  CONTAINER_REGISTRY: citadelbuyacr.azurecr.io
   KUSTOMIZE_VERSION: 'v5.3.0'
 
 permissions:
