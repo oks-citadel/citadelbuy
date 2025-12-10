@@ -22,9 +22,9 @@ resources:
 
 # Image transformations
 images:
-  - name: ghcr.io/citadelplatforms/citadelbuy-api
+  - name: citadelbuyacr.azurecr.io/citadelbuy-api
     newTag: staging-latest
-  - name: ghcr.io/citadelplatforms/citadelbuy-web
+  - name: citadelbuyacr.azurecr.io/citadelbuy-web
     newTag: staging-latest
 
 # ConfigMap generator for additional configuration

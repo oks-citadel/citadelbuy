@@ -31,11 +31,11 @@ bases:
 
 # Image transformations
 images:
-  - name: ghcr.io/citadelplatforms/citadelbuy-api
-    newName: ghcr.io/citadelplatforms/citadelbuy-api
+  - name: citadelbuyacr.azurecr.io/citadelbuy-api
+    newName: citadelbuyacr.azurecr.io/citadelbuy-api
     newTag: production-latest
-  - name: ghcr.io/citadelplatforms/citadelbuy-web
-    newName: ghcr.io/citadelplatforms/citadelbuy-web
+  - name: citadelbuyacr.azurecr.io/citadelbuy-web
+    newName: citadelbuyacr.azurecr.io/citadelbuy-web
     newTag: production-latest
 
 # ConfigMap generator for deployment metadata

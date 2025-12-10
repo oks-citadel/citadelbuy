@@ -34,7 +34,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: web
-        image: ghcr.io/citadelplatforms/citadelbuy-web:staging-latest
+        image: citadelbuyacr.azurecr.io/citadelbuy-web:staging-latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3000

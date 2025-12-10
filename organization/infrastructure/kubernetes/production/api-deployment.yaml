@@ -76,7 +76,7 @@ spec:
             app: citadelbuy-api
       containers:
       - name: api
-        image: ghcr.io/citadelplatforms/citadelbuy-api:production-latest
+        image: citadelbuyacr.azurecr.io/citadelbuy-api:production-latest
         imagePullPolicy: Always
         ports:
         - containerPort: 4000

@@ -28,9 +28,9 @@ spec:
         supplementalGroups: [4000]
       containers:
         - name: api
-          image: citadelplatforms/citadelbuy-ecommerce:backend-latest
+          image: citadelbuyacr.azurecr.io/citadelbuy-api:latest
           ports:
-            - containerPort: 3000
+            - containerPort: 4000
               name: http
               protocol: TCP
           envFrom:
@@ -64,24 +64,24 @@ spec:
               cpu: "500m"
           livenessProbe:
             httpGet:
-              path: /health
-              port: 3000
+              path: /api/health
+              port: 4000
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /health
-              port: 3000
+              path: /api/health
+              port: 4000
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
           startupProbe:
             httpGet:
-              path: /health
-              port: 3000
+              path: /api/health
+              port: 4000
             initialDelaySeconds: 0
             periodSeconds: 5
             timeoutSeconds: 3
@@ -102,7 +102,7 @@ spec:
     app: citadelbuy-api
   ports:
     - port: 80
-      targetPort: 3000
+      targetPort: 4000
   type: ClusterIP
 ---
 apiVersion: autoscaling/v2
