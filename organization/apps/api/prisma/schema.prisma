@@ -24,16 +24,16 @@ enum OrderStatus {
 }
 
 model User {
-  id              String   @id @default(uuid())
-  email           String   @unique
+  id              String    @id @default(uuid())
+  email           String    @unique
   phoneNumber     String?
-  phoneVerified   Boolean  @default(false)
+  phoneVerified   Boolean   @default(false)
   phoneVerifiedAt DateTime?
   password        String
   name            String
-  role            UserRole @default(CUSTOMER)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  role            UserRole  @default(CUSTOMER)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // Relations
   orders                 Order[]
@@ -107,11 +107,11 @@ model User {
   organizationMemberships OrganizationMember[]
 
   // Escrow relations
-  escrowAccountsAsBuyer   EscrowAccount[]            @relation("EscrowBuyer")
-  escrowAccountsAsSeller  EscrowAccount[]            @relation("EscrowSeller")
-  escrowDisputes          EscrowDispute[]
-  escrowsAsBuyer          Escrow[]                   @relation("MilestoneEscrowBuyer")
-  escrowsAsSeller         Escrow[]                   @relation("MilestoneEscrowSeller")
+  escrowAccountsAsBuyer  EscrowAccount[] @relation("EscrowBuyer")
+  escrowAccountsAsSeller EscrowAccount[] @relation("EscrowSeller")
+  escrowDisputes         EscrowDispute[]
+  escrowsAsBuyer         Escrow[]        @relation("MilestoneEscrowBuyer")
+  escrowsAsSeller        Escrow[]        @relation("MilestoneEscrowSeller")
 
   @@map("users")
 }
@@ -606,7 +606,9 @@ model ProductVariant {
 
 enum CampaignStatus {
   DRAFT
+  SCHEDULED
   ACTIVE
+  RUNNING
   PAUSED
   COMPLETED
   CANCELLED
@@ -3827,15 +3829,20 @@ model MarketingCampaign {
   // Campaign Type
   type MarketingCampaignType // FLASH_SALE, SEASONAL, LOYALTY, CLEARANCE, LAUNCH
 
+  // Organization
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   // Scheduling
-  startDate DateTime
-  endDate   DateTime
+  startDate DateTime?
+  endDate   DateTime?
 
   // Budget & Goals
   budget        Float? // Maximum discount budget
   budgetUsed    Float  @default(0)
   targetRevenue Float?
   actualRevenue Float  @default(0)
+  currency      String @default("USD")
 
   // Performance Metrics
   totalOrders   Int   @default(0)
@@ -3843,9 +3850,14 @@ model MarketingCampaign {
   impressions   Int   @default(0)
   clicks        Int   @default(0)
   conversions   Int   @default(0)
+  metrics       Json? // Additional metrics like spend, revenue, etc.
 
   // Status
   status MarketingCampaignStatus @default(DRAFT)
+
+  // Targeting and Content
+  targeting Json? // Targeting configuration
+  content   Json? // Campaign content
 
   // Metadata
   tags     String[] @default([])
@@ -3861,6 +3873,7 @@ model MarketingCampaign {
 
   @@index([status])
   @@index([type])
+  @@index([organizationId])
   @@index([startDate, endDate])
   @@map("marketing_campaigns")
 }
@@ -3886,6 +3899,7 @@ model CampaignCoupon {
 }
 
 enum MarketingCampaignType {
+  // Promotional campaigns
   FLASH_SALE // Short-duration high-discount
   SEASONAL // Holiday/seasonal promotions
   LOYALTY // Loyalty program rewards
@@ -3893,15 +3907,141 @@ enum MarketingCampaignType {
   LAUNCH // Product launch
   REFERRAL // Referral program
   WIN_BACK // Re-engagement campaign
+
+  // Channel-based campaigns (from campaign.dto.ts)
+  EMAIL // Email marketing
+  SMS // SMS marketing
+  PUSH // Push notifications
+  MULTI_CHANNEL // Multi-channel campaigns
+  SOCIAL // Social media campaigns
+  DISPLAY // Display advertising
 }
 
 enum MarketingCampaignStatus {
   DRAFT // Not yet scheduled
   SCHEDULED // Scheduled for future
-  ACTIVE // Currently running
+  RUNNING // Currently running (matches CampaignStatus.RUNNING from DTOs)
   PAUSED // Temporarily paused
   COMPLETED // Finished
   CANCELLED // Cancelled
+}
+
+// ============================================
+// ABM (ACCOUNT-BASED MARKETING) SYSTEM
+// ============================================
+
+enum ABMAccountTier {
+  STRATEGIC
+  PRIORITY
+  STANDARD
+}
+
+enum ABMAccountStatus {
+  TARGET
+  ENGAGED
+  QUALIFIED
+  CUSTOMER
+  LOST
+}
+
+enum ABMCampaignStrategy {
+  ONE_TO_ONE
+  ONE_TO_FEW
+  ONE_TO_MANY
+}
+
+enum ABMCampaignStatus {
+  PLANNING
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum ABMEngagementType {
+  EMAIL
+  MEETING
+  CALL
+  DEMO
+  PROPOSAL
+  EVENT
+}
+
+/// ABM Target Accounts
+model ABMAccount {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name     String
+  industry String
+  size     String
+  revenue  Float?
+
+  tier   ABMAccountTier   @default(STANDARD)
+  status ABMAccountStatus @default(TARGET)
+
+  assignedTo String? // User ID of account manager
+
+  // Engagement tracking
+  score              Int       @default(0)
+  engagementCount    Int       @default(0)
+  lastEngagementDate DateTime?
+
+  metadata Json? // Additional account data
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  engagements ABMEngagement[]
+
+  @@index([organizationId])
+  @@index([tier])
+  @@index([status])
+  @@index([assignedTo])
+  @@map("abm_accounts")
+}
+
+/// ABM Campaigns
+model ABMCampaign {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+
+  targetAccounts String[] // Array of account IDs
+  strategy       ABMCampaignStrategy
+  status         ABMCampaignStatus   @default(PLANNING)
+
+  budget    Float?
+  startDate DateTime?
+  endDate   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([strategy])
+  @@map("abm_campaigns")
+}
+
+/// ABM Account Engagements
+model ABMEngagement {
+  id        String     @id @default(uuid())
+  accountId String
+  account   ABMAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  type    ABMEngagementType
+  date    DateTime
+  outcome String?
+  notes   String?
+  score   Int? // Engagement quality score
+
+  createdAt DateTime @default(now())
+
+  @@index([accountId])
+  @@index([type])
+  @@index([date])
+  @@map("abm_engagements")
 }
 
 /// Vendor-specific coupons (vendors can create for their products)
@@ -5630,15 +5770,17 @@ model Organization {
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   // Relations
-  members         OrganizationMember[]
-  departments     Department[]
-  teams           Team[]
-  roles           OrganizationRole[]
-  kycApplications KycApplication[]
-  auditLogs       OrganizationAuditLog[]
-  invitations     OrganizationInvitation[]
-  apiKeys         OrganizationApiKey[]
-  billing         OrganizationBilling?
+  members            OrganizationMember[]
+  departments        Department[]
+  teams              Team[]
+  roles              OrganizationRole[]
+  kycApplications    KycApplication[]
+  auditLogs          OrganizationAuditLog[]
+  invitations        OrganizationInvitation[]
+  apiKeys            OrganizationApiKey[]
+  billing            OrganizationBilling?
+  marketingCampaigns MarketingCampaign[]
+  aBMAccounts        ABMAccount[]
 
   @@index([slug])
   @@index([status])
@@ -5968,39 +6110,39 @@ model OrganizationInvoice {
 
 // Escrow Account for B2B Transactions
 model EscrowAccount {
-  id        String   @id @default(uuid())
-  orderId   String   @unique
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id      String @id @default(uuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  buyerId   String
-  buyer     User     @relation("EscrowBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  buyerId String
+  buyer   User   @relation("EscrowBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
 
-  sellerId  String
-  seller    User     @relation("EscrowSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  sellerId String
+  seller   User   @relation("EscrowSeller", fields: [sellerId], references: [id], onDelete: Cascade)
 
-  amount           Float
-  currency         String   @default("USD")
-  status           String   @default("PENDING") // PENDING, FUNDED, IN_PROGRESS, RELEASED, REFUNDED, DISPUTED
+  amount   Float
+  currency String @default("USD")
+  status   String @default("PENDING") // PENDING, FUNDED, IN_PROGRESS, RELEASED, REFUNDED, DISPUTED
 
-  fundedAmount     Float?   @default(0)
-  releasedAmount   Float?   @default(0)
+  fundedAmount   Float? @default(0)
+  releasedAmount Float? @default(0)
 
-  milestones       Json?    // Stored as JSON array
-  fees             Float?
+  milestones Json? // Stored as JSON array
+  fees       Float?
 
-  fundedAt         DateTime?
-  releasedAt       DateTime?
-  completedAt      DateTime?
-  refundedAt       DateTime?
+  fundedAt    DateTime?
+  releasedAt  DateTime?
+  completedAt DateTime?
+  refundedAt  DateTime?
 
   paymentReference String?
   releasedBy       String?
   refundReason     String?
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  disputes         EscrowDispute[]
+  disputes EscrowDispute[]
 
   @@index([orderId])
   @@index([buyerId])
@@ -6011,25 +6153,25 @@ model EscrowAccount {
 
 // Escrow Dispute
 model EscrowDispute {
-  id          String        @id @default(uuid())
-  escrowId    String
-  escrow      EscrowAccount @relation(fields: [escrowId], references: [id], onDelete: Cascade)
+  id       String        @id @default(uuid())
+  escrowId String
+  escrow   EscrowAccount @relation(fields: [escrowId], references: [id], onDelete: Cascade)
 
   initiatedBy String // 'BUYER' or 'SELLER'
   userId      String
   user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  reason      String
-  details     String
-  evidence    Json?  // Array of evidence
-  status      String @default("OPEN") // OPEN, INVESTIGATING, RESOLVED, ESCALATED
+  reason   String
+  details  String
+  evidence Json? // Array of evidence
+  status   String @default("OPEN") // OPEN, INVESTIGATING, RESOLVED, ESCALATED
 
-  resolution       String?
-  resolutionNotes  String?
-  resolvedAt       DateTime?
+  resolution      String?
+  resolutionNotes String?
+  resolvedAt      DateTime?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([escrowId])
   @@index([userId])
@@ -6039,33 +6181,33 @@ model EscrowDispute {
 
 // Escrow for milestone-based payments
 model Escrow {
-  id                 String   @id @default(uuid())
-  orderId            String
-  order              Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id      String @id @default(uuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  buyerId            String
-  buyer              User     @relation("MilestoneEscrowBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  buyerId String
+  buyer   User   @relation("MilestoneEscrowBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
 
-  sellerId           String
-  seller             User     @relation("MilestoneEscrowSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  sellerId String
+  seller   User   @relation("MilestoneEscrowSeller", fields: [sellerId], references: [id], onDelete: Cascade)
 
-  totalAmount        Float
-  currency           String   @default("USD")
-  fundedAmount       Float    @default(0)
-  releasedAmount     Float    @default(0)
+  totalAmount    Float
+  currency       String @default("USD")
+  fundedAmount   Float  @default(0)
+  releasedAmount Float  @default(0)
 
-  status             String   @default("PENDING") // PENDING, FUNDED, MILESTONE_COMPLETED, RELEASED, DISPUTED, REFUNDED, CANCELLED
+  status String @default("PENDING") // PENDING, FUNDED, MILESTONE_COMPLETED, RELEASED, DISPUTED, REFUNDED, CANCELLED
 
-  automaticRelease   Boolean  @default(false)
-  releaseDelay       Int      @default(3) // Days
+  automaticRelease   Boolean @default(false)
+  releaseDelay       Int     @default(3) // Days
   termsAndConditions String?
 
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  milestones         Milestone[]
-  transactions       EscrowTransaction[]
-  dispute            EscrowMilestoneDispute?
+  milestones   Milestone[]
+  transactions EscrowTransaction[]
+  dispute      EscrowMilestoneDispute?
 
   @@index([orderId])
   @@index([buyerId])
@@ -6076,33 +6218,33 @@ model Escrow {
 
 // Milestone for Escrow
 model Milestone {
-  id              String   @id @default(uuid())
-  escrowId        String
-  escrow          Escrow   @relation(fields: [escrowId], references: [id], onDelete: Cascade)
+  id       String @id @default(uuid())
+  escrowId String
+  escrow   Escrow @relation(fields: [escrowId], references: [id], onDelete: Cascade)
 
-  name            String
-  description     String
-  amount          Float
-  status          String   @default("PENDING") // PENDING, IN_PROGRESS, SUBMITTED, APPROVED, REJECTED, PAID
+  name        String
+  description String
+  amount      Float
+  status      String @default("PENDING") // PENDING, IN_PROGRESS, SUBMITTED, APPROVED, REJECTED, PAID
 
-  sequenceNumber  Int
+  sequenceNumber Int
 
-  dueDate         DateTime?
-  deliverables    String[]
+  dueDate      DateTime?
+  deliverables String[]
 
   submittedAt     DateTime?
   submissionNotes String?
 
-  approvedAt      DateTime?
-  approvalNotes   String?
+  approvedAt    DateTime?
+  approvalNotes String?
 
   rejectedAt      DateTime?
   rejectionReason String?
 
-  paidAt          DateTime?
+  paidAt DateTime?
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([escrowId])
   @@index([status])
@@ -6112,17 +6254,17 @@ model Milestone {
 
 // Escrow Transaction
 model EscrowTransaction {
-  id            String   @id @default(uuid())
-  escrowId      String
-  escrow        Escrow   @relation(fields: [escrowId], references: [id], onDelete: Cascade)
+  id       String @id @default(uuid())
+  escrowId String
+  escrow   Escrow @relation(fields: [escrowId], references: [id], onDelete: Cascade)
 
-  type          String   // FUNDING, RELEASE, REFUND
+  type          String // FUNDING, RELEASE, REFUND
   amount        Float
   transactionId String?
   milestoneId   String?
   description   String?
 
-  createdAt     DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([escrowId])
   @@index([type])
@@ -6131,17 +6273,17 @@ model EscrowTransaction {
 
 // Escrow Milestone Dispute
 model EscrowMilestoneDispute {
-  id           String   @id @default(uuid())
-  escrowId     String   @unique
-  escrow       Escrow   @relation(fields: [escrowId], references: [id], onDelete: Cascade)
+  id       String @id @default(uuid())
+  escrowId String @unique
+  escrow   Escrow @relation(fields: [escrowId], references: [id], onDelete: Cascade)
 
-  initiatedBy  String
-  reason       String
-  evidence     String[]
-  status       String   @default("OPEN") // OPEN, RESOLVED, ESCALATED
+  initiatedBy String
+  reason      String
+  evidence    String[]
+  status      String   @default("OPEN") // OPEN, RESOLVED, ESCALATED
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@map("escrow_milestone_disputes")
