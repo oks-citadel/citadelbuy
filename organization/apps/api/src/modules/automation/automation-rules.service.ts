@@ -759,16 +759,17 @@ export class AutomationRulesService implements OnModuleDestroy {
                 ),
             );
 
+            const axiosResponse = response as any;
             this.logger.log(
-              `HTTP Request successful: ${method} ${url} - Status: ${response.status}`,
+              `HTTP Request successful: ${method} ${url} - Status: ${axiosResponse.status}`,
             );
 
             return {
               success: true,
-              status: response.status,
-              statusText: response.statusText,
-              data: response.data,
-              headers: response.headers,
+              status: axiosResponse.status,
+              statusText: axiosResponse.statusText,
+              data: axiosResponse.data,
+              headers: axiosResponse.headers,
             };
           } catch (error) {
             lastError = error;
@@ -1233,7 +1234,7 @@ export class AutomationRulesService implements OnModuleDestroy {
       const job = this.schedulerRegistry.getCronJob(ruleId);
       return {
         exists: true,
-        running: job.running,
+        running: (job as any).running ?? false,
         nextDate: job.nextDate()?.toJSDate(),
       };
     } catch (error) {

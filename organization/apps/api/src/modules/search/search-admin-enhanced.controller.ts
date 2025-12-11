@@ -41,7 +41,7 @@ export class SearchAdminEnhancedController {
     @Query('batchSize') batchSize?: number,
   ) {
     const result = await this.searchIndexingService.reindexAll({
-      deleteExisting: deleteFirst === true || deleteFirst === 'true',
+      deleteExisting: deleteFirst === true || String(deleteFirst) === 'true',
       batchSize: batchSize ? parseInt(batchSize.toString()) : 1000,
     });
 
@@ -239,7 +239,7 @@ export class SearchAdminEnhancedController {
     @Query('batchSize') batchSize?: number,
   ) {
     const products = await this.searchIndexingService.reindexAll({
-      deleteExisting: deleteFirst === true || deleteFirst === 'true',
+      deleteExisting: deleteFirst === true || String(deleteFirst) === 'true',
       batchSize: batchSize ? parseInt(batchSize.toString()) : 1000,
     });
 

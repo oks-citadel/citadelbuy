@@ -419,16 +419,16 @@ export class DataResidencyService {
 
     // Determine transfer mechanism
     let mechanism = 'Standard Contractual Clauses (SCC)';
-    const requirements: string[] = [];
+    const transferRequirements: string[] = [];
 
     if (sourceRegion === 'EU') {
       if (this.isAdequacyCountry(destinationCountry)) {
         mechanism = 'EU Adequacy Decision';
       } else {
         mechanism = 'Standard Contractual Clauses (SCC)';
-        requirements.push('Execute SCC with data importer');
-        requirements.push('Conduct Transfer Impact Assessment');
-        requirements.push('Document the transfer in Records of Processing Activities');
+        transferRequirements.push('Execute SCC with data importer');
+        transferRequirements.push('Conduct Transfer Impact Assessment');
+        transferRequirements.push('Document the transfer in Records of Processing Activities');
       }
     }
 
@@ -448,8 +448,8 @@ export class DataResidencyService {
       allowed,
       mechanism,
       requirements: [
-        ...requirements,
-        ...applicableReq.requirements.crossBorderTransferRestrictions,
+        ...transferRequirements,
+        ...(applicableReq.requirements.crossBorderTransferRestrictions || []).map(String),
       ],
       risks: allowed ? [] : ['Regulatory non-compliance', 'Potential penalties'],
     };

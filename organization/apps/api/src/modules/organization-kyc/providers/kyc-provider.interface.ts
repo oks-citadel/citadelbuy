@@ -125,6 +125,14 @@ export interface KycVerificationReport {
       result: KycCheckResult;
       breakdown?: any;
     };
+    livenessCheck?: {
+      result: KycCheckResult;
+      breakdown?: any;
+    };
+    addressVerification?: {
+      result: KycCheckResult;
+      breakdown?: any;
+    };
   };
   documents?: Array<{
     id: string;

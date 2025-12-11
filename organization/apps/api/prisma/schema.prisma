@@ -21,6 +21,7 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+  COMPLETED
 }
 
 model User {
@@ -117,8 +118,37 @@ model User {
   // Growth & Marketing relations
   churnRisk              ChurnRisk?      @relation("UserChurnRisk")
   leadScore              LeadScore?
+  profile                UserProfile?
 
   @@map("users")
+}
+
+// User Profile for additional user information
+model UserProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Profile details
+  firstName   String?
+  lastName    String?
+  bio         String?
+  avatarUrl   String?
+  companyName String?
+  jobTitle    String?
+  phoneNumber String?
+  address     Json?
+  timezone    String?
+  locale      String?  @default("en")
+
+  // Preferences
+  preferences Json?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@map("user_profiles")
 }
 
 model Category {
@@ -1580,6 +1610,7 @@ model CustomerLoyalty {
   id     String @id @default(uuid())
   userId String @unique
   email  String? // Email for notifications
+  name   String? // Customer name for display
 
   // Points
   totalPointsEarned Int @default(0)
@@ -2205,19 +2236,19 @@ model VendorProfile {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Business Information
-  name            String  // Vendor name (alias/copy of businessName for queries)
+  name            String?  // Vendor name (alias/copy of businessName for queries)
   businessName    String
   businessType    String? // LLC, Corporation, Sole Proprietor, etc.
   taxId           String? // EIN or SSN (encrypted)
-  businessAddress String // JSON: street, city, state, zip, country
-  businessPhone   String
-  businessEmail   String
+  businessAddress String? // JSON: street, city, state, zip, country
+  businessPhone   String?
+  businessEmail   String?
   website         String?
 
   // Legal & Compliance
   businessLicense       String? // License number
-  businessDocuments     String[] // URLs to uploaded documents
-  verificationDocuments String[] // ID, proof of address, etc.
+  businessDocuments     String[] @default([]) // URLs to uploaded documents
+  verificationDocuments String[] @default([]) // ID, proof of address, etc.
 
   // Banking Information (encrypted)
   bankName        String?
@@ -2240,6 +2271,7 @@ model VendorProfile {
   socialMedia Json? // Twitter, Facebook, Instagram links
 
   // Metrics (cached)
+  rating          Float @default(0) // Vendor rating (for RFQ service)
   totalSales      Float @default(0)
   totalOrders     Int   @default(0)
   averageRating   Float @default(0)
@@ -4492,14 +4524,14 @@ model EmailQueue {
   // Email details
   to          String
   subject     String
-  htmlContent String  @db.Text
-  textContent String? @db.Text
+  htmlContent String?  @db.Text // Made optional for template-based emails
+  textContent String?  @db.Text
 
   // Metadata
   templateId       String?
   templateData     Json?    // Template variables
   userId           String?
-  type             EmailType
+  type             EmailType?
   priority         Int       @default(5) // 1-10, higher = more important
   automationRuleId String?  // Link to automation rule if triggered by automation
 
@@ -6503,19 +6535,19 @@ model CustomsDeclaration {
   id                  String   @id @default(uuid())
   orderId             String?
   shipmentId          String?
-  declarationType     String   // EXPORT, IMPORT
-  hsCode              String
-  description         String
-  quantity            Int
-  value               Float
+  declarationType     String?  // EXPORT, IMPORT
+  hsCode              String?
+  description         String?
+  quantity            Int?
+  value               Float?
   currency            String   @default("USD")
-  originCountry       String
-  destinationCountry  String
+  originCountry       String?
+  destinationCountry  String?
 
   // Declaration details
   declarationNumber   String?
   declarationDate     DateTime?
-  status              String   @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, REJECTED
+  status              String   @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, REJECTED, GENERATED
   data                Json?    // Additional declaration data
 
   createdAt           DateTime @default(now())
@@ -6573,15 +6605,15 @@ model CurrencyConversion {
 
 model CurrencyHedge {
   id                  String   @id @default(uuid())
-  organizationId      String
+  organizationId      String?
 
   fromCurrency        String
   toCurrency          String
   amount              Float
-  lockedRate          Float
+  lockedRate          Float?
   currentRate         Float?   // Current exchange rate
   targetRate          Float?   // Target exchange rate for the hedge
-  expiryDate          DateTime
+  expiryDate          DateTime?
   status              String   @default("ACTIVE") // ACTIVE, EXPIRED, EXERCISED
 
   createdAt           DateTime @default(now())
@@ -6647,6 +6679,7 @@ model ReferralProgram {
   refereeReward       Float
   rewardType          String   // CREDIT, DISCOUNT, POINTS
   requirementType     String?  // Type of requirement to fulfill
+  requirementValue    Float?   // Value for the requirement
 
   // Conditions
   minPurchaseAmount   Float?
@@ -7088,33 +7121,43 @@ model Vendor {
 
 model LetterOfCredit {
   id                  String   @id @default(uuid())
-  organizationId      String
+  organizationId      String?
   orderId             String?
 
-  lcNumber            String   @unique
-  issuingBank         String
+  lcNumber            String?  @unique
+  issuingBank         String?
   advisingBank        String?
-  beneficiary         String
-  applicant           String
+  confirmingBank      String?
+  beneficiary         String?
+  applicant           String?
 
-  amount              Float
+  amount              Float?
   currency            String   @default("USD")
 
   // LC Details
-  type                String   // SIGHT, USANCE, REVOCABLE, IRREVOCABLE
+  type                String?  // SIGHT, USANCE, REVOCABLE, IRREVOCABLE
+  lcType              String?  // SIGHT, USANCE, DEFERRED (alias for type)
   terms               Json?
-  documents           String[] // Required documents
+  termsAndConditions  String[] @default([])
+  documents           String[] @default([]) // Required documents
+  requiredDocuments   String[] @default([]) // Alias for documents
   presentedDocuments  Json?    // Documents presented for payment
+  description         String?
 
   // Status and Dates
   status              String   @default("DRAFT") // DRAFT, ISSUED, CONFIRMED, AMENDED, EXPIRED, COMPLETED
   issueDate           DateTime?
   issuedAt            DateTime? // When LC was issued
-  expiryDate          DateTime
+  expiryDate          DateTime?
   shipmentDate        DateTime?
   presentationPeriod  Int?     // Days
   acceptedAt          DateTime? // When LC was accepted
   paidAt              DateTime? // When payment was made
+  presentedAt         DateTime? // When documents were presented
+
+  // Bank References
+  issuingBankRef      String?
+  paymentRef          String?
 
   // Financial
   drawingAmount       Float?
@@ -7133,22 +7176,26 @@ model LetterOfCredit {
 
 model WireTransfer {
   id                  String   @id @default(uuid())
-  organizationId      String
+  organizationId      String?
   orderId             String?
 
-  referenceNumber     String   @unique
+  referenceNumber     String?  @unique
   transferNumber      String?  @unique // Alternative transfer identifier
 
+  // Sender/Recipient ID references (for service code)
+  senderId            String?
+  recipientId         String?
+
   // Sender Details
-  senderName          String
-  senderAccount       String
-  senderBank          String
+  senderName          String?
+  senderAccount       String?
+  senderBank          String?
   senderBankSwift     String?
 
   // Recipient Details
-  recipientName       String
-  recipientAccount    String
-  recipientBank       String
+  recipientName       String?
+  recipientAccount    String?
+  recipientBank       String?
   recipientBankSwift  String?
 
   // Transfer Details
@@ -7156,6 +7203,8 @@ model WireTransfer {
   currency            String   @default("USD")
   purpose             String?
   instructions        String?
+  network             String?  // SWIFT, ACH, SEPA, BACS, WIRE
+  reference           String?  // User-provided reference
 
   // Fees and Charges
   fee                 Float?   @default(0) // Alias for transferFee
@@ -7183,6 +7232,8 @@ model WireTransfer {
   @@index([referenceNumber])
   @@index([transferNumber])
   @@index([status])
+  @@index([senderId])
+  @@index([recipientId])
   @@map("wire_transfers")
 }
 
@@ -7203,21 +7254,28 @@ model WireTransferStatusHistory {
 
 model InvoiceFinancing {
   id                  String   @id @default(uuid())
-  organizationId      String
+  organizationId      String?
   invoiceId           String?
 
   // Invoice Details
-  invoiceNumber       String
-  invoiceAmount       Float
+  invoiceNumber       String?
+  invoiceAmount       Float?
   currency            String   @default("USD")
-  invoiceDate         DateTime
-  dueDate             DateTime
+  invoiceDate         DateTime?
+  dueDate             DateTime?
 
   // Financing Details
-  advanceRate         Float    // Percentage (e.g., 80 = 80%)
-  advanceAmount       Float    // Amount financed
-  fee                 Float    // Financing fee
+  advanceRate         Float?   // Percentage (e.g., 80 = 80%)
+  advanceAmount       Float?   // Amount financed
+  fee                 Float?   // Financing fee
   feePercentage       Float?   // Fee as percentage
+  requestedAmount     Float?   // Amount requested by supplier
+  approvedAmount      Float?   // Amount approved for financing
+  discountFee         Float?   // Discount fee calculated
+  netAmount           Float?   // Net amount after fees
+  paymentTerms        Int?     // Payment terms in days
+  financingType       String?  // FACTORING, DISCOUNTING, SUPPLY_CHAIN
+  referenceNumber     String?  @unique
 
   // Parties
   buyerId             String?
@@ -7228,8 +7286,15 @@ model InvoiceFinancing {
   status              String   @default("PENDING") // PENDING, APPROVED, ADVANCED, REPAID, DEFAULTED
   applicationDate     DateTime @default(now())
   approvalDate        DateTime?
+  approvedAt          DateTime? // Alias for approvalDate
   advanceDate         DateTime?
+  fundedAt            DateTime? // When funds were disbursed
   repaymentDate       DateTime?
+  repaidAt            DateTime? // When fully repaid
+
+  // Transaction References
+  disbursementTransactionId String?
+  repaymentTransactionId    String?
 
   // Repayment
   repaidAmount        Float?   @default(0)
@@ -7241,6 +7306,7 @@ model InvoiceFinancing {
   @@index([organizationId])
   @@index([invoiceId])
   @@index([invoiceNumber])
+  @@index([referenceNumber])
   @@index([status])
   @@index([dueDate])
   @@map("invoice_financing")

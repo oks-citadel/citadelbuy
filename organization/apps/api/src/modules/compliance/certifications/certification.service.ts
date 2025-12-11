@@ -147,8 +147,7 @@ export class CertificationService {
     const now = new Date();
     return (
       certification.status === 'ACTIVE' &&
-      certification.expiryDate > now &&
-      certification.status !== 'REVOKED'
+      certification.expiryDate > now
     );
   }
 
