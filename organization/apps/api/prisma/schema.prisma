@@ -311,6 +311,7 @@ model Product {
   stock       Int      @default(0)
   vendorId    String
   categoryId  String
+  status      String?  @default("ACTIVE") // ACTIVE, INACTIVE, DRAFT, etc.
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -365,6 +366,7 @@ model Order {
   subtotal        Float
   tax             Float
   shipping        Float
+  shippingCost    Float?  // Explicit shipping cost field
   status          OrderStatus @default(PENDING)
   shippingAddress String // JSON string containing full shipping address
   paymentMethod   String?
@@ -2254,6 +2256,7 @@ model VendorProfile {
   featuredListings   FeaturedListing[]
   vendorCoupons      VendorCoupon[]
   rfqResponses       RFQResponse[]        @relation("RFQResponseVendor")
+  enterpriseContracts EnterpriseContract[] @relation("EnterpriseContractVendor")
 
   @@index([userId])
   @@index([status])
@@ -3940,6 +3943,7 @@ enum MarketingCampaignType {
 enum MarketingCampaignStatus {
   DRAFT // Not yet scheduled
   SCHEDULED // Scheduled for future
+  ACTIVE // Active campaign (matches CampaignStatus.ACTIVE from code)
   RUNNING // Currently running (matches CampaignStatus.RUNNING from DTOs)
   PAUSED // Temporarily paused
   COMPLETED // Finished
@@ -5804,6 +5808,7 @@ model Organization {
   aBMAccounts        ABMAccount[]
   offices            Office[]               @relation("OfficeOrganization")
   rfqs               RFQ[]                  @relation("RFQOrganization")
+  enterpriseContracts EnterpriseContract[]  @relation("EnterpriseContractOrg")
 
   @@index([slug])
   @@index([status])
@@ -6442,10 +6447,11 @@ model TradeLicense {
   id                  String   @id @default(uuid())
   organizationId      String
   licenseType         String
-  licenseNumber       String
+  licenseNumber       String   @unique
   issuingAuthority    String
   issuedDate          DateTime
   expiryDate          DateTime
+  country             String?  // Primary country for this license
   countries           String[] // Countries where valid
   status              String   @default("ACTIVE") // ACTIVE, EXPIRED, REVOKED
   documentUrl         String?
@@ -6499,6 +6505,7 @@ model CustomsDeclaration {
   declarationNumber   String?
   declarationDate     DateTime?
   status              String   @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, REJECTED
+  data                Json?    // Additional declaration data
 
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
@@ -6561,6 +6568,7 @@ model CurrencyHedge {
   toCurrency          String
   amount              Float
   lockedRate          Float
+  targetRate          Float?   // Target exchange rate for the hedge
   expiryDate          DateTime
   status              String   @default("ACTIVE") // ACTIVE, EXPIRED, EXERCISED
 
@@ -6827,6 +6835,10 @@ model EnterpriseContract {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
+  // Relations
+  organization        Organization  @relation("EnterpriseContractOrg", fields: [organizationId], references: [id], onDelete: Cascade)
+  vendor              VendorProfile? @relation("EnterpriseContractVendor", fields: [vendorId], references: [id], onDelete: SetNull)
+
   @@index([organizationId])
   @@index([vendorId])
   @@index([status])
@@ -6878,6 +6890,7 @@ model OfficeTransfer {
   requestedAt         DateTime @default(now())
   approvedAt          DateTime?
   completedAt         DateTime?
+  deliveredAt         DateTime? // When the transfer was delivered
 
   fromOffice          Office   @relation("TransferFrom", fields: [fromOfficeId], references: [id])
   toOffice            Office   @relation("TransferTo", fields: [toOfficeId], references: [id])
@@ -6964,6 +6977,7 @@ model RFQ {
   currency            String   @default("USD")
 
   awardedResponseId   String?  // ID of awarded response
+  awardedAt           DateTime? // When the RFQ was awarded
   cancellationReason  String?  // Reason if cancelled
 
   createdAt           DateTime @default(now())
@@ -6991,6 +7005,7 @@ model RFQResponse {
   currency            String   @default("USD")
   deliveryTime        Int?     // Days
   items               Json?    // Line items breakdown
+  validUntil          DateTime? // Valid until date for the quote
 
   status              String   @default("SUBMITTED") // SUBMITTED, UNDER_REVIEW, ACCEPTED, REJECTED
   notes               String?
@@ -7005,6 +7020,177 @@ model RFQResponse {
   @@index([vendorId])
   @@index([status])
   @@map("rfq_responses")
+}
+
+// ============================================
+// VENDOR MODEL (for category-vendor indexing)
+// ============================================
+
+model Vendor {
+  id                  String   @id @default(uuid())
+  name                String
+  slug                String   @unique
+  description         String?
+  logoUrl             String?
+  website             String?
+  email               String?
+  phone               String?
+  address             Json?
+
+  // Vendor Status
+  status              String   @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
+  isVerified          Boolean  @default(false)
+
+  // Metrics
+  rating              Float?   @default(0)
+  totalProducts       Int      @default(0)
+  totalSales          Float    @default(0)
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([slug])
+  @@index([status])
+  @@index([isVerified])
+  @@map("vendors")
+}
+
+// ============================================
+// ENTERPRISE PAYMENT MODELS
+// ============================================
+
+model LetterOfCredit {
+  id                  String   @id @default(uuid())
+  organizationId      String
+  orderId             String?
+
+  lcNumber            String   @unique
+  issuingBank         String
+  advisingBank        String?
+  beneficiary         String
+  applicant           String
+
+  amount              Float
+  currency            String   @default("USD")
+
+  // LC Details
+  type                String   // SIGHT, USANCE, REVOCABLE, IRREVOCABLE
+  terms               Json?
+  documents           String[] // Required documents
+
+  // Status and Dates
+  status              String   @default("DRAFT") // DRAFT, ISSUED, CONFIRMED, AMENDED, EXPIRED, COMPLETED
+  issueDate           DateTime?
+  expiryDate          DateTime
+  shipmentDate        DateTime?
+  presentationPeriod  Int?     // Days
+
+  // Financial
+  drawingAmount       Float?
+  balanceAmount       Float?
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([orderId])
+  @@index([lcNumber])
+  @@index([status])
+  @@index([expiryDate])
+  @@map("letters_of_credit")
+}
+
+model WireTransfer {
+  id                  String   @id @default(uuid())
+  organizationId      String
+  orderId             String?
+
+  referenceNumber     String   @unique
+
+  // Sender Details
+  senderName          String
+  senderAccount       String
+  senderBank          String
+  senderBankSwift     String?
+
+  // Recipient Details
+  recipientName       String
+  recipientAccount    String
+  recipientBank       String
+  recipientBankSwift  String?
+
+  // Transfer Details
+  amount              Float
+  currency            String   @default("USD")
+  purpose             String?
+  instructions        String?
+
+  // Fees and Charges
+  transferFee         Float?   @default(0)
+  intermediaryFees    Float?   @default(0)
+
+  // Status and Dates
+  status              String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, FAILED, CANCELLED
+  initiatedAt         DateTime @default(now())
+  completedAt         DateTime?
+
+  // Tracking
+  trackingNumber      String?
+  confirmationCode    String?
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([orderId])
+  @@index([referenceNumber])
+  @@index([status])
+  @@map("wire_transfers")
+}
+
+model InvoiceFinancing {
+  id                  String   @id @default(uuid())
+  organizationId      String
+  invoiceId           String?
+
+  // Invoice Details
+  invoiceNumber       String
+  invoiceAmount       Float
+  currency            String   @default("USD")
+  invoiceDate         DateTime
+  dueDate             DateTime
+
+  // Financing Details
+  advanceRate         Float    // Percentage (e.g., 80 = 80%)
+  advanceAmount       Float    // Amount financed
+  fee                 Float    // Financing fee
+  feePercentage       Float?   // Fee as percentage
+
+  // Parties
+  buyerId             String?
+  supplierId          String?
+  financierId         String?
+
+  // Status and Dates
+  status              String   @default("PENDING") // PENDING, APPROVED, ADVANCED, REPAID, DEFAULTED
+  applicationDate     DateTime @default(now())
+  approvalDate        DateTime?
+  advanceDate         DateTime?
+  repaymentDate       DateTime?
+
+  // Repayment
+  repaidAmount        Float?   @default(0)
+  remainingBalance    Float?
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([invoiceId])
+  @@index([invoiceNumber])
+  @@index([status])
+  @@index([dueDate])
+  @@map("invoice_financing")
 }
 
 // ============================================
