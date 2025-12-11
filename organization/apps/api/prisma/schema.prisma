@@ -321,6 +321,7 @@ model Product {
 
   // Relations
   vendor             User                   @relation(fields: [vendorId], references: [id])
+  vendorEntity       Vendor?                @relation("VendorProducts", fields: [vendorId], references: [id], map: "fk_product_vendor_entity")
   category           Category               @relation(fields: [categoryId], references: [id])
   orderItems         OrderItem[]
   reviews            Review[]
@@ -7040,11 +7041,15 @@ model Vendor {
   // Vendor Status
   status              String   @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
   isVerified          Boolean  @default(false)
+  isActive            Boolean  @default(true)
 
   // Metrics
   rating              Float?   @default(0)
   totalProducts       Int      @default(0)
   totalSales          Float    @default(0)
+
+  // Relations
+  products            Product[] @relation("VendorProducts")
 
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
@@ -7052,6 +7057,7 @@ model Vendor {
   @@index([slug])
   @@index([status])
   @@index([isVerified])
+  @@index([isActive])
   @@map("vendors")
 }
 
@@ -7106,6 +7112,7 @@ model WireTransfer {
   orderId             String?
 
   referenceNumber     String   @unique
+  transferNumber      String?  @unique // Alternative transfer identifier
 
   // Sender Details
   senderName          String
@@ -7138,14 +7145,33 @@ model WireTransfer {
   trackingNumber      String?
   confirmationCode    String?
 
+  // Relations
+  statusHistory       WireTransferStatusHistory[]
+
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   @@index([organizationId])
   @@index([orderId])
   @@index([referenceNumber])
+  @@index([transferNumber])
   @@index([status])
   @@map("wire_transfers")
+}
+
+model WireTransferStatusHistory {
+  id              String       @id @default(uuid())
+  wireTransferId  String
+  wireTransfer    WireTransfer @relation(fields: [wireTransferId], references: [id], onDelete: Cascade)
+
+  status          String
+  notes           String?
+
+  createdAt       DateTime     @default(now())
+
+  @@index([wireTransferId])
+  @@index([createdAt])
+  @@map("wire_transfer_status_history")
 }
 
 model InvoiceFinancing {
