@@ -26,6 +26,7 @@ enum OrderStatus {
 model User {
   id              String    @id @default(uuid())
   email           String    @unique
+  emailVerified   Boolean?  @default(false)
   phoneNumber     String?
   phoneVerified   Boolean   @default(false)
   phoneVerifiedAt DateTime?
@@ -115,6 +116,7 @@ model User {
 
   // Growth & Marketing relations
   churnRisk              ChurnRisk?      @relation("UserChurnRisk")
+  leadScore              LeadScore?
 
   @@map("users")
 }
@@ -1577,6 +1579,7 @@ model LoyaltyProgram {
 model CustomerLoyalty {
   id     String @id @default(uuid())
   userId String @unique
+  email  String? // Email for notifications
 
   // Points
   totalPointsEarned Int @default(0)
@@ -1729,10 +1732,11 @@ model RewardRedemption {
 }
 
 model Referral {
-  id         String  @id @default(uuid())
-  referrerId String
-  refereeId  String? // Null until referee signs up
-  programId  String? // Link to referral program
+  id              String  @id @default(uuid())
+  referrerId      String
+  refereeId       String? // Null until referee signs up
+  programId       String? // Link to referral program
+  referralCodeId  String? // Link to referral code used
 
   refereeEmail String? // Email of person being referred
   refereePhone String?
@@ -2201,6 +2205,7 @@ model VendorProfile {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Business Information
+  name            String  // Vendor name (alias/copy of businessName for queries)
   businessName    String
   businessType    String? // LLC, Corporation, Sole Proprietor, etc.
   taxId           String? // EIN or SSN (encrypted)
@@ -3631,6 +3636,7 @@ model Coupon {
   name        String // Display name
   description String? // Description of the offer
   userId      String? // Creator/owner of the coupon (nullable for system-wide coupons)
+  source      String? // Source of the coupon
 
   // Discount Configuration
   type  CouponType // PERCENTAGE, FIXED_AMOUNT, BUY_X_GET_Y, FREE_SHIPPING, TIERED
@@ -3893,7 +3899,8 @@ model MarketingCampaign {
   updatedAt DateTime @updatedAt
 
   // Relations
-  coupons CampaignCoupon[]
+  coupons      CampaignCoupon[]
+  landingPages LandingPage[]
 
   @@index([status])
   @@index([type])
@@ -4489,10 +4496,12 @@ model EmailQueue {
   textContent String? @db.Text
 
   // Metadata
-  templateId String?
-  userId     String?
-  type       EmailType
-  priority   Int       @default(5) // 1-10, higher = more important
+  templateId       String?
+  templateData     Json?    // Template variables
+  userId           String?
+  type             EmailType
+  priority         Int       @default(5) // 1-10, higher = more important
+  automationRuleId String?  // Link to automation rule if triggered by automation
 
   // Processing
   status       EmailStatus @default(QUEUED)
@@ -5806,6 +5815,7 @@ model Organization {
   apiKeys            OrganizationApiKey[]
   billing            OrganizationBilling?
   marketingCampaigns MarketingCampaign[]
+  landingPages       LandingPage[]
   aBMAccounts        ABMAccount[]
   offices            Office[]               @relation("OfficeOrganization")
   rfqs               RFQ[]                  @relation("RFQOrganization")
@@ -6569,6 +6579,7 @@ model CurrencyHedge {
   toCurrency          String
   amount              Float
   lockedRate          Float
+  currentRate         Float?   // Current exchange rate
   targetRate          Float?   // Target exchange rate for the hedge
   expiryDate          DateTime
   status              String   @default("ACTIVE") // ACTIVE, EXPIRED, EXERCISED
@@ -6616,6 +6627,8 @@ model LeadScore {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([tier])
   @@index([score])
   @@map("lead_scores")
@@ -6633,6 +6646,7 @@ model ReferralProgram {
   referrerReward      Float
   refereeReward       Float
   rewardType          String   // CREDIT, DISCOUNT, POINTS
+  requirementType     String?  // Type of requirement to fulfill
 
   // Conditions
   minPurchaseAmount   Float?
@@ -6695,6 +6709,7 @@ model UserCredit {
   amount              Float    @default(0) // Current credit amount (alias for balance)
   balance             Float    @default(0)
   currency            String   @default("USD")
+  source              String?  // Source of the credit
 
   // Tracking
   totalEarned         Float    @default(0)
@@ -6734,10 +6749,15 @@ model LandingPage {
 
   // Analytics
   analytics           Json?
+  metrics             Json?    // Performance metrics
 
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   publishedAt         DateTime?
+
+  // Relations
+  organization        Organization?     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaign            MarketingCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
   @@index([campaignId])
@@ -6797,6 +6817,7 @@ model EmailSequenceEnrollment {
 
   currentStep         Int      @default(0)
   status              String   @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
+  enrollmentData      Json?    // Additional enrollment data
 
   enrolledAt          DateTime @default(now())
   completedAt         DateTime?
@@ -7145,6 +7166,7 @@ model WireTransfer {
   status              String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, FAILED, CANCELLED
   initiatedAt         DateTime @default(now())
   completedAt         DateTime?
+  estimatedArrival    DateTime?
 
   // Tracking
   trackingNumber      String?
