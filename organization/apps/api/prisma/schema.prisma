@@ -7083,13 +7083,17 @@ model LetterOfCredit {
   type                String   // SIGHT, USANCE, REVOCABLE, IRREVOCABLE
   terms               Json?
   documents           String[] // Required documents
+  presentedDocuments  Json?    // Documents presented for payment
 
   // Status and Dates
   status              String   @default("DRAFT") // DRAFT, ISSUED, CONFIRMED, AMENDED, EXPIRED, COMPLETED
   issueDate           DateTime?
+  issuedAt            DateTime? // When LC was issued
   expiryDate          DateTime
   shipmentDate        DateTime?
   presentationPeriod  Int?     // Days
+  acceptedAt          DateTime? // When LC was accepted
+  paidAt              DateTime? // When payment was made
 
   // Financial
   drawingAmount       Float?
@@ -7133,6 +7137,7 @@ model WireTransfer {
   instructions        String?
 
   // Fees and Charges
+  fee                 Float?   @default(0) // Alias for transferFee
   transferFee         Float?   @default(0)
   intermediaryFees    Float?   @default(0)
 
