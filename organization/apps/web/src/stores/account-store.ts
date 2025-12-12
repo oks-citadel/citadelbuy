@@ -139,7 +139,7 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
       const data = await wishlistApi.addToWishlist({ productId, note });
       if (data) {
         set((state) => ({
-          items: [...state.items, data!],
+          items: [...state.items, data],
           count: state.count + 1,
         }));
       }
@@ -174,7 +174,7 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
       const data = await wishlistApi.createCollection({ name, description });
       if (data) {
         set((state) => ({
-          collections: [...state.collections, data!],
+          collections: [...state.collections, data],
         }));
       }
     } catch (error) {
@@ -239,7 +239,7 @@ export const useReviewsStore = create<ReviewsState>((set) => ({
       const data = await reviewsApi.createReview(reviewData);
       if (data) {
         set((state) => ({
-          myReviews: [...state.myReviews, data!],
+          myReviews: [...state.myReviews, data],
           isLoading: false,
         }));
       }
@@ -308,7 +308,7 @@ export const useReturnsStore = create<ReturnsState>((set) => ({
       const data = await returnsApi.createReturn(returnData);
       if (data) {
         set((state) => ({
-          returns: [...state.returns, data!],
+          returns: [...state.returns, data],
           isLoading: false,
         }));
       }
@@ -379,7 +379,7 @@ export const useSupportStore = create<SupportState>((set) => ({
       const data = await supportApi.createTicket(ticketData);
       if (data) {
         set((state) => ({
-          tickets: [...state.tickets, data!],
+          tickets: [...state.tickets, data],
           isLoading: false,
         }));
       }
@@ -452,7 +452,7 @@ export const useGiftCardsStore = create<GiftCardsState>((set) => ({
       const data = await giftCardsApi.purchaseGiftCard(giftCardData);
       if (data) {
         set((state) => ({
-          myGiftCards: [...state.myGiftCards, data!],
+          myGiftCards: [...state.myGiftCards, data],
           isLoading: false,
         }));
       }
@@ -620,7 +620,7 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
       const data = await loyaltyApi.redeemReward(rewardId);
       if (data) {
         set((state) => ({
-          redemptions: [...state.redemptions, data!],
+          redemptions: [...state.redemptions, data],
           isLoading: false,
         }));
         // Refresh account to update points
@@ -637,7 +637,7 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
       const data = await loyaltyApi.createReferral(email);
       if (data) {
         set((state) => ({
-          referrals: [...state.referrals, data!],
+          referrals: [...state.referrals, data],
         }));
       }
     } catch (error) {
@@ -680,7 +680,7 @@ export const useAddressStore = create<AddressState>((set) => ({
       const data = await addressApi.addAddress(addressData);
       if (data) {
         set((state) => ({
-          addresses: [...state.addresses, data!],
+          addresses: [...state.addresses, data],
           isLoading: false,
         }));
       }
@@ -695,7 +695,7 @@ export const useAddressStore = create<AddressState>((set) => ({
       if (data) {
         set((state) => ({
           addresses: state.addresses.map((a) =>
-            a.id === id ? data! : a
+            a.id === id ? data : a
           ),
         }));
       }

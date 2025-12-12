@@ -19,7 +19,11 @@ export type LanguageCode =
   | 'nl' // Dutch
   | 'it' // Italian
   | 'ru' // Russian
-  | 'ja'; // Japanese
+  | 'ja' // Japanese
+  | 'ko' // Korean
+  | 'hi' // Hindi
+  | 'pl' // Polish
+  | 'tr'; // Turkish
 
 export interface Language {
   code: LanguageCode;
@@ -185,3 +189,29 @@ export function isRTLLanguage(code: LanguageCode): boolean {
 export function getEnabledLanguages(): Language[] {
   return SUPPORTED_LANGUAGES.filter((lang) => lang.isEnabled !== false);
 }
+
+/**
+ * Locale configuration type
+ */
+export interface LocaleConfig {
+  locale: LanguageCode;
+  direction: 'ltr' | 'rtl';
+  enabled: boolean;
+}
+
+/**
+ * Get locale configuration
+ */
+export function getLocaleConfig(code: LanguageCode): LocaleConfig {
+  const lang = getLanguageByCode(code);
+  return {
+    locale: code,
+    direction: isRTLLanguage(code) ? 'rtl' : 'ltr',
+    enabled: lang?.isEnabled !== false,
+  };
+}
+
+/**
+ * Type alias for compatibility
+ */
+export type Locale = LanguageCode;

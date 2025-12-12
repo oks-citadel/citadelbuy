@@ -227,6 +227,12 @@ export class EmailAutomationService {
       }
 
       // Schedule email based on delay
+      // Ensure template is loaded
+      if (!rule.template) {
+        this.logger.warn(`Template not found for rule ${rule.id}, skipping`);
+        continue;
+      }
+
       const sendAt = rule.delay
         ? new Date(Date.now() + rule.delay * 60000)
         : new Date();

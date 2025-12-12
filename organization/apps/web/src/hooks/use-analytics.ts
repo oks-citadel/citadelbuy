@@ -14,14 +14,14 @@ interface TrackCategoryEventParams {
   categoryId: string;
   eventType: CategoryEventType;
   productId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface AnalyticsHook {
   trackCategoryEvent: (params: TrackCategoryEventParams) => Promise<void>;
   trackCategoryView: (categoryId: string) => Promise<void>;
   trackProductClick: (categoryId: string, productId: string) => Promise<void>;
-  trackFilterApplied: (categoryId: string, filters: Record<string, any>) => Promise<void>;
+  trackFilterApplied: (categoryId: string, filters: Record<string, unknown>) => Promise<void>;
   trackSortChanged: (categoryId: string, sortBy: string) => Promise<void>;
 }
 
@@ -51,7 +51,7 @@ function getUserId(): string | undefined {
   try {
     const userStr = localStorage.getItem('user');
     if (userStr) {
-      const user = JSON.parse(userStr);
+      const user = JSON.parse(userStr) as { id?: string };
       return user.id;
     }
   } catch (error) {
@@ -118,7 +118,7 @@ export function useAnalytics(): AnalyticsHook {
   );
 
   const trackFilterApplied = useCallback(
-    async (categoryId: string, filters: Record<string, any>) => {
+    async (categoryId: string, filters: Record<string, unknown>) => {
       await trackCategoryEvent({
         categoryId,
         eventType: CategoryEventType.FILTER_APPLIED,
@@ -151,7 +151,7 @@ export function useAnalytics(): AnalyticsHook {
 /**
  * Hook for tracking category page view time
  */
-export function useCategoryPageTracking(categoryId: string | null) {
+export function useCategoryPageTracking(categoryId: string | null): void {
   const { trackCategoryView } = useAnalytics();
   const viewTrackedRef = useRef(false);
   const startTimeRef = useRef<number>(Date.now());
@@ -184,7 +184,7 @@ export function useCategoryPageTracking(categoryId: string | null) {
 /**
  * Hook for tracking product impressions in category
  */
-export function useProductImpressionTracking() {
+export function useProductImpressionTracking(): { observeProduct: (element: HTMLElement | null) => void; unobserveProduct: (element: HTMLElement | null) => void; trackProductClick: (categoryId: string, productId: string) => Promise<void>; } {
   const { trackProductClick } = useAnalytics();
   const observerRef = useRef<IntersectionObserver | null>(null);
   const trackedProductsRef = useRef<Set<string>>(new Set());

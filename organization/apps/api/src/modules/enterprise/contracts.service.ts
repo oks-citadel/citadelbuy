@@ -38,7 +38,7 @@ export class ContractsService {
         status: data.status || 'DRAFT',
         terms: data.terms as any,
         startDate: data.startDate,
-        endDate: data.endDate,
+        endDate: data.endDate ?? new Date(),
         autoRenew: data.autoRenew,
         renewalTermDays: data.renewalTermDays,
         value: data.value,

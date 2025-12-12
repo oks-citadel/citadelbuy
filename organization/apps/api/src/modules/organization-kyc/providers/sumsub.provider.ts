@@ -73,7 +73,7 @@ export class SumsubProvider implements IKycProvider {
     }
 
     try {
-      const payload = {
+      const payload: any = {
         externalUserId: data.organizationId,
         info: {
           firstName: data.firstName,
@@ -93,7 +93,7 @@ export class SumsubProvider implements IKycProvider {
       };
 
       if (data.address) {
-        payload.info['addresses'] = [
+        payload.info.addresses = [
           {
             country: data.address.country,
             postCode: data.address.postalCode,
@@ -255,19 +255,10 @@ export class SumsubProvider implements IKycProvider {
                 result: this.mapResult(checkData.answer),
                 breakdown: checkData,
               };
-            } else if (checkName === 'WATCHLIST') {
-              breakdown.amlCheck = {
-                result: this.mapResult(checkData.answer),
-                breakdown: {
-                  hits: checkData.hits || [],
-                  searchStatus: checkData.searchStatus,
-                },
-              };
             }
           });
         }
       }
-
       // Extract document data
       if (applicantResponse.info && applicantResponse.info.idDocs) {
         applicantResponse.info.idDocs.forEach((doc: any) => {
@@ -601,13 +592,6 @@ export class SumsubProvider implements IKycProvider {
           result: KycCheckResult.CLEAR,
           breakdown: {
             verified: true,
-          },
-        },
-        amlCheck: {
-          result: KycCheckResult.CLEAR,
-          breakdown: {
-            hits: [],
-            searchStatus: 'COMPLETE',
           },
         },
       },

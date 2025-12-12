@@ -86,7 +86,7 @@ jobs:
       - name: Set matrix
         id: set-matrix
         run: |
-          matrix=$(cat <<EOF
+          cat > matrix.json <<'EOF'
           {
             "include": [
               {
@@ -182,8 +182,8 @@ jobs:
             ]
           }
           EOF
-          )
-          echo "matrix=$(echo $matrix | jq -c .)" >> $GITHUB_OUTPUT
+          echo "matrix=$(jq -c . matrix.json)" >> $GITHUB_OUTPUT
+          cat matrix.json
 
   build-and-push:
     name: Build & Push ${{ matrix.name }}

@@ -15,7 +15,7 @@ export class ProductsService {
     const { search, category, minPrice, maxPrice, sortBy, page = 1, limit = 12 } = query;
 
     // Build where clause
-    const where: any = {};
+    const where: any = { isActive: true };
 
     if (search) {
       where.OR = [

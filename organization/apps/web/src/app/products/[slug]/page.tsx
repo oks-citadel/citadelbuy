@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -48,13 +48,10 @@ import {
 } from '@/lib/utils';
 import { toast } from 'sonner';
 
-interface PageProps {
-  params: {
-    slug: string;
-  };
-}
 
-export default function ProductDetailPage({ params }: PageProps) {
+export default function ProductDetailPage() {
+  const params = useParams();
+  const slug = params.slug as string;
   const [product, setProduct] = React.useState<Product | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [selectedVariant, setSelectedVariant] = React.useState<ProductVariant | null>(null);
@@ -73,7 +70,7 @@ export default function ProductDetailPage({ params }: PageProps) {
     const loadProduct = async () => {
       setIsLoading(true);
       try {
-        const data = await productsApi.getBySlug(params.slug);
+        const data = await productsApi.getBySlug(slug);
         setProduct(data);
 
         // Load related products
@@ -97,7 +94,7 @@ export default function ProductDetailPage({ params }: PageProps) {
     };
 
     loadProduct();
-  }, [params.slug]);
+  }, [slug]);
 
   if (isLoading) {
     return null; // Loading state handled by loading.tsx

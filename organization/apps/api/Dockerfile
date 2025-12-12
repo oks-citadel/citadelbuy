@@ -1,5 +1,5 @@
 # ==================================
-# CitadelBuy Backend - Production Dockerfile
+# CitadelBuy Backend - Production Dockerfile (Monorepo)
 # Multi-stage build: Dependencies → Build → Runtime
 # ==================================
 
@@ -7,35 +7,53 @@
 FROM node:20-alpine AS deps
 LABEL stage=deps
 
+# Install build dependencies
+RUN apk add --no-cache \
+    libc6-compat \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/cache/apk/*
+
 WORKDIR /app
 
-# Copy package files
-COPY package.json ./
-COPY prisma ./prisma/
+# Install pnpm
+RUN npm install -g pnpm@10.23.0
 
-# Install all dependencies
-RUN npm install --legacy-peer-deps && \
-    npm cache clean --force
+# Copy workspace configuration
+COPY package.json pnpm-lock.yaml* package-lock.json* ./
+COPY pnpm-workspace.yaml* ./
+COPY turbo.json* ./
+
+# Copy API package files
+COPY apps/api/package.json ./apps/api/
+COPY apps/api/prisma ./apps/api/prisma/
+
+# Install dependencies using pnpm
+RUN pnpm install --frozen-lockfile || pnpm install
 
 # Generate Prisma Client
+WORKDIR /app/apps/api
 RUN npx prisma generate
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
 LABEL stage=builder
 
+# Install pnpm
+RUN npm install -g pnpm@10.23.0
+
 WORKDIR /app
 
-# Copy dependencies
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/prisma ./prisma
+# Copy dependencies from deps stage
+COPY --from=deps /app ./
 
 # Copy source code
-COPY . .
+COPY apps/api ./apps/api
 
 # Build application
-RUN npm run build && \
-    npm prune --production
+WORKDIR /app/apps/api
+RUN pnpm run build
 
 # Stage 3: Production Runtime
 FROM node:20-alpine AS production
@@ -58,12 +76,13 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001
 
 # Copy production dependencies and Prisma
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nestjs:nodejs /app/package.json ./
-COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./root_node_modules
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/prisma ./prisma
 
 # Copy built application
-COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./dist
 
 # Set environment
 ENV NODE_ENV=production

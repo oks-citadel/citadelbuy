@@ -647,8 +647,8 @@ export class CategoriesService {
 
     const where: Prisma.ProductWhereInput = {
       categoryId: { in: categoryIds },
+      isActive: true,
     };
-
     // Apply filters
     if (filters.priceMin !== undefined) {
       where.price = { ...((where.price as any) || {}), gte: filters.priceMin };

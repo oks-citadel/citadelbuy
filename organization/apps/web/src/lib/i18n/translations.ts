@@ -39,7 +39,7 @@ export interface Translations {
   };
 }
 
-export const translations: Record<SupportedLocale, Translations> = {
+export const translations: Partial<Record<SupportedLocale, Translations>> = {
   en: {
     common: {
       welcome: 'Welcome',

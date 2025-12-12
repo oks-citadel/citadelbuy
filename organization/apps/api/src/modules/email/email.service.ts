@@ -550,9 +550,9 @@ export class EmailService {
         await this.sendEmailWithLogging({
           to: email.to,
           subject: email.subject,
-          htmlContent: email.htmlContent,
+          htmlContent: email.htmlContent ?? '',
           textContent: email.textContent || undefined,
-          type: email.type,
+          type: email.type ?? ('DEFAULT' as EmailType),
           metadata: email.metadata,
         });
 

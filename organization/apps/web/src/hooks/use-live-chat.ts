@@ -58,6 +58,12 @@ interface UseLiveChatReturn {
   endSession: () => void;
 }
 
+interface UseStaffLiveChatReturn extends UseLiveChatReturn {
+  activeSessions: ChatSession[];
+  getActiveSessions: () => void;
+  assignChat: (sessionId: string) => void;
+}
+
 const SOCKET_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:4000';
 
 export function useLiveChat(options: UseLiveChatOptions = {}): UseLiveChatReturn {
@@ -73,7 +79,7 @@ export function useLiveChat(options: UseLiveChatOptions = {}): UseLiveChatReturn
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const connect = useCallback(() => {
+  const connect = useCallback((): void => {
     if (socketRef.current?.connected) return;
 
     setIsConnecting(true);
@@ -257,7 +263,7 @@ export function useLiveChat(options: UseLiveChatOptions = {}): UseLiveChatReturn
 }
 
 // Staff-specific hook
-export function useStaffLiveChat(options: UseLiveChatOptions = {}) {
+export function useStaffLiveChat(options: UseLiveChatOptions = {}): UseStaffLiveChatReturn {
   const baseChat = useLiveChat(options);
   const socketRef = useRef<Socket | null>(null);
   const [activeSessions, setActiveSessions] = useState<ChatSession[]>([]);

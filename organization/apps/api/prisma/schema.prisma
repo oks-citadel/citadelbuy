@@ -116,18 +116,21 @@ model User {
   escrowsAsSeller        Escrow[]        @relation("MilestoneEscrowSeller")
 
   // Growth & Marketing relations
-  churnRisk              ChurnRisk?      @relation("UserChurnRisk")
-  leadScore              LeadScore?
-  profile                UserProfile?
+  churnRisk ChurnRisk?   @relation("UserChurnRisk")
+  leadScore LeadScore?
+  profile   UserProfile?
+
+  // Phone verification
+  phoneVerificationCodes PhoneVerificationCode[]
 
   @@map("users")
 }
 
 // User Profile for additional user information
 model UserProfile {
-  id          String   @id @default(uuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Profile details
   firstName   String?
@@ -139,13 +142,13 @@ model UserProfile {
   phoneNumber String?
   address     Json?
   timezone    String?
-  locale      String?  @default("en")
+  locale      String? @default("en")
 
   // Preferences
   preferences Json?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@map("user_profiles")
@@ -344,6 +347,7 @@ model Product {
   vendorId    String
   categoryId  String
   status      String?  @default("ACTIVE") // ACTIVE, INACTIVE, DRAFT, etc.
+  isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -399,16 +403,16 @@ model Order {
   subtotal        Float
   tax             Float
   shipping        Float
-  shippingCost    Float?  // Explicit shipping cost field
+  shippingCost    Float? // Explicit shipping cost field
   status          OrderStatus @default(PENDING)
   shippingAddress String // JSON string containing full shipping address
   paymentMethod   String?
   paymentIntentId String?
 
   // Additional financial fields
-  currency        String? @default("USD")
-  insurance       Float?  // Insurance cost
-  officeId        String? // Office that processed the order
+  currency  String? @default("USD")
+  insurance Float? // Insurance cost
+  officeId  String? // Office that processed the order
 
   // Guest checkout fields
   guestEmail   String?
@@ -1607,8 +1611,8 @@ model LoyaltyProgram {
 }
 
 model CustomerLoyalty {
-  id     String @id @default(uuid())
-  userId String @unique
+  id     String  @id @default(uuid())
+  userId String  @unique
   email  String? // Email for notifications
   name   String? // Customer name for display
 
@@ -1763,11 +1767,11 @@ model RewardRedemption {
 }
 
 model Referral {
-  id              String  @id @default(uuid())
-  referrerId      String
-  refereeId       String? // Null until referee signs up
-  programId       String? // Link to referral program
-  referralCodeId  String? // Link to referral code used
+  id             String  @id @default(uuid())
+  referrerId     String
+  refereeId      String? // Null until referee signs up
+  programId      String? // Link to referral program
+  referralCodeId String? // Link to referral code used
 
   refereeEmail String? // Email of person being referred
   refereePhone String?
@@ -1788,7 +1792,7 @@ model Referral {
   refereePoints     Int?
 
   // Validity
-  expiresAt  DateTime?
+  expiresAt   DateTime?
   completedAt DateTime?
 
   createdAt DateTime @default(now())
@@ -2236,7 +2240,7 @@ model VendorProfile {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Business Information
-  name            String?  // Vendor name (alias/copy of businessName for queries)
+  name            String? // Vendor name (alias/copy of businessName for queries)
   businessName    String
   businessType    String? // LLC, Corporation, Sole Proprietor, etc.
   taxId           String? // EIN or SSN (encrypted)
@@ -2286,15 +2290,15 @@ model VendorProfile {
   updatedAt    DateTime  @updatedAt
 
   // Relations
-  application        VendorApplication?
-  payouts            VendorPayout[]
-  commissionRules    VendorCommissionRule[]
-  performanceMetrics VendorPerformanceMetric[]
-  bulkUploadJobs     BulkUploadJob[]
-  featuredListings   FeaturedListing[]
-  vendorCoupons      VendorCoupon[]
-  rfqResponses       RFQResponse[]        @relation("RFQResponseVendor")
-  enterpriseContracts EnterpriseContract[] @relation("EnterpriseContractVendor")
+  application         VendorApplication?
+  payouts             VendorPayout[]
+  commissionRules     VendorCommissionRule[]
+  performanceMetrics  VendorPerformanceMetric[]
+  bulkUploadJobs      BulkUploadJob[]
+  featuredListings    FeaturedListing[]
+  vendorCoupons       VendorCoupon[]
+  rfqResponses        RFQResponse[]             @relation("RFQResponseVendor")
+  enterpriseContracts EnterpriseContract[]      @relation("EnterpriseContractVendor")
 
   @@index([userId])
   @@index([status])
@@ -4423,8 +4427,8 @@ model EmailTemplate {
   updatedAt DateTime @updatedAt
 
   // Relations
-  emails             EmailLog[]
-  automationRules    EmailAutomationRule[] @relation("EmailAutomationRuleTemplate")
+  emails          EmailLog[]
+  automationRules EmailAutomationRule[] @relation("EmailAutomationRuleTemplate")
 
   @@index([name])
   @@index([type])
@@ -4524,16 +4528,16 @@ model EmailQueue {
   // Email details
   to          String
   subject     String
-  htmlContent String?  @db.Text // Made optional for template-based emails
-  textContent String?  @db.Text
+  htmlContent String? @db.Text // Made optional for template-based emails
+  textContent String? @db.Text
 
   // Metadata
   templateId       String?
-  templateData     Json?    // Template variables
+  templateData     Json? // Template variables
   userId           String?
   type             EmailType?
-  priority         Int       @default(5) // 1-10, higher = more important
-  automationRuleId String?  // Link to automation rule if triggered by automation
+  priority         Int        @default(5) // 1-10, higher = more important
+  automationRuleId String? // Link to automation rule if triggered by automation
 
   // Processing
   status       EmailStatus @default(QUEUED)
@@ -5837,21 +5841,21 @@ model Organization {
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   // Relations
-  members            OrganizationMember[]
-  departments        Department[]
-  teams              Team[]
-  roles              OrganizationRole[]
-  kycApplications    KycApplication[]
-  auditLogs          OrganizationAuditLog[]
-  invitations        OrganizationInvitation[]
-  apiKeys            OrganizationApiKey[]
-  billing            OrganizationBilling?
-  marketingCampaigns MarketingCampaign[]
-  landingPages       LandingPage[]
-  aBMAccounts        ABMAccount[]
-  offices            Office[]               @relation("OfficeOrganization")
-  rfqs               RFQ[]                  @relation("RFQOrganization")
-  enterpriseContracts EnterpriseContract[]  @relation("EnterpriseContractOrg")
+  members             OrganizationMember[]
+  departments         Department[]
+  teams               Team[]
+  roles               OrganizationRole[]
+  kycApplications     KycApplication[]
+  auditLogs           OrganizationAuditLog[]
+  invitations         OrganizationInvitation[]
+  apiKeys             OrganizationApiKey[]
+  billing             OrganizationBilling?
+  marketingCampaigns  MarketingCampaign[]
+  landingPages        LandingPage[]
+  aBMAccounts         ABMAccount[]
+  offices             Office[]                 @relation("OfficeOrganization")
+  rfqs                RFQ[]                    @relation("RFQOrganization")
+  enterpriseContracts EnterpriseContract[]     @relation("EnterpriseContractOrg")
 
   @@index([slug])
   @@index([status])
@@ -6365,25 +6369,25 @@ model EscrowMilestoneDispute {
 // ============================================
 
 model AnalyticsEvent {
-  id            String   @id @default(uuid())
-  eventType     String
-  eventCategory String?
-  userId        String?
-  sessionId     String
+  id             String  @id @default(uuid())
+  eventType      String
+  eventCategory  String?
+  userId         String?
+  sessionId      String
   organizationId String?
 
   // Event metadata
-  metadata      Json?
-  properties    Json?
+  metadata   Json?
+  properties Json?
 
   // Context
-  ipAddress     String?
-  userAgent     String?
-  referer       String?
-  page          String?
+  ipAddress String?
+  userAgent String?
+  referer   String?
+  page      String?
 
-  timestamp     DateTime @default(now())
-  createdAt     DateTime @default(now())
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([eventType])
   @@index([userId])
@@ -6399,18 +6403,18 @@ model AnalyticsEvent {
 // ============================================
 
 model CategoryRestriction {
-  id                  String   @id @default(uuid())
-  categoryId          String
-  originCountry       String
-  destinationCountry  String
-  country             String?  // Additional country field (nullable)
-  restrictionType     String   // PROHIBITED, RESTRICTED, REQUIRES_LICENSE
-  description         String?
-  requiresLicense     Boolean  @default(false)
-  licenseType         String?
+  id                 String  @id @default(uuid())
+  categoryId         String
+  originCountry      String
+  destinationCountry String
+  country            String? // Additional country field (nullable)
+  restrictionType    String // PROHIBITED, RESTRICTED, REQUIRES_LICENSE
+  description        String?
+  requiresLicense    Boolean @default(false)
+  licenseType        String?
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([categoryId])
   @@index([originCountry])
@@ -6420,16 +6424,16 @@ model CategoryRestriction {
 }
 
 model ComplianceCheck {
-  id                  String   @id @default(uuid())
-  productId           String?
-  originCountry       String
-  destinationCountry  String
-  hsCode              String?
-  result              String   // APPROVED, RESTRICTED, PROHIBITED, REQUIRES_LICENSE
-  restrictions        Json?
-  licenses            Json?
+  id                 String  @id @default(uuid())
+  productId          String?
+  originCountry      String
+  destinationCountry String
+  hsCode             String?
+  result             String // APPROVED, RESTRICTED, PROHIBITED, REQUIRES_LICENSE
+  restrictions       Json?
+  licenses           Json?
 
-  createdAt           DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([productId])
   @@index([result])
@@ -6438,15 +6442,15 @@ model ComplianceCheck {
 }
 
 model SanctionCheck {
-  id                  String   @id @default(uuid())
-  entityName          String
-  country             String
-  entityType          String   // INDIVIDUAL, ORGANIZATION
-  result              String   // CLEAR, MATCH, POTENTIAL_MATCH
-  matchedLists        Json?
-  riskScore           Float    @default(0)
+  id           String @id @default(uuid())
+  entityName   String
+  country      String
+  entityType   String // INDIVIDUAL, ORGANIZATION
+  result       String // CLEAR, MATCH, POTENTIAL_MATCH
+  matchedLists Json?
+  riskScore    Float  @default(0)
 
-  createdAt           DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([entityName])
   @@index([country])
@@ -6456,15 +6460,15 @@ model SanctionCheck {
 }
 
 model HSCode {
-  id                  String   @id @default(uuid())
-  code                String   @unique
-  description         String
-  chapter             String
-  section             String?
-  dutyRate            Float?
+  id          String  @id @default(uuid())
+  code        String  @unique
+  description String
+  chapter     String
+  section     String?
+  dutyRate    Float?
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([code])
   @@index([chapter])
@@ -6472,14 +6476,14 @@ model HSCode {
 }
 
 model HSCodeRestriction {
-  id                  String   @id @default(uuid())
-  hsCode              String
-  country             String
-  restrictionType     String   // PROHIBITED, RESTRICTED, REQUIRES_LICENSE
-  description         String?
+  id              String  @id @default(uuid())
+  hsCode          String
+  country         String
+  restrictionType String // PROHIBITED, RESTRICTED, REQUIRES_LICENSE
+  description     String?
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([hsCode])
   @@index([country])
@@ -6487,20 +6491,20 @@ model HSCodeRestriction {
 }
 
 model TradeLicense {
-  id                  String   @id @default(uuid())
-  organizationId      String
-  licenseType         String
-  licenseNumber       String   @unique
-  issuingAuthority    String
-  issuedDate          DateTime
-  expiryDate          DateTime
-  country             String?  // Primary country for this license
-  countries           String[] // Countries where valid
-  status              String   @default("ACTIVE") // ACTIVE, EXPIRED, REVOKED
-  documentUrl         String?
+  id               String   @id @default(uuid())
+  organizationId   String
+  licenseType      String
+  licenseNumber    String   @unique
+  issuingAuthority String
+  issuedDate       DateTime
+  expiryDate       DateTime
+  country          String? // Primary country for this license
+  countries        String[] // Countries where valid
+  status           String   @default("ACTIVE") // ACTIVE, EXPIRED, REVOKED
+  documentUrl      String?
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([organizationId])
   @@index([licenseNumber])
@@ -6510,20 +6514,20 @@ model TradeLicense {
 }
 
 model CustomsCalculation {
-  id                  String   @id @default(uuid())
-  hsCode              String
-  originCountry       String
-  destinationCountry  String
-  productValue        Float
-  currency            String   @default("USD")
+  id                 String @id @default(uuid())
+  hsCode             String
+  originCountry      String
+  destinationCountry String
+  productValue       Float
+  currency           String @default("USD")
 
   // Calculated amounts
-  duties              Float
-  taxes               Float
-  fees                Float
-  totalCost           Float
+  duties    Float
+  taxes     Float
+  fees      Float
+  totalCost Float
 
-  createdAt           DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([hsCode])
   @@index([destinationCountry])
@@ -6532,26 +6536,26 @@ model CustomsCalculation {
 }
 
 model CustomsDeclaration {
-  id                  String   @id @default(uuid())
-  orderId             String?
-  shipmentId          String?
-  declarationType     String?  // EXPORT, IMPORT
-  hsCode              String?
-  description         String?
-  quantity            Int?
-  value               Float?
-  currency            String   @default("USD")
-  originCountry       String?
-  destinationCountry  String?
+  id                 String  @id @default(uuid())
+  orderId            String?
+  shipmentId         String?
+  declarationType    String? // EXPORT, IMPORT
+  hsCode             String?
+  description        String?
+  quantity           Int?
+  value              Float?
+  currency           String  @default("USD")
+  originCountry      String?
+  destinationCountry String?
 
   // Declaration details
-  declarationNumber   String?
-  declarationDate     DateTime?
-  status              String   @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, REJECTED, GENERATED
-  data                Json?    // Additional declaration data
+  declarationNumber String?
+  declarationDate   DateTime?
+  status            String    @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, REJECTED, GENERATED
+  data              Json? // Additional declaration data
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([orderId])
   @@index([shipmentId])
@@ -6565,13 +6569,13 @@ model CustomsDeclaration {
 // ============================================
 
 model ExchangeRate {
-  id                  String   @id @default(uuid())
-  fromCurrency        String
-  toCurrency          String
-  rate                Float
-  source              String   // MARKET, MANUAL, API
+  id           String @id @default(uuid())
+  fromCurrency String
+  toCurrency   String
+  rate         Float
+  source       String // MARKET, MANUAL, API
 
-  createdAt           DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([fromCurrency, toCurrency])
   @@index([createdAt])
@@ -6579,22 +6583,22 @@ model ExchangeRate {
 }
 
 model CurrencyConversion {
-  id                  String   @id @default(uuid())
-  userId              String?
-  organizationId      String?
+  id             String  @id @default(uuid())
+  userId         String?
+  organizationId String?
 
-  amount              Float
-  fromCurrency        String
-  toCurrency          String
-  exchangeRate        Float
-  convertedAmount     Float
-  fees                Float    @default(0)
+  amount          Float
+  fromCurrency    String
+  toCurrency      String
+  exchangeRate    Float
+  convertedAmount Float
+  fees            Float  @default(0)
 
   // Transaction reference
-  orderId             String?
-  transactionType     String?  // ORDER, PAYOUT, REFUND
+  orderId         String?
+  transactionType String? // ORDER, PAYOUT, REFUND
 
-  createdAt           DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([organizationId])
@@ -6604,20 +6608,20 @@ model CurrencyConversion {
 }
 
 model CurrencyHedge {
-  id                  String   @id @default(uuid())
-  organizationId      String?
+  id             String  @id @default(uuid())
+  organizationId String?
 
-  fromCurrency        String
-  toCurrency          String
-  amount              Float
-  lockedRate          Float?
-  currentRate         Float?   // Current exchange rate
-  targetRate          Float?   // Target exchange rate for the hedge
-  expiryDate          DateTime?
-  status              String   @default("ACTIVE") // ACTIVE, EXPIRED, EXERCISED
+  fromCurrency String
+  toCurrency   String
+  amount       Float
+  lockedRate   Float?
+  currentRate  Float? // Current exchange rate
+  targetRate   Float? // Target exchange rate for the hedge
+  expiryDate   DateTime?
+  status       String    @default("ACTIVE") // ACTIVE, EXPIRED, EXERCISED
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([organizationId])
   @@index([status])
@@ -6630,18 +6634,18 @@ model CurrencyHedge {
 // ============================================
 
 model ChurnRisk {
-  id                  String   @id @default(uuid())
-  userId              String   @unique
+  id     String @id @default(uuid())
+  userId String @unique
 
-  riskScore           Float    // 0-100
-  riskLevel           String   // LOW, MEDIUM, HIGH
-  factors             Json?    // Contributing factors
-  assessedAt          DateTime @default(now())
+  riskScore  Float // 0-100
+  riskLevel  String // LOW, MEDIUM, HIGH
+  factors    Json? // Contributing factors
+  assessedAt DateTime @default(now())
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user                User     @relation("UserChurnRisk", fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation("UserChurnRisk", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([riskLevel])
   @@index([assessedAt])
@@ -6649,17 +6653,17 @@ model ChurnRisk {
 }
 
 model LeadScore {
-  id                  String   @id @default(uuid())
-  userId              String   @unique
+  id     String @id @default(uuid())
+  userId String @unique
 
-  score               Float    // 0-100
-  tier                String   // HOT, WARM, COLD
-  factors             Json?    // Scoring factors
+  score   Float // 0-100
+  tier    String // HOT, WARM, COLD
+  factors Json? // Scoring factors
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([tier])
   @@index([score])
@@ -6667,48 +6671,48 @@ model LeadScore {
 }
 
 model ReferralProgram {
-  id                  String   @id @default(uuid())
-  organizationId      String?
+  id             String  @id @default(uuid())
+  organizationId String?
 
-  name                String
-  description         String?
-  active              Boolean  @default(true)
+  name        String
+  description String?
+  active      Boolean @default(true)
 
   // Rewards
-  referrerReward      Float
-  refereeReward       Float
-  rewardType          String   // CREDIT, DISCOUNT, POINTS
-  requirementType     String?  // Type of requirement to fulfill
-  requirementValue    Float?   // Value for the requirement
+  referrerReward   Float
+  refereeReward    Float
+  rewardType       String // CREDIT, DISCOUNT, POINTS
+  requirementType  String? // Type of requirement to fulfill
+  requirementValue Float? // Value for the requirement
 
   // Conditions
-  minPurchaseAmount   Float?
-  maxRedemptions      Int?
-  validFrom           DateTime?
-  validUntil          DateTime?
+  minPurchaseAmount Float?
+  maxRedemptions    Int?
+  validFrom         DateTime?
+  validUntil        DateTime?
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  referralCodes       ReferralCode[]
-  referrals           Referral[]     @relation("ReferralProgram")
+  referralCodes ReferralCode[]
+  referrals     Referral[]     @relation("ReferralProgram")
 
   @@index([active])
   @@map("referral_programs")
 }
 
 model ReferralCode {
-  id                  String   @id @default(uuid())
-  programId           String
-  userId              String
+  id        String @id @default(uuid())
+  programId String
+  userId    String
 
-  code                String   @unique
-  usageCount          Int      @default(0)
+  code       String @unique
+  usageCount Int    @default(0)
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  program             ReferralProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  program ReferralProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([programId])
@@ -6716,19 +6720,19 @@ model ReferralCode {
 }
 
 model LoyaltyPoints {
-  id                  String   @id @default(uuid())
-  userId              String
+  id     String @id @default(uuid())
+  userId String
 
-  points              Int      @default(0)
-  tier                String?  // BRONZE, SILVER, GOLD, PLATINUM
-  source              String?  // Source of points (e.g., PURCHASE, REFERRAL, BONUS)
+  points Int     @default(0)
+  tier   String? // BRONZE, SILVER, GOLD, PLATINUM
+  source String? // Source of points (e.g., PURCHASE, REFERRAL, BONUS)
 
   // Transaction tracking
-  totalEarned         Int      @default(0)
-  totalRedeemed       Int      @default(0)
+  totalEarned   Int @default(0)
+  totalRedeemed Int @default(0)
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([tier])
@@ -6736,61 +6740,61 @@ model LoyaltyPoints {
 }
 
 model UserCredit {
-  id                  String   @id @default(uuid())
-  userId              String   @unique
+  id     String @id @default(uuid())
+  userId String @unique
 
-  amount              Float    @default(0) // Current credit amount (alias for balance)
-  balance             Float    @default(0)
-  currency            String   @default("USD")
-  source              String?  // Source of the credit
+  amount   Float   @default(0) // Current credit amount (alias for balance)
+  balance  Float   @default(0)
+  currency String  @default("USD")
+  source   String? // Source of the credit
 
   // Tracking
-  totalEarned         Float    @default(0)
-  totalSpent          Float    @default(0)
+  totalEarned Float @default(0)
+  totalSpent  Float @default(0)
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@map("user_credits")
 }
 
 model LandingPage {
-  id                  String   @id @default(uuid())
-  organizationId      String?
-  campaignId          String?
+  id             String  @id @default(uuid())
+  organizationId String?
+  campaignId     String?
 
-  name                String
-  slug                String   @unique
-  title               String
-  description         String?
-  template            String?
+  name        String
+  slug        String  @unique
+  title       String
+  description String?
+  template    String?
 
   // Content
-  content             Json?
-  primaryCTA          Json?    // Call to action
-  secondaryCTA        Json?
+  content      Json?
+  primaryCTA   Json? // Call to action
+  secondaryCTA Json?
 
   // SEO
-  seoMetadata         Json?
-  tags                String[] @default([])
+  seoMetadata Json?
+  tags        String[] @default([])
 
   // Settings
-  status              String   @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
-  region              String?
-  language            String   @default("en")
+  status   String  @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
+  region   String?
+  language String  @default("en")
 
   // Analytics
-  analytics           Json?
-  metrics             Json?    // Performance metrics
+  analytics Json?
+  metrics   Json? // Performance metrics
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  publishedAt         DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
 
   // Relations
-  organization        Organization?     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  campaign            MarketingCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  organization Organization?      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaign     MarketingCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
   @@index([campaignId])
@@ -6804,19 +6808,19 @@ model LandingPage {
 // ============================================
 
 model EmailAutomationRule {
-  id                  String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  name                String
-  trigger             String   // SIGNUP, CART_ABANDON, PURCHASE, etc.
-  conditions          Json?
-  emailTemplateId     String?
-  delay               Int      @default(0) // Minutes to wait before sending
-  enabled             Boolean  @default(true)
+  name            String
+  trigger         String // SIGNUP, CART_ABANDON, PURCHASE, etc.
+  conditions      Json?
+  emailTemplateId String?
+  delay           Int     @default(0) // Minutes to wait before sending
+  enabled         Boolean @default(true)
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  template            EmailTemplate? @relation("EmailAutomationRuleTemplate", fields: [emailTemplateId], references: [id], onDelete: SetNull)
+  template EmailTemplate? @relation("EmailAutomationRuleTemplate", fields: [emailTemplateId], references: [id], onDelete: SetNull)
 
   @@index([trigger])
   @@index([enabled])
@@ -6825,18 +6829,18 @@ model EmailAutomationRule {
 }
 
 model EmailSequence {
-  id                  String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  name                String
-  description         String?
-  trigger             String   // What triggers the sequence
-  steps               Json     // Array of sequence steps
-  enabled             Boolean  @default(true)
+  name        String
+  description String?
+  trigger     String // What triggers the sequence
+  steps       Json // Array of sequence steps
+  enabled     Boolean @default(true)
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  enrollments         EmailSequenceEnrollment[]
+  enrollments EmailSequenceEnrollment[]
 
   @@index([trigger])
   @@index([enabled])
@@ -6844,18 +6848,18 @@ model EmailSequence {
 }
 
 model EmailSequenceEnrollment {
-  id                  String   @id @default(uuid())
-  sequenceId          String
-  userId              String
+  id         String @id @default(uuid())
+  sequenceId String
+  userId     String
 
-  currentStep         Int      @default(0)
-  status              String   @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
-  enrollmentData      Json?    // Additional enrollment data
+  currentStep    Int    @default(0)
+  status         String @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
+  enrollmentData Json? // Additional enrollment data
 
-  enrolledAt          DateTime @default(now())
-  completedAt         DateTime?
+  enrolledAt  DateTime  @default(now())
+  completedAt DateTime?
 
-  sequence            EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  sequence EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
 
   @@index([sequenceId])
   @@index([userId])
@@ -6868,31 +6872,31 @@ model EmailSequenceEnrollment {
 // ============================================
 
 model EnterpriseContract {
-  id                  String   @id @default(uuid())
-  organizationId      String
-  vendorId            String?
+  id             String  @id @default(uuid())
+  organizationId String
+  vendorId       String?
 
-  title               String
-  type                String   // MSA, SLA, NDA, etc.
-  status              String   @default("DRAFT") // DRAFT, ACTIVE, EXPIRED, TERMINATED
-  terms               Json?
+  title  String
+  type   String // MSA, SLA, NDA, etc.
+  status String @default("DRAFT") // DRAFT, ACTIVE, EXPIRED, TERMINATED
+  terms  Json?
 
   // Dates
-  startDate           DateTime
-  endDate             DateTime
-  autoRenew           Boolean  @default(false)
-  renewalTermDays     Int?
+  startDate       DateTime
+  endDate         DateTime
+  autoRenew       Boolean  @default(false)
+  renewalTermDays Int?
 
   // Financial
-  value               Float?
-  currency            String   @default("USD")
+  value    Float?
+  currency String @default("USD")
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  organization        Organization  @relation("EnterpriseContractOrg", fields: [organizationId], references: [id], onDelete: Cascade)
-  vendor              VendorProfile? @relation("EnterpriseContractVendor", fields: [vendorId], references: [id], onDelete: SetNull)
+  organization Organization   @relation("EnterpriseContractOrg", fields: [organizationId], references: [id], onDelete: Cascade)
+  vendor       VendorProfile? @relation("EnterpriseContractVendor", fields: [vendorId], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
   @@index([vendorId])
@@ -6902,26 +6906,26 @@ model EnterpriseContract {
 }
 
 model Office {
-  id                  String   @id @default(uuid())
-  organizationId      String
+  id             String @id @default(uuid())
+  organizationId String
 
-  name                String
-  code                String   // Unique office code within org
-  type                String   // HEADQUARTERS, BRANCH, WAREHOUSE, etc.
+  name String
+  code String // Unique office code within org
+  type String // HEADQUARTERS, BRANCH, WAREHOUSE, etc.
 
-  address             Json?
-  contactInfo         Json?
-  operatingHours      Json?
-  approvalRules       Json?    // Approval rules for this office
+  address        Json?
+  contactInfo    Json?
+  operatingHours Json?
+  approvalRules  Json? // Approval rules for this office
 
-  isActive            Boolean  @default(true)
+  isActive Boolean @default(true)
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  organization        Organization     @relation("OfficeOrganization", fields: [organizationId], references: [id], onDelete: Cascade)
-  transfersFrom       OfficeTransfer[] @relation("TransferFrom")
-  transfersTo         OfficeTransfer[] @relation("TransferTo")
+  organization  Organization     @relation("OfficeOrganization", fields: [organizationId], references: [id], onDelete: Cascade)
+  transfersFrom OfficeTransfer[] @relation("TransferFrom")
+  transfersTo   OfficeTransfer[] @relation("TransferTo")
 
   @@unique([organizationId, code])
   @@index([organizationId])
@@ -6931,24 +6935,24 @@ model Office {
 }
 
 model OfficeTransfer {
-  id                  String   @id @default(uuid())
-  fromOfficeId        String
-  toOfficeId          String
+  id           String @id @default(uuid())
+  fromOfficeId String
+  toOfficeId   String
 
-  items               Json     // Items being transferred
-  requestedBy         String
-  approvedBy          String?
-  receivedBy          String?  // Who received the transfer
-  reason              String?
-  status              String   @default("PENDING") // PENDING, IN_TRANSIT, COMPLETED, CANCELLED
+  items       Json // Items being transferred
+  requestedBy String
+  approvedBy  String?
+  receivedBy  String? // Who received the transfer
+  reason      String?
+  status      String  @default("PENDING") // PENDING, IN_TRANSIT, COMPLETED, CANCELLED
 
-  requestedAt         DateTime @default(now())
-  approvedAt          DateTime?
-  completedAt         DateTime?
-  deliveredAt         DateTime? // When the transfer was delivered
+  requestedAt DateTime  @default(now())
+  approvedAt  DateTime?
+  completedAt DateTime?
+  deliveredAt DateTime? // When the transfer was delivered
 
-  fromOffice          Office   @relation("TransferFrom", fields: [fromOfficeId], references: [id])
-  toOffice            Office   @relation("TransferTo", fields: [toOfficeId], references: [id])
+  fromOffice Office @relation("TransferFrom", fields: [fromOfficeId], references: [id])
+  toOffice   Office @relation("TransferTo", fields: [toOfficeId], references: [id])
 
   @@index([fromOfficeId])
   @@index([toOfficeId])
@@ -6957,26 +6961,26 @@ model OfficeTransfer {
 }
 
 model Purchase {
-  id                  String   @id @default(uuid())
-  officeId            String?
-  organizationId      String
-  vendorId            String?
+  id             String  @id @default(uuid())
+  officeId       String?
+  organizationId String
+  vendorId       String?
 
-  purchaseOrderNumber String   @unique
-  status              String   @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, RECEIVED, CANCELLED
+  purchaseOrderNumber String @unique
+  status              String @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, RECEIVED, CANCELLED
 
-  items               Json
-  total               Float
-  currency            String   @default("USD")
+  items    Json
+  total    Float
+  currency String @default("USD")
 
-  requestedBy         String
-  approvedBy          String?
+  requestedBy String
+  approvedBy  String?
 
-  date                DateTime @default(now()) // Purchase date
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  approvedAt          DateTime?
-  receivedAt          DateTime?
+  date       DateTime  @default(now()) // Purchase date
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  approvedAt DateTime?
+  receivedAt DateTime?
 
   @@index([officeId])
   @@index([organizationId])
@@ -6988,26 +6992,26 @@ model Purchase {
 }
 
 model Expense {
-  id                  String   @id @default(uuid())
-  officeId            String?
-  organizationId      String
+  id             String  @id @default(uuid())
+  officeId       String?
+  organizationId String
 
-  category            String
-  description         String
-  amount              Float
-  currency            String   @default("USD")
+  category    String
+  description String
+  amount      Float
+  currency    String @default("USD")
 
-  submittedBy         String
-  approvedBy          String?
-  status              String   @default("PENDING") // PENDING, APPROVED, REJECTED, PAID
+  submittedBy String
+  approvedBy  String?
+  status      String  @default("PENDING") // PENDING, APPROVED, REJECTED, PAID
 
-  receiptUrl          String?
+  receiptUrl String?
 
-  date                DateTime @default(now()) // Expense date
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  approvedAt          DateTime?
-  paidAt              DateTime?
+  date       DateTime  @default(now()) // Expense date
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  approvedAt DateTime?
+  paidAt     DateTime?
 
   @@index([officeId])
   @@index([organizationId])
@@ -7018,30 +7022,30 @@ model Expense {
 }
 
 model RFQ {
-  id                  String   @id @default(uuid())
-  organizationId      String
+  id             String @id @default(uuid())
+  organizationId String
 
-  title               String
-  description         String
-  requirements        Json?
-  items               Json
+  title        String
+  description  String
+  requirements Json?
+  items        Json
 
-  status              String   @default("DRAFT") // DRAFT, PUBLISHED, CLOSED, AWARDED
-  deadline            DateTime?
-  budget              Float?
-  currency            String   @default("USD")
+  status   String    @default("DRAFT") // DRAFT, PUBLISHED, CLOSED, AWARDED
+  deadline DateTime?
+  budget   Float?
+  currency String    @default("USD")
 
-  awardedResponseId   String?  // ID of awarded response
-  awardedAt           DateTime? // When the RFQ was awarded
-  cancellationReason  String?  // Reason if cancelled
+  awardedResponseId  String? // ID of awarded response
+  awardedAt          DateTime? // When the RFQ was awarded
+  cancellationReason String? // Reason if cancelled
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  publishedAt         DateTime?
-  closedAt            DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+  closedAt    DateTime?
 
-  organization        Organization @relation("RFQOrganization", fields: [organizationId], references: [id], onDelete: Cascade)
-  responses           RFQResponse[]
+  organization Organization  @relation("RFQOrganization", fields: [organizationId], references: [id], onDelete: Cascade)
+  responses    RFQResponse[]
 
   @@index([organizationId])
   @@index([status])
@@ -7050,26 +7054,26 @@ model RFQ {
 }
 
 model RFQResponse {
-  id                  String   @id @default(uuid())
-  rfqId               String
-  vendorId            String
+  id       String @id @default(uuid())
+  rfqId    String
+  vendorId String
 
-  proposal            Json
-  quotedPrice         Float
-  totalPrice          Float?   // Total calculated price
-  currency            String   @default("USD")
-  deliveryTime        Int?     // Days
-  items               Json?    // Line items breakdown
-  validUntil          DateTime? // Valid until date for the quote
+  proposal     Json
+  quotedPrice  Float
+  totalPrice   Float? // Total calculated price
+  currency     String    @default("USD")
+  deliveryTime Int? // Days
+  items        Json? // Line items breakdown
+  validUntil   DateTime? // Valid until date for the quote
 
-  status              String   @default("SUBMITTED") // SUBMITTED, UNDER_REVIEW, ACCEPTED, REJECTED
-  notes               String?
+  status String  @default("SUBMITTED") // SUBMITTED, UNDER_REVIEW, ACCEPTED, REJECTED
+  notes  String?
 
-  submittedAt         DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  submittedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  rfq                 RFQ      @relation(fields: [rfqId], references: [id], onDelete: Cascade)
-  vendor              VendorProfile @relation("RFQResponseVendor", fields: [vendorId], references: [id], onDelete: Cascade)
+  rfq    RFQ           @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  vendor VendorProfile @relation("RFQResponseVendor", fields: [vendorId], references: [id], onDelete: Cascade)
 
   @@index([rfqId])
   @@index([vendorId])
@@ -7082,31 +7086,31 @@ model RFQResponse {
 // ============================================
 
 model Vendor {
-  id                  String   @id @default(uuid())
-  name                String
-  slug                String   @unique
-  description         String?
-  logoUrl             String?
-  website             String?
-  email               String?
-  phone               String?
-  address             Json?
+  id          String  @id @default(uuid())
+  name        String
+  slug        String  @unique
+  description String?
+  logoUrl     String?
+  website     String?
+  email       String?
+  phone       String?
+  address     Json?
 
   // Vendor Status
-  status              String   @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
-  isVerified          Boolean  @default(false)
-  isActive            Boolean  @default(true)
+  status     String  @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
+  isVerified Boolean @default(false)
+  isActive   Boolean @default(true)
 
   // Metrics
-  rating              Float?   @default(0)
-  totalProducts       Int      @default(0)
-  totalSales          Float    @default(0)
+  rating        Float? @default(0)
+  totalProducts Int    @default(0)
+  totalSales    Float  @default(0)
 
   // Relations
-  products            Product[] @relation("VendorProducts")
+  products Product[] @relation("VendorProducts")
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([slug])
   @@index([status])
@@ -7120,51 +7124,51 @@ model Vendor {
 // ============================================
 
 model LetterOfCredit {
-  id                  String   @id @default(uuid())
-  organizationId      String?
-  orderId             String?
+  id             String  @id @default(uuid())
+  organizationId String?
+  orderId        String?
 
-  lcNumber            String?  @unique
-  issuingBank         String?
-  advisingBank        String?
-  confirmingBank      String?
-  beneficiary         String?
-  applicant           String?
+  lcNumber       String? @unique
+  issuingBank    String?
+  advisingBank   String?
+  confirmingBank String?
+  beneficiary    String?
+  applicant      String?
 
-  amount              Float?
-  currency            String   @default("USD")
+  amount   Float?
+  currency String @default("USD")
 
   // LC Details
-  type                String?  // SIGHT, USANCE, REVOCABLE, IRREVOCABLE
-  lcType              String?  // SIGHT, USANCE, DEFERRED (alias for type)
-  terms               Json?
-  termsAndConditions  String[] @default([])
-  documents           String[] @default([]) // Required documents
-  requiredDocuments   String[] @default([]) // Alias for documents
-  presentedDocuments  Json?    // Documents presented for payment
-  description         String?
+  type               String? // SIGHT, USANCE, REVOCABLE, IRREVOCABLE
+  lcType             String? // SIGHT, USANCE, DEFERRED (alias for type)
+  terms              Json?
+  termsAndConditions String[] @default([])
+  documents          String[] @default([]) // Required documents
+  requiredDocuments  String[] @default([]) // Alias for documents
+  presentedDocuments Json? // Documents presented for payment
+  description        String?
 
   // Status and Dates
-  status              String   @default("DRAFT") // DRAFT, ISSUED, CONFIRMED, AMENDED, EXPIRED, COMPLETED
-  issueDate           DateTime?
-  issuedAt            DateTime? // When LC was issued
-  expiryDate          DateTime?
-  shipmentDate        DateTime?
-  presentationPeriod  Int?     // Days
-  acceptedAt          DateTime? // When LC was accepted
-  paidAt              DateTime? // When payment was made
-  presentedAt         DateTime? // When documents were presented
+  status             String    @default("DRAFT") // DRAFT, ISSUED, CONFIRMED, AMENDED, EXPIRED, COMPLETED
+  issueDate          DateTime?
+  issuedAt           DateTime? // When LC was issued
+  expiryDate         DateTime?
+  shipmentDate       DateTime?
+  presentationPeriod Int? // Days
+  acceptedAt         DateTime? // When LC was accepted
+  paidAt             DateTime? // When payment was made
+  presentedAt        DateTime? // When documents were presented
 
   // Bank References
-  issuingBankRef      String?
-  paymentRef          String?
+  issuingBankRef String?
+  paymentRef     String?
 
   // Financial
-  drawingAmount       Float?
-  balanceAmount       Float?
+  drawingAmount Float?
+  balanceAmount Float?
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([organizationId])
   @@index([orderId])
@@ -7175,57 +7179,57 @@ model LetterOfCredit {
 }
 
 model WireTransfer {
-  id                  String   @id @default(uuid())
-  organizationId      String?
-  orderId             String?
+  id             String  @id @default(uuid())
+  organizationId String?
+  orderId        String?
 
-  referenceNumber     String?  @unique
-  transferNumber      String?  @unique // Alternative transfer identifier
+  referenceNumber String? @unique
+  transferNumber  String? @unique // Alternative transfer identifier
 
   // Sender/Recipient ID references (for service code)
-  senderId            String?
-  recipientId         String?
+  senderId    String?
+  recipientId String?
 
   // Sender Details
-  senderName          String?
-  senderAccount       String?
-  senderBank          String?
-  senderBankSwift     String?
+  senderName      String?
+  senderAccount   String?
+  senderBank      String?
+  senderBankSwift String?
 
   // Recipient Details
-  recipientName       String?
-  recipientAccount    String?
-  recipientBank       String?
-  recipientBankSwift  String?
+  recipientName      String?
+  recipientAccount   String?
+  recipientBank      String?
+  recipientBankSwift String?
 
   // Transfer Details
-  amount              Float
-  currency            String   @default("USD")
-  purpose             String?
-  instructions        String?
-  network             String?  // SWIFT, ACH, SEPA, BACS, WIRE
-  reference           String?  // User-provided reference
+  amount       Float
+  currency     String  @default("USD")
+  purpose      String?
+  instructions String?
+  network      String? // SWIFT, ACH, SEPA, BACS, WIRE
+  reference    String? // User-provided reference
 
   // Fees and Charges
-  fee                 Float?   @default(0) // Alias for transferFee
-  transferFee         Float?   @default(0)
-  intermediaryFees    Float?   @default(0)
+  fee              Float? @default(0) // Alias for transferFee
+  transferFee      Float? @default(0)
+  intermediaryFees Float? @default(0)
 
   // Status and Dates
-  status              String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, FAILED, CANCELLED
-  initiatedAt         DateTime @default(now())
-  completedAt         DateTime?
-  estimatedArrival    DateTime?
+  status           String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, FAILED, CANCELLED
+  initiatedAt      DateTime  @default(now())
+  completedAt      DateTime?
+  estimatedArrival DateTime?
 
   // Tracking
-  trackingNumber      String?
-  confirmationCode    String?
+  trackingNumber   String?
+  confirmationCode String?
 
   // Relations
-  statusHistory       WireTransferStatusHistory[]
+  statusHistory WireTransferStatusHistory[]
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([organizationId])
   @@index([orderId])
@@ -7238,14 +7242,14 @@ model WireTransfer {
 }
 
 model WireTransferStatusHistory {
-  id              String       @id @default(uuid())
-  wireTransferId  String
-  wireTransfer    WireTransfer @relation(fields: [wireTransferId], references: [id], onDelete: Cascade)
+  id             String       @id @default(uuid())
+  wireTransferId String
+  wireTransfer   WireTransfer @relation(fields: [wireTransferId], references: [id], onDelete: Cascade)
 
-  status          String
-  notes           String?
+  status String
+  notes  String?
 
-  createdAt       DateTime     @default(now())
+  createdAt DateTime @default(now())
 
   @@index([wireTransferId])
   @@index([createdAt])
@@ -7253,55 +7257,55 @@ model WireTransferStatusHistory {
 }
 
 model InvoiceFinancing {
-  id                  String   @id @default(uuid())
-  organizationId      String?
-  invoiceId           String?
+  id             String  @id @default(uuid())
+  organizationId String?
+  invoiceId      String?
 
   // Invoice Details
-  invoiceNumber       String?
-  invoiceAmount       Float?
-  currency            String   @default("USD")
-  invoiceDate         DateTime?
-  dueDate             DateTime?
+  invoiceNumber String?
+  invoiceAmount Float?
+  currency      String    @default("USD")
+  invoiceDate   DateTime?
+  dueDate       DateTime?
 
   // Financing Details
-  advanceRate         Float?   // Percentage (e.g., 80 = 80%)
-  advanceAmount       Float?   // Amount financed
-  fee                 Float?   // Financing fee
-  feePercentage       Float?   // Fee as percentage
-  requestedAmount     Float?   // Amount requested by supplier
-  approvedAmount      Float?   // Amount approved for financing
-  discountFee         Float?   // Discount fee calculated
-  netAmount           Float?   // Net amount after fees
-  paymentTerms        Int?     // Payment terms in days
-  financingType       String?  // FACTORING, DISCOUNTING, SUPPLY_CHAIN
-  referenceNumber     String?  @unique
+  advanceRate     Float? // Percentage (e.g., 80 = 80%)
+  advanceAmount   Float? // Amount financed
+  fee             Float? // Financing fee
+  feePercentage   Float? // Fee as percentage
+  requestedAmount Float? // Amount requested by supplier
+  approvedAmount  Float? // Amount approved for financing
+  discountFee     Float? // Discount fee calculated
+  netAmount       Float? // Net amount after fees
+  paymentTerms    Int? // Payment terms in days
+  financingType   String? // FACTORING, DISCOUNTING, SUPPLY_CHAIN
+  referenceNumber String? @unique
 
   // Parties
-  buyerId             String?
-  supplierId          String?
-  financierId         String?
+  buyerId     String?
+  supplierId  String?
+  financierId String?
 
   // Status and Dates
-  status              String   @default("PENDING") // PENDING, APPROVED, ADVANCED, REPAID, DEFAULTED
-  applicationDate     DateTime @default(now())
-  approvalDate        DateTime?
-  approvedAt          DateTime? // Alias for approvalDate
-  advanceDate         DateTime?
-  fundedAt            DateTime? // When funds were disbursed
-  repaymentDate       DateTime?
-  repaidAt            DateTime? // When fully repaid
+  status          String    @default("PENDING") // PENDING, APPROVED, ADVANCED, REPAID, DEFAULTED
+  applicationDate DateTime  @default(now())
+  approvalDate    DateTime?
+  approvedAt      DateTime? // Alias for approvalDate
+  advanceDate     DateTime?
+  fundedAt        DateTime? // When funds were disbursed
+  repaymentDate   DateTime?
+  repaidAt        DateTime? // When fully repaid
 
   // Transaction References
   disbursementTransactionId String?
   repaymentTransactionId    String?
 
   // Repayment
-  repaidAmount        Float?   @default(0)
-  remainingBalance    Float?
+  repaidAmount     Float? @default(0)
+  remainingBalance Float?
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([organizationId])
   @@index([invoiceId])
@@ -7317,22 +7321,22 @@ model InvoiceFinancing {
 // ============================================
 
 model Inventory {
-  id                  String   @id @default(uuid())
-  productId           String
-  locationId          String?  // Office/warehouse ID
-  officeId            String?  // Office ID (alias for locationId)
+  id         String  @id @default(uuid())
+  productId  String
+  locationId String? // Office/warehouse ID
+  officeId   String? // Office ID (alias for locationId)
 
-  quantity            Int      @default(0)
-  reservedQuantity    Int      @default(0)
-  availableQuantity   Int      @default(0)
+  quantity          Int @default(0)
+  reservedQuantity  Int @default(0)
+  availableQuantity Int @default(0)
 
-  reorderPoint        Int?
-  reorderQuantity     Int?
+  reorderPoint    Int?
+  reorderQuantity Int?
 
-  lastRestocked       DateTime?
+  lastRestocked DateTime?
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([productId, locationId])
   @@unique([officeId, productId])
@@ -7341,4 +7345,29 @@ model Inventory {
   @@index([officeId])
   @@index([availableQuantity])
   @@map("inventory")
+}
+
+// ============================================
+// PHONE VERIFICATION SYSTEM
+// ============================================
+
+model PhoneVerificationCode {
+  id          String   @id @default(uuid())
+  userId      String
+  phoneNumber String
+  code        String // 6-digit verification code
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(3)
+  verified    Boolean  @default(false)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([phoneNumber])
+  @@index([code])
+  @@index([expiresAt])
+  @@map("phone_verification_codes")
 }

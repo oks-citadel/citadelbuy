@@ -101,7 +101,7 @@ export class InvoiceFinancingService {
       throw new Error('Financing not found');
     }
 
-    const totalOwed = financing.approvedAmount;
+    const totalOwed = financing.approvedAmount ?? 0;
     const isFullyRepaid = amount >= totalOwed;
 
     return this.prisma.invoiceFinancing.update({

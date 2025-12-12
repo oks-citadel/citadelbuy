@@ -237,16 +237,6 @@ export class JumioProvider implements IKycProvider {
           };
         }
 
-        // AML/Watchlist screening
-        if (execution.capabilities.watchlistScreening) {
-          breakdown.amlCheck = {
-            result: this.mapResult(execution.capabilities.watchlistScreening.decision?.type),
-            breakdown: {
-              searchStatus: execution.capabilities.watchlistScreening.searchStatus,
-              matches: execution.capabilities.watchlistScreening.matches,
-            },
-          };
-        }
       }
 
       return {
@@ -522,13 +512,6 @@ export class JumioProvider implements IKycProvider {
           result: KycCheckResult.CLEAR,
           breakdown: {
             livenessScore: 0.98,
-          },
-        },
-        amlCheck: {
-          result: KycCheckResult.CLEAR,
-          breakdown: {
-            searchStatus: 'DONE',
-            matches: [],
           },
         },
       },

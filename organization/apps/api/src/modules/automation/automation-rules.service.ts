@@ -1135,7 +1135,7 @@ export class AutomationRulesService implements OnModuleDestroy {
         }
       });
 
-      this.schedulerRegistry.addCronJob(rule.id, job);
+      this.schedulerRegistry.addCronJob(rule.id, job as any);
       job.start();
 
       this.logger.log(

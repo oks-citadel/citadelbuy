@@ -62,7 +62,7 @@ export class AfricaPaymentsService {
    * Select best provider for country and currency
    */
   private selectProvider(country: string, currency: string): string {
-    const providers = this.COUNTRY_PROVIDERS[country] || ['flutterwave'];
+    const providers = (this.COUNTRY_PROVIDERS as Record<string, string[]>)[country] || ['flutterwave'];
 
     // Paystack is preferred for NGN in Nigeria
     if (country === 'NG' && currency === 'NGN') {
@@ -87,7 +87,7 @@ export class AfricaPaymentsService {
       RW: ['card', 'mobile_money'],
     };
 
-    return methods[country] || ['card'];
+    return (methods as Record<string, string[]>)[country] || ['card'];
   }
 
   /**
@@ -102,6 +102,6 @@ export class AfricaPaymentsService {
       RW: ['MTN', 'Airtel'],
     };
 
-    return providers[country] || [];
+    return (providers as Record<string, string[]>)[country] || [];
   }
 }

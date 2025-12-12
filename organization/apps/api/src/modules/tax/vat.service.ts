@@ -94,10 +94,10 @@ export class VATService {
     isB2B?: boolean,
   ): VATCalculation {
     const countryCode = country.toUpperCase();
-    const vatRate = this.VAT_RATES[countryCode] || 0;
+    const vatRate = (this.VAT_RATES as Record<string, number>)[countryCode] || 0;
 
     // Reverse charge for B2B in EU
-    const isReverseCharge = isB2B && this.isEUCountry(countryCode) && !!vatNumber;
+    const isReverseCharge = (isB2B ?? false) && this.isEUCountry(countryCode) && !!vatNumber;
 
     const vatAmount = isReverseCharge ? 0 : netAmount * vatRate;
     const grossAmount = netAmount + vatAmount;
@@ -114,7 +114,7 @@ export class VATService {
   }
 
   getVATRate(country: string): number {
-    return this.VAT_RATES[country.toUpperCase()] || 0;
+    return (this.VAT_RATES as Record<string, number>)[country.toUpperCase()] || 0;
   }
 
   validateVATNumber(vatNumber: string, country: string): boolean {

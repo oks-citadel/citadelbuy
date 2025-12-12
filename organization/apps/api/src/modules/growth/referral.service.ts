@@ -50,11 +50,11 @@ export class ReferralService {
       data: {
         name: program.name,
         description: program.description,
-        referrerReward: program.referrerReward as any,
-        refereeReward: program.refereeReward as any,
+        referrerReward: (program.referrerReward as any)?.value || 0,
+        refereeReward: (program.refereeReward as any)?.value || 0,
+        rewardType: (program.referrerReward as any)?.type || 'CREDIT',
         requirementType: program.requirementType || 'NONE',
         requirementValue: program.requirementValue,
-        expiryDays: program.expiryDays,
         maxRedemptions: program.maxRedemptions,
         active: program.active,
       },
@@ -95,11 +95,11 @@ export class ReferralService {
       data: {
         name: updates.name,
         description: updates.description,
-        referrerReward: updates.referrerReward as any,
-        refereeReward: updates.refereeReward as any,
+        referrerReward: (updates.referrerReward as any)?.value,
+        refereeReward: (updates.refereeReward as any)?.value,
+        rewardType: (updates.referrerReward as any)?.type,
         requirementType: updates.requirementType,
         requirementValue: updates.requirementValue,
-        expiryDays: updates.expiryDays,
         maxRedemptions: updates.maxRedemptions,
         active: updates.active,
       },
@@ -282,6 +282,11 @@ export class ReferralService {
 
     if (referral.status !== 'COMPLETED') {
       throw new BadRequestException('Referral must be completed before issuing rewards');
+    }
+
+    // Ensure program is loaded
+    if (!referral.program) {
+      throw new NotFoundException(`Program not found for referral ${referralId}`);
     }
 
     // Issue referrer reward
@@ -471,8 +476,10 @@ export class ReferralService {
         await this.prisma.coupon.create({
           data: {
             code: this.generateUniqueCode('REFERRAL'),
+            name: `Referral Reward - ${type}`,
             type: 'PERCENTAGE',
             value: reward.value,
+            startDate: new Date(),
             userId,
             source: `REFERRAL_${type}`,
           },

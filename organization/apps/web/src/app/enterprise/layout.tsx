@@ -76,7 +76,7 @@ export default function EnterpriseLayout({
 
   // Redirect if not enterprise user
   React.useEffect(() => {
-    if (user && user.role !== 'ADMIN' && user.role !== 'super_admin') {
+    if (user && user.role !== 'ADMIN') {
       router.push('/');
     }
   }, [user, router]);

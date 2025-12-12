@@ -73,7 +73,15 @@ export class WireTransferService {
 
     return this.prisma.wireTransfer.create({
       data: {
-        ...request,
+        senderId: request.senderId,
+        recipientId: request.recipientId,
+        amount: request.amount,
+        currency: request.currency,
+        network: request.network,
+        senderAccount: JSON.stringify(request.senderAccount),
+        recipientAccount: JSON.stringify(request.recipientAccount),
+        purpose: request.purpose,
+        reference: request.reference,
         status: WireTransferStatus.PENDING,
         transferNumber: this.generateTransferNumber(),
         fee: transferFee,

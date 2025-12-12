@@ -273,7 +273,7 @@ export const smartSearchService = {
     const response = await apiClient.get<any>(
       `/ai/search/spell-check?q=${encodeURIComponent(query)}`
     );
-    return response.data.corrected;
+    return response.data?.corrected ?? query;
   },
 
   async expandQuery(query: string): Promise<string[]> {
@@ -437,7 +437,7 @@ export const chatbotService = {
       productId,
       question,
     });
-    return response.data.answer;
+    return response.data?.answer ?? '';
   },
 
   async getSuggestedQuestions(context: {
