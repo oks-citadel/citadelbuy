@@ -82,32 +82,9 @@ jobs:
       - name: Set matrix
         id: set-matrix
         run: |
-          # Detect which services have Dockerfiles
-          SERVICES_INPUT="${{ inputs.services }}"
-          if [ -z "$SERVICES_INPUT" ] || [ "$SERVICES_INPUT" = "api,web" ]; then
-            SERVICES_INPUT="api,web"
-          fi
-
-          matrix=$(cat <<EOF
-          {
-            "include": [
-              {
-                "name": "api",
-                "context": "./organization/apps/api",
-                "dockerfile": "./organization/apps/api/Dockerfile.production",
-                "image": "citadelbuy-api"
-              },
-              {
-                "name": "web",
-                "context": "./organization/apps/web",
-                "dockerfile": "./organization/apps/web/Dockerfile.production",
-                "image": "citadelbuy-web"
-              }
-            ]
-          }
-          EOF
-          )
-          echo "matrix=$(echo $matrix | jq -c .)" >> $GITHUB_OUTPUT
+          MATRIX='{"include":[{"name":"api","context":"./organization","dockerfile":"./organization/apps/api/Dockerfile","image":"citadelbuy-api"},{"name":"web","context":"./organization","dockerfile":"./organization/apps/web/Dockerfile","image":"citadelbuy-web"}]}'
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+          echo "Matrix: $MATRIX"
 
   build-and-push:
     name: Build & Push ${{ matrix.name }}
