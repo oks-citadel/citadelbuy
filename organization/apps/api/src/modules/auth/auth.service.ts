@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, NotFoundException, Logger, NotImplementedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -848,5 +848,422 @@ export class AuthService {
     this.logger.log(`Password reset complete for user ${user.id}. All tokens invalidated.`);
 
     return { message: 'Password has been reset successfully' };
+  }
+
+  // ==================== MFA Methods ====================
+
+  /**
+   * Setup MFA for a user - generates TOTP secret and QR code
+   */
+  async setupMfa(userId: string): Promise<{
+    secret: string;
+    qrCode: string;
+    backupCodes: string[];
+  }> {
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if MFA is already enabled
+    const existingMfa = await this.prisma.userMfa.findUnique({
+      where: { userId },
+    });
+
+    if (existingMfa?.enabled) {
+      throw new BadRequestException('MFA is already enabled for this account');
+    }
+
+    // Generate a base32 secret (20 bytes = 160 bits, encoded as base32)
+    const secretBuffer = crypto.randomBytes(20);
+    const secret = this.encodeBase32(secretBuffer);
+
+    // Generate backup codes
+    const backupCodes = Array.from({ length: 8 }, () =>
+      crypto.randomBytes(4).toString('hex').toUpperCase()
+    );
+
+    // Hash backup codes for storage
+    const hashedBackupCodes = await Promise.all(
+      backupCodes.map((code) => bcrypt.hash(code, 10))
+    );
+
+    // Store or update MFA setup (not enabled yet)
+    await this.prisma.userMfa.upsert({
+      where: { userId },
+      update: {
+        secret,
+        backupCodes: hashedBackupCodes,
+        enabled: false,
+        updatedAt: new Date(),
+      },
+      create: {
+        userId,
+        secret,
+        backupCodes: hashedBackupCodes,
+        enabled: false,
+      },
+    });
+
+    // Generate QR code URL (otpauth://totp/...)
+    const issuer = 'CitadelBuy';
+    const accountName = user.email;
+    const otpauthUrl = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(accountName)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
+
+    // Generate QR code as data URL (simplified - in production use qrcode library)
+    const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpauthUrl)}`;
+
+    this.logger.log(`MFA setup initiated for user ${userId}`);
+
+    return {
+      secret,
+      qrCode,
+      backupCodes,
+    };
+  }
+
+  /**
+   * Verify TOTP code and enable MFA
+   */
+  async verifyMfa(userId: string, code: string): Promise<{
+    message: string;
+    mfaEnabled: boolean;
+  }> {
+    const mfa = await this.prisma.userMfa.findUnique({
+      where: { userId },
+    });
+
+    if (!mfa || !mfa.secret) {
+      throw new BadRequestException('MFA has not been set up. Please call /auth/mfa/setup first.');
+    }
+
+    // Verify the TOTP code
+    const isValid = this.verifyTotpCode(mfa.secret, code);
+
+    if (!isValid) {
+      throw new BadRequestException('Invalid verification code');
+    }
+
+    // Enable MFA
+    await this.prisma.userMfa.update({
+      where: { userId },
+      data: {
+        enabled: true,
+        verifiedAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+    this.logger.log(`MFA enabled for user ${userId}`);
+
+    return {
+      message: 'MFA enabled successfully',
+      mfaEnabled: true,
+    };
+  }
+
+  /**
+   * Get MFA status for a user
+   */
+  async getMfaStatus(userId: string): Promise<{
+    mfaEnabled: boolean;
+    mfaMethod: string | null;
+  }> {
+    const mfa = await this.prisma.userMfa.findUnique({
+      where: { userId },
+    });
+
+    return {
+      mfaEnabled: mfa?.enabled ?? false,
+      mfaMethod: mfa?.enabled ? 'totp' : null,
+    };
+  }
+
+  /**
+   * Disable MFA for a user
+   */
+  async disableMfa(userId: string, code: string): Promise<{
+    message: string;
+    mfaEnabled: boolean;
+  }> {
+    const mfa = await this.prisma.userMfa.findUnique({
+      where: { userId },
+    });
+
+    if (!mfa || !mfa.enabled) {
+      throw new BadRequestException('MFA is not enabled for this account');
+    }
+
+    // Verify the code (TOTP or backup code)
+    const isValidTotp = this.verifyTotpCode(mfa.secret!, code);
+    let isValidBackup = false;
+
+    if (!isValidTotp && mfa.backupCodes) {
+      // Check backup codes
+      const backupCodes = mfa.backupCodes as string[];
+      for (const hashedCode of backupCodes) {
+        if (await bcrypt.compare(code.toUpperCase(), hashedCode)) {
+          isValidBackup = true;
+          break;
+        }
+      }
+    }
+
+    if (!isValidTotp && !isValidBackup) {
+      throw new BadRequestException('Invalid verification code');
+    }
+
+    // Disable MFA
+    await this.prisma.userMfa.update({
+      where: { userId },
+      data: {
+        enabled: false,
+        secret: null,
+        backupCodes: [],
+        updatedAt: new Date(),
+      },
+    });
+
+    this.logger.log(`MFA disabled for user ${userId}`);
+
+    return {
+      message: 'MFA disabled successfully',
+      mfaEnabled: false,
+    };
+  }
+
+  /**
+   * Verify a TOTP code against a secret
+   */
+  private verifyTotpCode(secret: string, code: string): boolean {
+    const window = 1; // Allow 1 period before/after for clock skew
+    const period = 30; // TOTP period in seconds
+
+    for (let i = -window; i <= window; i++) {
+      const counter = Math.floor((Date.now() / 1000 + i * period) / period);
+      const expectedCode = this.generateTotpCode(secret, counter);
+      if (expectedCode === code) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Generate a TOTP code for a given counter
+   */
+  private generateTotpCode(secret: string, counter: number): string {
+    // Decode base32 secret
+    const secretBuffer = this.decodeBase32(secret);
+
+    // Create counter buffer (8 bytes, big-endian)
+    const counterBuffer = Buffer.alloc(8);
+    counterBuffer.writeBigUInt64BE(BigInt(counter));
+
+    // Generate HMAC-SHA1
+    const hmac = crypto.createHmac('sha1', secretBuffer);
+    hmac.update(counterBuffer);
+    const hmacResult = hmac.digest();
+
+    // Dynamic truncation
+    const offset = hmacResult[hmacResult.length - 1] & 0x0f;
+    const truncatedHash =
+      ((hmacResult[offset] & 0x7f) << 24) |
+      ((hmacResult[offset + 1] & 0xff) << 16) |
+      ((hmacResult[offset + 2] & 0xff) << 8) |
+      (hmacResult[offset + 3] & 0xff);
+
+    // Get 6-digit code
+    const otp = truncatedHash % 1000000;
+    return otp.toString().padStart(6, '0');
+  }
+
+  /**
+   * Encode buffer to base32
+   */
+  private encodeBase32(buffer: Buffer): string {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    let result = '';
+    let bits = 0;
+    let value = 0;
+
+    for (const byte of buffer) {
+      value = (value << 8) | byte;
+      bits += 8;
+
+      while (bits >= 5) {
+        result += alphabet[(value >>> (bits - 5)) & 31];
+        bits -= 5;
+      }
+    }
+
+    if (bits > 0) {
+      result += alphabet[(value << (5 - bits)) & 31];
+    }
+
+    return result;
+  }
+
+  /**
+   * Decode base32 to buffer
+   */
+  private decodeBase32(str: string): Buffer {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    const cleanStr = str.toUpperCase().replace(/[^A-Z2-7]/g, '');
+    const bytes: number[] = [];
+    let bits = 0;
+    let value = 0;
+
+    for (const char of cleanStr) {
+      const idx = alphabet.indexOf(char);
+      if (idx === -1) continue;
+
+      value = (value << 5) | idx;
+      bits += 5;
+
+      if (bits >= 8) {
+        bytes.push((value >>> (bits - 8)) & 255);
+        bits -= 8;
+      }
+    }
+
+    return Buffer.from(bytes);
+  }
+
+  // ==================== Email Verification Methods ====================
+
+  /**
+   * Send email verification link to a user
+   */
+  async sendVerificationEmail(userId: string): Promise<{ message: string }> {
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.emailVerified) {
+      throw new BadRequestException('Email is already verified');
+    }
+
+    // Invalidate any existing tokens
+    await this.prisma.emailVerificationToken.updateMany({
+      where: {
+        userId,
+        used: false,
+      },
+      data: {
+        used: true,
+      },
+    });
+
+    // Generate verification token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    // Store token
+    await this.prisma.emailVerificationToken.create({
+      data: {
+        userId,
+        email: user.email,
+        token,
+        expiresAt,
+      },
+    });
+
+    // Send verification email
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
+
+    await this.emailService.sendEmail({
+      to: user.email,
+      subject: 'Verify your email address',
+      template: 'email-verification',
+      context: {
+        name: user.name,
+        verificationUrl,
+      },
+    });
+
+    this.logger.log(`Verification email sent to ${user.email}`);
+
+    return { message: 'Verification email sent successfully' };
+  }
+
+  /**
+   * Verify email with token
+   */
+  async verifyEmail(token: string): Promise<{ message: string; verified: boolean }> {
+    const verificationToken = await this.prisma.emailVerificationToken.findUnique({
+      where: { token },
+      include: { user: true },
+    });
+
+    if (!verificationToken) {
+      throw new BadRequestException('Invalid verification token');
+    }
+
+    if (verificationToken.used) {
+      throw new BadRequestException('Verification token has already been used');
+    }
+
+    if (verificationToken.expiresAt < new Date()) {
+      throw new BadRequestException('Verification token has expired');
+    }
+
+    // Mark email as verified
+    await this.prisma.user.update({
+      where: { id: verificationToken.userId },
+      data: { emailVerified: true },
+    });
+
+    // Mark token as used
+    await this.prisma.emailVerificationToken.update({
+      where: { token },
+      data: { used: true },
+    });
+
+    this.logger.log(`Email verified for user ${verificationToken.userId}`);
+
+    return {
+      message: 'Email verified successfully',
+      verified: true,
+    };
+  }
+
+  /**
+   * Resend verification email
+   */
+  async resendVerificationEmail(email: string): Promise<{ message: string }> {
+    const user = await this.usersService.findByEmail(email);
+
+    // Always return success to prevent email enumeration
+    if (!user) {
+      return { message: 'If your email is registered, you will receive a verification email shortly' };
+    }
+
+    if (user.emailVerified) {
+      return { message: 'If your email is registered, you will receive a verification email shortly' };
+    }
+
+    // Rate limit: Check if a verification email was sent recently
+    const recentToken = await this.prisma.emailVerificationToken.findFirst({
+      where: {
+        userId: user.id,
+        used: false,
+        createdAt: {
+          gt: new Date(Date.now() - 60 * 1000), // Within last minute
+        },
+      },
+    });
+
+    if (recentToken) {
+      throw new BadRequestException('Please wait before requesting another verification email');
+    }
+
+    // Send verification email
+    await this.sendVerificationEmail(user.id);
+
+    return { message: 'If your email is registered, you will receive a verification email shortly' };
   }
 }

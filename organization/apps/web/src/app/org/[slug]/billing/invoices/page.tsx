@@ -45,63 +45,8 @@ export default function InvoicesPage() {
       setIsLoading(true);
       setError(null);
 
-      // Mock data for now - replace with actual API call
-      // const { invoices } = await organizationsApi.getInvoices('org_id');
-
-      const mockInvoices: Invoice[] = [
-        {
-          id: 'inv_1',
-          number: 'INV-2024-001',
-          status: 'paid',
-          amount: 4900,
-          currency: 'USD',
-          date: '2024-01-01T00:00:00Z',
-          dueDate: '2024-01-15T00:00:00Z',
-          pdfUrl: 'https://example.com/invoice-1.pdf',
-        },
-        {
-          id: 'inv_2',
-          number: 'INV-2023-012',
-          status: 'paid',
-          amount: 4900,
-          currency: 'USD',
-          date: '2023-12-01T00:00:00Z',
-          dueDate: '2023-12-15T00:00:00Z',
-          pdfUrl: 'https://example.com/invoice-2.pdf',
-        },
-        {
-          id: 'inv_3',
-          number: 'INV-2023-011',
-          status: 'paid',
-          amount: 4900,
-          currency: 'USD',
-          date: '2023-11-01T00:00:00Z',
-          dueDate: '2023-11-15T00:00:00Z',
-          pdfUrl: 'https://example.com/invoice-3.pdf',
-        },
-        {
-          id: 'inv_4',
-          number: 'INV-2023-010',
-          status: 'void',
-          amount: 4900,
-          currency: 'USD',
-          date: '2023-10-01T00:00:00Z',
-          dueDate: '2023-10-15T00:00:00Z',
-          pdfUrl: 'https://example.com/invoice-4.pdf',
-        },
-        {
-          id: 'inv_5',
-          number: 'INV-2023-009',
-          status: 'paid',
-          amount: 4900,
-          currency: 'USD',
-          date: '2023-09-01T00:00:00Z',
-          dueDate: '2023-09-15T00:00:00Z',
-          pdfUrl: 'https://example.com/invoice-5.pdf',
-        },
-      ];
-
-      setInvoices(mockInvoices);
+      const data = await organizationsApi.getInvoices(slug);
+      setInvoices(data.invoices);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load invoices');
       toast.error('Failed to load invoices');
@@ -145,17 +90,14 @@ export default function InvoicesPage() {
     try {
       toast.info('Downloading invoice...');
 
-      // In production, download from API
-      // const blob = await organizationsApi.downloadInvoice('org_id', invoice.id);
-      // const url = window.URL.createObjectURL(blob);
-      // downloadFile(url, `${invoice.number}.pdf`);
-      // window.URL.revokeObjectURL(url);
+      const blob = await organizationsApi.downloadInvoice(slug, invoice.id);
+      const url = window.URL.createObjectURL(blob);
+      downloadFile(url, `${invoice.number}.pdf`);
+      window.URL.revokeObjectURL(url);
 
-      // Mock download
-      await new Promise(resolve => setTimeout(resolve, 1000));
       toast.success('Invoice downloaded successfully');
     } catch (err) {
-      toast.error('Failed to download invoice');
+      toast.error(err instanceof Error ? err.message : 'Failed to download invoice');
     }
   };
 
@@ -210,7 +152,20 @@ export default function InvoicesPage() {
 
       {error && (
         <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>
+            <div className="space-y-2">
+              <p className="font-medium">Unable to Load Invoices</p>
+              <p>{error}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadInvoices}
+                className="mt-2"
+              >
+                Retry
+              </Button>
+            </div>
+          </AlertDescription>
         </Alert>
       )}
 

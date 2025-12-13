@@ -16,11 +16,16 @@ import {
   AlertTriangle,
   CheckCircle,
   Archive,
+  Power,
+  PowerOff,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { ProductStatusToggle } from '@/components/products/ProductStatusToggle';
+import { toast } from 'sonner';
+import adminProductsApi from '@/services/product-api';
 
 interface Product {
   id: string;
@@ -32,6 +37,7 @@ interface Product {
   comparePrice?: number;
   stock: number;
   status: 'ACTIVE' | 'DRAFT' | 'ARCHIVED';
+  isActive: boolean;
   rating: number;
   reviews: number;
   sales: number;
@@ -50,6 +56,7 @@ const demoProducts: Product[] = [
     comparePrice: 99.99,
     stock: 150,
     status: 'ACTIVE',
+    isActive: true,
     rating: 4.5,
     reviews: 328,
     sales: 1250,
@@ -64,6 +71,7 @@ const demoProducts: Product[] = [
     price: 149.99,
     stock: 45,
     status: 'ACTIVE',
+    isActive: true,
     rating: 4.7,
     reviews: 256,
     sales: 890,
@@ -79,6 +87,7 @@ const demoProducts: Product[] = [
     comparePrice: 39.99,
     stock: 500,
     status: 'ACTIVE',
+    isActive: false,
     rating: 4.3,
     reviews: 412,
     sales: 2100,
@@ -93,6 +102,7 @@ const demoProducts: Product[] = [
     price: 24.99,
     stock: 0,
     status: 'ACTIVE',
+    isActive: true,
     rating: 4.8,
     reviews: 89,
     sales: 560,
@@ -108,6 +118,7 @@ const demoProducts: Product[] = [
     comparePrice: 249.99,
     stock: 28,
     status: 'ACTIVE',
+    isActive: true,
     rating: 4.6,
     reviews: 67,
     sales: 345,
@@ -122,6 +133,7 @@ const demoProducts: Product[] = [
     price: 89.99,
     stock: 75,
     status: 'DRAFT',
+    isActive: false,
     rating: 0,
     reviews: 0,
     sales: 0,
@@ -130,11 +142,13 @@ const demoProducts: Product[] = [
 ];
 
 export default function AdminProductsPage() {
-  const [products] = useState<Product[]>(demoProducts);
+  const [products, setProducts] = useState<Product[]>(demoProducts);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [activeFilter, setActiveFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [isProcessingBulk, setIsProcessingBulk] = useState(false);
 
   const filteredProducts = products.filter((product) => {
     if (searchQuery) {
@@ -150,11 +164,108 @@ export default function AdminProductsPage() {
     if (statusFilter !== 'all' && product.status !== statusFilter) {
       return false;
     }
+    if (activeFilter !== 'all') {
+      const isActiveProduct = activeFilter === 'active';
+      if (product.isActive !== isActiveProduct) {
+        return false;
+      }
+    }
     if (categoryFilter !== 'all' && product.category !== categoryFilter) {
       return false;
     }
     return true;
   });
+
+  const handleProductStatusChange = (productId: string, newStatus: boolean) => {
+    setProducts((prevProducts) =>
+      prevProducts.map((product) =>
+        product.id === productId ? { ...product, isActive: newStatus } : product
+      )
+    );
+  };
+
+  const handleBulkActivate = async () => {
+    if (selectedProducts.length === 0) return;
+
+    setIsProcessingBulk(true);
+    try {
+      // In production, this would call the API
+      // await adminProductsApi.bulkUpdateStatus(selectedProducts, true);
+
+      setProducts((prevProducts) =>
+        prevProducts.map((product) =>
+          selectedProducts.includes(product.id) ? { ...product, isActive: true } : product
+        )
+      );
+
+      toast.success(`${selectedProducts.length} product(s) activated successfully`, {
+        description: 'All selected products are now visible to customers',
+      });
+
+      setSelectedProducts([]);
+    } catch (error) {
+      toast.error('Failed to activate products', {
+        description: 'Please try again or contact support',
+      });
+    } finally {
+      setIsProcessingBulk(false);
+    }
+  };
+
+  const handleBulkDeactivate = async () => {
+    if (selectedProducts.length === 0) return;
+
+    setIsProcessingBulk(true);
+    try {
+      // In production, this would call the API
+      // await adminProductsApi.bulkUpdateStatus(selectedProducts, false);
+
+      setProducts((prevProducts) =>
+        prevProducts.map((product) =>
+          selectedProducts.includes(product.id) ? { ...product, isActive: false } : product
+        )
+      );
+
+      toast.success(`${selectedProducts.length} product(s) deactivated successfully`, {
+        description: 'All selected products are now hidden from customers',
+      });
+
+      setSelectedProducts([]);
+    } catch (error) {
+      toast.error('Failed to deactivate products', {
+        description: 'Please try again or contact support',
+      });
+    } finally {
+      setIsProcessingBulk(false);
+    }
+  };
+
+  const handleBulkArchive = async () => {
+    if (selectedProducts.length === 0) return;
+
+    setIsProcessingBulk(true);
+    try {
+      // In production, this would call the API
+      // await adminProductsApi.bulkArchive(selectedProducts);
+
+      setProducts((prevProducts) =>
+        prevProducts.map((product) =>
+          selectedProducts.includes(product.id)
+            ? { ...product, status: 'ARCHIVED', isActive: false }
+            : product
+        )
+      );
+
+      toast.success(`${selectedProducts.length} product(s) archived successfully`);
+      setSelectedProducts([]);
+    } catch (error) {
+      toast.error('Failed to archive products', {
+        description: 'Please try again or contact support',
+      });
+    } finally {
+      setIsProcessingBulk(false);
+    }
+  };
 
   const getStatusBadge = (status: Product['status']) => {
     const styles: Record<Product['status'], string> = {
@@ -167,7 +278,8 @@ export default function AdminProductsPage() {
 
   const categories = Array.from(new Set(products.map((p) => p.category)));
   const totalProducts = products.length;
-  const activeProducts = products.filter((p) => p.status === 'ACTIVE').length;
+  const activeProducts = products.filter((p) => p.isActive).length;
+  const inactiveProducts = products.filter((p) => !p.isActive).length;
   const lowStockProducts = products.filter((p) => p.stock > 0 && p.stock < 50).length;
   const outOfStock = products.filter((p) => p.stock === 0).length;
 
@@ -214,11 +326,11 @@ export default function AdminProductsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Active</p>
+                <p className="text-sm text-muted-foreground">Active Products</p>
                 <p className="text-2xl font-bold text-green-600">{activeProducts}</p>
               </div>
               <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                <CheckCircle className="h-5 w-5 text-green-600" />
+                <Power className="h-5 w-5 text-green-600" />
               </div>
             </div>
           </CardContent>
@@ -227,11 +339,11 @@ export default function AdminProductsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Low Stock</p>
-                <p className="text-2xl font-bold text-orange-600">{lowStockProducts}</p>
+                <p className="text-sm text-muted-foreground">Inactive Products</p>
+                <p className="text-2xl font-bold text-gray-600">{inactiveProducts}</p>
               </div>
-              <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                <AlertTriangle className="h-5 w-5 text-orange-600" />
+              <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                <PowerOff className="h-5 w-5 text-gray-600" />
               </div>
             </div>
           </CardContent>
@@ -244,7 +356,7 @@ export default function AdminProductsPage() {
                 <p className="text-2xl font-bold text-red-600">{outOfStock}</p>
               </div>
               <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
-                <Archive className="h-5 w-5 text-red-600" />
+                <AlertTriangle className="h-5 w-5 text-red-600" />
               </div>
             </div>
           </CardContent>
@@ -264,6 +376,15 @@ export default function AdminProductsPage() {
                 className="pl-10"
               />
             </div>
+            <select
+              className="rounded-md border px-3 py-2 text-sm"
+              value={activeFilter}
+              onChange={(e) => setActiveFilter(e.target.value)}
+            >
+              <option value="all">All Products</option>
+              <option value="active">Active Only</option>
+              <option value="inactive">Inactive Only</option>
+            </select>
             <select
               className="rounded-md border px-3 py-2 text-sm"
               value={statusFilter}
@@ -299,13 +420,40 @@ export default function AdminProductsPage() {
                 {selectedProducts.length} product(s) selected
               </span>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkActivate}
+                  disabled={isProcessingBulk}
+                >
+                  <Power className="h-4 w-4 mr-1" />
                   Activate
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkDeactivate}
+                  disabled={isProcessingBulk}
+                >
+                  <PowerOff className="h-4 w-4 mr-1" />
+                  Deactivate
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkArchive}
+                  disabled={isProcessingBulk}
+                >
+                  <Archive className="h-4 w-4 mr-1" />
                   Archive
                 </Button>
-                <Button variant="outline" size="sm" className="text-red-600">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600"
+                  disabled={isProcessingBulk}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
                   Delete
                 </Button>
               </div>
@@ -336,6 +484,7 @@ export default function AdminProductsPage() {
                   </th>
                   <th className="p-4 text-left text-sm font-medium text-muted-foreground">Product</th>
                   <th className="p-4 text-left text-sm font-medium text-muted-foreground">Status</th>
+                  <th className="p-4 text-left text-sm font-medium text-muted-foreground">Active</th>
                   <th className="p-4 text-left text-sm font-medium text-muted-foreground">Price</th>
                   <th className="p-4 text-left text-sm font-medium text-muted-foreground">Stock</th>
                   <th className="p-4 text-left text-sm font-medium text-muted-foreground">Vendor</th>
@@ -377,6 +526,13 @@ export default function AdminProductsPage() {
                       <Badge className={getStatusBadge(product.status)}>
                         {product.status}
                       </Badge>
+                    </td>
+                    <td className="p-4">
+                      <ProductStatusToggle
+                        productId={product.id}
+                        initialStatus={product.isActive}
+                        onStatusChange={handleProductStatusChange}
+                      />
                     </td>
                     <td className="p-4">
                       <div>

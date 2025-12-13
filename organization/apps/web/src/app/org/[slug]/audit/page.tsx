@@ -29,132 +29,126 @@ export default function AuditLogPage() {
   const [filters, setFilters] = useState<AuditFilterOptions>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalLogs, setTotalLogs] = useState(0);
   const logsPerPage = 20;
 
   useEffect(() => {
     loadAuditLogs();
-  }, [slug]);
-
-  useEffect(() => {
-    applyFilters();
-  }, [logs, filters]);
+  }, [slug, currentPage, filters]);
 
   const loadAuditLogs = async () => {
     try {
       setIsLoading(true);
+      setError(null);
 
-      // TODO: Replace with real API endpoint when backend is ready
-      // const response = await apiClient.get(`/api/v1/organizations/${slug}/audit-logs`, {
-      //   params: { limit: 100, sort: 'timestamp', order: 'desc' }
-      // });
-      // setLogs(response.data.logs.map((log: any) => ({
-      //   ...log,
-      //   timestamp: new Date(log.timestamp)
-      // })));
+      // Build query parameters
+      const params: any = {
+        page: currentPage,
+        limit: logsPerPage,
+      };
 
-      // Temporary: Show message that API integration is pending
-      toast.info('Audit log data will be loaded from API when backend endpoints are ready');
+      // Add filters to params
+      if (filters.actionType) {
+        params.action = filters.actionType;
+      }
+      if (filters.userId) {
+        params.userId = filters.userId;
+      }
+      if (filters.dateFrom) {
+        params.startDate = filters.dateFrom;
+      }
+      if (filters.dateTo) {
+        params.endDate = filters.dateTo;
+      }
+      if (filters.search) {
+        params.search = filters.search;
+      }
+
+      const response = await apiClient.get(
+        `/api/v1/organizations/${slug}/audit-logs`,
+        { params }
+      );
+
+      // Transform the response data
+      const transformedLogs = response.data.logs.map((log: any) => ({
+        id: log.id,
+        timestamp: new Date(log.timestamp),
+        user: {
+          name: log.user?.name || 'Unknown User',
+          email: log.user?.email || 'unknown@email.com',
+        },
+        action: log.action,
+        resource: log.resource,
+        details: log.details,
+        oldValue: log.oldValue,
+        newValue: log.newValue,
+        ipAddress: log.ipAddress,
+        userAgent: log.userAgent,
+      }));
+
+      setLogs(transformedLogs);
+      setFilteredLogs(transformedLogs);
+      setTotalLogs(response.data.total || transformedLogs.length);
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to load audit logs';
+      setError(errorMessage);
+      toast.error(errorMessage);
       setLogs([]);
-    } catch (err) {
-      toast.error('Failed to load audit logs');
+      setFilteredLogs([]);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const applyFilters = () => {
-    let filtered = [...logs];
-
-    // Apply search filter
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(
-        (log) =>
-          log.action.toLowerCase().includes(searchLower) ||
-          log.resource.toLowerCase().includes(searchLower) ||
-          log.user.name.toLowerCase().includes(searchLower) ||
-          log.user.email.toLowerCase().includes(searchLower) ||
-          log.details?.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Apply action type filter
-    if (filters.actionType) {
-      filtered = filtered.filter((log) =>
-        log.action.toLowerCase().includes(filters.actionType!.toLowerCase())
-      );
-    }
-
-    // Apply user filter
-    if (filters.userId) {
-      filtered = filtered.filter(
-        (log) => log.user.email === filters.userId
-      );
-    }
-
-    // Apply date range filters
-    if (filters.dateFrom) {
-      const dateFrom = new Date(filters.dateFrom);
-      filtered = filtered.filter((log) => log.timestamp >= dateFrom);
-    }
-
-    if (filters.dateTo) {
-      const dateTo = new Date(filters.dateTo);
-      dateTo.setHours(23, 59, 59, 999);
-      filtered = filtered.filter((log) => log.timestamp <= dateTo);
-    }
-
-    // Sort by timestamp descending
-    filtered.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-
-    setFilteredLogs(filtered);
-    setCurrentPage(1);
   };
 
   const handleExport = async () => {
     try {
       setIsExporting(true);
 
-      // Generate CSV content
-      const headers = [
-        'Timestamp',
-        'User',
-        'Email',
-        'Action',
-        'Resource',
-        'Details',
-        'IP Address',
-      ];
-      const csvContent = [
-        headers.join(','),
-        ...filteredLogs.map((log) =>
-          [
-            log.timestamp.toISOString(),
-            `"${log.user.name}"`,
-            log.user.email,
-            `"${log.action}"`,
-            log.resource,
-            `"${log.details || ''}"`,
-            log.ipAddress || '',
-          ].join(',')
-        ),
-      ].join('\n');
+      // Build query parameters for export (same filters as current view)
+      const params: any = {};
+
+      if (filters.actionType) {
+        params.action = filters.actionType;
+      }
+      if (filters.userId) {
+        params.userId = filters.userId;
+      }
+      if (filters.dateFrom) {
+        params.startDate = filters.dateFrom;
+      }
+      if (filters.dateTo) {
+        params.endDate = filters.dateTo;
+      }
+      if (filters.search) {
+        params.search = filters.search;
+      }
+
+      // Call backend export endpoint
+      const response = await apiClient.get(
+        `/api/v1/organizations/${slug}/audit-logs/export`,
+        {
+          params,
+          responseType: 'blob', // Important for file downloads
+        }
+      );
 
       // Create and download file
-      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const blob = new Blob([response.data], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `audit-logs-${slug}-${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
       toast.success('Audit logs exported successfully');
-    } catch (err) {
-      toast.error('Failed to export audit logs');
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to export audit logs';
+      toast.error(errorMessage);
     } finally {
       setIsExporting(false);
     }
@@ -170,12 +164,10 @@ export default function AuditLogPage() {
     };
   });
 
-  // Pagination
-  const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
-  const paginatedLogs = filteredLogs.slice(
-    (currentPage - 1) * logsPerPage,
-    currentPage * logsPerPage
-  );
+  // Pagination - use server-side total count
+  const totalPages = Math.ceil(totalLogs / logsPerPage);
+  // Since we're fetching paginated data from the server, we use filteredLogs directly
+  const paginatedLogs = filteredLogs;
 
   return (
     <div className="space-y-6">
@@ -228,19 +220,39 @@ export default function AuditLogPage() {
         </Card>
       </div>
 
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>
+            <p className="font-medium">Error loading audit logs</p>
+            <p className="text-sm mt-1">{error}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadAuditLogs}
+              className="mt-2"
+            >
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Info Alert */}
-      <Alert>
-        <Shield className="h-4 w-4" />
-        <AlertDescription>
-          <div className="space-y-1">
-            <p className="font-medium">Audit Log Retention</p>
-            <p className="text-sm text-muted-foreground">
-              Audit logs are retained for 90 days. Export logs regularly for
-              long-term record keeping.
-            </p>
-          </div>
-        </AlertDescription>
-      </Alert>
+      {!error && (
+        <Alert>
+          <Shield className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-1">
+              <p className="font-medium">Audit Log Retention</p>
+              <p className="text-sm text-muted-foreground">
+                Audit logs are retained for 90 days. Export logs regularly for
+                long-term record keeping.
+              </p>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Filters */}
       <AuditFilters
@@ -258,8 +270,8 @@ export default function AuditLogPage() {
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
               Showing {(currentPage - 1) * logsPerPage + 1} to{' '}
-              {Math.min(currentPage * logsPerPage, filteredLogs.length)} of{' '}
-              {filteredLogs.length} results
+              {Math.min(currentPage * logsPerPage, totalLogs)} of{' '}
+              {totalLogs} results
             </p>
             <div className="flex gap-2">
               <Button

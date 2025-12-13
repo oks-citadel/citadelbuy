@@ -33,20 +33,13 @@ export default function BillingPage() {
       setIsLoading(true);
       setError(null);
 
-      // TODO: Replace with real API call when backend is ready
-      // const data = await organizationsApi.getBilling(slug);
-      // setBillingData({
-      //   plan: data.plan,
-      //   subscription: data.subscription,
-      //   paymentMethod: data.paymentMethod
-      // });
-      // setUsageData(data.usage);
-
-      // Temporary: Show message that API integration is pending
-      toast.info('Billing data will be loaded from API when backend endpoints are ready');
-      setBillingData(null);
-      setUsageData(null);
-      setError('API integration pending. Billing functionality requires backend implementation.');
+      const data = await organizationsApi.getBilling(slug);
+      setBillingData({
+        plan: data.plan,
+        subscription: data.subscription,
+        paymentMethod: data.paymentMethod
+      });
+      setUsageData(data.usage);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load billing data');
       toast.error('Failed to load billing information');
@@ -67,18 +60,12 @@ export default function BillingPage() {
     try {
       setIsCanceling(true);
 
-      // TODO: Replace with real API call when backend is ready
-      // await organizationsApi.cancelSubscription(slug, true);
-      // toast.success('Subscription will be canceled at the end of the billing period');
-      // setShowCancelDialog(false);
-      // loadBillingData();
-
-      // Temporary: Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.info('Subscription cancellation will use real API when backend endpoints are ready');
+      await organizationsApi.cancelSubscription(slug, true);
+      toast.success('Subscription will be canceled at the end of the billing period');
       setShowCancelDialog(false);
+      loadBillingData();
     } catch (err) {
-      toast.error('Failed to cancel subscription');
+      toast.error(err instanceof Error ? err.message : 'Failed to cancel subscription');
     } finally {
       setIsCanceling(false);
     }
@@ -101,20 +88,19 @@ export default function BillingPage() {
             Manage your subscription, payment methods, and view invoices
           </p>
         </div>
-        <Alert className="border-yellow-200 bg-yellow-50">
+        <Alert variant="destructive">
           <AlertDescription>
             <div className="space-y-2">
-              <p className="font-medium text-yellow-900">Billing Data Unavailable</p>
-              <p className="text-yellow-800">{error}</p>
-              <p className="text-sm text-yellow-700">
-                Backend API endpoints need to be implemented:
-              </p>
-              <ul className="text-sm text-yellow-700 list-disc list-inside ml-2">
-                <li>GET /api/v1/organizations/:slug/billing - Get billing details</li>
-                <li>POST /api/v1/organizations/:slug/billing/subscribe - Subscribe to plan</li>
-                <li>POST /api/v1/organizations/:slug/billing/cancel - Cancel subscription</li>
-                <li>GET /api/v1/organizations/:slug/billing/invoices - Get invoice history</li>
-              </ul>
+              <p className="font-medium">Unable to Load Billing Data</p>
+              <p>{error}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadBillingData}
+                className="mt-2"
+              >
+                Retry
+              </Button>
             </div>
           </AlertDescription>
         </Alert>

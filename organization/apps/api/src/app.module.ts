@@ -56,6 +56,7 @@ import { OrganizationBillingModule } from './modules/organization-billing/organi
 import { WebhookModule } from './modules/webhooks/webhook.module';
 import { PrivacyModule } from './modules/privacy/privacy.module';
 import { AutomationModule } from './modules/automation/automation.module';
+import { MeModule } from './modules/me/me.module';
 import { validate } from './common/config/config-validation';
 
 @Module({
@@ -128,6 +129,7 @@ import { validate } from './common/config/config-validation';
     WebhookModule,
     PrivacyModule,
     AutomationModule,
+    MeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

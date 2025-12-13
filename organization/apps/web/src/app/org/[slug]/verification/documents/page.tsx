@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Send, Loader2, CheckCircle } from 'lucide-react';
 import {
@@ -17,6 +17,7 @@ import {
   type UploadedFile,
 } from '@/components/kyc/DocumentUploader';
 import { VerificationProgress } from '@/components/kyc/VerificationProgress';
+import { kycApi } from '@/lib/kyc-api';
 import { toast } from 'sonner';
 
 export default function DocumentUploadPage() {
@@ -31,45 +32,115 @@ export default function DocumentUploadPage() {
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(true);
+
+  useEffect(() => {
+    loadExistingDocuments();
+  }, [slug]);
+
+  const loadExistingDocuments = async () => {
+    try {
+      setIsLoadingDocuments(true);
+
+      // Try to load existing documents
+      const existingDocs = await kycApi.getDocuments(slug);
+
+      // Map backend documents to UI state
+      const docsMap: any = {};
+      existingDocs.forEach((doc) => {
+        const uploadedFile: UploadedFile = {
+          id: doc.id,
+          name: doc.fileName,
+          size: 0, // Not provided by backend
+          type: 'application/pdf',
+          uploadedAt: new Date(doc.uploadedAt),
+        };
+
+        if (doc.documentType === 'id_document') {
+          docsMap.idDocument = uploadedFile;
+        } else if (doc.documentType === 'address_proof') {
+          docsMap.addressProof = uploadedFile;
+        } else if (doc.documentType === 'business_document') {
+          docsMap.businessRegistration = uploadedFile;
+        }
+      });
+
+      setDocuments(docsMap);
+    } catch (err) {
+      // Documents may not exist yet, which is fine
+      console.log('No existing documents found or error loading:', err);
+    } finally {
+      setIsLoadingDocuments(false);
+    }
+  };
 
   const handleUpload = async (
     type: 'idDocument' | 'addressProof' | 'businessRegistration',
     file: File
   ): Promise<UploadedFile> => {
-    // Simulate upload to server
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      // Map UI document type to API document type
+      const documentTypeMap: Record<string, 'id_document' | 'address_proof' | 'business_document'> = {
+        idDocument: 'id_document',
+        addressProof: 'address_proof',
+        businessRegistration: 'business_document',
+      };
+      const apiDocType = documentTypeMap[type];
 
-    const uploadedFile: UploadedFile = {
-      id: Math.random().toString(36).substring(7),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      url: URL.createObjectURL(file),
-      uploadedAt: new Date(),
-    };
+      // Step 1: Get upload URL
+      const uploadUrlResponse = await kycApi.getUploadUrl(slug, {
+        documentType: apiDocType,
+        fileName: file.name,
+        contentType: file.type,
+      });
 
-    setDocuments((prev) => ({
-      ...prev,
-      [type]: uploadedFile,
-    }));
+      // Step 2: Upload file to pre-signed URL
+      await kycApi.uploadFile(uploadUrlResponse.uploadUrl, file);
 
-    toast.success(`${file.name} uploaded successfully`);
-    return uploadedFile;
+      // Step 3: Notify backend that upload is complete
+      const completedDoc = await kycApi.completeUpload(slug, apiDocType, file.name);
+
+      // Create uploaded file object
+      const uploadedFile: UploadedFile = {
+        id: completedDoc.id,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        uploadedAt: new Date(),
+      };
+
+      setDocuments((prev) => ({
+        ...prev,
+        [type]: uploadedFile,
+      }));
+
+      toast.success(`${file.name} uploaded successfully`);
+      return uploadedFile;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Upload failed';
+      toast.error(errorMessage);
+      throw err;
+    }
   };
 
   const handleRemove = async (
     type: 'idDocument' | 'addressProof' | 'businessRegistration'
   ) => {
-    // Simulate removal from server
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      // Note: Backend doesn't have a delete endpoint yet
+      // For now, just remove from UI state
+      setDocuments((prev) => {
+        const newDocs = { ...prev };
+        delete newDocs[type];
+        return newDocs;
+      });
 
-    setDocuments((prev) => {
-      const newDocs = { ...prev };
-      delete newDocs[type];
-      return newDocs;
-    });
-
-    toast.success('Document removed');
+      toast.success('Document removed');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Remove failed';
+      toast.error(errorMessage);
+      throw err;
+    }
   };
 
   const handleSubmit = async () => {
@@ -81,8 +152,14 @@ export default function DocumentUploadPage() {
     try {
       setIsSubmitting(true);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Submit KYC application for review
+      // Note: This assumes you have business info ready
+      // In a real scenario, you might need to collect this info first
+      await kycApi.submit(slug, {
+        idType: 'passport', // This should be collected from user
+        businessType: 'LLC', // This should be collected from user
+        // Add other required fields as needed
+      });
 
       setSubmitSuccess(true);
       toast.success('Documents submitted for review');
@@ -92,7 +169,8 @@ export default function DocumentUploadPage() {
         router.push(`/org/${slug}/verification`);
       }, 2000);
     } catch (err) {
-      toast.error('Failed to submit documents. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to submit documents';
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -162,74 +240,83 @@ export default function DocumentUploadPage() {
         </AlertDescription>
       </Alert>
 
+      {/* Loading State */}
+      {isLoadingDocuments && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      )}
+
       {/* Upload Section */}
-      <div className="space-y-6">
-        {/* ID Document */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Government-Issued ID</CardTitle>
-            <CardDescription>
-              Upload a clear photo or scan of your passport, driver's license, or
-              national ID card
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DocumentUploader
-              label="ID Document"
-              description="Accepted: Passport, Driver's License, National ID"
-              accept=".pdf,.jpg,.jpeg,.png"
-              maxSizeMB={10}
-              existingFile={documents.idDocument}
-              onUpload={(file) => handleUpload('idDocument', file)}
-              onRemove={() => handleRemove('idDocument')}
-            />
-          </CardContent>
-        </Card>
+      {!isLoadingDocuments && (
+        <div className="space-y-6">
+          {/* ID Document */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Government-Issued ID</CardTitle>
+              <CardDescription>
+                Upload a clear photo or scan of your passport, driver's license, or
+                national ID card
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DocumentUploader
+                label="ID Document"
+                description="Accepted: Passport, Driver's License, National ID"
+                accept=".pdf,.jpg,.jpeg,.png"
+                maxSizeMB={10}
+                existingFile={documents.idDocument}
+                onUpload={(file) => handleUpload('idDocument', file)}
+                onRemove={() => handleRemove('idDocument')}
+              />
+            </CardContent>
+          </Card>
 
-        {/* Proof of Address */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Proof of Address</CardTitle>
-            <CardDescription>
-              Upload a recent utility bill, bank statement, or official document
-              showing your address (dated within the last 3 months)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DocumentUploader
-              label="Address Proof"
-              description="Utility bill, bank statement, or government letter (max 3 months old)"
-              accept=".pdf,.jpg,.jpeg,.png"
-              maxSizeMB={10}
-              existingFile={documents.addressProof}
-              onUpload={(file) => handleUpload('addressProof', file)}
-              onRemove={() => handleRemove('addressProof')}
-            />
-          </CardContent>
-        </Card>
+          {/* Proof of Address */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Proof of Address</CardTitle>
+              <CardDescription>
+                Upload a recent utility bill, bank statement, or official document
+                showing your address (dated within the last 3 months)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DocumentUploader
+                label="Address Proof"
+                description="Utility bill, bank statement, or government letter (max 3 months old)"
+                accept=".pdf,.jpg,.jpeg,.png"
+                maxSizeMB={10}
+                existingFile={documents.addressProof}
+                onUpload={(file) => handleUpload('addressProof', file)}
+                onRemove={() => handleRemove('addressProof')}
+              />
+            </CardContent>
+          </Card>
 
-        {/* Business Registration */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Business Registration</CardTitle>
-            <CardDescription>
-              Upload your certificate of incorporation, business license, or other
-              official business registration documents
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DocumentUploader
-              label="Business Registration"
-              description="Certificate of incorporation or business license"
-              accept=".pdf,.jpg,.jpeg,.png"
-              maxSizeMB={10}
-              existingFile={documents.businessRegistration}
-              onUpload={(file) => handleUpload('businessRegistration', file)}
-              onRemove={() => handleRemove('businessRegistration')}
-            />
-          </CardContent>
-        </Card>
-      </div>
+          {/* Business Registration */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Business Registration</CardTitle>
+              <CardDescription>
+                Upload your certificate of incorporation, business license, or other
+                official business registration documents
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DocumentUploader
+                label="Business Registration"
+                description="Certificate of incorporation or business license"
+                accept=".pdf,.jpg,.jpeg,.png"
+                maxSizeMB={10}
+                existingFile={documents.businessRegistration}
+                onUpload={(file) => handleUpload('businessRegistration', file)}
+                onRemove={() => handleRemove('businessRegistration')}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Submit Button */}
       <div className="flex items-center justify-between pt-6 border-t">
@@ -241,7 +328,7 @@ export default function DocumentUploadPage() {
         </Button>
         <Button
           onClick={handleSubmit}
-          disabled={!allDocumentsUploaded || isSubmitting}
+          disabled={!allDocumentsUploaded || isSubmitting || isLoadingDocuments}
           isLoading={isSubmitting}
           loadingText="Submitting..."
           rightIcon={<Send className="h-4 w-4" />}

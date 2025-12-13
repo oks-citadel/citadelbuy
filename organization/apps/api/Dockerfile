@@ -1,11 +1,11 @@
 # ==================================
-# CitadelBuy Backend - Production Dockerfile (Monorepo)
-# Multi-stage build: Dependencies → Build → Runtime
+# CitadelBuy Backend - Production Dockerfile
+# Standalone build for API service
 # ==================================
 
-# Stage 1: Dependencies
-FROM node:20-alpine AS deps
-LABEL stage=deps
+# Stage 1: Builder
+FROM node:20-alpine AS builder
+LABEL stage=builder
 
 # Install build dependencies
 RUN apk add --no-cache \
@@ -17,45 +17,26 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm@10.23.0
+# Copy API package files only (standalone build)
+COPY apps/api/package.json ./
+COPY apps/api/prisma ./prisma/
 
-# Copy workspace configuration
-COPY package.json pnpm-lock.yaml* package-lock.json* ./
-COPY pnpm-workspace.yaml* ./
-COPY turbo.json* ./
-
-# Copy API package files
-COPY apps/api/package.json ./apps/api/
-COPY apps/api/prisma ./apps/api/prisma/
-
-# Install dependencies using pnpm
-RUN pnpm install --frozen-lockfile || pnpm install
+# Install all dependencies with npm
+RUN npm install --legacy-peer-deps
 
 # Generate Prisma Client
-WORKDIR /app/apps/api
 RUN npx prisma generate
 
-# Stage 2: Builder
-FROM node:20-alpine AS builder
-LABEL stage=builder
-
-# Install pnpm
-RUN npm install -g pnpm@10.23.0
-
-WORKDIR /app
-
-# Copy dependencies from deps stage
-COPY --from=deps /app ./
-
 # Copy source code
-COPY apps/api ./apps/api
+COPY apps/api/src ./src
+COPY apps/api/tsconfig*.json ./
+COPY apps/api/nest-cli.json ./
 
-# Build application
-WORKDIR /app/apps/api
-RUN pnpm run build
+# Build application with increased memory
+ENV NODE_OPTIONS="--max_old_space_size=4096"
+RUN npm run build
 
-# Stage 3: Production Runtime
+# Stage 2: Production Runtime
 FROM node:20-alpine AS production
 LABEL maintainer="CitadelBuy Platform <dev@citadelbuy.com>"
 LABEL version="2.0.0"
@@ -76,13 +57,12 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001
 
 # Copy production dependencies and Prisma
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules ./node_modules
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./root_node_modules
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/prisma ./prisma
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nodejs /app/package.json ./
+COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
 
 # Copy built application
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./dist
+COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 
 # Set environment
 ENV NODE_ENV=production

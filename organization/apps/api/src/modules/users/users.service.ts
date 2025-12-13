@@ -52,6 +52,7 @@ export class UsersService {
       select: {
         id: true,
         email: true,
+        emailVerified: true,
         phoneNumber: true,
         phoneVerified: true,
         phoneVerifiedAt: true,

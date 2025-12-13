@@ -123,6 +123,12 @@ model User {
   // Phone verification
   phoneVerificationCodes PhoneVerificationCode[]
 
+  // MFA settings
+  userMfa UserMfa?
+
+  // Email verification
+  emailVerificationTokens EmailVerificationToken[]
+
   @@map("users")
 }
 
@@ -4721,6 +4727,46 @@ model UserSession {
   @@index([isActive])
   @@index([expiresAt])
   @@map("user_sessions")
+}
+
+/// Multi-Factor Authentication settings
+model UserMfa {
+  id     String @id @default(uuid())
+  userId String @unique
+
+  // MFA configuration
+  secret      String? // TOTP secret (encrypted in production)
+  backupCodes Json? // Array of hashed backup codes
+  enabled     Boolean @default(false)
+
+  // Timestamps
+  verifiedAt DateTime? // When MFA was verified/enabled
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_mfa")
+}
+
+/// Email verification tokens for account verification
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  userId    String
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([email])
+  @@map("email_verification_tokens")
 }
 
 /// Data export requests (GDPR compliance)

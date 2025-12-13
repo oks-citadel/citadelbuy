@@ -21,6 +21,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { KycStatusBadge, type KycStatus } from '@/components/kyc/KycStatusBadge';
 import { VerificationProgress, type VerificationStep } from '@/components/kyc/VerificationProgress';
+import { kycApi, mapKycStatus, getVerificationStep } from '@/lib/kyc-api';
+import { toast } from 'sonner';
 
 interface KycData {
   status: KycStatus;
@@ -42,6 +44,7 @@ export default function VerificationPage() {
 
   const [kycData, setKycData] = useState<KycData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadKycData();
@@ -50,23 +53,41 @@ export default function VerificationPage() {
   const loadKycData = async () => {
     try {
       setIsLoading(true);
+      setError(null);
 
-      // Mock data - replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      // Fetch real KYC status from API
+      const response = await kycApi.getStatus(slug);
 
-      const mockData: KycData = {
-        status: 'incomplete',
-        currentStep: 'info',
+      // Map backend status to frontend status
+      const mappedStatus = mapKycStatus(response.status);
+
+      // Determine current step based on status and documents
+      const documentsUploaded = {
+        id: response.idVerified,
+        address: response.addressVerified,
+        business: response.businessVerified,
+      };
+
+      const currentStep = getVerificationStep(mappedStatus, documentsUploaded);
+
+      const kycDataMapped: KycData = {
+        status: mappedStatus,
+        currentStep,
+        submittedAt: response.submittedAt ? new Date(response.submittedAt) : undefined,
+        reviewedAt: response.reviewedAt ? new Date(response.reviewedAt) : undefined,
+        rejectionReason: response.rejectionReason,
         documents: {
-          idDocument: false,
-          addressProof: false,
-          businessRegistration: false,
+          idDocument: response.idVerified,
+          addressProof: response.addressVerified,
+          businessRegistration: response.businessVerified,
         },
       };
 
-      setKycData(mockData);
+      setKycData(kycDataMapped);
     } catch (err) {
       console.error('Failed to load KYC data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load verification data');
+      toast.error('Failed to load verification data');
     } finally {
       setIsLoading(false);
     }
@@ -84,12 +105,23 @@ export default function VerificationPage() {
     );
   }
 
-  if (!kycData) {
+  if (error || !kycData) {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Failed to load verification data. Please try again.
+          <div className="space-y-2">
+            <p className="font-medium">Failed to load verification data</p>
+            {error && <p className="text-sm">{error}</p>}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => loadKycData()}
+              className="mt-2"
+            >
+              Try Again
+            </Button>
+          </div>
         </AlertDescription>
       </Alert>
     );

@@ -207,4 +207,34 @@ export class OrdersController {
   async getTracking(@Param('id') id: string, @Request() req: any) {
     return this.ordersService.getTrackingHistory(id, req.user.id);
   }
+
+  @Post(':id/cancel')
+  @ApiOperation({
+    summary: 'Cancel an order',
+    description: 'Cancels an order if it has not been shipped yet. Only the order owner can cancel their order.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Order UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Order cancelled successfully',
+    schema: {
+      example: {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        orderNumber: 'ORD-2024-001234',
+        status: 'CANCELLED',
+        message: 'Order has been cancelled successfully',
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Order cannot be cancelled (already shipped/delivered)' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - invalid or missing token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - order belongs to another user' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  async cancelOrder(@Param('id') id: string, @Request() req: any) {
+    return this.ordersService.cancelOrder(id, req.user.id);
+  }
 }
