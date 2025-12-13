@@ -222,9 +222,7 @@ export class UsersController {
   @ApiResponse({ status: 400, description: 'Invalid verification code' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async verifyPhoneNumber(@Request() req: any, @Body() verifyPhoneDto: VerifyPhoneDto) {
-    // TODO: Implement verification code validation
-    // For now, just mark as verified
-    return this.usersService.markPhoneAsVerified(req.user.id);
+    return this.usersService.verifyPhoneWithCode(req.user.id, verifyPhoneDto.code);
   }
 
   // ===== ADDRESS MANAGEMENT ENDPOINTS =====
