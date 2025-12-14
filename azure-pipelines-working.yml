@@ -165,7 +165,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'Login to ACR via Azure CLI'
             inputs:
-              azureSubscription: 'AzureServiceConnection'  # Update this to match your service connection name
+              azureSubscription: 'CitadelBuyAzure'  # Update this to match your service connection name
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
@@ -181,7 +181,7 @@ stages:
               dockerfile: 'organization/apps/api/Dockerfile.production'
               buildContext: 'organization/apps/api'
               repository: 'broxiva-api'
-              containerRegistry: 'BroxivaACR'  # Update this to match your ACR service connection
+              containerRegistry: 'CitadelBuy-ACR'  # Update this to match your ACR service connection
               tags: |
                 $(IMAGE_TAG)
                 $(SHORT_SHA)
@@ -198,7 +198,7 @@ stages:
               dockerfile: 'organization/apps/web/Dockerfile.production'
               buildContext: 'organization/apps/web'
               repository: 'broxiva-web'
-              containerRegistry: 'BroxivaACR'  # Update this to match your ACR service connection
+              containerRegistry: 'CitadelBuy-ACR'  # Update this to match your ACR service connection
               tags: |
                 $(IMAGE_TAG)
                 $(SHORT_SHA)
@@ -240,7 +240,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'List ACR Repositories and Tags'
             inputs:
-              azureSubscription: 'AzureServiceConnection'
+              azureSubscription: 'CitadelBuyAzure'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
