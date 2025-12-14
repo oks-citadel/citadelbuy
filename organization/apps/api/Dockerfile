@@ -32,8 +32,9 @@ COPY apps/api/package*.json ./apps/api/
 COPY apps/api/prisma ./apps/api/prisma/
 
 # Install dependencies from API directory
+# HUSKY=0 prevents husky install from running during Docker builds
 WORKDIR /app/apps/api
-RUN npm install --legacy-peer-deps
+RUN HUSKY=0 npm install --legacy-peer-deps --ignore-scripts && npm rebuild
 
 # Generate Prisma Client
 RUN npx prisma generate
