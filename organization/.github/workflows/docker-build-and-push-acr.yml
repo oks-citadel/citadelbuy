@@ -34,7 +34,7 @@ permissions:
 
 env:
   ACR_NAME: broxivaacr
-  ACR_LOGIN_SERVER: broxivaacr.azurecr.io
+  ACR_LOGIN_SERVER: broxivaprodacr.azurecr.io
   NODE_VERSION: '20'
   PNPM_VERSION: '10'
 

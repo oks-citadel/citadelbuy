@@ -23,7 +23,7 @@ on:
           - production
 
 env:
-  REGISTRY: broxivaacr.azurecr.io
+  REGISTRY: broxivaprodacr.azurecr.io
   AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -364,8 +364,8 @@ jobs:
 
             ### Docker Images
             All images have been built and pushed to Azure Container Registry:
-            - `broxivaacr.azurecr.io/api:${{ needs.prepare-matrix.outputs.version }}`
-            - `broxivaacr.azurecr.io/web:${{ needs.prepare-matrix.outputs.version }}`
+            - `broxivaprodacr.azurecr.io/api:${{ needs.prepare-matrix.outputs.version }}`
+            - `broxivaprodacr.azurecr.io/web:${{ needs.prepare-matrix.outputs.version }}`
             - All microservices with version tag `${{ needs.prepare-matrix.outputs.version }}`
 
             ### Changes
@@ -392,7 +392,7 @@ jobs:
           if [ "${{ needs.build-and-push.result }}" = "success" ]; then
             echo "### ✅ All images successfully built and pushed to ACR" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Images are available at: \`broxivaacr.azurecr.io\`" >> $GITHUB_STEP_SUMMARY
+            echo "Images are available at: \`broxivaprodacr.azurecr.io\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Services deployed:**" >> $GITHUB_STEP_SUMMARY
             echo "- API" >> $GITHUB_STEP_SUMMARY

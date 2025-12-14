@@ -222,7 +222,7 @@ jobs:
 
           for service in "${SERVICES[@]}"; do
             kubectl set image deployment/broxiva-$service \
-              $service=broxivaacr.azurecr.io/broxiva/$service:$VERSION \
+              $service=broxivaprodacr.azurecr.io/broxiva/$service:$VERSION \
               -n broxiva || echo "Deployment broxiva-$service not found, skipping..."
           done
 
@@ -304,7 +304,7 @@ jobs:
               "cloud": "Azure",
               "region": "eastus",
               "aks_cluster": "broxiva-prod-aks",
-              "acr": "broxivaacr.azurecr.io"
+              "acr": "broxivaprodacr.azurecr.io"
             },
             "services_deployed": [
               "api", "web", "ai-agents", "ai-engine", "analytics", "chatbot",

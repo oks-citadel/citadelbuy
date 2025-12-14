@@ -38,7 +38,7 @@ on:
           - production
 
 env:
-  REGISTRY: broxivaacr.azurecr.io
+  REGISTRY: broxivaprodacr.azurecr.io
   NODE_VERSION: '20'
 
 jobs:
