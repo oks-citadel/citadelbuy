@@ -1,5 +1,5 @@
 /**
- * Shared UI Types for CitadelBuy UI Components
+ * Shared UI Types for Broxiva UI Components
  */
 
 import * as React from 'react';

@@ -10,7 +10,7 @@ from datetime import datetime
 import logging
 
 app = FastAPI(
-    title="CitadelBuy Dynamic Pricing Service",
+    title="Broxiva Dynamic Pricing Service",
     description="AI-powered pricing optimization",
     version="1.0.0"
 )

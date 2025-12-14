@@ -17,7 +17,7 @@ export default function AccessibilityPage() {
         <div className="max-w-3xl mx-auto prose prose-gray">
           <h2>Our Commitment</h2>
           <p>
-            CitadelBuy is committed to ensuring digital accessibility for people with
+            Broxiva is committed to ensuring digital accessibility for people with
             disabilities. We are continually improving the user experience for everyone
             and applying the relevant accessibility standards.
           </p>
@@ -90,11 +90,11 @@ export default function AccessibilityPage() {
 
           <h2>Feedback</h2>
           <p>
-            We welcome your feedback on the accessibility of CitadelBuy. Please let us
+            We welcome your feedback on the accessibility of Broxiva. Please let us
             know if you encounter accessibility barriers:
           </p>
           <ul>
-            <li>Email: accessibility@citadelbuy.com</li>
+            <li>Email: accessibility@broxiva.com</li>
             <li>Phone: 1-800-CITADEL (option 4)</li>
             <li>Mail: Accessibility Team, 123 Commerce Street, San Francisco, CA 94102</li>
           </ul>
@@ -104,7 +104,7 @@ export default function AccessibilityPage() {
 
           <h2>Assessment Methods</h2>
           <p>
-            CitadelBuy assesses the accessibility of our website through the following methods:
+            Broxiva assesses the accessibility of our website through the following methods:
           </p>
           <ul>
             <li>Self-evaluation using automated testing tools</li>
@@ -117,7 +117,7 @@ export default function AccessibilityPage() {
           <p>
             If you are not satisfied with our response to your accessibility concern,
             you may file a formal complaint by contacting our Accessibility Coordinator
-            at accessibility@citadelbuy.com. We will investigate all complaints and
+            at accessibility@broxiva.com. We will investigate all complaints and
             provide a response within 10 business days.
           </p>
 

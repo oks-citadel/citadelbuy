@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: citadelbuy-config
-  namespace: citadelbuy-staging
+  name: broxiva-config
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy
+    app: broxiva
     environment: staging
 data:
   # Node Environment
@@ -14,8 +14,8 @@ data:
   PORT: "4000"
 
   # Database Configuration
-  POSTGRES_DB: "citadelbuy_staging"
-  POSTGRES_USER: "citadelbuy"
+  POSTGRES_DB: "broxiva_staging"
+  POSTGRES_USER: "broxiva"
 
   # Redis Configuration
   REDIS_HOST: "redis"
@@ -23,11 +23,11 @@ data:
 
   # Elasticsearch Configuration
   ELASTICSEARCH_NODE: "http://elasticsearch:9200"
-  ELASTICSEARCH_INDEX: "citadelbuy-staging"
+  ELASTICSEARCH_INDEX: "broxiva-staging"
 
   # Frontend Configuration
-  NEXT_PUBLIC_API_URL: "https://staging-api.citadelbuy.com"
-  CORS_ORIGIN: "https://staging.citadelbuy.com"
+  NEXT_PUBLIC_API_URL: "https://staging-api.broxiva.com"
+  CORS_ORIGIN: "https://staging.broxiva.com"
 
   # Feature Flags
   ENABLE_ANALYTICS: "true"
@@ -39,8 +39,8 @@ data:
   LOG_FORMAT: "json"
 
   # Email Configuration
-  SENDGRID_FROM_EMAIL: "staging@citadelbuy.com"
-  SENDGRID_FROM_NAME: "CitadelBuy Staging"
+  SENDGRID_FROM_EMAIL: "staging@broxiva.com"
+  SENDGRID_FROM_NAME: "Broxiva Staging"
 
   # JWT Configuration
   JWT_EXPIRATION: "1h"
@@ -66,13 +66,13 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-config
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
   labels:
     app: postgres
     environment: staging
 data:
-  POSTGRES_DB: "citadelbuy_staging"
-  POSTGRES_USER: "citadelbuy"
+  POSTGRES_DB: "broxiva_staging"
+  POSTGRES_USER: "broxiva"
   max_connections: "100"
   shared_buffers: "128MB"
   effective_cache_size: "512MB"
@@ -90,7 +90,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: nginx-config
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
   labels:
     app: nginx
     environment: staging
@@ -131,16 +131,16 @@ data:
                    application/vnd.ms-fontobject image/svg+xml;
 
         upstream api {
-            server citadelbuy-api:4000;
+            server broxiva-api:4000;
         }
 
         upstream web {
-            server citadelbuy-web:3000;
+            server broxiva-web:3000;
         }
 
         server {
             listen 80;
-            server_name staging-api.citadelbuy.com;
+            server_name staging-api.broxiva.com;
 
             location / {
                 proxy_pass http://api;
@@ -157,7 +157,7 @@ data:
 
         server {
             listen 80;
-            server_name staging.citadelbuy.com;
+            server_name staging.broxiva.com;
 
             location / {
                 proxy_pass http://web;

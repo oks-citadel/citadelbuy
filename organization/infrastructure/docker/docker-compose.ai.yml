@@ -1,7 +1,7 @@
 version: '3.8'
 
 #===========================================
-# CitadelBuy AI Services Docker Stack
+# Broxiva AI Services Docker Stack
 # 300+ AI Capabilities for E-Commerce Intelligence
 #===========================================
 # REQUIRED ENVIRONMENT VARIABLES:
@@ -27,7 +27,7 @@ services:
     build:
       context: ../../apps/services/ai-engine
       dockerfile: Dockerfile
-    container_name: citadelbuy-ai-engine
+    container_name: broxiva-ai-engine
     restart: unless-stopped
     ports:
       - '8002:8002'
@@ -53,7 +53,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:8002/health']
       interval: 30s
@@ -66,8 +66,8 @@ services:
         max-size: "10m"
         max-file: "3"
     labels:
-      - "com.citadelbuy.service=ai-engine"
-      - "com.citadelbuy.description=Core AI/ML dropshipping engine"
+      - "com.broxiva.service=ai-engine"
+      - "com.broxiva.description=Core AI/ML dropshipping engine"
 
   #-----------------------------------------
   # Recommendation Service (Port 8001)
@@ -77,7 +77,7 @@ services:
     build:
       context: ../../apps/services/recommendation
       dockerfile: Dockerfile
-    container_name: citadelbuy-recommendation
+    container_name: broxiva-recommendation
     restart: unless-stopped
     ports:
       - '8001:8001'
@@ -98,7 +98,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:8001/health']
       interval: 30s
@@ -111,8 +111,8 @@ services:
         max-size: "10m"
         max-file: "3"
     labels:
-      - "com.citadelbuy.service=recommendation"
-      - "com.citadelbuy.description=AI-powered product recommendations"
+      - "com.broxiva.service=recommendation"
+      - "com.broxiva.description=AI-powered product recommendations"
 
   #-----------------------------------------
   # Search Service (Port 8007)
@@ -122,7 +122,7 @@ services:
     build:
       context: ../../apps/services/search
       dockerfile: Dockerfile
-    container_name: citadelbuy-search
+    container_name: broxiva-search
     restart: unless-stopped
     ports:
       - '8007:8007'
@@ -145,7 +145,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:8007/health']
       interval: 30s
@@ -158,8 +158,8 @@ services:
         max-size: "10m"
         max-file: "3"
     labels:
-      - "com.citadelbuy.service=search"
-      - "com.citadelbuy.description=AI-powered semantic search"
+      - "com.broxiva.service=search"
+      - "com.broxiva.description=AI-powered semantic search"
 
   #-----------------------------------------
   # Fraud Detection Service (Port 8003)
@@ -169,7 +169,7 @@ services:
     build:
       context: ../../apps/services/fraud-detection
       dockerfile: Dockerfile
-    container_name: citadelbuy-fraud-detection
+    container_name: broxiva-fraud-detection
     restart: unless-stopped
     ports:
       - '8003:8003'
@@ -193,7 +193,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:8003/health']
       interval: 30s
@@ -206,8 +206,8 @@ services:
         max-size: "10m"
         max-file: "3"
     labels:
-      - "com.citadelbuy.service=fraud-detection"
-      - "com.citadelbuy.description=AI fraud detection and prevention"
+      - "com.broxiva.service=fraud-detection"
+      - "com.broxiva.description=AI fraud detection and prevention"
 
   #-----------------------------------------
   # Chatbot Service (Port 8004)
@@ -217,7 +217,7 @@ services:
     build:
       context: ../../apps/services/chatbot
       dockerfile: Dockerfile
-    container_name: citadelbuy-chatbot
+    container_name: broxiva-chatbot
     restart: unless-stopped
     ports:
       - '8004:8004'
@@ -246,7 +246,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:8004/health']
       interval: 30s
@@ -259,8 +259,8 @@ services:
         max-size: "10m"
         max-file: "3"
     labels:
-      - "com.citadelbuy.service=chatbot"
-      - "com.citadelbuy.description=AI conversational assistant"
+      - "com.broxiva.service=chatbot"
+      - "com.broxiva.description=AI conversational assistant"
 
   #-----------------------------------------
   # Analytics Service (Port 8005)
@@ -270,7 +270,7 @@ services:
     build:
       context: ../../apps/services/analytics
       dockerfile: Dockerfile
-    container_name: citadelbuy-analytics
+    container_name: broxiva-analytics
     restart: unless-stopped
     ports:
       - '8005:8005'
@@ -298,7 +298,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:8005/health']
       interval: 30s
@@ -311,8 +311,8 @@ services:
         max-size: "10m"
         max-file: "3"
     labels:
-      - "com.citadelbuy.service=analytics"
-      - "com.citadelbuy.description=Real-time analytics with ML"
+      - "com.broxiva.service=analytics"
+      - "com.broxiva.description=Real-time analytics with ML"
 
   #-----------------------------------------
   # Pricing Service (Port 8006)
@@ -322,7 +322,7 @@ services:
     build:
       context: ../../apps/services/pricing
       dockerfile: Dockerfile
-    container_name: citadelbuy-pricing
+    container_name: broxiva-pricing
     restart: unless-stopped
     ports:
       - '8006:8006'
@@ -351,7 +351,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:8006/health']
       interval: 30s
@@ -364,29 +364,29 @@ services:
         max-size: "10m"
         max-file: "3"
     labels:
-      - "com.citadelbuy.service=pricing"
-      - "com.citadelbuy.description=Dynamic pricing optimization"
+      - "com.broxiva.service=pricing"
+      - "com.broxiva.description=Dynamic pricing optimization"
 
   #-----------------------------------------
   # Infrastructure Dependencies
   #-----------------------------------------
   postgres:
     image: postgres:16-alpine
-    container_name: citadelbuy-postgres-ai
+    container_name: broxiva-postgres-ai
     restart: unless-stopped
     ports:
       - '5433:5432'
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-citadelbuy}
+      POSTGRES_USER: ${POSTGRES_USER:-broxiva}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env file}
-      POSTGRES_DB: ${POSTGRES_DB:-citadelbuy_ai}
+      POSTGRES_DB: ${POSTGRES_DB:-broxiva_ai}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres-ai-data:/var/lib/postgresql/data
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-citadelbuy}']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-broxiva}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -398,7 +398,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: citadelbuy-redis-ai
+    container_name: broxiva-redis-ai
     restart: unless-stopped
     ports:
       - '6380:6379'
@@ -406,7 +406,7 @@ services:
     volumes:
       - redis-ai-data:/data
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
@@ -456,9 +456,9 @@ volumes:
 # Networks
 #-----------------------------------------
 networks:
-  citadelbuy-network:
+  broxiva-network:
     driver: bridge
-    name: citadelbuy-ai-network
+    name: broxiva-ai-network
     ipam:
       config:
         - subnet: 172.21.0.0/16

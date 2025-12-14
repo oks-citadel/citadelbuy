@@ -1,4 +1,4 @@
-# RBAC Configuration for CitadelBuy Production Environment
+# RBAC Configuration for Broxiva Production Environment
 # Implements strict least privilege access control with enhanced security
 
 ---
@@ -6,15 +6,15 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: citadelbuy-api
-  namespace: citadelbuy-production
+  name: broxiva-api
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     tier: backend
     environment: production
   annotations:
     # IRSA annotation for AWS EKS
-    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/citadelbuy-api-production
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/broxiva-api-production
 automountServiceAccountToken: true
 
 ---
@@ -22,15 +22,15 @@ automountServiceAccountToken: true
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: citadelbuy-web
-  namespace: citadelbuy-production
+  name: broxiva-web
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-web
+    app: broxiva-web
     tier: frontend
     environment: production
   annotations:
     # IRSA annotation for AWS EKS
-    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/citadelbuy-web-production
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/broxiva-web-production
 automountServiceAccountToken: true
 
 ---
@@ -38,15 +38,15 @@ automountServiceAccountToken: true
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: citadelbuy-worker
-  namespace: citadelbuy-production
+  name: broxiva-worker
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-worker
+    app: broxiva-worker
     tier: worker
     environment: production
   annotations:
     # IRSA annotation for AWS EKS
-    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/citadelbuy-worker-production
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/broxiva-worker-production
 automountServiceAccountToken: true
 
 ---
@@ -55,7 +55,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: postgres
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: postgres
     tier: database
@@ -68,7 +68,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: redis
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: redis
     tier: cache
@@ -80,20 +80,20 @@ automountServiceAccountToken: false
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: citadelbuy-api-role
-  namespace: citadelbuy-production
+  name: broxiva-api-role
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     environment: production
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get", "list", "watch"]
-    resourceNames: ["citadelbuy-config", "deployment-info"]
+    resourceNames: ["broxiva-config", "deployment-info"]
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "list", "watch"]
-    resourceNames: ["citadelbuy-secrets"]
+    resourceNames: ["broxiva-secrets"]
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list"]
@@ -109,35 +109,35 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: citadelbuy-api-rolebinding
-  namespace: citadelbuy-production
+  name: broxiva-api-rolebinding
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     environment: production
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: citadelbuy-api-role
+  name: broxiva-api-role
 subjects:
   - kind: ServiceAccount
-    name: citadelbuy-api
-    namespace: citadelbuy-production
+    name: broxiva-api
+    namespace: broxiva-production
 
 ---
 # Role for Web Frontend
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: citadelbuy-web-role
-  namespace: citadelbuy-production
+  name: broxiva-web-role
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-web
+    app: broxiva-web
     environment: production
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get", "list", "watch"]
-    resourceNames: ["citadelbuy-config"]
+    resourceNames: ["broxiva-config"]
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list"]
@@ -150,39 +150,39 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: citadelbuy-web-rolebinding
-  namespace: citadelbuy-production
+  name: broxiva-web-rolebinding
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-web
+    app: broxiva-web
     environment: production
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: citadelbuy-web-role
+  name: broxiva-web-role
 subjects:
   - kind: ServiceAccount
-    name: citadelbuy-web
-    namespace: citadelbuy-production
+    name: broxiva-web
+    namespace: broxiva-production
 
 ---
 # Role for Worker Pods
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: citadelbuy-worker-role
-  namespace: citadelbuy-production
+  name: broxiva-worker-role
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-worker
+    app: broxiva-worker
     environment: production
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get", "list", "watch"]
-    resourceNames: ["citadelbuy-config", "deployment-info"]
+    resourceNames: ["broxiva-config", "deployment-info"]
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "list", "watch"]
-    resourceNames: ["citadelbuy-secrets"]
+    resourceNames: ["broxiva-secrets"]
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list"]
@@ -195,19 +195,19 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: citadelbuy-worker-rolebinding
-  namespace: citadelbuy-production
+  name: broxiva-worker-rolebinding
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-worker
+    app: broxiva-worker
     environment: production
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: citadelbuy-worker-role
+  name: broxiva-worker-role
 subjects:
   - kind: ServiceAccount
-    name: citadelbuy-worker
-    namespace: citadelbuy-production
+    name: broxiva-worker
+    namespace: broxiva-production
 
 ---
 # Role for external-secrets operator in production namespace
@@ -215,7 +215,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: external-secrets-role
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: external-secrets
     environment: production
@@ -239,13 +239,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: external-secrets
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: external-secrets
     environment: production
   annotations:
     # IRSA annotation for AWS Secrets Manager access
-    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/citadelbuy-external-secrets-production
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/broxiva-external-secrets-production
 
 ---
 # RoleBinding for External Secrets Operator
@@ -253,7 +253,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: external-secrets-rolebinding
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: external-secrets
     environment: production
@@ -264,7 +264,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: external-secrets
-    namespace: citadelbuy-production
+    namespace: broxiva-production
 
 ---
 # PRODUCTION RBAC SECURITY NOTES:

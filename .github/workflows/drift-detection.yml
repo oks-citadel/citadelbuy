@@ -263,8 +263,8 @@ jobs:
       - name: Get AKS Credentials
         run: |
           az aks get-credentials \
-            --resource-group citadelbuy-${{ matrix.environment }}-rg \
-            --name citadelbuy-${{ matrix.environment }}-aks \
+            --resource-group broxiva-${{ matrix.environment }}-rg \
+            --name broxiva-${{ matrix.environment }}-aks \
             --overwrite-existing
 
       - name: Install kubectl
@@ -340,7 +340,7 @@ jobs:
 
           **Environment:** ${{ matrix.environment }}
           **Timestamp:** ${{ needs.setup-drift-detection.outputs.timestamp }}
-          **Cluster:** citadelbuy-${{ matrix.environment }}-aks
+          **Cluster:** broxiva-${{ matrix.environment }}-aks
 
           ## Summary
 
@@ -394,12 +394,12 @@ jobs:
         run: |
           mkdir -p ${{ env.DRIFT_REPORT_DIR }}
 
-          ACR_NAME="citadelbuy${{ matrix.environment }}acr"
+          ACR_NAME="broxiva${{ matrix.environment }}acr"
 
           # Get AKS credentials
           az aks get-credentials \
-            --resource-group citadelbuy-${{ matrix.environment }}-rg \
-            --name citadelbuy-${{ matrix.environment }}-aks \
+            --resource-group broxiva-${{ matrix.environment }}-rg \
+            --name broxiva-${{ matrix.environment }}-aks \
             --overwrite-existing
 
           # Get deployed images from cluster
@@ -499,8 +499,8 @@ jobs:
         run: |
           mkdir -p ${{ env.DRIFT_REPORT_DIR }}
 
-          CLUSTER_NAME="citadelbuy-${{ matrix.environment }}-aks"
-          RG_NAME="citadelbuy-${{ matrix.environment }}-rg"
+          CLUSTER_NAME="broxiva-${{ matrix.environment }}-aks"
+          RG_NAME="broxiva-${{ matrix.environment }}-rg"
 
           echo "# AKS Cluster Drift Report - ${{ matrix.environment }}" > ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
           echo "" >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
@@ -581,7 +581,7 @@ jobs:
         run: |
           mkdir -p ${{ env.DRIFT_REPORT_DIR }}
 
-          RG_NAME="citadelbuy-${{ matrix.environment }}-rg"
+          RG_NAME="broxiva-${{ matrix.environment }}-rg"
 
           echo "# Azure Resource Drift Report - ${{ matrix.environment }}" > ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
           echo "" >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
@@ -601,7 +601,7 @@ jobs:
           echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
           az resource list \
             --resource-group $RG_NAME \
-            --query "[?tags.Environment != '${{ matrix.environment }}' || tags.Project != 'CitadelBuy'].{Name:name, Tags:tags}" \
+            --query "[?tags.Environment != '${{ matrix.environment }}' || tags.Project != 'Broxiva'].{Name:name, Tags:tags}" \
             --output json | jq '.' >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
           echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
 

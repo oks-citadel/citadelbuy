@@ -39,8 +39,8 @@ export class CreateProductDto {
     description: 'Array of product image URLs',
     type: [String],
     example: [
-      'https://cdn.citadelbuy.com/products/headphones-main.jpg',
-      'https://cdn.citadelbuy.com/products/headphones-side.jpg',
+      'https://cdn.broxiva.com/products/headphones-main.jpg',
+      'https://cdn.broxiva.com/products/headphones-side.jpg',
     ],
   })
   @IsOptional()

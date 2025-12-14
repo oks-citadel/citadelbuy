@@ -1,6 +1,6 @@
 """
 Enhanced Base Agent Class with LLM Integration
-Foundation for all AI agents in the CitadelBuy ecosystem
+Foundation for all AI agents in the Broxiva ecosystem
 """
 
 from abc import ABC, abstractmethod

@@ -55,7 +55,7 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy Backend to Railway
-        working-directory: ./citadelbuy/backend
+        working-directory: ./broxiva/backend
         run: |
           echo "🚀 Deploying backend to Railway..."
           railway up --service backend --detach
@@ -63,7 +63,7 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Deploy Frontend to Railway
-        working-directory: ./citadelbuy/frontend
+        working-directory: ./broxiva/frontend
         run: |
           echo "🚀 Deploying frontend to Railway..."
           railway up --service frontend --detach
@@ -72,7 +72,7 @@ jobs:
 
       - name: Run Database Migrations
         if: github.event.inputs.run_migrations == 'true'
-        working-directory: ./citadelbuy/backend
+        working-directory: ./broxiva/backend
         run: |
           echo "📊 Running database migrations..."
           railway run --service backend npx prisma migrate deploy
@@ -81,7 +81,7 @@ jobs:
 
       - name: Seed Production Database
         if: github.event.inputs.seed_database == 'true'
-        working-directory: ./citadelbuy/backend
+        working-directory: ./broxiva/backend
         run: |
           echo "🌱 Seeding production database..."
           railway run --service backend npm run db:seed:prod
@@ -96,7 +96,7 @@ jobs:
       - name: Health Check - Backend
         run: |
           echo "🏥 Checking backend health..."
-          BACKEND_URL="${{ secrets.RAILWAY_BACKEND_URL || 'https://citadelbuy-backend.railway.app' }}"
+          BACKEND_URL="${{ secrets.RAILWAY_BACKEND_URL || 'https://broxiva-backend.railway.app' }}"
 
           for i in {1..10}; do
             if curl -f "$BACKEND_URL/api/health" -m 10; then
@@ -110,7 +110,7 @@ jobs:
       - name: Health Check - Frontend
         run: |
           echo "🏥 Checking frontend health..."
-          FRONTEND_URL="${{ secrets.RAILWAY_FRONTEND_URL || 'https://citadelbuy-frontend.railway.app' }}"
+          FRONTEND_URL="${{ secrets.RAILWAY_FRONTEND_URL || 'https://broxiva-frontend.railway.app' }}"
 
           for i in {1..10}; do
             if curl -f "$FRONTEND_URL" -m 10; then

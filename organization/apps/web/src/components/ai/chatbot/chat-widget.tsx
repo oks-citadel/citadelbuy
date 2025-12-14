@@ -248,7 +248,7 @@ export function ChatWidget() {
             {!isMinimized && (
               <div>
                 <h3 className="font-semibold text-sm">AI Shopping Assistant</h3>
-                <p className="text-xs opacity-80">Powered by CitadelBuy AI</p>
+                <p className="text-xs opacity-80">Powered by Broxiva AI</p>
               </div>
             )}
           </div>

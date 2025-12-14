@@ -132,7 +132,7 @@ export function HeroSection() {
                 {/* Title */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 leading-[1.1] tracking-tight">
                   {slide.title}
-                  <span className="block text-white/90">with CitadelBuy</span>
+                  <span className="block text-white/90">with Broxiva</span>
                 </h1>
 
                 {/* Description */}
@@ -241,7 +241,7 @@ export function HeroSection() {
                     <Sparkles className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">Why CitadelBuy?</h3>
+                    <h3 className="text-xl font-bold text-white">Why Broxiva?</h3>
                     <p className="text-white/70 text-sm">The future of shopping</p>
                   </div>
                 </div>

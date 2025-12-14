@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "CitadelBuy",
-    "slug": "citadelbuy",
+    "name": "Broxiva",
+    "slug": "broxiva",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,17 +14,17 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.citadelbuy.app",
+      "bundleIdentifier": "com.broxiva.app",
       "buildNumber": "1",
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow CitadelBuy to access your camera for visual search and AR features.",
-        "NSMicrophoneUsageDescription": "Allow CitadelBuy to access your microphone for voice search.",
-        "NSPhotoLibraryUsageDescription": "Allow CitadelBuy to access your photos for visual search.",
-        "NSUserNotificationsUsageDescription": "Allow CitadelBuy to send you notifications about orders, deals, and personalized recommendations."
+        "NSCameraUsageDescription": "Allow Broxiva to access your camera for visual search and AR features.",
+        "NSMicrophoneUsageDescription": "Allow Broxiva to access your microphone for voice search.",
+        "NSPhotoLibraryUsageDescription": "Allow Broxiva to access your photos for visual search.",
+        "NSUserNotificationsUsageDescription": "Allow Broxiva to send you notifications about orders, deals, and personalized recommendations."
       },
       "associatedDomains": [
-        "applinks:citadelbuy.com",
-        "applinks:www.citadelbuy.com"
+        "applinks:broxiva.com",
+        "applinks:www.broxiva.com"
       ],
       "usesAppleSignIn": false,
       "config": {
@@ -33,8 +33,8 @@
       "entitlements": {
         "aps-environment": "production",
         "com.apple.developer.associated-domains": [
-          "applinks:citadelbuy.com",
-          "applinks:www.citadelbuy.com"
+          "applinks:broxiva.com",
+          "applinks:www.broxiva.com"
         ]
       }
     },
@@ -43,7 +43,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#6366f1"
       },
-      "package": "com.citadelbuy.app",
+      "package": "com.broxiva.app",
       "versionCode": 1,
       "permissions": [
         "android.permission.CAMERA",
@@ -59,12 +59,12 @@
           "data": [
             {
               "scheme": "https",
-              "host": "citadelbuy.com",
+              "host": "broxiva.com",
               "pathPrefix": "/"
             },
             {
               "scheme": "https",
-              "host": "www.citadelbuy.com",
+              "host": "www.broxiva.com",
               "pathPrefix": "/"
             }
           ],
@@ -85,13 +85,13 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow CitadelBuy to access your camera for visual search."
+          "cameraPermission": "Allow Broxiva to access your camera for visual search."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow CitadelBuy to access your photos for visual search."
+          "photosPermission": "Allow Broxiva to access your photos for visual search."
         }
       ],
       [
@@ -106,7 +106,7 @@
         }
       ]
     ],
-    "scheme": "citadelbuy",
+    "scheme": "broxiva",
     "experiments": {
       "typedRoutes": true
     },

@@ -51,7 +51,7 @@ variable "postgresql_storage_mb" {
 variable "alert_email_addresses" {
   description = "Email addresses for monitoring alerts"
   type        = list(string)
-  default     = ["ops-africa@citadelbuy.com"]
+  default     = ["ops-africa@broxiva.com"]
 }
 
 variable "enable_ddos_protection" {

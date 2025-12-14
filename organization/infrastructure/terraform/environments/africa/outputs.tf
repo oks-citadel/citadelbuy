@@ -110,7 +110,7 @@ output "secondary_vnet_id" {
 # Regional endpoints for CDN configuration
 output "api_endpoint" {
   description = "API endpoint for Africa region"
-  value       = "api-af-south.citadelbuy.com"
+  value       = "api-af-south.broxiva.com"
 }
 
 output "region_code" {

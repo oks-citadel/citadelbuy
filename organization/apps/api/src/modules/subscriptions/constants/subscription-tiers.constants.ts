@@ -32,7 +32,7 @@ export interface SubscriptionFeatures {
   maxOrdersPerMonth: number | null;
 
   // Branding & customization
-  citadelBuyBranding: boolean;
+  broxivaBranding: boolean;
   customStoreUrl: boolean;
   customDomain: boolean;
   whiteLabelStorefront: boolean;
@@ -175,7 +175,7 @@ export const VENDOR_TIER_FREE: SubscriptionTierDefinition = {
     maxOrdersPerMonth: 50,
 
     // Branding
-    citadelBuyBranding: true,
+    broxivaBranding: true,
     customStoreUrl: false,
     customDomain: false,
     whiteLabelStorefront: false,
@@ -297,7 +297,7 @@ export const VENDOR_TIER_SILVER: SubscriptionTierDefinition = {
     maxOrdersPerMonth: 500,
 
     // Branding
-    citadelBuyBranding: false,
+    broxivaBranding: false,
     customStoreUrl: true,
     customDomain: false,
     whiteLabelStorefront: false,
@@ -419,7 +419,7 @@ export const VENDOR_TIER_GOLD: SubscriptionTierDefinition = {
     maxOrdersPerMonth: 2500,
 
     // Branding
-    citadelBuyBranding: false,
+    broxivaBranding: false,
     customStoreUrl: true,
     customDomain: false,
     whiteLabelStorefront: false,
@@ -541,7 +541,7 @@ export const VENDOR_TIER_PLATINUM: SubscriptionTierDefinition = {
     maxOrdersPerMonth: 10000,
 
     // Branding
-    citadelBuyBranding: false,
+    broxivaBranding: false,
     customStoreUrl: true,
     customDomain: false,
     whiteLabelStorefront: false,
@@ -663,7 +663,7 @@ export const VENDOR_TIER_DIAMOND: SubscriptionTierDefinition = {
     maxOrdersPerMonth: null, // Unlimited
 
     // Branding
-    citadelBuyBranding: false,
+    broxivaBranding: false,
     customStoreUrl: true,
     customDomain: true,
     whiteLabelStorefront: true,
@@ -783,7 +783,7 @@ export const VENDOR_TIER_ENTERPRISE: SubscriptionTierDefinition = {
     automatedOrderProcessing: true,
     maxOrdersPerMonth: null,
 
-    citadelBuyBranding: false,
+    broxivaBranding: false,
     customStoreUrl: true,
     customDomain: true,
     whiteLabelStorefront: true,

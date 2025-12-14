@@ -27,26 +27,26 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: citadelbuy/backend/package-lock.json
+          cache-dependency-path: broxiva/backend/package-lock.json
 
       - name: Install dependencies
-        working-directory: citadelbuy/backend
+        working-directory: broxiva/backend
         run: npm ci
 
       - name: Generate Prisma Client
-        working-directory: citadelbuy/backend
+        working-directory: broxiva/backend
         run: npx prisma generate
 
       - name: TypeScript type check
-        working-directory: citadelbuy/backend
+        working-directory: broxiva/backend
         run: npx tsc --noEmit
 
       - name: Build
-        working-directory: citadelbuy/backend
+        working-directory: broxiva/backend
         run: npm run build
 
       - name: Check build output
-        working-directory: citadelbuy/backend
+        working-directory: broxiva/backend
         run: |
           if [ ! -d "dist" ]; then
             echo "❌ Build failed - dist directory not found"
@@ -67,25 +67,25 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: citadelbuy/frontend/package-lock.json
+          cache-dependency-path: broxiva/frontend/package-lock.json
 
       - name: Install dependencies
-        working-directory: citadelbuy/frontend
+        working-directory: broxiva/frontend
         run: npm ci
 
       - name: TypeScript type check
-        working-directory: citadelbuy/frontend
+        working-directory: broxiva/frontend
         run: npx tsc --noEmit
 
       - name: Build
-        working-directory: citadelbuy/frontend
+        working-directory: broxiva/frontend
         run: npm run build
         env:
           NEXT_PUBLIC_API_URL: http://localhost:4000
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_dummy
 
       - name: Check build output
-        working-directory: citadelbuy/frontend
+        working-directory: broxiva/frontend
         run: |
           if [ ! -d ".next" ]; then
             echo "❌ Build failed - .next directory not found"

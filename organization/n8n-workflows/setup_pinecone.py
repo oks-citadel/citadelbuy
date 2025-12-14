@@ -1,5 +1,5 @@
 """
-Pinecone Setup Script for CitadelBuy AI Chatbot
+Pinecone Setup Script for Broxiva AI Chatbot
 Initializes vector database and ingests knowledge base
 """
 
@@ -24,15 +24,15 @@ except ImportError:
 # Configuration
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT", "us-west1-gcp")
-PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "citadelbuy-products")
+PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "broxiva-products")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-CITADELBUY_API_KEY = os.getenv("CITADELBUY_API_KEY")
-CITADELBUY_API_URL = os.getenv("CITADELBUY_API_URL", "https://api.citadelbuy.com/v1")
+BROXIVA_API_KEY = os.getenv("BROXIVA_API_KEY")
+BROXIVA_API_URL = os.getenv("BROXIVA_API_URL", "https://api.broxiva.com/v1")
 
 # Validate environment variables
-if not all([PINECONE_API_KEY, OPENAI_API_KEY, CITADELBUY_API_KEY]):
+if not all([PINECONE_API_KEY, OPENAI_API_KEY, BROXIVA_API_KEY]):
     print("Error: Missing required environment variables")
-    print("Required: PINECONE_API_KEY, OPENAI_API_KEY, CITADELBUY_API_KEY")
+    print("Required: PINECONE_API_KEY, OPENAI_API_KEY, BROXIVA_API_KEY")
     sys.exit(1)
 
 # Initialize clients
@@ -72,12 +72,12 @@ def create_pinecone_index():
     return pinecone.Index(PINECONE_INDEX_NAME)
 
 
-def fetch_citadelbuy_data(endpoint: str) -> List[Dict]:
-    """Fetch data from CitadelBuy API"""
+def fetch_broxiva_data(endpoint: str) -> List[Dict]:
+    """Fetch data from Broxiva API"""
     try:
         response = requests.get(
-            f"{CITADELBUY_API_URL}/{endpoint}",
-            headers={"X-API-Key": CITADELBUY_API_KEY}
+            f"{BROXIVA_API_URL}/{endpoint}",
+            headers={"X-API-Key": BROXIVA_API_KEY}
         )
         response.raise_for_status()
         return response.json().get('data', [])
@@ -195,7 +195,7 @@ def ingest_policies(index, policies: List[Dict]):
                 'id': 'return-policy',
                 'title': 'Return Policy',
                 'content': """
-                CitadelBuy offers a 30-day return policy on most items.
+                Broxiva offers a 30-day return policy on most items.
                 Items must be in original condition with tags attached.
                 Refunds are processed within 5-7 business days.
                 Free return shipping for defective items.
@@ -297,18 +297,18 @@ def test_search(index):
 def main():
     """Main execution function"""
     print("=" * 60)
-    print("CitadelBuy Pinecone Setup")
+    print("Broxiva Pinecone Setup")
     print("=" * 60)
 
     # Step 1: Create index
     print("\n[1/5] Creating Pinecone index...")
     index = create_pinecone_index()
 
-    # Step 2: Fetch data from CitadelBuy API
-    print("\n[2/5] Fetching data from CitadelBuy API...")
-    products = fetch_citadelbuy_data("products")
-    faqs = fetch_citadelbuy_data("support/faqs")
-    policies = fetch_citadelbuy_data("support/policies")
+    # Step 2: Fetch data from Broxiva API
+    print("\n[2/5] Fetching data from Broxiva API...")
+    products = fetch_broxiva_data("products")
+    faqs = fetch_broxiva_data("support/faqs")
+    policies = fetch_broxiva_data("support/policies")
 
     # Step 3: Ingest products
     print("\n[3/5] Ingesting products...")

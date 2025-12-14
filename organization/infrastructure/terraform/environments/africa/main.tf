@@ -13,8 +13,8 @@ terraform {
   }
 
   backend "azurerm" {
-    resource_group_name  = "citadelbuy-terraform-state"
-    storage_account_name = "citadelbuytfstate"
+    resource_group_name  = "broxiva-terraform-state"
+    storage_account_name = "broxivatfstate"
     container_name       = "tfstate"
     key                  = "africa/terraform.tfstate"
   }
@@ -35,12 +35,12 @@ provider "azurerm" {
 # Local variables
 locals {
   environment      = "prod"
-  project_name     = "citadelbuy"
+  project_name     = "broxiva"
   primary_region   = "southafricanorth"  # Johannesburg
   secondary_region = "westeurope"        # Backup region for Africa
 
   common_tags = {
-    Project     = "CitadelBuy"
+    Project     = "Broxiva"
     Environment = local.environment
     Region      = "Africa"
     ManagedBy   = "Terraform"

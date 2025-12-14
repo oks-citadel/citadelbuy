@@ -1,4 +1,4 @@
-// Utility functions for CitadelBuy platform
+// Utility functions for Broxiva platform
 import { format, parseISO, formatDistance } from 'date-fns';
 import { z } from 'zod';
 

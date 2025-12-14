@@ -1,7 +1,7 @@
 {
-  "name": "@citadelbuy/utils",
+  "name": "@broxiva/utils",
   "version": "1.0.0",
-  "description": "Shared utilities for CitadelBuy platform",
+  "description": "Shared utilities for Broxiva platform",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -34,7 +34,7 @@
   "keywords": [
     "utils",
     "utilities",
-    "citadelbuy"
+    "broxiva"
   ],
   "license": "UNLICENSED"
 }

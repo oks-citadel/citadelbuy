@@ -1,0 +1,856 @@
+/**
+ * Broxiva Global Styles
+ * Premium E-commerce Platform
+ *
+ * This file contains global styles, resets, and base typography
+ * for the Broxiva web application.
+ */
+
+@import '../../../packages/ui/src/styles/broxiva-theme.css';
+
+/* ===================================
+   MODERN CSS RESET
+   =================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* Prevent font size inflation */
+  -moz-text-size-adjust: none;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+
+  /* Font anti-aliasing */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Base font size for rem calculations */
+  font-size: 16px;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  font-family: var(--brx-font-sans);
+  font-size: var(--brx-text-base);
+  line-height: var(--brx-leading-base);
+  color: var(--brx-text-primary);
+  background-color: var(--brx-bg-primary);
+  overflow-x: hidden;
+
+  /* Better text rendering */
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+
+  /* Transition theme changes smoothly */
+  transition: background-color var(--brx-duration-normal) var(--brx-ease-out),
+              color var(--brx-duration-normal) var(--brx-ease-out);
+}
+
+/* Remove default margin and padding from headings and paragraphs */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+  padding: 0;
+}
+
+/* Remove list styles on ul, ol elements with a list role */
+ul[role='list'],
+ol[role='list'] {
+  list-style: none;
+}
+
+/* Set core body defaults */
+body {
+  line-height: 1.6;
+}
+
+/* Balance text wrapping on headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+}
+
+/* Prevent orphans in paragraphs */
+p {
+  text-wrap: pretty;
+}
+
+/* Make images easier to work with */
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Inherit fonts for inputs and buttons */
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+/* Remove default button styles */
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Remove default link underline */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Ensure target for :target */
+:target {
+  scroll-margin-block: 5ex;
+}
+
+/* ===================================
+   TYPOGRAPHY SYSTEM
+   =================================== */
+
+/* Headings - Using Playfair Display */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--brx-font-display);
+  font-weight: var(--brx-font-bold);
+  color: var(--brx-text-primary);
+  margin-bottom: var(--brx-spacing-4);
+}
+
+h1 {
+  font-size: var(--brx-text-5xl);
+  line-height: var(--brx-leading-tight);
+  letter-spacing: var(--brx-tracking-tight);
+  font-weight: var(--brx-font-black);
+}
+
+h2 {
+  font-size: var(--brx-text-4xl);
+  line-height: var(--brx-leading-tight);
+  letter-spacing: var(--brx-tracking-tight);
+  font-weight: var(--brx-font-extrabold);
+}
+
+h3 {
+  font-size: var(--brx-text-3xl);
+  line-height: var(--brx-leading-snug);
+  letter-spacing: var(--brx-tracking-tight);
+}
+
+h4 {
+  font-size: var(--brx-text-2xl);
+  line-height: var(--brx-leading-snug);
+  letter-spacing: var(--brx-tracking-normal);
+}
+
+h5 {
+  font-size: var(--brx-text-xl);
+  line-height: var(--brx-leading-normal);
+  letter-spacing: var(--brx-tracking-normal);
+}
+
+h6 {
+  font-size: var(--brx-text-lg);
+  line-height: var(--brx-leading-normal);
+  letter-spacing: var(--brx-tracking-normal);
+}
+
+/* Responsive heading sizes */
+@media (max-width: 768px) {
+  h1 {
+    font-size: var(--brx-text-4xl);
+  }
+
+  h2 {
+    font-size: var(--brx-text-3xl);
+  }
+
+  h3 {
+    font-size: var(--brx-text-2xl);
+  }
+
+  h4 {
+    font-size: var(--brx-text-xl);
+  }
+}
+
+/* Body text */
+p {
+  font-family: var(--brx-font-sans);
+  font-size: var(--brx-text-base);
+  line-height: 1.75;
+  color: var(--brx-text-secondary);
+  margin-bottom: var(--brx-spacing-4);
+}
+
+/* Lead paragraph (larger text for intro) */
+.lead {
+  font-size: var(--brx-text-xl);
+  line-height: 1.75;
+  color: var(--brx-text-secondary);
+  font-weight: var(--brx-font-normal);
+}
+
+/* Small text */
+small,
+.text-sm {
+  font-size: var(--brx-text-sm);
+  line-height: 1.5;
+}
+
+/* Strong and bold */
+strong,
+b {
+  font-weight: var(--brx-font-semibold);
+  color: var(--brx-text-primary);
+}
+
+/* Emphasis */
+em,
+i {
+  font-style: italic;
+}
+
+/* Links */
+a {
+  color: var(--brx-text-link);
+  text-decoration: none;
+  transition: color var(--brx-duration-fast) var(--brx-ease-out);
+}
+
+a:hover {
+  color: var(--brx-text-link-hover);
+}
+
+a:focus-visible {
+  outline: 2px solid var(--brx-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--brx-radius-sm);
+}
+
+/* Lists */
+ul,
+ol {
+  margin-bottom: var(--brx-spacing-4);
+  padding-left: var(--brx-spacing-6);
+  color: var(--brx-text-secondary);
+}
+
+li {
+  margin-bottom: var(--brx-spacing-2);
+  line-height: 1.75;
+}
+
+/* Code */
+code,
+pre {
+  font-family: var(--brx-font-mono);
+  font-size: 0.875em;
+}
+
+code {
+  background-color: var(--brx-bg-tertiary);
+  padding: var(--brx-spacing-1) var(--brx-spacing-2);
+  border-radius: var(--brx-radius);
+  color: var(--brx-color-primary);
+  font-weight: var(--brx-font-medium);
+}
+
+pre {
+  background-color: var(--brx-bg-tertiary);
+  padding: var(--brx-spacing-4);
+  border-radius: var(--brx-radius-lg);
+  overflow-x: auto;
+  margin-bottom: var(--brx-spacing-4);
+  border: 1px solid var(--brx-border-light);
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* Blockquotes */
+blockquote {
+  padding-left: var(--brx-spacing-6);
+  border-left: 4px solid var(--brx-color-primary);
+  margin-bottom: var(--brx-spacing-4);
+  font-style: italic;
+  color: var(--brx-text-secondary);
+  font-size: var(--brx-text-lg);
+}
+
+blockquote cite {
+  display: block;
+  margin-top: var(--brx-spacing-2);
+  font-size: var(--brx-text-sm);
+  font-style: normal;
+  color: var(--brx-text-tertiary);
+}
+
+/* Horizontal rule */
+hr {
+  border: none;
+  height: 1px;
+  background-color: var(--brx-border-light);
+  margin: var(--brx-spacing-8) 0;
+}
+
+/* ===================================
+   FORM ELEMENTS
+   =================================== */
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: var(--brx-spacing-3) var(--brx-spacing-4);
+  border: 1px solid var(--brx-border);
+  border-radius: var(--brx-radius-lg);
+  background-color: var(--brx-bg-primary);
+  color: var(--brx-text-primary);
+  font-size: var(--brx-text-base);
+  transition: all var(--brx-duration-fast) var(--brx-ease-out);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--brx-border-focus);
+  box-shadow: var(--brx-shadow-focus);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--brx-text-tertiary);
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--brx-bg-secondary);
+}
+
+/* Checkbox and Radio */
+input[type='checkbox'],
+input[type='radio'] {
+  width: auto;
+  cursor: pointer;
+}
+
+/* ===================================
+   ACCESSIBILITY
+   =================================== */
+
+/* Focus visible for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--brx-border-focus);
+  outline-offset: 2px;
+  border-radius: var(--brx-radius-sm);
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Skip to main content link */
+.skip-to-main {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  background: var(--brx-color-primary);
+  color: var(--brx-text-inverse);
+  padding: var(--brx-spacing-4) var(--brx-spacing-6);
+  text-decoration: none;
+  z-index: var(--brx-z-maximum);
+  transition: top var(--brx-duration-fast) var(--brx-ease-out);
+}
+
+.skip-to-main:focus {
+  top: 0;
+}
+
+/* ===================================
+   SELECTION STYLES
+   =================================== */
+
+::selection {
+  background-color: var(--brx-color-primary-200);
+  color: var(--brx-color-primary-900);
+}
+
+::-moz-selection {
+  background-color: var(--brx-color-primary-200);
+  color: var(--brx-color-primary-900);
+}
+
+/* ===================================
+   SCROLLBAR STYLES (Webkit browsers)
+   =================================== */
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--brx-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--brx-border);
+  border-radius: var(--brx-radius-full);
+  border: 2px solid var(--brx-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brx-border-dark);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--brx-border) var(--brx-bg-secondary);
+}
+
+/* ===================================
+   UTILITY CLASSES
+   =================================== */
+
+/* Container */
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--brx-spacing-4);
+}
+
+.container-fluid {
+  width: 100%;
+  padding: 0 var(--brx-spacing-4);
+}
+
+@media (min-width: 768px) {
+  .container,
+  .container-fluid {
+    padding: 0 var(--brx-spacing-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .container,
+  .container-fluid {
+    padding: 0 var(--brx-spacing-8);
+  }
+}
+
+/* Display utilities */
+.hidden {
+  display: none;
+}
+
+.block {
+  display: block;
+}
+
+.inline-block {
+  display: inline-block;
+}
+
+.flex {
+  display: flex;
+}
+
+.inline-flex {
+  display: inline-flex;
+}
+
+.grid {
+  display: grid;
+}
+
+/* Flexbox utilities */
+.flex-row {
+  flex-direction: row;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.items-start {
+  align-items: flex-start;
+}
+
+.items-end {
+  align-items: flex-end;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-around {
+  justify-content: space-around;
+}
+
+.justify-start {
+  justify-content: flex-start;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.gap-1 {
+  gap: var(--brx-spacing-1);
+}
+
+.gap-2 {
+  gap: var(--brx-spacing-2);
+}
+
+.gap-3 {
+  gap: var(--brx-spacing-3);
+}
+
+.gap-4 {
+  gap: var(--brx-spacing-4);
+}
+
+.gap-6 {
+  gap: var(--brx-spacing-6);
+}
+
+.gap-8 {
+  gap: var(--brx-spacing-8);
+}
+
+/* Text alignment */
+.text-left {
+  text-align: left;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+/* Text colors */
+.text-primary {
+  color: var(--brx-text-primary);
+}
+
+.text-secondary {
+  color: var(--brx-text-secondary);
+}
+
+.text-tertiary {
+  color: var(--brx-text-tertiary);
+}
+
+/* Font weights */
+.font-light {
+  font-weight: var(--brx-font-light);
+}
+
+.font-normal {
+  font-weight: var(--brx-font-normal);
+}
+
+.font-medium {
+  font-weight: var(--brx-font-medium);
+}
+
+.font-semibold {
+  font-weight: var(--brx-font-semibold);
+}
+
+.font-bold {
+  font-weight: var(--brx-font-bold);
+}
+
+/* ===================================
+   PREMIUM ANIMATIONS
+   =================================== */
+
+/* Fade in on page load */
+@keyframes fadeInPage {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Apply to main content */
+main {
+  animation: fadeInPage var(--brx-duration-slow) var(--brx-ease-premium);
+}
+
+/* Hover lift effect */
+.hover-lift {
+  transition: transform var(--brx-duration-normal) var(--brx-ease-premium),
+              box-shadow var(--brx-duration-normal) var(--brx-ease-premium);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--brx-shadow-lg);
+}
+
+/* Hover scale effect */
+.hover-scale {
+  transition: transform var(--brx-duration-normal) var(--brx-ease-premium);
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+/* Button hover glow */
+.hover-glow {
+  position: relative;
+  overflow: hidden;
+  transition: all var(--brx-duration-normal) var(--brx-ease-out);
+}
+
+.hover-glow:hover {
+  box-shadow: var(--brx-shadow-primary);
+}
+
+/* Shimmer loading effect */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--brx-bg-secondary) 0%,
+    var(--brx-bg-tertiary) 50%,
+    var(--brx-bg-secondary) 100%
+  );
+  background-size: 200% 100%;
+  animation: brx-shimmer 2s ease-in-out infinite;
+}
+
+/* Skeleton loading */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--brx-bg-secondary) 25%,
+    var(--brx-bg-tertiary) 50%,
+    var(--brx-bg-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: brx-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--brx-radius);
+}
+
+/* Stagger animation for lists */
+.stagger-item {
+  animation: brx-fade-in var(--brx-duration-normal) var(--brx-ease-out) backwards;
+}
+
+.stagger-item:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.stagger-item:nth-child(2) {
+  animation-delay: 100ms;
+}
+
+.stagger-item:nth-child(3) {
+  animation-delay: 200ms;
+}
+
+.stagger-item:nth-child(4) {
+  animation-delay: 300ms;
+}
+
+.stagger-item:nth-child(5) {
+  animation-delay: 400ms;
+}
+
+/* ===================================
+   PREMIUM CARD STYLES
+   =================================== */
+
+.card {
+  background: var(--brx-bg-primary);
+  border-radius: var(--brx-radius-2xl);
+  box-shadow: var(--brx-shadow-md);
+  padding: var(--brx-spacing-6);
+  transition: all var(--brx-duration-normal) var(--brx-ease-out);
+}
+
+.card:hover {
+  box-shadow: var(--brx-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.card-premium {
+  background: linear-gradient(135deg, var(--brx-color-primary-50) 0%, var(--brx-bg-primary) 100%);
+  border: 1px solid var(--brx-color-primary-100);
+}
+
+/* ===================================
+   PREMIUM BUTTON BASE
+   =================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--brx-spacing-2);
+  padding: var(--brx-spacing-3) var(--brx-spacing-6);
+  border-radius: var(--brx-radius-lg);
+  font-weight: var(--brx-font-semibold);
+  font-size: var(--brx-text-base);
+  transition: all var(--brx-duration-fast) var(--brx-ease-out);
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--brx-color-primary);
+  color: var(--brx-text-inverse);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--brx-color-primary-900);
+  box-shadow: var(--brx-shadow-primary);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: var(--brx-color-secondary);
+  color: var(--brx-text-inverse);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--brx-color-secondary-600);
+  box-shadow: var(--brx-shadow-secondary);
+  transform: translateY(-2px);
+}
+
+/* ===================================
+   PRINT STYLES
+   =================================== */
+
+@media print {
+  * {
+    background: transparent !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  a,
+  a:visited {
+    text-decoration: underline;
+  }
+
+  a[href]::after {
+    content: ' (' attr(href) ')';
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr,
+  img {
+    page-break-inside: avoid;
+  }
+
+  p,
+  h2,
+  h3 {
+    orphans: 3;
+    widows: 3;
+  }
+
+  h2,
+  h3 {
+    page-break-after: avoid;
+  }
+}

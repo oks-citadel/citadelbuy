@@ -1,6 +1,6 @@
 /**
  * Supported Currencies Configuration
- * Complete list of supported currencies for CitadelBuy Global B2B Platform
+ * Complete list of supported currencies for Broxiva Global B2B Platform
  */
 
 export interface Currency {

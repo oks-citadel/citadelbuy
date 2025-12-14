@@ -251,7 +251,7 @@ export class CustomsService {
       declarationDate: new Date(),
       shipper: {
         // Seller information
-        name: 'CitadelBuy Marketplace',
+        name: 'Broxiva Marketplace',
         address: 'Marketplace Address',
         country: 'US',
       },

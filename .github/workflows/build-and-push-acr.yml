@@ -19,7 +19,7 @@ on:
         type: string
 
 env:
-  REGISTRY: citadelbuyacr.azurecr.io
+  REGISTRY: broxivaacr.azurecr.io
   AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -80,7 +80,7 @@ jobs:
       - name: Set matrix
         id: set-matrix
         run: |
-          MATRIX='{"include":[{"name":"api","context":"./organization","dockerfile":"./organization/apps/api/Dockerfile","image":"citadelbuy-api"},{"name":"web","context":"./organization","dockerfile":"./organization/apps/web/Dockerfile","image":"citadelbuy-web"}]}'
+          MATRIX='{"include":[{"name":"api","context":"./organization","dockerfile":"./organization/apps/api/Dockerfile","image":"broxiva-api"},{"name":"web","context":"./organization","dockerfile":"./organization/apps/web/Dockerfile","image":"broxiva-web"}]}'
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
           echo "Matrix: $MATRIX"
 
@@ -121,7 +121,7 @@ jobs:
 
       - name: Login to Azure Container Registry
         run: |
-          az acr login --name citadelbuyacr
+          az acr login --name broxivaacr
 
       - name: Generate image metadata
         id: meta
@@ -191,15 +191,15 @@ jobs:
             ENVIRONMENT=${{ needs.prepare-matrix.outputs.environment }}
           labels: |
             org.opencontainers.image.title=${{ matrix.name }}
-            org.opencontainers.image.description=CitadelBuy ${{ matrix.name }} service
+            org.opencontainers.image.description=Broxiva ${{ matrix.name }} service
             org.opencontainers.image.url=https://github.com/${{ github.repository }}
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.version=${{ steps.meta.outputs.version }}
             org.opencontainers.image.created=${{ steps.meta.outputs.build_date }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.licenses=MIT
-            com.citadelbuy.environment=${{ needs.prepare-matrix.outputs.environment }}
-            com.citadelbuy.service=${{ matrix.name }}
+            com.broxiva.environment=${{ needs.prepare-matrix.outputs.environment }}
+            com.broxiva.service=${{ matrix.name }}
 
       - name: Move cache
         run: |
@@ -358,8 +358,8 @@ jobs:
 
             ### Docker Images
             All images have been built and pushed to Azure Container Registry:
-            - `citadelbuyacr.azurecr.io/citadelbuy-api:${{ needs.prepare-matrix.outputs.version }}`
-            - `citadelbuyacr.azurecr.io/citadelbuy-web:${{ needs.prepare-matrix.outputs.version }}`
+            - `broxivaacr.azurecr.io/broxiva-api:${{ needs.prepare-matrix.outputs.version }}`
+            - `broxivaacr.azurecr.io/broxiva-web:${{ needs.prepare-matrix.outputs.version }}`
 
             ### Changes
             See commit history for detailed changes.
@@ -385,11 +385,11 @@ jobs:
           if [ "${{ needs.build-and-push.result }}" = "success" ]; then
             echo "### ✅ All images successfully built and pushed to ACR" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Images are available at: \`citadelbuyacr.azurecr.io\`" >> $GITHUB_STEP_SUMMARY
+            echo "Images are available at: \`broxivaacr.azurecr.io\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Services deployed:**" >> $GITHUB_STEP_SUMMARY
-            echo "- citadelbuy-api" >> $GITHUB_STEP_SUMMARY
-            echo "- citadelbuy-web" >> $GITHUB_STEP_SUMMARY
+            echo "- broxiva-api" >> $GITHUB_STEP_SUMMARY
+            echo "- broxiva-web" >> $GITHUB_STEP_SUMMARY
           else
             echo "### ❌ Some builds failed" >> $GITHUB_STEP_SUMMARY
             echo "Please check the individual job logs for details." >> $GITHUB_STEP_SUMMARY

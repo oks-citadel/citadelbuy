@@ -72,7 +72,7 @@ export class ImageEnhancementService {
           mimetype: file.mimetype,
         },
         enhancedImage: {
-          url: 'https://cdn.citadelbuy.com/enhanced/image.jpg',
+          url: 'https://cdn.broxiva.com/enhanced/image.jpg',
           size: file.size * 1.1,
           format: 'jpeg',
           dimensions: { width: 1200, height: 1200 },
@@ -112,7 +112,7 @@ export class ImageEnhancementService {
           size: file.size,
         },
         processedImage: {
-          url: 'https://cdn.citadelbuy.com/nobg/image.png',
+          url: 'https://cdn.broxiva.com/nobg/image.png',
           format: 'png',
           hasTransparency: true,
           dimensions: { width: 1200, height: 1200 },
@@ -129,15 +129,15 @@ export class ImageEnhancementService {
         variations: [
           {
             type: 'white_background',
-            url: 'https://cdn.citadelbuy.com/bg-white/image.jpg',
+            url: 'https://cdn.broxiva.com/bg-white/image.jpg',
           },
           {
             type: 'transparent',
-            url: 'https://cdn.citadelbuy.com/transparent/image.png',
+            url: 'https://cdn.broxiva.com/transparent/image.png',
           },
           {
             type: 'shadow',
-            url: 'https://cdn.citadelbuy.com/shadow/image.png',
+            url: 'https://cdn.broxiva.com/shadow/image.png',
           },
         ],
       };
@@ -162,7 +162,7 @@ export class ImageEnhancementService {
 
       const thumbnails = sizes.map(size => ({
         size: size.name,
-        url: `https://cdn.citadelbuy.com/${size.name}/${file.originalname}`,
+        url: `https://cdn.broxiva.com/${size.name}/${file.originalname}`,
         dimensions: { width: size.width, height: size.height },
         fileSize: Math.round((file.size * size.width) / 2400),
       }));
@@ -195,17 +195,17 @@ export class ImageEnhancementService {
         },
         optimized: {
           jpeg: {
-            url: 'https://cdn.citadelbuy.com/optimized/image.jpg',
+            url: 'https://cdn.broxiva.com/optimized/image.jpg',
             size: Math.round(file.size * 0.6),
             savings: '40%',
           },
           webp: {
-            url: 'https://cdn.citadelbuy.com/optimized/image.webp',
+            url: 'https://cdn.broxiva.com/optimized/image.webp',
             size: Math.round(file.size * 0.4),
             savings: '60%',
           },
           avif: {
-            url: 'https://cdn.citadelbuy.com/optimized/image.avif',
+            url: 'https://cdn.broxiva.com/optimized/image.avif',
             size: Math.round(file.size * 0.3),
             savings: '70%',
           },

@@ -1,4 +1,4 @@
-# Network Policies for CitadelBuy Platform
+# Network Policies for Broxiva Platform
 # These policies implement a zero-trust network model with default deny and explicit allow rules
 
 ---
@@ -7,7 +7,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-ingress
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector: {}
   policyTypes:
@@ -19,7 +19,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-egress
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector: {}
   policyTypes:
@@ -31,7 +31,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector: {}
   policyTypes:
@@ -53,18 +53,18 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-web-to-api
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
   policyTypes:
     - Ingress
   ingress:
     - from:
         - podSelector:
             matchLabels:
-              app: citadelbuy-web
+              app: broxiva-web
       ports:
         - protocol: TCP
           port: 3000
@@ -75,18 +75,18 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-egress-to-web
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-web
+      app: broxiva-web
   policyTypes:
     - Egress
   egress:
     - to:
         - podSelector:
             matchLabels:
-              app: citadelbuy-api
+              app: broxiva-api
       ports:
         - protocol: TCP
           port: 3000
@@ -97,11 +97,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-ingress-to-web
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-web
+      app: broxiva-web
   policyTypes:
     - Ingress
   ingress:
@@ -119,7 +119,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-to-postgres
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector:
     matchLabels:
@@ -130,7 +130,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app: citadelbuy-api
+              app: broxiva-api
         - podSelector:
             matchLabels:
               app: postgres-exporter
@@ -144,11 +144,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-egress-to-postgres
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
   policyTypes:
     - Egress
   egress:
@@ -166,7 +166,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-to-redis
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector:
     matchLabels:
@@ -177,7 +177,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app: citadelbuy-api
+              app: broxiva-api
         - podSelector:
             matchLabels:
               app: redis-exporter
@@ -191,11 +191,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-egress-to-redis
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
   policyTypes:
     - Egress
   egress:
@@ -213,7 +213,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-to-elasticsearch
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector:
     matchLabels:
@@ -224,7 +224,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app: citadelbuy-api
+              app: broxiva-api
         - podSelector:
             matchLabels:
               app: elasticsearch-exporter
@@ -240,11 +240,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-egress-to-elasticsearch
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
   policyTypes:
     - Egress
   egress:
@@ -262,7 +262,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-prometheus-scraping
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector:
     matchLabels:
@@ -273,7 +273,7 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              name: citadelbuy-monitoring
+              name: broxiva-monitoring
         - podSelector:
             matchLabels:
               app: prometheus
@@ -291,7 +291,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-exporters-egress
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector:
     matchLabels:
@@ -327,11 +327,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-external-egress
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
   policyTypes:
     - Egress
   egress:
@@ -353,7 +353,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: isolate-postgres
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector:
     matchLabels:
@@ -377,7 +377,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: isolate-redis
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector:
     matchLabels:
@@ -401,7 +401,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: isolate-elasticsearch
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector:
     matchLabels:
@@ -425,18 +425,18 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-web-to-ai
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-web
+      app: broxiva-web
   policyTypes:
     - Egress
   egress:
     - to:
         - namespaceSelector:
             matchLabels:
-              name: citadelbuy-ai
+              name: broxiva-ai
       ports:
         - protocol: TCP
           port: 8080

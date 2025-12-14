@@ -2,7 +2,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: elasticsearch-pvc
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: elasticsearch
     tier: search
@@ -18,13 +18,13 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: elasticsearch-config
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: elasticsearch
     tier: search
 data:
   elasticsearch.yml: |
-    cluster.name: "citadelbuy-cluster"
+    cluster.name: "broxiva-cluster"
     network.host: 0.0.0.0
 
     # Discovery settings for single-node cluster
@@ -52,7 +52,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: elasticsearch
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: elasticsearch
     tier: search
@@ -105,7 +105,7 @@ spec:
               protocol: TCP
           env:
             - name: cluster.name
-              value: "citadelbuy-cluster"
+              value: "broxiva-cluster"
             - name: node.name
               valueFrom:
                 fieldRef:
@@ -117,7 +117,7 @@ spec:
             - name: ELASTIC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: citadelbuy-secrets
+                  name: broxiva-secrets
                   key: ELASTICSEARCH_PASSWORD
             - name: xpack.security.enabled
               value: "true"
@@ -201,7 +201,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: elasticsearch
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: elasticsearch
     tier: search
@@ -224,7 +224,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: elasticsearch-exporter
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: elasticsearch-exporter
     tier: monitoring
@@ -265,7 +265,7 @@ spec:
             - name: ES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: citadelbuy-secrets
+                  name: broxiva-secrets
                   key: ELASTICSEARCH_PASSWORD
           securityContext:
             allowPrivilegeEscalation: false
@@ -295,7 +295,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: elasticsearch-exporter
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: elasticsearch-exporter
     tier: monitoring

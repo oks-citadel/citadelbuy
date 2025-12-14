@@ -1,5 +1,5 @@
 # ==========================================
-# CitadelBuy Platform - Production Docker Compose
+# Broxiva Platform - Production Docker Compose
 # Version: 2.0.0
 # ==========================================
 #
@@ -119,7 +119,7 @@ services:
   # ==========================================
   nginx:
     image: nginx:1.25-alpine
-    container_name: citadelbuy-nginx-prod
+    container_name: broxiva-nginx-prod
     restart: unless-stopped
     ports:
       - "80:80"
@@ -152,8 +152,8 @@ services:
           cpus: '0.25'
           memory: 128M
     labels:
-      - "com.citadelbuy.service=nginx"
-      - "com.citadelbuy.tier=frontend"
+      - "com.broxiva.service=nginx"
+      - "com.broxiva.tier=frontend"
 
   # ==========================================
   # Next.js Web Application
@@ -167,7 +167,7 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
         NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL}
         NEXT_PUBLIC_AI_SERVICE_URL: ${NEXT_PUBLIC_AI_SERVICE_URL}
-        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-CitadelBuy}
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Broxiva}
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
         NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
         NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
@@ -185,8 +185,8 @@ services:
         NEXT_PUBLIC_IMAGE_OPTIMIZATION: ${NEXT_PUBLIC_IMAGE_OPTIMIZATION:-true}
         NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${NEXT_PUBLIC_VAPID_PUBLIC_KEY}
         NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN}
-    image: citadelbuy/web:${VERSION:-latest}
-    container_name: citadelbuy-web-prod
+    image: broxiva/web:${VERSION:-latest}
+    container_name: broxiva-web-prod
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -217,8 +217,8 @@ services:
         max_attempts: 3
         window: 120s
     labels:
-      - "com.citadelbuy.service=web"
-      - "com.citadelbuy.tier=frontend"
+      - "com.broxiva.service=web"
+      - "com.broxiva.tier=frontend"
 
   # ==========================================
   # NestJS API Backend
@@ -227,8 +227,8 @@ services:
     build:
       context: ./apps/api
       dockerfile: Dockerfile.production
-    image: citadelbuy/api:${VERSION:-latest}
-    container_name: citadelbuy-api-prod
+    image: broxiva/api:${VERSION:-latest}
+    container_name: broxiva-api-prod
     restart: unless-stopped
     ports:
       - "4000:4000"
@@ -239,7 +239,7 @@ services:
       - API_PREFIX=api
 
       # Database
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-citadelbuy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-citadelbuy_prod}?schema=public&connection_limit=20&pool_timeout=10
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-broxiva}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-broxiva_prod}?schema=public&connection_limit=20&pool_timeout=10
 
       # Redis Cache
       - REDIS_HOST=redis
@@ -281,7 +281,7 @@ services:
       - ALGOLIA_SEARCH_KEY=${ALGOLIA_SEARCH_KEY}
 
       # Message Queue
-      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-citadelbuy}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-broxiva}:${RABBITMQ_PASSWORD}@rabbitmq:5672
 
       # OAuth Providers
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
@@ -296,7 +296,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-info}
 
       # CORS
-      - CORS_ORIGIN=${CORS_ORIGIN:-https://citadelbuy.com,https://www.citadelbuy.com}
+      - CORS_ORIGIN=${CORS_ORIGIN:-https://broxiva.com,https://www.broxiva.com}
 
       # Rate Limiting
       - RATE_LIMIT_TTL=${RATE_LIMIT_TTL:-60}
@@ -336,22 +336,22 @@ services:
         max_attempts: 3
         window: 120s
     labels:
-      - "com.citadelbuy.service=api"
-      - "com.citadelbuy.tier=backend"
+      - "com.broxiva.service=api"
+      - "com.broxiva.tier=backend"
 
   # ==========================================
   # PostgreSQL Database
   # ==========================================
   postgres:
     image: postgres:16-alpine
-    container_name: citadelbuy-postgres-prod
+    container_name: broxiva-postgres-prod
     restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-citadelbuy}
+      - POSTGRES_USER=${POSTGRES_USER:-broxiva}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB:-citadelbuy_prod}
+      - POSTGRES_DB=${POSTGRES_DB:-broxiva_prod}
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
@@ -359,7 +359,7 @@ services:
     networks:
       - database
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-citadelbuy}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-broxiva}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -407,15 +407,15 @@ services:
       - "-c"
       - "max_parallel_maintenance_workers=2"
     labels:
-      - "com.citadelbuy.service=postgres"
-      - "com.citadelbuy.tier=database"
+      - "com.broxiva.service=postgres"
+      - "com.broxiva.tier=database"
 
   # ==========================================
   # Redis Cache & Session Store
   # ==========================================
   redis:
     image: redis:7-alpine
-    container_name: citadelbuy-redis-prod
+    container_name: broxiva-redis-prod
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -451,23 +451,23 @@ services:
           cpus: '0.25'
           memory: 256M
     labels:
-      - "com.citadelbuy.service=redis"
-      - "com.citadelbuy.tier=cache"
+      - "com.broxiva.service=redis"
+      - "com.broxiva.tier=cache"
 
   # ==========================================
   # RabbitMQ Message Queue
   # ==========================================
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
-    container_name: citadelbuy-rabbitmq-prod
+    container_name: broxiva-rabbitmq-prod
     restart: unless-stopped
     ports:
       - "5672:5672"   # AMQP
       - "15672:15672" # Management UI
     environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-citadelbuy}
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-broxiva}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
-      - RABBITMQ_DEFAULT_VHOST=citadelbuy
+      - RABBITMQ_DEFAULT_VHOST=broxiva
       - RABBITMQ_VM_MEMORY_HIGH_WATERMARK=512MiB
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
@@ -488,22 +488,22 @@ services:
           cpus: '0.5'
           memory: 512M
     labels:
-      - "com.citadelbuy.service=rabbitmq"
-      - "com.citadelbuy.tier=messaging"
+      - "com.broxiva.service=rabbitmq"
+      - "com.broxiva.tier=messaging"
 
   # ==========================================
   # MongoDB Document Store
   # ==========================================
   mongodb:
     image: mongo:7-jammy
-    container_name: citadelbuy-mongodb-prod
+    container_name: broxiva-mongodb-prod
     restart: unless-stopped
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-citadelbuy}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-broxiva}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
-      - MONGO_INITDB_DATABASE=citadelbuy
+      - MONGO_INITDB_DATABASE=broxiva
     volumes:
       - mongodb-data:/data/db
       - mongodb-data:/data/configdb
@@ -525,15 +525,15 @@ services:
           cpus: '0.5'
           memory: 1G
     labels:
-      - "com.citadelbuy.service=mongodb"
-      - "com.citadelbuy.tier=database"
+      - "com.broxiva.service=mongodb"
+      - "com.broxiva.tier=database"
 
   # ==========================================
   # Elasticsearch Search Engine
   # ==========================================
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
-    container_name: citadelbuy-elasticsearch-prod
+    container_name: broxiva-elasticsearch-prod
     restart: unless-stopped
     ports:
       - "9200:9200"
@@ -572,15 +572,15 @@ services:
         soft: 65536
         hard: 65536
     labels:
-      - "com.citadelbuy.service=elasticsearch"
-      - "com.citadelbuy.tier=search"
+      - "com.broxiva.service=elasticsearch"
+      - "com.broxiva.tier=search"
 
   # ==========================================
   # Prometheus Metrics Collection
   # ==========================================
   prometheus:
     image: prom/prometheus:v2.48.1
-    container_name: citadelbuy-prometheus-prod
+    container_name: broxiva-prometheus-prod
     restart: unless-stopped
     ports:
       - "9090:9090"
@@ -612,15 +612,15 @@ services:
           cpus: '0.25'
           memory: 256M
     labels:
-      - "com.citadelbuy.service=prometheus"
-      - "com.citadelbuy.tier=monitoring"
+      - "com.broxiva.service=prometheus"
+      - "com.broxiva.tier=monitoring"
 
   # ==========================================
   # Grafana Monitoring Dashboard
   # ==========================================
   grafana:
     image: grafana/grafana:10.2.3
-    container_name: citadelbuy-grafana-prod
+    container_name: broxiva-grafana-prod
     restart: unless-stopped
     ports:
       - "3001:3000"
@@ -653,8 +653,8 @@ services:
           cpus: '0.25'
           memory: 256M
     labels:
-      - "com.citadelbuy.service=grafana"
-      - "com.citadelbuy.tier=monitoring"
+      - "com.broxiva.service=grafana"
+      - "com.broxiva.tier=monitoring"
 
 # ==========================================
 # Deployment Instructions:
@@ -714,7 +714,7 @@ services:
 # ==========================================
 #
 # PostgreSQL:
-#   docker-compose exec postgres pg_dump -U citadelbuy citadelbuy_prod > backup.sql
+#   docker-compose exec postgres pg_dump -U broxiva broxiva_prod > backup.sql
 #
 # MongoDB:
 #   docker-compose exec mongodb mongodump --out /backup
@@ -723,7 +723,7 @@ services:
 #   docker-compose exec redis redis-cli BGSAVE
 #
 # Volumes:
-#   docker run --rm -v citadelbuy_postgres-data:/data -v $(pwd):/backup \
+#   docker run --rm -v broxiva_postgres-data:/data -v $(pwd):/backup \
 #     alpine tar czf /backup/postgres-backup.tar.gz /data
 #
 # ==========================================

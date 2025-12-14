@@ -71,7 +71,7 @@ export class OnfidoProvider implements IKycProvider {
       headers: {
         'Authorization': `Token token=${this.apiToken}`,
         'Content-Type': 'application/json',
-        'User-Agent': 'CitadelBuy-KYC/1.0',
+        'User-Agent': 'Broxiva-KYC/1.0',
       },
       timeout: 30000, // 30 seconds
     });

@@ -25,7 +25,7 @@ test.describe('Authentication Flow', () => {
 
     test('should login successfully with valid credentials', async ({ page }) => {
       await page.goto('/auth/login');
-      await page.getByRole('textbox', { name: /email/i }).fill('customer@citadelbuy.com');
+      await page.getByRole('textbox', { name: /email/i }).fill('customer@broxiva.com');
       await page.getByRole('textbox', { name: /password/i }).fill('password123');
       await page.getByRole('button', { name: /sign in|login/i }).click();
 
@@ -62,7 +62,7 @@ test.describe('Authentication Flow', () => {
     test('should show error for existing email', async ({ page }) => {
       await page.goto('/auth/register');
       await page.getByRole('textbox', { name: /name/i }).fill('Test User');
-      await page.getByRole('textbox', { name: /email/i }).fill('customer@citadelbuy.com');
+      await page.getByRole('textbox', { name: /email/i }).fill('customer@broxiva.com');
       await page.getByRole('textbox', { name: /password/i }).fill('SecurePass123!');
       await page.getByRole('button', { name: /sign up|register|create/i }).click();
       await expect(page.getByText(/already exists|already registered|in use/i)).toBeVisible({ timeout: 10000 });
@@ -73,7 +73,7 @@ test.describe('Authentication Flow', () => {
     test('should logout successfully', async ({ page }) => {
       // Login first
       await page.goto('/auth/login');
-      await page.getByRole('textbox', { name: /email/i }).fill('customer@citadelbuy.com');
+      await page.getByRole('textbox', { name: /email/i }).fill('customer@broxiva.com');
       await page.getByRole('textbox', { name: /password/i }).fill('password123');
       await page.getByRole('button', { name: /sign in|login/i }).click();
       await page.waitForURL(/\/(account|home|$)/, { timeout: 10000 });

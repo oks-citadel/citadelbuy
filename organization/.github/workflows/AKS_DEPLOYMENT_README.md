@@ -1,6 +1,6 @@
 # AKS Deployment Workflows Documentation
 
-This directory contains GitHub Actions workflows for deploying CitadelBuy to Azure Kubernetes Service (AKS) across multiple environments.
+This directory contains GitHub Actions workflows for deploying Broxiva to Azure Kubernetes Service (AKS) across multiple environments.
 
 ## Overview
 
@@ -16,9 +16,9 @@ Three deployment workflows are configured:
 
 | Environment | Cluster Name | Resource Group | Namespace |
 |-------------|--------------|----------------|-----------|
-| Development | citadelbuy-dev-aks | citadelbuy-dev-rg | citadelbuy-dev |
-| Staging | citadelbuy-staging-aks | citadelbuy-staging-rg | citadelbuy-staging |
-| Production | citadelbuy-prod-aks | citadelbuy-prod-rg | citadelbuy-production |
+| Development | broxiva-dev-aks | broxiva-dev-rg | broxiva-dev |
+| Staging | broxiva-staging-aks | broxiva-staging-rg | broxiva-staging |
+| Production | broxiva-prod-aks | broxiva-prod-rg | broxiva-production |
 
 ### Components Deployed
 
@@ -193,10 +193,10 @@ Each deployment runs Prisma migrations for all schemas:
 If migrations fail:
 ```bash
 # Connect to AKS
-az aks get-credentials --resource-group citadelbuy-prod-rg --name citadelbuy-prod-aks
+az aks get-credentials --resource-group broxiva-prod-rg --name broxiva-prod-aks
 
 # Rollback last migration
-kubectl exec -it <api-pod> -n citadelbuy-production -- npx prisma migrate resolve --rolled-back <migration-name>
+kubectl exec -it <api-pod> -n broxiva-production -- npx prisma migrate resolve --rolled-back <migration-name>
 ```
 
 ## Kustomize Configuration
@@ -254,8 +254,8 @@ Images are automatically tagged per environment:
 
 **Rollback:**
 ```bash
-kubectl patch service citadelbuy-api -n citadelbuy-production -p '{"spec":{"selector":{"color":"blue"}}}'
-kubectl patch service citadelbuy-web -n citadelbuy-production -p '{"spec":{"selector":{"color":"blue"}}}'
+kubectl patch service broxiva-api -n broxiva-production -p '{"spec":{"selector":{"color":"blue"}}}'
+kubectl patch service broxiva-web -n broxiva-production -p '{"spec":{"selector":{"color":"blue"}}}'
 ```
 
 ### Rolling Update
@@ -320,19 +320,19 @@ Workflows automatically rollback on:
 
 #### Development/Staging
 ```bash
-kubectl rollout undo deployment/citadelbuy-api -n <namespace>
-kubectl rollout undo deployment/citadelbuy-web -n <namespace>
+kubectl rollout undo deployment/broxiva-api -n <namespace>
+kubectl rollout undo deployment/broxiva-web -n <namespace>
 ```
 
 #### Production (Blue-Green)
 ```bash
 # Switch back to blue
-kubectl patch service citadelbuy-api -n citadelbuy-production -p '{"spec":{"selector":{"color":"blue"}}}'
-kubectl patch service citadelbuy-web -n citadelbuy-production -p '{"spec":{"selector":{"color":"blue"}}}'
+kubectl patch service broxiva-api -n broxiva-production -p '{"spec":{"selector":{"color":"blue"}}}'
+kubectl patch service broxiva-web -n broxiva-production -p '{"spec":{"selector":{"color":"blue"}}}'
 
 # Scale up blue if scaled down
-kubectl scale deployment/citadelbuy-api-blue -n citadelbuy-production --replicas=5
-kubectl scale deployment/citadelbuy-web-blue -n citadelbuy-production --replicas=5
+kubectl scale deployment/broxiva-api-blue -n broxiva-production --replicas=5
+kubectl scale deployment/broxiva-web-blue -n broxiva-production --replicas=5
 ```
 
 ## Artifacts & Backup
@@ -392,7 +392,7 @@ sudo mv bin/linux_amd64/kubelogin /usr/local/bin/
 **Solution:**
 ```bash
 # Verify image exists
-docker manifest inspect ghcr.io/citadelplatforms/citadelbuy-api:<tag>
+docker manifest inspect ghcr.io/broxiva/broxiva-api:<tag>
 
 # Check registry credentials
 kubectl get secret -n <namespace> | grep regcred

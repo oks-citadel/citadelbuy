@@ -194,17 +194,17 @@ output "redis_connection_string" {
 # Regional endpoints for CDN configuration
 output "api_endpoint_singapore" {
   description = "API endpoint for Singapore"
-  value       = "api-ap-southeast.citadelbuy.com"
+  value       = "api-ap-southeast.broxiva.com"
 }
 
 output "api_endpoint_sydney" {
   description = "API endpoint for Sydney"
-  value       = "api-ap-sydney.citadelbuy.com"
+  value       = "api-ap-sydney.broxiva.com"
 }
 
 output "api_endpoint_tokyo" {
   description = "API endpoint for Tokyo"
-  value       = "api-ap-tokyo.citadelbuy.com"
+  value       = "api-ap-tokyo.broxiva.com"
 }
 
 output "region_code" {

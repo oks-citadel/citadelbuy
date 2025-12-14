@@ -1,0 +1,175 @@
+name: 'Validate Secrets'
+description: 'Validates that required secrets are configured (by name only, no values exposed)'
+
+inputs:
+  environment:
+    description: 'Target environment (dev, staging, prod)'
+    required: true
+  azure-client-id:
+    description: 'Azure Client ID (existence check only)'
+    required: false
+    default: ''
+  azure-tenant-id:
+    description: 'Azure Tenant ID (existence check only)'
+    required: false
+    default: ''
+  azure-subscription-id:
+    description: 'Azure Subscription ID (existence check only)'
+    required: false
+    default: ''
+  database-url:
+    description: 'Database URL (existence check only)'
+    required: false
+    default: ''
+  slack-webhook-url:
+    description: 'Slack webhook URL (existence check only)'
+    required: false
+    default: ''
+  turbo-token:
+    description: 'Turborepo token (existence check only)'
+    required: false
+    default: ''
+  fail-on-missing:
+    description: 'Fail if required secrets are missing'
+    required: false
+    default: 'true'
+  generate-report:
+    description: 'Generate secrets validation report'
+    required: false
+    default: 'true'
+
+outputs:
+  all-present:
+    description: 'Whether all required secrets are present'
+    value: ${{ steps.validate.outputs.all-present }}
+  missing-secrets:
+    description: 'List of missing secret names (safe to log)'
+    value: ${{ steps.validate.outputs.missing }}
+  report-path:
+    description: 'Path to validation report'
+    value: ${{ steps.report.outputs.path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate secrets exist
+      id: validate
+      shell: bash
+      run: |
+        echo "Validating secrets for environment: ${{ inputs.environment }}"
+        echo "NOTE: Only checking existence by name, NOT exposing values"
+        echo ""
+
+        MISSING=""
+        ALL_PRESENT="true"
+
+        # Function to check if secret is set (non-empty)
+        check_secret() {
+          local name="$1"
+          local value="$2"
+
+          if [ -z "$value" ] || [ "$value" == "" ]; then
+            echo "  [MISSING] $name"
+            MISSING="$MISSING $name"
+            ALL_PRESENT="false"
+          else
+            echo "  [OK] $name"
+          fi
+        }
+
+        echo "=== Core Azure Secrets ==="
+        check_secret "AZURE_CLIENT_ID" "${{ inputs.azure-client-id }}"
+        check_secret "AZURE_TENANT_ID" "${{ inputs.azure-tenant-id }}"
+        check_secret "AZURE_SUBSCRIPTION_ID" "${{ inputs.azure-subscription-id }}"
+
+        echo ""
+        echo "=== Database Secrets ==="
+        case "${{ inputs.environment }}" in
+          dev|development)
+            check_secret "DATABASE_URL (DEV)" "${{ inputs.database-url }}"
+            ;;
+          staging)
+            check_secret "DATABASE_URL (STAGING)" "${{ inputs.database-url }}"
+            ;;
+          prod|production)
+            check_secret "DATABASE_URL (PROD)" "${{ inputs.database-url }}"
+            ;;
+        esac
+
+        echo ""
+        echo "=== Notification Secrets ==="
+        # Slack is optional but recommended
+        if [ -n "${{ inputs.slack-webhook-url }}" ]; then
+          echo "  [OK] SLACK_WEBHOOK_URL"
+        else
+          echo "  [OPTIONAL] SLACK_WEBHOOK_URL not configured"
+        fi
+
+        echo ""
+        echo "=== Build Secrets ==="
+        # Turbo is optional
+        if [ -n "${{ inputs.turbo-token }}" ]; then
+          echo "  [OK] TURBO_TOKEN"
+        else
+          echo "  [OPTIONAL] TURBO_TOKEN not configured (remote caching disabled)"
+        fi
+
+        echo ""
+        echo "=== Summary ==="
+        if [ "$ALL_PRESENT" == "true" ]; then
+          echo "All required secrets are configured"
+        else
+          echo "Missing required secrets:$MISSING"
+        fi
+
+        echo "all-present=$ALL_PRESENT" >> $GITHUB_OUTPUT
+        echo "missing=$MISSING" >> $GITHUB_OUTPUT
+
+    - name: Generate secrets validation report
+      id: report
+      if: inputs.generate-report == 'true'
+      shell: bash
+      run: |
+        REPORT_DIR="./secrets-validation-reports"
+        mkdir -p "$REPORT_DIR"
+
+        REPORT_FILE="$REPORT_DIR/secrets-validation-${{ inputs.environment }}-$(date +%Y%m%d-%H%M%S).json"
+
+        cat > "$REPORT_FILE" << EOF
+        {
+          "environment": "${{ inputs.environment }}",
+          "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "all_present": ${{ steps.validate.outputs.all-present }},
+          "missing_secrets": "${{ steps.validate.outputs.missing }}",
+          "workflow_run": "${{ github.run_id }}",
+          "ref": "${{ github.ref }}",
+          "note": "This report only indicates presence/absence of secrets, no values are exposed"
+        }
+        EOF
+
+        echo "path=$REPORT_FILE" >> $GITHUB_OUTPUT
+        echo "Secrets validation report: $REPORT_FILE"
+
+    - name: Upload validation report
+      if: inputs.generate-report == 'true' && always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: secrets-validation-${{ inputs.environment }}-${{ github.run_id }}
+        path: ./secrets-validation-reports/
+        retention-days: 30
+
+    - name: Fail if secrets missing
+      if: inputs.fail-on-missing == 'true' && steps.validate.outputs.all-present == 'false'
+      shell: bash
+      run: |
+        echo "::error::Required secrets are missing for ${{ inputs.environment }}"
+        echo "Missing secrets: ${{ steps.validate.outputs.missing }}"
+        echo ""
+        echo "Please configure the missing secrets in GitHub repository settings:"
+        echo "  Settings > Secrets and variables > Actions"
+        echo ""
+        echo "For Azure OIDC authentication, ensure you have:"
+        echo "  - AZURE_CLIENT_ID"
+        echo "  - AZURE_TENANT_ID"
+        echo "  - AZURE_SUBSCRIPTION_ID"
+        exit 1

@@ -1,9 +1,9 @@
 # =========================================================
-# CitadelBuy Elasticsearch Production Configuration
+# Broxiva Elasticsearch Production Configuration
 # =========================================================
 
 # ========== Cluster Settings ==========
-cluster.name: citadelbuy-production
+cluster.name: broxiva-production
 
 # ========== Network Settings ==========
 network.host: 0.0.0.0
@@ -42,7 +42,7 @@ xpack.security.transport.ssl.client_authentication: required
 
 # ========== Index Settings ==========
 # Automatically create index patterns
-action.auto_create_index: .monitoring*,.watches,.triggered_watches,.watcher-history*,.ml*,citadelbuy-*
+action.auto_create_index: .monitoring*,.watches,.triggered_watches,.watcher-history*,.ml*,broxiva-*
 
 # Require explicit index name for destructive operations
 action.destructive_requires_name: true

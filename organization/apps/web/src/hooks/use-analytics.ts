@@ -31,7 +31,7 @@ interface AnalyticsHook {
 function getSessionId(): string {
   if (typeof window === 'undefined') return uuidv4();
 
-  const SESSION_KEY = 'citadelbuy_session_id';
+  const SESSION_KEY = 'broxiva_session_id';
   let sessionId = sessionStorage.getItem(SESSION_KEY);
 
   if (!sessionId) {

@@ -449,7 +449,7 @@ export class CartAbandonmentService {
   <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
     <!-- Header -->
     <div style="background: #1a1a2e; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
-      <h1 style="margin: 0; font-size: 24px;">CitadelBuy</h1>
+      <h1 style="margin: 0; font-size: 24px;">Broxiva</h1>
     </div>
 
     <!-- Main Content -->
@@ -502,11 +502,11 @@ export class CartAbandonmentService {
 
     <!-- Footer -->
     <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
-      <p>You received this email because you left items in your cart at CitadelBuy.</p>
+      <p>You received this email because you left items in your cart at Broxiva.</p>
       <p>
         <a href="${data.unsubscribeLink}" style="color: #999;">Unsubscribe</a> from cart reminder emails
       </p>
-      <p>&copy; ${new Date().getFullYear()} CitadelBuy. All rights reserved.</p>
+      <p>&copy; ${new Date().getFullYear()} Broxiva. All rights reserved.</p>
     </div>
   </div>
 

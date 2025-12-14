@@ -1,4 +1,4 @@
-# Role-Based Access Control (RBAC) Configuration for CitadelBuy Platform
+# Role-Based Access Control (RBAC) Configuration for Broxiva Platform
 # Implements least privilege principle with dedicated service accounts and minimal permissions
 
 ---
@@ -6,10 +6,10 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: citadelbuy-api
-  namespace: citadelbuy
+  name: broxiva-api
+  namespace: broxiva
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     tier: backend
 automountServiceAccountToken: true
 
@@ -18,10 +18,10 @@ automountServiceAccountToken: true
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: citadelbuy-web
-  namespace: citadelbuy
+  name: broxiva-web
+  namespace: broxiva
   labels:
-    app: citadelbuy-web
+    app: broxiva-web
     tier: frontend
 automountServiceAccountToken: true
 
@@ -31,7 +31,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: postgres
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: postgres
     tier: database
@@ -43,7 +43,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: redis
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: redis
     tier: cache
@@ -55,7 +55,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: elasticsearch
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: elasticsearch
     tier: search
@@ -67,7 +67,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: postgres-exporter
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: postgres-exporter
     tier: monitoring
@@ -79,7 +79,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: redis-exporter
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: redis-exporter
     tier: monitoring
@@ -91,7 +91,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: elasticsearch-exporter
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: elasticsearch-exporter
     tier: monitoring
@@ -102,17 +102,17 @@ automountServiceAccountToken: true
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: citadelbuy-api-role
-  namespace: citadelbuy
+  name: broxiva-api-role
+  namespace: broxiva
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get", "list", "watch"]
-    resourceNames: ["citadelbuy-config"]
+    resourceNames: ["broxiva-config"]
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "list", "watch"]
-    resourceNames: ["citadelbuy-secrets"]
+    resourceNames: ["broxiva-secrets"]
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list"]
@@ -125,29 +125,29 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: citadelbuy-api-rolebinding
-  namespace: citadelbuy
+  name: broxiva-api-rolebinding
+  namespace: broxiva
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: citadelbuy-api-role
+  name: broxiva-api-role
 subjects:
   - kind: ServiceAccount
-    name: citadelbuy-api
-    namespace: citadelbuy
+    name: broxiva-api
+    namespace: broxiva
 
 ---
 # Role for Web Frontend - Minimal permissions to access ConfigMaps
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: citadelbuy-web-role
-  namespace: citadelbuy
+  name: broxiva-web-role
+  namespace: broxiva
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get", "list", "watch"]
-    resourceNames: ["citadelbuy-config"]
+    resourceNames: ["broxiva-config"]
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list"]
@@ -160,16 +160,16 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: citadelbuy-web-rolebinding
-  namespace: citadelbuy
+  name: broxiva-web-rolebinding
+  namespace: broxiva
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: citadelbuy-web-role
+  name: broxiva-web-role
 subjects:
   - kind: ServiceAccount
-    name: citadelbuy-web
-    namespace: citadelbuy
+    name: broxiva-web
+    namespace: broxiva
 
 ---
 # Role for Monitoring Exporters
@@ -177,7 +177,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: monitoring-exporter-role
-  namespace: citadelbuy
+  namespace: broxiva
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -195,7 +195,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: postgres-exporter-rolebinding
-  namespace: citadelbuy
+  namespace: broxiva
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -203,7 +203,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: postgres-exporter
-    namespace: citadelbuy
+    namespace: broxiva
 
 ---
 # RoleBinding for Redis Exporter
@@ -211,7 +211,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: redis-exporter-rolebinding
-  namespace: citadelbuy
+  namespace: broxiva
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -219,7 +219,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: redis-exporter
-    namespace: citadelbuy
+    namespace: broxiva
 
 ---
 # RoleBinding for Elasticsearch Exporter
@@ -227,7 +227,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: elasticsearch-exporter-rolebinding
-  namespace: citadelbuy
+  namespace: broxiva
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -235,86 +235,86 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: elasticsearch-exporter
-    namespace: citadelbuy
+    namespace: broxiva
 
 ---
 # ClusterRole for Pod Security Policy (Legacy - for older K8s versions)
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: citadelbuy-psp-restricted
+  name: broxiva-psp-restricted
 rules:
   - apiGroups: ["policy"]
     resources: ["podsecuritypolicies"]
     verbs: ["use"]
-    resourceNames: ["citadelbuy-restricted"]
+    resourceNames: ["broxiva-restricted"]
 
 ---
 # ClusterRole for Database Pod Security Policy
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: citadelbuy-psp-database
+  name: broxiva-psp-database
 rules:
   - apiGroups: ["policy"]
     resources: ["podsecuritypolicies"]
     verbs: ["use"]
-    resourceNames: ["citadelbuy-database"]
+    resourceNames: ["broxiva-database"]
 
 ---
 # ClusterRoleBinding for Application PSP
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: citadelbuy-psp-restricted-binding
+  name: broxiva-psp-restricted-binding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: citadelbuy-psp-restricted
+  name: broxiva-psp-restricted
 subjects:
   - kind: ServiceAccount
-    name: citadelbuy-api
-    namespace: citadelbuy
+    name: broxiva-api
+    namespace: broxiva
   - kind: ServiceAccount
-    name: citadelbuy-web
-    namespace: citadelbuy
+    name: broxiva-web
+    namespace: broxiva
   - kind: ServiceAccount
     name: postgres-exporter
-    namespace: citadelbuy
+    namespace: broxiva
   - kind: ServiceAccount
     name: redis-exporter
-    namespace: citadelbuy
+    namespace: broxiva
   - kind: ServiceAccount
     name: elasticsearch-exporter
-    namespace: citadelbuy
+    namespace: broxiva
 
 ---
 # ClusterRoleBinding for Database PSP
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: citadelbuy-psp-database-binding
+  name: broxiva-psp-database-binding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: citadelbuy-psp-database
+  name: broxiva-psp-database
 subjects:
   - kind: ServiceAccount
     name: postgres
-    namespace: citadelbuy
+    namespace: broxiva
   - kind: ServiceAccount
     name: redis
-    namespace: citadelbuy
+    namespace: broxiva
   - kind: ServiceAccount
     name: elasticsearch
-    namespace: citadelbuy
+    namespace: broxiva
 
 ---
 # ClusterRole for metrics collection (Prometheus access)
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: citadelbuy-metrics-reader
+  name: broxiva-metrics-reader
 rules:
   - apiGroups: [""]
     resources:
@@ -339,7 +339,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: prometheus
-  namespace: citadelbuy-monitoring
+  namespace: broxiva-monitoring
   labels:
     app: prometheus
     tier: monitoring
@@ -353,11 +353,11 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: citadelbuy-metrics-reader
+  name: broxiva-metrics-reader
 subjects:
   - kind: ServiceAccount
     name: prometheus
-    namespace: citadelbuy-monitoring
+    namespace: broxiva-monitoring
 
 ---
 # Role for viewing pod logs (debugging purposes)
@@ -365,7 +365,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: pod-log-reader
-  namespace: citadelbuy
+  namespace: broxiva
 rules:
   - apiGroups: [""]
     resources: ["pods", "pods/log"]
@@ -376,7 +376,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: citadelbuy-network-policy-reader
+  name: broxiva-network-policy-reader
 rules:
   - apiGroups: ["networking.k8s.io"]
     resources: ["networkpolicies"]
@@ -388,7 +388,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: external-secrets
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: external-secrets
 
@@ -398,7 +398,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: external-secrets-role
-  namespace: citadelbuy
+  namespace: broxiva
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -419,7 +419,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: external-secrets-rolebinding
-  namespace: citadelbuy
+  namespace: broxiva
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -427,4 +427,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: external-secrets
-    namespace: citadelbuy
+    namespace: broxiva

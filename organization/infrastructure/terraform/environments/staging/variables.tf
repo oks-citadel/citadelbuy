@@ -14,7 +14,7 @@ variable "tenant_id" {
 variable "db_admin_username" {
   description = "Database administrator username"
   type        = string
-  default     = "citadelbuy_admin"
+  default     = "broxiva_admin"
 }
 
 variable "db_admin_password" {

@@ -38,7 +38,7 @@ const adminErrorRate = new Rate('admin_error_rate');
 
 // Admin test user (should have admin privileges)
 const adminUser = {
-  email: 'admin@citadelbuy.test',
+  email: 'admin@broxiva.test',
   password: 'Admin@1234',
 };
 

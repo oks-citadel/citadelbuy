@@ -1,4 +1,4 @@
-# Network Policies for CitadelBuy Production Environment
+# Network Policies for Broxiva Production Environment
 # Implements strict network segmentation and zero-trust security model
 
 ---
@@ -7,7 +7,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-ingress
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     environment: production
 spec:
@@ -21,7 +21,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-egress
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     environment: production
 spec:
@@ -35,7 +35,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     environment: production
 spec:
@@ -59,13 +59,13 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-web-to-api
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     environment: production
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
       tier: backend
   policyTypes:
     - Ingress
@@ -73,7 +73,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app: citadelbuy-web
+              app: broxiva-web
               tier: frontend
       ports:
         - protocol: TCP
@@ -85,13 +85,13 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-ingress-to-web
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     environment: production
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-web
+      app: broxiva-web
       tier: frontend
   policyTypes:
     - Ingress
@@ -110,13 +110,13 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-ingress-to-api
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     environment: production
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
       tier: backend
   policyTypes:
     - Ingress
@@ -135,7 +135,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-backend-to-postgres
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     environment: production
 spec:
@@ -148,7 +148,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app: citadelbuy-api
+              app: broxiva-api
               tier: backend
         - podSelector:
             matchLabels:
@@ -163,7 +163,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-backend-to-redis
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     environment: production
 spec:
@@ -176,7 +176,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app: citadelbuy-api
+              app: broxiva-api
               tier: backend
         - podSelector:
             matchLabels:
@@ -191,13 +191,13 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-egress
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     environment: production
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
       tier: backend
   policyTypes:
     - Egress
@@ -237,7 +237,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-worker-egress
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     environment: production
 spec:
@@ -282,13 +282,13 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-web-egress
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     environment: production
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-web
+      app: broxiva-web
       tier: frontend
   policyTypes:
     - Egress
@@ -297,7 +297,7 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app: citadelbuy-api
+              app: broxiva-api
               tier: backend
       ports:
         - protocol: TCP
@@ -317,7 +317,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: isolate-postgres
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     environment: production
 spec:
@@ -352,7 +352,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: isolate-redis
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     environment: production
 spec:
@@ -389,7 +389,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-prometheus-scraping
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     environment: production
 spec:

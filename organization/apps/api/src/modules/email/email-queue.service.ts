@@ -101,7 +101,7 @@ export class EmailQueueService {
     return this.addEmailToQueue(
       {
         to: email,
-        subject: 'Welcome to CitadelBuy!',
+        subject: 'Welcome to Broxiva!',
         htmlContent: '', // Will be populated by processor using template
         type: EmailType.TRANSACTIONAL,
         userId,

@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: citadelbuy-api
-  namespace: citadelbuy-staging
+  name: broxiva-api
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     tier: backend
     environment: staging
 spec:
@@ -16,11 +16,11 @@ spec:
       maxUnavailable: 0
   selector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
   template:
     metadata:
       labels:
-        app: citadelbuy-api
+        app: broxiva-api
         tier: backend
         environment: staging
       annotations:
@@ -28,7 +28,7 @@ spec:
         prometheus.io/port: "4000"
         prometheus.io/path: "/metrics"
     spec:
-      serviceAccountName: citadelbuy-api
+      serviceAccountName: broxiva-api
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -38,7 +38,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: api
-        image: citadelbuyacr.azurecr.io/citadelbuy-api:staging-latest
+        image: broxivaacr.azurecr.io/broxiva-api:staging-latest
         imagePullPolicy: Always
         ports:
         - containerPort: 4000
@@ -48,59 +48,59 @@ spec:
         - name: NODE_ENV
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: NODE_ENV
         - name: PORT
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: PORT
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: DATABASE_URL
         - name: REDIS_URL
           value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
         - name: REDIS_HOST
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: REDIS_HOST
         - name: REDIS_PORT
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: REDIS_PORT
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: JWT_SECRET
         - name: JWT_REFRESH_SECRET
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: JWT_REFRESH_SECRET
         - name: JWT_EXPIRATION
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: JWT_EXPIRATION
         - name: STRIPE_SECRET_KEY
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: STRIPE_SECRET_KEY
         - name: SENDGRID_API_KEY
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: SENDGRID_API_KEY
         - name: CORS_ORIGIN
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: CORS_ORIGIN
         securityContext:
           allowPrivilegeEscalation: false
@@ -157,10 +157,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: citadelbuy-api
-  namespace: citadelbuy-staging
+  name: broxiva-api
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     tier: backend
     environment: staging
 spec:
@@ -171,12 +171,12 @@ spec:
     protocol: TCP
     name: http
   selector:
-    app: citadelbuy-api
+    app: broxiva-api
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: citadelbuy-api
-  namespace: citadelbuy-staging
+  name: broxiva-api
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy-api
+    app: broxiva-api

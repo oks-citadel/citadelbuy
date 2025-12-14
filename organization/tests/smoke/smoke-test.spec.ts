@@ -1,12 +1,12 @@
 /**
- * CitadelBuy E2E Smoke Tests
+ * Broxiva E2E Smoke Tests
  *
  * Purpose: Comprehensive smoke tests to verify critical user flows
  * Run after deployment to ensure system is functional
  *
  * Usage:
  *   pnpm playwright test tests/smoke/smoke-test.spec.ts
- *   PLAYWRIGHT_BASE_URL=https://staging.citadelbuy.com pnpm playwright test tests/smoke/
+ *   PLAYWRIGHT_BASE_URL=https://staging.broxiva.com pnpm playwright test tests/smoke/
  */
 
 import { test, expect } from '@playwright/test';
@@ -100,7 +100,7 @@ test.describe('Smoke Tests - Frontend Rendering', () => {
     await expect(page.locator('text=/error|something went wrong/i')).not.toBeVisible();
 
     // Should render core elements
-    await expect(page).toHaveTitle(/CitadelBuy|Home/i);
+    await expect(page).toHaveTitle(/Broxiva|Home/i);
   });
 
   test('should load products page', async ({ page }) => {
@@ -270,7 +270,7 @@ test.describe('Smoke Tests - Responsive Design', () => {
     await page.goto('/');
 
     // Should render without errors
-    await expect(page).toHaveTitle(/CitadelBuy|Home/i);
+    await expect(page).toHaveTitle(/Broxiva|Home/i);
   });
 
   test('should render on tablet viewport', async ({ page }) => {
@@ -278,7 +278,7 @@ test.describe('Smoke Tests - Responsive Design', () => {
     await page.goto('/');
 
     // Should render without errors
-    await expect(page).toHaveTitle(/CitadelBuy|Home/i);
+    await expect(page).toHaveTitle(/Broxiva|Home/i);
   });
 
   test('should render on desktop viewport', async ({ page }) => {
@@ -286,6 +286,6 @@ test.describe('Smoke Tests - Responsive Design', () => {
     await page.goto('/');
 
     // Should render without errors
-    await expect(page).toHaveTitle(/CitadelBuy|Home/i);
+    await expect(page).toHaveTitle(/Broxiva|Home/i);
   });
 });

@@ -34,13 +34,13 @@ jobs:
         run: |
           case "${{ inputs.environment || 'staging' }}" in
             dev)
-              echo "API_URL=https://api-dev.citadelbuy.com" >> $GITHUB_ENV
+              echo "API_URL=https://api-dev.broxiva.com" >> $GITHUB_ENV
               ;;
             staging)
-              echo "API_URL=https://api-staging.citadelbuy.com" >> $GITHUB_ENV
+              echo "API_URL=https://api-staging.broxiva.com" >> $GITHUB_ENV
               ;;
             production)
-              echo "API_URL=https://api.citadelbuy.com" >> $GITHUB_ENV
+              echo "API_URL=https://api.broxiva.com" >> $GITHUB_ENV
               ;;
           esac
 
@@ -87,16 +87,16 @@ jobs:
         run: |
           case "${{ inputs.environment || 'staging' }}" in
             dev)
-              echo "WEB_URL=https://dev.citadelbuy.com" >> $GITHUB_ENV
-              echo "API_URL=https://api-dev.citadelbuy.com" >> $GITHUB_ENV
+              echo "WEB_URL=https://dev.broxiva.com" >> $GITHUB_ENV
+              echo "API_URL=https://api-dev.broxiva.com" >> $GITHUB_ENV
               ;;
             staging)
-              echo "WEB_URL=https://staging.citadelbuy.com" >> $GITHUB_ENV
-              echo "API_URL=https://api-staging.citadelbuy.com" >> $GITHUB_ENV
+              echo "WEB_URL=https://staging.broxiva.com" >> $GITHUB_ENV
+              echo "API_URL=https://api-staging.broxiva.com" >> $GITHUB_ENV
               ;;
             production)
-              echo "WEB_URL=https://citadelbuy.com" >> $GITHUB_ENV
-              echo "API_URL=https://api.citadelbuy.com" >> $GITHUB_ENV
+              echo "WEB_URL=https://broxiva.com" >> $GITHUB_ENV
+              echo "API_URL=https://api.broxiva.com" >> $GITHUB_ENV
               ;;
           esac
 

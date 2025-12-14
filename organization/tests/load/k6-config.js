@@ -1,8 +1,8 @@
 /**
- * k6 Load Testing Configuration for CitadelBuy
+ * k6 Load Testing Configuration for Broxiva
  *
  * This configuration file defines common settings, thresholds, and utilities
- * for load testing the CitadelBuy e-commerce platform.
+ * for load testing the Broxiva e-commerce platform.
  */
 
 import { SharedArray } from 'k6/data';
@@ -95,7 +95,7 @@ export const testData = {
   randomEmail: () => {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(7);
-    return `test-${timestamp}-${random}@citadelbuy.test`;
+    return `test-${timestamp}-${random}@broxiva.test`;
   },
 
   // Generate random user credentials
@@ -122,11 +122,11 @@ export const testData = {
 // Sample test users (pre-seeded in database)
 export const testUsers = new SharedArray('users', function () {
   return [
-    { email: 'loadtest1@citadelbuy.test', password: 'Test@1234' },
-    { email: 'loadtest2@citadelbuy.test', password: 'Test@1234' },
-    { email: 'loadtest3@citadelbuy.test', password: 'Test@1234' },
-    { email: 'loadtest4@citadelbuy.test', password: 'Test@1234' },
-    { email: 'loadtest5@citadelbuy.test', password: 'Test@1234' },
+    { email: 'loadtest1@broxiva.test', password: 'Test@1234' },
+    { email: 'loadtest2@broxiva.test', password: 'Test@1234' },
+    { email: 'loadtest3@broxiva.test', password: 'Test@1234' },
+    { email: 'loadtest4@broxiva.test', password: 'Test@1234' },
+    { email: 'loadtest5@broxiva.test', password: 'Test@1234' },
   ];
 });
 

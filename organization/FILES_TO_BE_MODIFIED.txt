@@ -1,0 +1,199 @@
+================================================================================
+CITADELBUY TO BROXIVA MIGRATION - FILES TO BE MODIFIED
+================================================================================
+
+Working Directory:
+C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization\.github\workflows
+
+Migration Script:
+C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization\migrate-cicd-to-broxiva.sh
+
+================================================================================
+FILES WITH CITADELBUY REFERENCES (19 files requiring changes)
+================================================================================
+
+1. build-and-push-acr.yml
+   - 8 occurrences of citadelbuy/CitadelBuy
+   - Affects: ACR registry URLs, image descriptions, service labels
+
+2. cd-dev.yml
+   - 22 occurrences of citadelbuy/CitadelBuy
+   - Affects: AKS cluster names, resource groups, namespaces, container registry,
+     deployment URLs, pod selectors, rollback commands
+
+3. cd-prod.yml
+   - 40 occurrences of citadelbuy/CitadelBuy
+   - Affects: Production AKS, resource groups, namespaces, URLs, services
+
+4. cd-staging.yml
+   - 26 occurrences of citadelbuy/CitadelBuy
+   - Affects: Staging AKS, resource groups, namespaces, URLs, services
+
+5. cost-optimization-shutdown.yml
+   - 11 occurrences of citadelbuy/CitadelBuy
+   - Affects: Resource group references, AKS clusters
+
+6. docker-build.yml
+   - 2 occurrences of citadelbuy/CitadelBuy
+   - Affects: Workflow metadata
+
+7. docker-build-and-push-acr.yml
+   - 6 occurrences of citadelbuy/CitadelBuy
+   - Affects: ACR references, image metadata
+
+8. drift-detection.yml
+   - 10 occurrences of citadelbuy/CitadelBuy
+   - Affects: Resource groups, state storage
+
+9. drift-repair.yml
+   - 9 occurrences of citadelbuy/CitadelBuy
+   - Affects: Resource groups, Terraform state
+
+10. e2e-tests.yml
+    - 6 occurrences of citadelbuy/CitadelBuy
+    - Affects: Test URLs, environment references
+
+11. secret-rotation.yml
+    - 10 occurrences of citadelbuy/CitadelBuy
+    - Affects: Key vault references, resource groups
+
+12. smoke-test.yml
+    - 9 occurrences of citadelbuy/CitadelBuy
+    - Affects: Test endpoints, health check URLs
+
+13. terraform-apply-dev.yml
+    - 6 occurrences of citadelbuy/CitadelBuy
+    - Affects: Terraform workspace, state storage
+
+14. terraform-apply-prod.yml
+    - 12 occurrences of citadelbuy/CitadelBuy
+    - Affects: Production Terraform state, workspace
+
+15. terraform-apply-staging.yml
+    - 10 occurrences of citadelbuy/CitadelBuy
+    - Affects: Staging Terraform state, workspace
+
+16. terraform-deploy-production.yml
+    - 19 occurrences of citadelbuy/CitadelBuy
+    - Affects: Production deployment, state, resources
+
+17. terraform-drift-detection.yml
+    - 2 occurrences of citadelbuy/CitadelBuy
+    - Affects: Drift detection references
+
+18. terraform-plan.yml
+    - 2 occurrences of citadelbuy/CitadelBuy
+    - Affects: Terraform planning references
+
+19. webhook-monitoring.yml
+    - 3 occurrences of citadelbuy/CitadelBuy
+    - Affects: Monitoring endpoints
+
+================================================================================
+FILES WITH CITADELPLATFORMS REFERENCES (5 files)
+================================================================================
+
+1. cd-dev.yml
+   - Container registry: ghcr.io/citadelplatforms → ghcr.io/broxiva
+
+2. cd-staging.yml
+   - Container registry: ghcr.io/citadelplatforms → ghcr.io/broxiva
+
+3. cd-prod.yml
+   - Container registry: ghcr.io/citadelplatforms → ghcr.io/broxiva
+
+4. AKS_DEPLOYMENT_README.md
+   - Documentation references
+
+5. DEPLOYMENT_QUICK_REFERENCE.md
+   - Documentation references
+
+================================================================================
+FILES ALREADY CLEAN (9 files - no changes needed)
+================================================================================
+
+1. api-security-test.yml - Clean
+2. ci.yml - Clean
+3. compliance-check.yml - Clean
+4. container-scan.yml - Clean
+5. cost-anomaly-detection.yml - Clean
+6. dependency-scan.yml - Clean
+7. deploy-production-broxiva.yml - Already using Broxiva naming
+8. sast.yml - Clean
+9. secret-scan.yml - Clean
+
+================================================================================
+DOCUMENTATION FILES (will also be updated)
+================================================================================
+
+1. AKS_DEPLOYMENT_README.md - 15 occurrences
+2. DEPLOYMENT_QUICK_REFERENCE.md - 88 occurrences
+3. README-TERRAFORM-WORKFLOWS.md - 14 occurrences
+4. QUICK-REFERENCE.md - 8 occurrences
+5. TERRAFORM_WORKFLOWS_SUMMARY.txt - 7 occurrences
+6. TERRAFORM-SETUP-CHECKLIST.md - 19 occurrences
+
+================================================================================
+TOTAL STATISTICS
+================================================================================
+
+Total Workflow Files: 28
+  - Files requiring changes: 19
+  - Files already clean: 9
+
+Total Documentation Files: 6
+
+Total Occurrences to Replace:
+  - citadelbuy (case-insensitive): ~364
+  - citadelplatforms: ~5
+  - Total replacements: ~369
+
+================================================================================
+REPLACEMENT SUMMARY
+================================================================================
+
+1. Lowercase: citadelbuy → broxiva
+2. Title Case: CitadelBuy → Broxiva
+3. Organization: citadelplatforms → broxiva
+4. ACR: citadelbuyacr.azurecr.io → broxivaacr.azurecr.io
+5. Terraform: citadelbuytfstate → broxivatfstate
+6. Domain: citadelbuy.com → broxiva.com
+7. GHCR: ghcr.io/citadelplatforms → ghcr.io/broxiva
+
+================================================================================
+CRITICAL FILES (verify changes carefully)
+================================================================================
+
+Priority 1 - Production Deployments:
+  ✓ cd-prod.yml (40 changes)
+  ✓ terraform-apply-prod.yml (12 changes)
+  ✓ terraform-deploy-production.yml (19 changes)
+
+Priority 2 - Build and Container Registry:
+  ✓ build-and-push-acr.yml (8 changes)
+  ✓ docker-build-and-push-acr.yml (6 changes)
+
+Priority 3 - Environment Deployments:
+  ✓ cd-dev.yml (22 changes)
+  ✓ cd-staging.yml (26 changes)
+
+Priority 4 - Infrastructure:
+  ✓ drift-detection.yml (10 changes)
+  ✓ drift-repair.yml (9 changes)
+
+================================================================================
+EXECUTION COMMAND
+================================================================================
+
+# Dry-run (preview):
+bash migrate-cicd-to-broxiva.sh --dry-run
+
+# Execute with backup:
+bash migrate-cicd-to-broxiva.sh --backup
+
+# Verify (should return 0):
+grep -ri "citadelbuy" .github/workflows/*.yml | wc -l
+
+================================================================================
+END OF FILE LIST
+================================================================================

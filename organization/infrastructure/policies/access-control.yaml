@@ -1,5 +1,5 @@
 # Access Control Policy
-# CitadelBuy Global B2B Marketplace
+# Broxiva Global B2B Marketplace
 # Version: 2.0
 # Last Updated: 2025-12-06
 
@@ -12,7 +12,7 @@ metadata:
   next_review: 2026-03-01
 
 purpose: |
-  Define access control requirements for all CitadelBuy systems,
+  Define access control requirements for all Broxiva systems,
   applications, data, and infrastructure based on principle of
   least privilege and need-to-know.
 

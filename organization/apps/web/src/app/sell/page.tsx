@@ -99,7 +99,7 @@ export default function SellPage() {
               <span>Join 10,000+ successful sellers</span>
             </div>
             <h1 className="text-5xl font-bold mb-6">
-              Start Selling on CitadelBuy
+              Start Selling on Broxiva
             </h1>
             <p className="text-xl opacity-90 mb-8">
               Turn your passion into profit. Reach millions of customers and grow your business with our powerful selling tools.
@@ -144,7 +144,7 @@ export default function SellPage() {
       {/* Benefits */}
       <div className="container mx-auto px-4 py-20">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Why Sell on CitadelBuy?</h2>
+          <h2 className="text-3xl font-bold mb-4">Why Sell on Broxiva?</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
             We provide everything you need to succeed as an online seller
           </p>

@@ -1,4 +1,4 @@
-# Network Policies for CitadelBuy Staging Environment
+# Network Policies for Broxiva Staging Environment
 # Implements network segmentation and zero-trust networking
 
 ---
@@ -7,7 +7,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
   labels:
     environment: staging
 spec:
@@ -31,20 +31,20 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-web-to-api
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
   labels:
     environment: staging
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
   policyTypes:
     - Ingress
   ingress:
     - from:
         - podSelector:
             matchLabels:
-              app: citadelbuy-web
+              app: broxiva-web
       ports:
         - protocol: TCP
           port: 4000
@@ -55,7 +55,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-ingress-controller
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
   labels:
     environment: staging
 spec:
@@ -79,13 +79,13 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-ingress-to-api
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
   labels:
     environment: staging
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
   policyTypes:
     - Ingress
   ingress:
@@ -103,7 +103,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-to-postgres
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
   labels:
     environment: staging
 spec:
@@ -116,7 +116,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app: citadelbuy-api
+              app: broxiva-api
       ports:
         - protocol: TCP
           port: 5432
@@ -127,7 +127,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-to-redis
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
   labels:
     environment: staging
 spec:
@@ -140,7 +140,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app: citadelbuy-api
+              app: broxiva-api
       ports:
         - protocol: TCP
           port: 6379
@@ -151,13 +151,13 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-external-egress
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
   labels:
     environment: staging
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
   policyTypes:
     - Egress
   egress:
@@ -189,20 +189,20 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-web-egress
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
   labels:
     environment: staging
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-web
+      app: broxiva-web
   policyTypes:
     - Egress
   egress:
     - to:
         - podSelector:
             matchLabels:
-              app: citadelbuy-api
+              app: broxiva-api
       ports:
         - protocol: TCP
           port: 4000

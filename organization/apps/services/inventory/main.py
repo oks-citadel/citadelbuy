@@ -11,7 +11,7 @@ import logging
 import numpy as np
 
 app = FastAPI(
-    title="CitadelBuy Inventory AI Service",
+    title="Broxiva Inventory AI Service",
     description="AI-powered inventory demand forecasting and stock optimization",
     version="1.0.0"
 )

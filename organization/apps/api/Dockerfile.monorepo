@@ -1,14 +1,24 @@
 # ==================================
-# CitadelBuy Backend - Production Dockerfile (Monorepo)
-# Multi-stage build: Dependencies → Build → Runtime
+# Broxiva Backend - Production Dockerfile (Monorepo)
+# Multi-stage build: Dependencies - Build - Runtime
+# ENCODING-HARDENED: UTF-8 safe across all environments
 # ==================================
 
 # Stage 1: Dependencies
 FROM node:20-alpine AS deps
 LABEL stage=deps
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@10.23.0 --activate
+# ENCODING FIX: Set UTF-8 locale for Alpine
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install pnpm and bash
+RUN corepack enable && corepack prepare pnpm@10.23.0 --activate && \
+    apk add --no-cache bash && rm -rf /var/cache/apk/*
+
+# ENCODING FIX: Use bash shell
+SHELL ["/bin/bash", "-c"]
 
 WORKDIR /app
 
@@ -17,8 +27,11 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/api/prisma ./apps/api/prisma/
 
+# ENCODING FIX: Normalize CRLF line endings
+RUN find . -type f \( -name "*.json" -o -name "*.yaml" -o -name "*.prisma" \) -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
+
 # Install dependencies
-RUN pnpm install --frozen-lockfile --filter citadelbuy-backend...
+RUN pnpm install --frozen-lockfile --filter broxiva-backend...
 
 # Generate Prisma Client
 WORKDIR /app/apps/api
@@ -28,8 +41,17 @@ RUN npx prisma generate
 FROM node:20-alpine AS builder
 LABEL stage=builder
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@10.23.0 --activate
+# ENCODING FIX: Set UTF-8 locale
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install pnpm and bash
+RUN corepack enable && corepack prepare pnpm@10.23.0 --activate && \
+    apk add --no-cache bash && rm -rf /var/cache/apk/*
+
+# ENCODING FIX: Use bash shell
+SHELL ["/bin/bash", "-c"]
 
 WORKDIR /app
 
@@ -44,25 +66,37 @@ COPY package.json pnpm-workspace.yaml turbo.json ./
 # Copy source code
 COPY apps/api ./apps/api/
 
+# ENCODING FIX: Normalize all source files
+RUN find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" \) -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
+
 # Build application
 WORKDIR /app/apps/api
 RUN npm run build
 
 # Stage 3: Production Runtime
 FROM node:20-alpine AS production
-LABEL maintainer="CitadelBuy Platform <dev@citadelbuy.com>"
+LABEL maintainer="Broxiva Platform <dev@broxiva.com>"
 LABEL version="2.0.0"
-LABEL description="CitadelBuy Backend - NestJS API Server"
-LABEL org.opencontainers.image.source="https://github.com/citadel/citadelbuy"
+LABEL description="Broxiva Backend - NestJS API Server"
+LABEL org.opencontainers.image.source="https://github.com/citadel/broxiva"
+
+# ENCODING FIX: Set UTF-8 locale for runtime
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
 
 WORKDIR /app
 
-# Install runtime dependencies
+# Install runtime dependencies including bash
 RUN apk add --no-cache \
     dumb-init \
     curl \
     tini \
+    bash \
     postgresql-client
+
+# ENCODING FIX: Use bash shell
+SHELL ["/bin/bash", "-c"]
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -95,3 +129,10 @@ ENTRYPOINT ["/sbin/tini", "--"]
 
 # Start application
 CMD ["node", "dist/main.js"]
+
+# ==========================================
+# ENCODING HARDENING APPLIED:
+# - LANG=C.UTF-8, LC_ALL=C.UTF-8 in all stages
+# - SHELL ["/bin/bash", "-c"] for consistent behavior
+# - CRLF normalization for Windows compatibility
+# ==========================================

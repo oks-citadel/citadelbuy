@@ -1,5 +1,5 @@
 /**
- * Custom React hooks for CitadelBuy Mobile App
+ * Custom React hooks for Broxiva Mobile App
  */
 
 export * from './useAuth';

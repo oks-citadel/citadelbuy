@@ -38,9 +38,9 @@ describe('PaymentsService - Enhanced Tests', () => {
         PAYPAL_CLIENT_ID: 'paypal_client_id',
         PAYPAL_CLIENT_SECRET: 'paypal_client_secret',
         PAYPAL_MODE: 'sandbox',
-        APPLE_MERCHANT_ID: 'merchant.com.citadelbuy',
+        APPLE_MERCHANT_ID: 'merchant.com.broxiva',
         GOOGLE_MERCHANT_ID: 'google_merchant_123',
-        APP_NAME: 'CitadelBuy',
+        APP_NAME: 'Broxiva',
         NODE_ENV: 'test',
       };
       return config[key];
@@ -494,8 +494,8 @@ describe('PaymentsService - Enhanced Tests', () => {
           clientSecret: 'pi_applepay_secret',
           paymentIntentId: 'pi_applepay',
           applePay: {
-            merchantId: 'merchant.com.citadelbuy',
-            merchantName: 'CitadelBuy',
+            merchantId: 'merchant.com.broxiva',
+            merchantName: 'Broxiva',
             countryCode: 'US',
           },
         });
@@ -539,7 +539,7 @@ describe('PaymentsService - Enhanced Tests', () => {
           paymentIntentId: 'pi_googlepay',
           googlePay: {
             merchantId: 'google_merchant_123',
-            merchantName: 'CitadelBuy',
+            merchantName: 'Broxiva',
             environment: 'TEST',
             allowedCardNetworks: ['AMEX', 'DISCOVER', 'INTERAC', 'JCB', 'MASTERCARD', 'VISA'],
             allowedCardAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS'],

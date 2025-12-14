@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: organization-config
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: organization-service
     tier: backend
@@ -21,7 +21,7 @@ data:
 
   # CORS Configuration
   CORS_ENABLED: "true"
-  CORS_ORIGINS: "https://citadelbuy.com,https://www.citadelbuy.com,https://app.citadelbuy.com"
+  CORS_ORIGINS: "https://broxiva.com,https://www.broxiva.com,https://app.broxiva.com"
   CORS_CREDENTIALS: "true"
 
   # Rate Limiting
@@ -101,7 +101,7 @@ data:
   REDIS_TTL: "3600"
   REDIS_MAX_RETRIES: "3"
   REDIS_RETRY_DELAY: "1000"
-  REDIS_KEY_PREFIX: "citadelbuy:org:"
+  REDIS_KEY_PREFIX: "broxiva:org:"
 
   # Monitoring & Observability
   METRICS_ENABLED: "true"
@@ -163,7 +163,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: organization-nginx-config
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: organization-service
     tier: backend

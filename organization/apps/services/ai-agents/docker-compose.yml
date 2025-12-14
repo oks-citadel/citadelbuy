@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: citadelbuy-ai-agents
+    container_name: broxiva-ai-agents
     ports:
       - "8020:8020"
     environment:
@@ -15,14 +15,14 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - DATABASE_URL=postgresql://citadelbuy:password@postgres:5432/citadelbuy
+      - DATABASE_URL=postgresql://broxiva:password@postgres:5432/broxiva
       - SENTRY_DSN=${SENTRY_DSN}
     depends_on:
       - redis
       - postgres
     restart: unless-stopped
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8020/health"]
       interval: 30s
@@ -32,7 +32,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: citadelbuy-redis
+    container_name: broxiva-redis
     ports:
       - "6379:6379"
     volumes:
@@ -40,7 +40,7 @@ services:
     command: redis-server --appendonly yes
     restart: unless-stopped
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -49,10 +49,10 @@ services:
 
   postgres:
     image: postgres:15-alpine
-    container_name: citadelbuy-postgres
+    container_name: broxiva-postgres
     environment:
-      - POSTGRES_DB=citadelbuy
-      - POSTGRES_USER=citadelbuy
+      - POSTGRES_DB=broxiva
+      - POSTGRES_USER=broxiva
       - POSTGRES_PASSWORD=password
     ports:
       - "5432:5432"
@@ -60,9 +60,9 @@ services:
       - postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U citadelbuy"]
+      test: ["CMD-SHELL", "pg_isready -U broxiva"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -72,5 +72,5 @@ volumes:
   postgres-data:
 
 networks:
-  citadelbuy-network:
+  broxiva-network:
     driver: bridge

@@ -11,9 +11,9 @@ import { useAuthStore } from '../../stores/auth-store';
 
 // Test credentials for development - only shown in __DEV__ mode
 const TEST_ACCOUNTS = [
-  { email: 'admin@citadelbuy.com', password: 'password123', role: 'Admin', color: '#ef4444' },
-  { email: 'vendor1@citadelbuy.com', password: 'password123', role: 'Vendor', color: '#6366f1' },
-  { email: 'customer@citadelbuy.com', password: 'password123', role: 'Customer', color: '#22c55e' },
+  { email: 'admin@broxiva.com', password: 'password123', role: 'Admin', color: '#ef4444' },
+  { email: 'vendor1@broxiva.com', password: 'password123', role: 'Vendor', color: '#6366f1' },
+  { email: 'customer@broxiva.com', password: 'password123', role: 'Customer', color: '#22c55e' },
 ];
 
 export default function TestCredentials() {

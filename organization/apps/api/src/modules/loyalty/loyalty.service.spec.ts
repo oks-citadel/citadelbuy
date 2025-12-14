@@ -74,7 +74,7 @@ describe('LoyaltyService', () => {
 
   const mockLoyaltyProgram = {
     id: 'program-1',
-    name: 'CitadelBuy Rewards',
+    name: 'Broxiva Rewards',
     isActive: true,
     pointsPerDollar: 1,
     minimumRedeemPoints: 100,

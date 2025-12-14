@@ -472,7 +472,7 @@ async function rateLimitTests() {
 // Main execution
 async function main() {
   console.log('='.repeat(60));
-  console.log('CITADELBUY E-COMMERCE API TEST SUITE');
+  console.log('BROXIVA E-COMMERCE API TEST SUITE');
   console.log('='.repeat(60));
   console.log(`Test started at: ${new Date().toISOString()}`);
   console.log(`Base URL: ${BASE_URL}`);

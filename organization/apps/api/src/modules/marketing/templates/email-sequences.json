@@ -28,7 +28,7 @@
             "valueProposition": "Companies like {{similarCompanyName}} are saving 20-30% on sourcing costs by diversifying to verified African suppliers. Plus, West African shipping to the U.S. East Coast is 15 days faster than from Asia.",
             "socialProof": "We work with {{competitorName1}} and {{competitorName2}} in your industry.",
             "cta": "Would it make sense to have a quick 15-minute conversation to explore if this could work for {{companyName}}?",
-            "signature": "{{senderName}}\n{{senderTitle}}\nCitadelBuy"
+            "signature": "{{senderName}}\n{{senderTitle}}\nBroxiva"
           },
           "personalizationFields": [
             "{{firstName}}",
@@ -54,7 +54,7 @@
             "keyTakeaways": [
               "28% cost reduction",
               "15-day faster delivery (West Africa to U.S. East Coast)",
-              "Better quality control with CitadelBuy's 3-tier verification"
+              "Better quality control with Broxiva's 3-tier verification"
             ],
             "cta": "I'd love to show you how we could achieve similar results for {{companyName}}. Are you open to a 15-minute call next week?",
             "caseStudyLink": "[Read the full case study here]({{caseStudyUrl}})",
@@ -71,7 +71,7 @@
             "opening": "Hi {{firstName}},\n\nI've reached out a couple times but haven't heard back - no worries if this isn't a priority right now.",
             "question": "Before I close the loop, I'm curious:\n\nAre you actively looking to:\n- Reduce sourcing costs?\n- Diversify your supplier base beyond Asia?\n- Improve shipping times to the U.S.?\n\nOr is your current setup working well?",
             "breakup": "If it's not the right time, just let me know and I'll stop following up.",
-            "cta": "But if any of these are on your radar, I'd love to show you how CitadelBuy can help. Quick 15-minute call?",
+            "cta": "But if any of these are on your radar, I'd love to show you how Broxiva can help. Quick 15-minute call?",
             "signature": "{{senderName}}"
           }
         },
@@ -82,29 +82,29 @@
           "preheader": "Sharing some helpful content, even if we don't work together",
           "template": "cold-email-4-value-add",
           "bodyStructure": {
-            "opening": "Hi {{firstName}},\n\nEven if CitadelBuy isn't the right fit right now, I wanted to share some resources that might be helpful for {{companyName}}'s sourcing strategy:",
+            "opening": "Hi {{firstName}},\n\nEven if Broxiva isn't the right fit right now, I wanted to share some resources that might be helpful for {{companyName}}'s sourcing strategy:",
             "resources": [
               "[The Ultimate Guide to Sourcing from Africa]({{guideUrl}}) - 10,000 word guide covering suppliers, compliance, logistics",
               "[Africa vs. Asia Sourcing: Cost & Quality Comparison]({{whitepaperUrl}}) - Data-driven analysis of 1,000+ transactions",
               "[AGOA Trade Benefits Explained]({{blogUrl}}) - How to qualify for duty-free African imports"
             ],
             "noStringsAttached": "No forms to fill out, just genuinely useful content.",
-            "softCta": "And if you ever want to chat about how CitadelBuy could help {{companyName}}, I'm here.",
+            "softCta": "And if you ever want to chat about how Broxiva could help {{companyName}}, I'm here.",
             "signature": "{{senderName}}"
           }
         },
         {
           "touchNumber": 5,
           "delay": "Day 17",
-          "subject": "One last try - {{companyName}} + CitadelBuy?",
+          "subject": "One last try - {{companyName}} + Broxiva?",
           "preheader": "I promise this is my last email (unless you reply)",
           "template": "cold-email-5-final-attempt",
           "bodyStructure": {
             "opening": "Hi {{firstName}},\n\nI know you're busy and your inbox is probably overflowing. This will be my last email unless I hear from you.",
-            "summary": "Here's what I think CitadelBuy could do for {{companyName}}:\n\n✓ Save 20-30% on sourcing costs for {{productCategory}}\n✓ Diversify supplier base to reduce risk\n✓ Faster shipping from West Africa to U.S. (vs. Asia)\n✓ Integrated trade finance (BNPL, factoring) to preserve cash flow",
+            "summary": "Here's what I think Broxiva could do for {{companyName}}:\n\n✓ Save 20-30% on sourcing costs for {{productCategory}}\n✓ Diversify supplier base to reduce risk\n✓ Faster shipping from West Africa to U.S. (vs. Asia)\n✓ Integrated trade finance (BNPL, factoring) to preserve cash flow",
             "lowCommitmentCta": "If any of this sounds interesting, just reply with \"YES\" and I'll send over some times for a quick call.",
             "breakup": "If not, no hard feelings! I'll stop emailing and wish you the best with your sourcing strategy.",
-            "signature": "{{senderName}}\n{{senderTitle}}\nCitadelBuy\n{{senderEmail}} | {{senderPhone}}"
+            "signature": "{{senderName}}\n{{senderTitle}}\nBroxiva\n{{senderEmail}} | {{senderPhone}}"
           }
         },
         {
@@ -119,7 +119,7 @@
             "optOut": "If you don't want it, just reply \"UNSUBSCRIBE\" and I'll remove you immediately.",
             "futureContactPermission": "And if things change in 6 months or a year and you want to revisit African sourcing, my door is always open. Just reply to any of my emails.",
             "genuineWishes": "Best of luck with {{companyName}}'s continued growth!",
-            "signature": "{{senderName}}\nCitadelBuy"
+            "signature": "{{senderName}}\nBroxiva"
           }
         }
       ],
@@ -171,20 +171,20 @@
           "delay": "Day 0",
           "channel": "email",
           "subject": "Export your {{productCategory}} to the U.S. and Europe",
-          "preheader": "Connect with verified international buyers on CitadelBuy",
+          "preheader": "Connect with verified international buyers on Broxiva",
           "languages": ["en", "fr"],
           "template": "cold-email-exporter-1",
           "bodyStructure": {
             "opening": "Hi {{firstName}},\n\nI came across {{companyName}} and was impressed by your {{productCategory}} products. Have you considered exporting to the U.S. or European markets?",
-            "opportunity": "CitadelBuy connects African exporters like you with 10,000+ verified international buyers actively seeking {{productCategory}}.",
+            "opportunity": "Broxiva connects African exporters like you with 10,000+ verified international buyers actively seeking {{productCategory}}.",
             "benefits": [
               "Access to U.S., European, and Middle Eastern buyers",
               "Trade finance (get paid faster with invoice factoring)",
               "Integrated logistics and customs support"
             ],
-            "socialProof": "Exporters in {{country}} are already using CitadelBuy to reach new markets.",
+            "socialProof": "Exporters in {{country}} are already using Broxiva to reach new markets.",
             "cta": "Want to learn more? I can show you how it works in a quick 15-minute call. Or sign up for free: {{signUpUrl}}",
-            "signature": "{{senderName}}\n{{senderTitle}}\nCitadelBuy"
+            "signature": "{{senderName}}\n{{senderTitle}}\nBroxiva"
           }
         },
         {
@@ -193,7 +193,7 @@
           "channel": "whatsapp",
           "template": "whatsapp-exporter-1",
           "content": {
-            "message": "Hi {{firstName}}! This is {{senderName}} from CitadelBuy. I sent you an email about exporting your {{productCategory}} to the U.S. and Europe. \n\nAre you interested in learning more? Reply YES for details or CALL ME to schedule a quick chat.",
+            "message": "Hi {{firstName}}! This is {{senderName}} from Broxiva. I sent you an email about exporting your {{productCategory}} to the U.S. and Europe. \n\nAre you interested in learning more? Reply YES for details or CALL ME to schedule a quick chat.",
             "quickReplies": ["YES", "CALL ME", "Not interested"]
           }
         },
@@ -201,11 +201,11 @@
           "touchNumber": 3,
           "delay": "Day 5",
           "channel": "email",
-          "subject": "How {{competitorName}} is exporting to the U.S. via CitadelBuy",
+          "subject": "How {{competitorName}} is exporting to the U.S. via Broxiva",
           "template": "cold-email-exporter-2-case-study",
           "bodyStructure": {
             "opening": "Hi {{firstName}},\n\nI wanted to share a quick success story from {{competitorName}}, another {{country}} exporter in your industry.",
-            "caseStudy": "They joined CitadelBuy 6 months ago and have already secured 8 U.S. buyers for their {{productCategory}}. Their revenue from exports grew from $200K to over $1M in the first year.",
+            "caseStudy": "They joined Broxiva 6 months ago and have already secured 8 U.S. buyers for their {{productCategory}}. Their revenue from exports grew from $200K to over $1M in the first year.",
             "keyResults": [
               "8 new U.S. buyers in 6 months",
               "$1M+ in export revenue",
@@ -222,7 +222,7 @@
           "channel": "whatsapp",
           "template": "whatsapp-exporter-2-video",
           "content": {
-            "message": "Hi {{firstName}}, {{senderName}} from CitadelBuy here. \n\nI recorded a quick 2-minute video showing how Nigerian exporters are using our platform to find U.S. buyers: {{videoUrl}}\n\nLet me know if you have questions!",
+            "message": "Hi {{firstName}}, {{senderName}} from Broxiva here. \n\nI recorded a quick 2-minute video showing how Nigerian exporters are using our platform to find U.S. buyers: {{videoUrl}}\n\nLet me know if you have questions!",
             "videoThumbnail": "{{videoThumbnailUrl}}",
             "quickReplies": ["Watched it!", "Tell me more", "Not for me"]
           }
@@ -231,22 +231,22 @@
           "touchNumber": 5,
           "delay": "Day 14",
           "channel": "email",
-          "subject": "Last call: Start exporting with CitadelBuy (free trial)",
+          "subject": "Last call: Start exporting with Broxiva (free trial)",
           "template": "cold-email-exporter-3-final",
           "bodyStructure": {
             "opening": "Hi {{firstName}},\n\nThis will be my last email. I know expanding to international markets is a big decision.",
-            "finalOffer": "But here's what CitadelBuy can do for {{companyName}}:\n\n✓ Connect you with verified U.S., European, and Middle Eastern buyers\n✓ Help you get paid faster (invoice factoring, BNPL for buyers)\n✓ Handle logistics and shipping complexities\n✓ Free 14-day trial - no credit card required",
+            "finalOffer": "But here's what Broxiva can do for {{companyName}}:\n\n✓ Connect you with verified U.S., European, and Middle Eastern buyers\n✓ Help you get paid faster (invoice factoring, BNPL for buyers)\n✓ Handle logistics and shipping complexities\n✓ Free 14-day trial - no credit card required",
             "lowRisk": "You have nothing to lose by trying. Sign up takes 5 minutes: {{signUpUrl}}",
             "personalNote": "If you ever change your mind, I'm here to help. Just reply to this email or WhatsApp me at {{senderWhatsApp}}.",
-            "signature": "Best of luck with {{companyName}}!\n\n{{senderName}}\nCitadelBuy"
+            "signature": "Best of luck with {{companyName}}!\n\n{{senderName}}\nBroxiva"
           }
         }
       ],
       "localization": {
         "french": {
           "subjectLine1": "Exportez vos {{productCategory}} vers les États-Unis et l'Europe",
-          "subjectLine3": "Comment {{competitorName}} exporte vers les États-Unis via CitadelBuy",
-          "subjectLine5": "Dernier appel: Commencez à exporter avec CitadelBuy (essai gratuit)"
+          "subjectLine3": "Comment {{competitorName}} exporte vers les États-Unis via Broxiva",
+          "subjectLine5": "Dernier appel: Commencez à exporter avec Broxiva (essai gratuit)"
         }
       }
     },

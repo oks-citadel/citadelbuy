@@ -23,49 +23,49 @@ data:
       "regions": {
         "us-east": {
           "name": "United States East",
-          "endpoint": "api-us-east.citadelbuy.com",
+          "endpoint": "api-us-east.broxiva.com",
           "countries": ["US", "CA", "MX", "BR", "AR", "CL", "CO", "PE"],
           "priority": 1,
           "latencyThreshold": 50
         },
         "eu-west": {
           "name": "Europe West",
-          "endpoint": "api-eu-west.citadelbuy.com",
+          "endpoint": "api-eu-west.broxiva.com",
           "countries": ["GB", "FR", "DE", "IT", "ES", "NL", "BE", "CH", "AT", "SE", "NO", "DK", "FI", "PL", "CZ", "PT", "IE", "GR"],
           "priority": 1,
           "latencyThreshold": 50
         },
         "af-south": {
           "name": "Africa South",
-          "endpoint": "api-af-south.citadelbuy.com",
+          "endpoint": "api-af-south.broxiva.com",
           "countries": ["ZA", "NG", "KE", "GH", "EG", "MA", "TN", "DZ", "ET", "TZ", "UG", "ZW", "BW", "NA", "MZ"],
           "priority": 1,
           "latencyThreshold": 100
         },
         "ap-southeast": {
           "name": "Asia Pacific Southeast",
-          "endpoint": "api-ap-southeast.citadelbuy.com",
+          "endpoint": "api-ap-southeast.broxiva.com",
           "countries": ["SG", "MY", "TH", "VN", "ID", "PH", "IN", "BD", "PK", "LK"],
           "priority": 1,
           "latencyThreshold": 50
         },
         "ap-east": {
           "name": "Asia Pacific East",
-          "endpoint": "api-ap-tokyo.citadelbuy.com",
+          "endpoint": "api-ap-tokyo.broxiva.com",
           "countries": ["JP", "KR", "TW", "HK", "CN"],
           "priority": 1,
           "latencyThreshold": 50
         },
         "ap-oceania": {
           "name": "Oceania",
-          "endpoint": "api-ap-sydney.citadelbuy.com",
+          "endpoint": "api-ap-sydney.broxiva.com",
           "countries": ["AU", "NZ", "FJ", "PG"],
           "priority": 1,
           "latencyThreshold": 50
         }
       },
       "fallback": {
-        "endpoint": "api-us-east.citadelbuy.com",
+        "endpoint": "api-us-east.broxiva.com",
         "reason": "Default fallback for unmatched regions"
       }
     }
@@ -171,7 +171,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: router
-        image: citadelbuy/geo-routing-engine:latest
+        image: broxiva/geo-routing-engine:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
@@ -433,42 +433,42 @@ data:
   health-checks.yaml: |
     endpoints:
       - name: us-east
-        url: https://api-us-east.citadelbuy.com/health
+        url: https://api-us-east.broxiva.com/health
         interval: 30s
         timeout: 10s
         healthyThreshold: 2
         unhealthyThreshold: 3
 
       - name: eu-west
-        url: https://api-eu-west.citadelbuy.com/health
+        url: https://api-eu-west.broxiva.com/health
         interval: 30s
         timeout: 10s
         healthyThreshold: 2
         unhealthyThreshold: 3
 
       - name: af-south
-        url: https://api-af-south.citadelbuy.com/health
+        url: https://api-af-south.broxiva.com/health
         interval: 30s
         timeout: 10s
         healthyThreshold: 2
         unhealthyThreshold: 3
 
       - name: ap-southeast
-        url: https://api-ap-southeast.citadelbuy.com/health
+        url: https://api-ap-southeast.broxiva.com/health
         interval: 30s
         timeout: 10s
         healthyThreshold: 2
         unhealthyThreshold: 3
 
       - name: ap-tokyo
-        url: https://api-ap-tokyo.citadelbuy.com/health
+        url: https://api-ap-tokyo.broxiva.com/health
         interval: 30s
         timeout: 10s
         healthyThreshold: 2
         unhealthyThreshold: 3
 
       - name: ap-sydney
-        url: https://api-ap-sydney.citadelbuy.com/health
+        url: https://api-ap-sydney.broxiva.com/health
         interval: 30s
         timeout: 10s
         healthyThreshold: 2
@@ -493,7 +493,7 @@ spec:
     spec:
       containers:
       - name: checker
-        image: citadelbuy/health-checker:latest
+        image: broxiva/health-checker:latest
         imagePullPolicy: IfNotPresent
         env:
         - name: CHECK_INTERVAL

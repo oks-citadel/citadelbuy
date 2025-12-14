@@ -35,7 +35,7 @@ metadata:
     # Multi-region routing
     nginx.ingress.kubernetes.io/affinity: "cookie"
     nginx.ingress.kubernetes.io/affinity-mode: "persistent"
-    nginx.ingress.kubernetes.io/session-cookie-name: "citadelbuy-region"
+    nginx.ingress.kubernetes.io/session-cookie-name: "broxiva-region"
     nginx.ingress.kubernetes.io/session-cookie-max-age: "86400"
 
     # Performance optimizations
@@ -65,15 +65,15 @@ spec:
   ingressClassName: global-multi-region
   tls:
   - hosts:
-    - api.citadelbuy.com
-    - api-us-east.citadelbuy.com
-    - api-eu-west.citadelbuy.com
-    - api-af-south.citadelbuy.com
-    - api-ap-southeast.citadelbuy.com
-    secretName: citadelbuy-global-tls
+    - api.broxiva.com
+    - api-us-east.broxiva.com
+    - api-eu-west.broxiva.com
+    - api-af-south.broxiva.com
+    - api-ap-southeast.broxiva.com
+    secretName: broxiva-global-tls
   rules:
   # Global API endpoint - routes to nearest region
-  - host: api.citadelbuy.com
+  - host: api.broxiva.com
     http:
       paths:
       - path: /
@@ -85,7 +85,7 @@ spec:
               number: 443
 
   # US East endpoint
-  - host: api-us-east.citadelbuy.com
+  - host: api-us-east.broxiva.com
     http:
       paths:
       - path: /
@@ -97,7 +97,7 @@ spec:
               number: 443
 
   # Europe West endpoint
-  - host: api-eu-west.citadelbuy.com
+  - host: api-eu-west.broxiva.com
     http:
       paths:
       - path: /
@@ -109,7 +109,7 @@ spec:
               number: 443
 
   # Africa South endpoint
-  - host: api-af-south.citadelbuy.com
+  - host: api-af-south.broxiva.com
     http:
       paths:
       - path: /
@@ -121,7 +121,7 @@ spec:
               number: 443
 
   # Asia Pacific Southeast endpoint
-  - host: api-ap-southeast.citadelbuy.com
+  - host: api-ap-southeast.broxiva.com
     http:
       paths:
       - path: /
@@ -297,7 +297,7 @@ data:
                 add_header X-Served-By-Region $backend_region always;
 
                 # Route based on detected region
-                proxy_pass https://api-$backend_region.citadelbuy.com;
+                proxy_pass https://api-$backend_region.broxiva.com;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

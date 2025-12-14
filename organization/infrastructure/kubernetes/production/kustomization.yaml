@@ -1,19 +1,19 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: citadelbuy-production
+namespace: broxiva-production
 
 # Common labels applied to all resources
 commonLabels:
-  app: citadelbuy
+  app: broxiva
   environment: production
   managed-by: kustomize
   version: v1
 
 # Common annotations
 commonAnnotations:
-  contact: "devops@citadelbuy.com"
-  documentation: "https://docs.citadelbuy.com/infrastructure"
+  contact: "devops@broxiva.com"
+  documentation: "https://docs.broxiva.com/infrastructure"
 
 # Resources to deploy
 resources:
@@ -31,11 +31,11 @@ bases:
 
 # Image transformations
 images:
-  - name: citadelbuyacr.azurecr.io/citadelbuy-api
-    newName: citadelbuyacr.azurecr.io/citadelbuy-api
+  - name: broxivaacr.azurecr.io/broxiva-api
+    newName: broxivaacr.azurecr.io/broxiva-api
     newTag: production-latest
-  - name: citadelbuyacr.azurecr.io/citadelbuy-web
-    newName: citadelbuyacr.azurecr.io/citadelbuy-web
+  - name: broxivaacr.azurecr.io/broxiva-web
+    newName: broxivaacr.azurecr.io/broxiva-web
     newTag: production-latest
 
 # ConfigMap generator for deployment metadata
@@ -53,7 +53,7 @@ configMapGenerator:
 
 # Secret generator (use external secret management in production)
 secretGenerator:
-  - name: citadelbuy-secrets
+  - name: broxiva-secrets
     type: Opaque
     options:
       disableNameSuffixHash: true
@@ -62,9 +62,9 @@ secretGenerator:
 
 # Replicas for production environment
 replicas:
-  - name: citadelbuy-api
+  - name: broxiva-api
     count: 5
-  - name: citadelbuy-web
+  - name: broxiva-web
     count: 5
   - name: email-worker
     count: 3
@@ -83,7 +83,7 @@ patchesStrategicMerge:
     apiVersion: apps/v1
     kind: Deployment
     metadata:
-      name: citadelbuy-api
+      name: broxiva-api
     spec:
       template:
         metadata:
@@ -109,7 +109,7 @@ patchesStrategicMerge:
     apiVersion: apps/v1
     kind: Deployment
     metadata:
-      name: citadelbuy-web
+      name: broxiva-web
     spec:
       template:
         metadata:
@@ -138,7 +138,7 @@ patchesJson6902:
       group: apps
       version: v1
       kind: Deployment
-      name: citadelbuy-api
+      name: broxiva-api
     patch: |-
       - op: add
         path: /spec/template/spec/securityContext/runAsNonRoot
@@ -151,7 +151,7 @@ patchesJson6902:
       group: apps
       version: v1
       kind: Deployment
-      name: citadelbuy-web
+      name: broxiva-web
     patch: |-
       - op: add
         path: /spec/template/spec/securityContext/runAsNonRoot
@@ -170,14 +170,14 @@ vars:
   - name: API_SERVICE_NAME
     objref:
       kind: Service
-      name: citadelbuy-api
+      name: broxiva-api
       apiVersion: v1
     fieldref:
       fieldpath: metadata.name
   - name: WEB_SERVICE_NAME
     objref:
       kind: Service
-      name: citadelbuy-web
+      name: broxiva-web
       apiVersion: v1
     fieldref:
       fieldpath: metadata.name

@@ -4,7 +4,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class CreateWebhookDto {
   @ApiProperty({
     description: 'Webhook endpoint URL',
-    example: 'https://example.com/webhooks/citadelbuy',
+    example: 'https://example.com/webhooks/broxiva',
   })
   @IsUrl()
   url: string;

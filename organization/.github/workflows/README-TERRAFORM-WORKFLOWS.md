@@ -80,7 +80,7 @@ The Terraform automation is built with the following principles:
 
 **Environment**: `staging`
 - Approval required from designated reviewers
-- URL: https://staging.citadelbuy.com
+- URL: https://staging.broxiva.com
 
 **Required Secrets**:
 - `AZURE_CLIENT_ID`
@@ -110,7 +110,7 @@ The Terraform automation is built with the following principles:
 
 **Environment**: `production`
 - Approval required from senior team members
-- URL: https://citadelbuy.com
+- URL: https://broxiva.com
 
 **Required Secrets**:
 - `AZURE_CLIENT_ID`
@@ -157,10 +157,10 @@ The Terraform automation is built with the following principles:
 
 ```bash
 # Create App Registration
-az ad app create --display-name "GitHub-CitadelBuy-Terraform-OIDC"
+az ad app create --display-name "GitHub-Broxiva-Terraform-OIDC"
 
 # Get the Application (client) ID
-APP_ID=$(az ad app list --display-name "GitHub-CitadelBuy-Terraform-OIDC" --query "[0].appId" -o tsv)
+APP_ID=$(az ad app list --display-name "GitHub-Broxiva-Terraform-OIDC" --query "[0].appId" -o tsv)
 
 # Create Service Principal
 az ad sp create --id $APP_ID
@@ -173,7 +173,7 @@ az ad sp create --id $APP_ID
 az ad app federated-credential create \
   --id $APP_ID \
   --parameters '{
-    "name": "GitHub-CitadelBuy-Main",
+    "name": "GitHub-Broxiva-Main",
     "issuer": "https://token.actions.githubusercontent.com",
     "subject": "repo:YOUR_ORG/YOUR_REPO:ref:refs/heads/main",
     "audiences": ["api://AzureADTokenExchange"]
@@ -183,7 +183,7 @@ az ad app federated-credential create \
 az ad app federated-credential create \
   --id $APP_ID \
   --parameters '{
-    "name": "GitHub-CitadelBuy-Develop",
+    "name": "GitHub-Broxiva-Develop",
     "issuer": "https://token.actions.githubusercontent.com",
     "subject": "repo:YOUR_ORG/YOUR_REPO:ref:refs/heads/develop",
     "audiences": ["api://AzureADTokenExchange"]
@@ -193,7 +193,7 @@ az ad app federated-credential create \
 az ad app federated-credential create \
   --id $APP_ID \
   --parameters '{
-    "name": "GitHub-CitadelBuy-Staging",
+    "name": "GitHub-Broxiva-Staging",
     "issuer": "https://token.actions.githubusercontent.com",
     "subject": "repo:YOUR_ORG/YOUR_REPO:ref:refs/heads/staging",
     "audiences": ["api://AzureADTokenExchange"]
@@ -203,7 +203,7 @@ az ad app federated-credential create \
 az ad app federated-credential create \
   --id $APP_ID \
   --parameters '{
-    "name": "GitHub-CitadelBuy-PR",
+    "name": "GitHub-Broxiva-PR",
     "issuer": "https://token.actions.githubusercontent.com",
     "subject": "repo:YOUR_ORG/YOUR_REPO:pull_request",
     "audiences": ["api://AzureADTokenExchange"]
@@ -214,7 +214,7 @@ az ad app federated-credential create \
 
 ```bash
 # Get Service Principal Object ID
-SP_ID=$(az ad sp list --display-name "GitHub-CitadelBuy-Terraform-OIDC" --query "[0].id" -o tsv)
+SP_ID=$(az ad sp list --display-name "GitHub-Broxiva-Terraform-OIDC" --query "[0].id" -o tsv)
 
 # Assign Contributor role to subscription
 az role assignment create \
@@ -226,7 +226,7 @@ az role assignment create \
 az role assignment create \
   --assignee $SP_ID \
   --role "Storage Blob Data Contributor" \
-  --scope "/subscriptions/ba233460-2dbe-4603-a594-68f93ec9deb3/resourceGroups/citadelbuy-tfstate-rg/providers/Microsoft.Storage/storageAccounts/citadelbuytfstate"
+  --scope "/subscriptions/ba233460-2dbe-4603-a594-68f93ec9deb3/resourceGroups/broxiva-tfstate-rg/providers/Microsoft.Storage/storageAccounts/broxivatfstate"
 ```
 
 ### 4. Get Required IDs
@@ -236,7 +236,7 @@ az role assignment create \
 az account show --query tenantId -o tsv
 
 # Get Client ID (Application ID)
-az ad app list --display-name "GitHub-CitadelBuy-Terraform-OIDC" --query "[0].appId" -o tsv
+az ad app list --display-name "GitHub-Broxiva-Terraform-OIDC" --query "[0].appId" -o tsv
 ```
 
 ---
@@ -253,8 +253,8 @@ Add these secrets to your GitHub repository (Settings > Secrets and variables > 
 | `AZURE_TENANT_ID` | Azure AD Tenant ID | `87654321-4321-4321-4321-cba987654321` |
 | `DB_ADMIN_PASSWORD` | Database admin password (dev/staging) | `SecureP@ssw0rd123!` |
 | `DB_ADMIN_PASSWORD_PROD` | Database admin password (production) | `Pr0dP@ssw0rd456!` |
-| `ONCALL_EMAIL` | On-call engineer email for alerts | `oncall@citadelbuy.com` |
-| `TEAM_EMAIL` | Team email for notifications | `team@citadelbuy.com` |
+| `ONCALL_EMAIL` | On-call engineer email for alerts | `oncall@broxiva.com` |
+| `TEAM_EMAIL` | Team email for notifications | `team@broxiva.com` |
 | `INFRACOST_API_KEY` | (Optional) Infracost API key for cost estimation | `ico-xxx` |
 
 ### Environment Protection Rules
@@ -407,7 +407,7 @@ Update notification endpoints in the workflows or add integrations:
 ```bash
 # List locks
 az storage blob list \
-  --account-name citadelbuytfstate \
+  --account-name broxivatfstate \
   --container-name tfstate \
   --prefix .terraform.lock
 

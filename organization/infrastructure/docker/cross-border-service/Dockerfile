@@ -75,10 +75,10 @@ ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "dist/main.js"]
 
 # Labels for metadata
-LABEL maintainer="DevOps Team <devops@citadelbuy.com>" \
+LABEL maintainer="DevOps Team <devops@broxiva.com>" \
       service="cross-border-service" \
       version="1.0.0" \
       description="Cross-border trade and compliance service" \
-      com.citadelbuy.team="international" \
-      com.citadelbuy.tier="application" \
-      com.citadelbuy.compliance="customs,tax,regulations"
+      com.broxiva.team="international" \
+      com.broxiva.tier="application" \
+      com.broxiva.compliance="customs,tax,regulations"

@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="CitadelBuy AI Engine",
+    title="Broxiva AI Engine",
     description="AI-powered predictions and optimizations for dropshipping operations",
     version="1.0.0",
     docs_url="/docs",

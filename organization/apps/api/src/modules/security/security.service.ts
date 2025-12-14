@@ -163,7 +163,7 @@ export class SecurityService {
 
   async setup2FA(userId: string) {
     const secret = speakeasy.generateSecret({
-      name: `CitadelBuy (${userId})`,
+      name: `Broxiva (${userId})`,
       length: 32,
     });
 

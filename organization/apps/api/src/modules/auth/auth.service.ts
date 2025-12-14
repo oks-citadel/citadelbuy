@@ -558,7 +558,7 @@ export class AuthService {
       const payload = jwt.verify(identityToken, publicKey, {
         algorithms: ['RS256'],
         issuer: 'https://appleid.apple.com',
-        audience: appBundleId || 'com.citadelbuy.app',
+        audience: appBundleId || 'com.broxiva.app',
       }) as jwt.JwtPayload;
 
       if (!payload.sub) {
@@ -906,7 +906,7 @@ export class AuthService {
     });
 
     // Generate QR code URL (otpauth://totp/...)
-    const issuer = 'CitadelBuy';
+    const issuer = 'Broxiva';
     const accountName = user.email;
     const otpauthUrl = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(accountName)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
 

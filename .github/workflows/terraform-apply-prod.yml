@@ -24,8 +24,8 @@ permissions:
 
 env:
   ARM_SUBSCRIPTION_ID: ba233460-2dbe-4603-a594-68f93ec9deb3
-  ARM_RESOURCE_GROUP: citadelbuy-tfstate-rg
-  ARM_STORAGE_ACCOUNT: citadelbuytfstate
+  ARM_RESOURCE_GROUP: broxiva-tfstate-rg
+  ARM_STORAGE_ACCOUNT: broxivatfstate
   ARM_CONTAINER_NAME: tfstate
   TF_VERSION: "1.6.0"
   ENVIRONMENT: prod
@@ -161,7 +161,7 @@ jobs:
     if: needs.terraform-plan.outputs.plan_exitcode == '2'
     environment:
       name: production
-      url: https://citadelbuy.com
+      url: https://broxiva.com
     steps:
       - name: Pre-Deployment Announcement
         run: |
@@ -313,12 +313,12 @@ jobs:
           echo "🔍 Verifying deployed resources in production..."
 
           # Check Resource Group
-          az group show --name citadelbuy-prod-rg --query "{Name:name, Location:location, ProvisioningState:properties.provisioningState}" -o table
+          az group show --name broxiva-prod-rg --query "{Name:name, Location:location, ProvisioningState:properties.provisioningState}" -o table
 
           # List all resources
           echo ""
-          echo "📦 Resources in citadelbuy-prod-rg:"
-          az resource list --resource-group citadelbuy-prod-rg --query "[].{Name:name, Type:type, Location:location}" -o table
+          echo "📦 Resources in broxiva-prod-rg:"
+          az resource list --resource-group broxiva-prod-rg --query "[].{Name:name, Type:type, Location:location}" -o table
 
           echo ""
           echo "✅ Resource verification complete"
@@ -326,19 +326,19 @@ jobs:
       - name: Verify AKS Cluster
         run: |
           echo "☸️ Verifying AKS cluster..."
-          az aks show --resource-group citadelbuy-prod-rg --name citadelbuy-prod-aks --query "{Name:name, Status:powerState.code, Version:kubernetesVersion, NodeCount:agentPoolProfiles[0].count}" -o table || echo "AKS cluster not found or not accessible"
+          az aks show --resource-group broxiva-prod-rg --name broxiva-prod-aks --query "{Name:name, Status:powerState.code, Version:kubernetesVersion, NodeCount:agentPoolProfiles[0].count}" -o table || echo "AKS cluster not found or not accessible"
         continue-on-error: true
 
       - name: Verify Database
         run: |
           echo "🗄️ Verifying PostgreSQL server..."
-          az postgres flexible-server list --resource-group citadelbuy-prod-rg --query "[].{Name:name, State:state, Version:version, Tier:sku.tier}" -o table || echo "PostgreSQL server not found or not accessible"
+          az postgres flexible-server list --resource-group broxiva-prod-rg --query "[].{Name:name, State:state, Version:version, Tier:sku.tier}" -o table || echo "PostgreSQL server not found or not accessible"
         continue-on-error: true
 
       - name: Verify Storage Accounts
         run: |
           echo "💾 Verifying storage accounts..."
-          az storage account list --resource-group citadelbuy-prod-rg --query "[].{Name:name, Kind:kind, Location:location, Status:statusOfPrimary}" -o table || echo "Storage accounts not found"
+          az storage account list --resource-group broxiva-prod-rg --query "[].{Name:name, Kind:kind, Location:location, Status:statusOfPrimary}" -o table || echo "Storage accounts not found"
         continue-on-error: true
 
       - name: Production Health Check
@@ -349,7 +349,7 @@ jobs:
           sleep 30
 
           # Example health check (customize based on your application)
-          # curl -f https://citadelbuy.com/health || echo "Health check endpoint not available"
+          # curl -f https://broxiva.com/health || echo "Health check endpoint not available"
 
           echo "✅ Health checks complete"
         continue-on-error: true
@@ -359,7 +359,7 @@ jobs:
           echo "🧪 Running production smoke tests..."
           # Add your smoke tests here
           # Example: Check if main pages are accessible
-          # curl -f https://citadelbuy.com || echo "Main site not accessible"
+          # curl -f https://broxiva.com || echo "Main site not accessible"
           echo "✅ Smoke tests complete"
         continue-on-error: true
 
@@ -371,7 +371,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Environment Information" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Production URL:** https://citadelbuy.com" >> $GITHUB_STEP_SUMMARY
+          echo "- **Production URL:** https://broxiva.com" >> $GITHUB_STEP_SUMMARY
           echo "- **Verification Time:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
           echo "- **Deployed By:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

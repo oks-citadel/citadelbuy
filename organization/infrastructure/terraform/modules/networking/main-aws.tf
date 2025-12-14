@@ -1,5 +1,5 @@
 # Networking Module - AWS VPC, Subnets, Security Groups
-# CitadelBuy E-commerce Platform - AWS Infrastructure
+# Broxiva E-commerce Platform - AWS Infrastructure
 
 # ============================================
 # VPC

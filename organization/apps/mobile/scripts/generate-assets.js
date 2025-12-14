@@ -1,5 +1,5 @@
 /**
- * Asset Generation Script for CitadelBuy Mobile App
+ * Asset Generation Script for Broxiva Mobile App
  *
  * This script generates placeholder PNG assets for the mobile app.
  * Run: node scripts/generate-assets.js
@@ -68,7 +68,7 @@ function generateSplash(width, height, outputPath) {
   ctx.font = `bold ${Math.floor(width * 0.08)}px Arial`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('CitadelBuy', width / 2, height * 0.45);
+  ctx.fillText('Broxiva', width / 2, height * 0.45);
 
   // Tagline
   ctx.font = `${Math.floor(width * 0.03)}px Arial`;

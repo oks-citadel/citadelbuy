@@ -1,5 +1,5 @@
 """
-AI Agents Service - CitadelBuy Global B2B Enterprise Marketplace
+AI Agents Service - Broxiva Global B2B Enterprise Marketplace
 FastAPI microservice hosting 12 intelligent AI agents for enterprise operations
 
 Agents:
@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="CitadelBuy AI Agents Service",
+    title="Broxiva AI Agents Service",
     description="12 intelligent AI agents for global enterprise marketplace operations",
     version="1.0.0",
     docs_url="/docs",

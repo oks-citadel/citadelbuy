@@ -308,10 +308,10 @@ export class DhlProvider implements IShippingProvider {
               addressLine2: fromAddress.street2,
             },
             contactInformation: {
-              email: fromAddress.email || 'shipping@citadelbuy.com',
+              email: fromAddress.email || 'shipping@broxiva.com',
               phone: fromAddress.phone || '1234567890',
-              companyName: fromAddress.name || 'CitadelBuy',
-              fullName: fromAddress.name || 'CitadelBuy Shipping',
+              companyName: fromAddress.name || 'Broxiva',
+              fullName: fromAddress.name || 'Broxiva Shipping',
             },
           },
           receiverDetails: {

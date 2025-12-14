@@ -22,6 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { BuildInfo } from '@/components/common/build-info';
 
 const footerLinks = {
   shop: [
@@ -49,7 +50,7 @@ const footerLinks = {
     { name: 'Blog', href: '/blog' },
   ],
   sell: [
-    { name: 'Sell on CitadelBuy', href: '/sell' },
+    { name: 'Sell on Broxiva', href: '/sell' },
     { name: 'Vendor Portal', href: '/vendor/login' },
     { name: 'Vendor Guidelines', href: '/vendor/guidelines' },
     { name: 'Advertising', href: '/advertising' },
@@ -59,11 +60,11 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { name: 'Facebook', icon: Facebook, href: 'https://facebook.com/citadelbuy' },
-  { name: 'Twitter', icon: Twitter, href: 'https://twitter.com/citadelbuy' },
-  { name: 'Instagram', icon: Instagram, href: 'https://instagram.com/citadelbuy' },
-  { name: 'YouTube', icon: Youtube, href: 'https://youtube.com/citadelbuy' },
-  { name: 'LinkedIn', icon: Linkedin, href: 'https://linkedin.com/company/citadelbuy' },
+  { name: 'Facebook', icon: Facebook, href: 'https://facebook.com/broxiva' },
+  { name: 'Twitter', icon: Twitter, href: 'https://twitter.com/broxiva' },
+  { name: 'Instagram', icon: Instagram, href: 'https://instagram.com/broxiva' },
+  { name: 'YouTube', icon: Youtube, href: 'https://youtube.com/broxiva' },
+  { name: 'LinkedIn', icon: Linkedin, href: 'https://linkedin.com/company/broxiva' },
 ];
 
 const features = [
@@ -128,7 +129,7 @@ export function Footer() {
                 Get 10% off your first order
               </div>
               <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Join the CitadelBuy Community
+                Join the Broxiva Community
               </h3>
               <p className="text-white/80 mb-8 text-lg">
                 Subscribe for exclusive deals, early access to sales, and personalized recommendations.
@@ -167,7 +168,7 @@ export function Footer() {
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25">
                   <span className="text-white font-bold text-xl">C</span>
                 </div>
-                <span className="font-bold text-2xl text-white">CitadelBuy</span>
+                <span className="font-bold text-2xl text-white">Broxiva</span>
               </Link>
               <p className="text-slate-400 mb-6 leading-relaxed max-w-sm">
                 Discover the future of shopping with AI-powered recommendations, visual search, and personalized experiences.
@@ -261,11 +262,11 @@ export function Footer() {
           <div className="mt-12 pt-8 border-t border-slate-800">
             <div className="flex flex-wrap gap-6 justify-center md:justify-start">
               <a
-                href="mailto:support@citadelbuy.com"
+                href="mailto:support@broxiva.com"
                 className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
               >
                 <Mail className="h-4 w-4" />
-                support@citadelbuy.com
+                support@broxiva.com
               </a>
               <a
                 href="tel:1-800-CITADEL"
@@ -287,7 +288,7 @@ export function Footer() {
           <div className="container py-6">
             <div className="flex flex-col md:flex-row items-center justify-center gap-4">
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-2 text-sm text-slate-500">
-                <span>&copy; {new Date().getFullYear()} CitadelBuy. All rights reserved.</span>
+                <span>&copy; {new Date().getFullYear()} Broxiva. All rights reserved.</span>
                 <Link href="/privacy" className="hover:text-white transition-colors">
                   Privacy Policy
                 </Link>
@@ -306,6 +307,10 @@ export function Footer() {
                 <img src="/payment/apple-pay.svg" alt="Apple Pay" className="h-8 opacity-60 hover:opacity-100 transition-opacity" />
                 <img src="/payment/google-pay.svg" alt="Google Pay" className="h-8 opacity-60 hover:opacity-100 transition-opacity" />
               </div>
+            </div>
+            {/* Build Info - shows version, commit, and environment */}
+            <div className="mt-4 flex justify-center">
+              <BuildInfo variant="footer" className="text-slate-500" />
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 # Staging Environment Configuration
-# CitadelBuy E-commerce Platform - Azure Infrastructure
+# Broxiva E-commerce Platform - Azure Infrastructure
 
 terraform {
   required_version = ">= 1.0"
@@ -20,8 +20,8 @@ terraform {
   }
 
   backend "azurerm" {
-    resource_group_name  = "citadelbuy-tfstate-rg"
-    storage_account_name = "citadelbuytfstate"
+    resource_group_name  = "broxiva-tfstate-rg"
+    storage_account_name = "broxivatfstate"
     container_name       = "tfstate"
     key                  = "staging.terraform.tfstate"
   }
@@ -46,12 +46,12 @@ provider "azuread" {
 # Local Variables
 # ============================================
 locals {
-  project_name = "citadelbuy"
+  project_name = "broxiva"
   environment  = "staging"
   location     = "eastus"
 
   tags = {
-    Project     = "CitadelBuy"
+    Project     = "Broxiva"
     Environment = "Staging"
     ManagedBy   = "Terraform"
     CostCenter  = "Engineering"
@@ -236,7 +236,7 @@ module "monitoring" {
   # Resources to Monitor
   aks_cluster_id = module.compute.aks_id
   database_id    = module.database.postgresql_server_id
-  app_url        = "https://staging.citadelbuy.com"
+  app_url        = "https://staging.broxiva.com"
 
   tags = local.tags
 }

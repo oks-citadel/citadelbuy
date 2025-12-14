@@ -1,5 +1,5 @@
 {
-  "name": "CitadelBuy AI-Powered Customer Support Chatbot",
+  "name": "Broxiva AI-Powered Customer Support Chatbot",
   "nodes": [
     {
       "parameters": {
@@ -101,7 +101,7 @@
       "credentials": {
         "postgres": {
           "id": "1",
-          "name": "PostgreSQL - CitadelBuy"
+          "name": "PostgreSQL - Broxiva"
         }
       }
     },
@@ -124,7 +124,7 @@
       "credentials": {
         "postgres": {
           "id": "1",
-          "name": "PostgreSQL - CitadelBuy"
+          "name": "PostgreSQL - Broxiva"
         }
       }
     },
@@ -160,7 +160,7 @@
       "credentials": {
         "postgres": {
           "id": "1",
-          "name": "PostgreSQL - CitadelBuy"
+          "name": "PostgreSQL - Broxiva"
         }
       }
     },
@@ -171,7 +171,7 @@
           "values": [
             {
               "role": "system",
-              "content": "You are a friendly customer support assistant for CitadelBuy, a modern e-commerce platform. \n\nYour personality: Professional yet warm, concise but thorough, empathetic and solution-focused.\n\nCore rules:\n1. NEVER make up information - only use data from provided tools\n2. Always verify customer identity before sharing order details\n3. For complaints or frustrated customers, offer human escalation\n4. Be proactive - anticipate customer needs\n5. Use customer's name when available\n6. Keep responses under 150 words unless detailed explanation needed\n\nYou have access to these tools:\n- ORDER_STATUS: Look up order information\n- PRODUCT_SEARCH: Find product details and availability\n- RETURN_POLICY: Access return/refund policies\n- SHIPPING_INFO: Check shipping status and estimates\n- ESCALATE: Route to human agent\n\nClassify customer intent into one of:\n- order_status\n- product_question\n- return_refund\n- shipping_inquiry\n- complaint\n- general_question\n- escalation_request\n\nRespond in JSON format:\n{\n  \"intent\": \"<intent_type>\",\n  \"confidence\": <0.0-1.0>,\n  \"sentiment\": <-1.0 to 1.0>,\n  \"entities\": {\n    \"order_number\": \"<if mentioned>\",\n    \"product_name\": \"<if mentioned>\",\n    \"tracking_number\": \"<if mentioned>\"\n  },\n  \"requires_escalation\": <boolean>,\n  \"escalation_reason\": \"<if applicable>\"\n}"
+              "content": "You are a friendly customer support assistant for Broxiva, a modern e-commerce platform. \n\nYour personality: Professional yet warm, concise but thorough, empathetic and solution-focused.\n\nCore rules:\n1. NEVER make up information - only use data from provided tools\n2. Always verify customer identity before sharing order details\n3. For complaints or frustrated customers, offer human escalation\n4. Be proactive - anticipate customer needs\n5. Use customer's name when available\n6. Keep responses under 150 words unless detailed explanation needed\n\nYou have access to these tools:\n- ORDER_STATUS: Look up order information\n- PRODUCT_SEARCH: Find product details and availability\n- RETURN_POLICY: Access return/refund policies\n- SHIPPING_INFO: Check shipping status and estimates\n- ESCALATE: Route to human agent\n\nClassify customer intent into one of:\n- order_status\n- product_question\n- return_refund\n- shipping_inquiry\n- complaint\n- general_question\n- escalation_request\n\nRespond in JSON format:\n{\n  \"intent\": \"<intent_type>\",\n  \"confidence\": <0.0-1.0>,\n  \"sentiment\": <-1.0 to 1.0>,\n  \"entities\": {\n    \"order_number\": \"<if mentioned>\",\n    \"product_name\": \"<if mentioned>\",\n    \"tracking_number\": \"<if mentioned>\"\n  },\n  \"requires_escalation\": <boolean>,\n  \"escalation_reason\": \"<if applicable>\"\n}"
             },
             {
               "role": "user",
@@ -319,9 +319,9 @@
     },
     {
       "parameters": {
-        "url": "=https://api.citadelbuy.com/v1/orders/{{ $json.entities.order_number || 'search' }}",
+        "url": "=https://api.broxiva.com/v1/orders/{{ $json.entities.order_number || 'search' }}",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -338,7 +338,7 @@
         "options": {}
       },
       "id": "e7f8a9b0-c1d2-4e5f-4a5b-6c7d8e9f0a1b",
-      "name": "CitadelBuy API - Get Order",
+      "name": "Broxiva API - Get Order",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
@@ -348,13 +348,13 @@
       "credentials": {
         "httpHeaderAuth": {
           "id": "3",
-          "name": "CitadelBuy API Key"
+          "name": "Broxiva API Key"
         }
       }
     },
     {
       "parameters": {
-        "index": "citadelbuy-products",
+        "index": "broxiva-products",
         "operation": "search",
         "query": {
           "match": {
@@ -383,13 +383,13 @@
     },
     {
       "parameters": {
-        "url": "=https://api.citadelbuy.com/v1/returns/policy",
+        "url": "=https://api.broxiva.com/v1/returns/policy",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "options": {}
       },
       "id": "a9b0c1d2-e3f4-4a5b-6c7d-8e9f0a1b2c3d",
-      "name": "CitadelBuy API - Return Policy",
+      "name": "Broxiva API - Return Policy",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
@@ -399,7 +399,7 @@
       "credentials": {
         "httpHeaderAuth": {
           "id": "3",
-          "name": "CitadelBuy API Key"
+          "name": "Broxiva API Key"
         }
       }
     },
@@ -432,7 +432,7 @@
           "values": [
             {
               "role": "system",
-              "content": "You are a helpful customer support assistant for CitadelBuy. Use the provided order data to give the customer a friendly, informative response about their order status.\n\nInclude:\n- Order number and date\n- Current status\n- Expected delivery date\n- Tracking link if available\n\nKeep the tone warm and reassuring. If there are any delays, acknowledge them empathetically."
+              "content": "You are a helpful customer support assistant for Broxiva. Use the provided order data to give the customer a friendly, informative response about their order status.\n\nInclude:\n- Order number and date\n- Current status\n- Expected delivery date\n- Tracking link if available\n\nKeep the tone warm and reassuring. If there are any delays, acknowledge them empathetically."
             },
             {
               "role": "user",
@@ -468,7 +468,7 @@
           "values": [
             {
               "role": "system",
-              "content": "You are a knowledgeable product expert for CitadelBuy. Use the RAG search results to answer the customer's product question accurately.\n\nGuidelines:\n- Only use information from the search results\n- If you don't have enough information, say so and offer to escalate\n- Be enthusiastic about products but honest about limitations\n- Include relevant product details: price, availability, specs, reviews\n- Suggest related products if appropriate"
+              "content": "You are a knowledgeable product expert for Broxiva. Use the RAG search results to answer the customer's product question accurately.\n\nGuidelines:\n- Only use information from the search results\n- If you don't have enough information, say so and offer to escalate\n- Be enthusiastic about products but honest about limitations\n- Include relevant product details: price, availability, specs, reviews\n- Suggest related products if appropriate"
             },
             {
               "role": "user",
@@ -504,7 +504,7 @@
           "values": [
             {
               "role": "system",
-              "content": "You are a customer support assistant helping with returns and refunds for CitadelBuy.\n\nUse the return policy data to:\n- Explain the return window and conditions\n- Guide customer through return process\n- Check if their item is eligible for return\n- Explain refund timeline\n- Provide return shipping instructions\n\nBe empathetic if customer is disappointed with product."
+              "content": "You are a customer support assistant helping with returns and refunds for Broxiva.\n\nUse the return policy data to:\n- Explain the return window and conditions\n- Guide customer through return process\n- Check if their item is eligible for return\n- Explain refund timeline\n- Provide return shipping instructions\n\nBe empathetic if customer is disappointed with product."
             },
             {
               "role": "user",
@@ -540,7 +540,7 @@
           "values": [
             {
               "role": "system",
-              "content": "You are a customer support assistant helping with shipping inquiries for CitadelBuy.\n\nUse the tracking data to:\n- Provide current shipment location\n- Give estimated delivery date\n- Explain any delays\n- Provide carrier and tracking number\n- Offer tracking link\n\nIf there are shipping issues, be proactive in offering solutions."
+              "content": "You are a customer support assistant helping with shipping inquiries for Broxiva.\n\nUse the tracking data to:\n- Provide current shipment location\n- Give estimated delivery date\n- Explain any delays\n- Provide carrier and tracking number\n- Offer tracking link\n\nIf there are shipping issues, be proactive in offering solutions."
             },
             {
               "role": "user",
@@ -576,7 +576,7 @@
           "values": [
             {
               "role": "system",
-              "content": "You are a friendly customer support assistant for CitadelBuy. Answer general questions about the platform, policies, and services.\n\nTopics you can help with:\n- How to place an order\n- Payment methods accepted\n- Account management\n- Shipping options and costs\n- Customer service hours\n- Company policies\n\nBe helpful and guide customers to the right resources."
+              "content": "You are a friendly customer support assistant for Broxiva. Answer general questions about the platform, policies, and services.\n\nTopics you can help with:\n- How to place an order\n- Payment methods accepted\n- Account management\n- Shipping options and costs\n- Customer service hours\n- Company policies\n\nBe helpful and guide customers to the right resources."
             },
             {
               "role": "user",
@@ -686,7 +686,7 @@
       "credentials": {
         "postgres": {
           "id": "1",
-          "name": "PostgreSQL - CitadelBuy"
+          "name": "PostgreSQL - Broxiva"
         }
       }
     },
@@ -835,7 +835,7 @@
     },
     {
       "parameters": {
-        "fromEmail": "support@citadelbuy.com",
+        "fromEmail": "support@broxiva.com",
         "toEmail": "={{ $json.customerEmail }}",
         "subject": "=Re: {{ $json.metadata.subject }}",
         "emailFormat": "html",
@@ -903,7 +903,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Error handler - log and send fallback response\nconst error = $input.first().json;\nconst originalData = $('Normalize Message Format').first().json;\n\nconsole.error('Workflow error:', error);\n\nconst fallbackMessage = `I apologize, but I'm experiencing technical difficulties. A support ticket has been created for you, and our team will reach out shortly. For immediate assistance, please contact us at support@citadelbuy.com or call 1-800-CITADEL.`;\n\nreturn {\n  json: {\n    ...originalData,\n    aiResponse: fallbackMessage,\n    error: true,\n    errorMessage: error.message\n  }\n};"
+        "jsCode": "// Error handler - log and send fallback response\nconst error = $input.first().json;\nconst originalData = $('Normalize Message Format').first().json;\n\nconsole.error('Workflow error:', error);\n\nconst fallbackMessage = `I apologize, but I'm experiencing technical difficulties. A support ticket has been created for you, and our team will reach out shortly. For immediate assistance, please contact us at support@broxiva.com or call 1-800-CITADEL.`;\n\nreturn {\n  json: {\n    ...originalData,\n    aiResponse: fallbackMessage,\n    error: true,\n    errorMessage: error.message\n  }\n};"
       },
       "id": "e1f2a3b4-c5d6-4e5f-8a9b-0c1d2e3f4a5b",
       "name": "Error Handler",
@@ -933,7 +933,7 @@
       "credentials": {
         "postgres": {
           "id": "1",
-          "name": "PostgreSQL - CitadelBuy"
+          "name": "PostgreSQL - Broxiva"
         }
       }
     }
@@ -1108,7 +1108,7 @@
       "main": [
         [
           {
-            "node": "CitadelBuy API - Get Order",
+            "node": "Broxiva API - Get Order",
             "type": "main",
             "index": 0
           }
@@ -1130,7 +1130,7 @@
       "main": [
         [
           {
-            "node": "CitadelBuy API - Return Policy",
+            "node": "Broxiva API - Return Policy",
             "type": "main",
             "index": 0
           }
@@ -1148,7 +1148,7 @@
         ]
       ]
     },
-    "CitadelBuy API - Get Order": {
+    "Broxiva API - Get Order": {
       "main": [
         [
           {
@@ -1170,7 +1170,7 @@
         ]
       ]
     },
-    "CitadelBuy API - Return Policy": {
+    "Broxiva API - Return Policy": {
       "main": [
         [
           {
@@ -1410,7 +1410,7 @@
   "versionId": "1",
   "id": "2",
   "meta": {
-    "instanceId": "citadelbuy-ai-chatbot"
+    "instanceId": "broxiva-ai-chatbot"
   },
   "tags": [
     {

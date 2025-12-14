@@ -1,5 +1,5 @@
 # Database Module - Azure PostgreSQL Flexible Server and Redis Cache
-# CitadelBuy E-commerce Platform
+# Broxiva E-commerce Platform
 
 terraform {
   required_version = ">= 1.0"

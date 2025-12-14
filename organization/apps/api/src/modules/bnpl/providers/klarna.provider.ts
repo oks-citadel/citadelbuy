@@ -117,10 +117,10 @@ export class KlarnaProvider extends BaseBnplProvider {
           type: 'person',
         },
         merchant_urls: {
-          terms: 'https://citadelbuy.com/terms',
+          terms: 'https://broxiva.com/terms',
           checkout: request.returnUrl,
           confirmation: `${request.returnUrl}?status=confirmed`,
-          push: 'https://citadelbuy.com/webhooks/bnpl/klarna',
+          push: 'https://broxiva.com/webhooks/bnpl/klarna',
         },
         merchant_reference1: request.orderId,
         merchant_reference2: `order_${request.orderId}`,

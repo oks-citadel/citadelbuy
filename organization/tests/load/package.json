@@ -1,7 +1,7 @@
 {
-  "name": "@citadelbuy/load-tests",
+  "name": "@broxiva/load-tests",
   "version": "1.0.0",
-  "description": "Load testing suite for CitadelBuy using k6",
+  "description": "Load testing suite for Broxiva using k6",
   "scripts": {
     "test:auth": "k6 run scenarios/auth.js",
     "test:checkout": "k6 run scenarios/checkout.js",
@@ -18,9 +18,9 @@
     "k6",
     "load-testing",
     "performance",
-    "citadelbuy"
+    "broxiva"
   ],
-  "author": "CitadelBuy Team",
+  "author": "Broxiva Team",
   "license": "MIT",
   "devDependencies": {
     "k6": "^0.0.0"

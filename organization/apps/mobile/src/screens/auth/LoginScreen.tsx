@@ -57,7 +57,7 @@ export default function LoginScreen() {
             <View style={styles.logoCircle}>
               <Ionicons name="bag-handle" size={48} color="#6366f1" />
             </View>
-            <Text style={styles.logoText}>CitadelBuy</Text>
+            <Text style={styles.logoText}>Broxiva</Text>
             <Text style={styles.tagline}>Shop smarter with AI</Text>
           </View>
 

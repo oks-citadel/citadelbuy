@@ -172,7 +172,7 @@ export class SmsService {
     status: string,
     trackingNumber?: string,
   ): Promise<SendSmsResult> {
-    let message = `CitadelBuy Order Update: Your order #${orderNumber} is now ${status}.`;
+    let message = `Broxiva Order Update: Your order #${orderNumber} is now ${status}.`;
 
     if (trackingNumber) {
       message += ` Track your package: ${trackingNumber}`;
@@ -192,7 +192,7 @@ export class SmsService {
     orderNumber: string,
     estimatedDelivery?: string,
   ): Promise<SendSmsResult> {
-    let message = `CitadelBuy: Your order #${orderNumber} is out for delivery!`;
+    let message = `Broxiva: Your order #${orderNumber} is out for delivery!`;
 
     if (estimatedDelivery) {
       message += ` Expected by ${estimatedDelivery}.`;
@@ -213,7 +213,7 @@ export class SmsService {
     phoneNumber: string,
     code: string,
   ): Promise<SendSmsResult> {
-    const message = `Your CitadelBuy verification code is: ${code}. This code expires in 10 minutes.`;
+    const message = `Your Broxiva verification code is: ${code}. This code expires in 10 minutes.`;
 
     return this.sendSms({
       to: phoneNumber,
@@ -228,7 +228,7 @@ export class SmsService {
     phoneNumber: string,
     code: string,
   ): Promise<SendSmsResult> {
-    const message = `CitadelBuy password reset code: ${code}. If you didn't request this, please ignore this message.`;
+    const message = `Broxiva password reset code: ${code}. If you didn't request this, please ignore this message.`;
 
     return this.sendSms({
       to: phoneNumber,

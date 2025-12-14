@@ -1,11 +1,11 @@
-# CitadelBuy - Prometheus Configuration
+# Broxiva - Prometheus Configuration
 # Metrics collection and alerting rules
 
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
-    cluster: 'citadelbuy-local'
+    cluster: 'broxiva-local'
     env: 'development'
 
 # Alerting configuration
@@ -80,7 +80,7 @@ scrape_configs:
 ---
 # Alert rules (separate file: rules/alerts.yml)
 # groups:
-#   - name: citadelbuy_alerts
+#   - name: broxiva_alerts
 #     rules:
 #       - alert: HighErrorRate
 #         expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05

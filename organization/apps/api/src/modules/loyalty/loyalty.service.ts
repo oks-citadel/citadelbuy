@@ -1084,7 +1084,7 @@ export class LoyaltyService {
 
     return this.prisma.loyaltyProgram.create({
       data: {
-        name: 'CitadelBuy Rewards',
+        name: 'Broxiva Rewards',
         description: 'Earn points on every purchase and redeem for exclusive rewards',
         isActive: true,
         pointsPerDollar: 1,

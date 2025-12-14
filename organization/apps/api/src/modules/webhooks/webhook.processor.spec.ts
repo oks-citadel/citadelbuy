@@ -33,7 +33,7 @@ describe('WebhookProcessor', () => {
 
   const mockHeaders = {
     'Content-Type': 'application/json',
-    'User-Agent': 'CitadelBuy-Webhook/1.0',
+    'User-Agent': 'Broxiva-Webhook/1.0',
     'X-Webhook-Signature': 't=1234567890,v1=signature',
     'X-Webhook-Event-Type': 'order.created',
     'X-Webhook-Event-ID': 'evt_123',

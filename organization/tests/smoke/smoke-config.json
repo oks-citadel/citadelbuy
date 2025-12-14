@@ -2,7 +2,7 @@
   "environment": "staging",
   "endpoints": {
     "api": {
-      "baseUrl": "https://staging-api.citadelbuy.com",
+      "baseUrl": "https://staging-api.broxiva.com",
       "timeout": 10000,
       "retries": 3,
       "paths": {
@@ -28,7 +28,7 @@
       }
     },
     "web": {
-      "baseUrl": "https://staging.citadelbuy.com",
+      "baseUrl": "https://staging.broxiva.com",
       "timeout": 15000,
       "retries": 3,
       "paths": {
@@ -256,7 +256,7 @@
   },
   "testData": {
     "validUser": {
-      "email": "smoketest@citadelbuy.com",
+      "email": "smoketest@broxiva.com",
       "password": "SmokeTest123!@#",
       "name": "Smoke Test User"
     },
@@ -341,7 +341,7 @@
     },
     "email": {
       "enabled": false,
-      "recipients": ["ops@citadelbuy.com"]
+      "recipients": ["ops@broxiva.com"]
     }
   },
   "reporting": {

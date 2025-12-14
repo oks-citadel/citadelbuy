@@ -3,7 +3,7 @@ TERRAFORM GITHUB ACTIONS WORKFLOWS - CREATION SUMMARY
 ================================================================================
 
 Created: 2025-12-10
-Location: C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization\.github\workflows\
+Location: C:\Users\Dell\OneDrive\Documents\Broxiva\organization\.github\workflows\
 
 ================================================================================
 WORKFLOW FILES CREATED
@@ -123,13 +123,13 @@ AZURE CONFIGURATION REQUIRED
 Subscription: ba233460-2dbe-4603-a594-68f93ec9deb3
 
 Terraform State Storage:
-  - Resource Group: citadelbuy-tfstate-rg
-  - Storage Account: citadelbuytfstate
+  - Resource Group: broxiva-tfstate-rg
+  - Storage Account: broxivatfstate
   - Container: tfstate
   - State Files: dev.terraform.tfstate, staging.terraform.tfstate, prod.terraform.tfstate
 
 Azure AD App Registration:
-  - Name: GitHub-CitadelBuy-Terraform-OIDC
+  - Name: GitHub-Broxiva-Terraform-OIDC
   - Federated Credentials: 4 (main, develop, staging, pull_request)
   - Permissions: Contributor + Storage Blob Data Contributor
 
@@ -156,17 +156,17 @@ GITHUB ENVIRONMENTS REQUIRED
 
 1. dev
    - No approval required
-   - URL: https://dev.citadelbuy.com
+   - URL: https://dev.broxiva.com
    - Branch restriction: develop only
 
 2. staging
    - Requires 1-2 reviewers
-   - URL: https://staging.citadelbuy.com
+   - URL: https://staging.broxiva.com
    - Branch restriction: staging only
 
 3. production
    - Requires 2+ reviewers
-   - URL: https://citadelbuy.com
+   - URL: https://broxiva.com
    - Branch restriction: main only
    - Wait timer: 5 minutes recommended
 

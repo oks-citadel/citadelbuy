@@ -111,11 +111,11 @@ ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "dist/main.js"]
 
 # Labels for metadata
-LABEL maintainer="DevOps Team <devops@citadelbuy.com>" \
+LABEL maintainer="DevOps Team <devops@broxiva.com>" \
       service="ai-agents-service" \
       version="1.0.0" \
       description="AI-powered agents and automation service" \
-      com.citadelbuy.team="ai-ml" \
-      com.citadelbuy.tier="application" \
-      com.citadelbuy.ai-enabled="true" \
-      com.citadelbuy.runtime="nodejs,python"
+      com.broxiva.team="ai-ml" \
+      com.broxiva.tier="application" \
+      com.broxiva.ai-enabled="true" \
+      com.broxiva.runtime="nodejs,python"

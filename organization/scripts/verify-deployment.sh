@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ###############################################################################
-# CitadelBuy Deployment Verification Script
+# Broxiva Deployment Verification Script
 #
 # Purpose: Verify a deployment is successful and all systems operational
 # Usage: ./scripts/verify-deployment.sh [ENVIRONMENT]
@@ -29,7 +29,7 @@ RETRY_COUNT=5
 RETRY_DELAY=10
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}CitadelBuy Deployment Verification${NC}"
+echo -e "${BLUE}Broxiva Deployment Verification${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo -e "Environment: ${ENVIRONMENT}"
 echo -e "Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
@@ -38,16 +38,16 @@ echo ""
 # Set URLs based on environment
 case "$ENVIRONMENT" in
     dev)
-        API_URL="https://api-dev.citadelbuy.com"
-        WEB_URL="https://dev.citadelbuy.com"
+        API_URL="https://api-dev.broxiva.com"
+        WEB_URL="https://dev.broxiva.com"
         ;;
     staging)
-        API_URL="https://api-staging.citadelbuy.com"
-        WEB_URL="https://staging.citadelbuy.com"
+        API_URL="https://api-staging.broxiva.com"
+        WEB_URL="https://staging.broxiva.com"
         ;;
     production)
-        API_URL="https://api.citadelbuy.com"
-        WEB_URL="https://citadelbuy.com"
+        API_URL="https://api.broxiva.com"
+        WEB_URL="https://broxiva.com"
         ;;
     *)
         echo -e "${RED}Invalid environment: ${ENVIRONMENT}${NC}"

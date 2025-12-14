@@ -250,7 +250,7 @@ export class ContentGenerationService {
 
       switch (emailType) {
         case 'welcome':
-          subject = `Welcome to CitadelBuy, ${name}! 🎉`;
+          subject = `Welcome to Broxiva, ${name}! 🎉`;
           preview = 'Start your shopping journey with exclusive offers';
           body = this.generateWelcomeEmail(name);
           cta = { text: 'Start Shopping', url: '/products' };
@@ -335,7 +335,7 @@ export class ContentGenerationService {
         categoryName: data.categoryName,
         description,
         seo: {
-          title: `${data.categoryName} - Shop Quality Products | CitadelBuy`,
+          title: `${data.categoryName} - Shop Quality Products | Broxiva`,
           metaDescription: description.substring(0, 160),
           keywords: [
             data.categoryName.toLowerCase(),
@@ -417,7 +417,7 @@ export class ContentGenerationService {
   }
 
   private generateSEOTitle(productName: string, category: string): string {
-    return `${productName} - ${category} | Buy Online | CitadelBuy`;
+    return `${productName} - ${category} | Buy Online | Broxiva`;
   }
 
   private generateVariant(
@@ -549,7 +549,7 @@ export class ContentGenerationService {
   }
 
   private generateWelcomeEmail(name: string): string {
-    return `Hi ${name},\n\nWelcome to CitadelBuy! We're thrilled to have you join our community of smart shoppers.\n\nAs a special welcome gift, enjoy 15% off your first order with code WELCOME15.\n\nHappy shopping!`;
+    return `Hi ${name},\n\nWelcome to Broxiva! We're thrilled to have you join our community of smart shoppers.\n\nAs a special welcome gift, enjoy 15% off your first order with code WELCOME15.\n\nHappy shopping!`;
   }
 
   private generateAbandonedCartEmail(

@@ -163,9 +163,9 @@ export const DEFAULT_LANGUAGE: LanguageCode = 'en';
 
 export const RTL_LANGUAGES: LanguageCode[] = ['ar'];
 
-export const LANGUAGE_STORAGE_KEY = 'citadelbuy_language';
+export const LANGUAGE_STORAGE_KEY = 'broxiva_language';
 
-export const LANGUAGE_COOKIE_NAME = 'CITADELBUY_LANG';
+export const LANGUAGE_COOKIE_NAME = 'BROXIVA_LANG';
 
 export const LANGUAGE_HEADER_NAME = 'Accept-Language';
 

@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: organization-ingress
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: organization-service
     tier: backend
@@ -32,7 +32,7 @@ metadata:
     # CORS Configuration
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "https://citadelbuy.com, https://www.citadelbuy.com"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://broxiva.com, https://www.broxiva.com"
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
     nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
 
@@ -68,18 +68,18 @@ metadata:
 spec:
   tls:
     - hosts:
-        - citadelbuy.com
-        - www.citadelbuy.com
-        - api.citadelbuy.com
-      secretName: citadelbuy-tls-cert
+        - broxiva.com
+        - www.broxiva.com
+        - api.broxiva.com
+      secretName: broxiva-tls-cert
     - hosts:
-        - staging.citadelbuy.com
-        - api-staging.citadelbuy.com
-      secretName: citadelbuy-staging-tls-cert
+        - staging.broxiva.com
+        - api-staging.broxiva.com
+      secretName: broxiva-staging-tls-cert
 
   rules:
     # Production domain
-    - host: citadelbuy.com
+    - host: broxiva.com
       http:
         paths:
           - path: /api/organizations
@@ -112,7 +112,7 @@ spec:
                   number: 80
 
     # API subdomain
-    - host: api.citadelbuy.com
+    - host: api.broxiva.com
       http:
         paths:
           - path: /organizations
@@ -145,7 +145,7 @@ spec:
                   number: 80
 
     # Staging environment
-    - host: staging.citadelbuy.com
+    - host: staging.broxiva.com
       http:
         paths:
           - path: /api/organizations
@@ -178,7 +178,7 @@ spec:
                   number: 80
 
     # Staging API subdomain
-    - host: api-staging.citadelbuy.com
+    - host: api-staging.broxiva.com
       http:
         paths:
           - path: /organizations
@@ -216,7 +216,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: organization-internal-ingress
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: organization-service
     tier: backend
@@ -229,7 +229,7 @@ metadata:
 
 spec:
   rules:
-    - host: organization-service.citadelbuy.svc.cluster.local
+    - host: organization-service.broxiva.svc.cluster.local
       http:
         paths:
           - path: /

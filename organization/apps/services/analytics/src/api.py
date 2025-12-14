@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 import logging
 
 app = FastAPI(
-    title="CitadelBuy Analytics Service",
+    title="Broxiva Analytics Service",
     description="Real-time and batch analytics with ML insights",
     version="1.0.0"
 )

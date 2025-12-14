@@ -2,7 +2,7 @@
  * AlertService Usage Examples
  *
  * This file contains practical examples of how to use the AlertService
- * in various scenarios throughout the CitadelBuy application.
+ * in various scenarios throughout the Broxiva application.
  *
  * NOTE: This is an example file for reference only. Do not import in production code.
  */
@@ -104,7 +104,7 @@ export class AlertServiceExamples {
     await this.alertService.sendAlert({
       level: AlertLevel.INFO,
       title: 'Deployment Successful',
-      message: `CitadelBuy API v${version} deployed successfully`,
+      message: `Broxiva API v${version} deployed successfully`,
       details: {
         version,
         environment: process.env.NODE_ENV,

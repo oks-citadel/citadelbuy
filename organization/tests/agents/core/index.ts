@@ -1,7 +1,7 @@
 /**
  * Core Testing Agents Index
  *
- * Exports all 20 testing agents and their types for the CitadelBuy platform.
+ * Exports all 20 testing agents and their types for the Broxiva platform.
  */
 
 // Base Agent

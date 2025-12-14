@@ -93,3 +93,37 @@ output "cdn_endpoint" {
   description = "CDN endpoint hostname"
   value       = module.storage.cdn_endpoint_hostname
 }
+
+# ============================================
+# DNS - CRITICAL FOR GODADDY CONFIGURATION
+# ============================================
+
+output "dns_zone_id" {
+  description = "Azure DNS Zone ID"
+  value       = module.dns.zone_id
+}
+
+output "dns_nameservers" {
+  description = "Azure DNS nameservers - CONFIGURE THESE IN GODADDY"
+  value       = module.dns.nameservers
+}
+
+output "dns_nameservers_formatted" {
+  description = "Formatted nameservers for GoDaddy configuration"
+  value       = module.dns.nameservers_formatted
+}
+
+output "godaddy_setup_instructions" {
+  description = "Step-by-step instructions for configuring GoDaddy nameservers"
+  value       = module.dns.godaddy_instructions
+}
+
+output "dns_verification_commands" {
+  description = "Commands to verify DNS propagation"
+  value       = module.dns.verification_commands
+}
+
+output "dns_config_summary" {
+  description = "DNS configuration summary"
+  value       = module.dns.dns_config_summary
+}

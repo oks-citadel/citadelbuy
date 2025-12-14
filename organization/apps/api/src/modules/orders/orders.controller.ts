@@ -93,7 +93,7 @@ export class OrdersController {
             id: 'item-1',
             productId: 'prod-123',
             productName: 'Wireless Bluetooth Headphones',
-            productImage: 'https://cdn.citadelbuy.com/products/headphones-main.jpg',
+            productImage: 'https://cdn.broxiva.com/products/headphones-main.jpg',
             quantity: 2,
             price: 49.99,
             subtotal: 99.98,

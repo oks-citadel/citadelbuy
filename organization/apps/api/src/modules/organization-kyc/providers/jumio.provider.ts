@@ -392,7 +392,7 @@ export class JumioProvider implements IKycProvider {
     const headers = {
       'Authorization': `Basic ${authString}`,
       'Content-Type': 'application/json',
-      'User-Agent': 'CitadelBuy-KYC/1.0',
+      'User-Agent': 'Broxiva-KYC/1.0',
     };
 
     // Mock response for development

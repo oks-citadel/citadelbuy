@@ -134,7 +134,7 @@ export function createMockConfigService() {
         EMAIL_PORT: 587,
         EMAIL_USER: 'test',
         EMAIL_PASSWORD: 'test',
-        EMAIL_FROM: 'test@citadelbuy.com',
+        EMAIL_FROM: 'test@broxiva.com',
         STRIPE_SECRET_KEY: 'sk_test_mock',
         STRIPE_WEBHOOK_SECRET: 'whsec_test_mock',
         PAYPAL_CLIENT_ID: 'test_client_id',

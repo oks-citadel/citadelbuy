@@ -324,7 +324,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: classifier
-        image: citadelbuy/data-classification:latest
+        image: broxivaacr.azurecr.io/broxiva-data-classification:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

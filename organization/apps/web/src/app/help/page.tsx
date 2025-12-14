@@ -183,7 +183,7 @@ export default function HelpPage() {
                   Response within 24 hours
                 </p>
                 <Button variant="outline" className="w-full">
-                  support@citadelbuy.com
+                  support@broxiva.com
                 </Button>
               </CardContent>
             </Card>

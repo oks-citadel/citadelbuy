@@ -1,16 +1,16 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: citadelbuy-api-hpa
-  namespace: citadelbuy-staging
+  name: broxiva-api-hpa
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     environment: staging
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: citadelbuy-api
+    name: broxiva-api
   minReplicas: 2
   maxReplicas: 5
   metrics:
@@ -51,16 +51,16 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: citadelbuy-web-hpa
-  namespace: citadelbuy-staging
+  name: broxiva-web-hpa
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy-web
+    app: broxiva-web
     environment: staging
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: citadelbuy-web
+    name: broxiva-web
   minReplicas: 2
   maxReplicas: 4
   metrics:

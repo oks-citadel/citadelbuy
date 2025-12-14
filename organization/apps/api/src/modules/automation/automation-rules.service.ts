@@ -734,7 +734,7 @@ export class AutomationRulesService implements OnModuleDestroy {
         const requestBody = body || context.payload;
         const requestHeaders = {
           'Content-Type': 'application/json',
-          'User-Agent': 'CitadelBuy-Automation/1.0',
+          'User-Agent': 'Broxiva-Automation/1.0',
           ...headers,
         };
 
@@ -840,8 +840,8 @@ export class AutomationRulesService implements OnModuleDestroy {
         // Emit email event to be handled by email service
         this.eventEmitter.emit('automation.send_email', {
           to: emailAddress,
-          from: from || process.env.SMTP_FROM || 'noreply@citadelbuy.com',
-          subject: subject || 'Notification from CitadelBuy',
+          from: from || process.env.SMTP_FROM || 'noreply@broxiva.com',
+          subject: subject || 'Notification from Broxiva',
           template: template || 'generic',
           templateData: data || context.payload,
           ruleId: context.ruleId,
@@ -908,7 +908,7 @@ export class AutomationRulesService implements OnModuleDestroy {
         this.eventEmitter.emit('automation.send_sms', {
           userId,
           phoneNumber,
-          message: message || 'You have a notification from CitadelBuy',
+          message: message || 'You have a notification from Broxiva',
           smsType: smsType || 'general',
           ruleId: context.ruleId,
           timestamp: new Date(),

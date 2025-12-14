@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     API_VERSION: str = "v1"
 
     # Database
-    DATABASE_URL: str = "postgresql://citadelbuy:citadelbuy123@localhost:5432/citadelbuy_dev"
+    DATABASE_URL: str = "postgresql://broxiva:broxiva123@localhost:5432/broxiva_dev"
     REDIS_URL: str = "redis://localhost:6379"
 
     # Message Queue

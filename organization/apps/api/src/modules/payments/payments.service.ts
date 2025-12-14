@@ -407,7 +407,7 @@ export class PaymentsService {
           },
         ],
         application_context: {
-          brand_name: 'CitadelBuy',
+          brand_name: 'Broxiva',
           landing_page: 'LOGIN',
           user_action: 'PAY_NOW',
           ...(returnUrl && { return_url: returnUrl }),
@@ -490,8 +490,8 @@ export class PaymentsService {
         clientSecret: paymentIntent.client_secret as string,
         paymentIntentId: paymentIntent.id,
         applePay: {
-          merchantId: this.configService.get<string>('APPLE_MERCHANT_ID') || 'merchant.com.citadelbuy',
-          merchantName: this.configService.get<string>('APP_NAME') || 'CitadelBuy',
+          merchantId: this.configService.get<string>('APPLE_MERCHANT_ID') || 'merchant.com.broxiva',
+          merchantName: this.configService.get<string>('APP_NAME') || 'Broxiva',
           countryCode: 'US',
         },
       };
@@ -546,7 +546,7 @@ export class PaymentsService {
         paymentIntentId: paymentIntent.id,
         googlePay: {
           merchantId: this.configService.get<string>('GOOGLE_MERCHANT_ID') || 'BCR2DN4T6XXXXXXX',
-          merchantName: this.configService.get<string>('APP_NAME') || 'CitadelBuy',
+          merchantName: this.configService.get<string>('APP_NAME') || 'Broxiva',
           environment: isProduction ? 'PRODUCTION' : 'TEST',
           allowedCardNetworks: ['AMEX', 'DISCOVER', 'INTERAC', 'JCB', 'MASTERCARD', 'VISA'],
           allowedCardAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS'],

@@ -1,5 +1,5 @@
 # Compute Module - AKS, ACR, and App Service
-# CitadelBuy E-commerce Platform
+# Broxiva E-commerce Platform
 
 terraform {
   required_version = ">= 1.0"

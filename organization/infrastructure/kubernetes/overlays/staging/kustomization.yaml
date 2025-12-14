@@ -1,0 +1,168 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: broxiva-staging
+
+# Reference base resources
+bases:
+  - ../../base
+
+# Common labels applied to all resources
+commonLabels:
+  app: broxiva
+  environment: staging
+  managed-by: kustomize
+
+# Common annotations
+commonAnnotations:
+  contact: "devops@broxiva.com"
+  documentation: "https://docs.broxiva.com/infrastructure"
+
+# Resources specific to staging
+resources:
+  - configmap-staging.yaml
+  - namespace-staging.yaml
+
+# Image transformations for staging
+images:
+  - name: broxivaacr.azurecr.io/broxiva-api
+    newName: broxivaacr.azurecr.io/broxiva-api
+    newTag: staging-latest
+  - name: broxivaacr.azurecr.io/broxiva-web
+    newName: broxivaacr.azurecr.io/broxiva-web
+    newTag: staging-latest
+  - name: broxivaacr.azurecr.io/broxiva-worker
+    newName: broxivaacr.azurecr.io/broxiva-worker
+    newTag: staging-latest
+
+# ConfigMap generator for deployment metadata
+configMapGenerator:
+  - name: deployment-info
+    literals:
+      - DEPLOYMENT_ENV=staging
+      - DEPLOYMENT_TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+      - GIT_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+      - GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "staging")
+      - DEPLOYED_BY=$(git config user.name 2>/dev/null || echo "ci-cd")
+      - K8S_CLUSTER=staging
+    options:
+      disableNameSuffixHash: false
+
+# Replicas for staging environment
+replicas:
+  - name: broxiva-api
+    count: 2
+  - name: broxiva-web
+    count: 2
+  - name: email-worker
+    count: 2
+  - name: cart-abandonment-worker
+    count: 1
+  - name: order-processing-worker
+    count: 2
+  - name: search-indexing-worker
+    count: 1
+  - name: scheduled-jobs-worker
+    count: 1
+
+# Patches for staging-specific configuration
+patchesStrategicMerge:
+  - |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: broxiva-api
+    spec:
+      template:
+        metadata:
+          annotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "9090"
+        spec:
+          containers:
+          - name: api
+            env:
+            - name: ENVIRONMENT
+              value: "staging"
+            - name: NODE_ENV
+              value: "production"
+            - name: LOG_LEVEL
+              value: "info"
+            - name: ENABLE_DEBUG
+              value: "false"
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "250m"
+              limits:
+                memory: "1Gi"
+                cpu: "1000m"
+  - |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: broxiva-web
+    spec:
+      template:
+        metadata:
+          annotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "3000"
+        spec:
+          containers:
+          - name: web
+            env:
+            - name: ENVIRONMENT
+              value: "staging"
+            - name: NODE_ENV
+              value: "production"
+            - name: ENABLE_DEBUG
+              value: "false"
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "125m"
+              limits:
+                memory: "768Mi"
+                cpu: "500m"
+
+# JSON patches for fine-grained modifications
+patchesJson6902:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: broxiva-api
+    patch: |-
+      - op: add
+        path: /spec/template/spec/securityContext/runAsNonRoot
+        value: true
+      - op: add
+        path: /spec/template/spec/securityContext/seccompProfile
+        value:
+          type: RuntimeDefault
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: broxiva-web
+    patch: |-
+      - op: add
+        path: /spec/template/spec/securityContext/runAsNonRoot
+        value: true
+      - op: add
+        path: /spec/template/spec/securityContext/seccompProfile
+        value:
+          type: RuntimeDefault
+
+# Generation behavior
+generatorOptions:
+  disableNameSuffixHash: false
+  labels:
+    environment: staging
+    managed-by: kustomize
+  annotations:
+    generated-by: kustomize
+
+# Build metadata
+buildMetadata: [managedByLabel, originAnnotations]

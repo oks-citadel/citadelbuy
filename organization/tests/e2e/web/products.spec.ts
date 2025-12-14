@@ -4,7 +4,7 @@ test.describe('Product Browsing', () => {
   test.describe('Home Page', () => {
     test('should load home page', async ({ page }) => {
       await page.goto('/');
-      await expect(page).toHaveTitle(/CitadelBuy|Home/i);
+      await expect(page).toHaveTitle(/Broxiva|Home/i);
     });
 
     test('should display product sections', async ({ page }) => {

@@ -55,7 +55,7 @@ export class LocaleDetectionService {
    * Detect locale from cookies
    */
   private detectFromCookie(request: Request): string | null {
-    const locale = request.cookies?.CITADELBUY_LANG;
+    const locale = request.cookies?.BROXIVA_LANG;
     return this.validateLocale(locale);
   }
 

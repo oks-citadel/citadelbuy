@@ -63,14 +63,14 @@
         "buildConfiguration": "Release",
         "resourceClass": "m-medium",
         "autoIncrement": true,
-        "bundleIdentifier": "com.citadelbuy.app"
+        "bundleIdentifier": "com.broxiva.app"
       },
       "android": {
         "buildType": "app-bundle",
         "gradleCommand": ":app:bundleRelease",
         "resourceClass": "medium",
         "autoIncrement": "versionCode",
-        "package": "com.citadelbuy.app"
+        "package": "com.broxiva.app"
       },
       "env": {
         "APP_VARIANT": "production"
@@ -92,7 +92,7 @@
         "appleId": "your-apple-id@example.com",
         "ascAppId": "1234567890",
         "appleTeamId": "ABCD123456",
-        "sku": "citadelbuy-ios"
+        "sku": "broxiva-ios"
       },
       "android": {
         "serviceAccountKeyPath": "./google-service-account.json",

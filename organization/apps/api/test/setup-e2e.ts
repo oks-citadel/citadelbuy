@@ -13,7 +13,7 @@ process.env.NODE_ENV = 'test';
 
 // Use test database URL if not already set
 if (!process.env.DATABASE_URL?.includes('_test')) {
-  const originalDbUrl = process.env.DATABASE_URL || 'postgresql://citadelbuy:password@localhost:5432/citadelbuy_dev';
+  const originalDbUrl = process.env.DATABASE_URL || 'postgresql://broxiva:password@localhost:5432/broxiva_dev';
   const testDbUrl = originalDbUrl.replace(/\/([^/?]+)(\?|$)/, '/$1_test$2');
   process.env.DATABASE_URL = testDbUrl;
   console.log('Using test database:', testDbUrl.replace(/:[^:@]+@/, ':***@'));
@@ -33,7 +33,7 @@ process.env.EMAIL_HOST = process.env.EMAIL_HOST || 'smtp.mailtrap.io';
 process.env.EMAIL_PORT = process.env.EMAIL_PORT || '587';
 process.env.EMAIL_USER = process.env.EMAIL_USER || 'test';
 process.env.EMAIL_PASSWORD = process.env.EMAIL_PASSWORD || 'test';
-process.env.EMAIL_FROM = process.env.EMAIL_FROM || 'test@citadelbuy.com';
+process.env.EMAIL_FROM = process.env.EMAIL_FROM || 'test@broxiva.com';
 
 // Disable rate limiting in tests
 process.env.THROTTLE_LIMIT = '1000000';

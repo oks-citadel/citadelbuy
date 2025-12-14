@@ -1,7 +1,7 @@
 # ==========================================
-# CitadelBuy Next.js Web - Production Dockerfile
+# Broxiva Next.js Web - Production Dockerfile
 # Multi-stage build with standalone output
-# Node.js 20 Alpine with optimizations
+# ENCODING-HARDENED: UTF-8 safe across all environments
 # ==========================================
 
 # ==========================================
@@ -10,13 +10,24 @@
 # ==========================================
 FROM node:20-alpine AS deps
 
-# Install libc6-compat for compatibility
-RUN apk add --no-cache libc6-compat && rm -rf /var/cache/apk/*
+# ENCODING FIX: Set UTF-8 locale for Alpine
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install libc6-compat for compatibility and bash for consistent shell
+RUN apk add --no-cache libc6-compat bash && rm -rf /var/cache/apk/*
+
+# ENCODING FIX: Use bash shell for consistent behavior
+SHELL ["/bin/bash", "-c"]
 
 WORKDIR /app
 
 # Copy package manager files
 COPY package.json pnpm-lock.yaml* package-lock.json* ./
+
+# ENCODING FIX: Normalize CRLF line endings from Windows
+RUN find . -type f \( -name "*.json" -o -name "*.yaml" -o -name "*.yml" \) -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
 
 # Install pnpm globally
 RUN npm install -g pnpm@10.23.0
@@ -30,6 +41,17 @@ RUN pnpm install || npm install
 # ==========================================
 FROM node:20-alpine AS builder
 
+# ENCODING FIX: Set UTF-8 locale
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install bash for consistent shell behavior
+RUN apk add --no-cache bash && rm -rf /var/cache/apk/*
+
+# ENCODING FIX: Use bash shell
+SHELL ["/bin/bash", "-c"]
+
 WORKDIR /app
 
 # Copy dependencies from deps stage
@@ -37,6 +59,9 @@ COPY --from=deps /app/node_modules ./node_modules
 
 # Copy application source
 COPY . .
+
+# ENCODING FIX: Normalize source files (exclude node_modules to preserve binary permissions)
+RUN find . -path ./node_modules -prune -o -type f \( -name "*.js" -o -name "*.ts" -o -name "*.tsx" -o -name "*.json" -o -name "*.css" -o -name "*.sh" \) -print -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
 
 # Set build environment variables
 # DOCKER_BUILD=true enables standalone output mode
@@ -78,11 +103,20 @@ RUN npm run build
 # ==========================================
 FROM node:20-alpine AS runner
 
-# Install dumb-init for signal handling and curl for health checks
+# ENCODING FIX: Set UTF-8 locale for runtime
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install dumb-init for signal handling, curl for health checks, and bash
 RUN apk add --no-cache \
     dumb-init \
     curl \
+    bash \
     && rm -rf /var/cache/apk/*
+
+# ENCODING FIX: Use bash shell
+SHELL ["/bin/bash", "-c"]
 
 WORKDIR /app
 
@@ -112,8 +146,6 @@ EXPOSE 3000
 USER nextjs
 
 # Health check endpoint
-# Next.js doesn't have a built-in health endpoint by default
-# You may need to create /api/health route in your app
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:3000/api/health || curl -f http://localhost:3000/ || exit 1
 
@@ -121,51 +153,13 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start Next.js server
-# Standalone output includes server.js
 CMD ["node", "server.js"]
 
 # ==========================================
-# Build Instructions:
+# ENCODING HARDENING APPLIED:
 # ==========================================
-# Build with environment variables:
-# docker build -f Dockerfile.production \
-#   --build-arg NEXT_PUBLIC_API_URL=https://api.citadelbuy.com \
-#   --build-arg NEXT_PUBLIC_WS_URL=wss://api.citadelbuy.com \
-#   -t citadelbuy-web:prod .
-#
-# Run:
-# docker run -p 3000:3000 citadelbuy-web:prod
-# ==========================================
-
-# ==========================================
-# Security Features:
-# ==========================================
-# ✓ Non-root user (nextjs:1001)
-# ✓ Multi-stage build (minimal attack surface)
-# ✓ Alpine base (small, security-focused)
-# ✓ Standalone output (no source code)
-# ✓ Health check for monitoring
-# ✓ Proper signal handling with dumb-init
-# ✓ No development dependencies
-# ✓ Telemetry disabled for privacy
-# ==========================================
-
-# ==========================================
-# Size Optimizations:
-# ==========================================
-# ✓ Alpine Linux base (~5MB)
-# ✓ Next.js standalone output (~50-100MB)
-# ✓ No node_modules in final image
-# ✓ Static files optimized
-# ✓ Expected final image size: ~150-250MB
-# ==========================================
-
-# ==========================================
-# Performance Features:
-# ==========================================
-# ✓ Standalone output (faster cold starts)
-# ✓ Static file optimization
-# ✓ Image optimization ready
-# ✓ Compressed output
-# ✓ Production-ready server
+# - LANG=C.UTF-8, LC_ALL=C.UTF-8 in all stages
+# - SHELL ["/bin/bash", "-c"] for consistent behavior
+# - CRLF normalization (sed 's/\r$//') for Windows compatibility
+# - bash installed in Alpine for reliable scripting
 # ==========================================

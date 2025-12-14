@@ -1,0 +1,381 @@
+name: Payment Webhook Monitoring
+
+on:
+  schedule:
+    # Run every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to monitor'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '10'
+
+jobs:
+  setup-urls:
+    name: Setup Environment URLs
+    runs-on: ubuntu-latest
+    outputs:
+      api-url: ${{ steps.env.outputs.api-url }}
+      env-name: ${{ steps.env.outputs.env-name }}
+    steps:
+      - name: Set environment
+        id: env
+        run: |
+          ENV="${{ github.event.inputs.environment || 'development' }}"
+          case "$ENV" in
+            production)
+              echo "api-url=https://api.broxiva.com" >> $GITHUB_OUTPUT
+              echo "env-name=production" >> $GITHUB_OUTPUT
+              ;;
+            staging)
+              echo "api-url=https://api-staging.broxiva.com" >> $GITHUB_OUTPUT
+              echo "env-name=staging" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "api-url=https://api-dev.broxiva.com" >> $GITHUB_OUTPUT
+              echo "env-name=development" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+  stripe-webhook-health:
+    name: Stripe Webhook Health
+    runs-on: ubuntu-latest
+    needs: setup-urls
+    steps:
+      - name: Check Stripe webhook endpoint
+        id: stripe-check
+        run: |
+          WEBHOOK_URL="${{ needs.setup-urls.outputs.api-url }}/api/webhooks/stripe"
+          echo "Checking Stripe webhook endpoint: $WEBHOOK_URL"
+
+          # Send a test request (will be rejected but should return proper error)
+          HTTP_STATUS=$(curl -s -o response.txt -w "%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "Stripe-Signature: test" \
+            -d '{"type":"test"}' \
+            "$WEBHOOK_URL" || echo "000")
+
+          echo "HTTP Status: $HTTP_STATUS"
+          echo "status=$HTTP_STATUS" >> $GITHUB_OUTPUT
+
+          # 400 or 401 is expected for invalid signature
+          # 200 would be suspicious (no verification)
+          # 500+ indicates server error
+          if [ "$HTTP_STATUS" -ge 500 ]; then
+            echo "healthy=false" >> $GITHUB_OUTPUT
+            echo "::error::Stripe webhook endpoint returned server error: $HTTP_STATUS"
+          elif [ "$HTTP_STATUS" == "000" ]; then
+            echo "healthy=false" >> $GITHUB_OUTPUT
+            echo "::error::Stripe webhook endpoint is unreachable"
+          else
+            echo "healthy=true" >> $GITHUB_OUTPUT
+            echo "Stripe webhook endpoint is responding (Status: $HTTP_STATUS)"
+          fi
+
+      - name: Generate Stripe health report
+        run: |
+          cat > stripe-health.json << EOF
+          {
+            "provider": "stripe",
+            "environment": "${{ needs.setup-urls.outputs.env-name }}",
+            "endpoint": "${{ needs.setup-urls.outputs.api-url }}/api/webhooks/stripe",
+            "status": ${{ steps.stripe-check.outputs.status }},
+            "healthy": ${{ steps.stripe-check.outputs.healthy }},
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+      - name: Upload Stripe health report
+        uses: actions/upload-artifact@v4
+        with:
+          name: stripe-webhook-health
+          path: stripe-health.json
+          retention-days: 7
+        if: always()
+
+  paystack-webhook-health:
+    name: Paystack Webhook Health
+    runs-on: ubuntu-latest
+    needs: setup-urls
+    steps:
+      - name: Check Paystack webhook endpoint
+        id: paystack-check
+        run: |
+          WEBHOOK_URL="${{ needs.setup-urls.outputs.api-url }}/api/webhooks/paystack"
+          echo "Checking Paystack webhook endpoint: $WEBHOOK_URL"
+
+          HTTP_STATUS=$(curl -s -o response.txt -w "%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "X-Paystack-Signature: test" \
+            -d '{"event":"test"}' \
+            "$WEBHOOK_URL" || echo "000")
+
+          echo "HTTP Status: $HTTP_STATUS"
+          echo "status=$HTTP_STATUS" >> $GITHUB_OUTPUT
+
+          if [ "$HTTP_STATUS" -ge 500 ]; then
+            echo "healthy=false" >> $GITHUB_OUTPUT
+            echo "::error::Paystack webhook endpoint returned server error: $HTTP_STATUS"
+          elif [ "$HTTP_STATUS" == "000" ]; then
+            echo "healthy=false" >> $GITHUB_OUTPUT
+            echo "::error::Paystack webhook endpoint is unreachable"
+          else
+            echo "healthy=true" >> $GITHUB_OUTPUT
+            echo "Paystack webhook endpoint is responding (Status: $HTTP_STATUS)"
+          fi
+
+      - name: Generate Paystack health report
+        run: |
+          cat > paystack-health.json << EOF
+          {
+            "provider": "paystack",
+            "environment": "${{ needs.setup-urls.outputs.env-name }}",
+            "endpoint": "${{ needs.setup-urls.outputs.api-url }}/api/webhooks/paystack",
+            "status": ${{ steps.paystack-check.outputs.status }},
+            "healthy": ${{ steps.paystack-check.outputs.healthy }},
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+      - name: Upload Paystack health report
+        uses: actions/upload-artifact@v4
+        with:
+          name: paystack-webhook-health
+          path: paystack-health.json
+          retention-days: 7
+        if: always()
+
+  flutterwave-webhook-health:
+    name: Flutterwave Webhook Health
+    runs-on: ubuntu-latest
+    needs: setup-urls
+    steps:
+      - name: Check Flutterwave webhook endpoint
+        id: flutterwave-check
+        run: |
+          WEBHOOK_URL="${{ needs.setup-urls.outputs.api-url }}/api/webhooks/flutterwave"
+          echo "Checking Flutterwave webhook endpoint: $WEBHOOK_URL"
+
+          HTTP_STATUS=$(curl -s -o response.txt -w "%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "verif-hash: test" \
+            -d '{"event":"test"}' \
+            "$WEBHOOK_URL" || echo "000")
+
+          echo "HTTP Status: $HTTP_STATUS"
+          echo "status=$HTTP_STATUS" >> $GITHUB_OUTPUT
+
+          if [ "$HTTP_STATUS" -ge 500 ]; then
+            echo "healthy=false" >> $GITHUB_OUTPUT
+            echo "::error::Flutterwave webhook endpoint returned server error: $HTTP_STATUS"
+          elif [ "$HTTP_STATUS" == "000" ]; then
+            echo "healthy=false" >> $GITHUB_OUTPUT
+            echo "::error::Flutterwave webhook endpoint is unreachable"
+          else
+            echo "healthy=true" >> $GITHUB_OUTPUT
+            echo "Flutterwave webhook endpoint is responding (Status: $HTTP_STATUS)"
+          fi
+
+      - name: Generate Flutterwave health report
+        run: |
+          cat > flutterwave-health.json << EOF
+          {
+            "provider": "flutterwave",
+            "environment": "${{ needs.setup-urls.outputs.env-name }}",
+            "endpoint": "${{ needs.setup-urls.outputs.api-url }}/api/webhooks/flutterwave",
+            "status": ${{ steps.flutterwave-check.outputs.status }},
+            "healthy": ${{ steps.flutterwave-check.outputs.healthy }},
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+      - name: Upload Flutterwave health report
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutterwave-webhook-health
+          path: flutterwave-health.json
+          retention-days: 7
+        if: always()
+
+  webhook-summary:
+    name: Generate Webhook Health Summary
+    runs-on: ubuntu-latest
+    needs: [setup-urls, stripe-webhook-health, paystack-webhook-health, flutterwave-webhook-health]
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: webhook-results
+
+      - name: Generate consolidated report
+        run: |
+          cat > webhook-health-report.md << 'EOF'
+          # Payment Webhook Health Report
+
+          **Generated:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Environment:** ${{ needs.setup-urls.outputs.env-name }}
+          **API Base URL:** ${{ needs.setup-urls.outputs.api-url }}
+
+          ## Webhook Endpoint Status
+
+          | Provider | Endpoint | Status | Healthy |
+          |----------|----------|--------|---------|
+          | Stripe | /api/webhooks/stripe | ${{ needs.stripe-webhook-health.result }} | - |
+          | Paystack | /api/webhooks/paystack | ${{ needs.paystack-webhook-health.result }} | - |
+          | Flutterwave | /api/webhooks/flutterwave | ${{ needs.flutterwave-webhook-health.result }} | - |
+
+          ## Security Verification
+
+          Each webhook endpoint should:
+          - Verify request signatures
+          - Validate timestamps (prevent replay attacks)
+          - Check idempotency (dedupe by event ID)
+          - Log all events to webhook_events table
+          - Return 200 only for valid, verified requests
+
+          ## Recommendations
+
+          1. Monitor webhook processing latency
+          2. Set up alerts for failed webhook processing
+          3. Implement retry logic for failed events
+          4. Store raw webhook payloads for debugging
+          5. Regular rotation of webhook secrets
+
+          EOF
+
+          echo "### Webhook Health Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Provider | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Stripe | ${{ needs.stripe-webhook-health.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Paystack | ${{ needs.paystack-webhook-health.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Flutterwave | ${{ needs.flutterwave-webhook-health.result }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload consolidated report
+        uses: actions/upload-artifact@v4
+        with:
+          name: webhook-health-report
+          path: webhook-health-report.md
+          retention-days: 30
+
+  alert-on-failure:
+    name: Alert on Webhook Failure
+    runs-on: ubuntu-latest
+    needs: [setup-urls, stripe-webhook-health, paystack-webhook-health, flutterwave-webhook-health]
+    if: failure()
+    steps:
+      - name: Send Slack alert
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "Payment Webhook Alert",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Payment Webhook Health Check Failed"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment:*\n${{ needs.setup-urls.outputs.env-name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Time:*\n$(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Status:*\n- Stripe: ${{ needs.stripe-webhook-health.result }}\n- Paystack: ${{ needs.paystack-webhook-health.result }}\n- Flutterwave: ${{ needs.flutterwave-webhook-health.result }}"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Details"
+                      },
+                      "style": "danger",
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+        if: env.SLACK_WEBHOOK_URL != ''
+
+      - name: Create issue for persistent failure
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `Payment Webhook Health Check Failed - ${{ needs.setup-urls.outputs.env-name }}`;
+            const body = `## Webhook Health Check Failure
+
+            **Environment:** ${{ needs.setup-urls.outputs.env-name }}
+            **Time:** ${new Date().toISOString()}
+
+            ### Status
+            - Stripe: ${{ needs.stripe-webhook-health.result }}
+            - Paystack: ${{ needs.paystack-webhook-health.result }}
+            - Flutterwave: ${{ needs.flutterwave-webhook-health.result }}
+
+            ### Action Required
+            1. Check webhook endpoint availability
+            2. Verify signature verification is working
+            3. Check for any infrastructure issues
+            4. Review recent deployments
+
+            **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            `;
+
+            // Check for existing open issue
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'webhook-failure'
+            });
+
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['webhook-failure', 'priority-high', 'payments']
+              });
+            }
+        if: needs.setup-urls.outputs.env-name == 'production'

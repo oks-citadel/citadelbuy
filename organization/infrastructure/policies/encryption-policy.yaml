@@ -1,5 +1,5 @@
 # Encryption Policy
-# CitadelBuy Global B2B Marketplace
+# Broxiva Global B2B Marketplace
 # Version: 2.0
 # Last Updated: 2025-12-06
 
@@ -13,7 +13,7 @@ metadata:
 
 purpose: |
   This policy defines encryption standards and requirements for protecting
-  data at rest, in transit, and in use across all CitadelBuy systems,
+  data at rest, in transit, and in use across all Broxiva systems,
   applications, and infrastructure.
 
 scope:

@@ -207,7 +207,7 @@ describe('Order Lifecycle (e2e)', () => {
     it('should transition from PENDING to PROCESSING', async () => {
       // Admin updates order status
       const adminUser = await createTestUser(prisma, {
-        email: 'admin@citadelbuy.com',
+        email: 'admin@broxiva.com',
         role: 'ADMIN',
       });
 
@@ -237,7 +237,7 @@ describe('Order Lifecycle (e2e)', () => {
       await updateOrderStatus(prisma, orderId, 'PROCESSING');
 
       const adminUser = await createTestUser(prisma, {
-        email: 'admin@citadelbuy.com',
+        email: 'admin@broxiva.com',
         role: 'ADMIN',
       });
 
@@ -269,7 +269,7 @@ describe('Order Lifecycle (e2e)', () => {
       await updateOrderStatus(prisma, orderId, 'SHIPPED');
 
       const adminUser = await createTestUser(prisma, {
-        email: 'admin@citadelbuy.com',
+        email: 'admin@broxiva.com',
         role: 'ADMIN',
       });
 
@@ -295,7 +295,7 @@ describe('Order Lifecycle (e2e)', () => {
     it('should not allow invalid status transitions', async () => {
       // Try to go from PENDING directly to DELIVERED
       const adminUser = await createTestUser(prisma, {
-        email: 'admin@citadelbuy.com',
+        email: 'admin@broxiva.com',
         role: 'ADMIN',
       });
 

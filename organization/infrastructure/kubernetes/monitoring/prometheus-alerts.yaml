@@ -2,14 +2,14 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometheus-alerts
-  namespace: citadelbuy-monitoring
+  namespace: broxiva-monitoring
   labels:
     app: prometheus
     tier: monitoring
 data:
-  citadelbuy-alerts.yml: |
+  broxiva-alerts.yml: |
     groups:
-      - name: citadelbuy_alerts
+      - name: broxiva_alerts
         interval: 30s
         rules:
           # Service Availability Alerts
@@ -33,7 +33,7 @@ data:
 
           # API Performance Alerts
           - alert: APIResponseTimeSlow
-            expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="citadelbuy-api"}[5m])) > 2
+            expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="broxiva-api"}[5m])) > 2
             for: 10m
             labels:
               severity: warning
@@ -42,7 +42,7 @@ data:
               description: "95th percentile response time is {{ $value }}s"
 
           - alert: APIResponseTimeCritical
-            expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="citadelbuy-api"}[5m])) > 5
+            expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="broxiva-api"}[5m])) > 5
             for: 5m
             labels:
               severity: critical
@@ -254,7 +254,7 @@ data:
 
           # Container Alerts
           - alert: ContainerHighCPU
-            expr: rate(container_cpu_usage_seconds_total{namespace="citadelbuy"}[5m]) > 0.8
+            expr: rate(container_cpu_usage_seconds_total{namespace="broxiva"}[5m]) > 0.8
             for: 10m
             labels:
               severity: warning
@@ -263,7 +263,7 @@ data:
               description: "Container CPU usage is {{ $value | humanizePercentage }}"
 
           - alert: ContainerHighMemory
-            expr: container_memory_usage_bytes{namespace="citadelbuy"} / container_spec_memory_limit_bytes{namespace="citadelbuy"} > 0.85
+            expr: container_memory_usage_bytes{namespace="broxiva"} / container_spec_memory_limit_bytes{namespace="broxiva"} > 0.85
             for: 10m
             labels:
               severity: warning
@@ -272,7 +272,7 @@ data:
               description: "Container memory usage is above 85%"
 
           - alert: ContainerRestarting
-            expr: rate(kube_pod_container_status_restarts_total{namespace="citadelbuy"}[15m]) > 0
+            expr: rate(kube_pod_container_status_restarts_total{namespace="broxiva"}[15m]) > 0
             for: 5m
             labels:
               severity: warning
@@ -281,7 +281,7 @@ data:
               description: "Container has restarted {{ $value }} times in the last 15 minutes"
 
           - alert: PodCrashLooping
-            expr: rate(kube_pod_container_status_restarts_total{namespace="citadelbuy"}[5m]) > 2
+            expr: rate(kube_pod_container_status_restarts_total{namespace="broxiva"}[5m]) > 2
             for: 5m
             labels:
               severity: critical
@@ -290,7 +290,7 @@ data:
               description: "Pod has restarted {{ $value }} times in the last 5 minutes"
 
           - alert: PodNotReady
-            expr: kube_pod_status_phase{phase!="Running",namespace="citadelbuy"} > 0
+            expr: kube_pod_status_phase{phase!="Running",namespace="broxiva"} > 0
             for: 10m
             labels:
               severity: warning
@@ -318,7 +318,7 @@ data:
               description: "PersistentVolume has less than 15% free space"
 
           - alert: KubernetesDeploymentReplicasMismatch
-            expr: kube_deployment_spec_replicas{namespace="citadelbuy"} != kube_deployment_status_replicas_available{namespace="citadelbuy"}
+            expr: kube_deployment_spec_replicas{namespace="broxiva"} != kube_deployment_status_replicas_available{namespace="broxiva"}
             for: 10m
             labels:
               severity: warning

@@ -40,39 +40,39 @@ gh workflow run cd-prod.yml -f image_tag=v1.2.3 -f deployment_strategy=rolling
 
 ```bash
 # Development
-az aks get-credentials --resource-group citadelbuy-dev-rg --name citadelbuy-dev-aks
+az aks get-credentials --resource-group broxiva-dev-rg --name broxiva-dev-aks
 
 # Staging
-az aks get-credentials --resource-group citadelbuy-staging-rg --name citadelbuy-staging-aks
+az aks get-credentials --resource-group broxiva-staging-rg --name broxiva-staging-aks
 
 # Production
-az aks get-credentials --resource-group citadelbuy-prod-rg --name citadelbuy-prod-aks
+az aks get-credentials --resource-group broxiva-prod-rg --name broxiva-prod-aks
 ```
 
 ### View Deployments
 
 ```bash
 # List all deployments
-kubectl get deployments -n citadelbuy-<env>
+kubectl get deployments -n broxiva-<env>
 
 # Get deployment details
-kubectl describe deployment citadelbuy-api -n citadelbuy-<env>
+kubectl describe deployment broxiva-api -n broxiva-<env>
 
 # Watch rollout status
-kubectl rollout status deployment/citadelbuy-api -n citadelbuy-<env>
+kubectl rollout status deployment/broxiva-api -n broxiva-<env>
 ```
 
 ### View Pods
 
 ```bash
 # List all pods
-kubectl get pods -n citadelbuy-<env>
+kubectl get pods -n broxiva-<env>
 
 # Get pod logs
-kubectl logs -f <pod-name> -n citadelbuy-<env>
+kubectl logs -f <pod-name> -n broxiva-<env>
 
 # Execute command in pod
-kubectl exec -it <pod-name> -n citadelbuy-<env> -- /bin/sh
+kubectl exec -it <pod-name> -n broxiva-<env> -- /bin/sh
 ```
 
 ## Health Checks
@@ -81,25 +81,25 @@ kubectl exec -it <pod-name> -n citadelbuy-<env> -- /bin/sh
 
 ```bash
 # From within cluster
-kubectl exec -it <api-pod> -n citadelbuy-<env> -- curl http://localhost:4000/api/health/live
-kubectl exec -it <api-pod> -n citadelbuy-<env> -- curl http://localhost:4000/api/health/ready
+kubectl exec -it <api-pod> -n broxiva-<env> -- curl http://localhost:4000/api/health/live
+kubectl exec -it <api-pod> -n broxiva-<env> -- curl http://localhost:4000/api/health/ready
 
 # From external (if exposed)
-curl https://api-dev.citadelbuy.com/api/health/live
-curl https://api-staging.citadelbuy.com/api/health/live
-curl https://api.citadelbuy.com/api/health/live
+curl https://api-dev.broxiva.com/api/health/live
+curl https://api-staging.broxiva.com/api/health/live
+curl https://api.broxiva.com/api/health/live
 ```
 
 ### Web Health
 
 ```bash
 # From within cluster
-kubectl exec -it <web-pod> -n citadelbuy-<env> -- curl http://localhost:3000/health
+kubectl exec -it <web-pod> -n broxiva-<env> -- curl http://localhost:3000/health
 
 # From external
-curl https://dev.citadelbuy.com/health
-curl https://staging.citadelbuy.com/health
-curl https://citadelbuy.com/health
+curl https://dev.broxiva.com/health
+curl https://staging.broxiva.com/health
+curl https://broxiva.com/health
 ```
 
 ## Rollback Procedures
@@ -108,29 +108,29 @@ curl https://citadelbuy.com/health
 
 ```bash
 # Rollback to previous version
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-<env>
-kubectl rollout undo deployment/citadelbuy-web -n citadelbuy-<env>
+kubectl rollout undo deployment/broxiva-api -n broxiva-<env>
+kubectl rollout undo deployment/broxiva-web -n broxiva-<env>
 
 # Rollback to specific revision
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-<env> --to-revision=2
+kubectl rollout undo deployment/broxiva-api -n broxiva-<env> --to-revision=2
 
 # View rollout history
-kubectl rollout history deployment/citadelbuy-api -n citadelbuy-<env>
+kubectl rollout history deployment/broxiva-api -n broxiva-<env>
 ```
 
 ### Production Blue-Green Rollback
 
 ```bash
 # Switch traffic back to blue
-kubectl patch service citadelbuy-api -n citadelbuy-production -p '{"spec":{"selector":{"color":"blue"}}}'
-kubectl patch service citadelbuy-web -n citadelbuy-production -p '{"spec":{"selector":{"color":"blue"}}}'
+kubectl patch service broxiva-api -n broxiva-production -p '{"spec":{"selector":{"color":"blue"}}}'
+kubectl patch service broxiva-web -n broxiva-production -p '{"spec":{"selector":{"color":"blue"}}}'
 
 # Scale up blue if needed
-kubectl scale deployment/citadelbuy-api-blue -n citadelbuy-production --replicas=5
-kubectl scale deployment/citadelbuy-web-blue -n citadelbuy-production --replicas=5
+kubectl scale deployment/broxiva-api-blue -n broxiva-production --replicas=5
+kubectl scale deployment/broxiva-web-blue -n broxiva-production --replicas=5
 
 # Verify traffic routing
-kubectl get service citadelbuy-api -n citadelbuy-production -o jsonpath='{.spec.selector.color}'
+kubectl get service broxiva-api -n broxiva-production -o jsonpath='{.spec.selector.color}'
 ```
 
 ## Database Migrations
@@ -139,23 +139,23 @@ kubectl get service citadelbuy-api -n citadelbuy-production -o jsonpath='{.spec.
 
 ```bash
 # Get API pod
-API_POD=$(kubectl get pod -n citadelbuy-<env> -l app=citadelbuy-api -o jsonpath="{.items[0].metadata.name}")
+API_POD=$(kubectl get pod -n broxiva-<env> -l app=broxiva-api -o jsonpath="{.items[0].metadata.name}")
 
 # Check migration status
-kubectl exec -it $API_POD -n citadelbuy-<env> -- npx prisma migrate status
+kubectl exec -it $API_POD -n broxiva-<env> -- npx prisma migrate status
 
 # Run migrations manually
-kubectl exec -it $API_POD -n citadelbuy-<env> -- npx prisma migrate deploy
+kubectl exec -it $API_POD -n broxiva-<env> -- npx prisma migrate deploy
 ```
 
 ### Rollback Migration
 
 ```bash
 # Mark migration as rolled back
-kubectl exec -it $API_POD -n citadelbuy-<env> -- npx prisma migrate resolve --rolled-back <migration-name>
+kubectl exec -it $API_POD -n broxiva-<env> -- npx prisma migrate resolve --rolled-back <migration-name>
 
 # Apply down migration (if available)
-kubectl exec -it $API_POD -n citadelbuy-<env> -- npx prisma migrate dev
+kubectl exec -it $API_POD -n broxiva-<env> -- npx prisma migrate dev
 ```
 
 ## Debugging
@@ -164,52 +164,52 @@ kubectl exec -it $API_POD -n citadelbuy-<env> -- npx prisma migrate dev
 
 ```bash
 # Tail logs
-kubectl logs -f <pod-name> -n citadelbuy-<env>
+kubectl logs -f <pod-name> -n broxiva-<env>
 
 # View previous pod logs
-kubectl logs <pod-name> -n citadelbuy-<env> --previous
+kubectl logs <pod-name> -n broxiva-<env> --previous
 
 # View logs from all pods in deployment
-kubectl logs -l app=citadelbuy-api -n citadelbuy-<env> --tail=100
+kubectl logs -l app=broxiva-api -n broxiva-<env> --tail=100
 ```
 
 ### Pod Troubleshooting
 
 ```bash
 # Describe pod for events
-kubectl describe pod <pod-name> -n citadelbuy-<env>
+kubectl describe pod <pod-name> -n broxiva-<env>
 
 # Get pod in different output formats
-kubectl get pod <pod-name> -n citadelbuy-<env> -o yaml
-kubectl get pod <pod-name> -n citadelbuy-<env> -o json
+kubectl get pod <pod-name> -n broxiva-<env> -o yaml
+kubectl get pod <pod-name> -n broxiva-<env> -o json
 
 # Check resource usage
-kubectl top pod -n citadelbuy-<env>
+kubectl top pod -n broxiva-<env>
 ```
 
 ### Service Debugging
 
 ```bash
 # Test service connectivity
-kubectl run test-pod --rm -it --image=curlimages/curl -n citadelbuy-<env> -- curl http://citadelbuy-api:4000/api/health/live
+kubectl run test-pod --rm -it --image=curlimages/curl -n broxiva-<env> -- curl http://broxiva-api:4000/api/health/live
 
 # Port forward for local access
-kubectl port-forward service/citadelbuy-api 4000:4000 -n citadelbuy-<env>
-kubectl port-forward service/citadelbuy-web 3000:3000 -n citadelbuy-<env>
+kubectl port-forward service/broxiva-api 4000:4000 -n broxiva-<env>
+kubectl port-forward service/broxiva-web 3000:3000 -n broxiva-<env>
 ```
 
 ### Network Debugging
 
 ```bash
 # Check network policies
-kubectl get networkpolicies -n citadelbuy-<env>
+kubectl get networkpolicies -n broxiva-<env>
 
 # Describe network policy
-kubectl describe networkpolicy <policy-name> -n citadelbuy-<env>
+kubectl describe networkpolicy <policy-name> -n broxiva-<env>
 
 # Check ingress
-kubectl get ingress -n citadelbuy-<env>
-kubectl describe ingress citadelbuy-ingress -n citadelbuy-<env>
+kubectl get ingress -n broxiva-<env>
+kubectl describe ingress broxiva-ingress -n broxiva-<env>
 ```
 
 ## Scaling
@@ -218,23 +218,23 @@ kubectl describe ingress citadelbuy-ingress -n citadelbuy-<env>
 
 ```bash
 # Scale deployment
-kubectl scale deployment/citadelbuy-api -n citadelbuy-<env> --replicas=5
+kubectl scale deployment/broxiva-api -n broxiva-<env> --replicas=5
 
 # Check current replicas
-kubectl get deployment citadelbuy-api -n citadelbuy-<env>
+kubectl get deployment broxiva-api -n broxiva-<env>
 ```
 
 ### Horizontal Pod Autoscaler
 
 ```bash
 # Check HPA status
-kubectl get hpa -n citadelbuy-<env>
+kubectl get hpa -n broxiva-<env>
 
 # Describe HPA
-kubectl describe hpa citadelbuy-api-hpa -n citadelbuy-<env>
+kubectl describe hpa broxiva-api-hpa -n broxiva-<env>
 
 # Modify HPA
-kubectl edit hpa citadelbuy-api-hpa -n citadelbuy-<env>
+kubectl edit hpa broxiva-api-hpa -n broxiva-<env>
 ```
 
 ## Configuration Updates
@@ -243,23 +243,23 @@ kubectl edit hpa citadelbuy-api-hpa -n citadelbuy-<env>
 
 ```bash
 # Edit ConfigMap
-kubectl edit configmap citadelbuy-config -n citadelbuy-<env>
+kubectl edit configmap broxiva-config -n broxiva-<env>
 
 # Restart pods to pick up changes
-kubectl rollout restart deployment/citadelbuy-api -n citadelbuy-<env>
+kubectl rollout restart deployment/broxiva-api -n broxiva-<env>
 ```
 
 ### Update Secrets
 
 ```bash
 # Create secret from file
-kubectl create secret generic citadelbuy-secrets -n citadelbuy-<env> \
+kubectl create secret generic broxiva-secrets -n broxiva-<env> \
   --from-file=.env=.env.production \
   --dry-run=client -o yaml | kubectl apply -f -
 
 # Update secret
-kubectl delete secret citadelbuy-secrets -n citadelbuy-<env>
-kubectl create secret generic citadelbuy-secrets -n citadelbuy-<env> --from-env-file=.env.production
+kubectl delete secret broxiva-secrets -n broxiva-<env>
+kubectl create secret generic broxiva-secrets -n broxiva-<env> --from-env-file=.env.production
 ```
 
 ## Monitoring
@@ -271,23 +271,23 @@ kubectl create secret generic citadelbuy-secrets -n citadelbuy-<env> --from-env-
 kubectl top nodes
 
 # Pod resources
-kubectl top pods -n citadelbuy-<env>
+kubectl top pods -n broxiva-<env>
 
 # Specific deployment resources
-kubectl top pods -n citadelbuy-<env> -l app=citadelbuy-api
+kubectl top pods -n broxiva-<env> -l app=broxiva-api
 ```
 
 ### Events
 
 ```bash
 # Get all events
-kubectl get events -n citadelbuy-<env> --sort-by='.lastTimestamp'
+kubectl get events -n broxiva-<env> --sort-by='.lastTimestamp'
 
 # Watch events
-kubectl get events -n citadelbuy-<env> --watch
+kubectl get events -n broxiva-<env> --watch
 
 # Events for specific pod
-kubectl get events -n citadelbuy-<env> --field-selector involvedObject.name=<pod-name>
+kubectl get events -n broxiva-<env> --field-selector involvedObject.name=<pod-name>
 ```
 
 ## Useful Aliases
@@ -296,9 +296,9 @@ Add to your `.bashrc` or `.zshrc`:
 
 ```bash
 # Namespace aliases
-alias kdev='kubectl -n citadelbuy-dev'
-alias kstg='kubectl -n citadelbuy-staging'
-alias kprd='kubectl -n citadelbuy-production'
+alias kdev='kubectl -n broxiva-dev'
+alias kstg='kubectl -n broxiva-staging'
+alias kprd='kubectl -n broxiva-production'
 
 # Common commands
 alias kgp='kubectl get pods'
@@ -309,9 +309,9 @@ alias kdp='kubectl describe pod'
 alias klf='kubectl logs -f'
 
 # Get API pod
-alias api-dev='kubectl get pod -n citadelbuy-dev -l app=citadelbuy-api -o jsonpath="{.items[0].metadata.name}"'
-alias api-stg='kubectl get pod -n citadelbuy-staging -l app=citadelbuy-api -o jsonpath="{.items[0].metadata.name}"'
-alias api-prd='kubectl get pod -n citadelbuy-production -l app=citadelbuy-api -o jsonpath="{.items[0].metadata.name}"'
+alias api-dev='kubectl get pod -n broxiva-dev -l app=broxiva-api -o jsonpath="{.items[0].metadata.name}"'
+alias api-stg='kubectl get pod -n broxiva-staging -l app=broxiva-api -o jsonpath="{.items[0].metadata.name}"'
+alias api-prd='kubectl get pod -n broxiva-production -l app=broxiva-api -o jsonpath="{.items[0].metadata.name}"'
 ```
 
 ## Emergency Procedures
@@ -320,37 +320,37 @@ alias api-prd='kubectl get pod -n citadelbuy-production -l app=citadelbuy-api -o
 
 ```bash
 # 1. Switch to previous image
-kubectl set image deployment/citadelbuy-api -n citadelbuy-<env> \
-  api=ghcr.io/citadelplatforms/citadelbuy-api:<previous-tag>
+kubectl set image deployment/broxiva-api -n broxiva-<env> \
+  api=ghcr.io/broxiva/broxiva-api:<previous-tag>
 
 # 2. Watch rollout
-kubectl rollout status deployment/citadelbuy-api -n citadelbuy-<env>
+kubectl rollout status deployment/broxiva-api -n broxiva-<env>
 
 # 3. Verify health
-kubectl exec -it $(kubectl get pod -n citadelbuy-<env> -l app=citadelbuy-api -o jsonpath="{.items[0].metadata.name}") \
-  -n citadelbuy-<env> -- curl http://localhost:4000/api/health/live
+kubectl exec -it $(kubectl get pod -n broxiva-<env> -l app=broxiva-api -o jsonpath="{.items[0].metadata.name}") \
+  -n broxiva-<env> -- curl http://localhost:4000/api/health/live
 ```
 
 ### Emergency Scale Down
 
 ```bash
 # Scale to zero (maintenance mode)
-kubectl scale deployment/citadelbuy-api -n citadelbuy-<env> --replicas=0
-kubectl scale deployment/citadelbuy-web -n citadelbuy-<env> --replicas=0
+kubectl scale deployment/broxiva-api -n broxiva-<env> --replicas=0
+kubectl scale deployment/broxiva-web -n broxiva-<env> --replicas=0
 
 # Scale back up
-kubectl scale deployment/citadelbuy-api -n citadelbuy-<env> --replicas=5
-kubectl scale deployment/citadelbuy-web -n citadelbuy-<env> --replicas=5
+kubectl scale deployment/broxiva-api -n broxiva-<env> --replicas=5
+kubectl scale deployment/broxiva-web -n broxiva-<env> --replicas=5
 ```
 
 ### Emergency Database Connection
 
 ```bash
 # Port forward to PostgreSQL (if in cluster)
-kubectl port-forward service/postgres 5432:5432 -n citadelbuy-<env>
+kubectl port-forward service/postgres 5432:5432 -n broxiva-<env>
 
 # Connect via psql
-psql postgresql://user:password@localhost:5432/citadelbuy
+psql postgresql://user:password@localhost:5432/broxiva
 ```
 
 ## Workflow Status
@@ -383,23 +383,23 @@ gh run list --workflow=cd-dev.yml --json databaseId -q '.[].databaseId' | xargs 
 ## URL Reference
 
 ### Development
-- Web: https://dev.citadelbuy.com
-- API: https://api-dev.citadelbuy.com
-- Grafana: https://grafana-dev.citadelbuy.com
+- Web: https://dev.broxiva.com
+- API: https://api-dev.broxiva.com
+- Grafana: https://grafana-dev.broxiva.com
 
 ### Staging
-- Web: https://staging.citadelbuy.com
-- API: https://api-staging.citadelbuy.com
-- Grafana: https://grafana-staging.citadelbuy.com
+- Web: https://staging.broxiva.com
+- API: https://api-staging.broxiva.com
+- Grafana: https://grafana-staging.broxiva.com
 
 ### Production
-- Web: https://citadelbuy.com
-- API: https://api.citadelbuy.com
-- Grafana: https://grafana.citadelbuy.com
+- Web: https://broxiva.com
+- API: https://api.broxiva.com
+- Grafana: https://grafana.broxiva.com
 
 ## Support Contacts
 
-- **DevOps Team:** devops@citadelbuy.com
+- **DevOps Team:** devops@broxiva.com
 - **Slack Channel:** #deployments
 - **Emergency:** PagerDuty on-call rotation
 

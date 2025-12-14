@@ -1,0 +1,401 @@
+{
+  "properties": {
+    "lenses": {
+      "0": {
+        "order": 0,
+        "parts": {
+          "0": {
+            "position": {
+              "x": 0,
+              "y": 0,
+              "colSpan": 6,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "scope",
+                  "value": "/subscriptions/{subscriptionId}"
+                },
+                {
+                  "name": "view",
+                  "value": {
+                    "currency": "USD",
+                    "query": {
+                      "type": "ActualCost",
+                      "dataSet": {
+                        "granularity": "Daily",
+                        "aggregation": {
+                          "totalCost": {
+                            "name": "Cost",
+                            "function": "Sum"
+                          }
+                        },
+                        "sorting": [
+                          {
+                            "direction": "ascending",
+                            "name": "UsageDate"
+                          }
+                        ],
+                        "grouping": [
+                          {
+                            "type": "Dimension",
+                            "name": "ResourceGroupName"
+                          }
+                        ]
+                      },
+                      "timeframe": "MonthToDate"
+                    },
+                    "chart": "Area",
+                    "accumulated": "true"
+                  }
+                }
+              ],
+              "type": "Extension/Microsoft_Azure_CostManagement/PartType/CostAnalysisPart",
+              "settings": {
+                "content": {
+                  "title": "Broxiva - Monthly Cost Trend by Resource Group"
+                }
+              }
+            }
+          },
+          "1": {
+            "position": {
+              "x": 6,
+              "y": 0,
+              "colSpan": 6,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "scope",
+                  "value": "/subscriptions/{subscriptionId}"
+                },
+                {
+                  "name": "view",
+                  "value": {
+                    "currency": "USD",
+                    "query": {
+                      "type": "ActualCost",
+                      "dataSet": {
+                        "granularity": "None",
+                        "aggregation": {
+                          "totalCost": {
+                            "name": "Cost",
+                            "function": "Sum"
+                          }
+                        },
+                        "grouping": [
+                          {
+                            "type": "Tag",
+                            "name": "env"
+                          }
+                        ]
+                      },
+                      "timeframe": "MonthToDate"
+                    },
+                    "chart": "Pie"
+                  }
+                }
+              ],
+              "type": "Extension/Microsoft_Azure_CostManagement/PartType/CostAnalysisPart",
+              "settings": {
+                "content": {
+                  "title": "Cost by Environment (Month-to-Date)"
+                }
+              }
+            }
+          },
+          "2": {
+            "position": {
+              "x": 0,
+              "y": 4,
+              "colSpan": 6,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "scope",
+                  "value": "/subscriptions/{subscriptionId}"
+                },
+                {
+                  "name": "view",
+                  "value": {
+                    "currency": "USD",
+                    "query": {
+                      "type": "ActualCost",
+                      "dataSet": {
+                        "granularity": "None",
+                        "aggregation": {
+                          "totalCost": {
+                            "name": "Cost",
+                            "function": "Sum"
+                          }
+                        },
+                        "grouping": [
+                          {
+                            "type": "Dimension",
+                            "name": "ServiceName"
+                          }
+                        ],
+                        "sorting": [
+                          {
+                            "direction": "descending",
+                            "name": "Cost"
+                          }
+                        ]
+                      },
+                      "timeframe": "MonthToDate",
+                      "top": 10
+                    },
+                    "chart": "Table"
+                  }
+                }
+              ],
+              "type": "Extension/Microsoft_Azure_CostManagement/PartType/CostAnalysisPart",
+              "settings": {
+                "content": {
+                  "title": "Top 10 Services by Cost"
+                }
+              }
+            }
+          },
+          "3": {
+            "position": {
+              "x": 6,
+              "y": 4,
+              "colSpan": 6,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "scope",
+                  "value": "/subscriptions/{subscriptionId}"
+                },
+                {
+                  "name": "view",
+                  "value": {
+                    "currency": "USD",
+                    "query": {
+                      "type": "ActualCost",
+                      "dataSet": {
+                        "granularity": "None",
+                        "aggregation": {
+                          "totalCost": {
+                            "name": "Cost",
+                            "function": "Sum"
+                          }
+                        },
+                        "grouping": [
+                          {
+                            "type": "Dimension",
+                            "name": "ResourceLocation"
+                          }
+                        ]
+                      },
+                      "timeframe": "MonthToDate"
+                    },
+                    "chart": "Column"
+                  }
+                }
+              ],
+              "type": "Extension/Microsoft_Azure_CostManagement/PartType/CostAnalysisPart",
+              "settings": {
+                "content": {
+                  "title": "Cost by Region"
+                }
+              }
+            }
+          },
+          "4": {
+            "position": {
+              "x": 0,
+              "y": 8,
+              "colSpan": 12,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "scope",
+                  "value": "/subscriptions/{subscriptionId}"
+                },
+                {
+                  "name": "view",
+                  "value": {
+                    "currency": "USD",
+                    "query": {
+                      "type": "ActualCost",
+                      "dataSet": {
+                        "granularity": "Daily",
+                        "aggregation": {
+                          "totalCost": {
+                            "name": "Cost",
+                            "function": "Sum"
+                          }
+                        },
+                        "filter": {
+                          "tags": {
+                            "name": "env",
+                            "operator": "In",
+                            "values": ["production", "staging", "development"]
+                          }
+                        },
+                        "grouping": [
+                          {
+                            "type": "Tag",
+                            "name": "env"
+                          }
+                        ]
+                      },
+                      "timeframe": "MonthToDate"
+                    },
+                    "chart": "StackedColumn"
+                  }
+                }
+              ],
+              "type": "Extension/Microsoft_Azure_CostManagement/PartType/CostAnalysisPart",
+              "settings": {
+                "content": {
+                  "title": "Daily Cost Trend by Environment"
+                }
+              }
+            }
+          },
+          "5": {
+            "position": {
+              "x": 0,
+              "y": 12,
+              "colSpan": 6,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "scope",
+                  "value": "/subscriptions/{subscriptionId}"
+                },
+                {
+                  "name": "view",
+                  "value": {
+                    "currency": "USD",
+                    "query": {
+                      "type": "ActualCost",
+                      "dataSet": {
+                        "granularity": "None",
+                        "aggregation": {
+                          "totalCost": {
+                            "name": "Cost",
+                            "function": "Sum"
+                          }
+                        },
+                        "grouping": [
+                          {
+                            "type": "Tag",
+                            "name": "costCenter"
+                          }
+                        ]
+                      },
+                      "timeframe": "MonthToDate"
+                    },
+                    "chart": "Pie"
+                  }
+                }
+              ],
+              "type": "Extension/Microsoft_Azure_CostManagement/PartType/CostAnalysisPart",
+              "settings": {
+                "content": {
+                  "title": "Cost Allocation by Cost Center"
+                }
+              }
+            }
+          },
+          "6": {
+            "position": {
+              "x": 6,
+              "y": 12,
+              "colSpan": 6,
+              "rowSpan": 4
+            },
+            "metadata": {
+              "inputs": [
+                {
+                  "name": "scope",
+                  "value": "/subscriptions/{subscriptionId}"
+                },
+                {
+                  "name": "view",
+                  "value": {
+                    "currency": "USD",
+                    "query": {
+                      "type": "ActualCost",
+                      "dataSet": {
+                        "granularity": "None",
+                        "aggregation": {
+                          "totalCost": {
+                            "name": "Cost",
+                            "function": "Sum"
+                          }
+                        },
+                        "filter": {
+                          "dimensions": {
+                            "name": "ResourceType",
+                            "operator": "In",
+                            "values": [
+                              "microsoft.containerservice/managedclusters",
+                              "microsoft.compute/virtualmachines",
+                              "microsoft.sql/servers/databases"
+                            ]
+                          }
+                        },
+                        "grouping": [
+                          {
+                            "type": "Dimension",
+                            "name": "ResourceType"
+                          }
+                        ]
+                      },
+                      "timeframe": "MonthToDate"
+                    },
+                    "chart": "Donut"
+                  }
+                }
+              ],
+              "type": "Extension/Microsoft_Azure_CostManagement/PartType/CostAnalysisPart",
+              "settings": {
+                "content": {
+                  "title": "Cost by Key Resource Types"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "model": {
+        "timeRange": {
+          "value": {
+            "relative": {
+              "duration": 30,
+              "timeUnit": 1
+            }
+          },
+          "type": "MsPortalFx.Composition.Configuration.ValueTypes.TimeRange"
+        }
+      }
+    }
+  },
+  "name": "Broxiva Cost Governance Dashboard",
+  "type": "Microsoft.Portal/dashboards",
+  "location": "eastus",
+  "tags": {
+    "hidden-title": "Broxiva Cost Governance Dashboard",
+    "application": "broxiva",
+    "owner": "finops-team"
+  },
+  "apiVersion": "2020-09-01-preview"
+}

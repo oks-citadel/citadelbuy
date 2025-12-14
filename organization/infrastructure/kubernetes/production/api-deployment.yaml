@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: citadelbuy-api
-  namespace: citadelbuy-production
+  name: broxiva-api
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     tier: backend
     environment: production
     version: v1
@@ -17,12 +17,12 @@ spec:
       maxUnavailable: 0
   selector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
       tier: backend
   template:
     metadata:
       labels:
-        app: citadelbuy-api
+        app: broxiva-api
         tier: backend
         environment: production
         version: v1
@@ -32,7 +32,7 @@ spec:
         prometheus.io/path: "/metrics"
         sidecar.istio.io/inject: "true"
     spec:
-      serviceAccountName: citadelbuy-api
+      serviceAccountName: broxiva-api
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -50,7 +50,7 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - citadelbuy-api
+                  - broxiva-api
               topologyKey: kubernetes.io/hostname
           - weight: 50
             podAffinityTerm:
@@ -59,7 +59,7 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - citadelbuy-api
+                  - broxiva-api
               topologyKey: topology.kubernetes.io/zone
       topologySpreadConstraints:
       - maxSkew: 1
@@ -67,16 +67,16 @@ spec:
         whenUnsatisfiable: DoNotSchedule
         labelSelector:
           matchLabels:
-            app: citadelbuy-api
+            app: broxiva-api
       - maxSkew: 2
         topologyKey: kubernetes.io/hostname
         whenUnsatisfiable: ScheduleAnyway
         labelSelector:
           matchLabels:
-            app: citadelbuy-api
+            app: broxiva-api
       containers:
       - name: api
-        image: citadelbuyacr.azurecr.io/citadelbuy-api:production-latest
+        image: broxivaacr.azurecr.io/broxiva-api:production-latest
         imagePullPolicy: Always
         ports:
         - containerPort: 4000
@@ -91,104 +91,104 @@ spec:
         - name: PORT
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: PORT
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: DATABASE_URL
         - name: REDIS_URL
           value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
         - name: REDIS_HOST
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: REDIS_HOST
         - name: REDIS_PORT
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: REDIS_PORT
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: REDIS_PASSWORD
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: JWT_SECRET
         - name: JWT_REFRESH_SECRET
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: JWT_REFRESH_SECRET
         - name: JWT_EXPIRATION
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: JWT_EXPIRATION
         - name: STRIPE_SECRET_KEY
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: STRIPE_SECRET_KEY
         - name: STRIPE_WEBHOOK_SECRET
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: STRIPE_WEBHOOK_SECRET
         - name: PAYPAL_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: PAYPAL_CLIENT_ID
         - name: PAYPAL_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: PAYPAL_CLIENT_SECRET
         - name: SENDGRID_API_KEY
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: SENDGRID_API_KEY
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: AWS_ACCESS_KEY_ID
         - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: AWS_SECRET_ACCESS_KEY
         - name: AWS_S3_BUCKET
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: AWS_S3_BUCKET
         - name: AWS_REGION
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: AWS_REGION
         - name: CORS_ORIGIN
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: CORS_ORIGIN
         - name: ELASTICSEARCH_NODE
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: ELASTICSEARCH_NODE
         - name: SENTRY_DSN
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: SENTRY_DSN
         - name: SENTRY_ENVIRONMENT
           value: "production"
@@ -266,10 +266,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: citadelbuy-api
-  namespace: citadelbuy-production
+  name: broxiva-api
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     tier: backend
     environment: production
   annotations:
@@ -292,29 +292,29 @@ spec:
     protocol: TCP
     name: metrics
   selector:
-    app: citadelbuy-api
+    app: broxiva-api
     tier: backend
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: citadelbuy-api
-  namespace: citadelbuy-production
+  name: broxiva-api
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/citadelbuy-api-production
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/broxiva-api-production
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: citadelbuy-api-pdb
-  namespace: citadelbuy-production
+  name: broxiva-api-pdb
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
 spec:
   minAvailable: 3
   selector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
       tier: backend

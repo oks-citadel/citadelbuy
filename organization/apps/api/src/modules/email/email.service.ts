@@ -101,7 +101,7 @@ export class EmailService {
       }
 
       const mailOptions = {
-        from: this.configService.get('EMAIL_FROM') || 'noreply@citadelbuy.com',
+        from: this.configService.get('EMAIL_FROM') || 'noreply@broxiva.com',
         to: options.to,
         subject: options.subject,
         html,
@@ -220,7 +220,7 @@ export class EmailService {
   async sendWelcomeEmail(email: string, name: string): Promise<void> {
     await this.sendEmail({
       to: email,
-      subject: 'Welcome to CitadelBuy - Your Shopping Journey Starts Here!',
+      subject: 'Welcome to Broxiva - Your Shopping Journey Starts Here!',
       template: 'welcome',
       context: {
         name,
@@ -245,7 +245,7 @@ export class EmailService {
 
     await this.sendEmail({
       to: email,
-      subject: 'Reset Your CitadelBuy Password',
+      subject: 'Reset Your Broxiva Password',
       template: 'password-reset',
       context: {
         name: data.name,
@@ -309,7 +309,7 @@ export class EmailService {
         itemCount: data.items.length,
         trackingUrl: `${this.configService.get('FRONTEND_URL')}/orders/${data.orderNumber}`,
         helpUrl: `${this.configService.get('FRONTEND_URL')}/help`,
-        supportEmail: this.configService.get('SUPPORT_EMAIL') || 'support@citadelbuy.com',
+        supportEmail: this.configService.get('SUPPORT_EMAIL') || 'support@broxiva.com',
         unsubscribeUrl: `${this.configService.get('FRONTEND_URL')}/account/notifications`,
         privacyUrl: `${this.configService.get('FRONTEND_URL')}/privacy`,
       },
@@ -838,8 +838,8 @@ export class EmailService {
     businessVerified?: boolean;
   }): Promise<void> {
     try {
-      const frontendUrl = this.configService.get('FRONTEND_URL') || 'https://citadelbuy.com';
-      const supportEmail = this.configService.get('SUPPORT_EMAIL') || 'support@citadelbuy.com';
+      const frontendUrl = this.configService.get('FRONTEND_URL') || 'https://broxiva.com';
+      const supportEmail = this.configService.get('SUPPORT_EMAIL') || 'support@broxiva.com';
 
       await this.sendEmail({
         to: data.email,
@@ -879,8 +879,8 @@ export class EmailService {
     rejectionReasons?: string[];
   }): Promise<void> {
     try {
-      const frontendUrl = this.configService.get('FRONTEND_URL') || 'https://citadelbuy.com';
-      const supportEmail = this.configService.get('SUPPORT_EMAIL') || 'support@citadelbuy.com';
+      const frontendUrl = this.configService.get('FRONTEND_URL') || 'https://broxiva.com';
+      const supportEmail = this.configService.get('SUPPORT_EMAIL') || 'support@broxiva.com';
 
       await this.sendEmail({
         to: data.email,
@@ -920,8 +920,8 @@ export class EmailService {
     estimatedReviewTime?: string;
   }): Promise<void> {
     try {
-      const frontendUrl = this.configService.get('FRONTEND_URL') || 'https://citadelbuy.com';
-      const supportEmail = this.configService.get('SUPPORT_EMAIL') || 'support@citadelbuy.com';
+      const frontendUrl = this.configService.get('FRONTEND_URL') || 'https://broxiva.com';
+      const supportEmail = this.configService.get('SUPPORT_EMAIL') || 'support@broxiva.com';
 
       await this.sendEmail({
         to: data.email,

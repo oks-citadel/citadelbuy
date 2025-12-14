@@ -307,7 +307,7 @@ export class ReportingAgent {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Test Report - CitadelBuy Platform</title>
+  <title>Test Report - Broxiva Platform</title>
   <style>
     * {
       margin: 0;

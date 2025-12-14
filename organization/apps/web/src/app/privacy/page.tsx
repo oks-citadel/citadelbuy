@@ -17,7 +17,7 @@ export default function PrivacyPage() {
         <div className="max-w-3xl mx-auto prose prose-gray">
           <h2>1. Introduction</h2>
           <p>
-            CitadelBuy (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) is committed to protecting your privacy.
+            Broxiva (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) is committed to protecting your privacy.
             This Privacy Policy explains how we collect, use, disclose, and safeguard your information
             when you visit our website or use our services.
           </p>
@@ -106,7 +106,7 @@ export default function PrivacyPage() {
             If you have questions about this Privacy Policy, please contact us at:
           </p>
           <ul>
-            <li>Email: privacy@citadelbuy.com</li>
+            <li>Email: privacy@broxiva.com</li>
             <li>Address: 123 Commerce Street, San Francisco, CA 94102</li>
           </ul>
         </div>

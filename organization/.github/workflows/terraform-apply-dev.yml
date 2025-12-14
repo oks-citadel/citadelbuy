@@ -20,8 +20,8 @@ permissions:
 
 env:
   ARM_SUBSCRIPTION_ID: ba233460-2dbe-4603-a594-68f93ec9deb3
-  ARM_RESOURCE_GROUP: citadelbuy-tfstate-rg
-  ARM_STORAGE_ACCOUNT: citadelbuytfstate
+  ARM_RESOURCE_GROUP: broxiva-tfstate-rg
+  ARM_STORAGE_ACCOUNT: broxivatfstate
   ARM_CONTAINER_NAME: tfstate
   TF_VERSION: "1.6.0"
   ENVIRONMENT: dev
@@ -118,7 +118,7 @@ jobs:
     if: needs.terraform-plan.outputs.plan_exitcode == '2'
     environment:
       name: dev
-      url: https://dev.citadelbuy.com
+      url: https://dev.broxiva.com
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -210,12 +210,12 @@ jobs:
           echo "🔍 Verifying deployed resources..."
 
           # Check Resource Group
-          az group show --name citadelbuy-dev-rg --query "{Name:name, Location:location, ProvisioningState:properties.provisioningState}" -o table
+          az group show --name broxiva-dev-rg --query "{Name:name, Location:location, ProvisioningState:properties.provisioningState}" -o table
 
           # List all resources in the resource group
           echo ""
-          echo "📦 Resources in citadelbuy-dev-rg:"
-          az resource list --resource-group citadelbuy-dev-rg --query "[].{Name:name, Type:type, Location:location}" -o table
+          echo "📦 Resources in broxiva-dev-rg:"
+          az resource list --resource-group broxiva-dev-rg --query "[].{Name:name, Type:type, Location:location}" -o table
 
           echo ""
           echo "✅ Resource verification complete"

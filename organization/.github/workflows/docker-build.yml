@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY: citadelbuyacr.azurecr.io
+  REGISTRY: broxivaacr.azurecr.io
 
 jobs:
   prepare-matrix:
@@ -197,7 +197,7 @@ jobs:
             VERSION=${{ steps.meta.outputs.branch }}
           labels: |
             org.opencontainers.image.title=${{ matrix.name }}
-            org.opencontainers.image.description=CitadelBuy ${{ matrix.name }} service
+            org.opencontainers.image.description=Broxiva ${{ matrix.name }} service
             org.opencontainers.image.url=https://github.com/${{ github.repository }}
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.version=${{ steps.meta.outputs.branch }}

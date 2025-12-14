@@ -1,5 +1,5 @@
 # Database Module - AWS RDS PostgreSQL and ElastiCache Redis
-# CitadelBuy E-commerce Platform - AWS Infrastructure
+# Broxiva E-commerce Platform - AWS Infrastructure
 
 # ============================================
 # RDS Subnet Group

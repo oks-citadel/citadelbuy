@@ -64,9 +64,9 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: citadelbuy
-          POSTGRES_PASSWORD: citadelbuy123
-          POSTGRES_DB: citadelbuy_test
+          POSTGRES_USER: broxiva
+          POSTGRES_PASSWORD: broxiva123
+          POSTGRES_DB: broxiva_test
         ports:
           - 5432:5432
         options: >-
@@ -108,12 +108,12 @@ jobs:
       - name: Run migrations
         run: pnpm db:migrate:deploy
         env:
-          DATABASE_URL: postgresql://citadelbuy:citadelbuy123@localhost:5432/citadelbuy_test
+          DATABASE_URL: postgresql://broxiva:broxiva123@localhost:5432/broxiva_test
 
       - name: Run API tests
         run: pnpm test:api
         env:
-          DATABASE_URL: postgresql://citadelbuy:citadelbuy123@localhost:5432/citadelbuy_test
+          DATABASE_URL: postgresql://broxiva:broxiva123@localhost:5432/broxiva_test
           REDIS_URL: redis://localhost:6379
           JWT_SECRET: test-secret-key
           NODE_ENV: test
@@ -229,8 +229,8 @@ jobs:
           context: ./apps/api
           push: true
           tags: |
-            citadelplatforms/citadelbuy-ecommerce:backend-${{ github.sha }}
-            citadelplatforms/citadelbuy-ecommerce:backend-latest
+            broxiva/broxiva-ecommerce:backend-${{ github.sha }}
+            broxiva/broxiva-ecommerce:backend-latest
 
       - name: Build and push Web image
         uses: docker/build-push-action@v5
@@ -238,5 +238,5 @@ jobs:
           context: ./apps/web
           push: true
           tags: |
-            citadelplatforms/citadelbuy-ecommerce:frontend-${{ github.sha }}
-            citadelplatforms/citadelbuy-ecommerce:frontend-latest
+            broxiva/broxiva-ecommerce:frontend-${{ github.sha }}
+            broxiva/broxiva-ecommerce:frontend-latest

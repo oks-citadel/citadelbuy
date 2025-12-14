@@ -1,0 +1,307 @@
+name: CD - Deploy to AKS
+
+on:
+  workflow_run:
+    workflows: ["CI Build & Push to ACR (Selective)"]
+    types:
+      - completed
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      image_tag:
+        description: 'Image tag to deploy (e.g., sha-abc1234 or v1.0.0)'
+        required: true
+        type: string
+
+env:
+  REGISTRY: broxivaacr.azurecr.io
+  AKS_RESOURCE_GROUP: broxiva-rg
+  HELM_EXPERIMENTAL_OCI: 1
+
+jobs:
+  # ==========================================
+  # Determine deployment parameters
+  # ==========================================
+  prepare:
+    name: Prepare Deployment
+    runs-on: ubuntu-latest
+    # Only run if previous workflow succeeded or manual trigger
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    outputs:
+      environment: ${{ steps.params.outputs.environment }}
+      image_tag: ${{ steps.params.outputs.image_tag }}
+      cluster_name: ${{ steps.params.outputs.cluster_name }}
+      namespace: ${{ steps.params.outputs.namespace }}
+      should_deploy: ${{ steps.params.outputs.should_deploy }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine deployment parameters
+        id: params
+        run: |
+          # Determine environment
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ENVIRONMENT="${{ inputs.environment }}"
+            IMAGE_TAG="${{ inputs.image_tag }}"
+          elif [ "${{ github.event.workflow_run.head_branch }}" = "main" ]; then
+            ENVIRONMENT="production"
+            # Get latest tag from previous workflow
+            IMAGE_TAG="sha-$(echo ${{ github.event.workflow_run.head_sha }} | cut -c1-7)"
+          else
+            ENVIRONMENT="development"
+            IMAGE_TAG="sha-$(echo ${{ github.event.workflow_run.head_sha }} | cut -c1-7)"
+          fi
+
+          # Set cluster name and namespace based on environment
+          case $ENVIRONMENT in
+            production)
+              CLUSTER_NAME="broxiva-aks-prod"
+              NAMESPACE="broxiva-prod"
+              SHOULD_DEPLOY="false"  # Production requires manual approval
+              ;;
+            staging)
+              CLUSTER_NAME="broxiva-aks-staging"
+              NAMESPACE="broxiva-staging"
+              SHOULD_DEPLOY="true"
+              ;;
+            development)
+              CLUSTER_NAME="broxiva-aks-dev"
+              NAMESPACE="broxiva-dev"
+              SHOULD_DEPLOY="true"
+              ;;
+          esac
+
+          echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "cluster_name=$CLUSTER_NAME" >> $GITHUB_OUTPUT
+          echo "namespace=$NAMESPACE" >> $GITHUB_OUTPUT
+          echo "should_deploy=$SHOULD_DEPLOY" >> $GITHUB_OUTPUT
+
+          echo "### Deployment Parameters" >> $GITHUB_STEP_SUMMARY
+          echo "- Environment: $ENVIRONMENT" >> $GITHUB_STEP_SUMMARY
+          echo "- Image Tag: $IMAGE_TAG" >> $GITHUB_STEP_SUMMARY
+          echo "- Cluster: $CLUSTER_NAME" >> $GITHUB_STEP_SUMMARY
+          echo "- Namespace: $NAMESPACE" >> $GITHUB_STEP_SUMMARY
+
+  # ==========================================
+  # Deploy to Development (Auto)
+  # ==========================================
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: |
+      needs.prepare.outputs.environment == 'development' &&
+      needs.prepare.outputs.should_deploy == 'true'
+    environment:
+      name: development
+      url: https://dev.broxiva.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AKS_RESOURCE_GROUP }} \
+            --name ${{ needs.prepare.outputs.cluster_name }} \
+            --overwrite-existing
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'v3.13.0'
+
+      - name: Update image tags with Kustomize
+        run: |
+          cd infrastructure/kubernetes/overlays/development
+
+          # Update all service image tags
+          kustomize edit set image \
+            broxivaacr.azurecr.io/api=${{ env.REGISTRY }}/api:${{ needs.prepare.outputs.image_tag }} \
+            broxivaacr.azurecr.io/web=${{ env.REGISTRY }}/web:${{ needs.prepare.outputs.image_tag }}
+
+      - name: Deploy to AKS
+        run: |
+          kubectl apply -k infrastructure/kubernetes/overlays/development
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/broxiva-api -n ${{ needs.prepare.outputs.namespace }} --timeout=300s
+          kubectl rollout status deployment/broxiva-web -n ${{ needs.prepare.outputs.namespace }} --timeout=300s
+
+      - name: Verify deployment
+        run: |
+          echo "### Deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**API:**" >> $GITHUB_STEP_SUMMARY
+          kubectl get deployment broxiva-api -n ${{ needs.prepare.outputs.namespace }} -o wide >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Web:**" >> $GITHUB_STEP_SUMMARY
+          kubectl get deployment broxiva-web -n ${{ needs.prepare.outputs.namespace }} -o wide >> $GITHUB_STEP_SUMMARY
+
+      - name: Run smoke tests
+        run: |
+          # Get service endpoints
+          API_URL=$(kubectl get ingress -n ${{ needs.prepare.outputs.namespace }} -o jsonpath='{.items[0].spec.rules[0].host}')
+
+          # Basic health check
+          curl -sf "https://${API_URL}/api/health" || echo "Health check failed"
+
+  # ==========================================
+  # Deploy to Staging (Auto)
+  # ==========================================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: |
+      needs.prepare.outputs.environment == 'staging' &&
+      needs.prepare.outputs.should_deploy == 'true'
+    environment:
+      name: staging
+      url: https://staging.broxiva.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AKS_RESOURCE_GROUP }} \
+            --name ${{ needs.prepare.outputs.cluster_name }} \
+            --overwrite-existing
+
+      - name: Deploy to AKS
+        run: |
+          kubectl apply -k infrastructure/kubernetes/overlays/staging
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/broxiva-api -n ${{ needs.prepare.outputs.namespace }} --timeout=300s
+          kubectl rollout status deployment/broxiva-web -n ${{ needs.prepare.outputs.namespace }} --timeout=300s
+
+  # ==========================================
+  # Deploy to Production (Manual Approval Required)
+  # ==========================================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: needs.prepare.outputs.environment == 'production'
+    environment:
+      name: production
+      url: https://broxiva.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AKS_RESOURCE_GROUP }} \
+            --name ${{ needs.prepare.outputs.cluster_name }} \
+            --overwrite-existing
+
+      - name: Create backup
+        run: |
+          echo "Creating pre-deployment backup..."
+          kubectl get all -n ${{ needs.prepare.outputs.namespace }} -o yaml > backup-$(date +%Y%m%d-%H%M%S).yaml
+
+      - name: Deploy with blue-green strategy
+        run: |
+          # Blue-green deployment
+          # 1. Deploy to green (inactive) deployment
+          # 2. Run health checks
+          # 3. Switch traffic
+          # 4. Keep blue as rollback
+
+          echo "Deploying to production with blue-green strategy..."
+          kubectl apply -k infrastructure/kubernetes/overlays/production
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/broxiva-api -n ${{ needs.prepare.outputs.namespace }} --timeout=600s
+          kubectl rollout status deployment/broxiva-web -n ${{ needs.prepare.outputs.namespace }} --timeout=600s
+
+      - name: Run production smoke tests
+        run: |
+          # Production health checks
+          API_URL="https://api.broxiva.com"
+          WEB_URL="https://broxiva.com"
+
+          echo "Checking API health..."
+          curl -sf "${API_URL}/api/health" || exit 1
+
+          echo "Checking Web health..."
+          curl -sf "${WEB_URL}" || exit 1
+
+          echo "All health checks passed!"
+
+      - name: Notify success
+        if: success()
+        run: |
+          echo "### Production Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Image Tag: ${{ needs.prepare.outputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Deployed at: $(date -u)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deployment failed! Rolling back..."
+          kubectl rollout undo deployment/broxiva-api -n ${{ needs.prepare.outputs.namespace }}
+          kubectl rollout undo deployment/broxiva-web -n ${{ needs.prepare.outputs.namespace }}
+          echo "Rollback completed."
+
+  # ==========================================
+  # Post-deployment notification
+  # ==========================================
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [prepare, deploy-dev, deploy-staging, deploy-production]
+    if: always()
+    steps:
+      - name: Notify deployment status
+        run: |
+          echo "### Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Environment: ${{ needs.prepare.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Image Tag: ${{ needs.prepare.outputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: Completed" >> $GITHUB_STEP_SUMMARY

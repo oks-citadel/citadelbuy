@@ -8,7 +8,7 @@ async function main() {
 
   // Check if admin already exists
   const existingAdmin = await prisma.user.findUnique({
-    where: { email: 'admin@citadelbuy.com' },
+    where: { email: 'admin@broxiva.com' },
   });
 
   if (existingAdmin) {
@@ -30,7 +30,7 @@ async function main() {
 
     await prisma.user.create({
       data: {
-        email: 'admin@citadelbuy.com',
+        email: 'admin@broxiva.com',
         password: hashedPassword,
         name: 'Admin',
         role: 'ADMIN',
@@ -106,7 +106,7 @@ async function main() {
   if (!existingProgram) {
     await prisma.loyaltyProgram.create({
       data: {
-        name: 'CitadelBuy Rewards',
+        name: 'Broxiva Rewards',
         description: 'Earn points on every purchase and unlock exclusive rewards',
         pointsPerDollar: 1,
         isActive: true,
@@ -193,9 +193,9 @@ async function main() {
 
   console.log('\n✅ Production seeding complete!');
   console.log('\n📊 Summary:');
-  console.log('  - Admin user: admin@citadelbuy.com');
+  console.log('  - Admin user: admin@broxiva.com');
   console.log('  - Categories: 6 essential categories');
-  console.log('  - Loyalty program: CitadelBuy Rewards');
+  console.log('  - Loyalty program: Broxiva Rewards');
   console.log('  - Loyalty tiers: Bronze, Silver, Gold, Platinum, Diamond');
   console.log('\n⚠️  Remember to:');
   console.log('  1. Change admin password after first login');

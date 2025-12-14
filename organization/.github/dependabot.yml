@@ -1,4 +1,4 @@
-# Dependabot Configuration for CitadelBuy Platform
+# Dependabot Configuration for Broxiva Platform
 # Automates dependency updates for npm, Docker, GitHub Actions, and Terraform
 # See: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
@@ -42,7 +42,7 @@ updates:
       - "npm"
       - "automerge"
     reviewers:
-      - "citadelbuy/platform-team"
+      - "broxiva/platform-team"
     commit-message:
       prefix: "chore(deps)"
       include: "scope"
@@ -96,7 +96,7 @@ updates:
       - "npm"
       - "api"
     reviewers:
-      - "citadelbuy/backend-team"
+      - "broxiva/backend-team"
     commit-message:
       prefix: "chore(api)"
       include: "scope"
@@ -153,7 +153,7 @@ updates:
       - "web"
       - "frontend"
     reviewers:
-      - "citadelbuy/frontend-team"
+      - "broxiva/frontend-team"
     commit-message:
       prefix: "chore(web)"
       include: "scope"
@@ -198,7 +198,7 @@ updates:
       - "npm"
       - "mobile"
     reviewers:
-      - "citadelbuy/mobile-team"
+      - "broxiva/mobile-team"
     commit-message:
       prefix: "chore(mobile)"
       include: "scope"
@@ -255,7 +255,7 @@ updates:
       - "docker"
       - "api"
     reviewers:
-      - "citadelbuy/devops-team"
+      - "broxiva/devops-team"
     commit-message:
       prefix: "chore(docker)"
       include: "scope"
@@ -274,7 +274,7 @@ updates:
       - "docker"
       - "web"
     reviewers:
-      - "citadelbuy/devops-team"
+      - "broxiva/devops-team"
     commit-message:
       prefix: "chore(docker)"
       include: "scope"
@@ -429,7 +429,7 @@ updates:
       - "docker"
       - "infrastructure"
     reviewers:
-      - "citadelbuy/devops-team"
+      - "broxiva/devops-team"
     commit-message:
       prefix: "chore(infra)"
       include: "scope"
@@ -448,7 +448,7 @@ updates:
       - "docker"
       - "docker-compose"
     reviewers:
-      - "citadelbuy/devops-team"
+      - "broxiva/devops-team"
     commit-message:
       prefix: "chore(docker)"
       include: "scope"
@@ -472,7 +472,7 @@ updates:
       - "github-actions"
       - "ci-cd"
     reviewers:
-      - "citadelbuy/devops-team"
+      - "broxiva/devops-team"
     commit-message:
       prefix: "chore(ci)"
       include: "scope"
@@ -495,8 +495,8 @@ updates:
       - "terraform"
       - "infrastructure"
     reviewers:
-      - "citadelbuy/devops-team"
-      - "citadelbuy/platform-team"
+      - "broxiva/devops-team"
+      - "broxiva/platform-team"
     commit-message:
       prefix: "chore(terraform)"
       include: "scope"
@@ -516,8 +516,8 @@ updates:
       - "infrastructure"
       - "production"
     reviewers:
-      - "citadelbuy/devops-team"
-      - "citadelbuy/platform-team"
+      - "broxiva/devops-team"
+      - "broxiva/platform-team"
     commit-message:
       prefix: "chore(terraform)"
       include: "scope"
@@ -570,7 +570,7 @@ updates:
       - "terraform"
       - "security"
     reviewers:
-      - "citadelbuy/security-team"
+      - "broxiva/security-team"
     commit-message:
       prefix: "chore(terraform)"
       include: "scope"
@@ -606,7 +606,7 @@ updates:
       - "terraform"
       - "aws"
     reviewers:
-      - "citadelbuy/devops-team"
+      - "broxiva/devops-team"
     commit-message:
       prefix: "chore(aws)"
       include: "scope"
@@ -625,7 +625,7 @@ updates:
       - "terraform"
       - "azure"
     reviewers:
-      - "citadelbuy/devops-team"
+      - "broxiva/devops-team"
     commit-message:
       prefix: "chore(azure)"
       include: "scope"

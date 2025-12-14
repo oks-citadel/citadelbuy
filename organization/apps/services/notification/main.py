@@ -505,7 +505,7 @@ async def lifespan(app: FastAPI):
 
 # Initialize FastAPI app with lifespan
 app = FastAPI(
-    title="CitadelBuy Notification AI Service",
+    title="Broxiva Notification AI Service",
     description="AI-powered notification personalization, timing optimization, and user segmentation",
     version="1.0.0",
     docs_url="/docs",
@@ -637,7 +637,7 @@ async def segment_users(request: SegmentUsersRequest):
 async def root():
     """Root endpoint with service information."""
     return {
-        "service": "CitadelBuy Notification AI Service",
+        "service": "Broxiva Notification AI Service",
         "version": "1.0.0",
         "description": "AI-powered notification personalization, timing optimization, and user segmentation",
         "endpoints": {

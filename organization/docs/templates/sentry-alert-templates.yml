@@ -1,4 +1,4 @@
-# Sentry Alert Rule Templates for CitadelBuy
+# Sentry Alert Rule Templates for Broxiva
 #
 # This file contains pre-configured alert rule templates that can be imported
 # into Sentry for consistent monitoring across all projects.
@@ -36,16 +36,16 @@ critical_high_error_rate:
     - type: slack
       channel: "#incidents-critical"
       priority: urgent
-      workspace: citadelbuy
+      workspace: broxiva
 
     - type: pagerduty
-      service: citadelbuy-backend
+      service: broxiva-backend
       severity: critical
 
     - type: email
       recipients:
-        - engineering-leads@citadelbuy.com
-        - oncall@citadelbuy.com
+        - engineering-leads@broxiva.com
+        - oncall@broxiva.com
 
   notes: |
     This alert fires when error rate exceeds 50 errors in 5 minutes.
@@ -81,11 +81,11 @@ critical_database_failures:
       priority: urgent
 
     - type: pagerduty
-      service: citadelbuy-infrastructure
+      service: broxiva-infrastructure
       severity: critical
 
     - type: webhook
-      url: "https://api.citadelbuy.com/internal/incidents/database"
+      url: "https://api.broxiva.com/internal/incidents/database"
       method: POST
 
   notes: |
@@ -129,13 +129,13 @@ critical_payment_failures:
       priority: urgent
 
     - type: pagerduty
-      service: citadelbuy-payments
+      service: broxiva-payments
       severity: critical
 
     - type: email
       recipients:
-        - payments-team@citadelbuy.com
-        - finance-team@citadelbuy.com
+        - payments-team@broxiva.com
+        - finance-team@broxiva.com
 
   notes: |
     Payment failures directly impact revenue and customer experience.
@@ -180,7 +180,7 @@ critical_api_degradation:
 
     - type: email
       recipients:
-        - platform-team@citadelbuy.com
+        - platform-team@broxiva.com
 
   notes: |
     Sustained API response time > 2s indicates performance issues.
@@ -223,8 +223,8 @@ high_auth_failures:
 
     - type: email
       recipients:
-        - auth-team@citadelbuy.com
-        - security-team@citadelbuy.com
+        - auth-team@broxiva.com
+        - security-team@broxiva.com
 
   notes: |
     Authentication failures prevent users from accessing the platform.
@@ -261,7 +261,7 @@ high_checkout_errors:
 
     - type: email
       recipients:
-        - commerce-team@citadelbuy.com
+        - commerce-team@broxiva.com
 
   notes: |
     Checkout errors directly impact conversion rate and revenue.
@@ -371,12 +371,12 @@ warning_performance_regression:
       priority: medium
 
     - type: github
-      repo: citadelbuy/platform
+      repo: broxiva/platform
       labels: [performance, regression]
 
     - type: email
       recipients:
-        - performance-team@citadelbuy.com
+        - performance-team@broxiva.com
 
   notes: |
     25% performance regression requires investigation.
@@ -461,8 +461,8 @@ frontend_core_web_vitals:
 
     - type: email
       recipients:
-        - frontend-team@citadelbuy.com
-        - ux-team@citadelbuy.com
+        - frontend-team@broxiva.com
+        - ux-team@broxiva.com
 
   notes: |
     Core Web Vitals impact SEO and user experience.
@@ -571,7 +571,7 @@ mobile_crash_rate:
       priority: high
 
     - type: pagerduty
-      service: citadelbuy-mobile
+      service: broxiva-mobile
       severity: high
 
   notes: |
@@ -643,9 +643,9 @@ business_low_conversion_rate:
 
     - type: email
       recipients:
-        - commerce-team@citadelbuy.com
-        - product-team@citadelbuy.com
-        - cmo@citadelbuy.com
+        - commerce-team@broxiva.com
+        - product-team@broxiva.com
+        - cmo@broxiva.com
 
   notes: |
     Conversion rate drop indicates potential revenue loss.
@@ -722,8 +722,8 @@ report_weekly_error_summary:
   actions:
     - type: email
       recipients:
-        - engineering-all@citadelbuy.com
-        - product-team@citadelbuy.com
+        - engineering-all@broxiva.com
+        - product-team@broxiva.com
 
     - type: slack
       channel: "#weekly-metrics"
@@ -761,8 +761,8 @@ report_release_health:
   actions:
     - type: email
       recipients:
-        - release-managers@citadelbuy.com
-        - engineering-leads@citadelbuy.com
+        - release-managers@broxiva.com
+        - engineering-leads@broxiva.com
 
     - type: slack
       channel: "#releases"

@@ -21,11 +21,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'CitadelBuy - AI-Powered E-Commerce Platform',
-    template: '%s | CitadelBuy',
+    default: 'Broxiva - AI-Powered E-Commerce Platform',
+    template: '%s | Broxiva',
   },
   description:
-    'Discover the future of shopping with CitadelBuy. AI-powered recommendations, visual search, virtual try-on, and personalized shopping experiences.',
+    'Discover the future of shopping with Broxiva. AI-powered recommendations, visual search, virtual try-on, and personalized shopping experiences.',
   keywords: [
     'e-commerce',
     'online shopping',
@@ -34,10 +34,10 @@ export const metadata: Metadata = {
     'virtual try-on',
     'personalized recommendations',
   ],
-  authors: [{ name: 'CitadelBuy' }],
-  creator: 'CitadelBuy',
-  publisher: 'CitadelBuy',
-  metadataBase: new URL('https://citadelbuy.com'),
+  authors: [{ name: 'Broxiva' }],
+  creator: 'Broxiva',
+  publisher: 'Broxiva',
+  metadataBase: new URL('https://broxiva.com'),
   alternates: {
     canonical: '/',
     languages: {
@@ -46,11 +46,11 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'CitadelBuy - AI-Powered E-Commerce Platform',
+    title: 'Broxiva - AI-Powered E-Commerce Platform',
     description:
-      'Discover the future of shopping with CitadelBuy. AI-powered recommendations, visual search, virtual try-on, and personalized shopping experiences.',
-    url: 'https://citadelbuy.com',
-    siteName: 'CitadelBuy',
+      'Discover the future of shopping with Broxiva. AI-powered recommendations, visual search, virtual try-on, and personalized shopping experiences.',
+    url: 'https://broxiva.com',
+    siteName: 'Broxiva',
     locale: 'en_US',
     type: 'website',
     images: [
@@ -58,17 +58,17 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'CitadelBuy - AI-Powered Shopping',
+        alt: 'Broxiva - AI-Powered Shopping',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'CitadelBuy - AI-Powered E-Commerce Platform',
+    title: 'Broxiva - AI-Powered E-Commerce Platform',
     description:
-      'Discover the future of shopping with CitadelBuy. AI-powered recommendations, visual search, and personalized experiences.',
+      'Discover the future of shopping with Broxiva. AI-powered recommendations, visual search, and personalized experiences.',
     images: ['/twitter-image.png'],
-    creator: '@citadelbuy',
+    creator: '@broxiva',
   },
   robots: {
     index: true,

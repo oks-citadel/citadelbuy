@@ -445,7 +445,7 @@ export class MobilePWAAgent extends BaseAgent {
 
       t('should handle app scheme deep links via API', async (ctx) => {
         const { status } = await this.http.post('/deep-links/resolve', {
-          url: 'citadelbuy://product/123',
+          url: 'broxiva://product/123',
         });
 
         assert.ok([200, 404].includes(status), 'Deep link resolver endpoint');
@@ -983,7 +983,7 @@ export class MobilePWAAgent extends BaseAgent {
             type: 'loyalty',
             cardData: {
               number: 'LOYALTY123456',
-              name: 'CitadelBuy Rewards',
+              name: 'Broxiva Rewards',
             },
           });
 

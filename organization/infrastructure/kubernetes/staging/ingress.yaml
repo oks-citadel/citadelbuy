@@ -1,10 +1,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: citadelbuy-api-ingress
-  namespace: citadelbuy-staging
+  name: broxiva-api-ingress
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy
+    app: broxiva
     environment: staging
   annotations:
     # Nginx Ingress Controller
@@ -17,7 +17,7 @@ metadata:
 
     # CORS Configuration
     nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "https://staging.citadelbuy.com"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://staging.broxiva.com"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
 
@@ -34,27 +34,27 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - staging-api.citadelbuy.com
-    secretName: citadelbuy-api-tls-staging
+    - staging-api.broxiva.com
+    secretName: broxiva-api-tls-staging
   rules:
-  - host: staging-api.citadelbuy.com
+  - host: staging-api.broxiva.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: citadelbuy-api
+            name: broxiva-api
             port:
               number: 4000
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: citadelbuy-web-ingress
-  namespace: citadelbuy-staging
+  name: broxiva-web-ingress
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy
+    app: broxiva
     environment: staging
   annotations:
     # Nginx Ingress Controller
@@ -78,17 +78,17 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - staging.citadelbuy.com
-    secretName: citadelbuy-web-tls-staging
+    - staging.broxiva.com
+    secretName: broxiva-web-tls-staging
   rules:
-  - host: staging.citadelbuy.com
+  - host: staging.broxiva.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: citadelbuy-web
+            name: broxiva-web
             port:
               number: 3000
 ---
@@ -97,11 +97,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-ingress
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
   policyTypes:
   - Ingress
   ingress:
@@ -117,11 +117,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-web-ingress
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-web
+      app: broxiva-web
   policyTypes:
   - Ingress
   ingress:

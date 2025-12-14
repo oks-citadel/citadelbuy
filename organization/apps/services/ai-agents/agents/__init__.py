@@ -1,6 +1,6 @@
 """
 AI Agents Package
-All 12 enterprise AI agents for CitadelBuy
+All 12 enterprise AI agents for Broxiva
 """
 
 from .base_agent import BaseAgent, AgentStatus, Priority

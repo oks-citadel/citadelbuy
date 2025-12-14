@@ -1,5 +1,5 @@
 {
-  "name": "CitadelBuy Fraud Detection & Prevention",
+  "name": "Broxiva Fraud Detection & Prevention",
   "nodes": [
     {
       "parameters": {
@@ -29,9 +29,9 @@
     },
     {
       "parameters": {
-        "url": "https://api.citadelbuy.com/v1/customers/{{$json.customerId}}",
+        "url": "https://api.broxiva.com/v1/customers/{{$json.customerId}}",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "options": {
           "timeout": 10000
         }
@@ -44,9 +44,9 @@
     },
     {
       "parameters": {
-        "url": "https://api.citadelbuy.com/v1/orders?customerId={{$json.customerId}}&timeframe=24h",
+        "url": "https://api.broxiva.com/v1/orders?customerId={{$json.customerId}}&timeframe=24h",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "options": {
           "timeout": 10000
         }
@@ -59,9 +59,9 @@
     },
     {
       "parameters": {
-        "url": "https://api.citadelbuy.com/v1/payments/failed-attempts?customerId={{$json.customerId}}",
+        "url": "https://api.broxiva.com/v1/payments/failed-attempts?customerId={{$json.customerId}}",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "options": {
           "timeout": 10000
         }
@@ -226,9 +226,9 @@
     {
       "parameters": {
         "method": "PUT",
-        "url": "https://api.citadelbuy.com/v1/orders/{{$json.orderId}}/status",
+        "url": "https://api.broxiva.com/v1/orders/{{$json.orderId}}/status",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -256,9 +256,9 @@
     {
       "parameters": {
         "method": "PUT",
-        "url": "https://api.citadelbuy.com/v1/orders/{{$json.orderId}}/status",
+        "url": "https://api.broxiva.com/v1/orders/{{$json.orderId}}/status",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -290,9 +290,9 @@
     {
       "parameters": {
         "method": "PUT",
-        "url": "https://api.citadelbuy.com/v1/orders/{{$json.orderId}}/status",
+        "url": "https://api.broxiva.com/v1/orders/{{$json.orderId}}/status",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -328,9 +328,9 @@
     {
       "parameters": {
         "method": "DELETE",
-        "url": "https://api.citadelbuy.com/v1/orders/{{$json.orderId}}",
+        "url": "https://api.broxiva.com/v1/orders/{{$json.orderId}}",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -358,9 +358,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/customers/{{$json.customerId}}/block",
+        "url": "https://api.broxiva.com/v1/customers/{{$json.customerId}}/block",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -388,7 +388,7 @@
     {
       "parameters": {
         "channel": "#fraud-review",
-        "text": "=:warning: Medium Risk Order Detected\n\n*Order ID:* {{$json.orderId}}\n*Risk Score:* {{$json.riskScore}}/100\n*Customer:* {{$json.customerEmail}}\n*Order Total:* ${{$json.orderTotal}}\n\n*Risk Factors:*\n{{$json.riskFactors.map(f => `• ${f.factor}: +${f.points} points`).join('\\n')}}\n\n*Action Required:* Review order in admin panel\n<https://admin.citadelbuy.com/orders/{{$json.orderId}}|View Order>",
+        "text": "=:warning: Medium Risk Order Detected\n\n*Order ID:* {{$json.orderId}}\n*Risk Score:* {{$json.riskScore}}/100\n*Customer:* {{$json.customerEmail}}\n*Order Total:* ${{$json.orderTotal}}\n\n*Risk Factors:*\n{{$json.riskFactors.map(f => `• ${f.factor}: +${f.points} points`).join('\\n')}}\n\n*Action Required:* Review order in admin panel\n<https://admin.broxiva.com/orders/{{$json.orderId}}|View Order>",
         "attachments": []
       },
       "id": "slack-medium-alert",
@@ -400,7 +400,7 @@
     {
       "parameters": {
         "channel": "#fraud-alerts",
-        "text": "=:rotating_light: HIGH RISK ORDER - URGENT REVIEW REQUIRED\n\n*Order ID:* {{$json.orderId}}\n*Risk Score:* {{$json.riskScore}}/100 (HIGH)\n*Customer:* {{$json.customerEmail}}\n*Order Total:* ${{$json.orderTotal}}\n*IP Country:* {{$json.ipCountry}}\n*Shipping Country:* {{$json.shippingCountry}}\n\n*Risk Factors:*\n{{$json.riskFactors.map(f => `• ${f.factor}: +${f.points} points`).join('\\n')}}\n\n*Stripe Radar:* {{$json.stripeRiskLevel}}\n\n*Action Required:* URGENT manual review required\n<https://admin.citadelbuy.com/orders/{{$json.orderId}}|View Order> | <https://admin.citadelbuy.com/fraud/review/{{$json.orderId}}|Fraud Review Panel>\n\n@fraud-team @security-team",
+        "text": "=:rotating_light: HIGH RISK ORDER - URGENT REVIEW REQUIRED\n\n*Order ID:* {{$json.orderId}}\n*Risk Score:* {{$json.riskScore}}/100 (HIGH)\n*Customer:* {{$json.customerEmail}}\n*Order Total:* ${{$json.orderTotal}}\n*IP Country:* {{$json.ipCountry}}\n*Shipping Country:* {{$json.shippingCountry}}\n\n*Risk Factors:*\n{{$json.riskFactors.map(f => `• ${f.factor}: +${f.points} points`).join('\\n')}}\n\n*Stripe Radar:* {{$json.stripeRiskLevel}}\n\n*Action Required:* URGENT manual review required\n<https://admin.broxiva.com/orders/{{$json.orderId}}|View Order> | <https://admin.broxiva.com/fraud/review/{{$json.orderId}}|Fraud Review Panel>\n\n@fraud-team @security-team",
         "attachments": []
       },
       "id": "slack-high-alert",
@@ -412,7 +412,7 @@
     {
       "parameters": {
         "channel": "#fraud-alerts",
-        "text": "=:no_entry: CRITICAL RISK - ORDER AUTO-CANCELLED\n\n*Order ID:* {{$json.orderId}}\n*Risk Score:* {{$json.riskScore}}/100 (CRITICAL)\n*Customer:* {{$json.customerEmail}} (BLOCKED)\n*Customer ID:* {{$json.customerId}}\n*Order Total:* ${{$json.orderTotal}}\n\n*Risk Factors:*\n{{$json.riskFactors.map(f => `• ${f.factor}: +${f.points} points`).join('\\n')}}\n\n*Actions Taken:*\n• Order automatically cancelled\n• Payment refunded\n• Customer account blocked\n• Added to fraud blacklist\n\n<https://admin.citadelbuy.com/fraud/case/{{$json.orderId}}|View Fraud Case>\n\n@fraud-team @security-team @management",
+        "text": "=:no_entry: CRITICAL RISK - ORDER AUTO-CANCELLED\n\n*Order ID:* {{$json.orderId}}\n*Risk Score:* {{$json.riskScore}}/100 (CRITICAL)\n*Customer:* {{$json.customerEmail}} (BLOCKED)\n*Customer ID:* {{$json.customerId}}\n*Order Total:* ${{$json.orderTotal}}\n\n*Risk Factors:*\n{{$json.riskFactors.map(f => `• ${f.factor}: +${f.points} points`).join('\\n')}}\n\n*Actions Taken:*\n• Order automatically cancelled\n• Payment refunded\n• Customer account blocked\n• Added to fraud blacklist\n\n<https://admin.broxiva.com/fraud/case/{{$json.orderId}}|View Fraud Case>\n\n@fraud-team @security-team @management",
         "attachments": []
       },
       "id": "slack-critical-alert",
@@ -427,7 +427,7 @@
         "resource": "ticket",
         "operation": "create",
         "jsonParameters": true,
-        "additionalFieldsJson": "={\n  \"ticket\": {\n    \"subject\": \"High-Risk Order Review Required - Order #{{$json.orderId}}\",\n    \"comment\": {\n      \"body\": \"A high-risk order has been flagged for manual review.\\n\\nOrder Details:\\n- Order ID: {{$json.orderId}}\\n- Customer Email: {{$json.customerEmail}}\\n- Order Total: ${{$json.orderTotal}}\\n- Risk Score: {{$json.riskScore}}/100\\n\\nRisk Factors:\\n{{$json.riskFactors.map(f => f.factor + ': +' + f.points + ' points').join('\\\\n')}}\\n\\nIP Country: {{$json.ipCountry}}\\nShipping Country: {{$json.shippingCountry}}\\nStripe Risk Level: {{$json.stripeRiskLevel}}\\n\\nAction Required: Review order and approve/reject\\nAdmin Link: https://admin.citadelbuy.com/orders/{{$json.orderId}}\"\n    },\n    \"priority\": \"urgent\",\n    \"status\": \"open\",\n    \"tags\": [\"fraud\", \"high-risk\", \"order-review\"],\n    \"type\": \"problem\",\n    \"custom_fields\": [\n      {\n        \"id\": 360001234567,\n        \"value\": \"{{$json.orderId}}\"\n      },\n      {\n        \"id\": 360001234568,\n        \"value\": \"{{$json.riskScore}}\"\n      }\n    ]\n  }\n}"
+        "additionalFieldsJson": "={\n  \"ticket\": {\n    \"subject\": \"High-Risk Order Review Required - Order #{{$json.orderId}}\",\n    \"comment\": {\n      \"body\": \"A high-risk order has been flagged for manual review.\\n\\nOrder Details:\\n- Order ID: {{$json.orderId}}\\n- Customer Email: {{$json.customerEmail}}\\n- Order Total: ${{$json.orderTotal}}\\n- Risk Score: {{$json.riskScore}}/100\\n\\nRisk Factors:\\n{{$json.riskFactors.map(f => f.factor + ': +' + f.points + ' points').join('\\\\n')}}\\n\\nIP Country: {{$json.ipCountry}}\\nShipping Country: {{$json.shippingCountry}}\\nStripe Risk Level: {{$json.stripeRiskLevel}}\\n\\nAction Required: Review order and approve/reject\\nAdmin Link: https://admin.broxiva.com/orders/{{$json.orderId}}\"\n    },\n    \"priority\": \"urgent\",\n    \"status\": \"open\",\n    \"tags\": [\"fraud\", \"high-risk\", \"order-review\"],\n    \"type\": \"problem\",\n    \"custom_fields\": [\n      {\n        \"id\": 360001234567,\n        \"value\": \"{{$json.orderId}}\"\n      },\n      {\n        \"id\": 360001234568,\n        \"value\": \"{{$json.riskScore}}\"\n      }\n    ]\n  }\n}"
       },
       "id": "create-zendesk-ticket",
       "name": "Create Zendesk Ticket",
@@ -438,9 +438,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/emails/send",
+        "url": "https://api.broxiva.com/v1/emails/send",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -468,9 +468,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/emails/send",
+        "url": "https://api.broxiva.com/v1/emails/send",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -498,9 +498,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/audit/fraud-decisions",
+        "url": "https://api.broxiva.com/v1/audit/fraud-decisions",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "sendQuery": false,
         "jsonParameters": true,
@@ -515,9 +515,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/audit/fraud-decisions",
+        "url": "https://api.broxiva.com/v1/audit/fraud-decisions",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "sendQuery": false,
         "jsonParameters": true,
@@ -532,9 +532,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/audit/fraud-decisions",
+        "url": "https://api.broxiva.com/v1/audit/fraud-decisions",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "sendQuery": false,
         "jsonParameters": true,
@@ -549,9 +549,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/audit/fraud-decisions",
+        "url": "https://api.broxiva.com/v1/audit/fraud-decisions",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "sendQuery": false,
         "jsonParameters": true,
@@ -600,9 +600,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/audit/workflow-errors",
+        "url": "https://api.broxiva.com/v1/audit/workflow-errors",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "jsonParameters": true,
         "bodyParametersJson": "={\n  \"workflowName\": \"Fraud Detection\",\n  \"error\": \"{{$json.error}}\",\n  \"orderId\": \"{{$json.orderId}}\",\n  \"timestamp\": \"{{$json.timestamp}}\",\n  \"executionId\": \"{{$execution.id}}\"\n}"
@@ -1044,12 +1044,12 @@
       "createdAt": "2025-12-03T00:00:00.000Z",
       "updatedAt": "2025-12-03T00:00:00.000Z",
       "id": "3",
-      "name": "citadelbuy"
+      "name": "broxiva"
     }
   ],
   "pinData": {},
   "versionId": "1.0.0",
   "meta": {
-    "instanceId": "citadelbuy-production"
+    "instanceId": "broxiva-production"
   }
 }

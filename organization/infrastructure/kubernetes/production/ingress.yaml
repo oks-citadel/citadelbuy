@@ -1,10 +1,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: citadelbuy-api-ingress
-  namespace: citadelbuy-production
+  name: broxiva-api-ingress
+  namespace: broxiva-production
   labels:
-    app: citadelbuy
+    app: broxiva
     environment: production
     tier: backend
   annotations:
@@ -21,7 +21,7 @@ metadata:
 
     # CORS Configuration
     nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "https://citadelbuy.com,https://www.citadelbuy.com"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://broxiva.com,https://www.broxiva.com"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, PATCH, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,X-CSRF-Token"
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
@@ -60,38 +60,38 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - api.citadelbuy.com
-    - api-prod.citadelbuy.com
-    secretName: citadelbuy-api-tls-production
+    - api.broxiva.com
+    - api-prod.broxiva.com
+    secretName: broxiva-api-tls-production
   rules:
-  - host: api.citadelbuy.com
+  - host: api.broxiva.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: citadelbuy-api
+            name: broxiva-api
             port:
               number: 4000
-  - host: api-prod.citadelbuy.com
+  - host: api-prod.broxiva.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: citadelbuy-api
+            name: broxiva-api
             port:
               number: 4000
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: citadelbuy-web-ingress
-  namespace: citadelbuy-production
+  name: broxiva-web-ingress
+  namespace: broxiva-production
   labels:
-    app: citadelbuy
+    app: broxiva
     environment: production
     tier: frontend
   annotations:
@@ -144,28 +144,28 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - citadelbuy.com
-    - www.citadelbuy.com
-    secretName: citadelbuy-web-tls-production
+    - broxiva.com
+    - www.broxiva.com
+    secretName: broxiva-web-tls-production
   rules:
-  - host: citadelbuy.com
+  - host: broxiva.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: citadelbuy-web
+            name: broxiva-web
             port:
               number: 3000
-  - host: www.citadelbuy.com
+  - host: www.broxiva.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: citadelbuy-web
+            name: broxiva-web
             port:
               number: 3000
 ---
@@ -173,30 +173,30 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: citadelbuy-web-redirect
-  namespace: citadelbuy-production
+  name: broxiva-web-redirect
+  namespace: broxiva-production
   labels:
-    app: citadelbuy
+    app: broxiva
     environment: production
   annotations:
-    nginx.ingress.kubernetes.io/permanent-redirect: "https://citadelbuy.com$request_uri"
+    nginx.ingress.kubernetes.io/permanent-redirect: "https://broxiva.com$request_uri"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-production"
 spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - www.citadelbuy.com
-    secretName: citadelbuy-web-tls-production
+    - www.broxiva.com
+    secretName: broxiva-web-tls-production
   rules:
-  - host: www.citadelbuy.com
+  - host: www.broxiva.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: citadelbuy-web
+            name: broxiva-web
             port:
               number: 3000
 ---
@@ -205,14 +205,14 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-ingress
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
-    app: citadelbuy
+    app: broxiva
     environment: production
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
       tier: backend
   policyTypes:
   - Ingress
@@ -227,7 +227,7 @@ spec:
   - from:
     - podSelector:
         matchLabels:
-          app: citadelbuy-web
+          app: broxiva-web
     ports:
     - protocol: TCP
       port: 4000
@@ -237,14 +237,14 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-web-ingress
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
-    app: citadelbuy
+    app: broxiva
     environment: production
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-web
+      app: broxiva-web
       tier: frontend
   policyTypes:
   - Ingress
@@ -262,14 +262,14 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-egress
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
-    app: citadelbuy
+    app: broxiva
     environment: production
 spec:
   podSelector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
   policyTypes:
   - Egress
   egress:

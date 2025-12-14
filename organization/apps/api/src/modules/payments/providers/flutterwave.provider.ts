@@ -67,7 +67,7 @@ export class FlutterwaveProvider implements IPaymentProvider {
         payment_options: 'card,mobilemoney,ussd,banktransfer',
         meta: {
           ...request.metadata,
-          source: 'citadelbuy',
+          source: 'broxiva',
         },
         customer: {
           email: request.customer.email,
@@ -75,7 +75,7 @@ export class FlutterwaveProvider implements IPaymentProvider {
           name: request.customer.name || '',
         },
         customizations: {
-          title: 'CitadelBuy',
+          title: 'Broxiva',
           description: request.description || 'Payment',
           logo: `${this.configService.get('APP_URL')}/logo.png`,
         },
@@ -369,7 +369,7 @@ export class FlutterwaveProvider implements IPaymentProvider {
         email: request.customer.email,
         phone_number: request.customer.phone,
         fullname: request.customer.name,
-        narration: request.description || 'CitadelBuy payment',
+        narration: request.description || 'Broxiva payment',
         is_permanent: false,
         meta: request.metadata,
       };

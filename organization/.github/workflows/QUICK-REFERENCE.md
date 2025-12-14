@@ -2,7 +2,7 @@
 
 ## File Locations
 
-All workflows: `C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization\.github\workflows\`
+All workflows: `C:\Users\Dell\OneDrive\Documents\Broxiva\organization\.github\workflows\`
 
 Terraform config: `infrastructure/terraform/environments/{dev,staging,prod}/`
 
@@ -60,8 +60,8 @@ Environment: Select "all" or specific environment
 **Subscription ID**: `ba233460-2dbe-4603-a594-68f93ec9deb3`
 
 **State Storage**:
-- Resource Group: `citadelbuy-tfstate-rg`
-- Storage Account: `citadelbuytfstate`
+- Resource Group: `broxiva-tfstate-rg`
+- Storage Account: `broxivatfstate`
 - Container: `tfstate`
 
 **State Files**:
@@ -84,9 +84,9 @@ Environment: Select "all" or specific environment
 
 | Environment | Approval | Reviewers | Branch | URL |
 |-------------|----------|-----------|--------|-----|
-| dev | No | None | develop | https://dev.citadelbuy.com |
-| staging | Yes | 1-2 | staging | https://staging.citadelbuy.com |
-| production | Yes | 2+ | main | https://citadelbuy.com |
+| dev | No | None | develop | https://dev.broxiva.com |
+| staging | Yes | 1-2 | staging | https://staging.broxiva.com |
+| production | Yes | 2+ | main | https://broxiva.com |
 
 ## Workflow Outputs
 
@@ -118,7 +118,7 @@ Environment: Select "all" or specific environment
 ```bash
 # Via Azure CLI
 az storage blob list \
-  --account-name citadelbuytfstate \
+  --account-name broxivatfstate \
   --container-name tfstate \
   --prefix .terraform.lock
 
@@ -132,7 +132,7 @@ terraform force-unlock <LOCK_ID>
 # Download state backup from artifacts
 # Restore to Azure Storage
 az storage blob upload \
-  --account-name citadelbuytfstate \
+  --account-name broxivatfstate \
   --container-name tfstate \
   --name {env}.terraform.tfstate \
   --file backup-state.tfstate

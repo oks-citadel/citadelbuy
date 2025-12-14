@@ -19,10 +19,10 @@ env:
   AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-  AKS_CLUSTER_NAME: citadelbuy-dev-aks
-  AKS_RESOURCE_GROUP: citadelbuy-dev-rg
-  KUBERNETES_NAMESPACE: citadelbuy-dev
-  CONTAINER_REGISTRY: ghcr.io/citadelplatforms
+  AKS_CLUSTER_NAME: broxiva-dev-aks
+  AKS_RESOURCE_GROUP: broxiva-dev-rg
+  KUBERNETES_NAMESPACE: broxiva-dev
+  CONTAINER_REGISTRY: ghcr.io/broxiva
   KUSTOMIZE_VERSION: 'v5.3.0'
 
 permissions:
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: development
-      url: https://dev.citadelbuy.com
+      url: https://dev.broxiva.com
 
     steps:
       - name: Checkout code
@@ -44,14 +44,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         working-directory: ./apps/api
 
       - name: Azure Login via OIDC
@@ -103,9 +108,9 @@ jobs:
         run: |
           cd infrastructure/kubernetes/base
           kustomize edit set image \
-            ${{ env.CONTAINER_REGISTRY }}/citadelbuy-api:${{ steps.image-tag.outputs.tag }} \
-            ${{ env.CONTAINER_REGISTRY }}/citadelbuy-web:${{ steps.image-tag.outputs.tag }} \
-            ${{ env.CONTAINER_REGISTRY }}/citadelbuy-worker:${{ steps.image-tag.outputs.tag }}
+            ${{ env.CONTAINER_REGISTRY }}/broxiva-api:${{ steps.image-tag.outputs.tag }} \
+            ${{ env.CONTAINER_REGISTRY }}/broxiva-web:${{ steps.image-tag.outputs.tag }} \
+            ${{ env.CONTAINER_REGISTRY }}/broxiva-worker:${{ steps.image-tag.outputs.tag }}
 
       - name: Create namespace if not exists
         run: |
@@ -138,25 +143,25 @@ jobs:
       - name: Deploy to AKS
         run: |
           kubectl apply -f deployment.yaml
-          kubectl rollout status deployment/citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=5m
-          kubectl rollout status deployment/citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=5m
+          kubectl rollout status deployment/broxiva-api -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=5m
+          kubectl rollout status deployment/broxiva-web -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=5m
 
       - name: Verify API deployment
         run: |
-          kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l app=citadelbuy-api
+          kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l app=broxiva-api
           kubectl get services -n ${{ env.KUBERNETES_NAMESPACE }}
 
       - name: Health check - API
         run: |
           echo "Waiting for API to be ready..."
           sleep 30
-          API_POD=$(kubectl get pod -n ${{ env.KUBERNETES_NAMESPACE }} -l app=citadelbuy-api -o jsonpath="{.items[0].metadata.name}")
+          API_POD=$(kubectl get pod -n ${{ env.KUBERNETES_NAMESPACE }} -l app=broxiva-api -o jsonpath="{.items[0].metadata.name}")
           kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} $API_POD -- curl -f http://localhost:4000/api/health/live || exit 1
           kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} $API_POD -- curl -f http://localhost:4000/api/health/ready || exit 1
 
       - name: Health check - Web
         run: |
-          WEB_POD=$(kubectl get pod -n ${{ env.KUBERNETES_NAMESPACE }} -l app=citadelbuy-web -o jsonpath="{.items[0].metadata.name}")
+          WEB_POD=$(kubectl get pod -n ${{ env.KUBERNETES_NAMESPACE }} -l app=broxiva-web -o jsonpath="{.items[0].metadata.name}")
           kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} $WEB_POD -- curl -f http://localhost:3000/health || exit 1
 
       - name: Get deployment info
@@ -171,10 +176,10 @@ jobs:
         if: failure()
         run: |
           echo "Deployment failed, rolling back..."
-          kubectl rollout undo deployment/citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }}
-          kubectl rollout undo deployment/citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }}
-          kubectl rollout status deployment/citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=3m
-          kubectl rollout status deployment/citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=3m
+          kubectl rollout undo deployment/broxiva-api -n ${{ env.KUBERNETES_NAMESPACE }}
+          kubectl rollout undo deployment/broxiva-web -n ${{ env.KUBERNETES_NAMESPACE }}
+          kubectl rollout status deployment/broxiva-api -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=3m
+          kubectl rollout status deployment/broxiva-web -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=3m
 
       - name: Notify on success
         if: success()
@@ -188,7 +193,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": ":white_check_mark: *Development Deployment Successful*\n*Environment:* Development\n*Commit:* ${{ github.sha }}\n*Actor:* ${{ github.actor }}\n*Image Tag:* ${{ steps.image-tag.outputs.tag }}\n*URL:* https://dev.citadelbuy.com"
+                    "text": ":white_check_mark: *Development Deployment Successful*\n*Environment:* Development\n*Commit:* ${{ github.sha }}\n*Actor:* ${{ github.actor }}\n*Image Tag:* ${{ steps.image-tag.outputs.tag }}\n*URL:* https://dev.broxiva.com"
                   }
                 }
               ]
@@ -238,6 +243,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -246,17 +256,17 @@ jobs:
       - name: Run smoke tests
         run: |
           cd tests
-          npm ci
-          npm run test:smoke -- --environment=development
+          pnpm install --frozen-lockfile
+          pnpm run test:smoke -- --environment=development
         env:
-          API_URL: https://api-dev.citadelbuy.com
-          WEB_URL: https://dev.citadelbuy.com
+          API_URL: https://api-dev.broxiva.com
+          WEB_URL: https://dev.broxiva.com
 
       - name: Test API endpoints
         run: |
-          curl -f https://api-dev.citadelbuy.com/api/health/live
-          curl -f https://api-dev.citadelbuy.com/api/health/ready
-          curl -f https://dev.citadelbuy.com/health
+          curl -f https://api-dev.broxiva.com/api/health/live
+          curl -f https://api-dev.broxiva.com/api/health/ready
+          curl -f https://dev.broxiva.com/health
 
       - name: Notify test results
         if: always()

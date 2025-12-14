@@ -2,7 +2,7 @@
  * Basic mobile app tests
  */
 
-describe('CitadelBuy Mobile App', () => {
+describe('Broxiva Mobile App', () => {
   it('should pass basic test', () => {
     expect(true).toBe(true);
   });

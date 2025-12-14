@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: citadelbuy-web
-  namespace: citadelbuy-staging
+  name: broxiva-web
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy-web
+    app: broxiva-web
     tier: frontend
     environment: staging
 spec:
@@ -16,15 +16,15 @@ spec:
       maxUnavailable: 0
   selector:
     matchLabels:
-      app: citadelbuy-web
+      app: broxiva-web
   template:
     metadata:
       labels:
-        app: citadelbuy-web
+        app: broxiva-web
         tier: frontend
         environment: staging
     spec:
-      serviceAccountName: citadelbuy-web
+      serviceAccountName: broxiva-web
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -34,7 +34,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: web
-        image: citadelbuyacr.azurecr.io/citadelbuy-web:staging-latest
+        image: broxivaacr.azurecr.io/broxiva-web:staging-latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
@@ -46,7 +46,7 @@ spec:
         - name: NEXT_PUBLIC_API_URL
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: NEXT_PUBLIC_API_URL
         - name: NEXT_TELEMETRY_DISABLED
           value: "1"
@@ -105,10 +105,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: citadelbuy-web
-  namespace: citadelbuy-staging
+  name: broxiva-web
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy-web
+    app: broxiva-web
     tier: frontend
     environment: staging
 spec:
@@ -119,12 +119,12 @@ spec:
     protocol: TCP
     name: http
   selector:
-    app: citadelbuy-web
+    app: broxiva-web
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: citadelbuy-web
-  namespace: citadelbuy-staging
+  name: broxiva-web
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy-web
+    app: broxiva-web

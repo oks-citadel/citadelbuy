@@ -9,7 +9,7 @@ from typing import List, Optional
 import logging
 
 app = FastAPI(
-    title="CitadelBuy Recommendation Service",
+    title="Broxiva Recommendation Service",
     description="AI-powered product recommendation engine",
     version="1.0.0"
 )

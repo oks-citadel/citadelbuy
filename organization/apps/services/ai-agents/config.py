@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     REDIS_SSL: bool = False
 
     # Database Configuration
-    DATABASE_URL: str = "postgresql://user:password@localhost:5432/citadelbuy"
+    DATABASE_URL: str = "postgresql://user:password@localhost:5432/broxiva"
     DATABASE_POOL_SIZE: int = 20
     DATABASE_MAX_OVERFLOW: int = 10
 
@@ -73,7 +73,7 @@ class Settings(BaseSettings):
     # Security
     API_KEY_HEADER: str = "X-API-Key"
     REQUIRE_API_KEY: bool = False  # Set to True in production
-    ALLOWED_ORIGINS: str = "http://localhost:3000,https://citadelbuy.com"
+    ALLOWED_ORIGINS: str = "http://localhost:3000,https://broxiva.com"
 
     # Workflow Configuration
     DEFAULT_EXECUTION_MODE: str = "sequential"

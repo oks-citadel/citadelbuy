@@ -19,28 +19,28 @@ interface TestAccount {
 
 const TEST_ACCOUNTS: TestAccount[] = [
   {
-    email: 'admin@citadelbuy.com',
+    email: 'admin@broxiva.com',
     password: 'password123',
     role: 'ADMIN',
     name: 'Admin User',
     description: 'Full admin access to dashboard, users, orders, and settings',
   },
   {
-    email: 'vendor1@citadelbuy.com',
+    email: 'vendor1@broxiva.com',
     password: 'password123',
     role: 'VENDOR',
     name: 'Tech Store',
     description: 'Vendor account with products, inventory, and order management',
   },
   {
-    email: 'vendor2@citadelbuy.com',
+    email: 'vendor2@broxiva.com',
     password: 'password123',
     role: 'VENDOR',
     name: 'Fashion Hub',
     description: 'Secondary vendor account for testing multi-vendor features',
   },
   {
-    email: 'customer@citadelbuy.com',
+    email: 'customer@broxiva.com',
     password: 'password123',
     role: 'CUSTOMER',
     name: 'John Doe',

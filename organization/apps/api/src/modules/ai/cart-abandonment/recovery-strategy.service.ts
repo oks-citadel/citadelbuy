@@ -260,8 +260,8 @@ export class RecoveryStrategyService {
         strategy,
         schedule,
         tracking: {
-          campaignUrl: `https://citadelbuy.com/track/${campaignId}`,
-          dashboardUrl: `https://admin.citadelbuy.com/campaigns/${campaignId}`,
+          campaignUrl: `https://broxiva.com/track/${campaignId}`,
+          dashboardUrl: `https://admin.broxiva.com/campaigns/${campaignId}`,
         },
         estimatedCompletion: schedule[schedule.length - 1].scheduledTime,
       };

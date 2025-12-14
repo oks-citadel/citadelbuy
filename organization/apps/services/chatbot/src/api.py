@@ -11,7 +11,7 @@ import logging
 import json
 
 app = FastAPI(
-    title="CitadelBuy Chatbot Service",
+    title="Broxiva Chatbot Service",
     description="AI-powered conversational assistant",
     version="1.0.0"
 )

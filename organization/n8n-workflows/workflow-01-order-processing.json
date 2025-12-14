@@ -1,10 +1,10 @@
 {
-  "name": "CitadelBuy Order Processing & Fulfillment",
+  "name": "Broxiva Order Processing & Fulfillment",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "citadelbuy-order-webhook",
+        "path": "broxiva-order-webhook",
         "options": {
           "rawBody": true
         },
@@ -18,7 +18,7 @@
         250,
         300
       ],
-      "webhookId": "citadelbuy-order-webhook"
+      "webhookId": "broxiva-order-webhook"
     },
     {
       "parameters": {
@@ -54,7 +54,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// HMAC-SHA256 Signature Verification\nconst crypto = require('crypto');\n\n// Get webhook data\nconst webhookData = $input.item.json;\nconst headers = $input.item.headers;\n\n// Get signature from header\nconst receivedSignature = headers['x-citadelbuy-signature'] || '';\n\n// Reconstruct raw body for signature verification\nconst rawBody = JSON.stringify(webhookData);\n\n// Get secret from credentials (in production, use environment variable)\nconst webhookSecret = $env.CITADELBUY_WEBHOOK_SECRET || 'your-webhook-secret-key';\n\n// Calculate expected signature\nconst expectedSignature = crypto\n  .createHmac('sha256', webhookSecret)\n  .update(rawBody)\n  .digest('hex');\n\n// Compare signatures (timing-safe comparison)\nconst validSignature = crypto.timingSafeEqual(\n  Buffer.from(receivedSignature),\n  Buffer.from(expectedSignature)\n);\n\n// Return data with validation result\nreturn {\n  ...webhookData,\n  validSignature,\n  receivedSignature,\n  expectedSignature: expectedSignature.substring(0, 10) + '...' // truncated for security\n};"
+        "jsCode": "// HMAC-SHA256 Signature Verification\nconst crypto = require('crypto');\n\n// Get webhook data\nconst webhookData = $input.item.json;\nconst headers = $input.item.headers;\n\n// Get signature from header\nconst receivedSignature = headers['x-broxiva-signature'] || '';\n\n// Reconstruct raw body for signature verification\nconst rawBody = JSON.stringify(webhookData);\n\n// Get secret from credentials (in production, use environment variable)\nconst webhookSecret = $env.BROXIVA_WEBHOOK_SECRET || 'your-webhook-secret-key';\n\n// Calculate expected signature\nconst expectedSignature = crypto\n  .createHmac('sha256', webhookSecret)\n  .update(rawBody)\n  .digest('hex');\n\n// Compare signatures (timing-safe comparison)\nconst validSignature = crypto.timingSafeEqual(\n  Buffer.from(receivedSignature),\n  Buffer.from(expectedSignature)\n);\n\n// Return data with validation result\nreturn {\n  ...webhookData,\n  validSignature,\n  receivedSignature,\n  expectedSignature: expectedSignature.substring(0, 10) + '...' // truncated for security\n};"
       },
       "id": "b2c3d4e5-f6a7-8901-bcde-234567890bcd",
       "name": "Verify HMAC Signature",
@@ -113,9 +113,9 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "=https://api.citadelbuy.com/v1/inventory/check",
+        "url": "=https://api.broxiva.com/v1/inventory/check",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -201,11 +201,11 @@
           "parameters": [
             {
               "name": "personalizations",
-              "value": "={{ [\n  {\n    \"to\": [\n      {\n        \"email\": $json.customer.email,\n        \"name\": $json.customer.first_name + ' ' + $json.customer.last_name\n      }\n    ],\n    \"dynamic_template_data\": {\n      \"order_number\": $json.order_number,\n      \"order_id\": $json.order_id,\n      \"customer_name\": $json.customer.first_name,\n      \"total\": $json.total.toFixed(2),\n      \"items\": $json.line_items,\n      \"shipping_address\": $json.shipping_address,\n      \"estimated_delivery\": new Date(Date.now() + (5 * 24 * 60 * 60 * 1000)).toLocaleDateString(),\n      \"tracking_link\": 'https://citadelbuy.com/track-order?id=' + $json.order_id\n    }\n  }\n] }}"
+              "value": "={{ [\n  {\n    \"to\": [\n      {\n        \"email\": $json.customer.email,\n        \"name\": $json.customer.first_name + ' ' + $json.customer.last_name\n      }\n    ],\n    \"dynamic_template_data\": {\n      \"order_number\": $json.order_number,\n      \"order_id\": $json.order_id,\n      \"customer_name\": $json.customer.first_name,\n      \"total\": $json.total.toFixed(2),\n      \"items\": $json.line_items,\n      \"shipping_address\": $json.shipping_address,\n      \"estimated_delivery\": new Date(Date.now() + (5 * 24 * 60 * 60 * 1000)).toLocaleDateString(),\n      \"tracking_link\": 'https://broxiva.com/track-order?id=' + $json.order_id\n    }\n  }\n] }}"
             },
             {
               "name": "from",
-              "value": "={{ { \"email\": \"orders@citadelbuy.com\", \"name\": \"CitadelBuy Orders\" } }}"
+              "value": "={{ { \"email\": \"orders@broxiva.com\", \"name\": \"Broxiva Orders\" } }}"
             },
             {
               "name": "template_id",
@@ -227,9 +227,9 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "=https://api.citadelbuy.com/v1/orders/{{ $json.order_id }}",
+        "url": "=https://api.broxiva.com/v1/orders/{{ $json.order_id }}",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -275,7 +275,7 @@
           "value": "={{ $json.routing.slackChannels[0] || '#fulfillment' }}",
           "mode": "name"
         },
-        "text": "=:package: **New Order Received**\n\n*Order:* {{ $json.order_number }}\n*Customer:* {{ $json.customer.first_name }} {{ $json.customer.last_name }} ({{ $json.customer.email }})\n*Total:* ${{ $json.total.toFixed(2) }}\n*Priority:* {{ $json.routing.priority.toUpperCase() }}\n*Queue:* {{ $json.routing.queue }}\n*SLA Deadline:* {{ new Date($json.routing.slaDeadline).toLocaleString() }}\n\n{{ $json.routing.notifications.length > 0 ? ':warning: *Alerts:*\\n' + $json.routing.notifications.map(n => '• ' + n).join('\\n') : '' }}\n\n*Shipping:* {{ $json.shipping_address.city }}, {{ $json.shipping_address.state }}, {{ $json.shipping_address.country }}\n\n<https://citadelbuy.com/admin/orders/{{ $json.order_id }}|View Order Details>",
+        "text": "=:package: **New Order Received**\n\n*Order:* {{ $json.order_number }}\n*Customer:* {{ $json.customer.first_name }} {{ $json.customer.last_name }} ({{ $json.customer.email }})\n*Total:* ${{ $json.total.toFixed(2) }}\n*Priority:* {{ $json.routing.priority.toUpperCase() }}\n*Queue:* {{ $json.routing.queue }}\n*SLA Deadline:* {{ new Date($json.routing.slaDeadline).toLocaleString() }}\n\n{{ $json.routing.notifications.length > 0 ? ':warning: *Alerts:*\\n' + $json.routing.notifications.map(n => '• ' + n).join('\\n') : '' }}\n\n*Shipping:* {{ $json.shipping_address.city }}, {{ $json.shipping_address.state }}, {{ $json.shipping_address.country }}\n\n<https://broxiva.com/admin/orders/{{ $json.order_id }}|View Order Details>",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }
@@ -292,9 +292,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/audit-log",
+        "url": "https://api.broxiva.com/v1/audit-log",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -419,7 +419,7 @@
           "value": "#alerts",
           "mode": "name"
         },
-        "text": "=:x: **Order Processing Error**\n\n*Error Type:* {{ $json.error_type || 'Unknown' }}\n*Order ID:* {{ $json.order_id || 'N/A' }}\n*Message:* {{ $json.error_message || $json.error || 'No message' }}\n*Timestamp:* {{ new Date().toISOString() }}\n\n*Stack Trace:*\n```\n{{ $json.error_stack || 'No stack trace available' }}\n```\n\n*Workflow:* CitadelBuy Order Processing\n*Node:* {{ $node.name }}\n\n@channel Please investigate immediately!",
+        "text": "=:x: **Order Processing Error**\n\n*Error Type:* {{ $json.error_type || 'Unknown' }}\n*Order ID:* {{ $json.order_id || 'N/A' }}\n*Message:* {{ $json.error_message || $json.error || 'No message' }}\n*Timestamp:* {{ new Date().toISOString() }}\n\n*Stack Trace:*\n```\n{{ $json.error_stack || 'No stack trace available' }}\n```\n\n*Workflow:* Broxiva Order Processing\n*Node:* {{ $node.name }}\n\n@channel Please investigate immediately!",
         "otherOptions": {
           "includeLinkToWorkflow": true
         }
@@ -488,7 +488,7 @@
           "value": "#priority-orders",
           "mode": "name"
         },
-        "text": "=:star2: **Priority Order Alert**\n\n*Order:* {{ $json.order_number }}\n*Customer:* {{ $json.customer.first_name }} {{ $json.customer.last_name }}\n*Total:* ${{ $json.total.toFixed(2) }}\n*Tier:* {{ $json.customer.tier || 'Standard' }}\n\n{{ $json.isHighValue ? ':moneybag: High-value order (>$500)\\n' : '' }}\n{{ $json.isVIP ? ':crown: VIP Customer\\n' : '' }}\n{{ $json.isExpressShipping ? ':rocket: Express Shipping Required\\n' : '' }}\n\n*Immediate attention required!*\n\n<https://citadelbuy.com/admin/orders/{{ $json.order_id }}|Process Now>",
+        "text": "=:star2: **Priority Order Alert**\n\n*Order:* {{ $json.order_number }}\n*Customer:* {{ $json.customer.first_name }} {{ $json.customer.last_name }}\n*Total:* ${{ $json.total.toFixed(2) }}\n*Tier:* {{ $json.customer.tier || 'Standard' }}\n\n{{ $json.isHighValue ? ':moneybag: High-value order (>$500)\\n' : '' }}\n{{ $json.isVIP ? ':crown: VIP Customer\\n' : '' }}\n{{ $json.isExpressShipping ? ':rocket: Express Shipping Required\\n' : '' }}\n\n*Immediate attention required!*\n\n<https://broxiva.com/admin/orders/{{ $json.order_id }}|Process Now>",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }
@@ -543,7 +543,7 @@
           "value": "#international-fulfillment",
           "mode": "name"
         },
-        "text": "=:globe_with_meridians: **International Order**\n\n*Order:* {{ $json.order_number }}\n*Destination:* {{ $json.shipping_address.city }}, {{ $json.shipping_address.country }}\n*Customer:* {{ $json.customer.email }}\n*Total:* ${{ $json.total.toFixed(2) }}\n\n*Address:*\n{{ $json.shipping_address.address1 }}\n{{ $json.shipping_address.city }}, {{ $json.shipping_address.state }} {{ $json.shipping_address.zip }}\n{{ $json.shipping_address.country }}\n\n:warning: *Check customs requirements and international shipping regulations*\n\n<https://citadelbuy.com/admin/orders/{{ $json.order_id }}|View Order>",
+        "text": "=:globe_with_meridians: **International Order**\n\n*Order:* {{ $json.order_number }}\n*Destination:* {{ $json.shipping_address.city }}, {{ $json.shipping_address.country }}\n*Customer:* {{ $json.customer.email }}\n*Total:* ${{ $json.total.toFixed(2) }}\n\n*Address:*\n{{ $json.shipping_address.address1 }}\n{{ $json.shipping_address.city }}, {{ $json.shipping_address.state }} {{ $json.shipping_address.zip }}\n{{ $json.shipping_address.country }}\n\n:warning: *Check customs requirements and international shipping regulations*\n\n<https://broxiva.com/admin/orders/{{ $json.order_id }}|View Order>",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }
@@ -752,13 +752,13 @@
   },
   "versionId": "1.0.0",
   "meta": {
-    "instanceId": "citadelbuy-production"
+    "instanceId": "broxiva-production"
   },
-  "id": "citadelbuy-order-processing-v1",
+  "id": "broxiva-order-processing-v1",
   "tags": [
     {
-      "name": "citadelbuy",
-      "id": "tag-citadelbuy"
+      "name": "broxiva",
+      "id": "tag-broxiva"
     },
     {
       "name": "order-processing",

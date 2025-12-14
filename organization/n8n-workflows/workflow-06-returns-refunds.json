@@ -1,10 +1,10 @@
 {
-  "name": "CitadelBuy Returns & Refunds Automation",
+  "name": "Broxiva Returns & Refunds Automation",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "citadelbuy-returns",
+        "path": "broxiva-returns",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -16,7 +16,7 @@
         240,
         300
       ],
-      "webhookId": "citadelbuy-returns-webhook"
+      "webhookId": "broxiva-returns-webhook"
     },
     {
       "parameters": {
@@ -48,9 +48,9 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "https://api.citadelbuy.com/v1/customers/{{ $json.customer_id }}/returns/history",
+        "url": "https://api.broxiva.com/v1/customers/{{ $json.customer_id }}/returns/history",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "options": {
           "queryParameters": {
             "parameters": [
@@ -107,9 +107,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/returns/{{ $json.return_id }}/approve",
+        "url": "https://api.broxiva.com/v1/returns/{{ $json.return_id }}/approve",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -185,7 +185,7 @@
             },
             {
               "name": "shipTo",
-              "value": "={\"name\": \"CitadelBuy Returns\", \"company\": \"CitadelBuy Inc\", \"street1\": \"500 Returns Pkwy\", \"city\": \"Commerce\", \"state\": \"CA\", \"postalCode\": \"90040\", \"country\": \"US\", \"phone\": \"888-555-0100\"}"
+              "value": "={\"name\": \"Broxiva Returns\", \"company\": \"Broxiva Inc\", \"street1\": \"500 Returns Pkwy\", \"city\": \"Commerce\", \"state\": \"CA\", \"postalCode\": \"90040\", \"country\": \"US\", \"phone\": \"888-555-0100\"}"
             },
             {
               "name": "testLabel",
@@ -219,9 +219,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/emails/send",
+        "url": "https://api.broxiva.com/v1/emails/send",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -252,9 +252,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/returns/{{ $json.return_id }}/update",
+        "url": "https://api.broxiva.com/v1/returns/{{ $json.return_id }}/update",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -297,7 +297,7 @@
           "parameters": [
             {
               "name": "ticket",
-              "value": "={{ JSON.stringify({\n  subject: `Return Request Review Required - ${$json.return_id}`,\n  comment: {\n    body: `Return request requires manual review:\\n\\nReturn ID: ${$json.return_id}\\nOrder ID: ${$json.order_id}\\nCustomer: ${$json.customer_email}\\nTotal Refund: $${$json.validation.total_refund}\\n\\nReview Reasons:\\n${$json.auto_approval.review_reasons.map(r => '- ' + r).join('\\\\n')}\\n\\nItems:\\n${$json.items.map(i => `- ${i.name} (${i.sku}) - Qty: ${i.quantity} - Reason: ${i.reason} - Condition: ${i.condition}`).join('\\\\n')}\\n\\nCustomer History:\\n- Returns in last 90 days: ${$json.customer_analysis.return_count_90_days}\\n- Days since delivery: ${$json.validation.days_since_delivery}\\n\\nAction Required: Review and approve/deny return request in CitadelBuy admin panel.`\n  },\n  priority: $json.validation.is_high_value || $json.validation.has_damage_claim ? 'high' : 'normal',\n  type: 'task',\n  tags: ['return-review', 'returns', $json.validation.is_high_value ? 'high-value' : '', $json.customer_analysis.is_frequent_returner ? 'frequent-returner' : ''].filter(Boolean),\n  custom_fields: [\n    { id: 360001, value: $json.return_id },\n    { id: 360002, value: $json.order_id },\n    { id: 360003, value: $json.validation.total_refund }\n  ]\n}) }}"
+              "value": "={{ JSON.stringify({\n  subject: `Return Request Review Required - ${$json.return_id}`,\n  comment: {\n    body: `Return request requires manual review:\\n\\nReturn ID: ${$json.return_id}\\nOrder ID: ${$json.order_id}\\nCustomer: ${$json.customer_email}\\nTotal Refund: $${$json.validation.total_refund}\\n\\nReview Reasons:\\n${$json.auto_approval.review_reasons.map(r => '- ' + r).join('\\\\n')}\\n\\nItems:\\n${$json.items.map(i => `- ${i.name} (${i.sku}) - Qty: ${i.quantity} - Reason: ${i.reason} - Condition: ${i.condition}`).join('\\\\n')}\\n\\nCustomer History:\\n- Returns in last 90 days: ${$json.customer_analysis.return_count_90_days}\\n- Days since delivery: ${$json.validation.days_since_delivery}\\n\\nAction Required: Review and approve/deny return request in Broxiva admin panel.`\n  },\n  priority: $json.validation.is_high_value || $json.validation.has_damage_claim ? 'high' : 'normal',\n  type: 'task',\n  tags: ['return-review', 'returns', $json.validation.is_high_value ? 'high-value' : '', $json.customer_analysis.is_frequent_returner ? 'frequent-returner' : ''].filter(Boolean),\n  custom_fields: [\n    { id: 360001, value: $json.return_id },\n    { id: 360002, value: $json.order_id },\n    { id: 360003, value: $json.validation.total_refund }\n  ]\n}) }}"
             }
           ]
         }
@@ -314,9 +314,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/returns/{{ $json.return_id }}/update",
+        "url": "https://api.broxiva.com/v1/returns/{{ $json.return_id }}/update",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -351,9 +351,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/emails/send",
+        "url": "https://api.broxiva.com/v1/emails/send",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -367,7 +367,7 @@
             },
             {
               "name": "data",
-              "value": "={{ JSON.stringify({\n  customer_name: $json.customer_email.split('@')[0],\n  return_id: $json.return_id,\n  order_id: $json.order_id,\n  review_timeframe: '1-2 business days',\n  support_email: 'returns@citadelbuy.com'\n}) }}"
+              "value": "={{ JSON.stringify({\n  customer_name: $json.customer_email.split('@')[0],\n  return_id: $json.return_id,\n  order_id: $json.order_id,\n  review_timeframe: '1-2 business days',\n  support_email: 'returns@broxiva.com'\n}) }}"
             }
           ]
         }
@@ -384,7 +384,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "citadelbuy-return-received",
+        "path": "broxiva-return-received",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -396,7 +396,7 @@
         240,
         700
       ],
-      "webhookId": "citadelbuy-return-received-webhook"
+      "webhookId": "broxiva-return-received-webhook"
     },
     {
       "parameters": {
@@ -415,9 +415,9 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "https://api.citadelbuy.com/v1/returns/{{ $json.return_id }}",
+        "url": "https://api.broxiva.com/v1/returns/{{ $json.return_id }}",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi"
+        "nodeCredentialType": "broxivaApi"
       },
       "id": "get-return-details",
       "name": "Get Return Details",
@@ -444,9 +444,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/inventory/adjust",
+        "url": "https://api.broxiva.com/v1/inventory/adjust",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -535,9 +535,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/returns/{{ $('Get Return Details').item.json.return_id }}/complete",
+        "url": "https://api.broxiva.com/v1/returns/{{ $('Get Return Details').item.json.return_id }}/complete",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -576,9 +576,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/emails/send",
+        "url": "https://api.broxiva.com/v1/emails/send",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -624,9 +624,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/emails/send",
+        "url": "https://api.broxiva.com/v1/emails/send",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -640,7 +640,7 @@
             },
             {
               "name": "data",
-              "value": "={{ JSON.stringify({\n  customer_name: $('Get Return Details').item.json.customer_email.split('@')[0],\n  return_id: $('Get Return Details').item.json.return_id,\n  order_id: $('Get Return Details').item.json.order_id,\n  survey_url: `https://citadelbuy.com/surveys/return-experience?return_id=${$('Get Return Details').item.json.return_id}`,\n  questions: [\n    'How easy was the return process?',\n    'How satisfied are you with the refund timeline?',\n    'Would you shop with us again?',\n    'Any suggestions for improvement?'\n  ]\n}) }}"
+              "value": "={{ JSON.stringify({\n  customer_name: $('Get Return Details').item.json.customer_email.split('@')[0],\n  return_id: $('Get Return Details').item.json.return_id,\n  order_id: $('Get Return Details').item.json.order_id,\n  survey_url: `https://broxiva.com/surveys/return-experience?return_id=${$('Get Return Details').item.json.return_id}`,\n  questions: [\n    'How easy was the return process?',\n    'How satisfied are you with the refund timeline?',\n    'Would you shop with us again?',\n    'Any suggestions for improvement?'\n  ]\n}) }}"
             }
           ]
         }
@@ -656,7 +656,7 @@
     },
     {
       "parameters": {
-        "content": "## Returns & Refunds Automation Workflow\n\n**Trigger 1: Return Request Webhook**\n- Receives return requests from CitadelBuy Returns Portal\n- Validates eligibility (30-day window, returnable items)\n- Checks customer history for frequent returners\n\n**Auto-Approval Path:**\n- Standard reasons + good history → auto-approve\n- Generates ShipStation return label\n- Emails prepaid label to customer\n\n**Manual Review Path:**\n- High-value (>$200)\n- Damage claims\n- Frequent returners (≥3 returns/90 days)\n- Creates Zendesk ticket for review\n\n**Trigger 2: Return Received Webhook**\n- Updates inventory via API\n- Processes Stripe refund\n- Sends confirmation email\n- Schedules post-return survey (7 days)",
+        "content": "## Returns & Refunds Automation Workflow\n\n**Trigger 1: Return Request Webhook**\n- Receives return requests from Broxiva Returns Portal\n- Validates eligibility (30-day window, returnable items)\n- Checks customer history for frequent returners\n\n**Auto-Approval Path:**\n- Standard reasons + good history → auto-approve\n- Generates ShipStation return label\n- Emails prepaid label to customer\n\n**Manual Review Path:**\n- High-value (>$200)\n- Damage claims\n- Frequent returners (≥3 returns/90 days)\n- Creates Zendesk ticket for review\n\n**Trigger 2: Return Received Webhook**\n- Updates inventory via API\n- Processes Stripe refund\n- Sends confirmation email\n- Schedules post-return survey (7 days)",
         "height": 460,
         "width": 380
       },
@@ -959,7 +959,7 @@
     }
   ],
   "meta": {
-    "instanceId": "citadelbuy-production"
+    "instanceId": "broxiva-production"
   },
   "pinData": {},
   "versionId": "1.0.0"

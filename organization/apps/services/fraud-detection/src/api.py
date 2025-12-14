@@ -10,7 +10,7 @@ from datetime import datetime
 import logging
 
 app = FastAPI(
-    title="CitadelBuy Fraud Detection Service",
+    title="Broxiva Fraud Detection Service",
     description="AI-powered fraud detection and prevention",
     version="1.0.0"
 )

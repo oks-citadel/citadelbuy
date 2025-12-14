@@ -1,5 +1,5 @@
 {
-  "workflowName": "CitadelBuy Fraud Detection & Prevention",
+  "workflowName": "Broxiva Fraud Detection & Prevention",
   "version": "1.0.0",
   "lastUpdated": "2025-12-03",
 
@@ -200,7 +200,7 @@
   },
 
   "api": {
-    "baseUrl": "https://api.citadelbuy.com/v1",
+    "baseUrl": "https://api.broxiva.com/v1",
     "endpoints": {
       "customerHistory": "/customers/{customerId}",
       "orderVelocity": "/orders?customerId={customerId}&timeframe=24h",
@@ -316,7 +316,7 @@
     "ccpa": {
       "enabled": true,
       "rightToAppeal": true,
-      "appealEmail": "fraud-appeals@citadelbuy.com"
+      "appealEmail": "fraud-appeals@broxiva.com"
     }
   },
 

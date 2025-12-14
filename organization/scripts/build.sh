@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# CitadelBuy Platform Build Script
+# Broxiva Platform Build Script
 # This script builds all applications for production
 
 set -e
 
-echo "🏗️  CitadelBuy Production Build"
+echo "🏗️  Broxiva Production Build"
 echo "================================"
 
 # Colors
@@ -55,10 +55,10 @@ pnpm install --frozen-lockfile
 # Build shared packages first
 echo ""
 echo "📚 Building shared packages..."
-pnpm --filter "@citadelbuy/types" build
-pnpm --filter "@citadelbuy/utils" build
-pnpm --filter "@citadelbuy/ui" build
-pnpm --filter "@citadelbuy/ai-sdk" build
+pnpm --filter "@broxiva/types" build
+pnpm --filter "@broxiva/utils" build
+pnpm --filter "@broxiva/ui" build
+pnpm --filter "@broxiva/ai-sdk" build
 echo -e "${GREEN}✓ Shared packages built${NC}"
 
 # Type check
@@ -78,7 +78,7 @@ if [ "$BUILD_API" = true ]; then
 
     if [ "$DOCKER_BUILD" = true ]; then
         echo "🐳 Building API Docker image..."
-        docker build -t citadelbuy/api:latest -t citadelbuy/api:$(date +%Y%m%d) ./apps/api
+        docker build -t broxiva/api:latest -t broxiva/api:$(date +%Y%m%d) ./apps/api
         echo -e "${GREEN}✓ API Docker image built${NC}"
     fi
 fi
@@ -94,7 +94,7 @@ if [ "$BUILD_WEB" = true ]; then
 
     if [ "$DOCKER_BUILD" = true ]; then
         echo "🐳 Building Web Docker image..."
-        docker build -t citadelbuy/web:latest -t citadelbuy/web:$(date +%Y%m%d) ./apps/web
+        docker build -t broxiva/web:latest -t broxiva/web:$(date +%Y%m%d) ./apps/web
         echo -e "${GREEN}✓ Web Docker image built${NC}"
     fi
 fi
@@ -124,7 +124,7 @@ echo ""
 
 if [ "$DOCKER_BUILD" = true ]; then
     echo "Docker images created:"
-    docker images | grep citadelbuy
+    docker images | grep broxiva
 fi
 
 echo ""

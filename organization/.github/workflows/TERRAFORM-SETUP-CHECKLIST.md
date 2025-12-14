@@ -8,8 +8,8 @@ Use this checklist to ensure all Terraform workflows are properly configured.
 - [ ] GitHub repository admin access
 - [ ] Azure CLI installed
 - [ ] Terraform state storage already configured:
-  - [ ] Resource Group: `citadelbuy-tfstate-rg`
-  - [ ] Storage Account: `citadelbuytfstate`
+  - [ ] Resource Group: `broxiva-tfstate-rg`
+  - [ ] Storage Account: `broxivatfstate`
   - [ ] Container: `tfstate`
 
 ## Step 1: Azure AD App Registration & OIDC Setup
@@ -24,10 +24,10 @@ az login
 az account set --subscription ba233460-2dbe-4603-a594-68f93ec9deb3
 
 # Create App Registration
-az ad app create --display-name "GitHub-CitadelBuy-Terraform-OIDC"
+az ad app create --display-name "GitHub-Broxiva-Terraform-OIDC"
 
 # Get the Application (client) ID
-APP_ID=$(az ad app list --display-name "GitHub-CitadelBuy-Terraform-OIDC" --query "[0].appId" -o tsv)
+APP_ID=$(az ad app list --display-name "GitHub-Broxiva-Terraform-OIDC" --query "[0].appId" -o tsv)
 echo "Client ID: $APP_ID"
 
 # Create Service Principal
@@ -43,13 +43,13 @@ az ad sp create --id $APP_ID
 
 ```bash
 # Set your repository
-REPO="YOUR_ORG/YOUR_REPO"  # e.g., "citadelbuy/organization"
+REPO="YOUR_ORG/YOUR_REPO"  # e.g., "broxiva/organization"
 
 # For main branch (production)
 az ad app federated-credential create \
   --id $APP_ID \
   --parameters "{
-    \"name\": \"GitHub-CitadelBuy-Main\",
+    \"name\": \"GitHub-Broxiva-Main\",
     \"issuer\": \"https://token.actions.githubusercontent.com\",
     \"subject\": \"repo:${REPO}:ref:refs/heads/main\",
     \"audiences\": [\"api://AzureADTokenExchange\"]
@@ -59,7 +59,7 @@ az ad app federated-credential create \
 az ad app federated-credential create \
   --id $APP_ID \
   --parameters "{
-    \"name\": \"GitHub-CitadelBuy-Develop\",
+    \"name\": \"GitHub-Broxiva-Develop\",
     \"issuer\": \"https://token.actions.githubusercontent.com\",
     \"subject\": \"repo:${REPO}:ref:refs/heads/develop\",
     \"audiences\": [\"api://AzureADTokenExchange\"]
@@ -69,7 +69,7 @@ az ad app federated-credential create \
 az ad app federated-credential create \
   --id $APP_ID \
   --parameters "{
-    \"name\": \"GitHub-CitadelBuy-Staging\",
+    \"name\": \"GitHub-Broxiva-Staging\",
     \"issuer\": \"https://token.actions.githubusercontent.com\",
     \"subject\": \"repo:${REPO}:ref:refs/heads/staging\",
     \"audiences\": [\"api://AzureADTokenExchange\"]
@@ -79,7 +79,7 @@ az ad app federated-credential create \
 az ad app federated-credential create \
   --id $APP_ID \
   --parameters "{
-    \"name\": \"GitHub-CitadelBuy-PR\",
+    \"name\": \"GitHub-Broxiva-PR\",
     \"issuer\": \"https://token.actions.githubusercontent.com\",
     \"subject\": \"repo:${REPO}:pull_request\",
     \"audiences\": [\"api://AzureADTokenExchange\"]
@@ -95,7 +95,7 @@ az ad app federated-credential create \
 
 ```bash
 # Get Service Principal Object ID
-SP_ID=$(az ad sp list --display-name "GitHub-CitadelBuy-Terraform-OIDC" --query "[0].id" -o tsv)
+SP_ID=$(az ad sp list --display-name "GitHub-Broxiva-Terraform-OIDC" --query "[0].id" -o tsv)
 
 # Assign Contributor role to subscription
 az role assignment create \
@@ -107,7 +107,7 @@ az role assignment create \
 az role assignment create \
   --assignee $SP_ID \
   --role "Storage Blob Data Contributor" \
-  --scope "/subscriptions/ba233460-2dbe-4603-a594-68f93ec9deb3/resourceGroups/citadelbuy-tfstate-rg/providers/Microsoft.Storage/storageAccounts/citadelbuytfstate"
+  --scope "/subscriptions/ba233460-2dbe-4603-a594-68f93ec9deb3/resourceGroups/broxiva-tfstate-rg/providers/Microsoft.Storage/storageAccounts/broxivatfstate"
 ```
 
 - [ ] Contributor role assigned
@@ -121,7 +121,7 @@ TENANT_ID=$(az account show --query tenantId -o tsv)
 echo "Tenant ID: $TENANT_ID"
 
 # Get Client ID (if not saved earlier)
-CLIENT_ID=$(az ad app list --display-name "GitHub-CitadelBuy-Terraform-OIDC" --query "[0].appId" -o tsv)
+CLIENT_ID=$(az ad app list --display-name "GitHub-Broxiva-Terraform-OIDC" --query "[0].appId" -o tsv)
 echo "Client ID: $CLIENT_ID"
 ```
 
@@ -149,14 +149,14 @@ Add the following secrets:
 #### Dev Environment
 - [ ] Navigate to: `Settings > Environments > New environment`
 - [ ] Name: `dev`
-- [ ] Environment URL: `https://dev.citadelbuy.com`
+- [ ] Environment URL: `https://dev.broxiva.com`
 - [ ] Deployment branches: Only `develop` branch
 - [ ] Required reviewers: None (optional)
 
 #### Staging Environment
 - [ ] Navigate to: `Settings > Environments > New environment`
 - [ ] Name: `staging`
-- [ ] Environment URL: `https://staging.citadelbuy.com`
+- [ ] Environment URL: `https://staging.broxiva.com`
 - [ ] Deployment branches: Only `staging` branch
 - [ ] Required reviewers: Add 1-2 team members
 - [ ] Wait timer: 0 minutes (optional)
@@ -164,7 +164,7 @@ Add the following secrets:
 #### Production Environment
 - [ ] Navigate to: `Settings > Environments > New environment`
 - [ ] Name: `production`
-- [ ] Environment URL: `https://citadelbuy.com`
+- [ ] Environment URL: `https://broxiva.com`
 - [ ] Deployment branches: Only `main` branch
 - [ ] Required reviewers: Add 2+ senior team members
 - [ ] Wait timer: 5 minutes (recommended)
@@ -201,17 +201,17 @@ Add the following secrets:
 
 ```bash
 # Verify resource group exists
-az group show --name citadelbuy-tfstate-rg
+az group show --name broxiva-tfstate-rg
 
 # Verify storage account exists
 az storage account show \
-  --name citadelbuytfstate \
-  --resource-group citadelbuy-tfstate-rg
+  --name broxivatfstate \
+  --resource-group broxiva-tfstate-rg
 
 # Verify container exists
 az storage container show \
   --name tfstate \
-  --account-name citadelbuytfstate
+  --account-name broxivatfstate
 ```
 
 - [ ] Resource group exists

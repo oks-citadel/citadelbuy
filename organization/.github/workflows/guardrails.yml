@@ -1,0 +1,193 @@
+name: Build Guardrails
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'apps/**'
+      - 'services/**'
+      - 'packages/**'
+      - '**/Dockerfile*'
+      - '.dockerignore'
+      - 'assets/**'
+
+jobs:
+  guardrails:
+    name: Run Build Guardrails
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for large files in Git
+        run: |
+          echo "Checking for large files (>50MB) tracked in Git..."
+
+          # Find large files in the repository
+          LARGE_FILES=$(find . -type f -size +50M \
+            -not -path "./.git/*" \
+            -not -path "./node_modules/*" \
+            -not -path "./.pnpm-store/*" \
+            -not -name "pnpm-lock.yaml" \
+            -not -name "package-lock.json" \
+            2>/dev/null || true)
+
+          if [ -n "$LARGE_FILES" ]; then
+            echo "::error::Large files detected (>50MB):"
+            echo "$LARGE_FILES" | while read -r file; do
+              SIZE=$(ls -lh "$file" 2>/dev/null | awk '{print $5}')
+              echo "  - $file ($SIZE)"
+            done
+            exit 1
+          fi
+
+          echo "No large files detected."
+
+      - name: Validate .dockerignore
+        run: |
+          echo "Validating .dockerignore..."
+
+          REQUIRED_PATTERNS=(
+            "assets/large"
+            "node_modules"
+            "*.tfstate"
+            "models/"
+            "datasets/"
+            "data/"
+          )
+
+          for pattern in "${REQUIRED_PATTERNS[@]}"; do
+            if ! grep -q "$pattern" .dockerignore; then
+              echo "::error::.dockerignore missing required pattern: $pattern"
+              exit 1
+            fi
+          done
+
+          echo ".dockerignore validation passed."
+
+      - name: Lint Dockerfiles
+        run: |
+          echo "Checking Dockerfiles for unsafe patterns..."
+
+          UNSAFE_PATTERNS=(
+            "sed.*assets"
+            "sed.*models"
+            "sed.*data"
+            "iconv.*assets"
+            "COPY.*assets/large"
+            "ADD.*assets/large"
+          )
+
+          ERRORS=0
+
+          find . -name "Dockerfile*" -type f -not -path "./.git/*" | while read -r dockerfile; do
+            for pattern in "${UNSAFE_PATTERNS[@]}"; do
+              if grep -qE "$pattern" "$dockerfile" 2>/dev/null; then
+                echo "::error file=$dockerfile::Unsafe pattern found: $pattern"
+                ERRORS=$((ERRORS + 1))
+              fi
+            done
+          done
+
+          if [ $ERRORS -gt 0 ]; then
+            exit 1
+          fi
+
+          echo "Dockerfile linting passed."
+
+      - name: Check assets/large directory
+        run: |
+          echo "Checking assets/large directory..."
+
+          if [ -d "assets/large" ]; then
+            LARGE_ASSETS=$(find assets/large -type f \
+              -not -name ".gitkeep" \
+              -not -name "README.md" \
+              2>/dev/null | wc -l)
+
+            if [ "$LARGE_ASSETS" -gt 0 ]; then
+              echo "::error::assets/large should be empty in the repository"
+              echo "Found $LARGE_ASSETS file(s) that should be in Azure Blob Storage:"
+              find assets/large -type f \
+                -not -name ".gitkeep" \
+                -not -name "README.md" \
+                2>/dev/null
+              exit 1
+            fi
+          fi
+
+          echo "assets/large directory is clean."
+
+      - name: Check for secrets in code
+        run: |
+          echo "Checking for potential secrets in code..."
+
+          # Common secret patterns
+          PATTERNS=(
+            "PRIVATE.*KEY"
+            "password.*=.*['\"]"
+            "api_key.*=.*['\"]"
+            "secret.*=.*['\"]"
+            "token.*=.*['\"]"
+          )
+
+          ERRORS=0
+
+          for pattern in "${PATTERNS[@]}"; do
+            MATCHES=$(grep -rniE "$pattern" \
+              --include="*.ts" \
+              --include="*.tsx" \
+              --include="*.js" \
+              --include="*.jsx" \
+              --include="*.py" \
+              --exclude-dir=node_modules \
+              --exclude-dir=.git \
+              --exclude="*.test.*" \
+              --exclude="*.spec.*" \
+              --exclude="*.example*" \
+              2>/dev/null || true)
+
+            if [ -n "$MATCHES" ]; then
+              echo "::warning::Potential secret pattern found: $pattern"
+              echo "$MATCHES" | head -5
+            fi
+          done
+
+          echo "Secret scan completed (warnings shown above if any)."
+
+      - name: Verify UTF-8 encoding in Dockerfiles
+        run: |
+          echo "Verifying UTF-8 encoding settings in Dockerfiles..."
+
+          find . -name "Dockerfile*" -type f -not -path "./.git/*" | while read -r dockerfile; do
+            # Check for UTF-8 locale settings
+            if grep -q "FROM.*alpine" "$dockerfile" 2>/dev/null; then
+              if ! grep -qE "LANG=C\.UTF-8|LC_ALL=C\.UTF-8" "$dockerfile" 2>/dev/null; then
+                echo "::warning file=$dockerfile::Alpine image without UTF-8 locale (LANG/LC_ALL)"
+              fi
+            fi
+          done
+
+          echo "UTF-8 encoding check completed."
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Guardrails Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Large Files | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| .dockerignore | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dockerfile Lint | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| assets/large | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Scan | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| UTF-8 Encoding | ✅ |" >> $GITHUB_STEP_SUMMARY

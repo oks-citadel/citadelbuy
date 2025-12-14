@@ -1,5 +1,5 @@
 {
-  "name": "CitadelBuy Abandoned Cart Recovery",
+  "name": "Broxiva Abandoned Cart Recovery",
   "nodes": [
     {
       "parameters": {
@@ -20,7 +20,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.citadelbuy.com/v1/carts/abandoned",
+        "url": "https://api.broxiva.com/v1/carts/abandoned",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
@@ -42,7 +42,7 @@
       "credentials": {
         "httpHeaderAuth": {
           "id": "1",
-          "name": "CitadelBuy API Key"
+          "name": "Broxiva API Key"
         }
       }
     },
@@ -135,7 +135,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.citadelbuy.com/v1/orders",
+        "url": "https://api.broxiva.com/v1/orders",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendQuery": true,
@@ -167,7 +167,7 @@
       "credentials": {
         "httpHeaderAuth": {
           "id": "1",
-          "name": "CitadelBuy API Key"
+          "name": "Broxiva API Key"
         }
       }
     },
@@ -279,7 +279,7 @@
     },
     {
       "parameters": {
-        "url": "https://{{ $env.ALGOLIA_APP_ID }}-dsn.algolia.net/1/indexes/citadelbuy_products/query",
+        "url": "https://{{ $env.ALGOLIA_APP_ID }}-dsn.algolia.net/1/indexes/broxiva_products/query",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
@@ -328,7 +328,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Prepare email data with personalization\nconst cart = $input.first().json;\nconst algoliaResults = $input.last().json;\n\nconst emailStage = cart._metadata.emailStage;\nconst stageName = cart._metadata.stageName;\n\n// Build email template data\nconst emailData = {\n  customer_email: cart.customer_email,\n  customer_first_name: cart.customer_first_name || 'Valued Customer',\n  cart_id: cart.cart_id,\n  customer_id: cart.customer_id,\n  \n  // Cart details\n  cart_items: cart.items.map(item => ({\n    name: item.name,\n    sku: item.sku,\n    image_url: item.image_url,\n    price: item.price.toFixed(2),\n    quantity: item.quantity,\n    subtotal: (item.price * item.quantity).toFixed(2)\n  })),\n  \n  cart_total: cart.total_value.toFixed(2),\n  item_count: cart.item_count,\n  \n  // Stage-specific content\n  email_stage: emailStage,\n  stage_name: stageName,\n  urgency_message: cart._metadata.urgencyMessage,\n  discount_code: cart._metadata.discountCode,\n  \n  // Related products for stages 2 and 4\n  related_products: algoliaResults.hits ? algoliaResults.hits.slice(0, 4).map(hit => ({\n    name: hit.name,\n    sku: hit.sku,\n    image_url: hit.image_url,\n    price: hit.price.toFixed(2),\n    url: `https://citadelbuy.com/products/${hit.slug}`\n  })) : [],\n  \n  // Email metadata\n  cart_url: `https://citadelbuy.com/cart/${cart.cart_id}`,\n  checkout_url: `https://citadelbuy.com/checkout/${cart.cart_id}`,\n  \n  // Tracking\n  campaign_name: `abandoned_cart_stage_${emailStage}`,\n  \n  // Original cart data for updates\n  _original: cart\n};\n\nreturn emailData;"
+        "jsCode": "// Prepare email data with personalization\nconst cart = $input.first().json;\nconst algoliaResults = $input.last().json;\n\nconst emailStage = cart._metadata.emailStage;\nconst stageName = cart._metadata.stageName;\n\n// Build email template data\nconst emailData = {\n  customer_email: cart.customer_email,\n  customer_first_name: cart.customer_first_name || 'Valued Customer',\n  cart_id: cart.cart_id,\n  customer_id: cart.customer_id,\n  \n  // Cart details\n  cart_items: cart.items.map(item => ({\n    name: item.name,\n    sku: item.sku,\n    image_url: item.image_url,\n    price: item.price.toFixed(2),\n    quantity: item.quantity,\n    subtotal: (item.price * item.quantity).toFixed(2)\n  })),\n  \n  cart_total: cart.total_value.toFixed(2),\n  item_count: cart.item_count,\n  \n  // Stage-specific content\n  email_stage: emailStage,\n  stage_name: stageName,\n  urgency_message: cart._metadata.urgencyMessage,\n  discount_code: cart._metadata.discountCode,\n  \n  // Related products for stages 2 and 4\n  related_products: algoliaResults.hits ? algoliaResults.hits.slice(0, 4).map(hit => ({\n    name: hit.name,\n    sku: hit.sku,\n    image_url: hit.image_url,\n    price: hit.price.toFixed(2),\n    url: `https://broxiva.com/products/${hit.slug}`\n  })) : [],\n  \n  // Email metadata\n  cart_url: `https://broxiva.com/cart/${cart.cart_id}`,\n  checkout_url: `https://broxiva.com/checkout/${cart.cart_id}`,\n  \n  // Tracking\n  campaign_name: `abandoned_cart_stage_${emailStage}`,\n  \n  // Original cart data for updates\n  _original: cart\n};\n\nreturn emailData;"
       },
       "id": "3a4b5c6d-7e8f-9a0b-1c2d-3e4f5a6b7c8d",
       "name": "Prepare Email Data",
@@ -362,7 +362,7 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "={{ 'https://api.citadelbuy.com/v1/carts/' + $json.cart_id }}",
+        "url": "={{ 'https://api.broxiva.com/v1/carts/' + $json.cart_id }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -378,7 +378,7 @@
       "credentials": {
         "httpHeaderAuth": {
           "id": "1",
-          "name": "CitadelBuy API Key"
+          "name": "Broxiva API Key"
         }
       }
     },
@@ -663,7 +663,7 @@
       "createdAt": "2024-01-15T10:00:00.000Z",
       "updatedAt": "2024-01-15T10:00:00.000Z",
       "id": "1",
-      "name": "citadelbuy"
+      "name": "broxiva"
     },
     {
       "createdAt": "2024-01-15T10:00:00.000Z",

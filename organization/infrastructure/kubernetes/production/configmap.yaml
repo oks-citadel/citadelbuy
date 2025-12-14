@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: citadelbuy-config
-  namespace: citadelbuy-production
+  name: broxiva-config
+  namespace: broxiva-production
   labels:
-    app: citadelbuy
+    app: broxiva
     environment: production
 data:
   # Node Environment
@@ -14,28 +14,28 @@ data:
   PORT: "4000"
 
   # Database Configuration
-  POSTGRES_DB: "citadelbuy_production"
-  POSTGRES_USER: "citadelbuy"
+  POSTGRES_DB: "broxiva_production"
+  POSTGRES_USER: "broxiva"
 
   # Redis Configuration
-  REDIS_HOST: "redis-master.citadelbuy-production.svc.cluster.local"
+  REDIS_HOST: "redis-master.broxiva-production.svc.cluster.local"
   REDIS_PORT: "6379"
   REDIS_TLS_ENABLED: "true"
 
   # Elasticsearch Configuration
-  ELASTICSEARCH_NODE: "https://elasticsearch.citadelbuy-production.svc.cluster.local:9200"
-  ELASTICSEARCH_INDEX: "citadelbuy-production"
+  ELASTICSEARCH_NODE: "https://elasticsearch.broxiva-production.svc.cluster.local:9200"
+  ELASTICSEARCH_INDEX: "broxiva-production"
 
   # Frontend Configuration
-  NEXT_PUBLIC_API_URL: "https://api.citadelbuy.com"
-  CORS_ORIGIN: "https://citadelbuy.com,https://www.citadelbuy.com"
+  NEXT_PUBLIC_API_URL: "https://api.broxiva.com"
+  CORS_ORIGIN: "https://broxiva.com,https://www.broxiva.com"
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_live_..."
   NEXT_PUBLIC_GOOGLE_ANALYTICS_ID: "G-XXXXXXXXXX"
 
   # AWS Configuration
   AWS_REGION: "us-east-1"
-  AWS_S3_BUCKET: "citadelbuy-production-assets"
-  AWS_CLOUDFRONT_DOMAIN: "cdn.citadelbuy.com"
+  AWS_S3_BUCKET: "broxiva-production-assets"
+  AWS_CLOUDFRONT_DOMAIN: "cdn.broxiva.com"
 
   # Feature Flags
   ENABLE_ANALYTICS: "true"
@@ -53,9 +53,9 @@ data:
   LOG_RETENTION_DAYS: "90"
 
   # Email Configuration
-  SENDGRID_FROM_EMAIL: "noreply@citadelbuy.com"
-  SENDGRID_FROM_NAME: "CitadelBuy"
-  SENDGRID_REPLY_TO: "support@citadelbuy.com"
+  SENDGRID_FROM_EMAIL: "noreply@broxiva.com"
+  SENDGRID_FROM_NAME: "Broxiva"
+  SENDGRID_REPLY_TO: "support@broxiva.com"
 
   # JWT Configuration
   JWT_EXPIRATION: "1h"
@@ -88,9 +88,9 @@ data:
   SESSION_SAME_SITE: "strict"
 
   # Payment Configuration
-  STRIPE_WEBHOOK_ENDPOINT: "https://api.citadelbuy.com/webhooks/stripe"
+  STRIPE_WEBHOOK_ENDPOINT: "https://api.broxiva.com/webhooks/stripe"
   PAYPAL_MODE: "live"
-  PAYPAL_WEBHOOK_ENDPOINT: "https://api.citadelbuy.com/webhooks/paypal"
+  PAYPAL_WEBHOOK_ENDPOINT: "https://api.broxiva.com/webhooks/paypal"
 
   # Security Configuration
   BCRYPT_ROUNDS: "12"
@@ -177,13 +177,13 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-config
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: postgres
     environment: production
 data:
-  POSTGRES_DB: "citadelbuy_production"
-  POSTGRES_USER: "citadelbuy"
+  POSTGRES_DB: "broxiva_production"
+  POSTGRES_USER: "broxiva"
   # PostgreSQL Performance Tuning for Production
   max_connections: "200"
   shared_buffers: "2GB"
@@ -206,7 +206,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: redis-config
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: redis
     environment: production
@@ -294,7 +294,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: nginx-config
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: nginx
     environment: production
@@ -365,13 +365,13 @@ data:
 
         upstream api {
             least_conn;
-            server citadelbuy-api:4000 max_fails=3 fail_timeout=30s;
+            server broxiva-api:4000 max_fails=3 fail_timeout=30s;
             keepalive 32;
         }
 
         upstream web {
             least_conn;
-            server citadelbuy-web:3000 max_fails=3 fail_timeout=30s;
+            server broxiva-web:3000 max_fails=3 fail_timeout=30s;
             keepalive 32;
         }
 
@@ -384,7 +384,7 @@ data:
 
         server {
             listen 80;
-            server_name api.citadelbuy.com;
+            server_name api.broxiva.com;
 
             limit_req zone=api_limit burst=100 nodelay;
             limit_conn conn_limit 100;
@@ -408,7 +408,7 @@ data:
 
         server {
             listen 80;
-            server_name citadelbuy.com www.citadelbuy.com;
+            server_name broxiva.com www.broxiva.com;
 
             limit_req zone=web_limit burst=200 nodelay;
             limit_conn conn_limit 200;

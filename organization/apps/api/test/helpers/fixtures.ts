@@ -22,7 +22,7 @@ export const userFixtures = {
     role: 'VENDOR',
   },
   admin: {
-    email: 'admin@citadelbuy.com',
+    email: 'admin@broxiva.com',
     password: 'Admin123!',
     name: 'Test Admin',
     role: 'ADMIN',

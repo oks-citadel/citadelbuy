@@ -1,5 +1,5 @@
 {
-  "name": "CitadelBuy Marketing Campaign Automation",
+  "name": "Broxiva Marketing Campaign Automation",
   "nodes": [
     {
       "parameters": {
@@ -30,7 +30,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [250, 500],
-      "webhookId": "citadelbuy-campaign-trigger"
+      "webhookId": "broxiva-campaign-trigger"
     },
     {
       "parameters": {
@@ -70,7 +70,7 @@
       "parameters": {
         "authentication": "headerAuth",
         "requestMethod": "GET",
-        "url": "https://api.citadelbuy.com/v1/customers/segments",
+        "url": "https://api.broxiva.com/v1/customers/segments",
         "options": {
           "queryParameters": {
             "parameters": [
@@ -93,8 +93,8 @@
       "position": [500, 200],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "citadelbuy-api",
-          "name": "CitadelBuy API"
+          "id": "broxiva-api",
+          "name": "Broxiva API"
         }
       }
     },
@@ -102,7 +102,7 @@
       "parameters": {
         "authentication": "headerAuth",
         "requestMethod": "GET",
-        "url": "https://api.citadelbuy.com/v1/customers/segments",
+        "url": "https://api.broxiva.com/v1/customers/segments",
         "options": {
           "queryParameters": {
             "parameters": [
@@ -125,8 +125,8 @@
       "position": [500, 400],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "citadelbuy-api",
-          "name": "CitadelBuy API"
+          "id": "broxiva-api",
+          "name": "Broxiva API"
         }
       }
     },
@@ -134,7 +134,7 @@
       "parameters": {
         "authentication": "headerAuth",
         "requestMethod": "GET",
-        "url": "https://api.citadelbuy.com/v1/customers/segments",
+        "url": "https://api.broxiva.com/v1/customers/segments",
         "options": {
           "queryParameters": {
             "parameters": [
@@ -157,8 +157,8 @@
       "position": [500, 600],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "citadelbuy-api",
-          "name": "CitadelBuy API"
+          "id": "broxiva-api",
+          "name": "Broxiva API"
         }
       }
     },
@@ -166,7 +166,7 @@
       "parameters": {
         "authentication": "headerAuth",
         "requestMethod": "GET",
-        "url": "https://api.citadelbuy.com/v1/customers/birthdays",
+        "url": "https://api.broxiva.com/v1/customers/birthdays",
         "options": {
           "queryParameters": {
             "parameters": [
@@ -185,8 +185,8 @@
       "position": [500, 900],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "citadelbuy-api",
-          "name": "CitadelBuy API"
+          "id": "broxiva-api",
+          "name": "Broxiva API"
         }
       }
     },
@@ -215,7 +215,7 @@
       "parameters": {
         "authentication": "headerAuth",
         "requestMethod": "GET",
-        "url": "=https://api.citadelbuy.com/v1/customers/{{ $json.customerId }}/purchase-history",
+        "url": "=https://api.broxiva.com/v1/customers/{{ $json.customerId }}/purchase-history",
         "options": {
           "queryParameters": {
             "parameters": [
@@ -234,8 +234,8 @@
       "position": [1000, 300],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "citadelbuy-api",
-          "name": "CitadelBuy API"
+          "id": "broxiva-api",
+          "name": "Broxiva API"
         }
       }
     },
@@ -245,7 +245,7 @@
         "requestMethod": "POST",
         "url": "https://api.openai.com/v1/chat/completions",
         "options": {
-          "bodyParametersJson": "={\n  \"model\": \"gpt-4\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a marketing personalization expert for CitadelBuy e-commerce. Generate personalized product recommendations and email content based on customer data.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Customer Profile:\\nName: {{ $json.firstName }} {{ $json.lastName }}\\nTier: {{ $json.tier }}\\nPurchase History: {{ JSON.stringify($json.purchaseHistory) }}\\nCategory Affinity: {{ JSON.stringify($json.categoryAffinity) }}\\nSegment: {{ $json.segmentType }}\\n\\nGenerate:\\n1. 5 personalized product recommendations with reasons\\n2. Subject line for email campaign\\n3. Opening paragraph that resonates with their interests\\n4. Optimal send time based on past engagement\\n\\nReturn as JSON with keys: recommendations, subjectLine, opening, sendTime\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 1000\n}"
+          "bodyParametersJson": "={\n  \"model\": \"gpt-4\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a marketing personalization expert for Broxiva e-commerce. Generate personalized product recommendations and email content based on customer data.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Customer Profile:\\nName: {{ $json.firstName }} {{ $json.lastName }}\\nTier: {{ $json.tier }}\\nPurchase History: {{ JSON.stringify($json.purchaseHistory) }}\\nCategory Affinity: {{ JSON.stringify($json.categoryAffinity) }}\\nSegment: {{ $json.segmentType }}\\n\\nGenerate:\\n1. 5 personalized product recommendations with reasons\\n2. Subject line for email campaign\\n3. Opening paragraph that resonates with their interests\\n4. Optimal send time based on past engagement\\n\\nReturn as JSON with keys: recommendations, subjectLine, opening, sendTime\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 1000\n}"
         }
       },
       "id": "openai-personalization",
@@ -294,7 +294,7 @@
         "requestMethod": "POST",
         "url": "https://a.klaviyo.com/api/v2/campaigns",
         "options": {
-          "bodyParametersJson": "={\n  \"list_id\": \"{{ $env.KLAVIYO_NEW_CUSTOMERS_LIST }}\",\n  \"template_id\": \"{{ $env.KLAVIYO_WELCOME_TEMPLATE }}\",\n  \"from_email\": \"welcome@citadelbuy.com\",\n  \"from_name\": \"CitadelBuy Team\",\n  \"subject\": \"{{ $json.subjectLine }}\",\n  \"name\": \"Welcome Series - {{ $json.firstName }} {{ $json.lastName }}\",\n  \"use_smart_sending\": true,\n  \"add_google_analytics\": true,\n  \"campaign_type\": \"automated\"\n}"
+          "bodyParametersJson": "={\n  \"list_id\": \"{{ $env.KLAVIYO_NEW_CUSTOMERS_LIST }}\",\n  \"template_id\": \"{{ $env.KLAVIYO_WELCOME_TEMPLATE }}\",\n  \"from_email\": \"welcome@broxiva.com\",\n  \"from_name\": \"Broxiva Team\",\n  \"subject\": \"{{ $json.subjectLine }}\",\n  \"name\": \"Welcome Series - {{ $json.firstName }} {{ $json.lastName }}\",\n  \"use_smart_sending\": true,\n  \"add_google_analytics\": true,\n  \"campaign_type\": \"automated\"\n}"
         }
       },
       "id": "klaviyo-welcome-series",
@@ -315,7 +315,7 @@
         "requestMethod": "POST",
         "url": "https://a.klaviyo.com/api/v2/campaigns",
         "options": {
-          "bodyParametersJson": "={\n  \"list_id\": \"{{ $env.KLAVIYO_AT_RISK_LIST }}\",\n  \"template_id\": \"{{ $env.KLAVIYO_WINBACK_TEMPLATE }}\",\n  \"from_email\": \"offers@citadelbuy.com\",\n  \"from_name\": \"CitadelBuy Exclusive Offers\",\n  \"subject\": \"We Miss You! Here's 15% Off Your Next Purchase\",\n  \"name\": \"Win-Back Campaign - {{ $json.firstName }}\",\n  \"use_smart_sending\": true,\n  \"add_google_analytics\": true\n}"
+          "bodyParametersJson": "={\n  \"list_id\": \"{{ $env.KLAVIYO_AT_RISK_LIST }}\",\n  \"template_id\": \"{{ $env.KLAVIYO_WINBACK_TEMPLATE }}\",\n  \"from_email\": \"offers@broxiva.com\",\n  \"from_name\": \"Broxiva Exclusive Offers\",\n  \"subject\": \"We Miss You! Here's 15% Off Your Next Purchase\",\n  \"name\": \"Win-Back Campaign - {{ $json.firstName }}\",\n  \"use_smart_sending\": true,\n  \"add_google_analytics\": true\n}"
         }
       },
       "id": "klaviyo-winback",
@@ -336,7 +336,7 @@
         "requestMethod": "POST",
         "url": "https://a.klaviyo.com/api/v2/campaigns",
         "options": {
-          "bodyParametersJson": "={\n  \"list_id\": \"{{ $env.KLAVIYO_VIP_LIST }}\",\n  \"template_id\": \"{{ $env.KLAVIYO_VIP_TEMPLATE }}\",\n  \"from_email\": \"vip@citadelbuy.com\",\n  \"from_name\": \"CitadelBuy VIP\",\n  \"subject\": \"{{ $json.subjectLine }}\",\n  \"name\": \"VIP Exclusive - {{ $json.firstName }}\",\n  \"use_smart_sending\": false,\n  \"add_google_analytics\": true\n}"
+          "bodyParametersJson": "={\n  \"list_id\": \"{{ $env.KLAVIYO_VIP_LIST }}\",\n  \"template_id\": \"{{ $env.KLAVIYO_VIP_TEMPLATE }}\",\n  \"from_email\": \"vip@broxiva.com\",\n  \"from_name\": \"Broxiva VIP\",\n  \"subject\": \"{{ $json.subjectLine }}\",\n  \"name\": \"VIP Exclusive - {{ $json.firstName }}\",\n  \"use_smart_sending\": false,\n  \"add_google_analytics\": true\n}"
         }
       },
       "id": "klaviyo-vip-campaign",
@@ -357,7 +357,7 @@
         "requestMethod": "POST",
         "url": "https://a.klaviyo.com/api/v2/campaigns",
         "options": {
-          "bodyParametersJson": "={\n  \"list_id\": \"{{ $env.KLAVIYO_BIRTHDAY_LIST }}\",\n  \"template_id\": \"{{ $env.KLAVIYO_BIRTHDAY_TEMPLATE }}\",\n  \"from_email\": \"celebrations@citadelbuy.com\",\n  \"from_name\": \"CitadelBuy Team\",\n  \"subject\": \"Happy Birthday {{ $json.firstName }}! Here's 15% Off Just For You\",\n  \"name\": \"Birthday Campaign - {{ $json.firstName }}\",\n  \"use_smart_sending\": false,\n  \"add_google_analytics\": true\n}"
+          "bodyParametersJson": "={\n  \"list_id\": \"{{ $env.KLAVIYO_BIRTHDAY_LIST }}\",\n  \"template_id\": \"{{ $env.KLAVIYO_BIRTHDAY_TEMPLATE }}\",\n  \"from_email\": \"celebrations@broxiva.com\",\n  \"from_name\": \"Broxiva Team\",\n  \"subject\": \"Happy Birthday {{ $json.firstName }}! Here's 15% Off Just For You\",\n  \"name\": \"Birthday Campaign - {{ $json.firstName }}\",\n  \"use_smart_sending\": false,\n  \"add_google_analytics\": true\n}"
         }
       },
       "id": "klaviyo-birthday",
@@ -447,7 +447,7 @@
         "requestMethod": "POST",
         "url": "https://api.twilio.com/2010-04-01/Accounts/{{ $env.TWILIO_ACCOUNT_SID }}/Messages.json",
         "options": {
-          "bodyParametersJson": "={\n  \"To\": \"{{ $json.phone }}\",\n  \"From\": \"{{ $env.TWILIO_PHONE_NUMBER }}\",\n  \"Body\": \"Hi {{ $json.firstName }}! We noticed you haven't opened our email. Don't miss out on exclusive offers! Visit: citadelbuy.com/offers\"\n}"
+          "bodyParametersJson": "={\n  \"To\": \"{{ $json.phone }}\",\n  \"From\": \"{{ $env.TWILIO_PHONE_NUMBER }}\",\n  \"Body\": \"Hi {{ $json.firstName }}! We noticed you haven't opened our email. Don't miss out on exclusive offers! Visit: broxiva.com/offers\"\n}"
         }
       },
       "id": "send-sms-followup",
@@ -468,7 +468,7 @@
         "requestMethod": "POST",
         "url": "https://graph.facebook.com/v18.0/act_{{ $env.FACEBOOK_AD_ACCOUNT_ID }}/customaudiences",
         "options": {
-          "bodyParametersJson": "={\n  \"name\": \"CitadelBuy - Email Non-Openers - {{ $now.toFormat('yyyy-MM-dd') }}\",\n  \"subtype\": \"CUSTOM\",\n  \"description\": \"Customers who didn't open marketing email\",\n  \"customer_file_source\": \"USER_PROVIDED_ONLY\",\n  \"access_token\": \"{{ $env.FACEBOOK_ACCESS_TOKEN }}\"\n}"
+          "bodyParametersJson": "={\n  \"name\": \"Broxiva - Email Non-Openers - {{ $now.toFormat('yyyy-MM-dd') }}\",\n  \"subtype\": \"CUSTOM\",\n  \"description\": \"Customers who didn't open marketing email\",\n  \"customer_file_source\": \"USER_PROVIDED_ONLY\",\n  \"access_token\": \"{{ $env.FACEBOOK_ACCESS_TOKEN }}\"\n}"
         }
       },
       "id": "create-facebook-audience",
@@ -489,7 +489,7 @@
         "requestMethod": "POST",
         "url": "https://googleads.googleapis.com/v14/customers/{{ $env.GOOGLE_ADS_CUSTOMER_ID }}/userLists",
         "options": {
-          "bodyParametersJson": "={\n  \"userList\": {\n    \"name\": \"CitadelBuy - Email Non-Openers - {{ $now.toFormat('yyyy-MM-dd') }}\",\n    \"description\": \"Customers who didn't engage with email campaign\",\n    \"membershipLifeSpan\": 30,\n    \"membershipStatus\": \"OPEN\",\n    \"crmBasedUserList\": {\n      \"uploadKeyType\": \"CONTACT_INFO\",\n      \"dataSourceType\": \"FIRST_PARTY\"\n    }\n  }\n}"
+          "bodyParametersJson": "={\n  \"userList\": {\n    \"name\": \"Broxiva - Email Non-Openers - {{ $now.toFormat('yyyy-MM-dd') }}\",\n    \"description\": \"Customers who didn't engage with email campaign\",\n    \"membershipLifeSpan\": 30,\n    \"membershipStatus\": \"OPEN\",\n    \"crmBasedUserList\": {\n      \"uploadKeyType\": \"CONTACT_INFO\",\n      \"dataSourceType\": \"FIRST_PARTY\"\n    }\n  }\n}"
         }
       },
       "id": "create-google-audience",
@@ -617,7 +617,7 @@
       "parameters": {
         "authentication": "headerAuth",
         "requestMethod": "POST",
-        "url": "https://api.citadelbuy.com/v1/analytics/campaigns",
+        "url": "https://api.broxiva.com/v1/analytics/campaigns",
         "options": {
           "bodyParametersJson": "={{ JSON.stringify($json) }}"
         }
@@ -629,8 +629,8 @@
       "position": [1250, 1100],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "citadelbuy-api",
-          "name": "CitadelBuy API"
+          "id": "broxiva-api",
+          "name": "Broxiva API"
         }
       }
     },
@@ -656,7 +656,7 @@
       "parameters": {
         "authentication": "headerAuth",
         "requestMethod": "GET",
-        "url": "https://api.citadelbuy.com/v1/products/new-launches",
+        "url": "https://api.broxiva.com/v1/products/new-launches",
         "options": {
           "queryParameters": {
             "parameters": [
@@ -675,8 +675,8 @@
       "position": [1000, 500],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "citadelbuy-api",
-          "name": "CitadelBuy API"
+          "id": "broxiva-api",
+          "name": "Broxiva API"
         }
       }
     },
@@ -686,7 +686,7 @@
         "requestMethod": "POST",
         "url": "https://a.klaviyo.com/api/v2/campaigns",
         "options": {
-          "bodyParametersJson": "={\n  \"list_id\": \"{{ $env.KLAVIYO_ALL_CUSTOMERS_LIST }}\",\n  \"template_id\": \"{{ $env.KLAVIYO_PRODUCT_LAUNCH_TEMPLATE }}\",\n  \"from_email\": \"newproducts@citadelbuy.com\",\n  \"from_name\": \"CitadelBuy New Arrivals\",\n  \"subject\": \"Just Arrived: {{ $json.products[0].name }} and More!\",\n  \"name\": \"Product Launch - {{ $now.toFormat('yyyy-MM-dd') }}\",\n  \"use_smart_sending\": true,\n  \"add_google_analytics\": true\n}"
+          "bodyParametersJson": "={\n  \"list_id\": \"{{ $env.KLAVIYO_ALL_CUSTOMERS_LIST }}\",\n  \"template_id\": \"{{ $env.KLAVIYO_PRODUCT_LAUNCH_TEMPLATE }}\",\n  \"from_email\": \"newproducts@broxiva.com\",\n  \"from_name\": \"Broxiva New Arrivals\",\n  \"subject\": \"Just Arrived: {{ $json.products[0].name }} and More!\",\n  \"name\": \"Product Launch - {{ $now.toFormat('yyyy-MM-dd') }}\",\n  \"use_smart_sending\": true,\n  \"add_google_analytics\": true\n}"
         }
       },
       "id": "send-product-launch",
@@ -735,7 +735,7 @@
         "requestMethod": "POST",
         "url": "https://a.klaviyo.com/api/v2/campaigns",
         "options": {
-          "bodyParametersJson": "={\n  \"list_id\": \"{{ $env.KLAVIYO_ALL_CUSTOMERS_LIST }}\",\n  \"template_id\": \"{{ $json.template }}\",\n  \"from_email\": \"sales@citadelbuy.com\",\n  \"from_name\": \"CitadelBuy Sales Team\",\n  \"subject\": \"{{ $json.name }} - {{ $json.discount }}% OFF Everything!\",\n  \"name\": \"{{ $json.name }} - {{ $json.date }}\",\n  \"use_smart_sending\": false,\n  \"add_google_analytics\": true\n}"
+          "bodyParametersJson": "={\n  \"list_id\": \"{{ $env.KLAVIYO_ALL_CUSTOMERS_LIST }}\",\n  \"template_id\": \"{{ $json.template }}\",\n  \"from_email\": \"sales@broxiva.com\",\n  \"from_name\": \"Broxiva Sales Team\",\n  \"subject\": \"{{ $json.name }} - {{ $json.discount }}% OFF Everything!\",\n  \"name\": \"{{ $json.name }} - {{ $json.date }}\",\n  \"use_smart_sending\": false,\n  \"add_google_analytics\": true\n}"
         }
       },
       "id": "send-seasonal-campaign",
@@ -754,7 +754,7 @@
       "parameters": {
         "authentication": "headerAuth",
         "requestMethod": "POST",
-        "url": "https://api.citadelbuy.com/v1/coupons/generate",
+        "url": "https://api.broxiva.com/v1/coupons/generate",
         "options": {
           "bodyParametersJson": "={\n  \"code\": \"BIRTHDAY{{ $json.customerId }}\",\n  \"type\": \"percentage\",\n  \"value\": 15,\n  \"customerId\": \"{{ $json.customerId }}\",\n  \"expiresAt\": \"{{ $now.plus({days: 30}).toISO() }}\",\n  \"usage\": \"single\",\n  \"description\": \"Birthday discount for {{ $json.firstName }}\"\n}"
         }
@@ -766,8 +766,8 @@
       "position": [750, 900],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "citadelbuy-api",
-          "name": "CitadelBuy API"
+          "id": "broxiva-api",
+          "name": "Broxiva API"
         }
       }
     },
@@ -785,7 +785,7 @@
       "parameters": {
         "authentication": "headerAuth",
         "requestMethod": "POST",
-        "url": "https://api.citadelbuy.com/v1/coupons/generate",
+        "url": "https://api.broxiva.com/v1/coupons/generate",
         "options": {
           "bodyParametersJson": "={\n  \"code\": \"WINBACK{{ $json.customerId }}\",\n  \"type\": \"percentage\",\n  \"value\": {{ $json.attemptNumber === 1 ? 15 : ($json.attemptNumber === 2 ? 20 : 25) }},\n  \"customerId\": \"{{ $json.customerId }}\",\n  \"expiresAt\": \"{{ $now.plus({days: 7}).toISO() }}\",\n  \"usage\": \"single\",\n  \"description\": \"Win-back attempt {{ $json.attemptNumber }} for {{ $json.firstName }}\"\n}"
         }
@@ -797,14 +797,14 @@
       "position": [1750, 600],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "citadelbuy-api",
-          "name": "CitadelBuy API"
+          "id": "broxiva-api",
+          "name": "Broxiva API"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "// Win-back series logic\nconst customer = $input.first().json;\nconst attemptNumber = customer.winbackAttempt || 1;\n\nconst winbackSeries = [\n  {\n    attempt: 1,\n    subject: \"We Miss You at CitadelBuy!\",\n    discount: 15,\n    waitDays: 7\n  },\n  {\n    attempt: 2,\n    subject: \"Still Thinking About You! 20% Off Inside\",\n    discount: 20,\n    waitDays: 7\n  },\n  {\n    attempt: 3,\n    subject: \"Last Chance: 25% Off Your Next Purchase\",\n    discount: 25,\n    waitDays: 0\n  }\n];\n\nconst currentAttempt = winbackSeries[attemptNumber - 1];\n\nreturn {\n  json: {\n    ...customer,\n    attemptNumber,\n    subject: currentAttempt.subject,\n    discount: currentAttempt.discount,\n    waitDays: currentAttempt.waitDays,\n    isLastAttempt: attemptNumber === 3\n  }\n};"
+        "jsCode": "// Win-back series logic\nconst customer = $input.first().json;\nconst attemptNumber = customer.winbackAttempt || 1;\n\nconst winbackSeries = [\n  {\n    attempt: 1,\n    subject: \"We Miss You at Broxiva!\",\n    discount: 15,\n    waitDays: 7\n  },\n  {\n    attempt: 2,\n    subject: \"Still Thinking About You! 20% Off Inside\",\n    discount: 20,\n    waitDays: 7\n  },\n  {\n    attempt: 3,\n    subject: \"Last Chance: 25% Off Your Next Purchase\",\n    discount: 25,\n    waitDays: 0\n  }\n];\n\nconst currentAttempt = winbackSeries[attemptNumber - 1];\n\nreturn {\n  json: {\n    ...customer,\n    attemptNumber,\n    subject: currentAttempt.subject,\n    discount: currentAttempt.discount,\n    waitDays: currentAttempt.waitDays,\n    isLastAttempt: attemptNumber === 3\n  }\n};"
       },
       "id": "winback-series-logic",
       "name": "Win-Back Series Logic",
@@ -855,7 +855,7 @@
       "parameters": {
         "authentication": "headerAuth",
         "requestMethod": "POST",
-        "url": "https://api.citadelbuy.com/v1/customers/{{ $json.customerId }}/tags",
+        "url": "https://api.broxiva.com/v1/customers/{{ $json.customerId }}/tags",
         "options": {
           "bodyParametersJson": "={\n  \"tags\": [\"winback_completed\", \"high_churn_risk\"]\n}"
         }
@@ -867,8 +867,8 @@
       "position": [2750, 700],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "citadelbuy-api",
-          "name": "CitadelBuy API"
+          "id": "broxiva-api",
+          "name": "Broxiva API"
         }
       }
     },

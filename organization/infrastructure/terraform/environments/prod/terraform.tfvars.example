@@ -6,7 +6,7 @@ subscription_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 tenant_id       = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
 # Database Configuration
-db_admin_username = "citadelbuy_admin"
+db_admin_username = "broxiva_admin"
 db_admin_password = "CHANGE_ME_STRONG_PASSWORD_HERE"
 
 # AKS Admin Group (Azure AD Group Object IDs)
@@ -34,12 +34,12 @@ blocked_countries = [
 jwt_secret = "CHANGE_ME_USE_STRONG_RANDOM_STRING_AT_LEAST_256_BITS"
 
 # Monitoring Configuration
-oncall_email = "oncall@citadelbuy.com"
-team_email   = "platform-team@citadelbuy.com"
+oncall_email = "oncall@broxiva.com"
+team_email   = "platform-team@broxiva.com"
 
 additional_alert_emails = [
-  # "cto@citadelbuy.com",
-  # "security@citadelbuy.com"
+  # "cto@broxiva.com",
+  # "security@broxiva.com"
 ]
 
 # PagerDuty Integration (optional)

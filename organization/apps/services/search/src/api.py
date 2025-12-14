@@ -9,7 +9,7 @@ from typing import List, Optional, Dict
 import logging
 
 app = FastAPI(
-    title="CitadelBuy Search Service",
+    title="Broxiva Search Service",
     description="AI-powered search with semantic, visual, and voice capabilities",
     version="1.0.0"
 )

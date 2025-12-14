@@ -1,5 +1,5 @@
 # Storage Module - AWS S3 and CloudFront
-# CitadelBuy E-commerce Platform - AWS Infrastructure
+# Broxiva E-commerce Platform - AWS Infrastructure
 
 # ============================================
 # S3 Bucket for Main Storage

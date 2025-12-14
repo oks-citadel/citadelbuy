@@ -10,8 +10,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 const API_TIMEOUT = 30000;
 
 // Token storage keys
-const ACCESS_TOKEN_KEY = 'citadelbuy_access_token';
-const REFRESH_TOKEN_KEY = 'citadelbuy_refresh_token';
+const ACCESS_TOKEN_KEY = 'broxiva_access_token';
+const REFRESH_TOKEN_KEY = 'broxiva_refresh_token';
 
 // Types
 interface TokenResponse {

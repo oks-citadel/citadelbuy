@@ -260,7 +260,7 @@ class LLMClient:
                 model=model,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                system=system_prompt or "You are a helpful AI assistant for the CitadelBuy e-commerce platform.",
+                system=system_prompt or "You are a helpful AI assistant for the Broxiva e-commerce platform.",
                 messages=[{"role": "user", "content": prompt}]
             )
 

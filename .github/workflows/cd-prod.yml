@@ -32,10 +32,10 @@ env:
   AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-  AKS_CLUSTER_NAME: citadelbuy-prod-aks
-  AKS_RESOURCE_GROUP: citadelbuy-prod-rg
-  KUBERNETES_NAMESPACE: citadelbuy-production
-  CONTAINER_REGISTRY: citadelbuyacr.azurecr.io
+  AKS_CLUSTER_NAME: broxiva-prod-aks
+  AKS_RESOURCE_GROUP: broxiva-prod-rg
+  KUBERNETES_NAMESPACE: broxiva-production
+  CONTAINER_REGISTRY: broxivaacr.azurecr.io
   KUSTOMIZE_VERSION: 'v5.3.0'
 
 permissions:
@@ -106,9 +106,9 @@ jobs:
           TAG="${{ github.event.inputs.image_tag }}"
 
           # Check if images exist in registry
-          docker manifest inspect ${{ env.CONTAINER_REGISTRY }}/citadelbuy-api:$TAG || exit 1
-          docker manifest inspect ${{ env.CONTAINER_REGISTRY }}/citadelbuy-web:$TAG || exit 1
-          docker manifest inspect ${{ env.CONTAINER_REGISTRY }}/citadelbuy-worker:$TAG || exit 1
+          docker manifest inspect ${{ env.CONTAINER_REGISTRY }}/broxiva-api:$TAG || exit 1
+          docker manifest inspect ${{ env.CONTAINER_REGISTRY }}/broxiva-web:$TAG || exit 1
+          docker manifest inspect ${{ env.CONTAINER_REGISTRY }}/broxiva-worker:$TAG || exit 1
 
       - name: Run security vulnerability scan
         run: |
@@ -162,7 +162,7 @@ jobs:
       (github.event.inputs.deployment_strategy == 'blue-green' || github.event.inputs.deployment_strategy == '')
     environment:
       name: production
-      url: https://citadelbuy.com
+      url: https://broxiva.com
 
     outputs:
       deployment-id: ${{ steps.deployment-info.outputs.deployment-id }}
@@ -250,7 +250,7 @@ jobs:
       - name: Detect current deployment color
         id: current-color
         run: |
-          CURRENT_COLOR=$(kubectl get service citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.spec.selector.color}' 2>/dev/null || echo "blue")
+          CURRENT_COLOR=$(kubectl get service broxiva-api -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.spec.selector.color}' 2>/dev/null || echo "blue")
           if [ "$CURRENT_COLOR" == "blue" ]; then
             NEW_COLOR="green"
           else
@@ -297,9 +297,9 @@ jobs:
 
           # Update image tags
           kustomize edit set image \
-            ${{ env.CONTAINER_REGISTRY }}/citadelbuy-api:${{ steps.image-tag.outputs.tag }} \
-            ${{ env.CONTAINER_REGISTRY }}/citadelbuy-web:${{ steps.image-tag.outputs.tag }} \
-            ${{ env.CONTAINER_REGISTRY }}/citadelbuy-worker:${{ steps.image-tag.outputs.tag }}
+            ${{ env.CONTAINER_REGISTRY }}/broxiva-api:${{ steps.image-tag.outputs.tag }} \
+            ${{ env.CONTAINER_REGISTRY }}/broxiva-web:${{ steps.image-tag.outputs.tag }} \
+            ${{ env.CONTAINER_REGISTRY }}/broxiva-worker:${{ steps.image-tag.outputs.tag }}
 
           # Add green color label
           cat >> kustomization.yaml <<EOF
@@ -310,7 +310,7 @@ jobs:
               apiVersion: apps/v1
               kind: Deployment
               metadata:
-                name: citadelbuy-api-green
+                name: broxiva-api-green
               spec:
                 selector:
                   matchLabels:
@@ -324,7 +324,7 @@ jobs:
               apiVersion: apps/v1
               kind: Deployment
               metadata:
-                name: citadelbuy-web-green
+                name: broxiva-web-green
               spec:
                 selector:
                   matchLabels:
@@ -338,7 +338,7 @@ jobs:
               apiVersion: apps/v1
               kind: Deployment
               metadata:
-                name: citadelbuy-worker-green
+                name: broxiva-worker-green
               spec:
                 selector:
                   matchLabels:
@@ -355,9 +355,9 @@ jobs:
           kustomize build infrastructure/kubernetes/production > deployment-green.yaml
 
           # Rename deployments to include -green suffix
-          sed -i 's/name: citadelbuy-api$/name: citadelbuy-api-green/' deployment-green.yaml
-          sed -i 's/name: citadelbuy-web$/name: citadelbuy-web-green/' deployment-green.yaml
-          sed -i 's/name: citadelbuy-worker$/name: citadelbuy-worker-green/' deployment-green.yaml
+          sed -i 's/name: broxiva-api$/name: broxiva-api-green/' deployment-green.yaml
+          sed -i 's/name: broxiva-web$/name: broxiva-web-green/' deployment-green.yaml
+          sed -i 's/name: broxiva-worker$/name: broxiva-worker-green/' deployment-green.yaml
 
           echo "=== Green Deployment Manifests ==="
           cat deployment-green.yaml
@@ -369,9 +369,9 @@ jobs:
           kubectl apply -f deployment-green.yaml
 
           echo "Waiting for GREEN deployments to be ready..."
-          kubectl rollout status deployment/citadelbuy-api-green -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=10m
-          kubectl rollout status deployment/citadelbuy-web-green -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=10m
-          kubectl rollout status deployment/citadelbuy-worker-green -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=10m
+          kubectl rollout status deployment/broxiva-api-green -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=10m
+          kubectl rollout status deployment/broxiva-web-green -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=10m
+          kubectl rollout status deployment/broxiva-worker-green -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=10m
 
           echo "GREEN environment deployed successfully"
 
@@ -382,7 +382,7 @@ jobs:
           echo "deployment-id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
 
           # Annotate green deployments
-          for deployment in citadelbuy-api-green citadelbuy-web-green citadelbuy-worker-green; do
+          for deployment in broxiva-api-green broxiva-web-green broxiva-worker-green; do
             kubectl annotate deployment/$deployment -n ${{ env.KUBERNETES_NAMESPACE }} \
               deployment-id=$DEPLOYMENT_ID \
               deployed-by=${{ github.actor }} \
@@ -397,7 +397,7 @@ jobs:
           echo "Running health checks on GREEN environment..."
           sleep 30
 
-          API_POD=$(kubectl get pod -n ${{ env.KUBERNETES_NAMESPACE }} -l app=citadelbuy-api,color=green -o jsonpath="{.items[0].metadata.name}")
+          API_POD=$(kubectl get pod -n ${{ env.KUBERNETES_NAMESPACE }} -l app=broxiva-api,color=green -o jsonpath="{.items[0].metadata.name}")
           echo "Testing GREEN API pod: $API_POD"
 
           kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} $API_POD -- curl -f http://localhost:4000/api/health/live || exit 1
@@ -407,7 +407,7 @@ jobs:
 
       - name: Health check - Green Web
         run: |
-          WEB_POD=$(kubectl get pod -n ${{ env.KUBERNETES_NAMESPACE }} -l app=citadelbuy-web,color=green -o jsonpath="{.items[0].metadata.name}")
+          WEB_POD=$(kubectl get pod -n ${{ env.KUBERNETES_NAMESPACE }} -l app=broxiva-web,color=green -o jsonpath="{.items[0].metadata.name}")
           echo "Testing GREEN Web pod: $WEB_POD"
 
           kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} $WEB_POD -- curl -f http://localhost:3000/health || exit 1
@@ -473,8 +473,8 @@ jobs:
         id: green-endpoints
         run: |
           # Port forward to green services for testing
-          kubectl port-forward -n ${{ env.KUBERNETES_NAMESPACE }} service/citadelbuy-api-green 8080:4000 &
-          kubectl port-forward -n ${{ env.KUBERNETES_NAMESPACE }} service/citadelbuy-web-green 8081:3000 &
+          kubectl port-forward -n ${{ env.KUBERNETES_NAMESPACE }} service/broxiva-api-green 8080:4000 &
+          kubectl port-forward -n ${{ env.KUBERNETES_NAMESPACE }} service/broxiva-web-green 8081:3000 &
           sleep 10
 
           echo "api-url=http://localhost:8080" >> $GITHUB_OUTPUT
@@ -554,8 +554,8 @@ jobs:
           echo "Switching production traffic to GREEN environment..."
 
           # Update services to point to green deployments
-          kubectl patch service citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }} -p '{"spec":{"selector":{"color":"green"}}}'
-          kubectl patch service citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }} -p '{"spec":{"selector":{"color":"green"}}}'
+          kubectl patch service broxiva-api -n ${{ env.KUBERNETES_NAMESPACE }} -p '{"spec":{"selector":{"color":"green"}}}'
+          kubectl patch service broxiva-web -n ${{ env.KUBERNETES_NAMESPACE }} -p '{"spec":{"selector":{"color":"green"}}}'
 
           echo "Traffic switched to GREEN environment"
 
@@ -564,8 +564,8 @@ jobs:
           sleep 10
 
           # Verify services are routing to green pods
-          API_SELECTOR=$(kubectl get service citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.spec.selector.color}')
-          WEB_SELECTOR=$(kubectl get service citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.spec.selector.color}')
+          API_SELECTOR=$(kubectl get service broxiva-api -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.spec.selector.color}')
+          WEB_SELECTOR=$(kubectl get service broxiva-web -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.spec.selector.color}')
 
           if [ "$API_SELECTOR" != "green" ] || [ "$WEB_SELECTOR" != "green" ]; then
             echo "Error: Traffic not routing to green environment"
@@ -644,9 +644,9 @@ jobs:
         run: |
           echo "Scaling down BLUE environment..."
 
-          kubectl scale deployment/citadelbuy-api-blue -n ${{ env.KUBERNETES_NAMESPACE }} --replicas=0 || echo "Blue API deployment not found"
-          kubectl scale deployment/citadelbuy-web-blue -n ${{ env.KUBERNETES_NAMESPACE }} --replicas=0 || echo "Blue Web deployment not found"
-          kubectl scale deployment/citadelbuy-worker-blue -n ${{ env.KUBERNETES_NAMESPACE }} --replicas=0 || echo "Blue Worker deployment not found"
+          kubectl scale deployment/broxiva-api-blue -n ${{ env.KUBERNETES_NAMESPACE }} --replicas=0 || echo "Blue API deployment not found"
+          kubectl scale deployment/broxiva-web-blue -n ${{ env.KUBERNETES_NAMESPACE }} --replicas=0 || echo "Blue Web deployment not found"
+          kubectl scale deployment/broxiva-worker-blue -n ${{ env.KUBERNETES_NAMESPACE }} --replicas=0 || echo "Blue Worker deployment not found"
 
           echo "BLUE environment scaled down (kept for rollback capability)"
 
@@ -660,7 +660,7 @@ jobs:
       github.event.inputs.deployment_strategy == 'rolling'
     environment:
       name: production
-      url: https://citadelbuy.com
+      url: https://broxiva.com
 
     steps:
       - name: Checkout code
@@ -690,14 +690,14 @@ jobs:
       - name: Deploy with Rolling Update
         run: |
           echo "Deploying via Rolling Update strategy..."
-          kubectl set image deployment/citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }} \
-            api=${{ env.CONTAINER_REGISTRY }}/citadelbuy-api:${{ github.event.inputs.image_tag }}
+          kubectl set image deployment/broxiva-api -n ${{ env.KUBERNETES_NAMESPACE }} \
+            api=${{ env.CONTAINER_REGISTRY }}/broxiva-api:${{ github.event.inputs.image_tag }}
 
-          kubectl set image deployment/citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }} \
-            web=${{ env.CONTAINER_REGISTRY }}/citadelbuy-web:${{ github.event.inputs.image_tag }}
+          kubectl set image deployment/broxiva-web -n ${{ env.KUBERNETES_NAMESPACE }} \
+            web=${{ env.CONTAINER_REGISTRY }}/broxiva-web:${{ github.event.inputs.image_tag }}
 
-          kubectl rollout status deployment/citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=10m
-          kubectl rollout status deployment/citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=10m
+          kubectl rollout status deployment/broxiva-api -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=10m
+          kubectl rollout status deployment/broxiva-web -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=10m
 
   notification:
     name: Deployment Notification
@@ -718,7 +718,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": ":white_check_mark: *Production Deployment Complete*\n*Environment:* Production\n*Strategy:* Blue-Green\n*Deployment ID:* ${{ needs.deploy-green.outputs.deployment-id }}\n*Image Tag:* ${{ needs.deploy-green.outputs.image-tag }}\n*Deployed by:* ${{ github.actor }}\n*URL:* https://citadelbuy.com"
+                    "text": ":white_check_mark: *Production Deployment Complete*\n*Environment:* Production\n*Strategy:* Blue-Green\n*Deployment ID:* ${{ needs.deploy-green.outputs.deployment-id }}\n*Image Tag:* ${{ needs.deploy-green.outputs.image-tag }}\n*Deployed by:* ${{ github.actor }}\n*URL:* https://broxiva.com"
                   }
                 }
               ]

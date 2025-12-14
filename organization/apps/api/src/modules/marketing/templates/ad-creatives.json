@@ -17,7 +17,7 @@
       "region": "United States",
       "headlines": [
         "Verified African Suppliers | Save 20-30% on Sourcing",
-        "African Suppliers Marketplace | CitadelBuy B2B Platform",
+        "African Suppliers Marketplace | Broxiva B2B Platform",
         "Source from Africa | 10,000+ Verified Manufacturers",
         "African Import Platform | Trade Finance & Logistics",
         "Find African Suppliers | Enterprise B2B Marketplace"
@@ -53,7 +53,7 @@
           "url": "/pricing"
         }
       ],
-      "finalUrl": "https://citadelbuy.com/?utm_source=google&utm_medium=cpc&utm_campaign=us-buyers-search",
+      "finalUrl": "https://broxiva.com/?utm_source=google&utm_medium=cpc&utm_campaign=us-buyers-search",
       "budget": {
         "daily": "$2000",
         "monthly": "$60000"
@@ -94,7 +94,7 @@
           "variant": "A",
           "format": "single-image",
           "headline": "Reduce Sourcing Costs by 20-30% with African Suppliers",
-          "introText": "Supply chain leaders at Fortune 1000 companies are diversifying to African suppliers to:\n\n✓ Save 20-30% on sourcing costs\n✓ Reduce dependency on single-region sourcing\n✓ Improve shipping times (West Africa to U.S. East Coast: 14-21 days)\n\nCitadelBuy connects you with 10,000+ verified African manufacturers. Integrated trade finance, logistics, and compliance support included.",
+          "introText": "Supply chain leaders at Fortune 1000 companies are diversifying to African suppliers to:\n\n✓ Save 20-30% on sourcing costs\n✓ Reduce dependency on single-region sourcing\n✓ Improve shipping times (West Africa to U.S. East Coast: 14-21 days)\n\nBroxiva connects you with 10,000+ verified African manufacturers. Integrated trade finance, logistics, and compliance support included.",
           "cta": "Request Demo",
           "imageDescription": "Professional photo of African manufacturing facility with U.S. buyer shaking hands with supplier",
           "imageFile": "linkedin-ad-1-manufacturing.jpg"
@@ -136,7 +136,7 @@
           "format": "video",
           "headline": "See How Fortune 500 Companies Source from Africa",
           "videoDescription": "30-second video showcasing African manufacturing facilities and U.S. buyer testimonials",
-          "videoScript": "VoiceOver: 'Leading U.S. companies are discovering a new sourcing destination: Africa.'\n[Cut to Nigerian textile factory]\nVoiceOver: 'Save 20-30% on costs. Ship faster from West Africa.'\n[Cut to U.S. buyer testimonial]\nBuyer: 'CitadelBuy helped us find reliable suppliers and cut our sourcing costs by 28%.'\n[End screen: CitadelBuy logo + CTA]",
+          "videoScript": "VoiceOver: 'Leading U.S. companies are discovering a new sourcing destination: Africa.'\n[Cut to Nigerian textile factory]\nVoiceOver: 'Save 20-30% on costs. Ship faster from West Africa.'\n[Cut to U.S. buyer testimonial]\nBuyer: 'Broxiva helped us find reliable suppliers and cut our sourcing costs by 28%.'\n[End screen: Broxiva logo + CTA]",
           "videoFile": "linkedin-video-ad-1.mp4",
           "cta": "Request Demo"
         }
@@ -182,7 +182,7 @@
         {
           "variant": "B",
           "size": "728x90",
-          "headline": "Grow Your Export Business with CitadelBuy",
+          "headline": "Grow Your Export Business with Broxiva",
           "subheadline": "Trade finance, logistics, and buyer matching - all in one platform",
           "cta": "Free Trial",
           "backgroundColor": "#1e40af",
@@ -193,7 +193,7 @@
           "variant": "C",
           "size": "160x600",
           "headline": "From $200K to $2M in Exports",
-          "subheadline": "See how Nigerian exporters are growing with CitadelBuy",
+          "subheadline": "See how Nigerian exporters are growing with Broxiva",
           "cta": "Read Success Story",
           "imageDescription": "Success story graphic with revenue growth chart",
           "imageFile": "display-ad-exporter-160x600-c.jpg"
@@ -267,7 +267,7 @@
             "cta": "Sign Up Free"
           }
         ],
-        "destinationUrl": "https://citadelbuy.com/?utm_source=facebook&utm_medium=carousel&utm_campaign=us-smb-buyers"
+        "destinationUrl": "https://broxiva.com/?utm_source=facebook&utm_medium=carousel&utm_campaign=us-smb-buyers"
       },
       "budget": {
         "daily": "$300",
@@ -302,13 +302,13 @@
       "creative": {
         "duration": "30 seconds",
         "skipAfter": "5 seconds",
-        "videoScript": "Opening (0-5 sec): 'Are you an African exporter struggling to find international buyers?'\n\n[Visual: African manufacturer looking at world map]\n\nMiddle (6-20 sec): 'CitadelBuy connects you with 10,000+ verified U.S., European, and Middle Eastern buyers. Get trade finance, logistics support, and get paid faster.'\n\n[Visual: Platform interface showing buyer matches, then cut to exporter success story]\n\nClosing (21-30 sec): 'Nigerian exporters are already growing their businesses with CitadelBuy. Start your free trial today.'\n\n[End screen: CitadelBuy logo + URL + CTA button]",
+        "videoScript": "Opening (0-5 sec): 'Are you an African exporter struggling to find international buyers?'\n\n[Visual: African manufacturer looking at world map]\n\nMiddle (6-20 sec): 'Broxiva connects you with 10,000+ verified U.S., European, and Middle Eastern buyers. Get trade finance, logistics support, and get paid faster.'\n\n[Visual: Platform interface showing buyer matches, then cut to exporter success story]\n\nClosing (21-30 sec): 'Nigerian exporters are already growing their businesses with Broxiva. Start your free trial today.'\n\n[End screen: Broxiva logo + URL + CTA button]",
         "voiceOver": "Professional Nigerian accent (male or female)",
         "subtitles": true,
         "endScreen": {
           "headline": "Start Exporting Today",
           "cta": "Free Trial",
-          "url": "citadelbuy.com/exporters"
+          "url": "broxiva.com/exporters"
         },
         "videoFile": "youtube-preroll-exporter-30sec.mp4"
       },
@@ -345,12 +345,12 @@
       },
       "language": "en",
       "creative": {
-        "tweetText": "🌍 Africa is the next frontier for B2B sourcing.\n\n💰 Save 20-30% on costs\n⚡ Ship faster from West Africa\n✅ 10,000+ verified suppliers\n\nU.S. companies are already benefiting. Are you?\n\nDiscover CitadelBuy 👉 {{url}}\n\n#AfricaTrade #B2B #Sourcing",
+        "tweetText": "🌍 Africa is the next frontier for B2B sourcing.\n\n💰 Save 20-30% on costs\n⚡ Ship faster from West Africa\n✅ 10,000+ verified suppliers\n\nU.S. companies are already benefiting. Are you?\n\nDiscover Broxiva 👉 {{url}}\n\n#AfricaTrade #B2B #Sourcing",
         "mediaType": "image",
         "imageDescription": "Infographic showing Africa map with trade statistics",
         "imageFile": "twitter-ad-africa-trade-infographic.jpg",
         "cta": "Learn More",
-        "destinationUrl": "https://citadelbuy.com/?utm_source=twitter&utm_medium=promoted&utm_campaign=africa-trade-awareness"
+        "destinationUrl": "https://broxiva.com/?utm_source=twitter&utm_medium=promoted&utm_campaign=africa-trade-awareness"
       },
       "budget": {
         "daily": "$150",
@@ -371,14 +371,14 @@
         "frequency": "3 impressions per user per day (max)"
       },
       "creative": {
-        "message": "You visited CitadelBuy - Ready to start sourcing?",
+        "message": "You visited Broxiva - Ready to start sourcing?",
         "offerIncentive": "Sign up this week and get your first month free (Growth plan)",
         "urgency": "Offer expires in 7 days",
         "cta": "Claim Offer",
         "variants": [
           {
             "variant": "A",
-            "headline": "Come Back to CitadelBuy",
+            "headline": "Come Back to Broxiva",
             "description": "Still looking for African suppliers? Sign up this week and get your first month free.",
             "image": "retargeting-ad-variant-a.jpg"
           },

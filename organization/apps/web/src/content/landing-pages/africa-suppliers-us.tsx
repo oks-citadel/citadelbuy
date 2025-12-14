@@ -22,7 +22,7 @@ export const AfricaSuppliersUSLandingPage = () => {
               <p className="text-xl mb-8">
                 Connect with 10,000+ vetted manufacturers and exporters across Nigeria,
                 South Africa, Kenya, Egypt, and Ghana. Save 20-30% on sourcing costs with
-                CitadelBuy's enterprise B2B marketplace.
+                Broxiva's enterprise B2B marketplace.
               </p>
               <div className="flex gap-4">
                 <Button size="lg" variant="default" className="bg-white text-blue-900 hover:bg-gray-100">
@@ -164,7 +164,7 @@ export const AfricaSuppliersUSLandingPage = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-12">
-            How CitadelBuy Works
+            How Broxiva Works
           </h2>
           <div className="grid md:grid-cols-4 gap-8">
             <div className="text-center">
@@ -254,7 +254,7 @@ export const AfricaSuppliersUSLandingPage = () => {
                 ))}
               </div>
               <p className="text-gray-600 mb-4 italic">
-                "We've reduced sourcing costs by 28% by switching to African suppliers on CitadelBuy.
+                "We've reduced sourcing costs by 28% by switching to African suppliers on Broxiva.
                 The quality is excellent and shipping is faster than we expected."
               </p>
               <div className="flex items-center gap-3">
@@ -274,7 +274,7 @@ export const AfricaSuppliersUSLandingPage = () => {
                 ))}
               </div>
               <p className="text-gray-600 mb-4 italic">
-                "CitadelBuy's verification process gave us confidence in our African suppliers.
+                "Broxiva's verification process gave us confidence in our African suppliers.
                 We've found reliable partners for our manufacturing needs."
               </p>
               <div className="flex items-center gap-3">
@@ -328,7 +328,7 @@ export const AfricaSuppliersUSLandingPage = () => {
             </Button>
           </div>
           <p className="mt-6 text-sm">
-            Questions? Call us at 1-800-CITADEL or email sales@citadelbuy.com
+            Questions? Call us at 1-800-CITADEL or email sales@broxiva.com
           </p>
         </div>
       </section>
@@ -342,7 +342,7 @@ export const AfricaSuppliersUSLandingPage = () => {
           <div className="space-y-6">
             <details className="bg-gray-50 p-6 rounded-lg">
               <summary className="font-semibold text-lg cursor-pointer">
-                How are suppliers verified on CitadelBuy?
+                How are suppliers verified on Broxiva?
               </summary>
               <p className="mt-4 text-gray-600">
                 We use a 3-tier verification process: (1) Document verification (business license,

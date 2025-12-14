@@ -39,7 +39,7 @@ const profileCompletionRate = new Rate('profile_completion_rate');
 // Test data
 const firstNames = ['John', 'Jane', 'Michael', 'Emily', 'David', 'Sarah', 'James', 'Emma', 'Robert', 'Olivia'];
 const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'];
-const domains = ['test.com', 'example.com', 'citadelbuy.test', 'loadtest.local', 'demo.test'];
+const domains = ['test.com', 'example.com', 'broxiva.test', 'loadtest.local', 'demo.test'];
 
 // Password patterns
 const passwords = {
@@ -295,7 +295,7 @@ function testDuplicateEmailRegistration() {
 
   // Use a known existing email
   const payload = JSON.stringify({
-    email: 'loadtest1@citadelbuy.test', // Existing test user
+    email: 'loadtest1@broxiva.test', // Existing test user
     password: passwords.strong,
     firstName: 'Duplicate',
     lastName: 'User',

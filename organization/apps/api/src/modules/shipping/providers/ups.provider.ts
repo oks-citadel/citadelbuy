@@ -195,7 +195,7 @@ export class UpsProvider implements IShippingProvider {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
           'transId': `rate-${Date.now()}`,
-          'transactionSrc': 'CitadelBuy',
+          'transactionSrc': 'Broxiva',
         },
         body: JSON.stringify(requestBody),
       });
@@ -279,7 +279,7 @@ export class UpsProvider implements IShippingProvider {
           Shipment: {
             Description: options?.customsDescription || 'Merchandise',
             Shipper: {
-              Name: fromAddress.name || 'CitadelBuy',
+              Name: fromAddress.name || 'Broxiva',
               AttentionName: fromAddress.name || 'Shipping Dept',
               Phone: { Number: fromAddress.phone || '1234567890' },
               ShipperNumber: this.accountNumber,
@@ -304,7 +304,7 @@ export class UpsProvider implements IShippingProvider {
               },
             },
             ShipFrom: {
-              Name: fromAddress.name || 'CitadelBuy',
+              Name: fromAddress.name || 'Broxiva',
               AttentionName: fromAddress.name || 'Shipping Dept',
               Phone: { Number: fromAddress.phone || '1234567890' },
               Address: {
@@ -362,7 +362,7 @@ export class UpsProvider implements IShippingProvider {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
           'transId': `ship-${Date.now()}`,
-          'transactionSrc': 'CitadelBuy',
+          'transactionSrc': 'Broxiva',
         },
         body: JSON.stringify(requestBody),
       });
@@ -416,7 +416,7 @@ export class UpsProvider implements IShippingProvider {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
             'transId': `track-${Date.now()}`,
-            'transactionSrc': 'CitadelBuy',
+            'transactionSrc': 'Broxiva',
           },
         }
       );
@@ -482,7 +482,7 @@ export class UpsProvider implements IShippingProvider {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'transId': `void-${Date.now()}`,
-          'transactionSrc': 'CitadelBuy',
+          'transactionSrc': 'Broxiva',
         },
       });
 
@@ -522,7 +522,7 @@ export class UpsProvider implements IShippingProvider {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
           'transId': `av-${Date.now()}`,
-          'transactionSrc': 'CitadelBuy',
+          'transactionSrc': 'Broxiva',
         },
         body: JSON.stringify(requestBody),
       });

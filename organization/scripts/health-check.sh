@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ###############################################################################
-# CitadelBuy API Health Check Script
+# Broxiva API Health Check Script
 #
 # Purpose: Verify all critical API endpoints are responding correctly
 # Usage: ./scripts/health-check.sh [API_URL]
@@ -26,7 +26,7 @@ TIMEOUT=10
 FAILURES=0
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}CitadelBuy API Health Check${NC}"
+echo -e "${BLUE}Broxiva API Health Check${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo -e "API URL: ${API_URL}"
 echo -e "Timeout: ${TIMEOUT}s"

@@ -1,11 +1,11 @@
 {
   "workflow": "05-feedback-reviews",
-  "description": "Test payloads for CitadelBuy Customer Feedback & Review Collection Workflow",
+  "description": "Test payloads for Broxiva Customer Feedback & Review Collection Workflow",
   "payloads": {
     "shipment_delivered": {
       "basic": {
         "description": "Basic shipment delivered notification",
-        "endpoint": "POST https://n8n.citadelbuy.com/webhook/shipment-delivered",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/shipment-delivered",
         "payload": {
           "order_id": "ORD-123456",
           "user_id": "USR-789"
@@ -13,7 +13,7 @@
       },
       "complete": {
         "description": "Complete shipment delivered with all fields",
-        "endpoint": "POST https://n8n.citadelbuy.com/webhook/shipment-delivered",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/shipment-delivered",
         "payload": {
           "order_id": "ORD-123456",
           "order_number": "#CB-123456",
@@ -34,7 +34,7 @@
       },
       "high_value_order": {
         "description": "High-value order (should trigger NPS survey)",
-        "endpoint": "POST https://n8n.citadelbuy.com/webhook/shipment-delivered",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/shipment-delivered",
         "payload": {
           "order_id": "ORD-789012",
           "user_id": "USR-456",
@@ -47,7 +47,7 @@
       },
       "low_value_order": {
         "description": "Low-value order (no NPS survey)",
-        "endpoint": "POST https://n8n.citadelbuy.com/webhook/shipment-delivered",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/shipment-delivered",
         "payload": {
           "order_id": "ORD-345678",
           "user_id": "USR-123",
@@ -62,7 +62,7 @@
     "review_submitted": {
       "positive_5_star": {
         "description": "5-star positive review",
-        "endpoint": "POST https://n8n.citadelbuy.com/webhook/review-submitted",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/review-submitted",
         "payload": {
           "review_id": "REV-001",
           "order_id": "ORD-123456",
@@ -78,7 +78,7 @@
       },
       "positive_4_star": {
         "description": "4-star positive review",
-        "endpoint": "POST https://n8n.citadelbuy.com/webhook/review-submitted",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/review-submitted",
         "payload": {
           "review_id": "REV-002",
           "order_id": "ORD-234567",
@@ -94,7 +94,7 @@
       },
       "neutral_3_star": {
         "description": "3-star neutral review",
-        "endpoint": "POST https://n8n.citadelbuy.com/webhook/review-submitted",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/review-submitted",
         "payload": {
           "review_id": "REV-003",
           "order_id": "ORD-345678",
@@ -110,7 +110,7 @@
       },
       "negative_2_star": {
         "description": "2-star negative review",
-        "endpoint": "POST https://n8n.citadelbuy.com/webhook/review-submitted",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/review-submitted",
         "payload": {
           "review_id": "REV-004",
           "order_id": "ORD-456789",
@@ -122,11 +122,11 @@
           "product_ids": ["PROD-567"],
           "submitted_at": "2025-12-03T17:00:00Z"
         },
-        "expected_behavior": "Alert support@citadelbuy.com + Create Zendesk ticket + Slack alert + sentiment analysis"
+        "expected_behavior": "Alert support@broxiva.com + Create Zendesk ticket + Slack alert + sentiment analysis"
       },
       "negative_1_star": {
         "description": "1-star very negative review",
-        "endpoint": "POST https://n8n.citadelbuy.com/webhook/review-submitted",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/review-submitted",
         "payload": {
           "review_id": "REV-005",
           "order_id": "ORD-567890",
@@ -142,7 +142,7 @@
       },
       "quick_rating_only": {
         "description": "Quick 1-click rating without text review",
-        "endpoint": "POST https://n8n.citadelbuy.com/webhook/review-submitted",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/review-submitted",
         "payload": {
           "review_id": "REV-006",
           "order_id": "ORD-678901",
@@ -159,7 +159,7 @@
       },
       "multi_product_review": {
         "description": "Review covering multiple products",
-        "endpoint": "POST https://n8n.citadelbuy.com/webhook/review-submitted",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/review-submitted",
         "payload": {
           "review_id": "REV-007",
           "order_id": "ORD-789012",
@@ -176,20 +176,20 @@
     "nps_response": {
       "promoter": {
         "description": "NPS promoter (score 9-10)",
-        "endpoint": "POST https://n8n.citadelbuy.com/webhook/nps-response",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/nps-response",
         "payload": {
           "customer_id": "USR-789",
           "customer_email": "promoter@example.com",
           "order_id": "ORD-123456",
           "score": 10,
-          "feedback": "CitadelBuy is amazing! I recommend it to all my friends. Best online shopping experience ever!",
+          "feedback": "Broxiva is amazing! I recommend it to all my friends. Best online shopping experience ever!",
           "token": "eyJvcmRlcl9pZCI6Ik9SRC0xMjM0NTYifQ=="
         },
         "category": "promoter"
       },
       "passive": {
         "description": "NPS passive (score 7-8)",
-        "endpoint": "POST https://n8n.citadelbuy.com/webhook/nps-response",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/nps-response",
         "payload": {
           "customer_id": "USR-890",
           "customer_email": "passive@example.com",
@@ -202,7 +202,7 @@
       },
       "detractor": {
         "description": "NPS detractor (score 0-6)",
-        "endpoint": "POST https://n8n.citadelbuy.com/webhook/nps-response",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/nps-response",
         "payload": {
           "customer_id": "USR-901",
           "customer_email": "detractor@example.com",
@@ -216,7 +216,7 @@
       },
       "no_feedback": {
         "description": "NPS response without feedback text",
-        "endpoint": "POST https://n8n.citadelbuy.com/webhook/nps-response",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/nps-response",
         "payload": {
           "customer_id": "USR-012",
           "customer_email": "silent.scorer@example.com",
@@ -331,7 +331,7 @@
         {
           "step": 1,
           "action": "Simulate customer clicking 5-star link in email",
-          "method": "GET https://citadelbuy.com/api/v1/reviews/quick-rate?token=ABC123&rating=5",
+          "method": "GET https://broxiva.com/api/v1/reviews/quick-rate?token=ABC123&rating=5",
           "expected_result": "Review saved with rating=5, no text"
         },
         {
@@ -344,10 +344,10 @@
     }
   },
   "curl_commands": {
-    "test_shipment_delivered": "curl -X POST https://n8n.citadelbuy.com/webhook/shipment-delivered -H 'Content-Type: application/json' -d '{\"order_id\":\"ORD-123456\",\"user_id\":\"USR-789\"}'",
-    "test_positive_review": "curl -X POST https://n8n.citadelbuy.com/webhook/review-submitted -H 'Content-Type: application/json' -d '{\"review_id\":\"REV-001\",\"order_id\":\"ORD-123456\",\"customer_id\":\"USR-789\",\"customer_email\":\"test@example.com\",\"customer_name\":\"Test User\",\"rating\":5,\"review\":\"Great product!\"}'",
-    "test_negative_review": "curl -X POST https://n8n.citadelbuy.com/webhook/review-submitted -H 'Content-Type: application/json' -d '{\"review_id\":\"REV-002\",\"order_id\":\"ORD-123456\",\"customer_id\":\"USR-789\",\"customer_email\":\"test@example.com\",\"customer_name\":\"Test User\",\"rating\":1,\"review\":\"Terrible experience!\"}'",
-    "test_nps_response": "curl -X POST https://n8n.citadelbuy.com/webhook/nps-response -H 'Content-Type: application/json' -d '{\"customer_id\":\"USR-789\",\"customer_email\":\"test@example.com\",\"order_id\":\"ORD-123456\",\"score\":9,\"feedback\":\"Great service!\"}'"
+    "test_shipment_delivered": "curl -X POST https://n8n.broxiva.com/webhook/shipment-delivered -H 'Content-Type: application/json' -d '{\"order_id\":\"ORD-123456\",\"user_id\":\"USR-789\"}'",
+    "test_positive_review": "curl -X POST https://n8n.broxiva.com/webhook/review-submitted -H 'Content-Type: application/json' -d '{\"review_id\":\"REV-001\",\"order_id\":\"ORD-123456\",\"customer_id\":\"USR-789\",\"customer_email\":\"test@example.com\",\"customer_name\":\"Test User\",\"rating\":5,\"review\":\"Great product!\"}'",
+    "test_negative_review": "curl -X POST https://n8n.broxiva.com/webhook/review-submitted -H 'Content-Type: application/json' -d '{\"review_id\":\"REV-002\",\"order_id\":\"ORD-123456\",\"customer_id\":\"USR-789\",\"customer_email\":\"test@example.com\",\"customer_name\":\"Test User\",\"rating\":1,\"review\":\"Terrible experience!\"}'",
+    "test_nps_response": "curl -X POST https://n8n.broxiva.com/webhook/nps-response -H 'Content-Type: application/json' -d '{\"customer_id\":\"USR-789\",\"customer_email\":\"test@example.com\",\"order_id\":\"ORD-123456\",\"score\":9,\"feedback\":\"Great service!\"}'"
   },
   "validation_checklist": {
     "email_delivery": [
@@ -395,7 +395,7 @@
     ]
   },
   "expected_api_responses": {
-    "citadelbuy_order": {
+    "broxiva_order": {
       "endpoint": "GET /v1/orders/ORD-123456",
       "response": {
         "id": "ORD-123456",
@@ -409,7 +409,7 @@
             "sku": "WH-BLK-001",
             "quantity": 1,
             "price": 79.99,
-            "image_url": "https://cdn.citadelbuy.com/products/PROD-123/main.jpg"
+            "image_url": "https://cdn.broxiva.com/products/PROD-123/main.jpg"
           },
           {
             "product_id": "PROD-456",
@@ -417,7 +417,7 @@
             "sku": "PC-BLU-002",
             "quantity": 1,
             "price": 29.99,
-            "image_url": "https://cdn.citadelbuy.com/products/PROD-456/main.jpg"
+            "image_url": "https://cdn.broxiva.com/products/PROD-456/main.jpg"
           }
         ],
         "delivered_at": "2025-12-03T10:00:00Z",
@@ -425,7 +425,7 @@
         "carrier": "UPS"
       }
     },
-    "citadelbuy_user": {
+    "broxiva_user": {
       "endpoint": "GET /v1/users/USR-789",
       "response": {
         "id": "USR-789",
@@ -492,13 +492,13 @@
     },
     "api_calls_per_execution": {
       "shipment_delivered_flow": {
-        "citadelbuy_api": 2,
+        "broxiva_api": 2,
         "sendgrid": 1,
         "klaviyo": 0.3,
         "total": "~3-4 calls"
       },
       "review_submitted_flow": {
-        "citadelbuy_api": 1,
+        "broxiva_api": 1,
         "sendgrid": 0.7,
         "openai": 1,
         "mixpanel": 1,

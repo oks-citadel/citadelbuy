@@ -24,10 +24,10 @@ env:
   AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-  AKS_CLUSTER_NAME: citadelbuy-staging-aks
-  AKS_RESOURCE_GROUP: citadelbuy-staging-rg
-  KUBERNETES_NAMESPACE: citadelbuy-staging
-  CONTAINER_REGISTRY: ghcr.io/citadelplatforms
+  AKS_CLUSTER_NAME: broxiva-staging-aks
+  AKS_RESOURCE_GROUP: broxiva-staging-rg
+  KUBERNETES_NAMESPACE: broxiva-staging
+  CONTAINER_REGISTRY: ghcr.io/broxiva
   KUSTOMIZE_VERSION: 'v5.3.0'
 
 permissions:
@@ -100,7 +100,7 @@ jobs:
     if: always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
     environment:
       name: staging
-      url: https://staging.citadelbuy.com
+      url: https://staging.broxiva.com
 
     outputs:
       deployment-id: ${{ steps.deployment-info.outputs.deployment-id }}
@@ -172,9 +172,9 @@ jobs:
         run: |
           cd infrastructure/kubernetes/staging
           kustomize edit set image \
-            ${{ env.CONTAINER_REGISTRY }}/citadelbuy-api:${{ steps.image-tag.outputs.tag }} \
-            ${{ env.CONTAINER_REGISTRY }}/citadelbuy-web:${{ steps.image-tag.outputs.tag }} \
-            ${{ env.CONTAINER_REGISTRY }}/citadelbuy-worker:${{ steps.image-tag.outputs.tag }}
+            ${{ env.CONTAINER_REGISTRY }}/broxiva-api:${{ steps.image-tag.outputs.tag }} \
+            ${{ env.CONTAINER_REGISTRY }}/broxiva-web:${{ steps.image-tag.outputs.tag }} \
+            ${{ env.CONTAINER_REGISTRY }}/broxiva-worker:${{ steps.image-tag.outputs.tag }}
 
       - name: Create namespace if not exists
         run: |
@@ -220,8 +220,8 @@ jobs:
           kubectl apply -f deployment.yaml
 
           echo "Waiting for deployments to rollout..."
-          kubectl rollout status deployment/citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=8m
-          kubectl rollout status deployment/citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=8m
+          kubectl rollout status deployment/broxiva-api -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=8m
+          kubectl rollout status deployment/broxiva-web -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=8m
 
       - name: Set deployment info
         id: deployment-info
@@ -229,13 +229,13 @@ jobs:
           DEPLOYMENT_ID="staging-$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)"
           echo "deployment-id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
 
-          kubectl annotate deployment/citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }} \
+          kubectl annotate deployment/broxiva-api -n ${{ env.KUBERNETES_NAMESPACE }} \
             deployment-id=$DEPLOYMENT_ID \
             deployed-by=${{ github.actor }} \
             git-commit=${{ github.sha }} \
             --overwrite
 
-          kubectl annotate deployment/citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }} \
+          kubectl annotate deployment/broxiva-web -n ${{ env.KUBERNETES_NAMESPACE }} \
             deployment-id=$DEPLOYMENT_ID \
             deployed-by=${{ github.actor }} \
             git-commit=${{ github.sha }} \
@@ -254,7 +254,7 @@ jobs:
           echo "Waiting for API to be ready..."
           sleep 45
 
-          API_POD=$(kubectl get pod -n ${{ env.KUBERNETES_NAMESPACE }} -l app=citadelbuy-api -o jsonpath="{.items[0].metadata.name}")
+          API_POD=$(kubectl get pod -n ${{ env.KUBERNETES_NAMESPACE }} -l app=broxiva-api -o jsonpath="{.items[0].metadata.name}")
           echo "Testing API pod: $API_POD"
 
           kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} $API_POD -- curl -f http://localhost:4000/api/health/live || exit 1
@@ -264,7 +264,7 @@ jobs:
 
       - name: Health check - Web
         run: |
-          WEB_POD=$(kubectl get pod -n ${{ env.KUBERNETES_NAMESPACE }} -l app=citadelbuy-web -o jsonpath="{.items[0].metadata.name}")
+          WEB_POD=$(kubectl get pod -n ${{ env.KUBERNETES_NAMESPACE }} -l app=broxiva-web -o jsonpath="{.items[0].metadata.name}")
           echo "Testing Web pod: $WEB_POD"
 
           kubectl exec -n ${{ env.KUBERNETES_NAMESPACE }} $WEB_POD -- curl -f http://localhost:3000/health || exit 1
@@ -276,12 +276,12 @@ jobs:
         run: |
           echo "Deployment failed, initiating rollback..."
 
-          kubectl rollout undo deployment/citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }}
-          kubectl rollout undo deployment/citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }}
+          kubectl rollout undo deployment/broxiva-api -n ${{ env.KUBERNETES_NAMESPACE }}
+          kubectl rollout undo deployment/broxiva-web -n ${{ env.KUBERNETES_NAMESPACE }}
 
           echo "Waiting for rollback to complete..."
-          kubectl rollout status deployment/citadelbuy-api -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=5m
-          kubectl rollout status deployment/citadelbuy-web -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=5m
+          kubectl rollout status deployment/broxiva-api -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=5m
+          kubectl rollout status deployment/broxiva-web -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=5m
 
           echo "Rollback completed"
 
@@ -308,7 +308,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": ":white_check_mark: *Staging Deployment Successful*\n*Environment:* Staging\n*Deployment ID:* ${{ steps.deployment-info.outputs.deployment-id }}\n*Commit:* ${{ github.sha }}\n*Actor:* ${{ github.actor }}\n*Image Tag:* ${{ steps.image-tag.outputs.tag }}\n*URL:* https://staging.citadelbuy.com"
+                    "text": ":white_check_mark: *Staging Deployment Successful*\n*Environment:* Staging\n*Deployment ID:* ${{ steps.deployment-info.outputs.deployment-id }}\n*Commit:* ${{ github.sha }}\n*Actor:* ${{ github.actor }}\n*Image Tag:* ${{ steps.image-tag.outputs.tag }}\n*URL:* https://staging.broxiva.com"
                   }
                 }
               ]
@@ -363,27 +363,27 @@ jobs:
           cd tests
           npm run test:smoke -- --environment=staging
         env:
-          API_URL: https://api-staging.citadelbuy.com
-          WEB_URL: https://staging.citadelbuy.com
+          API_URL: https://api-staging.broxiva.com
+          WEB_URL: https://staging.broxiva.com
           TEST_USER_EMAIL: ${{ secrets.STAGING_TEST_USER_EMAIL }}
           TEST_USER_PASSWORD: ${{ secrets.STAGING_TEST_USER_PASSWORD }}
 
       - name: Test critical API endpoints
         run: |
           echo "Testing API health endpoints..."
-          curl -f https://api-staging.citadelbuy.com/api/health/live
-          curl -f https://api-staging.citadelbuy.com/api/health/ready
+          curl -f https://api-staging.broxiva.com/api/health/live
+          curl -f https://api-staging.broxiva.com/api/health/ready
 
           echo "Testing Web health endpoint..."
-          curl -f https://staging.citadelbuy.com/health
+          curl -f https://staging.broxiva.com/health
 
           echo "Testing API version endpoint..."
-          curl -f https://api-staging.citadelbuy.com/api/version
+          curl -f https://api-staging.broxiva.com/api/version
 
       - name: Test authentication flow
         run: |
           echo "Testing authentication endpoints..."
-          RESPONSE=$(curl -s -X POST https://api-staging.citadelbuy.com/api/auth/login \
+          RESPONSE=$(curl -s -X POST https://api-staging.broxiva.com/api/auth/login \
             -H "Content-Type: application/json" \
             -d '{"email":"test@example.com","password":"invalid"}')
           echo "Auth response: $RESPONSE"
@@ -445,7 +445,7 @@ jobs:
           npm ci
           npm run test:integration -- --environment=staging
         env:
-          API_URL: https://api-staging.citadelbuy.com
+          API_URL: https://api-staging.broxiva.com
           DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
 
       - name: Upload test results

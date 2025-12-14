@@ -13,9 +13,9 @@ on:
         type: string
 
 env:
-  DOCKER_USERNAME: citadelplatforms
-  BACKEND_IMAGE: citadelplatforms/citadelbuy-ecommerce
-  FRONTEND_IMAGE: citadelplatforms/citadelbuy-ecommerce
+  DOCKER_USERNAME: broxiva
+  BACKEND_IMAGE: broxiva/broxiva-ecommerce
+  FRONTEND_IMAGE: broxiva/broxiva-ecommerce
 
 jobs:
   build-backend:
@@ -50,8 +50,8 @@ jobs:
       - name: Build and push Backend
         uses: docker/build-push-action@v5
         with:
-          context: ./citadelbuy/backend
-          file: ./citadelbuy/backend/Dockerfile
+          context: ./broxiva/backend
+          file: ./broxiva/backend/Dockerfile
           push: true
           tags: |
             ${{ env.BACKEND_IMAGE }}:backend-latest
@@ -96,8 +96,8 @@ jobs:
       - name: Build and push Frontend
         uses: docker/build-push-action@v5
         with:
-          context: ./citadelbuy/frontend
-          file: ./citadelbuy/frontend/Dockerfile
+          context: ./broxiva/frontend
+          file: ./broxiva/frontend/Dockerfile
           push: true
           tags: |
             ${{ env.FRONTEND_IMAGE }}:frontend-latest
@@ -128,8 +128,8 @@ jobs:
           echo "- Frontend: ${{ needs.build-frontend.result }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Docker Images:**" >> $GITHUB_STEP_SUMMARY
-          echo "- \`citadelplatforms/citadelbuy-ecommerce:backend-latest\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`citadelplatforms/citadelbuy-ecommerce:frontend-latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`broxiva/broxiva-ecommerce:backend-latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`broxiva/broxiva-ecommerce:frontend-latest\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ "${{ needs.build-backend.result }}" == "success" ] && [ "${{ needs.build-frontend.result }}" == "success" ]; then

@@ -338,8 +338,8 @@ jobs:
       - name: Get AKS Credentials
         run: |
           az aks get-credentials \
-            --resource-group citadelbuy-${{ github.event.inputs.environment }}-rg \
-            --name citadelbuy-${{ github.event.inputs.environment }}-aks \
+            --resource-group broxiva-${{ github.event.inputs.environment }}-rg \
+            --name broxiva-${{ github.event.inputs.environment }}-aks \
             --overwrite-existing
 
       - name: Install kubectl
@@ -458,8 +458,8 @@ jobs:
       - name: Get AKS Credentials
         run: |
           az aks get-credentials \
-            --resource-group citadelbuy-${{ github.event.inputs.environment }}-rg \
-            --name citadelbuy-${{ github.event.inputs.environment }}-aks \
+            --resource-group broxiva-${{ github.event.inputs.environment }}-rg \
+            --name broxiva-${{ github.event.inputs.environment }}-aks \
             --overwrite-existing
 
       - name: Update Deployment Images
@@ -467,7 +467,7 @@ jobs:
         run: |
           mkdir -p image-repair-logs
 
-          ACR_NAME="citadelbuy${{ github.event.inputs.environment }}acr"
+          ACR_NAME="broxiva${{ github.event.inputs.environment }}acr"
           IMAGES_UPDATED=0
 
           echo "# Image Drift Repair" > image-repair-logs/update.log
@@ -685,8 +685,8 @@ jobs:
       - name: Get AKS Credentials
         run: |
           az aks get-credentials \
-            --resource-group citadelbuy-${{ github.event.inputs.environment }}-rg \
-            --name citadelbuy-${{ github.event.inputs.environment }}-aks \
+            --resource-group broxiva-${{ github.event.inputs.environment }}-rg \
+            --name broxiva-${{ github.event.inputs.environment }}-aks \
             --overwrite-existing
 
       - name: Run Health Checks
@@ -703,8 +703,8 @@ jobs:
           echo "## AKS Cluster Health" >> verification-logs/health-check.md
           echo '```' >> verification-logs/health-check.md
           az aks show \
-            --name citadelbuy-${{ github.event.inputs.environment }}-aks \
-            --resource-group citadelbuy-${{ github.event.inputs.environment }}-rg \
+            --name broxiva-${{ github.event.inputs.environment }}-aks \
+            --resource-group broxiva-${{ github.event.inputs.environment }}-rg \
             --query '{status: provisioningState, powerState: powerState.code, kubernetesVersion: currentKubernetesVersion}' \
             --output table >> verification-logs/health-check.md
           echo '```' >> verification-logs/health-check.md

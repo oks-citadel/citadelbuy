@@ -1,5 +1,5 @@
 # Compute Module - AWS EKS, ECR
-# CitadelBuy E-commerce Platform - AWS Infrastructure
+# Broxiva E-commerce Platform - AWS Infrastructure
 
 # ============================================
 # Data Sources

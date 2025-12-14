@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: citadelbuy-api
-  namespace: citadelbuy
+  name: broxiva-api
+  namespace: broxiva
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     tier: backend
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
   template:
     metadata:
       labels:
-        app: citadelbuy-api
+        app: broxiva-api
         tier: backend
     spec:
-      serviceAccountName: citadelbuy-api
+      serviceAccountName: broxiva-api
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -28,16 +28,16 @@ spec:
         supplementalGroups: [4000]
       containers:
         - name: api
-          image: citadelbuyacr.azurecr.io/citadelbuy-api:latest
+          image: broxivaacr.azurecr.io/broxiva-api:latest
           ports:
             - containerPort: 4000
               name: http
               protocol: TCP
           envFrom:
             - configMapRef:
-                name: citadelbuy-config
+                name: broxiva-config
             - secretRef:
-                name: citadelbuy-secrets
+                name: broxiva-secrets
           securityContext:
             allowPrivilegeEscalation: false
             runAsNonRoot: true
@@ -95,11 +95,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: citadelbuy-api
-  namespace: citadelbuy
+  name: broxiva-api
+  namespace: broxiva
 spec:
   selector:
-    app: citadelbuy-api
+    app: broxiva-api
   ports:
     - port: 80
       targetPort: 4000
@@ -108,13 +108,13 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: citadelbuy-api-hpa
-  namespace: citadelbuy
+  name: broxiva-api-hpa
+  namespace: broxiva
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: citadelbuy-api
+    name: broxiva-api
   minReplicas: 3
   maxReplicas: 10
   metrics:

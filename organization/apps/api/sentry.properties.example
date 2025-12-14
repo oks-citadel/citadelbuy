@@ -1,4 +1,4 @@
-# Sentry Configuration File for CitadelBuy Backend API
+# Sentry Configuration File for Broxiva Backend API
 # ========================================================
 # This file configures the Sentry CLI for creating releases and managing deployments.
 # Copy this file to sentry.properties and update with your actual values.
@@ -11,13 +11,13 @@ defaults.url=https://sentry.io/
 
 # Your Sentry organization slug
 # Get this from: https://sentry.io/settings/
-# Example: citadelbuy
+# Example: broxiva
 defaults.org=your-organization-slug
 
 # Your Sentry project slug for the backend API
 # Get this from: https://sentry.io/settings/projects/
-# Example: citadelbuy-backend-prod
-defaults.project=citadelbuy-backend-prod
+# Example: broxiva-backend-prod
+defaults.project=broxiva-backend-prod
 
 # Authentication token for creating releases
 # Get from: https://sentry.io/settings/account/api/auth-tokens/

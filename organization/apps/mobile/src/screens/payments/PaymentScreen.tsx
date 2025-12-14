@@ -152,8 +152,8 @@ export default function PaymentScreen() {
         provider: selectedProvider,
         items: params.items,
         metadata: params.orderId ? { orderId: params.orderId } : undefined,
-        returnUrl: 'citadelbuy://checkout/success',
-        cancelUrl: 'citadelbuy://checkout/cancel',
+        returnUrl: 'broxiva://checkout/success',
+        cancelUrl: 'broxiva://checkout/cancel',
       });
 
       if (result.success) {

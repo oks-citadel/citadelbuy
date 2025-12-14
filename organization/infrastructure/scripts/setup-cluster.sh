@@ -1,10 +1,10 @@
 #!/bin/bash
-# CitadelBuy AKS Cluster Setup Script
+# Broxiva AKS Cluster Setup Script
 
 set -e
 
-RESOURCE_GROUP=${1:-citadelbuy-rg}
-CLUSTER_NAME=${2:-citadelbuy-aks}
+RESOURCE_GROUP=${1:-broxiva-prod-rg}
+CLUSTER_NAME=${2:-broxiva-aks}
 LOCATION=${3:-eastus}
 
 echo "🔧 Setting up Azure AKS Cluster..."

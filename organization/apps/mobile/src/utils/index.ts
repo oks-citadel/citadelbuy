@@ -1,5 +1,5 @@
 /**
- * Utility functions for CitadelBuy Mobile App
+ * Utility functions for Broxiva Mobile App
  */
 
 export * from './formatting';

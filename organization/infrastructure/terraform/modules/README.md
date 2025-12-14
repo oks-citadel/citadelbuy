@@ -1,6 +1,6 @@
 # Terraform Modules
 
-Reusable, multi-cloud infrastructure modules for the CitadelBuy platform.
+Reusable, multi-cloud infrastructure modules for the Broxiva platform.
 
 ## Module Index
 
@@ -93,9 +93,9 @@ Modules support both Azure and AWS through:
 "${var.project_name}-${var.environment}-${resource_type}"
 
 # Examples
-citadelbuy-prod-aks
-citadelbuy-prod-postgres
-citadelbuy-staging-s3
+broxiva-prod-aks
+broxiva-prod-postgres
+broxiva-staging-s3
 ```
 
 ### Tags
@@ -104,7 +104,7 @@ Always include standard tags:
 
 ```hcl
 tags = {
-  Project     = "CitadelBuy"
+  Project     = "Broxiva"
   Environment = var.environment
   ManagedBy   = "Terraform"
   CostCenter  = "Engineering"
