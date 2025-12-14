@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: supplier-integration
-          image: broxivaacr.azurecr.io/broxiva-supplier-integration:latest
+          image: broxivaprodacr.azurecr.io/broxiva-supplier-integration:latest
           ports:
             - containerPort: 8001
               name: http

@@ -19,9 +19,9 @@ replicas:
     count: 3
 
 images:
-  - name: broxivaacr.azurecr.io/broxiva-ecommerce
+  - name: broxivaprodacr.azurecr.io/broxiva-ecommerce
     newTag: v2.0-stable
-  - name: broxivaacr.azurecr.io/broxiva-ai
+  - name: broxivaprodacr.azurecr.io/broxiva-ai
     newTag: v2.0-stable
 
 configMapGenerator:

@@ -31,11 +31,11 @@ bases:
 
 # Image transformations
 images:
-  - name: broxivaacr.azurecr.io/broxiva-api
-    newName: broxivaacr.azurecr.io/broxiva-api
+  - name: broxivaprodacr.azurecr.io/broxiva-api
+    newName: broxivaprodacr.azurecr.io/broxiva-api
     newTag: production-latest
-  - name: broxivaacr.azurecr.io/broxiva-web
-    newName: broxivaacr.azurecr.io/broxiva-web
+  - name: broxivaprodacr.azurecr.io/broxiva-web
+    newName: broxivaprodacr.azurecr.io/broxiva-web
     newTag: production-latest
 
 # ConfigMap generator for deployment metadata

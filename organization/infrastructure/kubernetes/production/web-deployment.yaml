@@ -76,7 +76,7 @@ spec:
             app: broxiva-web
       containers:
       - name: web
-        image: broxivaacr.azurecr.io/broxiva-web:production-latest
+        image: broxivaprodacr.azurecr.io/broxiva-web:production-latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3000

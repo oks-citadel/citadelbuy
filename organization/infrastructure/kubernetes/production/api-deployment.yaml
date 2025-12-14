@@ -76,7 +76,7 @@ spec:
             app: broxiva-api
       containers:
       - name: api
-        image: broxivaacr.azurecr.io/broxiva-api:production-latest
+        image: broxivaprodacr.azurecr.io/broxiva-api:production-latest
         imagePullPolicy: Always
         ports:
         - containerPort: 4000

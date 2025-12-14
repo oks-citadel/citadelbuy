@@ -29,7 +29,7 @@ spec:
       serviceAccountName: organization-service
       containers:
       - name: organization-service
-        image: broxivaacr.azurecr.io/broxiva:organization-latest
+        image: broxivaprodacr.azurecr.io/broxiva:organization-latest
         imagePullPolicy: Always
         ports:
         - name: http

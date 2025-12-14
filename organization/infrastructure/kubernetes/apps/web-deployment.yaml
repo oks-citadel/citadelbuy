@@ -28,7 +28,7 @@ spec:
         supplementalGroups: [4000]
       containers:
         - name: web
-          image: broxivaacr.azurecr.io/broxiva-web:latest
+          image: broxivaprodacr.azurecr.io/broxiva-web:latest
           ports:
             - containerPort: 3000
               name: http

@@ -34,7 +34,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: web
-        image: broxivaacr.azurecr.io/broxiva-web:staging-latest
+        image: broxivaprodacr.azurecr.io/broxiva-web:staging-latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3000

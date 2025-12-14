@@ -25,14 +25,14 @@ resources:
 
 # Image transformations for staging
 images:
-  - name: broxivaacr.azurecr.io/broxiva-api
-    newName: broxivaacr.azurecr.io/broxiva-api
+  - name: broxivaprodacr.azurecr.io/broxiva-api
+    newName: broxivaprodacr.azurecr.io/broxiva-api
     newTag: staging-latest
-  - name: broxivaacr.azurecr.io/broxiva-web
-    newName: broxivaacr.azurecr.io/broxiva-web
+  - name: broxivaprodacr.azurecr.io/broxiva-web
+    newName: broxivaprodacr.azurecr.io/broxiva-web
     newTag: staging-latest
-  - name: broxivaacr.azurecr.io/broxiva-worker
-    newName: broxivaacr.azurecr.io/broxiva-worker
+  - name: broxivaprodacr.azurecr.io/broxiva-worker
+    newName: broxivaprodacr.azurecr.io/broxiva-worker
     newTag: staging-latest
 
 # ConfigMap generator for deployment metadata
