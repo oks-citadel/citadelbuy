@@ -187,7 +187,7 @@ export function VirtualTryOn({ products, onCapture, onShare }: VirtualTryOnProps
 
         {/* Product Selection */}
         <Tabs defaultValue="eyewear" className="w-full">
-          <TabsList className="w-full grid grid-cols-4">
+          <TabsList className="w-full grid grid-cols-2 md:grid-cols-4">
             {Object.entries(categoryLabels).map(([key, label]) => (
               <TabsTrigger key={key} value={key}>
                 {label}
@@ -196,7 +196,7 @@ export function VirtualTryOn({ products, onCapture, onShare }: VirtualTryOnProps
           </TabsList>
           {Object.keys(categoryLabels).map((category) => (
             <TabsContent key={category} value={category} className="mt-4">
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {products
                   .filter((p) => p.category === category)
                   .map((product) => (

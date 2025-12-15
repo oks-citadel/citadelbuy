@@ -316,14 +316,16 @@ export class SanctionsScreeningService {
     this.logger.log(`Running continuous monitoring for entity: ${entityId}`);
 
     // Try to find entity in vendor table
-    let entity = await this.prisma.vendor.findUnique({
+    const vendor = await this.prisma.vendor.findUnique({
       where: { id: entityId },
     });
 
     let entityType: 'VENDOR' | 'USER' = 'VENDOR';
+    let name: string;
+    let type: 'INDIVIDUAL' | 'BUSINESS';
 
     // If not found in vendor, try user table
-    if (!entity) {
+    if (!vendor) {
       const user = await this.prisma.user.findUnique({
         where: { id: entityId },
       });
@@ -332,19 +334,17 @@ export class SanctionsScreeningService {
         throw new NotFoundException(`Entity with ID ${entityId} not found`);
       }
 
-      entity = user;
       entityType = 'USER';
+      name = user.name || 'Unknown';
+      type = 'INDIVIDUAL';
+    } else {
+      name = vendor.name || 'Unknown';
+      type = 'BUSINESS';
     }
 
-    // Extract entity details
-    const name = entity.name || entity.companyName || 'Unknown';
-    const type: 'INDIVIDUAL' | 'BUSINESS' = entityType === 'USER' ? 'INDIVIDUAL' : 'BUSINESS';
-    const country = entity.country || 'Unknown';
-    const identifiers = {
-      taxId: entity.taxId,
-      registrationNumber: entity.registrationNumber,
-      dateOfBirth: entity.dateOfBirth,
-    };
+    // Use empty defaults for country and identifiers since those fields don't exist in schema
+    const country = 'Unknown';
+    const identifiers = {};
 
     // Perform screening
     const result = await this.screenEntity(name, type, country, identifiers);
@@ -554,7 +554,7 @@ export class SanctionsScreeningService {
     // Build comprehensive report
     const report = {
       entityId,
-      entityName: entityDetails?.name || entityDetails?.companyName || 'Unknown',
+      entityName: vendor?.name || user?.name || 'Unknown',
       entityType: vendor ? 'VENDOR' : 'USER',
       reportGeneratedAt: new Date().toISOString(),
       totalScreenings: history.length,
