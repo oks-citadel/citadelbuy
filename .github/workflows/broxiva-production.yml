@@ -186,6 +186,7 @@ jobs:
         working-directory: organization
         env:
           NODE_ENV: production
+          NODE_OPTIONS: "--max-old-space-size=4096"
       - uses: actions/upload-artifact@v4
         with:
           name: build-artifacts-${{ github.sha }}
