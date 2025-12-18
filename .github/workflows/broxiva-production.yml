@@ -18,7 +18,7 @@ on:
 env:
   NODE_VERSION: '20'
   PNPM_VERSION: '10'
-  AZURE_RESOURCE_GROUP: 'ba233460-2dbe-4603-a594-68f93ec9deb3'
+  AZURE_RESOURCE_GROUP: 'broxiva-prod-rg'
   ACR_NAME: 'broxivaprodacr'
   AKS_CLUSTER: 'broxiva-prod-aks'
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
