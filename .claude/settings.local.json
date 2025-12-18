@@ -139,7 +139,8 @@
       "Bash(GIT_AUTHOR_NAME=\"Kenny Ogunmola\" GIT_AUTHOR_EMAIL=\"kogun@broxiva.com\" GIT_COMMITTER_NAME=\"Kenny Ogunmola\" GIT_COMMITTER_EMAIL=\"kogun@broxiva.com\" git commit -m \"$\\(cat <<''EOF''\nfix: Additional CI fixes for lint and coverage\n\n- Simplify web eslint config to avoid missing plugin error\n- Add @vitest/coverage-v8 to ui package for CI coverage support\n- Update pnpm lockfile\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(GIT_AUTHOR_NAME=\"Kenny Ogunmola\" GIT_AUTHOR_EMAIL=\"kogun@broxiva.com\" GIT_COMMITTER_NAME=\"Kenny Ogunmola\" GIT_COMMITTER_EMAIL=\"kogun@broxiva.com\" git commit -m \"$\\(cat <<''EOF''\nfix: Comprehensive CI and Terraform configuration fixes\n\n## Web ESLint Fixes\n- Downgraded ESLint to v8 for Next.js 15 compatibility\n- Replaced eslint.config.mjs with .eslintrc.json\n- Changed lint script from `next lint` to `eslint .`\n\n## Mobile Test/Coverage Fixes  \n- Switched from ts-jest to babel-jest for JSX support\n- Updated transformIgnorePatterns for React Native/Expo\n- Disabled coverage collection to avoid parsing issues\n- Added babel-jest dependency\n\n## Terraform Fixes\n- Disabled AWS-specific module files \\(*.disabled\\)\n- Fixed Python syntax errors in DNS outputs\n- Resolved duplicate output definitions\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git repack:*)",
-      "Bash(cmd.exe /c \"cd C:\\\\Users\\\\kogun\\\\OneDrive\\\\Documents\\\\Citadelbuy\\\\CitadelBuy && git push github main\")"
+      "Bash(cmd.exe /c \"cd C:\\\\Users\\\\kogun\\\\OneDrive\\\\Documents\\\\Citadelbuy\\\\CitadelBuy && git push github main\")",
+      "Bash(gh run rerun:*)"
     ],
     "deny": [],
     "ask": []
