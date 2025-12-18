@@ -135,7 +135,8 @@
       "Bash(gh run view:*)",
       "Bash(node:*)",
       "Bash(gh run list:*)",
-      "Bash(GIT_AUTHOR_NAME=\"Kenny Ogunmola\" GIT_AUTHOR_EMAIL=\"kogun@broxiva.com\" GIT_COMMITTER_NAME=\"Kenny Ogunmola\" GIT_COMMITTER_EMAIL=\"kogun@broxiva.com\" git commit -m \"$\\(cat <<''EOF''\nfix: Resolve CI lint and test issues\n\n- Add @vitest/coverage-v8 to utils for CI coverage support\n- Create eslint.config.mjs for web to fix ESLint 9 compatibility\n- Add @eslint/eslintrc for flat config compatibility\n- Update pnpm lockfile\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(GIT_AUTHOR_NAME=\"Kenny Ogunmola\" GIT_AUTHOR_EMAIL=\"kogun@broxiva.com\" GIT_COMMITTER_NAME=\"Kenny Ogunmola\" GIT_COMMITTER_EMAIL=\"kogun@broxiva.com\" git commit -m \"$\\(cat <<''EOF''\nfix: Resolve CI lint and test issues\n\n- Add @vitest/coverage-v8 to utils for CI coverage support\n- Create eslint.config.mjs for web to fix ESLint 9 compatibility\n- Add @eslint/eslintrc for flat config compatibility\n- Update pnpm lockfile\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(GIT_AUTHOR_NAME=\"Kenny Ogunmola\" GIT_AUTHOR_EMAIL=\"kogun@broxiva.com\" GIT_COMMITTER_NAME=\"Kenny Ogunmola\" GIT_COMMITTER_EMAIL=\"kogun@broxiva.com\" git commit -m \"$\\(cat <<''EOF''\nfix: Additional CI fixes for lint and coverage\n\n- Simplify web eslint config to avoid missing plugin error\n- Add @vitest/coverage-v8 to ui package for CI coverage support\n- Update pnpm lockfile\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")"
     ],
     "deny": [],
     "ask": []

@@ -13,15 +13,6 @@ const compat = new FlatCompat({
 export default [
   ...compat.extends('next/core-web-vitals'),
   {
-    rules: {
-      // Disable rules that have compatibility issues with ESLint 9
-      '@typescript-eslint/no-unsafe-declaration-merging': 'off',
-      // Relax some rules for now
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-    },
-  },
-  {
     ignores: [
       '.next/**',
       'node_modules/**',
