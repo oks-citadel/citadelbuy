@@ -163,7 +163,7 @@ jobs:
   build:
     name: Build Applications
     runs-on: ubuntu-latest
-    needs: [lint, type-check]
+    needs: [setup, lint, type-check]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -179,6 +179,7 @@ jobs:
             organization/apps/*/node_modules
             organization/packages/*/node_modules
           key: ${{ needs.setup.outputs.cache-key }}
+          restore-keys: ${{ runner.os }}-pnpm-
       - run: pnpm install --frozen-lockfile
         working-directory: organization
       - run: pnpm build
@@ -200,7 +201,7 @@ jobs:
   docker-build:
     name: Build Docker Images
     runs-on: ubuntu-latest
-    needs: [build, test]
+    needs: [setup, build, test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4

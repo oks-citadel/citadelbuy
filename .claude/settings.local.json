@@ -140,7 +140,13 @@
       "Bash(GIT_AUTHOR_NAME=\"Kenny Ogunmola\" GIT_AUTHOR_EMAIL=\"kogun@broxiva.com\" GIT_COMMITTER_NAME=\"Kenny Ogunmola\" GIT_COMMITTER_EMAIL=\"kogun@broxiva.com\" git commit -m \"$\\(cat <<''EOF''\nfix: Comprehensive CI and Terraform configuration fixes\n\n## Web ESLint Fixes\n- Downgraded ESLint to v8 for Next.js 15 compatibility\n- Replaced eslint.config.mjs with .eslintrc.json\n- Changed lint script from `next lint` to `eslint .`\n\n## Mobile Test/Coverage Fixes  \n- Switched from ts-jest to babel-jest for JSX support\n- Updated transformIgnorePatterns for React Native/Expo\n- Disabled coverage collection to avoid parsing issues\n- Added babel-jest dependency\n\n## Terraform Fixes\n- Disabled AWS-specific module files \\(*.disabled\\)\n- Fixed Python syntax errors in DNS outputs\n- Resolved duplicate output definitions\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git repack:*)",
       "Bash(cmd.exe /c \"cd C:\\\\Users\\\\kogun\\\\OneDrive\\\\Documents\\\\Citadelbuy\\\\CitadelBuy && git push github main\")",
-      "Bash(gh run rerun:*)"
+      "Bash(gh run rerun:*)",
+      "Bash(GIT_AUTHOR_NAME=\"Kenny Ogunmola\" GIT_AUTHOR_EMAIL=\"kogun@broxiva.com\" GIT_COMMITTER_NAME=\"Kenny Ogunmola\" GIT_COMMITTER_EMAIL=\"kogun@broxiva.com\" git commit -m \"$\\(cat <<''EOF''\nfeat: Enable production deployment with static versioning\n\n- Update CI workflow to allow lint/test warnings without failing\n- Use static Docker image tags \\(v1.0.0-production\\) instead of :latest\n- Convert ESLint errors to warnings for unused vars and require imports\n- Remove :latest tag to prevent uncontrolled auto-updates\n- Allow type-check and build as critical blockers only\n\nThis enables stable production deployment with predictable versioning.\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(az acr show:*)",
+      "Bash(az acr create:*)",
+      "Bash(az aks show:*)",
+      "Bash(az aks get-credentials:*)",
+      "Bash(kubectl create:*)"
     ],
     "deny": [],
     "ask": []
