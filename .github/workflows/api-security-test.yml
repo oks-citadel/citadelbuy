@@ -44,19 +44,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Start application
         run: |
-          npm run build || echo "Build step skipped"
-          nohup npm start &
+          pnpm run build || echo "Build step skipped"
+          nohup pnpm start &
           echo $! > app.pid
         env:
           NODE_ENV: test
@@ -86,10 +91,15 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Install and start application
         run: |
-          npm ci
-          nohup npm start &
+          pnpm install --frozen-lockfile
+          nohup pnpm start &
           timeout 120 bash -c 'until curl -f http://localhost:3000/health 2>/dev/null || curl -f http://localhost:3000 2>/dev/null; do sleep 2; done' || echo "App may not be ready"
 
       - name: ZAP Baseline Scan
@@ -166,9 +176,14 @@ jobs:
 
       - name: Install and start application
         run: |
-          npm ci
-          nohup npm start &
+          pnpm install --frozen-lockfile
+          nohup pnpm start &
           timeout 120 bash -c 'until curl -f http://localhost:3000/health 2>/dev/null || curl -f http://localhost:3000 2>/dev/null; do sleep 2; done' || echo "App may not be ready"
+
+      - name: Setup pnpm for API scan
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Generate OpenAPI specification
         run: |
@@ -309,10 +324,15 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Setup pnpm for fuzzing
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Install and start application
         run: |
-          npm ci
-          nohup npm start &
+          pnpm install --frozen-lockfile
+          nohup pnpm start &
           timeout 120 bash -c 'until curl -f http://localhost:3000/health 2>/dev/null || curl -f http://localhost:3000 2>/dev/null; do sleep 2; done' || echo "App may not be ready"
 
       - name: Install RESTler
@@ -409,10 +429,15 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Setup pnpm for auth testing
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Install and start application
         run: |
-          npm ci
-          nohup npm start &
+          pnpm install --frozen-lockfile
+          nohup pnpm start &
           timeout 120 bash -c 'until curl -f http://localhost:3000/health 2>/dev/null || curl -f http://localhost:3000 2>/dev/null; do sleep 2; done' || echo "App may not be ready"
 
       - name: Test authentication mechanisms
@@ -510,10 +535,15 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Setup pnpm for rate limit testing
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Install and start application
         run: |
-          npm ci
-          nohup npm start &
+          pnpm install --frozen-lockfile
+          nohup pnpm start &
           timeout 120 bash -c 'until curl -f http://localhost:3000/health 2>/dev/null || curl -f http://localhost:3000 2>/dev/null; do sleep 2; done' || echo "App may not be ready"
 
       - name: Test rate limiting

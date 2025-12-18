@@ -625,15 +625,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js and start app
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'pnpm'
 
       - name: Install and start application
         run: |
-          npm ci
-          nohup npm start &
+          pnpm install --frozen-lockfile
+          nohup pnpm start &
           timeout 120 bash -c 'until curl -f http://localhost:3000/health 2>/dev/null || curl -f http://localhost:3000 2>/dev/null; do sleep 2; done' || echo "App may not be ready"
 
       - name: Check security headers

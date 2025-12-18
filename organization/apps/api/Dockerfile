@@ -1,4 +1,4 @@
-# ==================================
+﻿# ==================================
 # Broxiva Backend - Production Dockerfile
 # Optimized for Azure ACR and monorepo builds
 # ENCODING-HARDENED: UTF-8 safe across all environments
@@ -89,10 +89,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN groupadd --gid 1001 nodejs && \
     useradd --uid 1001 --gid nodejs --shell /bin/bash --create-home nestjs
 
-# Copy production dependencies and Prisma
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules ./node_modules
+# Copy package files and prisma schema
 COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./
 COPY --from=builder --chown=nestjs:nodejs /app/apps/api/prisma ./prisma
+
+# Copy all node_modules from builder root (npm hoists dependencies to monorepo root)
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 
 # Copy built application
 COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./dist
@@ -123,4 +125,6 @@ CMD ["node", "dist/main.js"]
 # - No sed/iconv transforms on large files
 # - Large files handled by Git autocrlf
 # - Runtime assets mounted from Azure Blob/Files
+# - Production dependencies installed fresh
+# - Prisma client copied from builder stage
 # ==========================================

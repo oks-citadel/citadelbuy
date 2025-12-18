@@ -95,7 +95,9 @@
       "Bash([ -f \"C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/web/src/app/categories/\\[slug\\]/page.tsx\" ])",
       "Bash([ -f \"C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/web/src/app/account/payments/page.tsx\" ])",
       "Bash([ -f \"C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/web/src/app/account/page.tsx\" ])",
-      "Bash([ -f \"C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/web/src/app/org/\\[slug\\]/page.tsx\" ])"
+      "Bash([ -f \"C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/web/src/app/org/\\[slug\\]/page.tsx\" ])",
+      "Bash(for branch in github/dependabot/github_actions/actions/upload-artifact-5 github/dependabot/github_actions/codecov/codecov-action-5 github/dependabot/github_actions/docker/build-push-action-6 github/dependabot/github_actions/github/codeql-action-4 github/dependabot/github_actions/pnpm/action-setup-4)",
+      "Bash(do echo \"=== $branch ===\")"
     ],
     "deny": [],
     "ask": []
