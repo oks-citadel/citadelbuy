@@ -65,7 +65,7 @@ export default tseslint.config(
     },
   },
 
-  // Test files configuration
+  // Test files configuration - no project-based parsing to avoid tsconfig inclusion issues
   {
     files: ['**/*.spec.ts', '**/*.e2e-spec.ts', '**/test/**/*.ts'],
     languageOptions: {
@@ -73,7 +73,7 @@ export default tseslint.config(
       parserOptions: {
         ecmaVersion: 2022,
         sourceType: 'module',
-        project: './tsconfig.json',
+        // Explicitly not using project to avoid "file not in tsconfig" errors
       },
       globals: {
         node: true,
