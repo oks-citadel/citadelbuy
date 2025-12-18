@@ -3,7 +3,7 @@
  */
 
 import * as React from 'react';
-import { VariantProps } from 'class-variance-authority';
+// VariantProps removed - was unused
 
 // Button Types
 export interface ButtonProps

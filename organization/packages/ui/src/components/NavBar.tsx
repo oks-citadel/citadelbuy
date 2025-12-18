@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { cn } from '../utils';
-import Button from './Button';
+// Button import removed - was unused
 
 export interface NavLink {
   label: string;
