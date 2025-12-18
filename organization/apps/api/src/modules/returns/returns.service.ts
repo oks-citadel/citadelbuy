@@ -583,7 +583,7 @@ export class ReturnsService {
       }
     } catch (error) {
       // Handle refund failure
-      const failed = await this.prisma.refund.update({
+      const _failed = await this.prisma.refund.update({
         where: { id: refundId },
         data: {
           status: RefundStatus.FAILED,
