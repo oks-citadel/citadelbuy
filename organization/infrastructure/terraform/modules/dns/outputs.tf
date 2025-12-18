@@ -17,20 +17,20 @@ output "nameservers" {
 output "nameservers_formatted" {
   description = "Formatted nameservers for easy copy-paste into GoDaddy"
   value = join("\n", [
-    "=".repeat(60),
+    "============================================================",
     "BROXIVA.COM AZURE DNS NAMESERVERS",
     "Configure these in GoDaddy > Domain Settings > Nameservers",
-    "=".repeat(60),
+    "============================================================",
     "",
     "Nameserver 1: ${try(azurerm_dns_zone.main.name_servers[0], "pending...")}",
     "Nameserver 2: ${try(azurerm_dns_zone.main.name_servers[1], "pending...")}",
     "Nameserver 3: ${try(azurerm_dns_zone.main.name_servers[2], "pending...")}",
     "Nameserver 4: ${try(azurerm_dns_zone.main.name_servers[3], "pending...")}",
     "",
-    "=".repeat(60),
+    "============================================================",
     "IMPORTANT: Remove default GoDaddy nameservers and add these",
     "DNS propagation takes 24-48 hours",
-    "=".repeat(60)
+    "============================================================"
   ])
 }
 
