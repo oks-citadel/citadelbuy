@@ -16,9 +16,9 @@ jest.mock('@stripe/stripe-js', () => ({
   })),
 }));
 
-// Mock API
-jest.mock('@/services/api', () => ({
-  api: {
+// Mock API client
+jest.mock('@/lib/api-client', () => ({
+  apiClient: {
     post: jest.fn(() => Promise.resolve({
       success: true,
       data: {
