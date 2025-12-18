@@ -28,7 +28,7 @@ interface AuthState {
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set, _get) => ({
   user: null,
   token: null,
   isAuthenticated: false,

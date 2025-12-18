@@ -22,7 +22,6 @@ export default tseslint.config(
       '**/.nest/**',
       '**/prisma/migrations/**',
       '**/*.js',
-      '!eslint.config.js',
     ],
   },
 

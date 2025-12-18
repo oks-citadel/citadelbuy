@@ -29,7 +29,7 @@ const STATUS_OPTIONS: { label: string; value: OrderStatus; icon: keyof typeof Io
 ];
 
 export default function VendorOrderDetailScreen() {
-  const navigation = useNavigation<OrderDetailNavigationProp>();
+  const _navigation = useNavigation<OrderDetailNavigationProp>();
   const route = useRoute<OrderDetailRouteProp>();
   const { orderId } = route.params;
 

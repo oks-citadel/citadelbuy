@@ -72,6 +72,7 @@ export type AccountStackScreenProps<T extends keyof AccountStackParamList> = Com
 
 // Navigation utility type
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace ReactNavigation {
     interface RootParamList extends RootStackParamList {}
   }

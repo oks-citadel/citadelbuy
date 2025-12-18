@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useVendorStore } from '../../stores/vendor-store';
 
-const { width } = Dimensions.get('window');
+const { width: _width } = Dimensions.get('window');
 
 export default function VendorAnalyticsScreen() {
   const { analytics, isLoadingAnalytics, fetchAnalytics } = useVendorStore();

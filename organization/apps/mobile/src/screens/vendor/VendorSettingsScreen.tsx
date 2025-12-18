@@ -16,7 +16,7 @@ import { useVendorStore } from '../../stores/vendor-store';
 import { useAuthStore } from '../../stores/auth-store';
 
 export default function VendorSettingsScreen() {
-  const navigation = useNavigation();
+  const _navigation = useNavigation();
   const { profile, isLoadingProfile, fetchProfile, updateProfile } = useVendorStore();
   const { logout } = useAuthStore();
 

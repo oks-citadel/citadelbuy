@@ -121,7 +121,7 @@ export default function VendorNotificationsScreen() {
   const renderNotificationItem = ({ item }: { item: VendorNotification }) => {
     const iconName = getNotificationIcon(item.type);
     const iconColor = getNotificationColor(item.type);
-    const priorityColor = getPriorityColor(item.priority);
+    const _priorityColor = getPriorityColor(item.priority);
 
     return (
       <TouchableOpacity
