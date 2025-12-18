@@ -1,6 +1,8 @@
 {
   "root": true,
-  "extends": "next/core-web-vitals",
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "extends": ["next/core-web-vitals"],
   "ignorePatterns": [
     "node_modules/",
     ".next/",
@@ -22,6 +24,8 @@
     "no-case-declarations": "warn",
     "no-useless-escape": "warn",
     "prefer-rest-params": "warn",
-    "no-unused-vars": "off"
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/no-explicit-any": "warn"
   }
 }
