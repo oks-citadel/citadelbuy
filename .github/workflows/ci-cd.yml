@@ -1,11 +1,13 @@
-name: Broxiva Production Pipeline
+name: CitadelBuy CI/CD Pipeline
 
 on:
   push:
     branches:
+      - master
       - main
   pull_request:
     branches:
+      - master
       - main
   workflow_dispatch:
     inputs:
@@ -18,9 +20,9 @@ on:
 env:
   NODE_VERSION: '20'
   PNPM_VERSION: '10'
-  AZURE_RESOURCE_GROUP: 'broxiva-prod-rg'
-  ACR_NAME: 'broxivaprodacr'
-  AKS_CLUSTER: 'broxiva-prod-aks'
+  AZURE_RESOURCE_GROUP: 'citadelbuy-prod-rg'
+  ACR_NAME: 'citadelbuyprodacr'
+  AKS_CLUSTER: 'citadelbuy-prod-aks'
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
@@ -228,7 +230,7 @@ jobs:
           file: ./organization/apps/api/Dockerfile
           push: true
           tags: |
-            ${{ env.ACR_NAME }}.azurecr.io/broxiva-api:v1.0.0-production
+            ${{ env.ACR_NAME }}.azurecr.io/citadelbuy-api:v1.0.0-production
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -239,7 +241,7 @@ jobs:
           file: ./organization/apps/web/Dockerfile
           push: true
           tags: |
-            ${{ env.ACR_NAME }}.azurecr.io/broxiva-web:v1.0.0-production
+            ${{ env.ACR_NAME }}.azurecr.io/citadelbuy-web:v1.0.0-production
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -273,24 +275,24 @@ jobs:
       - name: Deploy to AKS
         run: |
           # Update deployment image tags (using static version)
-          kubectl set image deployment/broxiva-api \
-            api=${{ env.ACR_NAME }}.azurecr.io/broxiva-api:v1.0.0-production \
-            -n broxiva-production || true
+          kubectl set image deployment/citadelbuy-api \
+            api=${{ env.ACR_NAME }}.azurecr.io/citadelbuy-api:v1.0.0-production \
+            -n citadelbuy-production || true
 
-          kubectl set image deployment/broxiva-web \
-            web=${{ env.ACR_NAME }}.azurecr.io/broxiva-web:v1.0.0-production \
-            -n broxiva-production || true
+          kubectl set image deployment/citadelbuy-web \
+            web=${{ env.ACR_NAME }}.azurecr.io/citadelbuy-web:v1.0.0-production \
+            -n citadelbuy-production || true
 
           # Wait for rollout
-          kubectl rollout status deployment/broxiva-api -n broxiva-production --timeout=300s || true
-          kubectl rollout status deployment/broxiva-web -n broxiva-production --timeout=300s || true
+          kubectl rollout status deployment/citadelbuy-api -n citadelbuy-production --timeout=300s || true
+          kubectl rollout status deployment/citadelbuy-web -n citadelbuy-production --timeout=300s || true
 
       - name: Deployment Summary
         run: |
           echo "## Production Deployment Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **API Image**: ${{ env.ACR_NAME }}.azurecr.io/broxiva-api:v1.0.0-production" >> $GITHUB_STEP_SUMMARY
-          echo "- **Web Image**: ${{ env.ACR_NAME }}.azurecr.io/broxiva-web:v1.0.0-production" >> $GITHUB_STEP_SUMMARY
+          echo "- **API Image**: ${{ env.ACR_NAME }}.azurecr.io/citadelbuy-api:v1.0.0-production" >> $GITHUB_STEP_SUMMARY
+          echo "- **Web Image**: ${{ env.ACR_NAME }}.azurecr.io/citadelbuy-web:v1.0.0-production" >> $GITHUB_STEP_SUMMARY
           echo "- **Cluster**: ${{ env.AKS_CLUSTER }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Resource Group**: ${{ env.AZURE_RESOURCE_GROUP }}" >> $GITHUB_STEP_SUMMARY
 
@@ -339,7 +341,7 @@ jobs:
     steps:
       - name: Generate Summary
         run: |
-          echo "## Broxiva CI Results" >> $GITHUB_STEP_SUMMARY
+          echo "## CitadelBuy CI Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
