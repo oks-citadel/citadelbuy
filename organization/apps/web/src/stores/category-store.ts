@@ -39,6 +39,34 @@ export interface CategoryFilter {
   max?: number;
 }
 
+/** Parameters for fetching categories */
+export interface FetchCategoriesParams {
+  page?: number;
+  limit?: number;
+  status?: 'ACTIVE' | 'INACTIVE' | 'DRAFT' | 'ARCHIVED';
+  parentId?: string;
+  search?: string;
+}
+
+/** Parameters for fetching category products */
+export interface FetchCategoryProductsParams {
+  page?: number;
+  limit?: number;
+  sort?: 'price_asc' | 'price_desc' | 'newest' | 'popular' | 'rating';
+  minPrice?: number;
+  maxPrice?: number;
+  filters?: Record<string, string | string[]>;
+}
+
+/** Product response from category products endpoint */
+export interface CategoryProductsResponse {
+  products: unknown[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+}
+
 interface CategoryState {
   // Data
   categories: Category[];
@@ -58,12 +86,12 @@ interface CategoryState {
   error: string | null;
 
   // Actions
-  fetchCategories: (params?: any) => Promise<void>;
+  fetchCategories: (params?: FetchCategoriesParams) => Promise<void>;
   fetchCategoryTree: (maxDepth?: number) => Promise<void>;
   fetchFeaturedCategories: (limit?: number) => Promise<void>;
   fetchTrendingCategories: (period?: 'day' | 'week' | 'month', limit?: number) => Promise<void>;
   fetchCategory: (idOrSlug: string, bySlug?: boolean) => Promise<void>;
-  fetchCategoryProducts: (id: string, params?: any) => Promise<any>;
+  fetchCategoryProducts: (id: string, params?: FetchCategoryProductsParams) => Promise<CategoryProductsResponse>;
   fetchCategoryFilters: (id: string) => Promise<void>;
   searchCategories: (query: string) => Promise<void>;
   trackCategoryView: (id: string) => Promise<void>;
