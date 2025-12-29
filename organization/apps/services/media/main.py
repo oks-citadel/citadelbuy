@@ -1,45 +1,129 @@
 """
-Media AI Service - FastAPI Application
+Media Service - FastAPI Application
 
-This service provides AI-powered media processing capabilities including:
+This service provides media processing capabilities including:
+- Image upload and storage
 - Image processing and optimization
 - Thumbnail generation
+- CDN URL generation
 - Image analysis for product categorization
 """
 
 import io
+import os
+import json
+import hashlib
 import logging
+from contextlib import asynccontextmanager
 from datetime import datetime
 from enum import Enum
 from typing import Optional, List, Dict, Any
 from pathlib import Path
+from uuid import uuid4
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, status
-from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel, Field, validator
+from fastapi import FastAPI, File, UploadFile, HTTPException, status, Query, Path as PathParam, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
+from pydantic import BaseModel, Field
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance
 import numpy as np
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Configure structured logging
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
+LOG_FORMAT = os.getenv('LOG_FORMAT', 'json')
 
-# Initialize FastAPI app
+
+class StructuredFormatter(logging.Formatter):
+    """Custom formatter for structured JSON logging"""
+    def format(self, record):
+        log_data = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "level": record.levelname,
+            "service": "media-service",
+            "message": record.getMessage(),
+            "module": record.module,
+            "function": record.funcName,
+            "line": record.lineno,
+        }
+        if hasattr(record, 'extra_data'):
+            log_data.update(record.extra_data)
+        if record.exc_info:
+            log_data["exception"] = self.formatException(record.exc_info)
+        return json.dumps(log_data)
+
+
+# Configure logging
+logger = logging.getLogger(__name__)
+logger.setLevel(getattr(logging, LOG_LEVEL))
+
+if LOG_FORMAT == 'json':
+    handler = logging.StreamHandler()
+    handler.setFormatter(StructuredFormatter())
+    logger.handlers = [handler]
+else:
+    logging.basicConfig(
+        level=LOG_LEVEL,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+
+# CORS Configuration - Use specific origins instead of wildcard
+ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '').split(',') if os.getenv('ALLOWED_ORIGINS') else [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://localhost:8080",
+    "https://citadelbuy.com",
+    "https://admin.citadelbuy.com",
+    "https://api.citadelbuy.com",
+]
+
+# CDN Configuration
+CDN_BASE_URL = os.getenv('CDN_BASE_URL', 'https://cdn.citadelbuy.com')
+STORAGE_PATH = os.getenv('STORAGE_PATH', '/app/data/media')
+
+# In-memory storage for media metadata (replace with database in production)
+media_store: Dict[str, Dict] = {}
+
+
+# ============================================
+# Lifespan Manager
+# ============================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager"""
+    logger.info("Media Service starting up...")
+    os.makedirs(STORAGE_PATH, exist_ok=True)
+    logger.info(f"Storage path: {STORAGE_PATH}")
+    logger.info("Media Service initialized successfully")
+    yield
+    logger.info("Media Service shutting down...")
+
+
+# Initialize FastAPI app with lifespan
 app = FastAPI(
-    title="Media AI Service",
-    description="AI-powered media processing and analysis service",
+    title="CitadelBuy Media Service",
+    description="Media processing, image upload, and CDN URL generation service",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
+)
+
+# Add CORS middleware with specific origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
 )
 
 
+# ============================================
 # Enums and Models
+# ============================================
+
 class ImageFormat(str, Enum):
-    """Supported image formats"""
     JPEG = "jpeg"
     PNG = "png"
     WEBP = "webp"
@@ -47,7 +131,6 @@ class ImageFormat(str, Enum):
 
 
 class ImageQuality(str, Enum):
-    """Image quality presets"""
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -55,7 +138,6 @@ class ImageQuality(str, Enum):
 
 
 class ProductCategory(str, Enum):
-    """Product categories for image analysis"""
     ELECTRONICS = "electronics"
     FASHION = "fashion"
     HOME_GARDEN = "home_garden"
@@ -68,26 +150,17 @@ class ProductCategory(str, Enum):
     OTHER = "other"
 
 
-class ProcessImageRequest(BaseModel):
-    """Request model for image processing"""
-    max_width: Optional[int] = Field(None, ge=100, le=4000, description="Maximum width in pixels")
-    max_height: Optional[int] = Field(None, ge=100, le=4000, description="Maximum height in pixels")
-    quality: ImageQuality = Field(ImageQuality.MEDIUM, description="Image quality preset")
-    format: ImageFormat = Field(ImageFormat.JPEG, description="Output format")
-    optimize: bool = Field(True, description="Optimize image for web")
-    auto_orient: bool = Field(True, description="Auto-orient based on EXIF data")
-
-
-class GenerateThumbnailRequest(BaseModel):
-    """Request model for thumbnail generation"""
-    width: int = Field(150, ge=50, le=500, description="Thumbnail width in pixels")
-    height: int = Field(150, ge=50, le=500, description="Thumbnail height in pixels")
-    crop: bool = Field(True, description="Crop to exact dimensions")
-    format: ImageFormat = Field(ImageFormat.JPEG, description="Output format")
+class ProcessImageResponse(BaseModel):
+    success: bool
+    original_size: int
+    processed_size: int
+    compression_ratio: float
+    dimensions: Dict[str, int]
+    format: str
+    processing_time_ms: int
 
 
 class AnalyzeImageResponse(BaseModel):
-    """Response model for image analysis"""
     category: ProductCategory
     confidence: float = Field(..., ge=0.0, le=1.0)
     dimensions: Dict[str, int]
@@ -101,36 +174,29 @@ class AnalyzeImageResponse(BaseModel):
     metadata: Dict[str, Any]
 
 
-class ProcessImageResponse(BaseModel):
-    """Response model for image processing"""
-    success: bool
-    original_size: int
-    processed_size: int
-    compression_ratio: float
-    dimensions: Dict[str, int]
-    format: str
-    processing_time_ms: int
-
-
-class ThumbnailResponse(BaseModel):
-    """Response model for thumbnail generation"""
-    success: bool
-    dimensions: Dict[str, int]
-    file_size: int
-    format: str
-
-
 class HealthResponse(BaseModel):
-    """Health check response"""
     status: str
     timestamp: str
     service: str
     version: str
 
 
+class MediaUpdateRequest(BaseModel):
+    tags: Optional[List[str]] = None
+    metadata: Optional[Dict[str, Any]] = None
+    alt_text: Optional[str] = None
+
+
+class CDNUrlRequest(BaseModel):
+    media_id: str
+    transformations: Optional[Dict[str, Any]] = None
+
+
+# ============================================
 # Helper Functions
+# ============================================
+
 def get_quality_value(quality: ImageQuality) -> int:
-    """Convert quality preset to numeric value"""
     quality_map = {
         ImageQuality.LOW: 60,
         ImageQuality.MEDIUM: 85,
@@ -141,126 +207,68 @@ def get_quality_value(quality: ImageQuality) -> int:
 
 
 def analyze_image_brightness(image: Image.Image) -> float:
-    """Analyze image brightness"""
     try:
         grayscale = image.convert('L')
         histogram = grayscale.histogram()
         pixels = sum(histogram)
         brightness = sum(i * histogram[i] for i in range(256)) / pixels
         return brightness / 255.0
-    except Exception as e:
-        logger.warning(f"Error analyzing brightness: {e}")
+    except Exception:
         return 0.5
 
 
 def analyze_image_sharpness(image: Image.Image) -> float:
-    """Analyze image sharpness using Laplacian variance"""
     try:
         grayscale = image.convert('L')
         array = np.array(grayscale)
-
-        # Calculate Laplacian
-        laplacian = np.array([
-            [0, 1, 0],
-            [1, -4, 1],
-            [0, 1, 0]
-        ])
-
-        # Simple convolution approximation
         variance = np.var(array)
-        # Normalize to 0-1 range (simplified)
         sharpness = min(variance / 10000.0, 1.0)
         return sharpness
-    except Exception as e:
-        logger.warning(f"Error analyzing sharpness: {e}")
+    except Exception:
         return 0.5
 
 
 def get_dominant_colors(image: Image.Image, num_colors: int = 3) -> List[str]:
-    """Extract dominant colors from image"""
     try:
-        # Resize for performance
         small_image = image.copy()
         small_image.thumbnail((100, 100))
-
-        # Convert to RGB
         small_image = small_image.convert('RGB')
-
-        # Get colors
         pixels = list(small_image.getdata())
-
-        # Simple color extraction (placeholder for more sophisticated algorithm)
-        # In production, use k-means clustering
         from collections import Counter
         color_counter = Counter(pixels)
         most_common = color_counter.most_common(num_colors)
-
-        # Convert to hex
         hex_colors = [
             "#{:02x}{:02x}{:02x}".format(r, g, b)
             for (r, g, b), _ in most_common
         ]
-
         return hex_colors
-    except Exception as e:
-        logger.warning(f"Error extracting colors: {e}")
+    except Exception:
         return ["#000000", "#808080", "#FFFFFF"]
 
 
-def categorize_image(image: Image.Image, filename: str) -> tuple[ProductCategory, float]:
-    """
-    Categorize image based on content analysis.
-    This is a placeholder implementation. In production, this would use a
-    trained ML model for image classification.
-    """
-    # Placeholder logic based on image characteristics
-    # In production, replace with actual ML model inference
-
+def categorize_image(image: Image.Image, filename: str) -> tuple:
     width, height = image.size
     aspect_ratio = width / height if height > 0 else 1.0
 
-    # Simple heuristic-based categorization (placeholder)
-    # Real implementation would use CNN model like ResNet, EfficientNet, etc.
-
     if aspect_ratio > 1.5:
-        # Wide images might be banners or fashion
         return ProductCategory.FASHION, 0.65
     elif aspect_ratio < 0.7:
-        # Tall images might be fashion or beauty
         return ProductCategory.BEAUTY, 0.62
     else:
-        # Square-ish images - default to electronics
         return ProductCategory.ELECTRONICS, 0.70
-
-    # In production, this would be:
-    # - Load pre-trained model
-    # - Preprocess image
-    # - Run inference
-    # - Return category with confidence score
 
 
 def calculate_quality_score(image: Image.Image) -> float:
-    """Calculate overall image quality score"""
     brightness = analyze_image_brightness(image)
     sharpness = analyze_image_sharpness(image)
-
     width, height = image.size
     resolution_score = min((width * height) / (1920 * 1080), 1.0)
-
-    # Weighted average
-    quality_score = (
-        brightness * 0.2 +
-        sharpness * 0.4 +
-        resolution_score * 0.4
-    )
-
+    quality_score = brightness * 0.2 + sharpness * 0.4 + resolution_score * 0.4
     return min(max(quality_score, 0.0), 1.0)
 
 
 def generate_suggestions(analysis_data: Dict[str, Any]) -> List[str]:
-    """Generate improvement suggestions based on analysis"""
     suggestions = []
-
     brightness = analysis_data.get('brightness', 0.5)
     sharpness = analysis_data.get('sharpness', 0.5)
     quality_score = analysis_data.get('quality_score', 0.5)
@@ -289,13 +297,271 @@ def generate_suggestions(analysis_data: Dict[str, Any]) -> List[str]:
     return suggestions
 
 
-# API Endpoints
-@app.post(
-    "/process-image",
-    response_model=ProcessImageResponse,
-    summary="Process and optimize image",
-    description="Process an image with optimization, resizing, and format conversion"
-)
+# ============================================
+# Health Check Endpoint
+# ============================================
+
+@app.get("/health", response_model=HealthResponse)
+async def health_check():
+    """Health check endpoint."""
+    return HealthResponse(
+        status="healthy",
+        timestamp=datetime.utcnow().isoformat(),
+        service="media-service",
+        version="1.0.0"
+    )
+
+
+# ============================================
+# Upload and CDN Endpoints
+# ============================================
+
+@app.post("/api/v1/media/upload", response_model=Dict[str, Any], status_code=201)
+async def upload_media(
+    file: UploadFile = File(..., description="Image file to upload"),
+    tags: Optional[str] = Query(None, description="Comma-separated tags"),
+    folder: Optional[str] = Query("general", description="Storage folder"),
+    generate_thumbnail: bool = Query(True, description="Generate thumbnail"),
+    background_tasks: BackgroundTasks = None
+):
+    """Upload a new media file."""
+    try:
+        allowed_types = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+        if file.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported file type: {file.content_type}. Allowed: {allowed_types}"
+            )
+
+        contents = await file.read()
+        file_size = len(contents)
+
+        if file_size > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="File size exceeds 10MB limit")
+
+        media_id = str(uuid4())
+        file_hash = hashlib.md5(contents).hexdigest()[:8]
+        ext = file.filename.split('.')[-1] if '.' in file.filename else 'jpg'
+        new_filename = f"{media_id}_{file_hash}.{ext}"
+
+        image = Image.open(io.BytesIO(contents))
+        image = ImageOps.exif_transpose(image)
+
+        dimensions = {"width": image.width, "height": image.height}
+
+        folder_path = os.path.join(STORAGE_PATH, folder)
+        os.makedirs(folder_path, exist_ok=True)
+        file_path = os.path.join(folder_path, new_filename)
+
+        image.save(file_path, quality=95, optimize=True)
+
+        thumbnail_url = None
+        if generate_thumbnail:
+            thumbnail = image.copy()
+            thumbnail.thumbnail((300, 300), Image.Resampling.LANCZOS)
+            thumbnail_filename = f"thumb_{new_filename}"
+            thumbnail_path = os.path.join(folder_path, thumbnail_filename)
+
+            if thumbnail.mode in ('RGBA', 'LA', 'P'):
+                background = Image.new('RGB', thumbnail.size, (255, 255, 255))
+                if thumbnail.mode == 'P':
+                    thumbnail = thumbnail.convert('RGBA')
+                background.paste(thumbnail, mask=thumbnail.split()[-1] if thumbnail.mode == 'RGBA' else None)
+                thumbnail = background
+
+            thumbnail.save(thumbnail_path, 'JPEG', quality=85, optimize=True)
+            thumbnail_url = f"{CDN_BASE_URL}/{folder}/thumb_{new_filename}"
+
+        cdn_url = f"{CDN_BASE_URL}/{folder}/{new_filename}"
+        tag_list = [t.strip() for t in tags.split(',')] if tags else []
+
+        media_item = {
+            "id": media_id,
+            "filename": new_filename,
+            "original_filename": file.filename,
+            "content_type": file.content_type,
+            "size": file_size,
+            "dimensions": dimensions,
+            "cdn_url": cdn_url,
+            "thumbnail_url": thumbnail_url,
+            "file_path": file_path,
+            "folder": folder,
+            "status": "active",
+            "tags": tag_list,
+            "metadata": {},
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat()
+        }
+
+        media_store[media_id] = media_item
+
+        logger.info(f"Media uploaded: {media_id}, filename: {file.filename}, size: {file_size}")
+
+        return {
+            "success": True,
+            "message": "Media uploaded successfully",
+            "data": {
+                "id": media_id,
+                "filename": new_filename,
+                "original_filename": file.filename,
+                "content_type": file.content_type,
+                "size": file_size,
+                "dimensions": dimensions,
+                "cdn_url": cdn_url,
+                "thumbnail_url": thumbnail_url,
+                "created_at": media_item["created_at"]
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uploading media: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error uploading media: {str(e)}"
+        )
+
+
+@app.get("/api/v1/media", response_model=Dict[str, Any])
+async def list_media(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    folder: Optional[str] = None,
+    tags: Optional[str] = None,
+    status: Optional[str] = Query("active", description="Filter by status")
+):
+    """List all media items with pagination and filters."""
+    items = list(media_store.values())
+
+    if folder:
+        items = [i for i in items if i.get("folder") == folder]
+    if status:
+        items = [i for i in items if i.get("status") == status]
+    if tags:
+        tag_list = [t.strip() for t in tags.split(',')]
+        items = [i for i in items if any(t in i.get("tags", []) for t in tag_list)]
+
+    items.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+
+    total = len(items)
+    start = (page - 1) * page_size
+    end = start + page_size
+    paginated_items = items[start:end]
+
+    safe_items = []
+    for item in paginated_items:
+        safe_item = {k: v for k, v in item.items() if k != "file_path"}
+        safe_items.append(safe_item)
+
+    return {
+        "success": True,
+        "data": safe_items,
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": (total + page_size - 1) // page_size
+        }
+    }
+
+
+@app.get("/api/v1/media/{media_id}", response_model=Dict[str, Any])
+async def get_media(media_id: str = PathParam(..., description="Media ID")):
+    """Get a single media item by ID."""
+    if media_id not in media_store:
+        raise HTTPException(status_code=404, detail="Media not found")
+
+    item = media_store[media_id]
+    safe_item = {k: v for k, v in item.items() if k != "file_path"}
+
+    return {"success": True, "data": safe_item}
+
+
+@app.put("/api/v1/media/{media_id}", response_model=Dict[str, Any])
+async def update_media(
+    media_id: str = PathParam(..., description="Media ID"),
+    update: MediaUpdateRequest = None
+):
+    """Update media metadata."""
+    if media_id not in media_store:
+        raise HTTPException(status_code=404, detail="Media not found")
+
+    item = media_store[media_id]
+
+    if update.tags is not None:
+        item["tags"] = update.tags
+    if update.metadata is not None:
+        item["metadata"].update(update.metadata)
+    if update.alt_text is not None:
+        item["metadata"]["alt_text"] = update.alt_text
+
+    item["updated_at"] = datetime.utcnow().isoformat()
+    logger.info(f"Media updated: {media_id}")
+
+    safe_item = {k: v for k, v in item.items() if k != "file_path"}
+
+    return {"success": True, "message": "Media updated successfully", "data": safe_item}
+
+
+@app.delete("/api/v1/media/{media_id}", response_model=Dict[str, Any])
+async def delete_media(media_id: str = PathParam(..., description="Media ID")):
+    """Delete a media item (soft delete)."""
+    if media_id not in media_store:
+        raise HTTPException(status_code=404, detail="Media not found")
+
+    item = media_store[media_id]
+    item["status"] = "deleted"
+    item["updated_at"] = datetime.utcnow().isoformat()
+
+    logger.info(f"Media deleted: {media_id}")
+
+    return {"success": True, "message": "Media deleted successfully", "data": {"id": media_id}}
+
+
+@app.post("/api/v1/media/cdn-url", response_model=Dict[str, Any])
+async def generate_cdn_url(request: CDNUrlRequest):
+    """Generate a CDN URL with optional transformations."""
+    if request.media_id not in media_store:
+        raise HTTPException(status_code=404, detail="Media not found")
+
+    item = media_store[request.media_id]
+    original_url = item["cdn_url"]
+
+    transformations = request.transformations or {}
+    if transformations:
+        params = []
+        if "width" in transformations:
+            params.append(f"w={transformations['width']}")
+        if "height" in transformations:
+            params.append(f"h={transformations['height']}")
+        if "format" in transformations:
+            params.append(f"fmt={transformations['format']}")
+        if "quality" in transformations:
+            params.append(f"q={transformations['quality']}")
+        if "fit" in transformations:
+            params.append(f"fit={transformations['fit']}")
+
+        transformed_url = f"{original_url}?{'&'.join(params)}" if params else original_url
+    else:
+        transformed_url = original_url
+
+    return {
+        "success": True,
+        "data": {
+            "media_id": request.media_id,
+            "original_url": original_url,
+            "transformed_url": transformed_url,
+            "transformations": transformations
+        }
+    }
+
+
+# ============================================
+# Image Processing Endpoints
+# ============================================
+
+@app.post("/process-image", response_model=ProcessImageResponse)
 async def process_image(
     file: UploadFile = File(..., description="Image file to process"),
     max_width: Optional[int] = None,
@@ -305,36 +571,20 @@ async def process_image(
     optimize: bool = True,
     auto_orient: bool = True
 ):
-    """
-    Process and optimize an image.
-
-    - **file**: Image file to process
-    - **max_width**: Maximum width in pixels (optional)
-    - **max_height**: Maximum height in pixels (optional)
-    - **quality**: Quality preset (low, medium, high, original)
-    - **format**: Output format (jpeg, png, webp)
-    - **optimize**: Whether to optimize the image
-    - **auto_orient**: Auto-rotate based on EXIF orientation
-    """
+    """Process and optimize an image."""
     start_time = datetime.now()
 
     try:
-        # Read uploaded file
         contents = await file.read()
         original_size = len(contents)
 
-        # Open image
         image = Image.open(io.BytesIO(contents))
 
-        # Auto-orient if requested
         if auto_orient:
             image = ImageOps.exif_transpose(image)
 
-        # Resize if dimensions specified
         if max_width or max_height:
-            # Calculate new dimensions maintaining aspect ratio
             width, height = image.size
-
             if max_width and max_height:
                 image.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
             elif max_width:
@@ -344,22 +594,16 @@ async def process_image(
                 new_width = int(width * (max_height / height))
                 image = image.resize((new_width, max_height), Image.Resampling.LANCZOS)
 
-        # Convert format if needed
         output_format = format.value.upper()
         if output_format == 'JPEG' and image.mode in ('RGBA', 'LA', 'P'):
-            # Convert to RGB for JPEG
             background = Image.new('RGB', image.size, (255, 255, 255))
             if image.mode == 'P':
                 image = image.convert('RGBA')
             background.paste(image, mask=image.split()[-1] if image.mode == 'RGBA' else None)
             image = background
 
-        # Save processed image
         output_buffer = io.BytesIO()
-        save_kwargs = {
-            'format': output_format,
-            'optimize': optimize,
-        }
+        save_kwargs = {'format': output_format, 'optimize': optimize}
 
         if output_format in ('JPEG', 'WEBP'):
             save_kwargs['quality'] = get_quality_value(quality)
@@ -367,25 +611,17 @@ async def process_image(
         image.save(output_buffer, **save_kwargs)
         processed_size = output_buffer.tell()
 
-        # Calculate metrics
         compression_ratio = (1 - processed_size / original_size) * 100 if original_size > 0 else 0
         processing_time = int((datetime.now() - start_time).total_seconds() * 1000)
 
-        logger.info(
-            f"Processed image: {file.filename} - "
-            f"Original: {original_size} bytes, Processed: {processed_size} bytes, "
-            f"Compression: {compression_ratio:.2f}%"
-        )
+        logger.info(f"Processed image: {file.filename} - Original: {original_size}, Processed: {processed_size}")
 
         return ProcessImageResponse(
             success=True,
             original_size=original_size,
             processed_size=processed_size,
             compression_ratio=round(compression_ratio, 2),
-            dimensions={
-                "width": image.width,
-                "height": image.height
-            },
+            dimensions={"width": image.width, "height": image.height},
             format=output_format,
             processing_time_ms=processing_time
         )
@@ -398,46 +634,25 @@ async def process_image(
         )
 
 
-@app.post(
-    "/generate-thumbnail",
-    summary="Generate image thumbnail",
-    description="Generate a thumbnail from an uploaded image"
-)
+@app.post("/generate-thumbnail")
 async def generate_thumbnail(
-    file: UploadFile = File(..., description="Image file to create thumbnail from"),
+    file: UploadFile = File(..., description="Image file"),
     width: int = 150,
     height: int = 150,
     crop: bool = True,
     format: ImageFormat = ImageFormat.JPEG
 ):
-    """
-    Generate a thumbnail from an image.
-
-    - **file**: Source image file
-    - **width**: Thumbnail width in pixels (default: 150)
-    - **height**: Thumbnail height in pixels (default: 150)
-    - **crop**: Whether to crop to exact dimensions (default: True)
-    - **format**: Output format (jpeg, png, webp)
-    """
+    """Generate a thumbnail from an image."""
     try:
-        # Read uploaded file
         contents = await file.read()
-
-        # Open image
         image = Image.open(io.BytesIO(contents))
-
-        # Auto-orient
         image = ImageOps.exif_transpose(image)
 
-        # Generate thumbnail
         if crop:
-            # Crop to exact dimensions
             image = ImageOps.fit(image, (width, height), Image.Resampling.LANCZOS)
         else:
-            # Maintain aspect ratio
             image.thumbnail((width, height), Image.Resampling.LANCZOS)
 
-        # Convert format if needed
         output_format = format.value.upper()
         if output_format == 'JPEG' and image.mode in ('RGBA', 'LA', 'P'):
             background = Image.new('RGB', image.size, (255, 255, 255))
@@ -446,7 +661,6 @@ async def generate_thumbnail(
             background.paste(image, mask=image.split()[-1] if image.mode == 'RGBA' else None)
             image = background
 
-        # Save thumbnail
         output_buffer = io.BytesIO()
         save_kwargs = {'format': output_format}
 
@@ -457,21 +671,14 @@ async def generate_thumbnail(
         image.save(output_buffer, **save_kwargs)
         output_buffer.seek(0)
 
-        file_size = output_buffer.tell()
+        logger.info(f"Generated thumbnail: {file.filename} - {image.width}x{image.height}")
 
-        logger.info(
-            f"Generated thumbnail: {file.filename} - "
-            f"Dimensions: {image.width}x{image.height}, Size: {file_size} bytes"
-        )
-
-        # Return image as streaming response
         return StreamingResponse(
             output_buffer,
             media_type=f"image/{format.value}",
             headers={
                 "X-Thumbnail-Width": str(image.width),
                 "X-Thumbnail-Height": str(image.height),
-                "X-File-Size": str(file_size),
                 "Content-Disposition": f'inline; filename="thumbnail.{format.value}"'
             }
         )
@@ -484,56 +691,26 @@ async def generate_thumbnail(
         )
 
 
-@app.post(
-    "/analyze-image",
-    response_model=AnalyzeImageResponse,
-    summary="Analyze image for product categorization",
-    description="Analyze an image and provide categorization, quality metrics, and suggestions"
-)
-async def analyze_image(
-    file: UploadFile = File(..., description="Image file to analyze")
-):
-    """
-    Analyze an image for product categorization.
-
-    Returns:
-    - Product category prediction with confidence
-    - Image quality metrics (brightness, sharpness, quality score)
-    - Dominant colors
-    - Image dimensions and format
-    - Improvement suggestions
-    - EXIF metadata
-    """
+@app.post("/analyze-image", response_model=AnalyzeImageResponse)
+async def analyze_image(file: UploadFile = File(..., description="Image file to analyze")):
+    """Analyze an image for product categorization."""
     try:
-        # Read uploaded file
         contents = await file.read()
         file_size = len(contents)
 
-        # Open image
         image = Image.open(io.BytesIO(contents))
-
-        # Auto-orient
         image = ImageOps.exif_transpose(image)
 
-        # Get basic info
-        dimensions = {
-            "width": image.width,
-            "height": image.height
-        }
+        dimensions = {"width": image.width, "height": image.height}
         img_format = image.format or "UNKNOWN"
 
-        # Categorize image
         category, confidence = categorize_image(image, file.filename)
 
-        # Analyze quality metrics
         brightness = analyze_image_brightness(image)
         sharpness = analyze_image_sharpness(image)
         quality_score = calculate_quality_score(image)
-
-        # Extract dominant colors
         dominant_colors = get_dominant_colors(image)
 
-        # Extract EXIF metadata
         metadata = {}
         try:
             exif_data = image._getexif()
@@ -544,10 +721,9 @@ async def analyze_image(
                     for tag, value in exif_data.items()
                     if tag in TAGS
                 }
-        except Exception as e:
-            logger.debug(f"No EXIF data available: {e}")
+        except Exception:
+            pass
 
-        # Generate suggestions
         analysis_data = {
             'brightness': brightness,
             'sharpness': sharpness,
@@ -556,11 +732,7 @@ async def analyze_image(
         }
         suggestions = generate_suggestions(analysis_data)
 
-        logger.info(
-            f"Analyzed image: {file.filename} - "
-            f"Category: {category.value}, Confidence: {confidence:.2f}, "
-            f"Quality Score: {quality_score:.2f}"
-        )
+        logger.info(f"Analyzed image: {file.filename} - Category: {category.value}, Quality: {quality_score:.2f}")
 
         return AnalyzeImageResponse(
             category=category,
@@ -584,38 +756,25 @@ async def analyze_image(
         )
 
 
-@app.get(
-    "/health",
-    response_model=HealthResponse,
-    summary="Health check",
-    description="Check service health and status"
-)
-async def health_check():
-    """
-    Health check endpoint.
-
-    Returns service status, timestamp, and version information.
-    """
-    return HealthResponse(
-        status="healthy",
-        timestamp=datetime.utcnow().isoformat(),
-        service="media-ai-service",
-        version="1.0.0"
-    )
-
+# ============================================
+# Root Endpoint
+# ============================================
 
 @app.get("/")
 async def root():
     """Root endpoint with service information"""
     return {
-        "service": "Media AI Service",
+        "service": "CitadelBuy Media Service",
         "version": "1.0.0",
-        "description": "AI-powered media processing and analysis service",
+        "description": "Media processing, image upload, and CDN URL generation service",
         "endpoints": {
+            "health": "/health",
+            "upload": "/api/v1/media/upload",
+            "list": "/api/v1/media",
+            "cdn_url": "/api/v1/media/cdn-url",
             "process_image": "/process-image",
             "generate_thumbnail": "/generate-thumbnail",
             "analyze_image": "/analyze-image",
-            "health": "/health",
             "docs": "/docs"
         }
     }
@@ -623,11 +782,5 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8008,
-        reload=True,
-        log_level="info"
-    )
+    port = int(os.getenv("PORT", "8008"))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True, log_level="info")

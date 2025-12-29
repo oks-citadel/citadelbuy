@@ -59,7 +59,6 @@ stages:
               containerRegistry: $(dockerRegistryServiceConnection)
               tags: |
                 $(tag)
-                latest
 
           - task: Docker@2
             displayName: 'Build Web Image'
@@ -70,7 +69,6 @@ stages:
               containerRegistry: $(dockerRegistryServiceConnection)
               tags: |
                 $(tag)
-                latest
 
           - task: Docker@2
             displayName: 'Build Marketing Service Image'
@@ -81,7 +79,6 @@ stages:
               containerRegistry: $(dockerRegistryServiceConnection)
               tags: |
                 $(tag)
-                latest
 
           - task: Docker@2
             displayName: 'Build Growth Service Image'
@@ -92,7 +89,6 @@ stages:
               containerRegistry: $(dockerRegistryServiceConnection)
               tags: |
                 $(tag)
-                latest
 
           - task: Docker@2
             displayName: 'Build Cross-Border Service Image'
@@ -103,7 +99,6 @@ stages:
               containerRegistry: $(dockerRegistryServiceConnection)
               tags: |
                 $(tag)
-                latest
 
           - task: Docker@2
             displayName: 'Build AI Agents Service Image'
@@ -114,7 +109,6 @@ stages:
               containerRegistry: $(dockerRegistryServiceConnection)
               tags: |
                 $(tag)
-                latest
 
           - task: Docker@2
             displayName: 'Push All Images'
@@ -123,7 +117,6 @@ stages:
               containerRegistry: $(dockerRegistryServiceConnection)
               tags: |
                 $(tag)
-                latest
 
       - job: SecurityScanning
         displayName: 'Security Scanning'

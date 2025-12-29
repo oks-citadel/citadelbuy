@@ -213,7 +213,6 @@ stages:
               buildContext: '$(System.DefaultWorkingDirectory)/apps/services/supplier-integration'
               tags: |
                 $(Build.SourceVersion)
-                latest
 
       - job: BuildAIEngine
         displayName: 'Build AI Engine Image'
@@ -238,7 +237,6 @@ stages:
               buildContext: '$(System.DefaultWorkingDirectory)/apps/services/ai-engine'
               tags: |
                 $(Build.SourceVersion)
-                latest
 
   # ============================================
   # STAGE 5: Deploy to Staging

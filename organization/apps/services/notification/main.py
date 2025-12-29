@@ -1,491 +1,115 @@
 """
-Notification AI Service
-FastAPI microservice for AI-powered notification personalization and optimization
+Notification Service - FastAPI Application
+
+This service provides multi-channel notification capabilities including:
+- Email notifications
+- SMS notifications
+- Push notifications
+- Notification templates and scheduling
+- Delivery tracking and analytics
 """
 
+import os
+import json
+import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Optional, List, Dict, Any
+from uuid import uuid4
+
+from fastapi import FastAPI, HTTPException, Query, Path, BackgroundTasks, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import Dict, List, Any, Optional
-from datetime import datetime, time
-from enum import Enum
-import logging
-import os
-import random
-import numpy as np
+
+# Configure structured logging
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
+LOG_FORMAT = os.getenv('LOG_FORMAT', 'json')
+
+
+class StructuredFormatter(logging.Formatter):
+    """Custom formatter for structured JSON logging"""
+    def format(self, record):
+        log_data = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "level": record.levelname,
+            "service": "notification-service",
+            "message": record.getMessage(),
+            "module": record.module,
+            "function": record.funcName,
+            "line": record.lineno,
+        }
+        if hasattr(record, 'extra_data'):
+            log_data.update(record.extra_data)
+        if record.exc_info:
+            log_data["exception"] = self.formatException(record.exc_info)
+        return json.dumps(log_data)
+
 
 # Configure logging
-logging.basicConfig(level=os.getenv('LOG_LEVEL', 'INFO'))
 logger = logging.getLogger(__name__)
+logger.setLevel(getattr(logging, LOG_LEVEL))
+
+if LOG_FORMAT == 'json':
+    handler = logging.StreamHandler()
+    handler.setFormatter(StructuredFormatter())
+    logger.handlers = [handler]
+else:
+    logging.basicConfig(
+        level=LOG_LEVEL,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+
+# CORS Configuration - Use specific origins instead of wildcard
+ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '').split(',') if os.getenv('ALLOWED_ORIGINS') else [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://localhost:8080",
+    "https://citadelbuy.com",
+    "https://admin.citadelbuy.com",
+    "https://api.citadelbuy.com",
+]
+
+# In-memory storage (replace with database in production)
+notifications: Dict[str, Dict] = {}
+templates: Dict[str, Dict] = {}
+subscriptions: Dict[str, Dict] = {}
 
 
 # ============================================
 # Enums and Constants
 # ============================================
 
-class NotificationType(str, Enum):
+class NotificationChannel(str, Enum):
     EMAIL = "email"
     SMS = "sms"
     PUSH = "push"
     IN_APP = "in_app"
+    WEBHOOK = "webhook"
 
 
-class NotificationCategory(str, Enum):
+class NotificationStatus(str, Enum):
+    PENDING = "pending"
+    QUEUED = "queued"
+    SENT = "sent"
+    DELIVERED = "delivered"
+    FAILED = "failed"
+    BOUNCED = "bounced"
+
+
+class NotificationType(str, Enum):
     TRANSACTIONAL = "transactional"
     MARKETING = "marketing"
-    PROMOTIONAL = "promotional"
-    REMINDER = "reminder"
     ALERT = "alert"
-    SOCIAL = "social"
-
-
-class UserSegment(str, Enum):
-    HIGH_VALUE = "high_value"
-    ACTIVE = "active"
-    AT_RISK = "at_risk"
-    DORMANT = "dormant"
-    NEW_USER = "new_user"
-    PRICE_SENSITIVE = "price_sensitive"
-    IMPULSE_BUYER = "impulse_buyer"
-    RESEARCHER = "researcher"
-
-
-class TimeZone(str, Enum):
-    PST = "America/Los_Angeles"
-    EST = "America/New_York"
-    CST = "America/Chicago"
-    MST = "America/Denver"
-    UTC = "UTC"
-
-
-# ============================================
-# Request/Response Models
-# ============================================
-
-class UserProfile(BaseModel):
-    user_id: str
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    name: Optional[str] = None
-    timezone: Optional[str] = "UTC"
-    locale: Optional[str] = "en-US"
-    preferences: Optional[Dict[str, Any]] = None
-    last_active: Optional[datetime] = None
-    signup_date: Optional[datetime] = None
-    total_orders: Optional[int] = 0
-    total_spent: Optional[float] = 0.0
-    average_order_value: Optional[float] = 0.0
-    engagement_score: Optional[float] = None
-    device_type: Optional[str] = None
-    platform: Optional[str] = None
-
-
-class NotificationContent(BaseModel):
-    title: str
-    body: str
-    template_id: Optional[str] = None
-    variables: Optional[Dict[str, Any]] = None
-    call_to_action: Optional[str] = None
-    image_url: Optional[str] = None
-    link_url: Optional[str] = None
-
-
-class PersonalizeRequest(BaseModel):
-    user_profile: UserProfile
-    notification_type: NotificationType
-    category: NotificationCategory
-    base_content: NotificationContent
-    context: Optional[Dict[str, Any]] = None
-
-
-class OptimizeTimingRequest(BaseModel):
-    user_profile: UserProfile
-    notification_type: NotificationType
-    category: NotificationCategory
-    content: NotificationContent
-    urgency: Optional[str] = "medium"  # low, medium, high
-    historical_engagement: Optional[List[Dict[str, Any]]] = None
-
-
-class SegmentUsersRequest(BaseModel):
-    users: List[UserProfile]
-    campaign_type: Optional[str] = "general"
-    target_segments: Optional[List[UserSegment]] = None
-    min_segment_size: Optional[int] = 10
-
-
-class PersonalizedNotification(BaseModel):
-    user_id: str
-    personalized_content: NotificationContent
-    personalization_score: float = Field(ge=0.0, le=1.0)
-    applied_personalizations: List[str]
-    predicted_engagement: float = Field(ge=0.0, le=1.0)
-    recommendations: List[str]
-
-
-class OptimalTiming(BaseModel):
-    user_id: str
-    optimal_send_time: datetime
-    timezone: str
-    confidence_score: float = Field(ge=0.0, le=1.0)
-    alternative_times: List[datetime]
-    reasoning: str
-    expected_open_rate: float = Field(ge=0.0, le=1.0)
-    expected_click_rate: float = Field(ge=0.0, le=1.0)
-
-
-class UserSegmentation(BaseModel):
-    segment: UserSegment
-    user_ids: List[str]
-    size: int
-    characteristics: Dict[str, Any]
-    recommended_strategy: str
-    estimated_engagement: float = Field(ge=0.0, le=1.0)
-
-
-# ============================================
-# AI Service Classes (Placeholder Implementations)
-# ============================================
-
-class NotificationPersonalizer:
-    """Personalizes notification content based on user profile and context."""
-
-    async def personalize(
-        self,
-        user_profile: UserProfile,
-        notification_type: NotificationType,
-        category: NotificationCategory,
-        base_content: NotificationContent,
-        context: Optional[Dict[str, Any]] = None
-    ) -> PersonalizedNotification:
-        """
-        Personalize notification content for a specific user.
-
-        Placeholder implementation that will be enhanced with:
-        - NLP-based content optimization
-        - User preference learning
-        - A/B testing insights
-        - Sentiment analysis
-        """
-        applied_personalizations = []
-        personalized_content = NotificationContent(
-            title=base_content.title,
-            body=base_content.body,
-            template_id=base_content.template_id,
-            variables=base_content.variables or {},
-            call_to_action=base_content.call_to_action,
-            image_url=base_content.image_url,
-            link_url=base_content.link_url
-        )
-
-        # Placeholder: Name personalization
-        if user_profile.name:
-            personalized_content.title = f"Hi {user_profile.name.split()[0]}, {base_content.title}"
-            applied_personalizations.append("name_insertion")
-
-        # Placeholder: Locale-based adjustments
-        if user_profile.locale and user_profile.locale.startswith('es'):
-            applied_personalizations.append("spanish_locale")
-
-        # Placeholder: Time-based greeting
-        current_hour = datetime.now().hour
-        if 5 <= current_hour < 12:
-            greeting = "Good morning"
-        elif 12 <= current_hour < 18:
-            greeting = "Good afternoon"
-        else:
-            greeting = "Good evening"
-        applied_personalizations.append("time_based_greeting")
-
-        # Placeholder: User segment-based customization
-        if user_profile.total_orders > 10:
-            applied_personalizations.append("loyal_customer_tone")
-            personalization_score = 0.85
-        elif user_profile.total_orders > 0:
-            personalization_score = 0.65
-        else:
-            applied_personalizations.append("new_customer_tone")
-            personalization_score = 0.50
-
-        # Placeholder: Predicted engagement
-        base_engagement = 0.15
-        if notification_type == NotificationType.PUSH:
-            base_engagement = 0.25
-        elif notification_type == NotificationType.EMAIL:
-            base_engagement = 0.20
-
-        predicted_engagement = min(base_engagement * (1 + personalization_score), 1.0)
-
-        recommendations = [
-            "Consider adding product recommendations based on browsing history",
-            "Include user-specific discount offers",
-            "Test different CTA button colors"
-        ]
-
-        return PersonalizedNotification(
-            user_id=user_profile.user_id,
-            personalized_content=personalized_content,
-            personalization_score=personalization_score,
-            applied_personalizations=applied_personalizations,
-            predicted_engagement=predicted_engagement,
-            recommendations=recommendations
-        )
-
-
-class TimingOptimizer:
-    """Optimizes notification send timing based on user behavior patterns."""
-
-    async def optimize(
-        self,
-        user_profile: UserProfile,
-        notification_type: NotificationType,
-        category: NotificationCategory,
-        urgency: str = "medium",
-        historical_engagement: Optional[List[Dict[str, Any]]] = None
-    ) -> OptimalTiming:
-        """
-        Determine optimal send time for a notification.
-
-        Placeholder implementation that will be enhanced with:
-        - Time series analysis of user engagement
-        - Timezone-aware scheduling
-        - Category-specific optimal windows
-        - Machine learning models for engagement prediction
-        """
-        # Placeholder: Simple heuristics based on notification type
-        now = datetime.now()
-
-        # High urgency: send immediately
-        if urgency == "high":
-            optimal_time = now
-            confidence = 0.95
-            reasoning = "High urgency notification scheduled for immediate delivery"
-
-        # Medium urgency: find optimal window
-        elif urgency == "medium":
-            # Placeholder: Default to business hours
-            if notification_type == NotificationType.EMAIL:
-                # Email: 10 AM user local time
-                optimal_hour = 10
-                confidence = 0.75
-                reasoning = "Email scheduled for morning business hours (10 AM local time)"
-            elif notification_type == NotificationType.PUSH:
-                # Push: 7 PM user local time
-                optimal_hour = 19
-                confidence = 0.70
-                reasoning = "Push notification scheduled for evening engagement peak (7 PM local time)"
-            else:
-                optimal_hour = 12
-                confidence = 0.65
-                reasoning = "Notification scheduled for midday (12 PM local time)"
-
-            optimal_time = now.replace(hour=optimal_hour, minute=0, second=0, microsecond=0)
-            if optimal_time < now:
-                # If time has passed today, schedule for tomorrow
-                from datetime import timedelta
-                optimal_time += timedelta(days=1)
-
-        # Low urgency: find best engagement window
-        else:
-            optimal_hour = 14
-            optimal_time = now.replace(hour=optimal_hour, minute=0, second=0, microsecond=0)
-            confidence = 0.80
-            reasoning = "Low urgency notification scheduled for optimal engagement window (2 PM local time)"
-
-            from datetime import timedelta
-            if optimal_time < now:
-                optimal_time += timedelta(days=1)
-
-        # Generate alternative times
-        from datetime import timedelta
-        alternative_times = [
-            optimal_time + timedelta(hours=2),
-            optimal_time + timedelta(hours=4),
-            optimal_time + timedelta(days=1)
-        ]
-
-        # Placeholder: Estimated engagement rates
-        base_open_rate = 0.25 if notification_type == NotificationType.EMAIL else 0.40
-        base_click_rate = 0.05 if notification_type == NotificationType.EMAIL else 0.15
-
-        # Adjust based on user engagement score
-        engagement_multiplier = user_profile.engagement_score or 1.0
-
-        return OptimalTiming(
-            user_id=user_profile.user_id,
-            optimal_send_time=optimal_time,
-            timezone=user_profile.timezone or "UTC",
-            confidence_score=confidence,
-            alternative_times=alternative_times,
-            reasoning=reasoning,
-            expected_open_rate=min(base_open_rate * engagement_multiplier, 1.0),
-            expected_click_rate=min(base_click_rate * engagement_multiplier, 1.0)
-        )
-
-
-class UserSegmenter:
-    """Segments users for targeted notification campaigns."""
-
-    async def segment(
-        self,
-        users: List[UserProfile],
-        campaign_type: str = "general",
-        target_segments: Optional[List[UserSegment]] = None,
-        min_segment_size: int = 10
-    ) -> List[UserSegmentation]:
-        """
-        Segment users based on behavior, preferences, and engagement.
-
-        Placeholder implementation that will be enhanced with:
-        - Clustering algorithms (K-means, DBSCAN)
-        - RFM (Recency, Frequency, Monetary) analysis
-        - Behavioral pattern recognition
-        - Predictive segmentation
-        """
-        segments_data = {}
-
-        for user in users:
-            # Placeholder: Simple rule-based segmentation
-            segment = self._classify_user(user)
-
-            if segment not in segments_data:
-                segments_data[segment] = []
-            segments_data[segment].append(user.user_id)
-
-        # Build segment results
-        results = []
-        for segment, user_ids in segments_data.items():
-            if len(user_ids) < min_segment_size:
-                continue
-
-            # Filter if target segments specified
-            if target_segments and segment not in target_segments:
-                continue
-
-            characteristics = self._get_segment_characteristics(segment)
-            recommended_strategy = self._get_recommended_strategy(segment)
-            estimated_engagement = self._estimate_segment_engagement(segment)
-
-            results.append(UserSegmentation(
-                segment=segment,
-                user_ids=user_ids,
-                size=len(user_ids),
-                characteristics=characteristics,
-                recommended_strategy=recommended_strategy,
-                estimated_engagement=estimated_engagement
-            ))
-
-        # Sort by segment size descending
-        results.sort(key=lambda x: x.size, reverse=True)
-
-        return results
-
-    def _classify_user(self, user: UserProfile) -> UserSegment:
-        """Classify user into a segment (placeholder logic)."""
-        # High value customers
-        if user.total_spent > 1000:
-            return UserSegment.HIGH_VALUE
-
-        # New users
-        if user.total_orders == 0:
-            return UserSegment.NEW_USER
-
-        # Active users
-        if user.last_active:
-            days_since_active = (datetime.now() - user.last_active).days
-            if days_since_active <= 7:
-                return UserSegment.ACTIVE
-            elif days_since_active <= 30:
-                return UserSegment.AT_RISK
-            else:
-                return UserSegment.DORMANT
-
-        # Price sensitive (low AOV but multiple orders)
-        if user.average_order_value and user.average_order_value < 50 and user.total_orders > 3:
-            return UserSegment.PRICE_SENSITIVE
-
-        # Impulse buyer (high AOV, few orders)
-        if user.average_order_value and user.average_order_value > 200 and user.total_orders < 5:
-            return UserSegment.IMPULSE_BUYER
-
-        # Default to active
-        return UserSegment.ACTIVE
-
-    def _get_segment_characteristics(self, segment: UserSegment) -> Dict[str, Any]:
-        """Get characteristics for a segment."""
-        characteristics_map = {
-            UserSegment.HIGH_VALUE: {
-                "avg_order_value": ">$100",
-                "total_spent": ">$1000",
-                "engagement": "high",
-                "churn_risk": "low"
-            },
-            UserSegment.ACTIVE: {
-                "last_active": "< 7 days",
-                "engagement": "high",
-                "conversion_rate": "medium-high"
-            },
-            UserSegment.AT_RISK: {
-                "last_active": "7-30 days",
-                "engagement": "declining",
-                "churn_risk": "medium"
-            },
-            UserSegment.DORMANT: {
-                "last_active": "> 30 days",
-                "engagement": "low",
-                "churn_risk": "high"
-            },
-            UserSegment.NEW_USER: {
-                "orders": "0",
-                "engagement": "unknown",
-                "conversion_potential": "high"
-            },
-            UserSegment.PRICE_SENSITIVE: {
-                "avg_order_value": "< $50",
-                "discount_affinity": "high",
-                "promotion_responsive": "very high"
-            },
-            UserSegment.IMPULSE_BUYER: {
-                "avg_order_value": "> $200",
-                "decision_time": "short",
-                "upsell_potential": "high"
-            },
-            UserSegment.RESEARCHER: {
-                "browsing_time": "high",
-                "comparison_behavior": "high",
-                "decision_time": "long"
-            }
-        }
-        return characteristics_map.get(segment, {})
-
-    def _get_recommended_strategy(self, segment: UserSegment) -> str:
-        """Get recommended notification strategy for segment."""
-        strategy_map = {
-            UserSegment.HIGH_VALUE: "VIP treatment with exclusive offers and early access",
-            UserSegment.ACTIVE: "Regular engagement with product updates and personalized recommendations",
-            UserSegment.AT_RISK: "Re-engagement campaign with special incentives",
-            UserSegment.DORMANT: "Win-back campaign with significant discount offers",
-            UserSegment.NEW_USER: "Onboarding sequence with welcome offers and product education",
-            UserSegment.PRICE_SENSITIVE: "Discount-focused messaging and sale notifications",
-            UserSegment.IMPULSE_BUYER: "Limited-time offers and scarcity messaging",
-            UserSegment.RESEARCHER: "Detailed product information and comparison guides"
-        }
-        return strategy_map.get(segment, "Standard engagement strategy")
-
-    def _estimate_segment_engagement(self, segment: UserSegment) -> float:
-        """Estimate engagement rate for segment."""
-        engagement_map = {
-            UserSegment.HIGH_VALUE: 0.75,
-            UserSegment.ACTIVE: 0.65,
-            UserSegment.AT_RISK: 0.35,
-            UserSegment.DORMANT: 0.15,
-            UserSegment.NEW_USER: 0.50,
-            UserSegment.PRICE_SENSITIVE: 0.60,
-            UserSegment.IMPULSE_BUYER: 0.55,
-            UserSegment.RESEARCHER: 0.45
-        }
-        return engagement_map.get(segment, 0.40)
+    REMINDER = "reminder"
+    SYSTEM = "system"
+
+
+class Priority(str, Enum):
+    LOW = "low"
+    NORMAL = "normal"
+    HIGH = "high"
+    URGENT = "urgent"
 
 
 # ============================================
@@ -494,160 +118,779 @@ class UserSegmenter:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan manager."""
-    # Startup
-    logger.info("Notification AI Service starting up...")
-    logger.info("AI services initialized successfully")
+    """Application lifespan manager"""
+    logger.info("Notification Service starting up...")
+    _initialize_sample_templates()
+    logger.info("Notification Service initialized successfully")
     yield
-    # Shutdown
-    logger.info("Notification AI Service shutting down...")
+    logger.info("Notification Service shutting down...")
 
 
 # Initialize FastAPI app with lifespan
 app = FastAPI(
-    title="CitadelBuy Notification AI Service",
-    description="AI-powered notification personalization, timing optimization, and user segmentation",
+    title="CitadelBuy Notification Service",
+    description="Multi-channel notification service for email, SMS, and push notifications",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan
 )
 
-# CORS middleware
+# Add CORS middleware with specific origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
 )
-
-# Initialize AI services
-personalizer = NotificationPersonalizer()
-timing_optimizer = TimingOptimizer()
-user_segmenter = UserSegmenter()
 
 
 # ============================================
-# API Endpoints
+# Pydantic Models
+# ============================================
+
+class EmailNotification(BaseModel):
+    to: List[str] = Field(..., min_length=1, description="List of email recipients")
+    subject: str = Field(..., min_length=1, max_length=200)
+    body: str = Field(..., min_length=1)
+    html_body: Optional[str] = None
+    template_id: Optional[str] = None
+    template_data: Optional[Dict[str, Any]] = None
+    cc: Optional[List[str]] = None
+    bcc: Optional[List[str]] = None
+    attachments: Optional[List[Dict[str, str]]] = None
+    priority: Priority = Priority.NORMAL
+    notification_type: NotificationType = NotificationType.TRANSACTIONAL
+    scheduled_at: Optional[str] = None
+
+
+class SMSNotification(BaseModel):
+    to: str = Field(..., min_length=10, max_length=15, description="Phone number")
+    message: str = Field(..., min_length=1, max_length=1600)
+    template_id: Optional[str] = None
+    template_data: Optional[Dict[str, Any]] = None
+    priority: Priority = Priority.NORMAL
+    notification_type: NotificationType = NotificationType.TRANSACTIONAL
+    scheduled_at: Optional[str] = None
+
+
+class PushNotification(BaseModel):
+    user_id: str = Field(..., description="User ID for push notification")
+    device_tokens: Optional[List[str]] = None
+    title: str = Field(..., min_length=1, max_length=100)
+    body: str = Field(..., min_length=1, max_length=500)
+    data: Optional[Dict[str, Any]] = None
+    image_url: Optional[str] = None
+    action_url: Optional[str] = None
+    priority: Priority = Priority.NORMAL
+    notification_type: NotificationType = NotificationType.TRANSACTIONAL
+    ttl: Optional[int] = Field(None, description="Time to live in seconds")
+
+
+class BulkNotification(BaseModel):
+    channel: NotificationChannel
+    recipients: List[Dict[str, Any]] = Field(..., description="List of recipients with their details")
+    template_id: str
+    template_data: Optional[Dict[str, Any]] = None
+    priority: Priority = Priority.NORMAL
+    notification_type: NotificationType = NotificationType.MARKETING
+
+
+class NotificationTemplate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    channel: NotificationChannel
+    subject: Optional[str] = None
+    body: str = Field(..., min_length=1)
+    html_body: Optional[str] = None
+    variables: Optional[List[str]] = Field(None, description="List of template variables")
+    metadata: Optional[Dict[str, Any]] = None
+
+
+class NotificationPreferences(BaseModel):
+    user_id: str
+    email_enabled: bool = True
+    sms_enabled: bool = True
+    push_enabled: bool = True
+    marketing_enabled: bool = False
+    quiet_hours_start: Optional[str] = None
+    quiet_hours_end: Optional[str] = None
+    preferred_channels: Optional[List[NotificationChannel]] = None
+
+
+# ============================================
+# Health Check Endpoint
 # ============================================
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
+    """Service health check endpoint."""
     return {
         "status": "healthy",
-        "service": "notification-ai",
-        "version": "1.0.0",
-        "timestamp": datetime.now().isoformat()
+        "service": "notification-service",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "1.0.0"
     }
 
 
-@app.post("/personalize-notification")
-async def personalize_notification(request: PersonalizeRequest):
-    """
-    Personalize notification content for a specific user.
+# ============================================
+# Email Notification Endpoints
+# ============================================
 
-    Uses AI to adapt content based on:
-    - User profile and preferences
-    - Historical engagement patterns
-    - Notification type and category
-    - Contextual information
-    """
-    try:
-        result = await personalizer.personalize(
-            user_profile=request.user_profile,
-            notification_type=request.notification_type,
-            category=request.category,
-            base_content=request.base_content,
-            context=request.context
-        )
+@app.post("/api/v1/notifications/email", response_model=Dict[str, Any], status_code=201)
+async def send_email(
+    notification: EmailNotification,
+    background_tasks: BackgroundTasks
+):
+    """Send an email notification."""
+    notification_id = str(uuid4())
 
-        return {
-            "success": True,
-            "data": result.model_dump()
+    body = notification.body
+    html_body = notification.html_body
+    if notification.template_id:
+        template = templates.get(notification.template_id)
+        if template:
+            body = _process_template(template.get("body", ""), notification.template_data or {})
+            html_body = _process_template(template.get("html_body", ""), notification.template_data or {})
+
+    notification_record = {
+        "id": notification_id,
+        "channel": NotificationChannel.EMAIL.value,
+        "to": notification.to,
+        "cc": notification.cc,
+        "bcc": notification.bcc,
+        "subject": notification.subject,
+        "body": body,
+        "html_body": html_body,
+        "priority": notification.priority.value,
+        "notification_type": notification.notification_type.value,
+        "status": NotificationStatus.QUEUED.value,
+        "scheduled_at": notification.scheduled_at,
+        "created_at": datetime.utcnow().isoformat(),
+        "sent_at": None,
+        "delivered_at": None,
+        "error": None,
+        "metadata": {
+            "template_id": notification.template_id,
+            "attachments_count": len(notification.attachments) if notification.attachments else 0
+        }
+    }
+
+    notifications[notification_id] = notification_record
+    background_tasks.add_task(_simulate_send_notification, notification_id)
+
+    logger.info(f"Email notification queued: {notification_id}, to: {notification.to}")
+
+    return {
+        "success": True,
+        "message": "Email notification queued successfully",
+        "data": {
+            "notification_id": notification_id,
+            "status": NotificationStatus.QUEUED.value,
+            "recipients": len(notification.to),
+            "scheduled_at": notification.scheduled_at
+        }
+    }
+
+
+# ============================================
+# SMS Notification Endpoints
+# ============================================
+
+@app.post("/api/v1/notifications/sms", response_model=Dict[str, Any], status_code=201)
+async def send_sms(
+    notification: SMSNotification,
+    background_tasks: BackgroundTasks
+):
+    """Send an SMS notification."""
+    notification_id = str(uuid4())
+
+    message = notification.message
+    if notification.template_id:
+        template = templates.get(notification.template_id)
+        if template:
+            message = _process_template(template.get("body", ""), notification.template_data or {})
+
+    notification_record = {
+        "id": notification_id,
+        "channel": NotificationChannel.SMS.value,
+        "to": notification.to,
+        "message": message,
+        "priority": notification.priority.value,
+        "notification_type": notification.notification_type.value,
+        "status": NotificationStatus.QUEUED.value,
+        "scheduled_at": notification.scheduled_at,
+        "created_at": datetime.utcnow().isoformat(),
+        "sent_at": None,
+        "delivered_at": None,
+        "error": None,
+        "metadata": {
+            "template_id": notification.template_id,
+            "message_length": len(message)
+        }
+    }
+
+    notifications[notification_id] = notification_record
+    background_tasks.add_task(_simulate_send_notification, notification_id)
+
+    logger.info(f"SMS notification queued: {notification_id}, to: {notification.to}")
+
+    return {
+        "success": True,
+        "message": "SMS notification queued successfully",
+        "data": {
+            "notification_id": notification_id,
+            "status": NotificationStatus.QUEUED.value,
+            "message_segments": (len(message) // 160) + 1
+        }
+    }
+
+
+# ============================================
+# Push Notification Endpoints
+# ============================================
+
+@app.post("/api/v1/notifications/push", response_model=Dict[str, Any], status_code=201)
+async def send_push(
+    notification: PushNotification,
+    background_tasks: BackgroundTasks
+):
+    """Send a push notification."""
+    notification_id = str(uuid4())
+
+    notification_record = {
+        "id": notification_id,
+        "channel": NotificationChannel.PUSH.value,
+        "user_id": notification.user_id,
+        "device_tokens": notification.device_tokens or [],
+        "title": notification.title,
+        "body": notification.body,
+        "data": notification.data,
+        "image_url": notification.image_url,
+        "action_url": notification.action_url,
+        "priority": notification.priority.value,
+        "notification_type": notification.notification_type.value,
+        "status": NotificationStatus.QUEUED.value,
+        "ttl": notification.ttl,
+        "created_at": datetime.utcnow().isoformat(),
+        "sent_at": None,
+        "delivered_at": None,
+        "error": None
+    }
+
+    notifications[notification_id] = notification_record
+    background_tasks.add_task(_simulate_send_notification, notification_id)
+
+    logger.info(f"Push notification queued: {notification_id}, user: {notification.user_id}")
+
+    return {
+        "success": True,
+        "message": "Push notification queued successfully",
+        "data": {
+            "notification_id": notification_id,
+            "status": NotificationStatus.QUEUED.value,
+            "devices": len(notification.device_tokens) if notification.device_tokens else 0
+        }
+    }
+
+
+# ============================================
+# Bulk Notification Endpoints
+# ============================================
+
+@app.post("/api/v1/notifications/bulk", response_model=Dict[str, Any], status_code=201)
+async def send_bulk_notifications(
+    notification: BulkNotification,
+    background_tasks: BackgroundTasks
+):
+    """Send bulk notifications to multiple recipients."""
+    batch_id = str(uuid4())
+    notification_ids = []
+
+    for recipient in notification.recipients[:1000]:
+        notification_id = str(uuid4())
+
+        notification_record = {
+            "id": notification_id,
+            "batch_id": batch_id,
+            "channel": notification.channel.value,
+            "recipient": recipient,
+            "template_id": notification.template_id,
+            "priority": notification.priority.value,
+            "notification_type": notification.notification_type.value,
+            "status": NotificationStatus.PENDING.value,
+            "created_at": datetime.utcnow().isoformat(),
+            "sent_at": None,
+            "delivered_at": None,
+            "error": None
         }
 
-    except Exception as e:
-        logger.error(f"Personalization failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Personalization failed: {str(e)}")
+        notifications[notification_id] = notification_record
+        notification_ids.append(notification_id)
+
+    background_tasks.add_task(_process_bulk_notifications, batch_id, notification_ids)
+
+    logger.info(f"Bulk notifications queued: batch={batch_id}, count={len(notification_ids)}")
+
+    return {
+        "success": True,
+        "message": "Bulk notifications queued successfully",
+        "data": {
+            "batch_id": batch_id,
+            "total_recipients": len(notification_ids),
+            "status": "processing",
+            "estimated_completion": (datetime.utcnow() + timedelta(minutes=5)).isoformat()
+        }
+    }
 
 
-@app.post("/optimize-timing")
-async def optimize_timing(request: OptimizeTimingRequest):
-    """
-    Optimize notification send timing for maximum engagement.
+# ============================================
+# Notification Status and History Endpoints
+# ============================================
 
-    Analyzes:
-    - User timezone and activity patterns
-    - Historical engagement data
-    - Notification type and urgency
-    - Category-specific optimal windows
-    """
-    try:
-        result = await timing_optimizer.optimize(
-            user_profile=request.user_profile,
-            notification_type=request.notification_type,
-            category=request.category,
-            urgency=request.urgency,
-            historical_engagement=request.historical_engagement
-        )
+@app.get("/api/v1/notifications", response_model=Dict[str, Any])
+async def list_notifications(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    channel: Optional[NotificationChannel] = None,
+    status: Optional[NotificationStatus] = None,
+    notification_type: Optional[NotificationType] = None,
+    user_id: Optional[str] = None
+):
+    """List notifications with pagination and filters."""
+    items = list(notifications.values())
 
+    if channel:
+        items = [n for n in items if n.get("channel") == channel.value]
+    if status:
+        items = [n for n in items if n.get("status") == status.value]
+    if notification_type:
+        items = [n for n in items if n.get("notification_type") == notification_type.value]
+    if user_id:
+        items = [n for n in items if n.get("user_id") == user_id]
+
+    items.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+
+    total = len(items)
+    start = (page - 1) * page_size
+    end = start + page_size
+    paginated_items = items[start:end]
+
+    return {
+        "success": True,
+        "data": paginated_items,
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": (total + page_size - 1) // page_size
+        }
+    }
+
+
+@app.get("/api/v1/notifications/{notification_id}", response_model=Dict[str, Any])
+async def get_notification(notification_id: str = Path(..., description="Notification ID")):
+    """Get a single notification by ID."""
+    if notification_id not in notifications:
+        raise HTTPException(status_code=404, detail="Notification not found")
+
+    return {
+        "success": True,
+        "data": notifications[notification_id]
+    }
+
+
+@app.get("/api/v1/notifications/{notification_id}/status", response_model=Dict[str, Any])
+async def get_notification_status(notification_id: str = Path(..., description="Notification ID")):
+    """Get the delivery status of a notification."""
+    if notification_id not in notifications:
+        raise HTTPException(status_code=404, detail="Notification not found")
+
+    n = notifications[notification_id]
+
+    return {
+        "success": True,
+        "data": {
+            "notification_id": notification_id,
+            "channel": n.get("channel"),
+            "status": n.get("status"),
+            "created_at": n.get("created_at"),
+            "sent_at": n.get("sent_at"),
+            "delivered_at": n.get("delivered_at"),
+            "error": n.get("error")
+        }
+    }
+
+
+# ============================================
+# Template Management Endpoints
+# ============================================
+
+@app.post("/api/v1/templates", response_model=Dict[str, Any], status_code=201)
+async def create_template(template: NotificationTemplate):
+    """Create a notification template."""
+    template_id = str(uuid4())
+
+    template_record = {
+        "id": template_id,
+        "name": template.name,
+        "channel": template.channel.value,
+        "subject": template.subject,
+        "body": template.body,
+        "html_body": template.html_body,
+        "variables": template.variables or [],
+        "metadata": template.metadata or {},
+        "is_active": True,
+        "created_at": datetime.utcnow().isoformat(),
+        "updated_at": datetime.utcnow().isoformat()
+    }
+
+    templates[template_id] = template_record
+    logger.info(f"Template created: {template_id}, name: {template.name}")
+
+    return {
+        "success": True,
+        "message": "Template created successfully",
+        "data": template_record
+    }
+
+
+@app.get("/api/v1/templates", response_model=Dict[str, Any])
+async def list_templates(
+    channel: Optional[NotificationChannel] = None,
+    active_only: bool = True
+):
+    """List all notification templates."""
+    items = list(templates.values())
+
+    if channel:
+        items = [t for t in items if t.get("channel") == channel.value]
+    if active_only:
+        items = [t for t in items if t.get("is_active")]
+
+    return {
+        "success": True,
+        "data": items,
+        "total": len(items)
+    }
+
+
+@app.get("/api/v1/templates/{template_id}", response_model=Dict[str, Any])
+async def get_template(template_id: str = Path(..., description="Template ID")):
+    """Get a template by ID."""
+    if template_id not in templates:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    return {
+        "success": True,
+        "data": templates[template_id]
+    }
+
+
+@app.put("/api/v1/templates/{template_id}", response_model=Dict[str, Any])
+async def update_template(
+    template_id: str = Path(..., description="Template ID"),
+    template: NotificationTemplate = None
+):
+    """Update a notification template."""
+    if template_id not in templates:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    t = templates[template_id]
+    t["name"] = template.name
+    t["channel"] = template.channel.value
+    t["subject"] = template.subject
+    t["body"] = template.body
+    t["html_body"] = template.html_body
+    t["variables"] = template.variables or []
+    t["metadata"] = template.metadata or {}
+    t["updated_at"] = datetime.utcnow().isoformat()
+
+    logger.info(f"Template updated: {template_id}")
+
+    return {
+        "success": True,
+        "message": "Template updated successfully",
+        "data": t
+    }
+
+
+@app.delete("/api/v1/templates/{template_id}", response_model=Dict[str, Any])
+async def delete_template(template_id: str = Path(..., description="Template ID")):
+    """Delete (deactivate) a template."""
+    if template_id not in templates:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    templates[template_id]["is_active"] = False
+    templates[template_id]["updated_at"] = datetime.utcnow().isoformat()
+
+    logger.info(f"Template deleted: {template_id}")
+
+    return {
+        "success": True,
+        "message": "Template deleted successfully",
+        "data": {"id": template_id}
+    }
+
+
+# ============================================
+# Subscription Management Endpoints
+# ============================================
+
+@app.post("/api/v1/subscriptions", response_model=Dict[str, Any], status_code=201)
+async def create_subscription(preferences: NotificationPreferences):
+    """Create or update notification preferences for a user."""
+    subscription_record = {
+        "user_id": preferences.user_id,
+        "email_enabled": preferences.email_enabled,
+        "sms_enabled": preferences.sms_enabled,
+        "push_enabled": preferences.push_enabled,
+        "marketing_enabled": preferences.marketing_enabled,
+        "quiet_hours_start": preferences.quiet_hours_start,
+        "quiet_hours_end": preferences.quiet_hours_end,
+        "preferred_channels": [c.value for c in (preferences.preferred_channels or [])],
+        "created_at": datetime.utcnow().isoformat(),
+        "updated_at": datetime.utcnow().isoformat()
+    }
+
+    subscriptions[preferences.user_id] = subscription_record
+    logger.info(f"Subscription created/updated: user={preferences.user_id}")
+
+    return {
+        "success": True,
+        "message": "Subscription preferences saved successfully",
+        "data": subscription_record
+    }
+
+
+@app.get("/api/v1/subscriptions/{user_id}", response_model=Dict[str, Any])
+async def get_subscription(user_id: str = Path(..., description="User ID")):
+    """Get notification preferences for a user."""
+    if user_id not in subscriptions:
         return {
             "success": True,
-            "data": result.model_dump()
+            "data": {
+                "user_id": user_id,
+                "email_enabled": True,
+                "sms_enabled": True,
+                "push_enabled": True,
+                "marketing_enabled": False,
+                "quiet_hours_start": None,
+                "quiet_hours_end": None,
+                "preferred_channels": []
+            }
         }
 
-    except Exception as e:
-        logger.error(f"Timing optimization failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Timing optimization failed: {str(e)}")
+    return {
+        "success": True,
+        "data": subscriptions[user_id]
+    }
 
 
-@app.post("/segment-users")
-async def segment_users(request: SegmentUsersRequest):
-    """
-    Segment users for targeted notification campaigns.
-
-    Creates segments based on:
-    - Purchase behavior (RFM analysis)
-    - Engagement patterns
-    - User preferences
-    - Demographic data
-    """
-    try:
-        results = await user_segmenter.segment(
-            users=request.users,
-            campaign_type=request.campaign_type,
-            target_segments=request.target_segments,
-            min_segment_size=request.min_segment_size
-        )
-
-        return {
-            "success": True,
-            "total_segments": len(results),
-            "data": [r.model_dump() for r in results]
+@app.post("/api/v1/subscriptions/{user_id}/unsubscribe", response_model=Dict[str, Any])
+async def unsubscribe(
+    user_id: str = Path(..., description="User ID"),
+    channels: Optional[List[NotificationChannel]] = None
+):
+    """Unsubscribe user from specific channels or all."""
+    if user_id not in subscriptions:
+        subscriptions[user_id] = {
+            "user_id": user_id,
+            "email_enabled": True,
+            "sms_enabled": True,
+            "push_enabled": True,
+            "marketing_enabled": False
         }
 
-    except Exception as e:
-        logger.error(f"User segmentation failed: {e}")
-        raise HTTPException(status_code=500, detail=f"User segmentation failed: {str(e)}")
+    sub = subscriptions[user_id]
 
+    if channels:
+        for channel in channels:
+            if channel == NotificationChannel.EMAIL:
+                sub["email_enabled"] = False
+            elif channel == NotificationChannel.SMS:
+                sub["sms_enabled"] = False
+            elif channel == NotificationChannel.PUSH:
+                sub["push_enabled"] = False
+    else:
+        sub["email_enabled"] = False
+        sub["sms_enabled"] = False
+        sub["push_enabled"] = False
+        sub["marketing_enabled"] = False
+
+    sub["updated_at"] = datetime.utcnow().isoformat()
+
+    logger.info(f"User unsubscribed: {user_id}, channels: {channels}")
+
+    return {
+        "success": True,
+        "message": "Unsubscribed successfully",
+        "data": sub
+    }
+
+
+# ============================================
+# Analytics Endpoints
+# ============================================
+
+@app.get("/api/v1/analytics/summary", response_model=Dict[str, Any])
+async def get_analytics_summary(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+    """Get notification analytics summary."""
+    all_notifications = list(notifications.values())
+
+    by_channel = {}
+    by_status = {}
+    by_type = {}
+
+    for n in all_notifications:
+        channel = n.get("channel", "unknown")
+        by_channel[channel] = by_channel.get(channel, 0) + 1
+
+        status_val = n.get("status", "unknown")
+        by_status[status_val] = by_status.get(status_val, 0) + 1
+
+        ntype = n.get("notification_type", "unknown")
+        by_type[ntype] = by_type.get(ntype, 0) + 1
+
+    sent_count = by_status.get(NotificationStatus.SENT.value, 0) + by_status.get(NotificationStatus.DELIVERED.value, 0)
+    failed_count = by_status.get(NotificationStatus.FAILED.value, 0) + by_status.get(NotificationStatus.BOUNCED.value, 0)
+    total = len(all_notifications)
+
+    delivery_rate = (sent_count / total * 100) if total > 0 else 0
+
+    return {
+        "success": True,
+        "data": {
+            "total_notifications": total,
+            "by_channel": by_channel,
+            "by_status": by_status,
+            "by_type": by_type,
+            "delivery_rate": round(delivery_rate, 2),
+            "sent_count": sent_count,
+            "failed_count": failed_count
+        }
+    }
+
+
+# ============================================
+# Root Endpoint
+# ============================================
 
 @app.get("/")
 async def root():
-    """Root endpoint with service information."""
+    """Root endpoint with service information"""
     return {
-        "service": "CitadelBuy Notification AI Service",
+        "service": "CitadelBuy Notification Service",
         "version": "1.0.0",
-        "description": "AI-powered notification personalization, timing optimization, and user segmentation",
+        "description": "Multi-channel notification service for email, SMS, and push notifications",
         "endpoints": {
             "health": "/health",
-            "personalize": "/personalize-notification",
-            "optimize_timing": "/optimize-timing",
-            "segment_users": "/segment-users",
+            "email": "/api/v1/notifications/email",
+            "sms": "/api/v1/notifications/sms",
+            "push": "/api/v1/notifications/push",
+            "bulk": "/api/v1/notifications/bulk",
+            "templates": "/api/v1/templates",
+            "subscriptions": "/api/v1/subscriptions",
+            "analytics": "/api/v1/analytics/summary",
             "docs": "/docs"
         }
     }
+
+
+# ============================================
+# Helper Functions
+# ============================================
+
+def _initialize_sample_templates():
+    """Initialize sample notification templates."""
+    global templates
+
+    sample_templates = [
+        {
+            "id": "order-confirmation",
+            "name": "Order Confirmation",
+            "channel": NotificationChannel.EMAIL.value,
+            "subject": "Your Order #{order_id} has been confirmed",
+            "body": "Hello {customer_name},\n\nYour order #{order_id} has been confirmed. Total: ${total}",
+            "html_body": "<h1>Order Confirmed</h1><p>Hello {customer_name},</p><p>Your order #{order_id} has been confirmed.</p>",
+            "variables": ["customer_name", "order_id", "total"],
+            "is_active": True,
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat()
+        },
+        {
+            "id": "shipping-update",
+            "name": "Shipping Update",
+            "channel": NotificationChannel.SMS.value,
+            "subject": None,
+            "body": "Your order #{order_id} has shipped! Track: {tracking_url}",
+            "html_body": None,
+            "variables": ["order_id", "tracking_url"],
+            "is_active": True,
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat()
+        },
+        {
+            "id": "welcome",
+            "name": "Welcome Email",
+            "channel": NotificationChannel.EMAIL.value,
+            "subject": "Welcome to CitadelBuy!",
+            "body": "Hello {customer_name},\n\nWelcome to CitadelBuy! We're excited to have you.",
+            "html_body": "<h1>Welcome!</h1><p>Hello {customer_name},</p><p>We're excited to have you!</p>",
+            "variables": ["customer_name"],
+            "is_active": True,
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat()
+        }
+    ]
+
+    for template in sample_templates:
+        templates[template["id"]] = template
+
+
+def _process_template(template: str, data: Dict[str, Any]) -> str:
+    """Process template by replacing variables with data."""
+    result = template
+    for key, value in data.items():
+        result = result.replace("{" + key + "}", str(value))
+    return result
+
+
+async def _simulate_send_notification(notification_id: str):
+    """Simulate sending a notification."""
+    import asyncio
+    import random
+    await asyncio.sleep(1)
+
+    if notification_id in notifications:
+        n = notifications[notification_id]
+        n["status"] = NotificationStatus.SENT.value
+        n["sent_at"] = datetime.utcnow().isoformat()
+
+        if random.random() < 0.8:
+            await asyncio.sleep(0.5)
+            n["status"] = NotificationStatus.DELIVERED.value
+            n["delivered_at"] = datetime.utcnow().isoformat()
+        else:
+            n["status"] = NotificationStatus.FAILED.value
+            n["error"] = "Delivery failed - simulated error"
+
+        logger.info(f"Notification {notification_id} processed: status={n['status']}")
+
+
+async def _process_bulk_notifications(batch_id: str, notification_ids: List[str]):
+    """Process bulk notifications in background."""
+    import asyncio
+    for nid in notification_ids:
+        if nid in notifications:
+            notifications[nid]["status"] = NotificationStatus.QUEUED.value
+            await asyncio.sleep(0.1)
+            await _simulate_send_notification(nid)
+
+    logger.info(f"Bulk notification batch {batch_id} completed")
 
 
 if __name__ == "__main__":

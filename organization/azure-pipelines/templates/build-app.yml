@@ -46,7 +46,6 @@ steps:
       tags: |
         $(Build.BuildId)
         $(Build.SourceVersion)
-        latest
       arguments: |
         --build-arg NODE_ENV=production
         --build-arg BUILD_DATE=$(Build.BuildId)
@@ -66,7 +65,6 @@ steps:
       tags: |
         $(Build.BuildId)
         $(Build.SourceVersion)
-        latest
 
   - task: Docker@2
     displayName: 'Tag with short SHA'
@@ -81,7 +79,7 @@ steps:
   - script: |
       echo "Docker image built and pushed successfully!"
       echo "Image: $(AZURE_CONTAINER_REGISTRY)/${{ parameters.imageName }}:$(Build.BuildId)"
-      echo "Tags: $(Build.BuildId), $(Build.SourceVersion), latest"
+      echo "Tags: $(Build.BuildId), $(Build.SourceVersion)"
     displayName: 'Build summary'
 
   - task: PublishPipelineArtifact@1

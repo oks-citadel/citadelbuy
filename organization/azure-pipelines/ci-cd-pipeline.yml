@@ -214,7 +214,6 @@ stages:
               tags: |
                 $(SHA_TAG)
                 $(BRANCH_TAG)
-                latest
               arguments: '--build-arg NODE_ENV=production'
 
           - task: Docker@2
@@ -228,7 +227,6 @@ stages:
               tags: |
                 $(SHA_TAG)
                 $(BRANCH_TAG)
-                latest
               arguments: |
                 --build-arg NODE_ENV=production
                 --build-arg NEXT_PUBLIC_API_URL=$(API_URL)

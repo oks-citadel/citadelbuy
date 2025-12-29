@@ -1,0 +1,38 @@
+# ==========================================
+# Template: Setup Node.js and pnpm
+# Reusable template for Node.js setup
+# ==========================================
+
+parameters:
+  - name: nodeVersion
+    type: string
+    default: '20.x'
+  - name: pnpmVersion
+    type: string
+    default: '10.23.0'
+  - name: enableCache
+    type: boolean
+    default: true
+
+steps:
+  - task: NodeTool@0
+    displayName: 'Install Node.js ${{ parameters.nodeVersion }}'
+    inputs:
+      versionSpec: ${{ parameters.nodeVersion }}
+
+  - script: |
+      npm install -g pnpm@${{ parameters.pnpmVersion }}
+      pnpm config set store-dir $(Pipeline.Workspace)/.pnpm-store
+    displayName: 'Setup pnpm ${{ parameters.pnpmVersion }}'
+
+  - ${{ if eq(parameters.enableCache, true) }}:
+    - task: Cache@2
+      displayName: 'Cache pnpm dependencies'
+      inputs:
+        key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
+        path: $(Pipeline.Workspace)/.pnpm-store
+        restoreKeys: |
+          pnpm | "$(Agent.OS)"
+
+  - script: pnpm install --frozen-lockfile
+    displayName: 'Install Dependencies'

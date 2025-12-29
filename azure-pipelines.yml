@@ -307,23 +307,20 @@ stages:
 
           - script: |
               cd $(ORGANIZATION_PATH)
-              pnpm build || true
+              pnpm build
             displayName: 'Build all packages'
-            continueOnError: true
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish API build'
             inputs:
               targetPath: '$(ORGANIZATION_PATH)/apps/api/dist'
               artifact: 'api-build'
-            continueOnError: true
 
           - task: PublishPipelineArtifact@1
             displayName: 'Publish Web build'
             inputs:
               targetPath: '$(ORGANIZATION_PATH)/apps/web/.next'
               artifact: 'web-build'
-            continueOnError: true
 
   # ============================================
   # STAGE 4: Build Docker Images
@@ -343,7 +340,6 @@ stages:
             inputs:
               command: 'login'
               containerRegistry: 'AzureContainerRegistry'
-            continueOnError: true
 
           - bash: |
               SHA=$(echo $(Build.SourceVersion) | cut -c1-7)
@@ -364,8 +360,6 @@ stages:
               tags: |
                 $(IMAGE_TAG)
                 $(BRANCH_TAG)
-                latest
-            continueOnError: true
 
           - task: Docker@2
             displayName: 'Build Web image'
@@ -378,8 +372,6 @@ stages:
               tags: |
                 $(IMAGE_TAG)
                 $(BRANCH_TAG)
-                latest
-            continueOnError: true
 
       - job: BuildMicroservices
         displayName: 'Build Python Microservices'
@@ -406,7 +398,6 @@ stages:
             inputs:
               command: 'login'
               containerRegistry: 'AzureContainerRegistry'
-            continueOnError: true
 
           - bash: |
               SHA=$(echo $(Build.SourceVersion) | cut -c1-7)
@@ -423,8 +414,6 @@ stages:
               buildContext: '$(SERVICE_PATH)'
               tags: |
                 $(IMAGE_TAG)
-                latest
-            continueOnError: true
 
   # ============================================
   # STAGE 5: Deploy to Staging
@@ -454,34 +443,31 @@ stages:
                         --resource-group citadelbuy-staging-rg \
                         --name citadelbuy-staging-aks \
                         --overwrite-existing
-                  continueOnError: true
 
                 - bash: |
                     SHA=$(echo $(Build.SourceVersion) | cut -c1-7)
 
                     # Apply Kubernetes manifests
-                    kubectl apply -f $(ORGANIZATION_PATH)/infrastructure/kubernetes/staging/ || true
+                    kubectl apply -f $(ORGANIZATION_PATH)/infrastructure/kubernetes/staging/
 
                     # Update deployments with new images
                     kubectl set image deployment/api \
                       api=$(AZURE_CONTAINER_REGISTRY)/citadelbuy-api:$SHA \
-                      -n citadelbuy-staging || true
+                      -n citadelbuy-staging
 
                     kubectl set image deployment/web \
                       web=$(AZURE_CONTAINER_REGISTRY)/citadelbuy-web:$SHA \
-                      -n citadelbuy-staging || true
+                      -n citadelbuy-staging
 
                     # Wait for rollout
-                    kubectl rollout status deployment/api -n citadelbuy-staging --timeout=300s || true
-                    kubectl rollout status deployment/web -n citadelbuy-staging --timeout=300s || true
+                    kubectl rollout status deployment/api -n citadelbuy-staging --timeout=300s
+                    kubectl rollout status deployment/web -n citadelbuy-staging --timeout=300s
                   displayName: 'Deploy to Kubernetes'
-                  continueOnError: true
 
                 - bash: |
                     echo "Verifying staging deployment..."
-                    curl -sf https://staging.citadelbuy.com/api/health || echo "Health check skipped"
+                    curl -sf https://staging.citadelbuy.com/api/health
                   displayName: 'Verify Deployment'
-                  continueOnError: true
 
   # ============================================
   # STAGE 6: Deploy to Production
@@ -511,38 +497,35 @@ stages:
                         --resource-group citadelbuy-prod-rg \
                         --name citadelbuy-prod-aks \
                         --overwrite-existing
-                  continueOnError: true
 
                 - bash: |
                     SHA=$(echo $(Build.SourceVersion) | cut -c1-7)
 
                     # Apply Kubernetes manifests
-                    kubectl apply -f $(ORGANIZATION_PATH)/infrastructure/kubernetes/production/ || true
+                    kubectl apply -f $(ORGANIZATION_PATH)/infrastructure/kubernetes/production/
 
                     # Blue-Green deployment
                     kubectl set image deployment/api-green \
                       api=$(AZURE_CONTAINER_REGISTRY)/citadelbuy-api:$SHA \
-                      -n citadelbuy-prod || true
+                      -n citadelbuy-prod
 
                     kubectl set image deployment/web-green \
                       web=$(AZURE_CONTAINER_REGISTRY)/citadelbuy-web:$SHA \
-                      -n citadelbuy-prod || true
+                      -n citadelbuy-prod
 
                     # Wait for green deployment
-                    kubectl rollout status deployment/api-green -n citadelbuy-prod --timeout=300s || true
-                    kubectl rollout status deployment/web-green -n citadelbuy-prod --timeout=300s || true
+                    kubectl rollout status deployment/api-green -n citadelbuy-prod --timeout=300s
+                    kubectl rollout status deployment/web-green -n citadelbuy-prod --timeout=300s
 
                     # Switch traffic to green
                     kubectl patch service api-service -n citadelbuy-prod \
-                      -p '{"spec":{"selector":{"app":"api-green"}}}' || true
+                      -p '{"spec":{"selector":{"app":"api-green"}}}'
                     kubectl patch service web-service -n citadelbuy-prod \
-                      -p '{"spec":{"selector":{"app":"web-green"}}}' || true
+                      -p '{"spec":{"selector":{"app":"web-green"}}}'
                   displayName: 'Blue-Green Deployment'
-                  continueOnError: true
 
                 - bash: |
                     echo "Verifying production deployment..."
                     sleep 30
-                    curl -sf https://citadelbuy.com/api/health || echo "Health check skipped"
+                    curl -sf https://citadelbuy.com/api/health
                   displayName: 'Verify Production'
-                  continueOnError: true

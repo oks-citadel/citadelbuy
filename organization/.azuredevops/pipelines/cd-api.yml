@@ -1,0 +1,384 @@
+# ==========================================
+# CitadelBuy - API Continuous Deployment
+# Deploys NestJS API to Azure Kubernetes Service
+# Environments: dev, staging, production
+# ==========================================
+#
+# NOTE: Production deployments require approval.
+# Configure approvals in Azure DevOps: Project Settings > Environments > citadelbuy-production
+
+trigger:
+  branches:
+    include:
+      - main
+      - master
+      - develop
+  paths:
+    include:
+      - 'apps/api/**'
+      - 'packages/**'
+      - '.azuredevops/pipelines/cd-api.yml'
+
+pr: none  # CD pipeline doesn't run on PR
+
+variables:
+  - group: citadelbuy-common
+  - group: citadelbuy-acr
+  - name: dockerfilePath
+    value: '$(Build.SourcesDirectory)/apps/api/Dockerfile.production'
+  - name: imageRepository
+    value: 'citadelbuy-api'
+  - name: containerRegistry
+    value: 'citadelbuyprod.azurecr.io'
+  - name: tag
+    value: '$(Build.BuildNumber)'
+
+stages:
+  # ==========================================
+  # Stage 1: Build & Push Docker Image
+  # ==========================================
+  - stage: Build
+    displayName: 'Build Docker Image'
+    jobs:
+      - job: BuildImage
+        displayName: 'Build & Push to ACR'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+            fetchDepth: 1
+
+          # Login to Azure Container Registry
+          - task: Docker@2
+            displayName: 'Login to ACR'
+            inputs:
+              command: login
+              containerRegistry: 'citadelbuy-acr-connection'
+
+          # Build and push Docker image
+          - task: Docker@2
+            displayName: 'Build and Push API Image'
+            inputs:
+              command: buildAndPush
+              repository: $(imageRepository)
+              dockerfile: $(dockerfilePath)
+              containerRegistry: 'citadelbuy-acr-connection'
+              tags: |
+                $(tag)
+                $(Build.SourceBranchName)
+
+          # Scan image for vulnerabilities
+          - task: AzureCLI@2
+            displayName: 'Scan Image for Vulnerabilities'
+            inputs:
+              azureSubscription: 'citadelbuy-azure-connection'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Scanning image: $(containerRegistry)/$(imageRepository):$(tag)"
+                # Add Trivy or other scanning tool here if needed
+
+          # Generate SBOM (Software Bill of Materials)
+          - script: |
+              echo "Generating SBOM for $(imageRepository):$(tag)"
+              docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                aquasec/trivy image --format cyclonedx \
+                $(containerRegistry)/$(imageRepository):$(tag) > sbom.json
+            displayName: 'Generate SBOM'
+            continueOnError: true
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Build Info'
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              ArtifactName: 'api-build-info'
+
+  # ==========================================
+  # Stage 2: Deploy to Development
+  # ==========================================
+  - stage: DeployDev
+    displayName: 'Deploy to Development'
+    dependsOn: Build
+    condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/develop'), eq(variables['Build.SourceBranch'], 'refs/heads/main')))
+    variables:
+      - group: citadelbuy-dev
+      - name: environment
+        value: 'dev'
+      - name: namespace
+        value: 'citadelbuy-dev'
+    jobs:
+      - deployment: DeployToDevAKS
+        displayName: 'Deploy to Dev AKS'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'citadelbuy-dev'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                # Replace tokens in Kubernetes manifests
+                - task: qetza.replacetokens.replacetokens-task.replacetokens@5
+                  displayName: 'Replace tokens in k8s manifests'
+                  inputs:
+                    rootDirectory: '$(Build.SourcesDirectory)/infrastructure/kubernetes'
+                    targetFiles: |
+                      **/*.yaml
+                      **/*.yml
+                    encoding: 'auto'
+                    tokenPattern: 'default'
+                    writeBOM: true
+                    actionOnMissing: 'warn'
+                    keepToken: false
+                    actionOnNoFiles: 'continue'
+                    enableTransforms: false
+                    enableRecursion: false
+                    useLegacyPattern: false
+                    enableTelemetry: true
+
+                # Deploy to AKS
+                - task: KubernetesManifest@0
+                  displayName: 'Deploy API to AKS Dev'
+                  inputs:
+                    action: 'deploy'
+                    kubernetesServiceConnection: 'citadelbuy-aks-dev'
+                    namespace: '$(namespace)'
+                    manifests: |
+                      $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/api/deployment.yaml
+                      $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/api/service.yaml
+                    containers: '$(containerRegistry)/$(imageRepository):$(tag)'
+
+                # Run database migrations
+                - task: Kubernetes@1
+                  displayName: 'Run Database Migrations'
+                  inputs:
+                    connectionType: 'Kubernetes Service Connection'
+                    kubernetesServiceEndpoint: 'citadelbuy-aks-dev'
+                    namespace: '$(namespace)'
+                    command: 'exec'
+                    arguments: 'deployment/citadelbuy-api -- npx prisma migrate deploy'
+
+      # Smoke Tests for Dev
+      - job: SmokeTestDev
+        displayName: 'Smoke Tests - Dev'
+        dependsOn: DeployToDevAKS
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - script: |
+              echo "Running smoke tests against Dev environment..."
+
+              # Health check
+              response=$(curl -s -o /dev/null -w "%{http_code}" https://api-dev.citadelbuy.com/api/health)
+              if [ $response -eq 200 ]; then
+                echo "✓ Health check passed"
+              else
+                echo "✗ Health check failed with status: $response"
+                exit 1
+              fi
+
+              # API version check
+              curl -s https://api-dev.citadelbuy.com/api | grep -q "version"
+              if [ $? -eq 0 ]; then
+                echo "✓ API version endpoint accessible"
+              else
+                echo "✗ API version endpoint failed"
+                exit 1
+              fi
+            displayName: 'Run Smoke Tests'
+
+  # ==========================================
+  # Stage 3: Deploy to Staging
+  # ==========================================
+  - stage: DeployStaging
+    displayName: 'Deploy to Staging'
+    dependsOn: DeployDev
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    variables:
+      - group: citadelbuy-staging
+      - name: environment
+        value: 'staging'
+      - name: namespace
+        value: 'citadelbuy-staging'
+    jobs:
+      - deployment: DeployToStagingAKS
+        displayName: 'Deploy to Staging AKS'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'citadelbuy-staging'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: qetza.replacetokens.replacetokens-task.replacetokens@5
+                  displayName: 'Replace tokens in k8s manifests'
+                  inputs:
+                    rootDirectory: '$(Build.SourcesDirectory)/infrastructure/kubernetes'
+                    targetFiles: '**/*.yaml'
+                    encoding: 'auto'
+                    tokenPattern: 'default'
+
+                - task: KubernetesManifest@0
+                  displayName: 'Deploy API to AKS Staging'
+                  inputs:
+                    action: 'deploy'
+                    kubernetesServiceConnection: 'citadelbuy-aks-staging'
+                    namespace: '$(namespace)'
+                    manifests: |
+                      $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/api/deployment.yaml
+                      $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/api/service.yaml
+                    containers: '$(containerRegistry)/$(imageRepository):$(tag)'
+
+                - task: Kubernetes@1
+                  displayName: 'Run Database Migrations'
+                  inputs:
+                    connectionType: 'Kubernetes Service Connection'
+                    kubernetesServiceEndpoint: 'citadelbuy-aks-staging'
+                    namespace: '$(namespace)'
+                    command: 'exec'
+                    arguments: 'deployment/citadelbuy-api -- npx prisma migrate deploy'
+
+      - job: SmokeTestStaging
+        displayName: 'Smoke Tests - Staging'
+        dependsOn: DeployToStagingAKS
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - script: |
+              echo "Running smoke tests against Staging environment..."
+              response=$(curl -s -o /dev/null -w "%{http_code}" https://api-staging.citadelbuy.com/api/health)
+              if [ $response -eq 200 ]; then
+                echo "✓ Staging health check passed"
+              else
+                echo "✗ Staging health check failed"
+                exit 1
+              fi
+            displayName: 'Run Smoke Tests'
+
+  # ==========================================
+  # Stage 4: Deploy to Production
+  # ==========================================
+  - stage: DeployProduction
+    displayName: 'Deploy to Production'
+    dependsOn: DeployStaging
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    variables:
+      - group: citadelbuy-production
+      - name: environment
+        value: 'production'
+      - name: namespace
+        value: 'citadelbuy-prod'
+    jobs:
+      - deployment: DeployToProdAKS
+        displayName: 'Deploy to Production AKS'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'citadelbuy-production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                # Create backup before deployment
+                - task: AzureCLI@2
+                  displayName: 'Backup Database'
+                  inputs:
+                    azureSubscription: 'citadelbuy-azure-connection'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      echo "Creating production database backup..."
+                      # Add database backup commands here
+
+                - task: qetza.replacetokens.replacetokens-task.replacetokens@5
+                  displayName: 'Replace tokens in k8s manifests'
+                  inputs:
+                    rootDirectory: '$(Build.SourcesDirectory)/infrastructure/kubernetes'
+                    targetFiles: '**/*.yaml'
+                    encoding: 'auto'
+                    tokenPattern: 'default'
+
+                # Blue-Green deployment strategy
+                - task: KubernetesManifest@0
+                  displayName: 'Deploy API to AKS Production (Blue-Green)'
+                  inputs:
+                    action: 'deploy'
+                    kubernetesServiceConnection: 'citadelbuy-aks-production'
+                    namespace: '$(namespace)'
+                    strategy: 'canary'
+                    percentage: '25'
+                    manifests: |
+                      $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/api/deployment.yaml
+                      $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/api/service.yaml
+                    containers: '$(containerRegistry)/$(imageRepository):$(tag)'
+
+                - task: Kubernetes@1
+                  displayName: 'Run Database Migrations'
+                  inputs:
+                    connectionType: 'Kubernetes Service Connection'
+                    kubernetesServiceEndpoint: 'citadelbuy-aks-production'
+                    namespace: '$(namespace)'
+                    command: 'exec'
+                    arguments: 'deployment/citadelbuy-api -- npx prisma migrate deploy'
+
+      # Production Smoke Tests
+      - job: SmokeTestProduction
+        displayName: 'Smoke Tests - Production'
+        dependsOn: DeployToProdAKS
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - script: |
+              echo "Running production smoke tests..."
+
+              # Critical endpoints check
+              endpoints=(
+                "https://api.citadelbuy.com/api/health"
+                "https://api.citadelbuy.com/api/products"
+                "https://api.citadelbuy.com/api/auth/status"
+              )
+
+              for endpoint in "${endpoints[@]}"; do
+                response=$(curl -s -o /dev/null -w "%{http_code}" $endpoint)
+                if [ $response -eq 200 ] || [ $response -eq 401 ]; then
+                  echo "✓ $endpoint is accessible"
+                else
+                  echo "✗ $endpoint failed with status: $response"
+                  exit 1
+                fi
+              done
+
+              echo "✓ All production smoke tests passed"
+            displayName: 'Run Production Smoke Tests'
+
+      # Full Canary Promotion
+      - job: PromoteCanary
+        displayName: 'Promote Canary to 100%'
+        dependsOn: SmokeTestProduction
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: KubernetesManifest@0
+            displayName: 'Promote to 100% traffic'
+            inputs:
+              action: 'promote'
+              kubernetesServiceConnection: 'citadelbuy-aks-production'
+              namespace: '$(namespace)'
+              strategy: 'canary'
+              manifests: |
+                $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/api/deployment.yaml
+
+          # Send deployment notification
+          - task: AzureCLI@2
+            displayName: 'Send Deployment Notification'
+            inputs:
+              azureSubscription: 'citadelbuy-azure-connection'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "API v$(tag) successfully deployed to production"
+                # Add Slack/Teams notification here

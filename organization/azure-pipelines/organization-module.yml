@@ -251,7 +251,6 @@ stages:
               buildContext: '$(System.DefaultWorkingDirectory)/apps/api'
               tags: |
                 $(BRANCH_TAG)-$(SHA_TAG)
-                latest
               arguments: |
                 --build-arg NODE_ENV=production
                 --build-arg BUILD_DATE=$(Build.BuildNumber)
