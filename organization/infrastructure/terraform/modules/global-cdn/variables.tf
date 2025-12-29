@@ -88,6 +88,16 @@ variable "rate_limit_threshold" {
   default     = 1000
 }
 
+# SECURITY: IP ranges for rate limiting
+# Note: For rate limiting, matching all IPs (0.0.0.0/0) is a protective measure,
+# not a permissive one. It ensures all traffic is subject to rate limits.
+# Only customize this if you want to exempt certain IPs from rate limiting.
+variable "rate_limit_ip_ranges" {
+  description = "IP ranges to apply rate limiting to. Default matches all traffic for protection."
+  type        = list(string)
+  default     = ["0.0.0.0/0"]  # Match all traffic for rate limiting (protective)
+}
+
 variable "enable_geo_blocking" {
   description = "Enable geographic blocking based on allowed countries"
   type        = bool

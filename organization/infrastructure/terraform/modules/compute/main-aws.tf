@@ -115,11 +115,18 @@ resource "aws_security_group" "eks_cluster" {
   description = "Security group for EKS cluster"
   vpc_id      = var.vpc_id
 
+  # SECURITY: Egress rule for EKS cluster communication
+  # Note: 0.0.0.0/0 egress is typically required for EKS to:
+  # - Pull container images from ECR/external registries
+  # - Communicate with AWS APIs
+  # - Download packages during builds
+  # For stricter security, use VPC endpoints and restrict to specific destinations.
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.eks_egress_cidr_blocks
+    description = "Allow outbound traffic - customize via var.eks_egress_cidr_blocks"
   }
 
   tags = merge(

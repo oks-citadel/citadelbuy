@@ -286,11 +286,14 @@ resource "aws_security_group" "vpc_endpoints" {
     description = "HTTPS from VPC"
   }
 
+  # SECURITY: VPC endpoints typically don't need egress, but allowing for
+  # flexibility. Consider restricting to VPC CIDR only.
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.vpc_cidr]
+    description = "Allow outbound to VPC only"
   }
 
   tags = merge(
@@ -310,27 +313,33 @@ resource "aws_security_group" "alb" {
   description = "Security group for Application Load Balancer"
   vpc_id      = aws_vpc.main[0].id
 
+  # SECURITY: ALB ingress rules for public-facing load balancer
+  # These rules allow HTTP/HTTPS from the internet by design.
+  # For internal-only ALBs, restrict to specific CIDR blocks.
+  # Use var.alb_ingress_cidr_blocks to customize allowed sources.
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "HTTP from internet"
+    cidr_blocks = var.alb_ingress_cidr_blocks
+    description = "HTTP from allowed sources"
   }
 
   ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "HTTPS from internet"
+    cidr_blocks = var.alb_ingress_cidr_blocks
+    description = "HTTPS from allowed sources"
   }
 
+  # SECURITY: ALB needs egress to forward traffic to targets
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.vpc_cidr]
+    description = "Allow outbound to VPC targets"
   }
 
   tags = merge(
@@ -366,11 +375,14 @@ resource "aws_security_group" "app" {
     description = "All TCP from self"
   }
 
+  # SECURITY: Application egress - required for external API calls,
+  # package downloads, etc. Consider using VPC endpoints to reduce exposure.
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.app_egress_cidr_blocks
+    description = "Outbound traffic - customize via var.app_egress_cidr_blocks"
   }
 
   tags = merge(

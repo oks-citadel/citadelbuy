@@ -35,11 +35,6 @@ interface RegisterData {
   phone?: string;
 }
 
-interface AuthResponse {
-  user: User;
-  accessToken: string;
-  refreshToken: string;
-}
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -157,7 +152,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      verifyEmail: async (token: string) => {
+      verifyEmail: async (_token: string) => {
         set({ isLoading: true, error: null });
         try {
           // Verify email endpoint

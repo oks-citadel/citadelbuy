@@ -254,8 +254,8 @@ export default function AdminMarketingPage() {
                         {campaign.type === 'Social Media'
                           ? campaign.conversions
                           : campaign.type === 'Email'
-                          ? `${((campaign.clicked / campaign.opened) * 100).toFixed(1)}%`
-                          : `${((campaign.clicked / campaign.opened) * 100).toFixed(1)}%`
+                          ? `${(((campaign.clicked ?? 0) / (campaign.opened || 1)) * 100).toFixed(1)}%`
+                          : `${(((campaign.clicked ?? 0) / (campaign.opened || 1)) * 100).toFixed(1)}%`
                         }
                       </p>
                     </div>

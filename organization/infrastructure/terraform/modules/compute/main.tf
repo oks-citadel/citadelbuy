@@ -37,12 +37,24 @@ resource "azurerm_container_registry" "main" {
   }
 
   # Network rules
+  # SECURITY: ACR network access is restricted to specific IP ranges and subnets.
+  # Default action is Deny - only explicitly allowed sources can access the registry.
+  # Configure var.acr_allowed_ip_ranges per environment (avoid 0.0.0.0/0 in production).
   network_rule_set {
     default_action = "Deny"
 
-    ip_rule {
-      action   = "Allow"
-      ip_range = "0.0.0.0/0"  # Will be restricted in production
+    # Dynamic IP rules - allow access from configured IP ranges
+    # SECURITY WARNING: Overly permissive IP ranges (e.g., 0.0.0.0/0) expose the
+    # container registry to the public internet. Use restrictive ranges:
+    # - Internal networks: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+    # - Office/VPN IPs: specific public IPs of your organization
+    # - CI/CD runners: specific IPs of your build agents
+    dynamic "ip_rule" {
+      for_each = var.acr_allowed_ip_ranges
+      content {
+        action   = "Allow"
+        ip_range = ip_rule.value
+      }
     }
 
     dynamic "virtual_network" {
@@ -307,6 +319,8 @@ resource "azurerm_linux_web_app" "api" {
       docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
     }
 
+    # SECURITY: Only allow traffic from Azure Front Door with specific header validation.
+    # This ensures all traffic flows through the WAF for protection.
     ip_restriction {
       name       = "FrontDoor"
       priority   = 100
@@ -317,11 +331,14 @@ resource "azurerm_linux_web_app" "api" {
       }
     }
 
+    # SECURITY: Default deny rule - blocks all direct access to the App Service.
+    # Traffic must flow through Front Door for WAF protection and SSL termination.
+    # Using "Any" instead of "0.0.0.0/0" for clarity in deny rules.
     ip_restriction {
       name       = "DenyAll"
       priority   = 1000
       action     = "Deny"
-      ip_address = "0.0.0.0/0"
+      ip_address = "Any"
     }
   }
 

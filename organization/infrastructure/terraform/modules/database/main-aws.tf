@@ -34,11 +34,16 @@ resource "aws_security_group" "rds" {
     description     = "PostgreSQL access from application"
   }
 
+  # SECURITY: Egress from RDS is rarely needed but may be required for:
+  # - Database replication
+  # - External service connections (avoid if possible)
+  # Consider restricting to specific destinations if egress is needed.
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.database_egress_cidr_blocks
+    description = "Outbound traffic - restrict in production"
   }
 
   tags = merge(
@@ -268,11 +273,14 @@ resource "aws_security_group" "redis" {
     description     = "Redis access from application"
   }
 
+  # SECURITY: ElastiCache typically doesn't need outbound access.
+  # This rule allows cluster communication; restrict further if possible.
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.database_egress_cidr_blocks
+    description = "Outbound traffic - restrict in production"
   }
 
   tags = merge(

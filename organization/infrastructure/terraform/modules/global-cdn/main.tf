@@ -111,6 +111,11 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "main" {
   }
 
   # Custom Rules
+  # SECURITY: Rate limiting rule applies to all traffic to prevent abuse.
+  # This is intentionally broad (all IPs) to provide DDoS protection.
+  # The rate_limit_threshold controls how many requests per minute are allowed.
+  # Note: 0.0.0.0/0 in a WAF rule is different from firewall rules -
+  # it means "match all traffic" for rate limiting, not "allow all traffic".
   custom_rule {
     name     = "RateLimitRule"
     enabled  = true
@@ -125,7 +130,8 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "main" {
       match_variable     = "RemoteAddr"
       operator           = "IPMatch"
       negation_condition = false
-      match_values       = ["0.0.0.0/0"]
+      # Match all IPs for rate limiting - this is security protective, not permissive
+      match_values       = var.rate_limit_ip_ranges
     }
   }
 

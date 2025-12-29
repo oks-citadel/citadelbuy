@@ -58,10 +58,30 @@ variable "aks_admin_group_ids" {
 # ============================================
 # Network Configuration
 # ============================================
+# SECURITY: Allowed IP ranges for development environment
+# Note: Even in dev, avoid 0.0.0.0/0 to prevent accidental exposure.
+# Use office IPs, VPN ranges, or developer home IPs.
 variable "allowed_ip_ranges" {
-  description = "Allowed IP ranges for accessing resources"
+  description = "Allowed IP ranges for accessing resources. Avoid 0.0.0.0/0."
   type        = list(string)
-  default     = ["0.0.0.0/0"] # Wide open for dev - restrict in production
+  default     = [
+    "10.0.0.0/8",        # Internal RFC1918 networks
+    "172.16.0.0/12",     # Internal RFC1918 networks
+    "192.168.0.0/16"     # Internal RFC1918 networks
+    # Add your office/VPN IPs here, e.g.:
+    # "203.0.113.0/24",  # Example office IP range
+  ]
+}
+
+# SECURITY: ACR-specific IP ranges for development
+# These IPs can access the container registry.
+variable "acr_allowed_ip_ranges" {
+  description = "IP ranges allowed to access ACR. Restrict to known sources."
+  type        = list(string)
+  default     = [
+    "10.0.0.0/8"         # Internal networks only by default
+    # Add CI/CD runner IPs and developer IPs as needed
+  ]
 }
 
 # ============================================

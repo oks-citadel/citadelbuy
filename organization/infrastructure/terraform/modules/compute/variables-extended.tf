@@ -75,3 +75,17 @@ variable "log_retention_days" {
   type        = number
   default     = 7
 }
+# ============================================
+# Security - Network Access Control
+# ============================================
+# SECURITY: EKS cluster egress CIDR blocks
+# Default allows all outbound which is often needed for:
+# - Container image pulls
+# - AWS API access
+# - Package downloads
+# For stricter security, use VPC endpoints and restrict ranges.
+variable "eks_egress_cidr_blocks" {
+  description = "CIDR blocks for EKS cluster egress. Use restrictive ranges in production."
+  type        = list(string)
+  default     = ["0.0.0.0/0"]  # Required for most EKS operations
+}

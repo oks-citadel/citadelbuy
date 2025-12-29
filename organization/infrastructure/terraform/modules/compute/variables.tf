@@ -109,9 +109,21 @@ variable "acr_geo_replications" {
 }
 
 variable "allowed_ip_ranges" {
-  description = "Allowed IP ranges for ACR"
+  description = "Allowed IP ranges for ACR (DEPRECATED: use acr_allowed_ip_ranges)"
   type        = list(string)
   default     = []
+}
+
+# SECURITY: ACR IP ranges variable with secure defaults
+# WARNING: Avoid using 0.0.0.0/0 which exposes the registry to the entire internet.
+# Recommended values:
+# - Production: Use specific office/VPN IPs and CI/CD runner IPs only
+# - Staging: Use office IPs and limited external access
+# - Dev: Can be more permissive but still avoid 0.0.0.0/0
+variable "acr_allowed_ip_ranges" {
+  description = "Allowed IP ranges for ACR network access. Use restrictive ranges to limit exposure."
+  type        = list(string)
+  default     = ["10.0.0.0/8"]  # Default: internal networks only
 }
 
 variable "allowed_subnet_ids" {

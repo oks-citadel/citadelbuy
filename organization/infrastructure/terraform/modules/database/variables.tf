@@ -154,6 +154,33 @@ variable "log_analytics_workspace_id" {
   default     = null
 }
 
+# SECURITY: Redis network access configuration
+# For non-Premium SKUs, VNet integration is not available.
+# These settings control IP-based access rules.
+variable "redis_allow_azure_services" {
+  description = "Allow Azure services to access Redis (uses 0.0.0.0 convention). Recommended for PaaS connectivity."
+  type        = bool
+  default     = true  # Required for many Azure services to connect
+}
+
+# SECURITY: Custom IP ranges for Redis access
+# Use specific IP ranges instead of open ranges.
+# Each entry should have start_ip and end_ip.
+variable "redis_allowed_ip_ranges" {
+  description = "Custom IP ranges allowed to access Redis. Each entry needs start_ip and end_ip."
+  type = list(object({
+    start_ip = string
+    end_ip   = string
+  }))
+  default = []  # Empty by default - rely on Azure services rule or VNet for Premium
+
+  # Example usage:
+  # redis_allowed_ip_ranges = [
+  #   { start_ip = "10.0.0.1", end_ip = "10.0.0.255" },     # Internal subnet
+  #   { start_ip = "203.0.113.50", end_ip = "203.0.113.50" } # Specific office IP
+  # ]
+}
+
 variable "tags" {
   description = "Resource tags"
   type        = map(string)

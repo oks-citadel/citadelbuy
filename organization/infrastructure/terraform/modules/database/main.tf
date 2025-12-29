@@ -187,13 +187,33 @@ resource "azurerm_redis_cache" "main" {
 # ============================================
 # Redis Firewall Rules (for non-Premium SKU)
 # ============================================
+# SECURITY: Redis firewall rules control network access to the cache.
+# For non-Premium SKUs, VNet integration is not available, so IP rules are used.
+# 
+# Azure Services Rule (0.0.0.0 - 0.0.0.0):
+# This is a special Azure convention that allows Azure services to connect.
+# While this is more permissive than specific IPs, it's required for many
+# Azure PaaS services to connect. For tighter security, use Premium SKU with VNet.
+#
+# Custom IP rules below allow access from specified ranges.
 resource "azurerm_redis_firewall_rule" "allow_azure" {
-  count               = var.redis_sku_name != "Premium" ? 1 : 0
+  count               = var.redis_sku_name != "Premium" && var.redis_allow_azure_services ? 1 : 0
   name                = "AllowAzureServices"
   redis_cache_name    = azurerm_redis_cache.main.name
   resource_group_name = var.resource_group_name
   start_ip            = "0.0.0.0"
   end_ip              = "0.0.0.0"
+}
+
+# Dynamic firewall rules for custom IP ranges
+# SECURITY: Use specific IP ranges instead of broad ranges like 0.0.0.0/0
+resource "azurerm_redis_firewall_rule" "custom" {
+  for_each            = var.redis_sku_name != "Premium" ? { for idx, ip in var.redis_allowed_ip_ranges : idx => ip } : {}
+  name                = "CustomRule${each.key}"
+  redis_cache_name    = azurerm_redis_cache.main.name
+  resource_group_name = var.resource_group_name
+  start_ip            = each.value.start_ip
+  end_ip              = each.value.end_ip
 }
 
 # ============================================

@@ -102,3 +102,20 @@ variable "redis_snapshot_retention_days" {
   type        = number
   default     = 7
 }
+# ============================================
+# Security - Network Access Control
+# ============================================
+# SECURITY: Database egress CIDR blocks
+# Databases typically don't need outbound access.
+# Default allows all for compatibility but should be restricted in production.
+variable "database_egress_cidr_blocks" {
+  description = "CIDR blocks for database egress. Restrict in production."
+  type        = list(string)
+  default     = ["0.0.0.0/0"]  # Consider restricting to VPC CIDR only
+}
+
+variable "log_retention_days" {
+  description = "CloudWatch log retention in days (AWS)"
+  type        = number
+  default     = 7
+}
