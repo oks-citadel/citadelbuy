@@ -11,7 +11,7 @@ services:
     build:
       context: ../../apps/services/supplier-integration
       dockerfile: Dockerfile
-    container_name: citadelbuy-supplier-integration
+    container_name: broxiva-supplier-integration
     restart: unless-stopped
     environment:
       - SERVICE_NAME=supplier-integration
@@ -32,7 +32,7 @@ services:
       - postgres
       - redis
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 30s
@@ -50,7 +50,7 @@ services:
     build:
       context: ../../apps/services/ai-engine
       dockerfile: Dockerfile
-    container_name: citadelbuy-ai-engine
+    container_name: broxiva-ai-engine
     restart: unless-stopped
     environment:
       - SERVICE_NAME=ai-engine
@@ -69,7 +69,7 @@ services:
       - postgres
       - redis
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
       interval: 30s
@@ -83,7 +83,7 @@ services:
     build:
       context: ../../apps/api
       dockerfile: Dockerfile
-    container_name: citadelbuy-inventory-sync
+    container_name: broxiva-inventory-sync
     restart: unless-stopped
     command: ["node", "dist/workers/inventory-sync.worker.js"]
     environment:
@@ -98,7 +98,7 @@ services:
       - redis
       - supplier-integration
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
   # ============================================
   # Price Sync Worker
@@ -107,7 +107,7 @@ services:
     build:
       context: ../../apps/api
       dockerfile: Dockerfile
-    container_name: citadelbuy-price-sync
+    container_name: broxiva-price-sync
     restart: unless-stopped
     command: ["node", "dist/workers/price-sync.worker.js"]
     environment:
@@ -122,7 +122,7 @@ services:
       - redis
       - ai-engine
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
   # ============================================
   # Order Routing Worker
@@ -131,7 +131,7 @@ services:
     build:
       context: ../../apps/api
       dockerfile: Dockerfile
-    container_name: citadelbuy-order-routing
+    container_name: broxiva-order-routing
     restart: unless-stopped
     command: ["node", "dist/workers/order-routing.worker.js"]
     environment:
@@ -146,7 +146,7 @@ services:
       - redis
       - supplier-integration
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
   # ============================================
   # Tracking Sync Worker
@@ -155,7 +155,7 @@ services:
     build:
       context: ../../apps/api
       dockerfile: Dockerfile
-    container_name: citadelbuy-tracking-sync
+    container_name: broxiva-tracking-sync
     restart: unless-stopped
     command: ["node", "dist/workers/tracking-sync.worker.js"]
     environment:
@@ -170,7 +170,7 @@ services:
       - redis
       - supplier-integration
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
   # ============================================
   # Fraud Detection Worker
@@ -179,7 +179,7 @@ services:
     build:
       context: ../../apps/api
       dockerfile: Dockerfile
-    container_name: citadelbuy-fraud-detection
+    container_name: broxiva-fraud-detection
     restart: unless-stopped
     command: ["node", "dist/workers/fraud-detection.worker.js"]
     environment:
@@ -194,10 +194,10 @@ services:
       - redis
       - ai-engine
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
 networks:
-  citadelbuy-network:
+  broxiva-network:
     external: true
 
 volumes:

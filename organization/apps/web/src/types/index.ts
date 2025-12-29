@@ -6,6 +6,7 @@ export interface User {
   avatar?: string;
   role: 'CUSTOMER' | 'VENDOR' | 'ADMIN';
   phone?: string;
+  phoneVerified?: boolean;
   emailVerified: boolean;
   createdAt: string;
   updatedAt: string;

@@ -25,7 +25,7 @@ export class OrderTrackingService {
     this.logger.log(`Tracking order: ${orderNumber} for user: ${userId}`);
 
     // Find order - orderNumber is typically derived from order ID
-    // For CitadelBuy, we use last 8 chars of ID as order number (e.g., CB-2024-12345678)
+    // For Broxiva, we use last 8 chars of ID as order number (e.g., CB-2024-12345678)
     const order = await this.prisma.order.findFirst({
       where: {
         userId,

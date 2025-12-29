@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <Link href="/" className="flex justify-center mb-4">
-            <span className="text-2xl font-bold text-primary">CitadelBuy</span>
+            <span className="text-2xl font-bold text-primary">Broxiva</span>
           </Link>
           <CardTitle className="text-2xl">Forgot your password?</CardTitle>
           <CardDescription>

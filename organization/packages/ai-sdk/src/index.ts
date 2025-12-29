@@ -1,5 +1,5 @@
 /**
- * CitadelBuy AI SDK
+ * Broxiva AI SDK
  * Client libraries for AI-powered services
  */
 
@@ -23,7 +23,7 @@ export interface AIConfig {
   timeout?: number;
 }
 
-export class CitadelBuyAI {
+export class BroxivaAI {
   public recommendation: RecommendationClient;
   public search: SearchClient;
   public personalization: PersonalizationClient;
@@ -41,4 +41,4 @@ export class CitadelBuyAI {
   }
 }
 
-export default CitadelBuyAI;
+export default BroxivaAI;

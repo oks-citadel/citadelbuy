@@ -257,7 +257,7 @@ describe('AuthController (e2e)', () => {
       const hashedPassword = await bcrypt.hash('adminpass', 10);
       await prisma.user.create({
         data: {
-          email: 'admin@citadelbuy.com',
+          email: 'admin@broxiva.com',
           password: hashedPassword,
           name: 'Admin User',
           role: 'ADMIN',
@@ -265,7 +265,7 @@ describe('AuthController (e2e)', () => {
       });
 
       const loginDto = {
-        email: 'admin@citadelbuy.com',
+        email: 'admin@broxiva.com',
         password: 'adminpass',
       };
 

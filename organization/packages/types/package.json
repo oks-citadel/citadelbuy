@@ -1,7 +1,7 @@
 {
-  "name": "@citadelbuy/types",
+  "name": "@broxiva/types",
   "version": "1.0.0",
-  "description": "Shared TypeScript types for CitadelBuy platform",
+  "description": "Shared TypeScript types for Broxiva platform",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -31,7 +31,7 @@
   "keywords": [
     "types",
     "typescript",
-    "citadelbuy"
+    "broxiva"
   ],
   "license": "UNLICENSED"
 }

@@ -23,6 +23,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PhoneVerificationForm } from '@/components/phone/PhoneVerificationForm';
+import { OtpInput } from '@/components/phone/OtpInput';
+import { PhoneVerificationStatus } from '@/components/phone/PhoneVerificationStatus';
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuthStore();
@@ -60,6 +63,9 @@ export default function SettingsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [phoneVerificationStep, setPhoneVerificationStep] = useState<'form' | 'otp' | 'verified'>('form');
+  const [verifyingPhone, setVerifyingPhone] = useState('');
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -403,6 +409,81 @@ export default function SettingsPage() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Phone Verification Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">Phone Verification</h3>
+                <p className="text-sm text-muted-foreground">
+                  Verify your phone number for enhanced security
+                </p>
+              </div>
+              <PhoneVerificationStatus
+                status={isPhoneVerified ? 'verified' : 'unverified'}
+                phoneNumber={isPhoneVerified ? verifyingPhone || profile.phone : undefined}
+              />
+            </div>
+
+            {!isPhoneVerified && phoneVerificationStep === 'form' && (
+              <PhoneVerificationForm
+                initialPhone={profile.phone}
+                onCodeSent={(phone) => {
+                  setVerifyingPhone(phone);
+                  setPhoneVerificationStep('otp');
+                }}
+              />
+            )}
+
+            {!isPhoneVerified && phoneVerificationStep === 'otp' && (
+              <OtpInput
+                phoneNumber={verifyingPhone}
+                onVerified={() => {
+                  setIsPhoneVerified(true);
+                  setPhoneVerificationStep('verified');
+                  updateUser({ phone: verifyingPhone, phoneVerified: true });
+                  setSaveMessage('Phone number verified successfully');
+                  setTimeout(() => setSaveMessage(''), 3000);
+                }}
+                onResend={() => {
+                  // Code resent, keep on OTP step
+                }}
+              />
+            )}
+
+            {isPhoneVerified && (
+              <Card className="border-green-200 bg-green-50/50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                        <Phone className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          Phone Number Verified
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {verifyingPhone || profile.phone}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsPhoneVerified(false);
+                        setPhoneVerificationStep('form');
+                        setVerifyingPhone('');
+                      }}
+                    >
+                      Change Number
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
           <Card>
             <CardHeader>

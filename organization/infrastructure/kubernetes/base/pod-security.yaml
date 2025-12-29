@@ -1,13 +1,13 @@
-# Pod Security Standards for CitadelBuy Platform
+# Pod Security Standards for Broxiva Platform
 # Implements Kubernetes Pod Security Standards (PSS) for workload isolation and security
 
 ---
 # Pod Security Standards - Namespace Labels
-# Apply baseline pod security standard to citadelbuy namespace
+# Apply baseline pod security standard to broxiva namespace
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: citadelbuy
+  name: broxiva
   labels:
     pod-security.kubernetes.io/enforce: restricted
     pod-security.kubernetes.io/audit: restricted
@@ -18,7 +18,7 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: citadelbuy-ai
+  name: broxiva-ai
   labels:
     pod-security.kubernetes.io/enforce: restricted
     pod-security.kubernetes.io/audit: restricted
@@ -29,7 +29,7 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: citadelbuy-monitoring
+  name: broxiva-monitoring
   labels:
     pod-security.kubernetes.io/enforce: baseline
     pod-security.kubernetes.io/audit: baseline
@@ -43,7 +43,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: pod-security-context-template
-  namespace: citadelbuy
+  namespace: broxiva
 data:
   application-security-context.yaml: |
     # Pod-level security context
@@ -128,7 +128,7 @@ data:
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
-  name: citadelbuy-restricted
+  name: broxiva-restricted
   annotations:
     seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'runtime/default'
     apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
@@ -166,7 +166,7 @@ spec:
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
-  name: citadelbuy-database
+  name: broxiva-database
   annotations:
     seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'runtime/default'
     apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
@@ -207,26 +207,26 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: citadelbuy-api-pdb
-  namespace: citadelbuy
+  name: broxiva-api-pdb
+  namespace: broxiva
 spec:
   minAvailable: 2
   selector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
 
 ---
 # Pod Disruption Budget for Web Frontend
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: citadelbuy-web-pdb
-  namespace: citadelbuy
+  name: broxiva-web-pdb
+  namespace: broxiva
 spec:
   minAvailable: 2
   selector:
     matchLabels:
-      app: citadelbuy-web
+      app: broxiva-web
 
 ---
 # Pod Disruption Budget for PostgreSQL
@@ -234,7 +234,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: postgres-pdb
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   minAvailable: 1
   selector:
@@ -247,7 +247,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: redis-pdb
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   minAvailable: 1
   selector:
@@ -260,7 +260,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: elasticsearch-pdb
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   minAvailable: 1
   selector:
@@ -272,8 +272,8 @@ spec:
 apiVersion: v1
 kind: LimitRange
 metadata:
-  name: citadelbuy-limitrange
-  namespace: citadelbuy
+  name: broxiva-limitrange
+  namespace: broxiva
 spec:
   limits:
     - max:
@@ -302,8 +302,8 @@ spec:
 apiVersion: v1
 kind: ResourceQuota
 metadata:
-  name: citadelbuy-quota
-  namespace: citadelbuy
+  name: broxiva-quota
+  namespace: broxiva
 spec:
   hard:
     requests.cpu: "50"

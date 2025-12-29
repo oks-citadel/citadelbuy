@@ -7,15 +7,15 @@ export async function seedOrganizations() {
 
   // Get existing users to use as organization owners
   const admin = await prisma.user.findUnique({
-    where: { email: 'admin@citadelbuy.com' },
+    where: { email: 'admin@broxiva.com' },
   });
 
   const vendor1 = await prisma.user.findUnique({
-    where: { email: 'vendor1@citadelbuy.com' },
+    where: { email: 'vendor1@broxiva.com' },
   });
 
   const vendor2 = await prisma.user.findUnique({
-    where: { email: 'vendor2@citadelbuy.com' },
+    where: { email: 'vendor2@broxiva.com' },
   });
 
   if (!admin || !vendor1 || !vendor2) {
@@ -146,19 +146,19 @@ export async function seedOrganizations() {
   // Create Organizations
   console.log('🏢 Creating organizations...');
 
-  // 1. CitadelBuy Platform Organization
+  // 1. Broxiva Platform Organization
   const platformOrg = await prisma.organization.create({
     data: {
-      name: 'CitadelBuy Platform',
-      slug: 'citadelbuy-platform',
+      name: 'Broxiva Platform',
+      slug: 'broxiva-platform',
       type: 'MARKETPLACE',
       status: 'ACTIVE',
-      legalName: 'CitadelBuy Inc.',
+      legalName: 'Broxiva Inc.',
       registrationNumber: 'CB-2024-001',
       taxId: 'ENC-TAX-123456789', // Should be encrypted in production
       industry: 'E-Commerce',
-      website: 'https://citadelbuy.com',
-      primaryEmail: 'contact@citadelbuy.com',
+      website: 'https://broxiva.com',
+      primaryEmail: 'contact@broxiva.com',
       primaryPhone: '+1-800-CITADEL',
       address: {
         street: '100 Commerce Drive',
@@ -190,7 +190,7 @@ export async function seedOrganizations() {
       taxId: 'ENC-TAX-987654321',
       industry: 'Electronics Retail',
       website: 'https://techstore.example.com',
-      primaryEmail: 'vendor1@citadelbuy.com',
+      primaryEmail: 'vendor1@broxiva.com',
       primaryPhone: '+1-555-TECH-001',
       address: {
         street: '456 Tech Boulevard',
@@ -221,7 +221,7 @@ export async function seedOrganizations() {
       registrationNumber: 'FB-2024-003',
       industry: 'Fashion & Apparel',
       website: 'https://fashionboutique.example.com',
-      primaryEmail: 'vendor2@citadelbuy.com',
+      primaryEmail: 'vendor2@broxiva.com',
       primaryPhone: '+1-555-FASH-002',
       address: {
         street: '789 Fashion Avenue',
@@ -446,7 +446,7 @@ export async function seedOrganizations() {
       action: 'organization.created',
       resource: 'organization',
       resourceId: platformOrg.id,
-      newValue: { name: 'CitadelBuy Platform' },
+      newValue: { name: 'Broxiva Platform' },
       metadata: { source: 'seed' },
     },
   });
@@ -471,7 +471,7 @@ export async function seedOrganizations() {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📊 Organizations Created: 3
-   - CitadelBuy Platform (Marketplace)
+   - Broxiva Platform (Marketplace)
    - TechStore (Small Business)
    - Fashion Boutique (Small Business)
 

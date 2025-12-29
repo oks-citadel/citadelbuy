@@ -8,7 +8,7 @@ const AVAILABLE_PLANS: Plan[] = [
   {
     id: 'free',
     name: 'Free',
-    description: 'Perfect for trying out CitadelBuy',
+    description: 'Perfect for trying out Broxiva',
     price: {
       monthly: 0,
       yearly: 0,

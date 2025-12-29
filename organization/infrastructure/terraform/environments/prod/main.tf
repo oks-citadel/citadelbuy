@@ -1,5 +1,5 @@
 # Production Environment Configuration
-# CitadelBuy E-commerce Platform - Azure Infrastructure
+# Broxiva E-commerce Platform - Azure Infrastructure
 
 terraform {
   required_version = ">= 1.0"
@@ -20,8 +20,8 @@ terraform {
   }
 
   backend "azurerm" {
-    resource_group_name  = "citadelbuy-tfstate-rg"
-    storage_account_name = "citadelbuytfstate"
+    resource_group_name  = "broxiva-tfstate-rg"
+    storage_account_name = "broxivatfstate"
     container_name       = "tfstate"
     key                  = "prod.terraform.tfstate"
   }
@@ -46,12 +46,12 @@ provider "azuread" {
 # Local Variables
 # ============================================
 locals {
-  project_name = "citadelbuy"
+  project_name = "broxiva"
   environment  = "prod"
   location     = "eastus"
 
   tags = {
-    Project     = "CitadelBuy"
+    Project     = "Broxiva"
     Environment = "Production"
     ManagedBy   = "Terraform"
     CostCenter  = "Engineering"
@@ -160,8 +160,8 @@ module "compute" {
   # App Service (backup/alternative)
   enable_app_service = true
   app_service_sku    = "P2v3"
-  api_url            = "https://api.citadelbuy.com"
-  staging_api_url    = "https://staging-api.citadelbuy.com"
+  api_url            = "https://api.broxiva.com"
+  staging_api_url    = "https://staging-api.broxiva.com"
   front_door_id      = module.security.front_door_profile_uuid
 
   app_insights_connection_string = module.monitoring.app_insights_connection_string
@@ -243,7 +243,7 @@ module "monitoring" {
   # Resources to Monitor
   aks_cluster_id = module.compute.aks_id
   database_id    = module.database.postgresql_server_id
-  app_url        = "https://citadelbuy.com"
+  app_url        = "https://broxiva.com"
 
   tags = local.tags
 }
@@ -268,9 +268,45 @@ module "storage" {
   # CDN for static assets
   enable_cdn        = true
   cdn_sku           = "Premium_AzureFrontDoor"
-  custom_domain     = "cdn.citadelbuy.com"
+  custom_domain     = "cdn.broxiva.com"
 
   allowed_subnet_ids = module.networking.private_subnet_ids
 
   tags = local.tags
+}
+
+# ============================================
+# DNS Module - Azure DNS Zone for broxiva.com
+# ============================================
+module "dns" {
+  source = "../../modules/dns"
+
+  domain_name         = "broxiva.com"
+  resource_group_name = azurerm_resource_group.main.name
+
+  # Front Door Configuration
+  front_door_hostname = module.security.front_door_endpoint_hostname
+  use_cname_for_www   = true
+
+  # API and CDN Endpoints
+  api_hostname     = module.compute.app_service_hostname
+  cdn_hostname     = module.storage.cdn_endpoint_hostname
+  staging_hostname = module.compute.staging_app_service_hostname
+  staging_api_hostname = module.compute.staging_api_hostname
+
+  # Email Configuration
+  enable_email_records = true
+  # MX records default to Google Workspace
+  # SPF, DKIM, DMARC records will be created with defaults
+
+  # Security
+  enable_caa_records = true
+
+  # Domain Verification (to be populated after Azure generates the code)
+  azure_verification_code = var.azure_verification_code
+
+  tags = merge(local.tags, {
+    Domain = "broxiva.com"
+    Purpose = "Primary DNS Zone"
+  })
 }

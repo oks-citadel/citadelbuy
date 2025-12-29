@@ -186,7 +186,7 @@ def add_indexes_to_schema(schema_path):
         return [], 0
 
 def main():
-    schema_path = r'C:\Users\citad\OneDrive\Documents\citadelbuy-master\organization\apps\api\prisma\schema.prisma'
+    schema_path = r'C:\Users\citad\OneDrive\Documents\broxiva-master\organization\apps\api\prisma\schema.prisma'
 
     print("Adding missing indexes to Prisma schema...")
     print("=" * 80)

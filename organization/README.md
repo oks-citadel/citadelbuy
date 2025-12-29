@@ -1,61 +1,72 @@
-# CitadelBuy E-Commerce Platform
+# Broxiva E-Commerce Platform
 
-A next-generation AI-powered e-commerce platform built with modern technologies and enterprise-grade architecture.
+A next-generation AI-powered premium global e-commerce platform built with modern technologies and enterprise-grade architecture.
+
+**Domain:** www.broxiva.com
+**Cloud Provider:** Microsoft Azure
+**DNS Registrar:** GoDaddy
 
 ## Test User Accounts for Frontend Verification
 
 ```
-╔═══════════════════════════════════════════════════════════════════════╗
-║                    TEST USER ACCOUNT #1                                ║
-╠═══════════════════════════════════════════════════════════════════════╣
-║  Email:     customer@citadelbuy.com                                    ║
-║  Password:  password123                                                ║
-║  Role:      CUSTOMER                                                   ║
-║                                                                        ║
-║  Pre-configured with:                                                  ║
-║  • Shipping address (123 Main Street, New York, NY 10001)              ║
-║  • Order history (delivered, shipped, processing orders)               ║
-║  • Can browse products, add to cart, checkout                          ║
-╚═══════════════════════════════════════════════════════════════════════╝
++-----------------------------------------------------------------------+
+|                    TEST USER ACCOUNT #1                                |
++-----------------------------------------------------------------------+
+|  Email:     customer@broxiva.com                                       |
+|  Password:  password123                                                |
+|  Role:      CUSTOMER                                                   |
+|                                                                        |
+|  Pre-configured with:                                                  |
+|  - Shipping address (123 Main Street, New York, NY 10001)              |
+|  - Order history (delivered, shipped, processing orders)               |
+|  - Can browse products, add to cart, checkout                          |
++-----------------------------------------------------------------------+
 
-╔═══════════════════════════════════════════════════════════════════════╗
-║                    TEST USER ACCOUNT #2                                ║
-╠═══════════════════════════════════════════════════════════════════════╣
-║  Email:     jane@example.com                                           ║
-║  Password:  password123                                                ║
-║  Role:      CUSTOMER                                                   ║
-║                                                                        ║
-║  Pre-configured with:                                                  ║
-║  • Shipping address (456 Oak Avenue, Los Angeles, CA 90001)            ║
-║  • Order history (shipped, pending orders)                             ║
-║  • Wishlist items, saved products                                      ║
-╚═══════════════════════════════════════════════════════════════════════╝
++-----------------------------------------------------------------------+
+|                    TEST USER ACCOUNT #2                                |
++-----------------------------------------------------------------------+
+|  Email:     jane@example.com                                           |
+|  Password:  password123                                                |
+|  Role:      CUSTOMER                                                   |
+|                                                                        |
+|  Pre-configured with:                                                  |
+|  - Shipping address (456 Oak Avenue, Los Angeles, CA 90001)            |
+|  - Order history (shipped, pending orders)                             |
+|  - Wishlist items, saved products                                      |
++-----------------------------------------------------------------------+
 ```
 
 ### Additional Test Accounts
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | `admin@citadelbuy.com` | `password123` |
-| Vendor 1 | `vendor1@citadelbuy.com` | `password123` |
-| Vendor 2 | `vendor2@citadelbuy.com` | `password123` |
+| Admin | `admin@broxiva.com` | `password123` |
+| Vendor 1 | `vendor1@broxiva.com` | `password123` |
+| Vendor 2 | `vendor2@broxiva.com` | `password123` |
 
-## URLs (Development)
+## URLs
 
+### Development
 - **Frontend**: http://localhost:3000
 - **API**: http://localhost:4000/api
 - **API Docs (Swagger)**: http://localhost:4000/api/docs
 - **Grafana**: http://localhost:3001 (admin/admin)
 - **Prometheus**: http://localhost:9090
 
+### Production
+- **Website**: https://www.broxiva.com
+- **API**: https://api.broxiva.com
+- **CDN**: https://cdn.broxiva.com
+- **Status**: https://status.broxiva.com
+
 ---
 
 ## Project Structure
 
 ```
-organization/
+broxiva/
 ├── apps/                          # Frontend applications
-│   ├── web-app/                   # Next.js web application
+│   ├── web/                       # Next.js web application
 │   │   ├── src/                   # Source code
 │   │   │   ├── app/              # Next.js App Router pages
 │   │   │   ├── components/       # React components
@@ -69,14 +80,14 @@ organization/
 │   │   │   └── accessibility/    # WCAG accessibility tests
 │   │   └── .github/workflows/    # CI/CD pipelines
 │   │
-│   └── mobile-app/                # React Native mobile app
+│   └── mobile/                    # React Native mobile app
 │       ├── src/                   # Source code
 │       ├── android/               # Android native code
 │       ├── ios/                   # iOS native code
 │       ├── tests/e2e/            # Detox E2E tests
 │       └── .github/workflows/     # Mobile CI/CD
 │
-├── backend/                       # NestJS API backend
+├── apps/api/                      # NestJS API backend
 │   ├── src/                       # Source code
 │   │   ├── common/               # Shared utilities
 │   │   └── modules/              # Feature modules
@@ -84,11 +95,33 @@ organization/
 │   ├── test/                      # Unit & integration tests
 │   └── .github/workflows/         # Backend CI/CD
 │
+├── apps/services/                 # Microservices
+│   ├── ai-agents/                # AI Agent orchestration
+│   ├── ai-engine/                # AI/ML processing
+│   ├── analytics/                # Analytics service
+│   ├── chatbot/                  # AI Chatbot
+│   ├── fraud-detection/          # Fraud detection
+│   ├── inventory/                # Inventory management
+│   ├── media/                    # Media processing
+│   ├── notification/             # Notifications
+│   ├── personalization/          # User personalization
+│   ├── pricing/                  # Dynamic pricing
+│   ├── recommendation/           # Product recommendations
+│   ├── search/                   # Search service
+│   └── supplier-integration/     # Supplier integrations
+│
+├── packages/                      # Shared packages
+│   ├── ai-sdk/                   # AI SDK
+│   ├── types/                    # Shared TypeScript types
+│   ├── ui/                       # Shared UI components
+│   └── utils/                    # Common utilities
+│
 ├── infrastructure/                # Infrastructure as Code
 │   ├── terraform/                 # Terraform modules
 │   │   ├── modules/              # Reusable modules
 │   │   │   ├── compute/          # AKS, ACR, App Service
 │   │   │   ├── database/         # PostgreSQL, Redis
+│   │   │   ├── dns/              # Azure DNS Zone
 │   │   │   ├── networking/       # VNet, Subnets, NSG
 │   │   │   ├── security/         # Key Vault, WAF, DDoS
 │   │   │   ├── monitoring/       # Log Analytics, App Insights
@@ -99,31 +132,26 @@ organization/
 │   │       └── prod/
 │   ├── kubernetes/                # K8s manifests
 │   ├── docker/                    # Docker configs
-│   ├── ansible/                   # Configuration management
-│   └── tests/                     # Infrastructure tests
+│   └── azure/                     # Azure-specific configs
 │
-├── shared-libraries/              # Shared code packages
-│   ├── api-clients/              # API client SDKs
-│   ├── ui-components/            # Shared UI components
-│   └── utilities/                # Common utilities
-│
-├── documentation/                 # Project documentation
+├── docs/                          # Project documentation
 │   ├── architecture/             # Technical architecture
-│   ├── business/                 # Business documentation
 │   ├── development/              # Development guides
-│   ├── phases/                   # Phase completion reports
-│   ├── adr/                      # Architecture Decision Records
-│   ├── runbooks/                 # Operations runbooks
-│   └── guides/                   # User guides
+│   ├── infrastructure/           # Infrastructure docs
+│   └── compliance/               # Compliance documentation
+│
+├── tests/                         # Test suites
+│   ├── e2e/                      # End-to-end tests
+│   ├── load/                     # Load testing
+│   ├── smoke/                    # Smoke tests
+│   └── agents/                   # AI agent tests
 │
 ├── scripts/                       # Utility scripts
-│   ├── deploy-docker.sh          # Docker deployment
-│   └── fix-controllers.sh        # Controller fixes
 │
 └── .github/                       # GitHub configurations
     ├── workflows/                 # CI/CD workflows
-    ├── ISSUE_TEMPLATE/           # Issue templates
-    └── PULL_REQUEST_TEMPLATE/    # PR templates
+    ├── actions/                   # Composite actions
+    └── ISSUE_TEMPLATE/           # Issue templates
 ```
 
 ## Quick Start
@@ -131,7 +159,7 @@ organization/
 ### Prerequisites
 
 - Node.js >= 20.0.0
-- npm >= 10.0.0
+- pnpm >= 10.0.0
 - Docker & Docker Compose
 - PostgreSQL 16+
 - Redis 7+
@@ -140,48 +168,49 @@ organization/
 
 1. **Clone and install dependencies:**
    ```bash
-   cd organization
-   npm install
+   git clone https://github.com/broxiva/broxiva-platform.git
+   cd broxiva-platform
+   pnpm install
    ```
 
 2. **Start infrastructure services:**
    ```bash
-   npm run docker:up
+   pnpm run docker:up
    ```
 
 3. **Set up environment variables:**
    ```bash
-   cp backend/.env.example backend/.env
-   cp apps/web-app/.env.example apps/web-app/.env
+   cp apps/api/.env.example apps/api/.env
+   cp apps/web/.env.example apps/web/.env.local
    ```
 
 4. **Run database migrations:**
    ```bash
-   npm run db:migrate
-   npm run db:seed
+   pnpm run db:migrate
+   pnpm run db:seed
    ```
 
 5. **Start development servers:**
    ```bash
-   npm run dev
+   pnpm run dev
    ```
 
 ### Available Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start all services in development mode |
-| `npm run dev:web` | Start web app only |
-| `npm run dev:backend` | Start backend only |
-| `npm run build` | Build all workspaces |
-| `npm run test` | Run all tests |
-| `npm run test:e2e` | Run E2E tests |
-| `npm run test:visual` | Run visual regression tests |
-| `npm run test:a11y` | Run accessibility tests |
-| `npm run lint` | Lint all workspaces |
-| `npm run docker:up` | Start Docker services |
-| `npm run db:migrate` | Run database migrations |
-| `npm run prisma:studio` | Open Prisma Studio |
+| `pnpm run dev` | Start all services in development mode |
+| `pnpm run dev:web` | Start web app only |
+| `pnpm run dev:api` | Start backend only |
+| `pnpm run build` | Build all workspaces |
+| `pnpm run test` | Run all tests |
+| `pnpm run test:e2e` | Run E2E tests |
+| `pnpm run test:visual` | Run visual regression tests |
+| `pnpm run test:a11y` | Run accessibility tests |
+| `pnpm run lint` | Lint all workspaces |
+| `pnpm run docker:up` | Start Docker services |
+| `pnpm run db:migrate` | Run database migrations |
+| `pnpm run prisma:studio` | Open Prisma Studio |
 
 ## Testing
 
@@ -189,45 +218,34 @@ organization/
 
 ```bash
 # Unit tests
-npm run test:web
+pnpm run test:web
 
 # E2E tests (Playwright)
-npm run test:e2e
+pnpm run test:e2e
 
 # Visual regression
-npm run test:visual
+pnpm run test:visual
 
 # Accessibility (WCAG 2.1 AA)
-npm run test:a11y
+pnpm run test:a11y
 
 # Mobile viewports
-npm run test:mobile --workspace=apps/web-app
+pnpm run test:mobile --filter=apps/web
 ```
 
 ### Backend Testing
 
 ```bash
 # Unit tests
-npm run test:backend
+pnpm run test:api
 
 # Integration tests
-npm run test:e2e --workspace=backend
-```
-
-### Mobile App Testing
-
-```bash
-# Detox E2E (iOS)
-cd apps/mobile-app
-detox test -c ios.sim.debug
-
-# Detox E2E (Android)
-detox test -c android.emu.debug
+pnpm run test:e2e --filter=apps/api
 ```
 
 ## Infrastructure
 
-### Terraform Deployment
+### Azure Production Deployment
 
 ```bash
 cd infrastructure/terraform/environments/prod
@@ -246,13 +264,13 @@ terraform apply tfplan
 
 ```bash
 # Build images
-npm run docker:build
+pnpm run docker:build
 
 # Deploy stack
-npm run docker:up
+pnpm run docker:up
 
 # View logs
-npm run docker:logs
+pnpm run docker:logs
 ```
 
 ## Architecture
@@ -261,70 +279,31 @@ npm run docker:logs
 - **Mobile:** React Native, Expo
 - **Backend:** NestJS, Prisma ORM, PostgreSQL
 - **Caching:** Redis
-- **Cloud:** Azure (AKS, App Service, Blob Storage)
+- **Cloud:** Microsoft Azure (AKS, Front Door, Blob Storage)
 - **CI/CD:** GitHub Actions
-- **IaC:** Terraform, Ansible
+- **IaC:** Terraform
 
-## Documentation
+## Production URLs
 
-- [Architecture Overview](./documentation/architecture/ARCHITECTURE.md)
-- [Development Guide](./documentation/development/DEVELOPMENT-GUIDE.md)
-- [Quick Start Guide](./documentation/development/Quick-Start-Guide.md)
-- [Contributing](./documentation/CONTRIBUTING.md)
-- [Security](./documentation/SECURITY.md)
+| Service | URL |
+|---------|-----|
+| Website | https://www.broxiva.com |
+| API | https://api.broxiva.com |
+| CDN | https://cdn.broxiva.com |
+| API Docs | https://api.broxiva.com/docs |
+| Status | https://status.broxiva.com |
+
+## Support & Contacts
+
+- **Website**: https://www.broxiva.com
+- **API Documentation**: https://api.broxiva.com/docs
+- **Support Email**: support@broxiva.com
+- **Status Page**: https://status.broxiva.com
 
 ## License
 
-This project is proprietary. See [LICENSE](./documentation/LICENSE) for details.
+This project is proprietary. All rights reserved.
 
 ---
 
-## Production Documentation
-
-### Operations Guides
-
-**Production Deployment**
-- [Production Deployment Guide](./docs/PRODUCTION_DEPLOYMENT_GUIDE.md) - Complete deployment procedures for Azure
-- [Deployment Runbook](./docs/DEPLOYMENT_RUNBOOK.md) - Step-by-step deployment checklist
-- [Disaster Recovery Plan](./docs/DISASTER_RECOVERY.md) - Backup and recovery procedures (RPO: 15min, RTO: 1hr)
-- [Database Backup Strategy](./docs/DATABASE_BACKUP_STRATEGY.md) - Automated backup procedures
-
-**Monitoring & Operations**
-- [Monitoring and Alerting](./docs/MONITORING_AND_ALERTING.md) - Prometheus, Grafana, alert configuration
-- [Incident Response Guide](./docs/INCIDENT_RESPONSE.md) - Emergency response procedures
-- [Scaling Guide](./docs/SCALING_GUIDE.md) - Horizontal and vertical scaling procedures
-- [Database Maintenance](./docs/DATABASE_MAINTENANCE.md) - Routine maintenance procedures
-
-**Security & Compliance**
-- [Security Setup](./docs/SECURITY_SETUP.md) - Production security hardening
-- [PCI DSS Compliance](./docs/PCI_DSS_COMPLIANCE.md) - Payment card industry compliance
-- [Privacy Compliance](./docs/PRIVACY_COMPLIANCE.md) - GDPR, CCPA compliance
-- [Payment Security](./docs/PAYMENT_SECURITY.md) - Payment processing security
-- [Security Audit Checklist](./docs/SECURITY_AUDIT_CHECKLIST.md) - Pre-deployment security audit
-
-### Production Readiness Checklist
-
-Before deploying to production:
-
-- [ ] All tests passing (400+ unit, integration, and E2E tests)
-- [ ] Security audit completed
-- [ ] Database migrations tested in staging
-- [ ] Backup and recovery procedures tested
-- [ ] Monitoring and alerting configured
-- [ ] SSL certificates installed and configured
-- [ ] Environment variables secured in Azure Key Vault
-- [ ] Payment providers (Stripe, PayPal) configured and tested
-- [ ] CDN configured for static assets
-- [ ] Auto-scaling policies configured (HPA + Cluster Autoscaler)
-- [ ] Disaster recovery plan reviewed and tested
-- [ ] On-call rotation established in PagerDuty
-- [ ] Documentation reviewed and updated
-
-### Support & Contacts
-
-- **Technical Documentation**: [docs/](./docs/)
-- **API Documentation**: https://api.citadelbuy.com/docs (Swagger/OpenAPI)
-- **Status Page**: https://status.citadelbuy.com
-- **Support Email**: support@citadelbuy.com
-- **Emergency Hotline**: See [Emergency Contacts](./docs/PRODUCTION_DEPLOYMENT_GUIDE.md#emergency-contacts)
-
+**Broxiva** - Premium Global E-Commerce Platform

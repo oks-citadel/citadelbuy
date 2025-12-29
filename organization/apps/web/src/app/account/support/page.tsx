@@ -178,7 +178,7 @@ export default function SupportPage() {
             {[
               { icon: MessageCircle, label: 'Live Chat', desc: 'Chat with us', action: 'chat' },
               { icon: Phone, label: 'Call Us', desc: '1-800-123-4567', action: 'call' },
-              { icon: Mail, label: 'Email', desc: 'support@citadelbuy.com', action: 'email' },
+              { icon: Mail, label: 'Email', desc: 'support@broxiva.com', action: 'email' },
               { icon: Book, label: 'FAQ', desc: 'Common questions', action: 'faq' },
             ].map((item) => (
               <Card

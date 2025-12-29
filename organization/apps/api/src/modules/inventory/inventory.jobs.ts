@@ -113,7 +113,7 @@ export class InventoryJobs {
               nextWeek,
             );
             forecastsGenerated++;
-          } catch (error) {
+          } catch (_error) {
             this.logger.warn(
               `Failed to generate forecast for product ${product.id} at warehouse ${warehouse.id}`,
             );
@@ -129,7 +129,7 @@ export class InventoryJobs {
             nextWeek,
           );
           forecastsGenerated++;
-        } catch (error) {
+        } catch (_error) {
           this.logger.warn(
             `Failed to generate overall forecast for product ${product.id}`,
           );

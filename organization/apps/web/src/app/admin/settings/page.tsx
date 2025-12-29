@@ -30,14 +30,14 @@ export default function AdminSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   const [generalSettings, setGeneralSettings] = useState({
-    storeName: 'CitadelBuy',
-    storeEmail: 'support@citadelbuy.com',
+    storeName: 'Broxiva',
+    storeEmail: 'support@broxiva.com',
     storePhone: '+1 (800) 123-4567',
     storeAddress: '123 Commerce St, New York, NY 10001',
     currency: 'USD',
     timezone: 'America/New_York',
     language: 'en',
-    metaTitle: 'CitadelBuy - Your One-Stop Shop',
+    metaTitle: 'Broxiva - Your One-Stop Shop',
     metaDescription: 'Find the best products at great prices',
   });
 

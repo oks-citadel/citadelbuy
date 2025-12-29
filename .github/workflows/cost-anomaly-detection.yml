@@ -1,0 +1,537 @@
+name: Cost Anomaly Detection & Daily Reports
+
+on:
+  schedule:
+    # Run daily at 8 AM UTC for cost reports
+    - cron: '0 8 * * *'
+    # Run every 6 hours for anomaly detection
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      report_type:
+        description: 'Type of report to generate'
+        required: false
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - anomaly-only
+          - summary
+
+permissions:
+  contents: write
+  id-token: write
+  issues: write
+  pull-requests: write
+
+env:
+  # Cost thresholds in USD
+  DAILY_COST_THRESHOLD: 500
+  MONTHLY_COST_THRESHOLD: 15000
+  HOURLY_SPIKE_THRESHOLD: 50
+  PERCENTAGE_INCREASE_ALERT: 25  # Alert if costs increase by >25%
+
+jobs:
+  collect-cost-data:
+    name: Collect Azure Cost Data
+    runs-on: ubuntu-latest
+    outputs:
+      total_30day_cost: ${{ steps.calculate.outputs.total_30day }}
+      daily_average: ${{ steps.calculate.outputs.daily_avg }}
+      yesterday_cost: ${{ steps.calculate.outputs.yesterday }}
+      anomaly_detected: ${{ steps.anomaly.outputs.detected }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Fetch cost data
+        id: fetch
+        run: |
+          # Set date ranges
+          END_DATE=$(date -u +%Y-%m-%d)
+          START_DATE_30=$(date -u -d '30 days ago' +%Y-%m-%d)
+          START_DATE_7=$(date -u -d '7 days ago' +%Y-%m-%d)
+          YESTERDAY=$(date -u -d '1 day ago' +%Y-%m-%d)
+
+          echo "Fetching cost data from $START_DATE_30 to $END_DATE..."
+
+          # Get consumption data (last 30 days)
+          az consumption usage list \
+            --start-date $START_DATE_30 \
+            --end-date $END_DATE \
+            --query "[].{date:usageStart, cost:pretaxCost, service:meterDetails.meterCategory, resourceGroup:instanceName}" \
+            --output json > cost-data-30day.json
+
+          # Get consumption data (last 7 days for trend analysis)
+          az consumption usage list \
+            --start-date $START_DATE_7 \
+            --end-date $END_DATE \
+            --query "[].{date:usageStart, cost:pretaxCost, service:meterDetails.meterCategory}" \
+            --output json > cost-data-7day.json
+
+          echo "Cost data fetched successfully"
+
+      - name: Calculate cost metrics
+        id: calculate
+        run: |
+          # Install jq if not available
+          which jq || sudo apt-get install -y jq
+
+          # Calculate 30-day total cost
+          TOTAL_30DAY=$(jq '[.[].cost | tonumber] | add' cost-data-30day.json)
+          echo "total_30day=$TOTAL_30DAY" >> $GITHUB_OUTPUT
+
+          # Calculate daily average
+          DAILY_AVG=$(echo "scale=2; $TOTAL_30DAY / 30" | bc)
+          echo "daily_avg=$DAILY_AVG" >> $GITHUB_OUTPUT
+
+          # Calculate yesterday's cost
+          YESTERDAY_DATE=$(date -u -d '1 day ago' +%Y-%m-%d)
+          YESTERDAY_COST=$(jq --arg date "$YESTERDAY_DATE" '[.[] | select(.date | startswith($date)) | .cost | tonumber] | add' cost-data-30day.json)
+          echo "yesterday=$YESTERDAY_COST" >> $GITHUB_OUTPUT
+
+          # Calculate 7-day trend
+          TOTAL_7DAY=$(jq '[.[].cost | tonumber] | add' cost-data-7day.json)
+          echo "total_7day=$TOTAL_7DAY" >> $GITHUB_OUTPUT
+
+          # Calculate weekly average
+          WEEKLY_AVG=$(echo "scale=2; $TOTAL_7DAY / 7" | bc)
+          echo "weekly_avg=$WEEKLY_AVG" >> $GITHUB_OUTPUT
+
+          echo "### Cost Metrics Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **30-Day Total:** \$$TOTAL_30DAY" >> $GITHUB_STEP_SUMMARY
+          echo "- **Daily Average:** \$$DAILY_AVG" >> $GITHUB_STEP_SUMMARY
+          echo "- **Yesterday's Cost:** \$$YESTERDAY_COST" >> $GITHUB_STEP_SUMMARY
+          echo "- **7-Day Average:** \$$WEEKLY_AVG" >> $GITHUB_STEP_SUMMARY
+
+      - name: Analyze cost by environment
+        id: by-environment
+        run: |
+          echo "## Cost Breakdown by Environment" >> cost-by-environment.md
+          echo "" >> cost-by-environment.md
+          echo "| Environment | Resource Group | Cost (30 days) |" >> cost-by-environment.md
+          echo "|-------------|----------------|----------------|" >> cost-by-environment.md
+
+          # Production
+          PROD_COST=$(jq '[.[] | select(.resourceGroup | contains("broxiva-prod")) | .cost | tonumber] | add' cost-data-30day.json || echo "0")
+          echo "| Production | broxiva-prod-rg | \$$PROD_COST |" >> cost-by-environment.md
+
+          # Staging
+          STAGING_COST=$(jq '[.[] | select(.resourceGroup | contains("broxiva-staging")) | .cost | tonumber] | add' cost-data-30day.json || echo "0")
+          echo "| Staging | broxiva-staging-rg | \$$STAGING_COST |" >> cost-by-environment.md
+
+          # Dev
+          DEV_COST=$(jq '[.[] | select(.resourceGroup | contains("broxiva-dev")) | .cost | tonumber] | add' cost-data-30day.json || echo "0")
+          echo "| Development | broxiva-dev-rg | \$$DEV_COST |" >> cost-by-environment.md
+
+          # Africa
+          AFRICA_COST=$(jq '[.[] | select(.resourceGroup | contains("broxiva-africa")) | .cost | tonumber] | add' cost-data-30day.json || echo "0")
+          echo "| Africa | broxiva-africa-rg | \$$AFRICA_COST |" >> cost-by-environment.md
+
+          # Asia
+          ASIA_COST=$(jq '[.[] | select(.resourceGroup | contains("broxiva-asia")) | .cost | tonumber] | add' cost-data-30day.json || echo "0")
+          echo "| Asia | broxiva-asia-rg | \$$ASIA_COST |" >> cost-by-environment.md
+
+          cat cost-by-environment.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Analyze cost by service
+        id: by-service
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Top 10 Services by Cost" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          jq -r 'group_by(.service) | map({service: .[0].service, cost: (map(.cost | tonumber) | add)}) | sort_by(.cost) | reverse | .[:10] | .[] | "| \(.service) | $\(.cost) |"' cost-data-30day.json | \
+            awk 'BEGIN {print "| Service | Cost (30 days) |"; print "|---------|----------------|"} {print}' >> $GITHUB_STEP_SUMMARY
+
+      - name: Detect anomalies
+        id: anomaly
+        run: |
+          TOTAL_30DAY="${{ steps.calculate.outputs.total_30day }}"
+          DAILY_AVG="${{ steps.calculate.outputs.daily_avg }}"
+          YESTERDAY="${{ steps.calculate.outputs.yesterday }}"
+          WEEKLY_AVG="${{ steps.calculate.outputs.weekly_avg }}"
+
+          ANOMALY_DETECTED=false
+          ANOMALY_TYPE=""
+          ANOMALY_MESSAGE=""
+
+          # Check if monthly threshold exceeded
+          if (( $(echo "$TOTAL_30DAY > ${{ env.MONTHLY_COST_THRESHOLD }}" | bc -l) )); then
+            ANOMALY_DETECTED=true
+            ANOMALY_TYPE="monthly_threshold"
+            ANOMALY_MESSAGE="Monthly cost threshold exceeded: \$$TOTAL_30DAY > \$${{ env.MONTHLY_COST_THRESHOLD }}"
+          fi
+
+          # Check if daily threshold exceeded
+          if (( $(echo "$YESTERDAY > ${{ env.DAILY_COST_THRESHOLD }}" | bc -l) )); then
+            ANOMALY_DETECTED=true
+            ANOMALY_TYPE="${ANOMALY_TYPE:+${ANOMALY_TYPE},}daily_threshold"
+            ANOMALY_MESSAGE="${ANOMALY_MESSAGE}\nDaily cost threshold exceeded: \$$YESTERDAY > \$${{ env.DAILY_COST_THRESHOLD }}"
+          fi
+
+          # Check for sudden spike (yesterday > 25% higher than weekly average)
+          SPIKE_THRESHOLD=$(echo "scale=2; $WEEKLY_AVG * 1.25" | bc)
+          if (( $(echo "$YESTERDAY > $SPIKE_THRESHOLD" | bc -l) )); then
+            ANOMALY_DETECTED=true
+            ANOMALY_TYPE="${ANOMALY_TYPE:+${ANOMALY_TYPE},}cost_spike"
+            ANOMALY_MESSAGE="${ANOMALY_MESSAGE}\nCost spike detected: Yesterday (\$$YESTERDAY) > 25% above weekly average (\$$WEEKLY_AVG)"
+          fi
+
+          # Check for unusual daily variance
+          VARIANCE_THRESHOLD=$(echo "scale=2; $DAILY_AVG * 1.50" | bc)
+          if (( $(echo "$YESTERDAY > $VARIANCE_THRESHOLD" | bc -l) )); then
+            ANOMALY_DETECTED=true
+            ANOMALY_TYPE="${ANOMALY_TYPE:+${ANOMALY_TYPE},}high_variance"
+            ANOMALY_MESSAGE="${ANOMALY_MESSAGE}\nHigh cost variance: Yesterday (\$$YESTERDAY) > 50% above daily average (\$$DAILY_AVG)"
+          fi
+
+          if [ "$ANOMALY_DETECTED" = true ]; then
+            echo "detected=true" >> $GITHUB_OUTPUT
+            echo "type=$ANOMALY_TYPE" >> $GITHUB_OUTPUT
+            echo "message<<EOF" >> $GITHUB_OUTPUT
+            echo -e "$ANOMALY_MESSAGE" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "## :rotating_light: COST ANOMALY DETECTED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Anomaly Types:** $ANOMALY_TYPE" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo -e "$ANOMALY_MESSAGE" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "detected=false" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "## :white_check_mark: No Cost Anomalies Detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload cost data artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cost-data-${{ github.run_number }}
+          path: |
+            cost-data-30day.json
+            cost-data-7day.json
+            cost-by-environment.md
+          retention-days: 90
+
+  generate-cost-report:
+    name: Generate Daily Cost Report
+    needs: collect-cost-data
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download cost data
+        uses: actions/download-artifact@v4
+        with:
+          name: cost-data-${{ github.run_number }}
+          path: ./cost-data
+
+      - name: Generate comprehensive report
+        run: |
+          REPORT_DATE=$(date -u +%Y-%m-%d)
+
+          cat > daily-cost-report-${REPORT_DATE}.md <<EOF
+          # Broxiva Infrastructure Cost Report
+
+          **Report Date:** ${REPORT_DATE}
+          **Generated:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          **Period:** Last 30 days
+
+          ---
+
+          ## Executive Summary
+
+          - **30-Day Total Cost:** \$${{ needs.collect-cost-data.outputs.total_30day_cost }}
+          - **Daily Average:** \$${{ needs.collect-cost-data.outputs.daily_average }}
+          - **Yesterday's Cost:** \$${{ needs.collect-cost-data.outputs.yesterday_cost }}
+          - **Monthly Projection:** \$$(echo "scale=2; ${{ needs.collect-cost-data.outputs.daily_average }} * 30" | bc)
+
+          ---
+
+          $(cat cost-data/cost-by-environment.md)
+
+          ---
+
+          ## Cost Trends
+
+          ### 30-Day Trend
+          - Total: \$${{ needs.collect-cost-data.outputs.total_30day_cost }}
+          - Average per day: \$${{ needs.collect-cost-data.outputs.daily_average }}
+
+          ### Cost Optimization Opportunities
+
+          1. **Dev/Test Environment Shutdown**
+             - Enable auto-shutdown for development and staging environments after hours
+             - Estimated savings: ~\$475/month
+
+          2. **Reserved Instance Purchases**
+             - Consider 1-year or 3-year reserved instances for production workloads
+             - Potential savings: 30-50% on compute costs
+
+          3. **Storage Optimization**
+             - Review and archive old data
+             - Implement lifecycle policies for blob storage
+             - Estimated savings: 10-20% on storage costs
+
+          4. **Right-sizing Resources**
+             - Analyze resource utilization metrics
+             - Scale down over-provisioned resources
+             - Estimated savings: 15-25% on compute costs
+
+          ---
+
+          ## Anomaly Detection
+
+          **Status:** ${{ needs.collect-cost-data.outputs.anomaly_detected == 'true' && 'ANOMALY DETECTED' || 'Normal' }}
+
+          ${{ needs.collect-cost-data.outputs.anomaly_detected == 'true' && '**Details:** See anomaly alert below' || 'No cost anomalies detected in the last 24 hours.' }}
+
+          ---
+
+          ## Cost Breakdown by Resource Type
+
+          ### Compute (AKS)
+          - Production AKS: broxiva-prod-aks
+          - Staging AKS: broxiva-staging-aks
+          - Development AKS: broxiva-dev-aks
+
+          ### Databases
+          - Production PostgreSQL: broxiva-prod-postgres
+          - Staging PostgreSQL: broxiva-staging-postgres
+          - Development PostgreSQL: broxiva-dev-postgres
+
+          ### Storage & Networking
+          - Container Registry: broxivaprodacr.azurecr.io
+          - Application Gateway / Load Balancers
+          - Virtual Network costs
+
+          ---
+
+          ## Action Items
+
+          - [ ] Review high-cost services
+          - [ ] Implement cost optimization recommendations
+          - [ ] Update cost thresholds if justified
+          - [ ] Schedule cost review meeting if anomalies detected
+
+          ---
+
+          ## Additional Resources
+
+          - [Azure Cost Management](https://portal.azure.com/#blade/Microsoft_Azure_CostManagement/Menu/costanalysis)
+          - [Cost Optimization Best Practices](https://learn.microsoft.com/en-us/azure/cost-management-billing/costs/cost-mgt-best-practices)
+          - [Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          ---
+
+          **Report ID:** cost-report-${{ github.run_number }}
+          **Workflow:** ${{ github.workflow }}
+          EOF
+
+      - name: Commit cost report to repository
+        run: |
+          mkdir -p reports/cost-reports
+          mv daily-cost-report-*.md reports/cost-reports/
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add reports/cost-reports/
+          git commit -m "chore: add daily cost report for $(date -u +%Y-%m-%d)" || echo "No changes to commit"
+          git push || echo "No changes to push"
+
+      - name: Upload cost report
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-cost-report-${{ github.run_number }}
+          path: reports/cost-reports/
+          retention-days: 90
+
+  create-anomaly-issue:
+    name: Create Cost Anomaly Issue
+    needs: collect-cost-data
+    runs-on: ubuntu-latest
+    if: needs.collect-cost-data.outputs.anomaly_detected == 'true'
+    steps:
+      - name: Create GitHub Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toISOString().split('T')[0];
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Cost Anomaly Alert - ${today}`,
+              body: `## Cost Anomaly Detected - Broxiva Infrastructure\n\n**Date:** ${today}\n**Detection Time:** ${new Date().toISOString()}\n\n### Cost Summary\n\n- **30-Day Total:** \\$${{ needs.collect-cost-data.outputs.total_30day_cost }}\n- **Daily Average:** \\$${{ needs.collect-cost-data.outputs.daily_average }}\n- **Yesterday:** \\$${{ needs.collect-cost-data.outputs.yesterday_cost }}\n\n### Anomaly Details\n\n**Type:** ${{ needs.collect-cost-data.outputs.anomaly_type }}\n\n**Thresholds:**\n- Daily Threshold: \\$${{ env.DAILY_COST_THRESHOLD }}\n- Monthly Threshold: \\$${{ env.MONTHLY_COST_THRESHOLD }}\n\n### Immediate Actions Required\n\n1. **Investigate** - Review [Azure Cost Management](https://portal.azure.com/#blade/Microsoft_Azure_CostManagement/Menu/costanalysis)\n2. **Identify** - Determine which resources are causing the increase\n3. **Evaluate** - Assess if the increase is expected or unexpected\n4. **Optimize** - Scale down or remove unnecessary resources\n5. **Document** - Add findings to this issue\n\n### Cost Breakdown\n\nView detailed cost breakdown in the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\n### Suggested Optimizations\n\n- [ ] Enable auto-shutdown for dev/test environments\n- [ ] Review and right-size AKS node pools\n- [ ] Check for orphaned resources (disks, IPs, etc.)\n- [ ] Review storage lifecycle policies\n- [ ] Consider reserved instances for production\n\n---\n\n**Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`,
+              labels: ['cost-optimization', 'alert', 'ops', 'high-priority']
+            });
+
+  notify-cost-anomaly:
+    name: Send Cost Anomaly Notifications
+    needs: collect-cost-data
+    runs-on: ubuntu-latest
+    if: needs.collect-cost-data.outputs.anomaly_detected == 'true'
+    steps:
+      - name: Send Slack Alert
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "COST ANOMALY ALERT - Broxiva Infrastructure",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": ":rotating_light: Cost Anomaly Detected :rotating_light:"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*30-Day Total:*\n\\$${{ needs.collect-cost-data.outputs.total_30day_cost }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Daily Average:*\n\\$${{ needs.collect-cost-data.outputs.daily_average }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Yesterday's Cost:*\n\\$${{ needs.collect-cost-data.outputs.yesterday_cost }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Monthly Threshold:*\n\\$${{ env.MONTHLY_COST_THRESHOLD }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":warning: *Immediate action required to review and optimize costs.*"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Azure Cost Analysis"
+                      },
+                      "url": "https://portal.azure.com/#blade/Microsoft_Azure_CostManagement/Menu/costanalysis",
+                      "style": "primary"
+                    },
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Report"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                      "style": "danger"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+        if: env.SLACK_WEBHOOK_URL != ''
+
+      - name: Send Teams Alert
+        uses: jdcargile/ms-teams-notification@v1.4
+        with:
+          github-token: ${{ github.token }}
+          ms-teams-webhook-uri: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          notification-summary: "COST ANOMALY: Broxiva infrastructure costs exceeded threshold - \$${{ needs.collect-cost-data.outputs.total_30day_cost }} (30-day total)"
+          notification-color: dc3545
+          timezone: UTC
+        if: env.TEAMS_WEBHOOK_URL != ''
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+
+  send-daily-report:
+    name: Send Daily Cost Report Email
+    needs: [collect-cost-data, generate-cost-report]
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 8 * * *' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Send Daily Summary to Slack
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Daily Cost Report - Broxiva",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Daily Cost Report - Broxiva Infrastructure"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*30-Day Total:*\n\\$${{ needs.collect-cost-data.outputs.total_30day_cost }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Daily Average:*\n\\$${{ needs.collect-cost-data.outputs.daily_average }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Yesterday:*\n\\$${{ needs.collect-cost-data.outputs.yesterday_cost }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Status:*\n${{ needs.collect-cost-data.outputs.anomaly_detected == 'true' && ':warning: Anomaly Detected' || ':white_check_mark: Normal' }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "View detailed cost breakdown and optimization recommendations in the full report."
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Full Report"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+        if: env.SLACK_WEBHOOK_URL != ''

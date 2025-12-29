@@ -1,5 +1,5 @@
 # Storage Module - Azure Storage Account, CDN, and Blob Containers
-# CitadelBuy E-commerce Platform
+# Broxiva E-commerce Platform
 
 terraform {
   required_version = ">= 1.0"

@@ -1,0 +1,167 @@
+# ==========================================
+# Azure Blob Storage Runtime Asset Mounting
+# Recommended approach for large assets
+# ==========================================
+# This manifest demonstrates how to use an InitContainer
+# to download assets from Azure Blob Storage at pod startup
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: asset-download-script
+  namespace: broxiva
+data:
+  download-assets.sh: |
+    #!/bin/bash
+    set -e
+
+    echo "Starting asset download from Azure Blob Storage..."
+    echo "Storage Account: ${AZURE_STORAGE_ACCOUNT}"
+    echo "Container: ${AZURE_STORAGE_CONTAINER}"
+    echo "Target Path: ${ASSET_PATH}"
+
+    # Install Azure CLI if not present (for debugging)
+    # In production, use a pre-built image with azcopy
+
+    # Use azcopy for efficient downloads
+    if command -v azcopy &> /dev/null; then
+      echo "Using azcopy for download..."
+      azcopy copy \
+        "https://${AZURE_STORAGE_ACCOUNT}.blob.core.windows.net/${AZURE_STORAGE_CONTAINER}/*" \
+        "${ASSET_PATH}/" \
+        --recursive \
+        --check-md5=FailIfDifferent
+    else
+      echo "Using az cli for download..."
+      az storage blob download-batch \
+        --account-name "${AZURE_STORAGE_ACCOUNT}" \
+        --source "${AZURE_STORAGE_CONTAINER}" \
+        --destination "${ASSET_PATH}" \
+        --auth-mode login
+    fi
+
+    echo "Asset download complete!"
+    ls -la "${ASSET_PATH}/"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: azure-storage-credentials
+  namespace: broxiva
+type: Opaque
+stringData:
+  # These should be populated from External Secrets or Key Vault
+  AZURE_STORAGE_ACCOUNT: "broxivaprodstorage"
+  AZURE_STORAGE_KEY: "REPLACE_WITH_ACTUAL_KEY"
+  # Or use SAS token
+  AZURE_STORAGE_SAS_TOKEN: "REPLACE_WITH_SAS_TOKEN"
+
+---
+# Example deployment using InitContainer for asset download
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-with-blob-assets
+  namespace: broxiva
+  labels:
+    app: broxiva-api
+    asset-source: blob
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: broxiva-api
+  template:
+    metadata:
+      labels:
+        app: broxiva-api
+    spec:
+      serviceAccountName: broxiva-workload-identity
+      # InitContainer downloads assets before main container starts
+      initContainers:
+        - name: asset-downloader
+          image: mcr.microsoft.com/azure-cli:latest
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              echo "Downloading assets from Azure Blob..."
+              az login --identity --allow-no-subscriptions
+              az storage blob download-batch \
+                --account-name "${AZURE_STORAGE_ACCOUNT}" \
+                --source "${AZURE_STORAGE_CONTAINER}" \
+                --destination /assets \
+                --auth-mode login \
+                --pattern "*"
+              echo "Download complete!"
+              ls -la /assets/
+          env:
+            - name: AZURE_STORAGE_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: azure-storage-credentials
+                  key: AZURE_STORAGE_ACCOUNT
+            - name: AZURE_STORAGE_CONTAINER
+              value: "assets-prod"
+          volumeMounts:
+            - name: shared-assets
+              mountPath: /assets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+      containers:
+        - name: api
+          image: broxivaprodacr.azurecr.io/api:latest
+          ports:
+            - containerPort: 4000
+          env:
+            - name: ASSET_SOURCE
+              value: "blob"
+            - name: ASSET_PATH
+              value: "/app/assets"
+            - name: NODE_ENV
+              value: "production"
+          volumeMounts:
+            - name: shared-assets
+              mountPath: /app/assets
+              readOnly: true
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 4000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+      volumes:
+        - name: shared-assets
+          emptyDir:
+            sizeLimit: "5Gi"
+
+---
+# Workload Identity for Azure access
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: broxiva-workload-identity
+  namespace: broxiva
+  annotations:
+    azure.workload.identity/client-id: "YOUR_CLIENT_ID"
+    azure.workload.identity/tenant-id: "YOUR_TENANT_ID"

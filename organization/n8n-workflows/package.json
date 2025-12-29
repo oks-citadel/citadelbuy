@@ -1,7 +1,7 @@
 {
-  "name": "citadelbuy-n8n-workflows",
+  "name": "broxiva-n8n-workflows",
   "version": "1.0.0",
-  "description": "n8n automation workflows for CitadelBuy e-commerce platform",
+  "description": "n8n automation workflows for Broxiva e-commerce platform",
   "main": "generate-signature.js",
   "scripts": {
     "test": "node test-workflow.js",
@@ -15,12 +15,12 @@
     "n8n",
     "automation",
     "webhook",
-    "citadelbuy",
+    "broxiva",
     "ecommerce",
     "order-processing",
     "fulfillment"
   ],
-  "author": "CitadelBuy Engineering Team",
+  "author": "Broxiva Engineering Team",
   "license": "PROPRIETARY",
   "dependencies": {
     "axios": "^1.6.0"
@@ -32,11 +32,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/citadelbuy/citadelbuy"
+    "url": "https://github.com/broxiva/broxiva"
   },
   "bugs": {
-    "url": "https://github.com/citadelbuy/citadelbuy/issues",
-    "email": "engineering@citadelbuy.com"
+    "url": "https://github.com/broxiva/broxiva/issues",
+    "email": "engineering@broxiva.com"
   },
-  "homepage": "https://github.com/citadelbuy/citadelbuy#readme"
+  "homepage": "https://github.com/broxiva/broxiva#readme"
 }

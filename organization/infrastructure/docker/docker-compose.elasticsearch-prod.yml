@@ -1,5 +1,5 @@
 # =========================================================
-# CitadelBuy Elasticsearch Production Configuration
+# Broxiva Elasticsearch Production Configuration
 # =========================================================
 # SECURITY NOTICE: This configuration enables X-Pack security
 # Generate passwords with: docker run --rm docker.elastic.co/elasticsearch/elasticsearch:8.11.0 bin/elasticsearch-setup-passwords auto
@@ -8,7 +8,7 @@
 version: '3.9'
 
 networks:
-  citadelbuy-network:
+  broxiva-network:
     driver: bridge
   elasticsearch-network:
     driver: bridge
@@ -30,11 +30,11 @@ services:
   # Node 1 - Master & Data
   elasticsearch-01:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: citadelbuy-elasticsearch-01
+    container_name: broxiva-elasticsearch-01
     restart: unless-stopped
     environment:
       # Cluster Configuration
-      - cluster.name=citadelbuy-production
+      - cluster.name=broxiva-production
       - node.name=es-node-01
       - node.roles=master,data,ingest
 
@@ -65,7 +65,7 @@ services:
       - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
 
       # Index Settings
-      - action.auto_create_index=.monitoring*,.watches,.triggered_watches,.watcher-history*,.ml*,citadelbuy-*
+      - action.auto_create_index=.monitoring*,.watches,.triggered_watches,.watcher-history*,.ml*,broxiva-*
       - action.destructive_requires_name=true
 
       # Performance Tuning
@@ -81,7 +81,7 @@ services:
       - "9200:9200"
       - "9300:9300"
     networks:
-      - citadelbuy-network
+      - broxiva-network
       - elasticsearch-network
     ulimits:
       memlock:
@@ -97,8 +97,8 @@ services:
       retries: 5
       start_period: 120s
     labels:
-      - "com.citadelbuy.service=elasticsearch-master"
-      - "com.citadelbuy.description=Elasticsearch Master Node 01"
+      - "com.broxiva.service=elasticsearch-master"
+      - "com.broxiva.description=Elasticsearch Master Node 01"
     deploy:
       resources:
         limits:
@@ -111,10 +111,10 @@ services:
   # Node 2 - Master & Data
   elasticsearch-02:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: citadelbuy-elasticsearch-02
+    container_name: broxiva-elasticsearch-02
     restart: unless-stopped
     environment:
-      - cluster.name=citadelbuy-production
+      - cluster.name=broxiva-production
       - node.name=es-node-02
       - node.roles=master,data,ingest
       - discovery.seed_hosts=elasticsearch-01,elasticsearch-03
@@ -131,7 +131,7 @@ services:
       - xpack.security.transport.ssl.certificate=/usr/share/elasticsearch/config/certificates/es-node-02/es-node-02.crt
       - xpack.security.transport.ssl.certificate_authorities=/usr/share/elasticsearch/config/certificates/ca/ca.crt
       - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
-      - action.auto_create_index=.monitoring*,.watches,.triggered_watches,.watcher-history*,.ml*,citadelbuy-*
+      - action.auto_create_index=.monitoring*,.watches,.triggered_watches,.watcher-history*,.ml*,broxiva-*
       - action.destructive_requires_name=true
       - indices.memory.index_buffer_size=30%
       - indices.queries.cache.size=15%
@@ -140,7 +140,7 @@ services:
       - ./elasticsearch/certificates:/usr/share/elasticsearch/config/certificates:ro
       - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     networks:
-      - citadelbuy-network
+      - broxiva-network
       - elasticsearch-network
     ulimits:
       memlock:
@@ -156,8 +156,8 @@ services:
       retries: 5
       start_period: 120s
     labels:
-      - "com.citadelbuy.service=elasticsearch-master"
-      - "com.citadelbuy.description=Elasticsearch Master Node 02"
+      - "com.broxiva.service=elasticsearch-master"
+      - "com.broxiva.description=Elasticsearch Master Node 02"
     deploy:
       resources:
         limits:
@@ -170,10 +170,10 @@ services:
   # Node 3 - Data Node
   elasticsearch-03:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: citadelbuy-elasticsearch-03
+    container_name: broxiva-elasticsearch-03
     restart: unless-stopped
     environment:
-      - cluster.name=citadelbuy-production
+      - cluster.name=broxiva-production
       - node.name=es-node-03
       - node.roles=data,ingest
       - discovery.seed_hosts=elasticsearch-01,elasticsearch-02
@@ -190,7 +190,7 @@ services:
       - xpack.security.transport.ssl.certificate=/usr/share/elasticsearch/config/certificates/es-node-03/es-node-03.crt
       - xpack.security.transport.ssl.certificate_authorities=/usr/share/elasticsearch/config/certificates/ca/ca.crt
       - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
-      - action.auto_create_index=.monitoring*,.watches,.triggered_watches,.watcher-history*,.ml*,citadelbuy-*
+      - action.auto_create_index=.monitoring*,.watches,.triggered_watches,.watcher-history*,.ml*,broxiva-*
       - action.destructive_requires_name=true
       - indices.memory.index_buffer_size=30%
       - indices.queries.cache.size=15%
@@ -199,7 +199,7 @@ services:
       - ./elasticsearch/certificates:/usr/share/elasticsearch/config/certificates:ro
       - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     networks:
-      - citadelbuy-network
+      - broxiva-network
       - elasticsearch-network
     ulimits:
       memlock:
@@ -215,8 +215,8 @@ services:
       retries: 5
       start_period: 120s
     labels:
-      - "com.citadelbuy.service=elasticsearch-data"
-      - "com.citadelbuy.description=Elasticsearch Data Node 03"
+      - "com.broxiva.service=elasticsearch-data"
+      - "com.broxiva.description=Elasticsearch Data Node 03"
     deploy:
       resources:
         limits:
@@ -231,7 +231,7 @@ services:
   # =========================================================
   kibana:
     image: docker.elastic.co/kibana/kibana:8.11.0
-    container_name: citadelbuy-kibana
+    container_name: broxiva-kibana
     restart: unless-stopped
     ports:
       - "5601:5601"
@@ -247,7 +247,7 @@ services:
       - kibana-data:/usr/share/kibana/data
       - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
     networks:
-      - citadelbuy-network
+      - broxiva-network
       - elasticsearch-network
     depends_on:
       elasticsearch-01:
@@ -259,8 +259,8 @@ services:
       retries: 5
       start_period: 60s
     labels:
-      - "com.citadelbuy.service=kibana"
-      - "com.citadelbuy.description=Kibana Dashboard"
+      - "com.broxiva.service=kibana"
+      - "com.broxiva.description=Kibana Dashboard"
     deploy:
       resources:
         limits:
@@ -281,7 +281,7 @@ services:
 #
 # 3. First-time setup:
 #    docker-compose -f docker-compose.elasticsearch-prod.yml up -d
-#    docker exec citadelbuy-elasticsearch-01 bin/elasticsearch-setup-passwords auto
+#    docker exec broxiva-elasticsearch-01 bin/elasticsearch-setup-passwords auto
 #
 # 4. Configure OS settings on host:
 #    sudo sysctl -w vm.max_map_count=262144

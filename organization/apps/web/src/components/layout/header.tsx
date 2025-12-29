@@ -82,7 +82,7 @@ export function Header() {
               Track Order
             </Link>
             <Link href="/sell" className="hover:text-foreground transition-colors">
-              Sell on CitadelBuy
+              Sell on Broxiva
             </Link>
           </div>
         </div>
@@ -106,7 +106,7 @@ export function Header() {
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">C</span>
             </div>
-            <span className="hidden sm:inline-block font-bold text-xl">CitadelBuy</span>
+            <span className="hidden sm:inline-block font-bold text-xl">Broxiva</span>
           </Link>
 
           {/* Search bar - Desktop */}

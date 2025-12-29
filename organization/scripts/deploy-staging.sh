@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # ============================================
-# CitadelBuy Staging Deployment Script
+# Broxiva Staging Deployment Script
 # ============================================
-# This script automates the deployment of CitadelBuy to staging environment
+# This script automates the deployment of Broxiva to staging environment
 # It includes building, pushing, deploying, migrating, and testing
 
 set -euo pipefail
@@ -23,11 +23,11 @@ readonly DEPLOYMENT_LOG="${PROJECT_ROOT}/logs/staging-deploy-${TIMESTAMP}.log"
 
 # Container Registry Configuration
 readonly REGISTRY="${REGISTRY:-ghcr.io}"
-readonly IMAGE_NAME="${IMAGE_NAME:-citadelplatforms/citadelbuy}"
+readonly IMAGE_NAME="${IMAGE_NAME:-broxiva/broxiva}"
 readonly IMAGE_TAG="${IMAGE_TAG:-staging-$(git rev-parse --short HEAD)}"
 
 # Kubernetes Configuration
-readonly K8S_NAMESPACE="${K8S_NAMESPACE:-citadelbuy-staging}"
+readonly K8S_NAMESPACE="${K8S_NAMESPACE:-broxiva-staging}"
 readonly K8S_CONTEXT="${K8S_CONTEXT:-staging}"
 readonly KUBECTL="${KUBECTL:-kubectl}"
 
@@ -149,7 +149,7 @@ build_images() {
         -t "${REGISTRY}/${IMAGE_NAME}-web:staging-latest" \
         -f "${PROJECT_ROOT}/apps/web/Dockerfile" \
         --build-arg NODE_ENV=staging \
-        --build-arg NEXT_PUBLIC_API_URL="${STAGING_API_URL:-https://staging-api.citadelbuy.com}" \
+        --build-arg NEXT_PUBLIC_API_URL="${STAGING_API_URL:-https://staging-api.broxiva.com}" \
         "${PROJECT_ROOT}/apps/web" || {
             log ERROR "Failed to build Web image"
             return 1
@@ -213,14 +213,14 @@ deploy_to_kubernetes() {
 
     # Update image tags
     log INFO "Updating deployment image tags..."
-    $KUBECTL set image deployment/citadelbuy-api \
+    $KUBECTL set image deployment/broxiva-api \
         api="${REGISTRY}/${IMAGE_NAME}-api:${IMAGE_TAG}" \
         -n "$K8S_NAMESPACE" || {
         log ERROR "Failed to update API deployment image"
         return 1
     }
 
-    $KUBECTL set image deployment/citadelbuy-web \
+    $KUBECTL set image deployment/broxiva-web \
         web="${REGISTRY}/${IMAGE_NAME}-web:${IMAGE_TAG}" \
         -n "$K8S_NAMESPACE" || {
         log ERROR "Failed to update Web deployment image"
@@ -236,7 +236,7 @@ run_database_migrations() {
 
     # Get the first API pod
     local api_pod
-    api_pod=$($KUBECTL get pods -n "$K8S_NAMESPACE" -l app=citadelbuy-api -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+    api_pod=$($KUBECTL get pods -n "$K8S_NAMESPACE" -l app=broxiva-api -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
 
     if [ -z "$api_pod" ]; then
         log ERROR "No API pod found to run migrations"
@@ -258,7 +258,7 @@ wait_for_rollout() {
 
     # Wait for API deployment
     log INFO "Waiting for API deployment..."
-    $KUBECTL rollout status deployment/citadelbuy-api \
+    $KUBECTL rollout status deployment/broxiva-api \
         -n "$K8S_NAMESPACE" \
         --timeout=300s || {
         log ERROR "API deployment rollout failed or timed out"
@@ -267,7 +267,7 @@ wait_for_rollout() {
 
     # Wait for Web deployment
     log INFO "Waiting for Web deployment..."
-    $KUBECTL rollout status deployment/citadelbuy-web \
+    $KUBECTL rollout status deployment/broxiva-web \
         -n "$K8S_NAMESPACE" \
         --timeout=300s || {
         log ERROR "Web deployment rollout failed or timed out"
@@ -283,17 +283,17 @@ check_pod_health() {
 
     # Check API pods
     local api_pods_ready
-    api_pods_ready=$($KUBECTL get deployment citadelbuy-api -n "$K8S_NAMESPACE" -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+    api_pods_ready=$($KUBECTL get deployment broxiva-api -n "$K8S_NAMESPACE" -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
     local api_pods_desired
-    api_pods_desired=$($KUBECTL get deployment citadelbuy-api -n "$K8S_NAMESPACE" -o jsonpath='{.status.replicas}' 2>/dev/null || echo "0")
+    api_pods_desired=$($KUBECTL get deployment broxiva-api -n "$K8S_NAMESPACE" -o jsonpath='{.status.replicas}' 2>/dev/null || echo "0")
 
     log INFO "API pods: ${api_pods_ready}/${api_pods_desired} ready"
 
     # Check Web pods
     local web_pods_ready
-    web_pods_ready=$($KUBECTL get deployment citadelbuy-web -n "$K8S_NAMESPACE" -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+    web_pods_ready=$($KUBECTL get deployment broxiva-web -n "$K8S_NAMESPACE" -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
     local web_pods_desired
-    web_pods_desired=$($KUBECTL get deployment citadelbuy-web -n "$K8S_NAMESPACE" -o jsonpath='{.status.replicas}' 2>/dev/null || echo "0")
+    web_pods_desired=$($KUBECTL get deployment broxiva-web -n "$K8S_NAMESPACE" -o jsonpath='{.status.replicas}' 2>/dev/null || echo "0")
 
     log INFO "Web pods: ${web_pods_ready}/${web_pods_desired} ready"
 
@@ -337,7 +337,7 @@ generate_deployment_report() {
     local report_file="${PROJECT_ROOT}/logs/staging-deploy-report-${TIMESTAMP}.txt"
 
     cat > "$report_file" << EOF
-CitadelBuy Staging Deployment Report
+Broxiva Staging Deployment Report
 ====================================
 Timestamp: $(date)
 Git Commit: $(git rev-parse HEAD)
@@ -389,13 +389,13 @@ rollback_deployment() {
 
     # Rollback API deployment
     log INFO "Rolling back API deployment..."
-    $KUBECTL rollout undo deployment/citadelbuy-api -n "$K8S_NAMESPACE" || {
+    $KUBECTL rollout undo deployment/broxiva-api -n "$K8S_NAMESPACE" || {
         log ERROR "Failed to rollback API deployment"
     }
 
     # Rollback Web deployment
     log INFO "Rolling back Web deployment..."
-    $KUBECTL rollout undo deployment/citadelbuy-web -n "$K8S_NAMESPACE" || {
+    $KUBECTL rollout undo deployment/broxiva-web -n "$K8S_NAMESPACE" || {
         log ERROR "Failed to rollback Web deployment"
     }
 
@@ -407,7 +407,7 @@ rollback_deployment() {
 # ============================================
 
 main() {
-    log INFO "Starting CitadelBuy staging deployment..."
+    log INFO "Starting Broxiva staging deployment..."
     log INFO "Deployment log: $DEPLOYMENT_LOG"
 
     # Check prerequisites

@@ -4,7 +4,7 @@ test.describe('Checkout Flow', () => {
   test.beforeEach(async ({ page }) => {
     // Login before each test
     await page.goto('/auth/login');
-    await page.getByRole('textbox', { name: /email/i }).fill('customer@citadelbuy.com');
+    await page.getByRole('textbox', { name: /email/i }).fill('customer@broxiva.com');
     await page.getByRole('textbox', { name: /password/i }).fill('password123');
     await page.getByRole('button', { name: /sign in|login/i }).click();
     await page.waitForURL(/\/(account|home|$)/, { timeout: 10000 });

@@ -1,5 +1,17 @@
-# CitadelBuy Web - Development Dockerfile
+# Broxiva Web - Development Dockerfile
+# ENCODING-HARDENED: UTF-8 safe across all environments
 FROM node:20-alpine
+
+# ENCODING FIX: Set UTF-8 locale for Alpine
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install bash for consistent shell behavior
+RUN apk add --no-cache bash && rm -rf /var/cache/apk/*
+
+# ENCODING FIX: Use bash shell
+SHELL ["/bin/bash", "-c"]
 
 WORKDIR /app
 
@@ -9,11 +21,17 @@ RUN npm install -g pnpm
 # Copy package files
 COPY package.json pnpm-lock.yaml* ./
 
+# ENCODING FIX: Normalize CRLF line endings
+RUN find . -type f -name "*.json" -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
+
 # Install dependencies
 RUN pnpm install
 
 # Copy source code
 COPY . .
+
+# ENCODING FIX: Normalize all source files
+RUN find . -type f \( -name "*.js" -o -name "*.ts" -o -name "*.tsx" -o -name "*.json" -o -name "*.css" \) -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
 
 # Expose port
 EXPOSE 3000
@@ -24,3 +42,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 # Start development server
 CMD ["pnpm", "dev"]
+
+# ==========================================
+# ENCODING HARDENING APPLIED:
+# - LANG=C.UTF-8, LC_ALL=C.UTF-8
+# - SHELL ["/bin/bash", "-c"]
+# - CRLF normalization for Windows compatibility
+# ==========================================

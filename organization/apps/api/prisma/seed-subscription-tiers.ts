@@ -56,7 +56,7 @@ async function seedSubscriptionTier(tier: SubscriptionTierDefinition): Promise<v
     },
     commissionRate: tier.transactionFee,
     prioritySupport: tier.features.supportType !== 'email',
-    removeBranding: !tier.features.citadelBuyBranding,
+    removeBranding: !tier.features.broxivaBranding,
     customDomain: tier.features.customDomain,
     apiAccess: tier.features.apiAccess,
     apiCallsPerMonth: tier.features.apiCallsPerMonth,
@@ -101,7 +101,7 @@ function getFeatureList(tier: SubscriptionTierDefinition): string[] {
   if (f.automatedOrderProcessing) features.push('Automated order processing');
 
   // Branding
-  if (!f.citadelBuyBranding) features.push('No CitadelBuy branding');
+  if (!f.broxivaBranding) features.push('No Broxiva branding');
   if (f.customStoreUrl) features.push('Custom store URL');
   if (f.customDomain) features.push('Custom domain with SSL');
   if (f.whiteLabelStorefront) features.push('White-label storefront');

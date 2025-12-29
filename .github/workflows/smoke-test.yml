@@ -1,0 +1,188 @@
+name: Smoke Tests
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to test'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+  schedule:
+    # Run smoke tests every hour
+    - cron: '0 * * * *'
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '10'
+
+jobs:
+  api-health-check:
+    name: API Health Check - ${{ inputs.environment || 'staging' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set environment URL
+        id: set-url
+        run: |
+          case "${{ inputs.environment || 'staging' }}" in
+            dev)
+              echo "API_URL=https://api-dev.broxiva.com" >> $GITHUB_ENV
+              ;;
+            staging)
+              echo "API_URL=https://api-staging.broxiva.com" >> $GITHUB_ENV
+              ;;
+            production)
+              echo "API_URL=https://api.broxiva.com" >> $GITHUB_ENV
+              ;;
+          esac
+
+      - name: Run health check script
+        run: |
+          chmod +x scripts/health-check.sh
+          ./scripts/health-check.sh ${{ env.API_URL }}
+
+      - name: Post health check results
+        if: always()
+        run: |
+          echo "## API Health Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Environment: ${{ inputs.environment || 'staging' }}" >> $GITHUB_STEP_SUMMARY
+          echo "API URL: ${{ env.API_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+
+  e2e-smoke-tests:
+    name: E2E Smoke Tests - ${{ inputs.environment || 'staging' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Set environment URL
+        id: set-url
+        run: |
+          case "${{ inputs.environment || 'staging' }}" in
+            dev)
+              echo "WEB_URL=https://dev.broxiva.com" >> $GITHUB_ENV
+              echo "API_URL=https://api-dev.broxiva.com" >> $GITHUB_ENV
+              ;;
+            staging)
+              echo "WEB_URL=https://staging.broxiva.com" >> $GITHUB_ENV
+              echo "API_URL=https://api-staging.broxiva.com" >> $GITHUB_ENV
+              ;;
+            production)
+              echo "WEB_URL=https://broxiva.com" >> $GITHUB_ENV
+              echo "API_URL=https://api.broxiva.com" >> $GITHUB_ENV
+              ;;
+          esac
+
+      - name: Run smoke tests
+        run: pnpm exec playwright test tests/smoke/smoke-test.spec.ts
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ env.WEB_URL }}
+          API_BASE_URL: ${{ env.API_URL }}
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-test-results-${{ inputs.environment || 'staging' }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+      - name: Post test summary
+        if: always()
+        run: |
+          echo "## E2E Smoke Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Environment: ${{ inputs.environment || 'staging' }}" >> $GITHUB_STEP_SUMMARY
+          echo "Web URL: ${{ env.WEB_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "API URL: ${{ env.API_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+
+  notify-on-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [api-health-check, e2e-smoke-tests]
+    if: failure()
+    steps:
+      - name: Send Slack notification
+        if: env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST $SLACK_WEBHOOK_URL \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "text": "🚨 Smoke Tests Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Smoke Tests Failed*\n\nEnvironment: ${{ inputs.environment || 'staging' }}\nWorkflow: ${{ github.workflow }}\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
+              ]
+            }'
+
+      - name: Create GitHub issue
+        if: github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Smoke Tests Failed - ${context.payload.inputs?.environment || 'staging'}`,
+              body: `## Smoke Test Failure\n\n**Environment:** ${context.payload.inputs?.environment || 'staging'}\n**Workflow:** ${context.workflow}\n**Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nPlease investigate immediately.`,
+              labels: ['bug', 'smoke-test', 'production']
+            })
+
+  summary:
+    name: Smoke Test Summary
+    runs-on: ubuntu-latest
+    needs: [api-health-check, e2e-smoke-tests]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## Smoke Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| API Health Check | ${{ needs.api-health-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| E2E Smoke Tests | ${{ needs.e2e-smoke-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ inputs.environment || 'staging' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check overall status
+        if: needs.api-health-check.result != 'success' || needs.e2e-smoke-tests.result != 'success'
+        run: exit 1

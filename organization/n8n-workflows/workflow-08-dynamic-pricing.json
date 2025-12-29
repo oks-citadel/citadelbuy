@@ -1,5 +1,5 @@
 {
-  "name": "CitadelBuy Dynamic Pricing & Competitor Monitoring",
+  "name": "Broxiva Dynamic Pricing & Competitor Monitoring",
   "nodes": [
     {
       "parameters": {
@@ -32,8 +32,8 @@
       "position": [450, 300],
       "credentials": {
         "postgres": {
-          "id": "citadelbuy_postgres",
-          "name": "CitadelBuy PostgreSQL"
+          "id": "broxiva_postgres",
+          "name": "Broxiva PostgreSQL"
         }
       }
     },
@@ -315,8 +315,8 @@
       "position": [850, 500],
       "credentials": {
         "postgres": {
-          "id": "citadelbuy_postgres",
-          "name": "CitadelBuy PostgreSQL"
+          "id": "broxiva_postgres",
+          "name": "Broxiva PostgreSQL"
         }
       }
     },
@@ -344,8 +344,8 @@
       "position": [1450, 200],
       "credentials": {
         "postgres": {
-          "id": "citadelbuy_postgres",
-          "name": "CitadelBuy PostgreSQL"
+          "id": "broxiva_postgres",
+          "name": "Broxiva PostgreSQL"
         }
       },
       "executeOnce": false
@@ -374,8 +374,8 @@
       "position": [1650, 300],
       "credentials": {
         "postgres": {
-          "id": "citadelbuy_postgres",
-          "name": "CitadelBuy PostgreSQL"
+          "id": "broxiva_postgres",
+          "name": "Broxiva PostgreSQL"
         }
       },
       "executeOnce": false
@@ -422,7 +422,7 @@
           "value": "C12345PRICING",
           "mode": "id"
         },
-        "text": "=:rotating_light: *URGENT PRICING ALERT*\n\n*Product:* {{ $json.product_name }}\n*SKU:* {{ $json.sku }}\n*Current Price:* ${{ $json.current_price }}\n*Current Margin:* {{ ($json.current_margin * 100).toFixed(1) }}%\n\n{{ $json.alerts.filter(a => a.severity === 'urgent' || a.severity === 'critical').map(alert => \n  `*${alert.type.toUpperCase()}:* ${alert.message}\\n*Action:* ${alert.recommended_action}`\n).join('\\n\\n') }}\n\n*Recommendations:*\n{{ $json.recommendations.slice(0, 2).map(rec => \n  `• *${rec.type}*: ${rec.current_price} → $${rec.recommended_price} (${rec.price_change_percent}%)\\n  Reason: ${rec.reason}\\n  ${rec.requires_approval ? '⚠️ Requires approval' : '✅ Auto-eligible'}`\n).join('\\n\\n') }}\n\n*Competitor Pricing:*\n{{ $json.competitor_prices.slice(0, 3).map(cp => \n  `• ${cp.competitor}: $${cp.price} ${cp.in_stock ? '✓' : '(Out of stock)'}`\n).join('\\n') }}\n\n<https://admin.citadelbuy.com/pricing/review/{{ $json.product_id }}|Review & Take Action>",
+        "text": "=:rotating_light: *URGENT PRICING ALERT*\n\n*Product:* {{ $json.product_name }}\n*SKU:* {{ $json.sku }}\n*Current Price:* ${{ $json.current_price }}\n*Current Margin:* {{ ($json.current_margin * 100).toFixed(1) }}%\n\n{{ $json.alerts.filter(a => a.severity === 'urgent' || a.severity === 'critical').map(alert => \n  `*${alert.type.toUpperCase()}:* ${alert.message}\\n*Action:* ${alert.recommended_action}`\n).join('\\n\\n') }}\n\n*Recommendations:*\n{{ $json.recommendations.slice(0, 2).map(rec => \n  `• *${rec.type}*: ${rec.current_price} → $${rec.recommended_price} (${rec.price_change_percent}%)\\n  Reason: ${rec.reason}\\n  ${rec.requires_approval ? '⚠️ Requires approval' : '✅ Auto-eligible'}`\n).join('\\n\\n') }}\n\n*Competitor Pricing:*\n{{ $json.competitor_prices.slice(0, 3).map(cp => \n  `• ${cp.competitor}: $${cp.price} ${cp.in_stock ? '✓' : '(Out of stock)'}`\n).join('\\n') }}\n\n<https://admin.broxiva.com/pricing/review/{{ $json.product_id }}|Review & Take Action>",
         "otherOptions": {}
       },
       "id": "send-urgent-slack-alert",
@@ -467,7 +467,7 @@
           "value": "C12345PRICING",
           "mode": "id"
         },
-        "text": "=:chart_with_upwards_trend: *Daily Pricing Summary - {{ $json.report_date }}*\n\n*Overview*\n• Products Tracked: {{ $json.total_products_tracked }}\n• With Competitor Data: {{ $json.products_with_data }}\n• Total Recommendations: {{ $json.total_recommendations }}\n• Urgent Alerts: {{ $json.urgent_alerts }}\n• Pending Approvals: {{ $json.pending_approvals }}\n\n*Price Positioning*\n• Significantly Lower: {{ $json.price_positions.significantly_lower }}\n• Competitive: {{ $json.price_positions.competitive }}\n• Slightly Higher: {{ $json.price_positions.slightly_higher }}\n• Significantly Higher: {{ $json.price_positions.significantly_higher }}\n\n*Recommendations*\n• Price Match: {{ $json.recommendations_by_type.price_match }}\n• Margin Protection: {{ $json.recommendations_by_type.margin_protection }}\n• Opportunity Pricing: {{ $json.recommendations_by_type.opportunity_pricing }}\n• Competitive Adjustments: {{ $json.recommendations_by_type.competitive_adjustment }}\n• Premium Opportunities: {{ $json.recommendations_by_type.premium_opportunity }}\n\n*Alerts by Severity*\n• Critical: {{ $json.alerts_by_severity.critical }}\n• Urgent: {{ $json.alerts_by_severity.urgent }}\n• High: {{ $json.alerts_by_severity.high }}\n• Medium: {{ $json.alerts_by_severity.medium }}\n\n{{ $json.top_price_match_opportunities.length > 0 ? '*Top Price Match Opportunities:*\\n' + $json.top_price_match_opportunities.map(p => `• ${p.product_name} (${p.sku}): $${p.current_price} vs $${p.min_competitor_price} (${p.price_diff_percent}% diff)`).join('\\n') : '' }}\n\n{{ $json.low_margin_products.length > 0 ? '*Low Margin Warnings:*\\n' + $json.low_margin_products.map(p => `• ${p.product_name}: ${p.current_margin}% margin`).join('\\n') : '' }}\n\n{{ $json.out_of_stock_opportunities.length > 0 ? '*Out of Stock Opportunities:*\\n' + $json.out_of_stock_opportunities.map(p => `• ${p.product_name}: ${p.out_of_stock_count}/${p.total_competitors} competitors OOS`).join('\\n') : '' }}\n\n*Market Insights*\n• Avg Competitors/Product: {{ $json.avg_competitors_per_product }}\n• Avg Price Difference: {{ $json.avg_price_difference }}%\n\n<https://admin.citadelbuy.com/pricing/dashboard|View Full Dashboard> | <https://admin.citadelbuy.com/pricing/approvals|Review Approvals>",
+        "text": "=:chart_with_upwards_trend: *Daily Pricing Summary - {{ $json.report_date }}*\n\n*Overview*\n• Products Tracked: {{ $json.total_products_tracked }}\n• With Competitor Data: {{ $json.products_with_data }}\n• Total Recommendations: {{ $json.total_recommendations }}\n• Urgent Alerts: {{ $json.urgent_alerts }}\n• Pending Approvals: {{ $json.pending_approvals }}\n\n*Price Positioning*\n• Significantly Lower: {{ $json.price_positions.significantly_lower }}\n• Competitive: {{ $json.price_positions.competitive }}\n• Slightly Higher: {{ $json.price_positions.slightly_higher }}\n• Significantly Higher: {{ $json.price_positions.significantly_higher }}\n\n*Recommendations*\n• Price Match: {{ $json.recommendations_by_type.price_match }}\n• Margin Protection: {{ $json.recommendations_by_type.margin_protection }}\n• Opportunity Pricing: {{ $json.recommendations_by_type.opportunity_pricing }}\n• Competitive Adjustments: {{ $json.recommendations_by_type.competitive_adjustment }}\n• Premium Opportunities: {{ $json.recommendations_by_type.premium_opportunity }}\n\n*Alerts by Severity*\n• Critical: {{ $json.alerts_by_severity.critical }}\n• Urgent: {{ $json.alerts_by_severity.urgent }}\n• High: {{ $json.alerts_by_severity.high }}\n• Medium: {{ $json.alerts_by_severity.medium }}\n\n{{ $json.top_price_match_opportunities.length > 0 ? '*Top Price Match Opportunities:*\\n' + $json.top_price_match_opportunities.map(p => `• ${p.product_name} (${p.sku}): $${p.current_price} vs $${p.min_competitor_price} (${p.price_diff_percent}% diff)`).join('\\n') : '' }}\n\n{{ $json.low_margin_products.length > 0 ? '*Low Margin Warnings:*\\n' + $json.low_margin_products.map(p => `• ${p.product_name}: ${p.current_margin}% margin`).join('\\n') : '' }}\n\n{{ $json.out_of_stock_opportunities.length > 0 ? '*Out of Stock Opportunities:*\\n' + $json.out_of_stock_opportunities.map(p => `• ${p.product_name}: ${p.out_of_stock_count}/${p.total_competitors} competitors OOS`).join('\\n') : '' }}\n\n*Market Insights*\n• Avg Competitors/Product: {{ $json.avg_competitors_per_product }}\n• Avg Price Difference: {{ $json.avg_price_difference }}%\n\n<https://admin.broxiva.com/pricing/dashboard|View Full Dashboard> | <https://admin.broxiva.com/pricing/approvals|Review Approvals>",
         "otherOptions": {}
       },
       "id": "send-daily-summary-slack",
@@ -537,7 +537,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"model\": \"citadelbuy\",\n  \"view\": \"pricing_metrics\",\n  \"fields\": [\"pricing_metrics.date\", \"pricing_metrics.total_products\", \"pricing_metrics.competitive_position\", \"pricing_metrics.avg_margin\"],\n  \"filters\": {\n    \"pricing_metrics.date\": \"{{ $json.report_date }}\"\n  },\n  \"limit\": 1,\n  \"cache\": false\n}",
+        "jsonBody": "={\n  \"model\": \"broxiva\",\n  \"view\": \"pricing_metrics\",\n  \"fields\": [\"pricing_metrics.date\", \"pricing_metrics.total_products\", \"pricing_metrics.competitive_position\", \"pricing_metrics.avg_margin\"],\n  \"filters\": {\n    \"pricing_metrics.date\": \"{{ $json.report_date }}\"\n  },\n  \"limit\": 1,\n  \"cache\": false\n}",
         "options": {}
       },
       "id": "push-to-looker",
@@ -566,8 +566,8 @@
       "position": [2250, 200],
       "credentials": {
         "postgres": {
-          "id": "citadelbuy_postgres",
-          "name": "CitadelBuy PostgreSQL"
+          "id": "broxiva_postgres",
+          "name": "Broxiva PostgreSQL"
         }
       }
     },
@@ -897,7 +897,7 @@
   "versionId": "1.0.0",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "citadelbuy_production"
+    "instanceId": "broxiva_production"
   },
   "id": "workflow-08-dynamic-pricing",
   "tags": [

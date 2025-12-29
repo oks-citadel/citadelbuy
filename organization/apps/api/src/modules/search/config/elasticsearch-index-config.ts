@@ -31,7 +31,7 @@ export const PRODUCTS_INDEX_CONFIG: IndexConfig = {
     max_rescore_window: 10000,
 
     // Index Lifecycle Management
-    'lifecycle.name': 'citadelbuy-products-policy',
+    'lifecycle.name': 'broxiva-products-policy',
 
     // Codec for compression
     codec: 'best_compression', // Save storage space
@@ -434,7 +434,7 @@ export const SEARCH_ANALYTICS_INDEX_CONFIG: IndexConfig = {
     refresh_interval: '30s',
 
     // ILM: Delete after 90 days
-    'lifecycle.name': 'citadelbuy-analytics-policy',
+    'lifecycle.name': 'broxiva-analytics-policy',
   },
 
   mappings: {
@@ -543,7 +543,7 @@ export const ILM_POLICIES = {
  * Get index name with environment prefix
  */
 export function getIndexName(baseIndex: string, environment?: string): string {
-  const prefix = process.env.ELASTICSEARCH_INDEX_PREFIX || 'citadelbuy';
+  const prefix = process.env.ELASTICSEARCH_INDEX_PREFIX || 'broxiva';
   const env = environment || process.env.NODE_ENV || 'development';
   return `${prefix}-${env}-${baseIndex}`;
 }

@@ -4,7 +4,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: email-worker
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: email-worker
     tier: worker
@@ -32,7 +32,7 @@ spec:
         prometheus.io/port: "9090"
         prometheus.io/path: "/metrics"
     spec:
-      serviceAccountName: citadelbuy-worker
+      serviceAccountName: broxiva-worker
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -42,7 +42,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: worker
-        image: ghcr.io/citadelplatforms/citadelbuy-api:production-latest
+        image: broxivaprodacr.azurecr.io/broxiva-api:production-latest
         command: ["node", "dist/workers/email.worker.js"]
         env:
         - name: NODE_ENV
@@ -54,34 +54,34 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: DATABASE_URL
         - name: REDIS_URL
           value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
         - name: REDIS_HOST
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: REDIS_HOST
         - name: REDIS_PORT
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: REDIS_PORT
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: REDIS_PASSWORD
         - name: SENDGRID_API_KEY
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: SENDGRID_API_KEY
         - name: SENTRY_DSN
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: SENTRY_DSN
         securityContext:
           allowPrivilegeEscalation: false
@@ -113,7 +113,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cart-abandonment-worker
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: cart-abandonment-worker
     tier: worker
@@ -141,7 +141,7 @@ spec:
         prometheus.io/port: "9090"
         prometheus.io/path: "/metrics"
     spec:
-      serviceAccountName: citadelbuy-worker
+      serviceAccountName: broxiva-worker
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -151,7 +151,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: worker
-        image: ghcr.io/citadelplatforms/citadelbuy-api:production-latest
+        image: broxivaprodacr.azurecr.io/broxiva-api:production-latest
         command: ["node", "dist/workers/cart-abandonment.worker.js"]
         env:
         - name: NODE_ENV
@@ -163,34 +163,34 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: DATABASE_URL
         - name: REDIS_URL
           value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
         - name: REDIS_HOST
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: REDIS_HOST
         - name: REDIS_PORT
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: REDIS_PORT
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: REDIS_PASSWORD
         - name: SENDGRID_API_KEY
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: SENDGRID_API_KEY
         - name: SENTRY_DSN
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: SENTRY_DSN
         securityContext:
           allowPrivilegeEscalation: false
@@ -222,7 +222,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: order-processing-worker
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: order-processing-worker
     tier: worker
@@ -250,7 +250,7 @@ spec:
         prometheus.io/port: "9090"
         prometheus.io/path: "/metrics"
     spec:
-      serviceAccountName: citadelbuy-worker
+      serviceAccountName: broxiva-worker
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -272,7 +272,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
       - name: worker
-        image: ghcr.io/citadelplatforms/citadelbuy-api:production-latest
+        image: broxivaprodacr.azurecr.io/broxiva-api:production-latest
         command: ["node", "dist/workers/order-processing.worker.js"]
         env:
         - name: NODE_ENV
@@ -284,39 +284,39 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: DATABASE_URL
         - name: REDIS_URL
           value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
         - name: REDIS_HOST
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: REDIS_HOST
         - name: REDIS_PORT
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: REDIS_PORT
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: REDIS_PASSWORD
         - name: STRIPE_SECRET_KEY
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: STRIPE_SECRET_KEY
         - name: SENDGRID_API_KEY
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: SENDGRID_API_KEY
         - name: SENTRY_DSN
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: SENTRY_DSN
         securityContext:
           allowPrivilegeEscalation: false
@@ -348,7 +348,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: search-indexing-worker
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: search-indexing-worker
     tier: worker
@@ -376,7 +376,7 @@ spec:
         prometheus.io/port: "9090"
         prometheus.io/path: "/metrics"
     spec:
-      serviceAccountName: citadelbuy-worker
+      serviceAccountName: broxiva-worker
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -386,7 +386,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: worker
-        image: ghcr.io/citadelplatforms/citadelbuy-api:production-latest
+        image: broxivaprodacr.azurecr.io/broxiva-api:production-latest
         command: ["node", "dist/workers/search-indexing.worker.js"]
         env:
         - name: NODE_ENV
@@ -398,34 +398,34 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: DATABASE_URL
         - name: REDIS_URL
           value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
         - name: REDIS_HOST
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: REDIS_HOST
         - name: REDIS_PORT
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: REDIS_PORT
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: REDIS_PASSWORD
         - name: ELASTICSEARCH_NODE
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: ELASTICSEARCH_NODE
         - name: SENTRY_DSN
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: SENTRY_DSN
         securityContext:
           allowPrivilegeEscalation: false
@@ -457,7 +457,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: scheduled-jobs-worker
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: scheduled-jobs-worker
     tier: worker
@@ -485,7 +485,7 @@ spec:
         prometheus.io/port: "9090"
         prometheus.io/path: "/metrics"
     spec:
-      serviceAccountName: citadelbuy-worker
+      serviceAccountName: broxiva-worker
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -495,7 +495,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: worker
-        image: ghcr.io/citadelplatforms/citadelbuy-api:production-latest
+        image: broxivaprodacr.azurecr.io/broxiva-api:production-latest
         command: ["node", "dist/workers/scheduled-jobs.worker.js"]
         env:
         - name: NODE_ENV
@@ -507,34 +507,34 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: DATABASE_URL
         - name: REDIS_URL
           value: "redis://$(REDIS_HOST):$(REDIS_PORT)"
         - name: REDIS_HOST
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: REDIS_HOST
         - name: REDIS_PORT
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: REDIS_PORT
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: REDIS_PASSWORD
         - name: SENDGRID_API_KEY
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: SENDGRID_API_KEY
         - name: SENTRY_DSN
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: SENTRY_DSN
         securityContext:
           allowPrivilegeEscalation: false
@@ -564,19 +564,19 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: citadelbuy-worker
-  namespace: citadelbuy-production
+  name: broxiva-worker
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-worker
+    app: broxiva-worker
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/citadelbuy-worker-production
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/broxiva-worker-production
 ---
 # Pod Disruption Budget for Order Processing Workers
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: order-processing-worker-pdb
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: order-processing-worker
 spec:

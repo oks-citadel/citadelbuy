@@ -1,17 +1,17 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: citadelbuy-staging
+  name: broxiva-staging
   labels:
-    name: citadelbuy-staging
+    name: broxiva-staging
     environment: staging
-    app: citadelbuy
+    app: broxiva
 ---
 apiVersion: v1
 kind: ResourceQuota
 metadata:
   name: staging-quota
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
 spec:
   hard:
     requests.cpu: "8"
@@ -25,7 +25,7 @@ apiVersion: v1
 kind: LimitRange
 metadata:
   name: staging-limits
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
 spec:
   limits:
   - max:

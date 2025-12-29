@@ -27,7 +27,7 @@ export class MockEmailService {
   async sendWelcomeEmail(to: string, name: string) {
     return this.sendEmail(
       to,
-      'Welcome to CitadelBuy!',
+      'Welcome to Broxiva!',
       `Hello ${name}, welcome to our platform!`,
     );
   }

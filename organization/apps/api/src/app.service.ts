@@ -5,7 +5,7 @@ export class AppService {
   getHealth(): { status: string; message: string } {
     return {
       status: 'ok',
-      message: 'CitadelBuy API is running',
+      message: 'Broxiva API is running',
     };
   }
 

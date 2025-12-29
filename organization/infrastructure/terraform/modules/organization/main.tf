@@ -39,7 +39,7 @@ variable "tags" {
 
 # Local variables
 locals {
-  name_prefix = "citadelbuy-org-${var.environment}"
+  name_prefix = "broxiva-org-${var.environment}"
   common_tags = merge(var.tags, {
     Module      = "organization"
     Environment = var.environment
@@ -55,7 +55,7 @@ resource "azurerm_postgresql_flexible_server" "organization_db" {
   version                = "15"
   delegated_subnet_id    = var.subnet_id
   private_dns_zone_id    = var.private_dns_zone_id
-  administrator_login    = "citadelbuy_admin"
+  administrator_login    = "broxiva_admin"
   administrator_password = var.db_password
   zone                   = "1"
 

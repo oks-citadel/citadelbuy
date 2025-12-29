@@ -160,9 +160,10 @@ export class CurrencyConversionService {
     const pair = `${fromCurrency}-${toCurrency}`;
     const reversePair = `${toCurrency}-${fromCurrency}`;
 
+    const fees = this.DEFAULT_CONVERSION_FEES as Record<string, number>;
     return (
-      this.DEFAULT_CONVERSION_FEES[pair] ||
-      this.DEFAULT_CONVERSION_FEES[reversePair] ||
+      fees[pair] ||
+      fees[reversePair] ||
       this.DEFAULT_CONVERSION_FEES.default
     );
   }
@@ -174,9 +175,10 @@ export class CurrencyConversionService {
     const pair = `${fromCurrency}-${toCurrency}`;
     const reversePair = `${toCurrency}-${fromCurrency}`;
 
+    const markup = this.DEFAULT_MARKUP as Record<string, number>;
     return (
-      this.DEFAULT_MARKUP[pair] ||
-      this.DEFAULT_MARKUP[reversePair] ||
+      markup[pair] ||
+      markup[reversePair] ||
       this.DEFAULT_MARKUP.default
     );
   }

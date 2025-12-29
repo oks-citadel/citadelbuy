@@ -1,20 +1,35 @@
 # Development Dockerfile for NestJS Backend (using ts-node)
+# ENCODING-HARDENED: UTF-8 safe across all environments
 FROM node:20-alpine
+
+# ENCODING FIX: Set UTF-8 locale for Alpine
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
 
 WORKDIR /app
 
-# Install dependencies
-RUN apk add --no-cache dumb-init
+# Install dependencies including bash
+RUN apk add --no-cache dumb-init bash && rm -rf /var/cache/apk/*
+
+# ENCODING FIX: Use bash shell
+SHELL ["/bin/bash", "-c"]
 
 # Copy package files
 COPY package*.json ./
 COPY prisma ./prisma/
+
+# ENCODING FIX: Normalize CRLF line endings
+RUN find . -type f \( -name "*.json" -o -name "*.prisma" \) -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
 
 # Install all dependencies (including dev dependencies for ts-node)
 RUN npm install
 
 # Copy source code
 COPY . .
+
+# ENCODING FIX: Normalize all source files
+RUN find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" \) -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
 
 # Generate Prisma Client
 RUN npx prisma generate
@@ -31,3 +46,10 @@ ENTRYPOINT ["dumb-init", "--"]
 
 # Start application with ts-node
 CMD ["npx", "ts-node", "-r", "tsconfig-paths/register", "src/main.ts"]
+
+# ==========================================
+# ENCODING HARDENING APPLIED:
+# - LANG=C.UTF-8, LC_ALL=C.UTF-8
+# - SHELL ["/bin/bash", "-c"]
+# - CRLF normalization for Windows compatibility
+# ==========================================

@@ -31,7 +31,7 @@ def fix_schema_format(schema_path):
         return False
 
 def main():
-    schema_path = r'C:\Users\citad\OneDrive\Documents\citadelbuy-master\organization\apps\api\prisma\schema.prisma'
+    schema_path = r'C:\Users\citad\OneDrive\Documents\broxiva-master\organization\apps\api\prisma\schema.prisma'
     print("Fixing schema formatting...")
     print("=" * 80)
     fix_schema_format(schema_path)

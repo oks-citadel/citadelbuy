@@ -340,7 +340,7 @@ export class BnplProviderService {
           user_confirmation_url: request.returnUrl,
           user_cancel_url: request.cancelUrl,
           user_confirmation_url_action: 'GET',
-          name: this.configService.get('APP_NAME') || 'CitadelBuy',
+          name: this.configService.get('APP_NAME') || 'Broxiva',
         },
         shipping: {
           name: {

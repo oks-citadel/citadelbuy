@@ -342,20 +342,33 @@ export class NotificationsService {
     status: string,
     trackingNumber?: string,
   ) {
-    // Note: phoneNumber field is not in the User model yet
-    // This is a placeholder for when the field is added
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true },
+      select: { id: true, email: true, phoneNumber: true, phoneVerified: true },
     });
 
     if (!user) {
       return { success: false, error: 'User not found' };
     }
 
-    // TODO: Add phoneNumber to User model and use it here
-    this.logger.warn(`SMS not sent - phoneNumber field not yet available for user ${userId}`);
-    return { success: false, error: 'Phone number not available in user profile' };
+
+    if (!user.phoneNumber) {
+      return { success: false, error: 'User does not have a phone number' };
+    }
+
+    if (!user.phoneVerified) {
+      this.logger.warn(`SMS not sent - phone number not verified for user ${userId}`);
+      return { success: false, error: 'Phone number not verified' };
+    }
+
+    // Construct SMS message
+    let message = `Order Update: Your order #${orderNumber} status is now ${status}.`;
+    if (trackingNumber) {
+      message += ` Tracking: ${trackingNumber}`;
+    }
+
+    // Send SMS
+    return this.smsService.sendSms({ to: user.phoneNumber, message });
   }
 
   /**
@@ -366,20 +379,33 @@ export class NotificationsService {
     orderNumber: string,
     estimatedDelivery?: string,
   ) {
-    // Note: phoneNumber field is not in the User model yet
-    // This is a placeholder for when the field is added
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true },
+      select: { id: true, email: true, phoneNumber: true, phoneVerified: true },
     });
 
     if (!user) {
       return { success: false, error: 'User not found' };
     }
 
-    // TODO: Add phoneNumber to User model and use it here
-    this.logger.warn(`SMS not sent - phoneNumber field not yet available for user ${userId}`);
-    return { success: false, error: 'Phone number not available in user profile' };
+
+    if (!user.phoneNumber) {
+      return { success: false, error: 'User does not have a phone number' };
+    }
+
+    if (!user.phoneVerified) {
+      this.logger.warn(`SMS not sent - phone number not verified for user ${userId}`);
+      return { success: false, error: 'Phone number not verified' };
+    }
+
+    // Construct SMS message
+    let message = `Delivery Update: Your order #${orderNumber} is on its way!`;
+    if (estimatedDelivery) {
+      message += ` Estimated delivery: ${estimatedDelivery}`;
+    }
+
+    // Send SMS
+    return this.smsService.sendSms({ to: user.phoneNumber, message });
   }
 
   /**

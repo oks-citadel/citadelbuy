@@ -204,9 +204,9 @@ export default function SettingsScreen() {
 
       {/* App Info */}
       <View style={styles.appInfo}>
-        <Text style={styles.appName}>CitadelBuy</Text>
+        <Text style={styles.appName}>Broxiva</Text>
         <Text style={styles.appVersion}>Version 1.0.0 (Build 1)</Text>
-        <Text style={styles.copyright}>2024 CitadelBuy. All rights reserved.</Text>
+        <Text style={styles.copyright}>2024 Broxiva. All rights reserved.</Text>
       </View>
 
       <View style={styles.bottomPadding} />

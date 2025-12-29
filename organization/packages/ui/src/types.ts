@@ -1,9 +1,9 @@
 /**
- * Shared UI Types for CitadelBuy UI Components
+ * Shared UI Types for Broxiva UI Components
  */
 
 import * as React from 'react';
-import { VariantProps } from 'class-variance-authority';
+// VariantProps removed - was unused
 
 // Button Types
 export interface ButtonProps

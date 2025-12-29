@@ -10,9 +10,9 @@ version: '3.8'
 #   PGADMIN_DEFAULT_PASSWORD=<generate-secure-password>
 #
 # Optional (with defaults):
-#   POSTGRES_USER=citadelbuy
-#   POSTGRES_DB=citadelbuy_dev
-#   PGADMIN_DEFAULT_EMAIL=admin@citadelbuy.com
+#   POSTGRES_USER=broxiva
+#   POSTGRES_DB=broxiva_dev
+#   PGADMIN_DEFAULT_EMAIL=admin@broxiva.com
 #
 # Generate secure passwords: openssl rand -base64 32
 # See .env.docker.example in project root for a complete template
@@ -24,36 +24,36 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: citadelbuy-postgres
+    container_name: broxiva-postgres
     restart: unless-stopped
     ports:
       - '5432:5432'
     environment:
       # Set POSTGRES_PASSWORD in .env file - do not use the default!
-      POSTGRES_USER: ${POSTGRES_USER:-citadelbuy}
+      POSTGRES_USER: ${POSTGRES_USER:-broxiva}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env file}
-      POSTGRES_DB: ${POSTGRES_DB:-citadelbuy_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-broxiva_dev}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U citadelbuy']
+      test: ['CMD-SHELL', 'pg_isready -U broxiva']
       interval: 10s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: citadelbuy-redis
+    container_name: broxiva-redis
     restart: unless-stopped
     ports:
       - '6379:6379'
     volumes:
       - redis-data:/data
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
@@ -64,19 +64,19 @@ services:
   # Optional: pgAdmin for database management
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: citadelbuy-pgadmin
+    container_name: broxiva-pgadmin
     restart: unless-stopped
     ports:
       - '5050:80'
     environment:
       # Set PGADMIN_DEFAULT_PASSWORD in .env file - do not use the default!
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@citadelbuy.com}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@broxiva.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?PGADMIN_DEFAULT_PASSWORD must be set in .env file}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     volumes:
       - pgadmin-data:/var/lib/pgadmin
     networks:
-      - citadelbuy-network
+      - broxiva-network
     depends_on:
       - postgres
 
@@ -89,5 +89,5 @@ volumes:
     driver: local
 
 networks:
-  citadelbuy-network:
+  broxiva-network:
     driver: bridge

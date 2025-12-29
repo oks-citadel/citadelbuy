@@ -23,7 +23,7 @@ export class LocaleDetectionService {
   /**
    * Detect locale from HTTP request
    */
-  detectLocale(request: Request, userId?: string): string {
+  detectLocale(request: Request, _userId?: string): string {
     // Priority 1: URL query parameter
     const queryLocale = this.detectFromQuery(request);
     if (queryLocale) return queryLocale;
@@ -55,7 +55,7 @@ export class LocaleDetectionService {
    * Detect locale from cookies
    */
   private detectFromCookie(request: Request): string | null {
-    const locale = request.cookies?.CITADELBUY_LANG;
+    const locale = request.cookies?.BROXIVA_LANG;
     return this.validateLocale(locale);
   }
 

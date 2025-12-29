@@ -1,17 +1,17 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: citadelbuy-api-hpa
-  namespace: citadelbuy-production
+  name: broxiva-api-hpa
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     environment: production
     tier: backend
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: citadelbuy-api
+    name: broxiva-api
   minReplicas: 5
   maxReplicas: 20
   metrics:
@@ -59,17 +59,17 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: citadelbuy-web-hpa
-  namespace: citadelbuy-production
+  name: broxiva-web-hpa
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-web
+    app: broxiva-web
     environment: production
     tier: frontend
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: citadelbuy-web
+    name: broxiva-web
   minReplicas: 5
   maxReplicas: 15
   metrics:
@@ -118,7 +118,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: email-worker-hpa
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: email-worker
     environment: production
@@ -163,7 +163,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: order-processing-worker-hpa
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: order-processing-worker
     environment: production
@@ -214,7 +214,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: search-indexing-worker-hpa
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: search-indexing-worker
     environment: production
@@ -259,7 +259,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: cart-abandonment-worker-hpa
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: cart-abandonment-worker
     environment: production
@@ -304,7 +304,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: scheduled-jobs-worker-hpa
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: scheduled-jobs-worker
     environment: production

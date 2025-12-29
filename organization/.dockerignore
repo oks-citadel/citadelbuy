@@ -1,0 +1,297 @@
+# ==========================================
+# BROXIVA DOCKER BUILD CONTEXT EXCLUSIONS
+# Enterprise-grade configuration
+# Last updated: 2024-12
+# ==========================================
+
+# ==========================================
+# CRITICAL: LARGE ASSETS EXCLUSION
+# These directories are NEVER copied into images
+# They are mounted at runtime from Azure Blob/Files
+# ==========================================
+assets/large/
+**/assets/large/
+
+# Data directories (use Azure Blob/Files at runtime)
+data/
+**/data/
+models/
+**/models/
+datasets/
+**/datasets/
+uploads/
+**/uploads/
+exports/
+**/exports/
+backups/
+**/backups/
+temp/
+**/temp/
+tmp/
+**/tmp/
+
+# ==========================================
+# DEPENDENCIES
+# Installed fresh inside container
+# ==========================================
+node_modules
+**/node_modules
+vendor/
+**/vendor/
+.pnpm-store
+.yarn/cache
+.npm
+
+# ==========================================
+# GIT & VERSION CONTROL
+# ==========================================
+.git
+.gitignore
+.gitattributes
+.github
+**/.git
+
+# ==========================================
+# BUILD OUTPUTS
+# These are generated inside container
+# ==========================================
+dist
+**/dist
+build
+**/build
+.next
+**/.next
+out
+coverage
+.nyc_output
+
+# ==========================================
+# DEVELOPMENT FILES
+# ==========================================
+*.log
+*.md
+!README.md
+*.txt
+!requirements.txt
+!package.json
+!package-lock.json
+!pnpm-lock.yaml
+!yarn.lock
+
+# IDE & Editor
+.idea
+.vscode
+*.swp
+*.swo
+*.sublime-*
+.editorconfig
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.lnk
+
+# ==========================================
+# TEST FILES
+# Not needed in production images
+# ==========================================
+__tests__
+**/tests
+**/__tests__
+*.test.ts
+*.test.tsx
+*.test.js
+*.test.jsx
+*.spec.ts
+*.spec.tsx
+*.spec.js
+*.spec.jsx
+jest.config.*
+vitest.config.*
+playwright.config.*
+cypress/
+e2e/
+
+# Documentation (not needed for build)
+docs
+**/docs
+*.stories.tsx
+*.stories.ts
+storybook/
+
+# ==========================================
+# CACHE & TEMPORARY
+# ==========================================
+.expo
+.turbo
+.cache
+**/cache
+.parcel-cache
+.sass-cache
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+
+# ==========================================
+# ENVIRONMENT & SECRETS
+# ==========================================
+.env
+.env.*
+!.env.example
+!.env.docker.example
+*.pem
+*.key
+*.crt
+secrets/
+credentials/
+
+# ==========================================
+# PYTHON
+# ==========================================
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.mypy_cache
+.ruff_cache
+*.egg-info
+venv/
+.venv/
+env/
+
+# ==========================================
+# INFRASTRUCTURE (Not needed for app builds)
+# ==========================================
+infrastructure/terraform
+infrastructure/bicep
+infrastructure/scripts
+.azuredevops
+*.tfstate
+*.tfstate.*
+.terraform
+**/.terraform
+
+# ==========================================
+# LARGE FILE EXCLUSIONS (CI Guardrail)
+# Files that should be mounted at runtime
+# not baked into the Docker image
+# ==========================================
+
+# Archives (should never be in build context)
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tgz
+*.rar
+*.7z
+*.gz
+*.bz2
+*.xz
+
+# Large data files
+*.parquet
+*.csv
+*.xlsx
+*.xls
+*.sqlite
+*.sqlite3
+*.db
+*.mdb
+*.accdb
+*.sql
+
+# ML model files (use Azure Blob at runtime)
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.pt
+*.pth
+*.onnx
+*.pb
+*.safetensors
+*.bin
+*.ckpt
+*.weights
+*.model
+*.joblib
+
+# Media files (use CDN)
+*.mp4
+*.mp3
+*.wav
+*.avi
+*.mov
+*.mkv
+*.wmv
+*.flv
+*.webm
+*.m4a
+*.aac
+*.ogg
+*.flac
+
+# Large images (use CDN)
+*.psd
+*.ai
+*.raw
+*.cr2
+*.nef
+*.arw
+*.tiff
+*.tif
+*.bmp
+*.gif
+# Note: jpg/png allowed for small assets
+
+# Large documents
+*.pdf
+*.doc
+*.docx
+*.ppt
+*.pptx
+
+# Logs and debug files
+*.log
+logs/
+**/logs/
+debug/
+**/debug/
+
+# ==========================================
+# N8N & WORKFLOW FILES
+# ==========================================
+n8n-workflows/
+
+# ==========================================
+# MOBILE (React Native/Expo)
+# ==========================================
+.expo/
+ios/
+android/
+*.apk
+*.aab
+*.ipa
+
+# ==========================================
+# MISCELLANEOUS
+# ==========================================
+*.bak
+*.backup
+*.old
+*.orig
+*.swp
+*~
+Makefile
+docker-compose*.yml
+!docker-compose.production.yml
+CHANGELOG*
+LICENSE*
+CONTRIBUTING*
+CODE_OF_CONDUCT*
+SECURITY*

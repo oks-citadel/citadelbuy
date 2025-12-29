@@ -1,11 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: citadelbuy-staging
+namespace: broxiva-staging
 
 # Common labels applied to all resources
 commonLabels:
-  app: citadelbuy
+  app: broxiva
   environment: staging
   managed-by: kustomize
 
@@ -22,9 +22,9 @@ resources:
 
 # Image transformations
 images:
-  - name: ghcr.io/citadelplatforms/citadelbuy-api
+  - name: broxivaprodacr.azurecr.io/broxiva-api
     newTag: staging-latest
-  - name: ghcr.io/citadelplatforms/citadelbuy-web
+  - name: broxivaprodacr.azurecr.io/broxiva-web
     newTag: staging-latest
 
 # ConfigMap generator for additional configuration
@@ -37,9 +37,9 @@ configMapGenerator:
 
 # Replicas for staging environment
 replicas:
-  - name: citadelbuy-api
+  - name: broxiva-api
     count: 2
-  - name: citadelbuy-web
+  - name: broxiva-web
     count: 2
 
 # Patches for staging-specific configuration
@@ -48,7 +48,7 @@ patchesStrategicMerge:
     apiVersion: apps/v1
     kind: Deployment
     metadata:
-      name: citadelbuy-api
+      name: broxiva-api
     spec:
       template:
         spec:
@@ -61,7 +61,7 @@ patchesStrategicMerge:
     apiVersion: apps/v1
     kind: Deployment
     metadata:
-      name: citadelbuy-web
+      name: broxiva-web
     spec:
       template:
         spec:

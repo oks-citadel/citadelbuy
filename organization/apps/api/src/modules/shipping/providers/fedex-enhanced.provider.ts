@@ -464,7 +464,7 @@ export class FedexEnhancedProvider implements IShippingProvider {
         pickupContactInfo: {
           personName: address.name || 'Pickup Contact',
           phoneNumber: address.phone || '1234567890',
-          companyName: address.name || 'CitadelBuy',
+          companyName: address.name || 'Broxiva',
         },
         totalWeight: {
           units: 'LB',

@@ -495,12 +495,12 @@ export class PaymentOrchestratorService {
   private mapIAPProductToPlan(productId: string): string | null {
     // Map IAP product IDs to internal plan IDs
     const mapping: Record<string, string> = {
-      'com.citadelbuy.subscription.basic': 'basic',
-      'com.citadelbuy.subscription.premium': 'premium',
-      'com.citadelbuy.subscription.vip': 'vip',
-      'citadelbuy_subscription_basic': 'basic',
-      'citadelbuy_subscription_premium': 'premium',
-      'citadelbuy_subscription_vip': 'vip',
+      'com.broxiva.subscription.basic': 'basic',
+      'com.broxiva.subscription.premium': 'premium',
+      'com.broxiva.subscription.vip': 'vip',
+      'broxiva_subscription_basic': 'basic',
+      'broxiva_subscription_premium': 'premium',
+      'broxiva_subscription_vip': 'vip',
     };
 
     return mapping[productId] || null;
@@ -509,14 +509,14 @@ export class PaymentOrchestratorService {
   private getCreditsForProduct(productId: string): number {
     // Map IAP product IDs to credit amounts
     const creditMapping: Record<string, number> = {
-      'com.citadelbuy.coins.small': 100,
-      'com.citadelbuy.coins.medium': 500,
-      'com.citadelbuy.coins.large': 1200,
-      'com.citadelbuy.coins.xlarge': 3000,
-      'citadelbuy_coins_100': 100,
-      'citadelbuy_coins_500': 500,
-      'citadelbuy_coins_1200': 1200,
-      'citadelbuy_coins_3000': 3000,
+      'com.broxiva.coins.small': 100,
+      'com.broxiva.coins.medium': 500,
+      'com.broxiva.coins.large': 1200,
+      'com.broxiva.coins.xlarge': 3000,
+      'broxiva_coins_100': 100,
+      'broxiva_coins_500': 500,
+      'broxiva_coins_1200': 1200,
+      'broxiva_coins_3000': 3000,
     };
 
     return creditMapping[productId] || 0;

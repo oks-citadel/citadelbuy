@@ -1,7 +1,7 @@
 version: '3.8'
 
 # ==================================
-# CitadelBuy E-Commerce Platform
+# Broxiva E-Commerce Platform
 # DEVELOPMENT Docker Compose Configuration
 # Version: 1.1.0
 # ==================================
@@ -36,9 +36,9 @@ version: '3.8'
 #   REDIS_PASSWORD=<generate-secure-password> (optional for dev)
 #
 # Optional (with defaults):
-#   POSTGRES_USER=citadelbuy
-#   POSTGRES_DB=citadelbuy_dev
-#   PGADMIN_DEFAULT_EMAIL=admin@citadelbuy.com
+#   POSTGRES_USER=broxiva
+#   POSTGRES_DB=broxiva_dev
+#   PGADMIN_DEFAULT_EMAIL=admin@broxiva.com
 #
 # Generate passwords: openssl rand -base64 32
 # See .env.docker.example for complete template
@@ -51,35 +51,35 @@ services:
   # ==================================
   postgres:
     image: postgres:16-alpine
-    container_name: citadelbuy-postgres-dev
+    container_name: broxiva-postgres-dev
     restart: unless-stopped
     ports:
       - '5432:5432'
     environment:
       # Set POSTGRES_PASSWORD in .env file - do not use the default!
-      POSTGRES_USER: ${POSTGRES_USER:-citadelbuy}
+      POSTGRES_USER: ${POSTGRES_USER:-broxiva}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env file}
-      POSTGRES_DB: ${POSTGRES_DB:-citadelbuy_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-broxiva_dev}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U citadelbuy']
+      test: ['CMD-SHELL', 'pg_isready -U broxiva']
       interval: 10s
       timeout: 5s
       retries: 5
     labels:
-      - "com.citadelbuy.env=development"
-      - "com.citadelbuy.service=postgres"
+      - "com.broxiva.env=development"
+      - "com.broxiva.service=postgres"
 
   # ==================================
   # Redis Cache & Sessions
   # ==================================
   redis:
     image: redis:7-alpine
-    container_name: citadelbuy-redis-dev
+    container_name: broxiva-redis-dev
     restart: unless-stopped
     ports:
       - '6379:6379'
@@ -87,7 +87,7 @@ services:
       - redis-data:/data
       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
@@ -98,8 +98,8 @@ services:
     # command: redis-server /usr/local/etc/redis/redis.conf --requirepass "${REDIS_PASSWORD}"
     command: redis-server /usr/local/etc/redis/redis.conf --appendonly yes
     labels:
-      - "com.citadelbuy.env=development"
-      - "com.citadelbuy.service=redis"
+      - "com.broxiva.env=development"
+      - "com.broxiva.service=redis"
 
   # ==================================
   # pgAdmin - Database Management Tool
@@ -108,25 +108,25 @@ services:
   # Only use for local development and testing
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: citadelbuy-pgadmin-dev
+    container_name: broxiva-pgadmin-dev
     restart: unless-stopped
     ports:
       - '5050:80'
     environment:
       # Set PGADMIN_DEFAULT_PASSWORD in .env file - do not use the default!
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@citadelbuy.com}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@broxiva.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?PGADMIN_DEFAULT_PASSWORD must be set in .env file}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     volumes:
       - pgadmin-data:/var/lib/pgadmin
     networks:
-      - citadelbuy-network
+      - broxiva-network
     depends_on:
       - postgres
     labels:
-      - "com.citadelbuy.env=development"
-      - "com.citadelbuy.service=pgadmin"
-      - "com.citadelbuy.warning=DO_NOT_USE_IN_PRODUCTION"
+      - "com.broxiva.env=development"
+      - "com.broxiva.service=pgadmin"
+      - "com.broxiva.warning=DO_NOT_USE_IN_PRODUCTION"
 
 # ==================================
 # Volumes
@@ -143,9 +143,9 @@ volumes:
 # Networks
 # ==================================
 networks:
-  citadelbuy-network:
+  broxiva-network:
     driver: bridge
-    name: citadelbuy-network-dev
+    name: broxiva-network-dev
 
 # ==================================
 # Development Security Checklist

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# CitadelBuy Platform Deployment Script
+# Broxiva Platform Deployment Script
 # This script deploys the application to production
 
 set -e
 
-echo "🚀 CitadelBuy Production Deployment"
+echo "🚀 Broxiva Production Deployment"
 echo "===================================="
 
 # Colors
@@ -15,9 +15,9 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 # Configuration
-REGISTRY="citadelplatforms"
-API_IMAGE="citadelbuy-ecommerce"
-WEB_IMAGE="citadelbuy-ecommerce"
+REGISTRY="broxiva"
+API_IMAGE="broxiva-ecommerce"
+WEB_IMAGE="broxiva-ecommerce"
 VERSION=${VERSION:-$(date +%Y%m%d-%H%M%S)}
 
 # Parse arguments
@@ -80,8 +80,8 @@ case $DEPLOY_TARGET in
         echo "🐳 Deploying with Docker Compose..."
 
         # Tag images
-        docker tag citadelbuy/api:latest $REGISTRY/$API_IMAGE:backend-$VERSION
-        docker tag citadelbuy/web:latest $REGISTRY/$WEB_IMAGE:frontend-$VERSION
+        docker tag broxiva/api:latest $REGISTRY/$API_IMAGE:backend-$VERSION
+        docker tag broxiva/web:latest $REGISTRY/$WEB_IMAGE:frontend-$VERSION
 
         # Push images
         echo "Pushing images to registry..."
@@ -119,8 +119,8 @@ case $DEPLOY_TARGET in
         kubectl apply -f ingress.yaml
 
         # Wait for rollout
-        kubectl rollout status deployment/citadelbuy-api -n citadelbuy
-        kubectl rollout status deployment/citadelbuy-web -n citadelbuy
+        kubectl rollout status deployment/broxiva-api -n broxiva
+        kubectl rollout status deployment/broxiva-web -n broxiva
 
         cd ../..
         echo -e "${GREEN}✓ Kubernetes deployment complete${NC}"

@@ -75,7 +75,7 @@ export class SeoOptimizationService {
       const { productName, category, description, price } = data;
 
       // Generate SEO-optimized meta tags
-      const title = `${productName} - ${category} | Buy Online | CitadelBuy`;
+      const title = `${productName} - ${category} | Buy Online | Broxiva`;
       const metaDescription =
         description?.substring(0, 160) ||
         `Shop ${productName} in ${category} category. ${
@@ -97,9 +97,9 @@ export class SeoOptimizationService {
         'og:title': productName,
         'og:description': metaDescription,
         'og:type': 'product',
-        'og:url': `https://citadelbuy.com/products/${productName.toLowerCase().replace(/\s+/g, '-')}`,
-        'og:image': `https://cdn.citadelbuy.com/products/${productName.toLowerCase().replace(/\s+/g, '-')}.jpg`,
-        'og:site_name': 'CitadelBuy',
+        'og:url': `https://broxiva.com/products/${productName.toLowerCase().replace(/\s+/g, '-')}`,
+        'og:image': `https://cdn.broxiva.com/products/${productName.toLowerCase().replace(/\s+/g, '-')}.jpg`,
+        'og:site_name': 'Broxiva',
       };
 
       // Twitter Card tags

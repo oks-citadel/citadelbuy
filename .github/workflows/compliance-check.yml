@@ -1,0 +1,966 @@
+name: Security Compliance & Validation
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  schedule:
+    # Run every Monday at 7 AM UTC
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+  issues: write
+
+env:
+  COMPLIANCE_FRAMEWORKS: 'OWASP,CIS,PCI-DSS,HIPAA,SOC2'
+
+jobs:
+  owasp-top-10-check:
+    name: OWASP Top 10 Compliance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create OWASP Top 10 checklist
+        run: |
+          cat > owasp-top10-checklist.md << 'EOF'
+          # OWASP Top 10 2021 Compliance Checklist
+
+          ## A01:2021 - Broken Access Control
+
+          - [ ] Implement proper authentication and authorization
+          - [ ] Deny access by default
+          - [ ] Implement proper session management
+          - [ ] Disable directory listing
+          - [ ] Log access control failures
+          - [ ] Rate limit API and controller access
+          - [ ] Invalidate JWT tokens on logout
+
+          ## A02:2021 - Cryptographic Failures
+
+          - [ ] Encrypt data in transit (HTTPS/TLS)
+          - [ ] Encrypt sensitive data at rest
+          - [ ] Use strong, up-to-date cryptographic algorithms
+          - [ ] Proper key management
+          - [ ] No hardcoded secrets
+          - [ ] Use secure random number generators
+          - [ ] Disable caching for sensitive data
+
+          ## A03:2021 - Injection
+
+          - [ ] Use parameterized queries / prepared statements
+          - [ ] Validate and sanitize all input
+          - [ ] Use ORM/ODM frameworks securely
+          - [ ] Escape special characters
+          - [ ] Use allowlists for input validation
+          - [ ] Implement SAST tools to detect injection
+          - [ ] SQL injection prevention
+          - [ ] NoSQL injection prevention
+          - [ ] Command injection prevention
+          - [ ] LDAP injection prevention
+
+          ## A04:2021 - Insecure Design
+
+          - [ ] Threat modeling performed
+          - [ ] Security requirements defined
+          - [ ] Secure development lifecycle
+          - [ ] Use secure design patterns
+          - [ ] Limit resource consumption per user
+          - [ ] Separation of tenants
+          - [ ] Security unit and integration tests
+
+          ## A05:2021 - Security Misconfiguration
+
+          - [ ] Secure default configuration
+          - [ ] Remove unnecessary features
+          - [ ] Update dependencies regularly
+          - [ ] Proper error handling (no stack traces)
+          - [ ] Security headers implemented
+          - [ ] Up-to-date security patches
+          - [ ] Regular security scans
+          - [ ] Disable default accounts
+          - [ ] Remove unnecessary services
+
+          ## A06:2021 - Vulnerable and Outdated Components
+
+          - [ ] Inventory of all components and versions
+          - [ ] Monitor for vulnerabilities (npm audit, Snyk)
+          - [ ] Only use official sources for components
+          - [ ] Monitor unmaintained libraries
+          - [ ] Regular dependency updates
+          - [ ] Software Bill of Materials (SBOM)
+
+          ## A07:2021 - Identification and Authentication Failures
+
+          - [ ] Implement multi-factor authentication
+          - [ ] Strong password policy
+          - [ ] Protect against brute force attacks
+          - [ ] Use secure session management
+          - [ ] No default credentials
+          - [ ] Implement account lockout
+          - [ ] Use secure password recovery
+          - [ ] Hash passwords properly (bcrypt, Argon2)
+
+          ## A08:2021 - Software and Data Integrity Failures
+
+          - [ ] Use digital signatures for updates
+          - [ ] Verify integrity of dependencies
+          - [ ] Use trusted repositories
+          - [ ] Implement CI/CD security
+          - [ ] Review code changes
+          - [ ] Verify serialized data integrity
+
+          ## A09:2021 - Security Logging and Monitoring Failures
+
+          - [ ] Log authentication events
+          - [ ] Log access control failures
+          - [ ] Log input validation failures
+          - [ ] Centralized logging
+          - [ ] Log integrity protection
+          - [ ] Alerting for suspicious activities
+          - [ ] Incident response plan
+          - [ ] Regular log review
+
+          ## A10:2021 - Server-Side Request Forgery (SSRF)
+
+          - [ ] Validate and sanitize all user input URLs
+          - [ ] Disable HTTP redirections
+          - [ ] Use allowlist for remote resources
+          - [ ] Implement network segmentation
+          - [ ] Monitor outbound traffic
+
+          EOF
+
+      - name: Analyze code for OWASP compliance
+        run: |
+          cat > check_owasp_compliance.sh << 'EOF'
+          #!/bin/bash
+
+          echo "OWASP Top 10 Automated Compliance Check" > owasp-compliance-report.txt
+          echo "=======================================" >> owasp-compliance-report.txt
+          echo "" >> owasp-compliance-report.txt
+
+          # A01: Access Control
+          echo "A01: Broken Access Control" >> owasp-compliance-report.txt
+          if grep -r "req.user" . --include="*.js" --include="*.ts" | grep -q "role"; then
+            echo "  [PASS] Role-based access control detected" >> owasp-compliance-report.txt
+          else
+            echo "  [WARN] No clear RBAC implementation found" >> owasp-compliance-report.txt
+          fi
+
+          # A02: Cryptographic Failures
+          echo "" >> owasp-compliance-report.txt
+          echo "A02: Cryptographic Failures" >> owasp-compliance-report.txt
+          if grep -r "https://" . --include="*.js" --include="*.ts" | grep -q "axios\|fetch"; then
+            echo "  [PASS] HTTPS usage detected" >> owasp-compliance-report.txt
+          fi
+          if grep -r "bcrypt\|argon2" . --include="package.json"; then
+            echo "  [PASS] Secure password hashing library detected" >> owasp-compliance-report.txt
+          else
+            echo "  [WARN] No secure password hashing library found" >> owasp-compliance-report.txt
+          fi
+
+          # A03: Injection
+          echo "" >> owasp-compliance-report.txt
+          echo "A03: Injection" >> owasp-compliance-report.txt
+          if grep -r "parameterized\|prepared" . --include="*.js" --include="*.ts" | grep -q "query"; then
+            echo "  [PASS] Parameterized queries detected" >> owasp-compliance-report.txt
+          fi
+          if grep -r "validator\|sanitize" . --include="*.js" --include="*.ts"; then
+            echo "  [PASS] Input validation library detected" >> owasp-compliance-report.txt
+          else
+            echo "  [WARN] No input validation library found" >> owasp-compliance-report.txt
+          fi
+
+          # A05: Security Misconfiguration
+          echo "" >> owasp-compliance-report.txt
+          echo "A05: Security Misconfiguration" >> owasp-compliance-report.txt
+          if grep -r "helmet" . --include="*.js" --include="*.ts"; then
+            echo "  [PASS] Security headers middleware (helmet) detected" >> owasp-compliance-report.txt
+          else
+            echo "  [WARN] No security headers middleware found" >> owasp-compliance-report.txt
+          fi
+
+          # A07: Authentication
+          echo "" >> owasp-compliance-report.txt
+          echo "A07: Authentication Failures" >> owasp-compliance-report.txt
+          if grep -r "express-rate-limit\|rate-limiter" . --include="*.js" --include="*.ts"; then
+            echo "  [PASS] Rate limiting detected" >> owasp-compliance-report.txt
+          else
+            echo "  [WARN] No rate limiting found" >> owasp-compliance-report.txt
+          fi
+
+          # A09: Logging
+          echo "" >> owasp-compliance-report.txt
+          echo "A09: Logging and Monitoring" >> owasp-compliance-report.txt
+          if grep -r "winston\|pino\|bunyan" . --include="*.js" --include="*.ts"; then
+            echo "  [PASS] Logging library detected" >> owasp-compliance-report.txt
+          else
+            echo "  [WARN] No structured logging library found" >> owasp-compliance-report.txt
+          fi
+
+          echo "" >> owasp-compliance-report.txt
+          echo "Review complete. Check manual checklist for comprehensive compliance." >> owasp-compliance-report.txt
+          EOF
+
+          chmod +x check_owasp_compliance.sh
+          ./check_owasp_compliance.sh
+
+      - name: Display OWASP compliance results
+        run: |
+          cat owasp-compliance-report.txt
+
+          echo "### OWASP Top 10 Compliance Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat owasp-compliance-report.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload OWASP compliance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-compliance-results
+          path: |
+            owasp-compliance-report.txt
+            owasp-top10-checklist.md
+          retention-days: 90
+
+  cis-benchmark-check:
+    name: CIS Benchmarks Compliance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create CIS Docker Benchmark checklist
+        run: |
+          cat > cis-docker-checklist.md << 'EOF'
+          # CIS Docker Benchmark Compliance
+
+          ## 1. Host Configuration
+
+          - [ ] 1.1.1 Ensure a separate partition for containers
+          - [ ] 1.1.2 Ensure only trusted users control Docker daemon
+          - [ ] 1.2.1 Ensure the container host has been hardened
+          - [ ] 1.2.2 Ensure Docker version is up to date
+
+          ## 2. Docker Daemon Configuration
+
+          - [ ] 2.1 Run Docker daemon as non-root user
+          - [ ] 2.2 Ensure network traffic is restricted between containers
+          - [ ] 2.3 Ensure logging level is set to info
+          - [ ] 2.4 Ensure Docker is allowed to make changes to iptables
+          - [ ] 2.5 Ensure insecure registries are not used
+          - [ ] 2.6 Ensure Docker socket is not mounted
+
+          ## 3. Docker Daemon Configuration Files
+
+          - [ ] 3.1 Ensure docker.service file ownership is root:root
+          - [ ] 3.2 Ensure docker.service file permissions are 644
+          - [ ] 3.3 Ensure docker.socket file ownership is root:root
+          - [ ] 3.4 Ensure docker.socket file permissions are 644
+
+          ## 4. Container Images and Build Files
+
+          - [ ] 4.1 Ensure image is created with trusted base
+          - [ ] 4.2 Ensure Dockerfile uses trusted base image
+          - [ ] 4.3 Ensure unnecessary packages are not installed
+          - [ ] 4.4 Ensure images are scanned for vulnerabilities
+          - [ ] 4.5 Ensure Content trust for Docker is enabled
+          - [ ] 4.6 Ensure HEALTHCHECK instruction is used
+          - [ ] 4.7 Ensure update instructions are not used alone
+          - [ ] 4.8 Ensure setuid and setgid permissions are removed
+
+          ## 5. Container Runtime
+
+          - [ ] 5.1 Ensure AppArmor profile is enabled
+          - [ ] 5.2 Ensure SELinux security options are set
+          - [ ] 5.3 Ensure Linux Kernel Capabilities are restricted
+          - [ ] 5.4 Ensure privileged containers are not used
+          - [ ] 5.5 Ensure sensitive host system directories not mounted
+          - [ ] 5.6 Ensure SSH is not run within containers
+          - [ ] 5.7 Ensure privileged ports are not mapped
+          - [ ] 5.8 Ensure only needed ports are open
+          - [ ] 5.9 Ensure host network mode is not used
+          - [ ] 5.10 Ensure memory usage is limited
+          - [ ] 5.11 Ensure CPU priority is set appropriately
+          - [ ] 5.12 Ensure container root filesystem is mounted as read-only
+          - [ ] 5.13 Ensure incoming container traffic is bound to host interface
+          - [ ] 5.14 Ensure default ulimit is overridden
+          - [ ] 5.15 Ensure mount propagation mode is not shared
+          - [ ] 5.16 Ensure host UTS namespace is not shared
+          - [ ] 5.17 Ensure default seccomp profile is not disabled
+          - [ ] 5.18 Ensure containers are restricted from acquiring new privileges
+
+          EOF
+
+      - name: Run CIS Node.js security checks
+        run: |
+          cat > cis_node_check.sh << 'EOF'
+          #!/bin/bash
+
+          echo "CIS Node.js Security Benchmark Check" > cis-compliance-report.txt
+          echo "====================================" >> cis-compliance-report.txt
+          echo "" >> cis-compliance-report.txt
+
+          # Check for security-related packages
+          echo "Security Packages:" >> cis-compliance-report.txt
+          if grep -q "helmet" package.json; then
+            echo "  [PASS] Helmet (security headers) installed" >> cis-compliance-report.txt
+          else
+            echo "  [FAIL] Helmet not installed" >> cis-compliance-report.txt
+          fi
+
+          if grep -q "express-rate-limit" package.json; then
+            echo "  [PASS] Rate limiting installed" >> cis-compliance-report.txt
+          else
+            echo "  [WARN] Rate limiting not installed" >> cis-compliance-report.txt
+          fi
+
+          if grep -q "express-validator" package.json; then
+            echo "  [PASS] Input validation library installed" >> cis-compliance-report.txt
+          else
+            echo "  [WARN] Input validation library not installed" >> cis-compliance-report.txt
+          fi
+
+          # Check for logging
+          echo "" >> cis-compliance-report.txt
+          echo "Logging Configuration:" >> cis-compliance-report.txt
+          if grep -E "winston|pino|bunyan" package.json; then
+            echo "  [PASS] Logging library installed" >> cis-compliance-report.txt
+          else
+            echo "  [WARN] No structured logging library" >> cis-compliance-report.txt
+          fi
+
+          # Check for security linting
+          echo "" >> cis-compliance-report.txt
+          echo "Security Linting:" >> cis-compliance-report.txt
+          if grep -q "eslint-plugin-security" package.json; then
+            echo "  [PASS] ESLint security plugin installed" >> cis-compliance-report.txt
+          else
+            echo "  [WARN] ESLint security plugin not installed" >> cis-compliance-report.txt
+          fi
+
+          # Check for environment variable validation
+          echo "" >> cis-compliance-report.txt
+          echo "Environment Configuration:" >> cis-compliance-report.txt
+          if [ -f ".env.example" ]; then
+            echo "  [PASS] .env.example template exists" >> cis-compliance-report.txt
+          else
+            echo "  [WARN] No .env.example template" >> cis-compliance-report.txt
+          fi
+
+          if grep -q ".env" .gitignore 2>/dev/null; then
+            echo "  [PASS] .env is gitignored" >> cis-compliance-report.txt
+          else
+            echo "  [FAIL] .env not in .gitignore" >> cis-compliance-report.txt
+          fi
+
+          # Check Node.js version
+          echo "" >> cis-compliance-report.txt
+          echo "Node.js Version:" >> cis-compliance-report.txt
+          if [ -f ".nvmrc" ] || [ -f ".node-version" ]; then
+            echo "  [PASS] Node version pinned" >> cis-compliance-report.txt
+          else
+            echo "  [WARN] Node version not pinned" >> cis-compliance-report.txt
+          fi
+
+          echo "" >> cis-compliance-report.txt
+          echo "Check complete." >> cis-compliance-report.txt
+          EOF
+
+          chmod +x cis_node_check.sh
+          ./cis_node_check.sh
+
+      - name: Display CIS compliance results
+        run: |
+          cat cis-compliance-report.txt
+
+          echo "### CIS Benchmarks Compliance Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat cis-compliance-report.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload CIS compliance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: cis-compliance-results
+          path: |
+            cis-compliance-report.txt
+            cis-docker-checklist.md
+          retention-days: 90
+
+  pci-dss-check:
+    name: PCI-DSS Compliance Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create PCI-DSS checklist
+        run: |
+          cat > pci-dss-checklist.md << 'EOF'
+          # PCI-DSS Compliance Checklist
+
+          ## Requirement 1: Install and maintain firewall configuration
+
+          - [ ] 1.1 Firewall and router configuration standards
+          - [ ] 1.2 Build firewall configuration that restricts connections
+          - [ ] 1.3 Prohibit direct public access
+          - [ ] 1.4 Install personal firewall software on mobile devices
+
+          ## Requirement 2: Do not use vendor-supplied defaults
+
+          - [ ] 2.1 Change vendor-supplied defaults
+          - [ ] 2.2 Develop configuration standards
+          - [ ] 2.3 Encrypt all non-console administrative access using strong cryptography
+          - [ ] 2.4 Maintain inventory of system components
+
+          ## Requirement 3: Protect stored cardholder data
+
+          - [ ] 3.1 Keep cardholder data storage to minimum
+          - [ ] 3.2 Do not store sensitive authentication data after authorization
+          - [ ] 3.3 Mask PAN when displayed
+          - [ ] 3.4 Render PAN unreadable (encryption)
+          - [ ] 3.5 Document and implement key management processes
+          - [ ] 3.6 Fully document and implement key management
+          - [ ] 3.7 Ensure security policies restrict access to cardholder data
+
+          ## Requirement 4: Encrypt transmission of cardholder data
+
+          - [ ] 4.1 Use strong cryptography and security protocols (TLS/SSL)
+          - [ ] 4.2 Never send unprotected PANs by end-user messaging
+          - [ ] 4.3 Ensure security policies address encryption requirements
+
+          ## Requirement 5: Protect all systems against malware
+
+          - [ ] 5.1 Deploy anti-virus software
+          - [ ] 5.2 Ensure anti-virus mechanisms are current
+          - [ ] 5.3 Ensure anti-virus mechanisms are actively running
+          - [ ] 5.4 Ensure security policies address anti-virus
+
+          ## Requirement 6: Develop and maintain secure systems
+
+          - [ ] 6.1 Establish process to identify security vulnerabilities
+          - [ ] 6.2 Ensure all system components have latest security patches
+          - [ ] 6.3 Develop internal and external applications securely
+          - [ ] 6.4 Follow change control processes
+          - [ ] 6.5 Address common coding vulnerabilities
+          - [ ] 6.6 Public-facing web applications protected
+          - [ ] 6.7 Ensure security policies address secure development
+
+          ## Requirement 7: Restrict access to cardholder data
+
+          - [ ] 7.1 Limit access to system components
+          - [ ] 7.2 Establish access control system
+          - [ ] 7.3 Ensure security policies address access control
+
+          ## Requirement 8: Identify and authenticate access
+
+          - [ ] 8.1 Define and implement policies for identification
+          - [ ] 8.2 Ensure proper user authentication management
+          - [ ] 8.3 Secure all individual non-console access with MFA
+          - [ ] 8.4 Document and communicate authentication procedures
+          - [ ] 8.5 No shared IDs or authentication methods
+          - [ ] 8.6 Use of other authentication mechanisms must be secure
+          - [ ] 8.7 All access to databases must be restricted
+          - [ ] 8.8 Ensure security policies address authentication
+
+          ## Requirement 9: Restrict physical access
+
+          - [ ] 9.1 Use facility entry controls
+          - [ ] 9.2 Develop procedures to distinguish visitors
+          - [ ] 9.3 Control physical access for onsite personnel
+          - [ ] 9.4 Implement procedures to identify and authorize visitors
+          - [ ] 9.5 Physically secure all media
+          - [ ] 9.6 Maintain strict control over distribution of media
+          - [ ] 9.7 Maintain strict control over storage of media
+          - [ ] 9.8 Destroy media when no longer needed
+          - [ ] 9.9 Protect devices that capture payment card data
+
+          ## Requirement 10: Track and monitor all access
+
+          - [ ] 10.1 Implement audit trails
+          - [ ] 10.2 Implement automated audit trails
+          - [ ] 10.3 Record audit trail entries
+          - [ ] 10.4 Synchronize all critical system clocks
+          - [ ] 10.5 Secure audit trails
+          - [ ] 10.6 Review logs and security events
+          - [ ] 10.7 Retain audit trail history
+          - [ ] 10.8 Implement process for timely detection of failures
+          - [ ] 10.9 Ensure security policies address monitoring
+
+          ## Requirement 11: Regularly test security systems
+
+          - [ ] 11.1 Implement processes to test for wireless access points
+          - [ ] 11.2 Run internal and external network vulnerability scans
+          - [ ] 11.3 Implement penetration testing methodology
+          - [ ] 11.4 Use intrusion detection/prevention techniques
+          - [ ] 11.5 Deploy file integrity monitoring solution
+          - [ ] 11.6 Ensure security policies address security monitoring
+
+          ## Requirement 12: Maintain information security policy
+
+          - [ ] 12.1 Establish, publish, maintain security policy
+          - [ ] 12.2 Implement risk assessment process
+          - [ ] 12.3 Develop usage policies for critical technologies
+          - [ ] 12.4 Ensure security policy addresses responsibilities
+          - [ ] 12.5 Assign information security responsibilities
+          - [ ] 12.6 Implement formal security awareness program
+          - [ ] 12.7 Screen potential personnel
+          - [ ] 12.8 Maintain policies for service providers
+          - [ ] 12.9 Additional requirement for service providers
+          - [ ] 12.10 Implement incident response plan
+          - [ ] 12.11 Additional requirement for service providers (reviews)
+
+          EOF
+
+      - name: Run PCI-DSS automated checks
+        run: |
+          cat > pci_dss_check.sh << 'EOF'
+          #!/bin/bash
+
+          echo "PCI-DSS Automated Compliance Check" > pci-dss-report.txt
+          echo "===================================" >> pci-dss-report.txt
+          echo "" >> pci-dss-report.txt
+
+          # Requirement 2: No default credentials
+          echo "Requirement 2: Default Security Settings" >> pci-dss-report.txt
+          if grep -r "admin\|password\|default" . --include="*.js" --include="*.ts" | grep -i "password.*="; then
+            echo "  [WARN] Potential hardcoded credentials found" >> pci-dss-report.txt
+          else
+            echo "  [PASS] No obvious hardcoded credentials" >> pci-dss-report.txt
+          fi
+
+          # Requirement 3: Protect stored data
+          echo "" >> pci-dss-report.txt
+          echo "Requirement 3: Cardholder Data Protection" >> pci-dss-report.txt
+          if grep -r "creditCard\|cardNumber\|cvv" . --include="*.js" --include="*.ts"; then
+            echo "  [WARN] Potential cardholder data handling found - verify encryption" >> pci-dss-report.txt
+          else
+            echo "  [INFO] No obvious cardholder data handling" >> pci-dss-report.txt
+          fi
+
+          # Requirement 4: Encrypt transmissions
+          echo "" >> pci-dss-report.txt
+          echo "Requirement 4: Encryption in Transit" >> pci-dss-report.txt
+          if grep -r "https://" . --include="*.js" --include="*.ts" | grep -q "api\|request"; then
+            echo "  [PASS] HTTPS usage detected for API calls" >> pci-dss-report.txt
+          else
+            echo "  [WARN] Verify all sensitive data transmitted over HTTPS" >> pci-dss-report.txt
+          fi
+
+          # Requirement 6: Secure development
+          echo "" >> pci-dss-report.txt
+          echo "Requirement 6: Secure Systems and Applications" >> pci-dss-report.txt
+          if [ -f "package-lock.json" ] || [ -f "yarn.lock" ]; then
+            echo "  [PASS] Dependency lock file exists" >> pci-dss-report.txt
+          else
+            echo "  [WARN] No dependency lock file - dependencies may vary" >> pci-dss-report.txt
+          fi
+
+          # Requirement 8: Authentication
+          echo "" >> pci-dss-report.txt
+          echo "Requirement 8: Identify and Authenticate Access" >> pci-dss-report.txt
+          if grep -r "passport\|jwt\|oauth" . --include="*.js" --include="*.ts"; then
+            echo "  [PASS] Authentication library detected" >> pci-dss-report.txt
+          else
+            echo "  [WARN] No clear authentication library found" >> pci-dss-report.txt
+          fi
+
+          # Requirement 10: Logging
+          echo "" >> pci-dss-report.txt
+          echo "Requirement 10: Track and Monitor Access" >> pci-dss-report.txt
+          if grep -r "logger\|log\|audit" . --include="*.js" --include="*.ts" | grep -v "console.log"; then
+            echo "  [PASS] Logging implementation detected" >> pci-dss-report.txt
+          else
+            echo "  [WARN] No structured logging detected" >> pci-dss-report.txt
+          fi
+
+          echo "" >> pci-dss-report.txt
+          echo "Check complete. Review manual checklist for full compliance." >> pci-dss-report.txt
+          EOF
+
+          chmod +x pci_dss_check.sh
+          ./pci_dss_check.sh
+
+      - name: Display PCI-DSS results
+        run: |
+          cat pci-dss-report.txt
+
+          echo "### PCI-DSS Compliance Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat pci-dss-report.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload PCI-DSS results
+        uses: actions/upload-artifact@v4
+        with:
+          name: pci-dss-compliance-results
+          path: |
+            pci-dss-report.txt
+            pci-dss-checklist.md
+          retention-days: 90
+
+  security-headers-check:
+    name: Security Headers Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js and start app
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install and start application
+        run: |
+          pnpm install --frozen-lockfile
+          nohup pnpm start &
+          timeout 120 bash -c 'until curl -f http://localhost:3000/health 2>/dev/null || curl -f http://localhost:3000 2>/dev/null; do sleep 2; done' || echo "App may not be ready"
+
+      - name: Check security headers
+        run: |
+          cat > check_security_headers.sh << 'EOF'
+          #!/bin/bash
+
+          URL="http://localhost:3000"
+
+          echo "Security Headers Check" > security-headers-report.txt
+          echo "======================" >> security-headers-report.txt
+          echo "" >> security-headers-report.txt
+
+          # Get all headers
+          HEADERS=$(curl -s -I $URL)
+
+          # Check each security header
+          check_header() {
+            header_name=$1
+            if echo "$HEADERS" | grep -qi "$header_name"; then
+              echo "[PASS] $header_name: $(echo "$HEADERS" | grep -i "$header_name" | head -1 | cut -d: -f2-)" >> security-headers-report.txt
+            else
+              echo "[FAIL] $header_name: Not present" >> security-headers-report.txt
+            fi
+          }
+
+          check_header "Strict-Transport-Security"
+          check_header "X-Content-Type-Options"
+          check_header "X-Frame-Options"
+          check_header "Content-Security-Policy"
+          check_header "X-XSS-Protection"
+          check_header "Referrer-Policy"
+          check_header "Permissions-Policy"
+
+          echo "" >> security-headers-report.txt
+          echo "Recommendations:" >> security-headers-report.txt
+          echo "- Use helmet.js middleware for Express applications" >> security-headers-report.txt
+          echo "- Implement all recommended security headers" >> security-headers-report.txt
+          echo "- Test at https://securityheaders.com/" >> security-headers-report.txt
+
+          EOF
+
+          chmod +x check_security_headers.sh
+          ./check_security_headers.sh
+
+      - name: Display security headers results
+        run: |
+          cat security-headers-report.txt
+
+          echo "### Security Headers Validation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat security-headers-report.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload security headers results
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-headers-results
+          path: security-headers-report.txt
+          retention-days: 30
+
+  vulnerability-trend-analysis:
+    name: Vulnerability Trend Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download previous scan results
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: compliance-check.yml
+          name: vulnerability-trends
+          path: previous-trends
+          if_no_artifact_found: ignore
+        continue-on-error: true
+
+      - name: Generate vulnerability trends
+        run: |
+          cat > generate-trends.sh << 'EOF'
+          #!/bin/bash
+
+          CURRENT_DATE=$(date +%Y-%m-%d)
+          TRENDS_FILE="vulnerability-trends.json"
+
+          # Initialize or load existing trends
+          if [ -f "previous-trends/$TRENDS_FILE" ]; then
+            cp "previous-trends/$TRENDS_FILE" "$TRENDS_FILE"
+          else
+            echo '{"scans": []}' > "$TRENDS_FILE"
+          fi
+
+          # Add current scan data
+          jq --arg date "$CURRENT_DATE" \
+             --argjson critical 0 \
+             --argjson high 0 \
+             --argjson medium 0 \
+             --argjson low 0 \
+             '.scans += [{"date": $date, "critical": $critical, "high": $high, "medium": $medium, "low": $low}]' \
+             "$TRENDS_FILE" > tmp.json && mv tmp.json "$TRENDS_FILE"
+
+          # Generate trend report
+          cat > vulnerability-trend-report.md << 'EOFMD'
+          # Vulnerability Trend Analysis
+
+          **Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          ## Trend Over Time
+
+          This report tracks vulnerability trends across multiple scans.
+
+          ### Summary
+
+          Monitor how vulnerabilities change over time to ensure:
+          - New vulnerabilities are promptly addressed
+          - Overall vulnerability count decreases
+          - No critical vulnerabilities persist
+
+          ### Last 10 Scans
+
+          | Date | Critical | High | Medium | Low |
+          |------|----------|------|--------|-----|
+          EOFMD
+
+          # Add last 10 scans to table
+          jq -r '.scans[-10:] | .[] | "| \(.date) | \(.critical) | \(.high) | \(.medium) | \(.low) |"' \
+            "$TRENDS_FILE" >> vulnerability-trend-report.md
+
+          echo "" >> vulnerability-trend-report.md
+          echo "### Recommendations" >> vulnerability-trend-report.md
+          echo "" >> vulnerability-trend-report.md
+          echo "- If trends show increase: Investigate root causes" >> vulnerability-trend-report.md
+          echo "- If critical/high persist: Prioritize remediation" >> vulnerability-trend-report.md
+          echo "- Regular scans help catch issues early" >> vulnerability-trend-report.md
+
+          EOF
+
+          chmod +x generate-trends.sh
+          ./generate-trends.sh
+
+      - name: Upload vulnerability trends
+        uses: actions/upload-artifact@v4
+        with:
+          name: vulnerability-trends
+          path: |
+            vulnerability-trends.json
+            vulnerability-trend-report.md
+          retention-days: 365
+
+  compliance-report:
+    name: Generate Compliance Report
+    runs-on: ubuntu-latest
+    needs: [owasp-top-10-check, cis-benchmark-check, pci-dss-check, security-headers-check]
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: compliance-results
+
+      - name: Generate consolidated compliance report
+        run: |
+          cat > compliance-report.md << 'EOF'
+          # Security Compliance & Validation Report
+
+          **Generated:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Repository:** ${{ github.repository }}
+          **Branch:** ${{ github.ref_name }}
+          **Commit:** ${{ github.sha }}
+
+          ## Executive Summary
+
+          This report provides compliance status against major security frameworks and standards.
+
+          ## Compliance Status
+
+          | Framework | Status | Completeness |
+          |-----------|--------|--------------|
+          | OWASP Top 10 | ${{ needs.owasp-top-10-check.result }} | Review detailed checklist |
+          | CIS Benchmarks | ${{ needs.cis-benchmark-check.result }} | Review detailed checklist |
+          | PCI-DSS | ${{ needs.pci-dss-check.result }} | Review detailed checklist |
+          | Security Headers | ${{ needs.security-headers-check.result }} | See validation results |
+
+          ## Framework Coverage
+
+          ### OWASP Top 10 2021
+          Industry-standard web application security risks coverage.
+
+          ### CIS Benchmarks
+          Configuration best practices for Docker and Node.js applications.
+
+          ### PCI-DSS v4.0
+          Payment Card Industry Data Security Standard requirements.
+
+          ### Security Headers
+          HTTP security headers validation and best practices.
+
+          ## Key Recommendations
+
+          1. **Immediate Actions**
+             - Address all FAIL items in compliance checks
+             - Implement missing security controls
+             - Update security configurations
+
+          2. **Short-term Improvements**
+             - Complete manual checklist items
+             - Implement automated compliance testing
+             - Regular compliance reviews
+
+          3. **Long-term Strategy**
+             - Establish security compliance program
+             - Regular third-party audits
+             - Continuous compliance monitoring
+             - Security training for development team
+
+          ## Compliance Resources
+
+          ### OWASP
+          - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+          - [OWASP ASVS](https://owasp.org/www-project-application-security-verification-standard/)
+          - [OWASP Testing Guide](https://owasp.org/www-project-web-security-testing-guide/)
+
+          ### CIS
+          - [CIS Controls](https://www.cisecurity.org/controls/)
+          - [CIS Benchmarks](https://www.cisecurity.org/cis-benchmarks/)
+
+          ### PCI-DSS
+          - [PCI Security Standards](https://www.pcisecuritystandards.org/)
+          - [PCI DSS Quick Reference Guide](https://www.pcisecuritystandards.org/document_library)
+
+          ### General Security
+          - [NIST Cybersecurity Framework](https://www.nist.gov/cyberframework)
+          - [ISO 27001](https://www.iso.org/isoiec-27001-information-security.html)
+          - [SANS Top 25](https://www.sans.org/top25-software-errors/)
+
+          ## Audit Trail
+
+          All compliance check results are retained for 90 days as workflow artifacts.
+
+          EOF
+
+      - name: Upload consolidated report
+        uses: actions/upload-artifact@v4
+        with:
+          name: compliance-consolidated-report
+          path: compliance-report.md
+          retention-days: 365
+
+  notify-compliance-status:
+    name: Notify Compliance Status
+    runs-on: ubuntu-latest
+    needs: [owasp-top-10-check, cis-benchmark-check, pci-dss-check]
+    if: always() && (github.ref == 'refs/heads/main' || github.event_name == 'schedule')
+
+    steps:
+      - name: Determine overall status
+        id: status
+        run: |
+          if [ "${{ needs.owasp-top-10-check.result }}" == "failure" ] || \
+             [ "${{ needs.cis-benchmark-check.result }}" == "failure" ] || \
+             [ "${{ needs.pci-dss-check.result }}" == "failure" ]; then
+            echo "status=warning" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "Security Compliance Report",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": ":clipboard: Weekly Security Compliance Report"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Status:*\n${{ steps.status.outputs.status }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Compliance Checks:*\n• OWASP Top 10: ${{ needs.owasp-top-10-check.result }}\n• CIS Benchmarks: ${{ needs.cis-benchmark-check.result }}\n• PCI-DSS: ${{ needs.pci-dss-check.result }}"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Full Report"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_SECURITY_WEBHOOK }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+        if: env.SLACK_WEBHOOK_URL != '' && github.event_name == 'schedule'

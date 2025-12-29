@@ -1,22 +1,22 @@
 # ServiceMonitors for Prometheus Operator
-# These enable automatic metrics collection from CitadelBuy services
+# These enable automatic metrics collection from Broxiva services
 
 ---
 # ServiceMonitor for API Backend
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: citadelbuy-api-monitor
-  namespace: citadelbuy-production
+  name: broxiva-api-monitor
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     tier: backend
     environment: production
     prometheus: main
 spec:
   selector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
       tier: backend
   endpoints:
     - port: metrics
@@ -42,17 +42,17 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: citadelbuy-web-monitor
-  namespace: citadelbuy-production
+  name: broxiva-web-monitor
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-web
+    app: broxiva-web
     tier: frontend
     environment: production
     prometheus: main
 spec:
   selector:
     matchLabels:
-      app: citadelbuy-web
+      app: broxiva-web
       tier: frontend
   endpoints:
     - port: http
@@ -71,8 +71,8 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: citadelbuy-workers-monitor
-  namespace: citadelbuy-production
+  name: broxiva-workers-monitor
+  namespace: broxiva-production
   labels:
     tier: worker
     environment: production
@@ -98,10 +98,10 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: citadelbuy-pods-monitor
-  namespace: citadelbuy-production
+  name: broxiva-pods-monitor
+  namespace: broxiva-production
   labels:
-    app: citadelbuy
+    app: broxiva
     environment: production
 spec:
   selector:
@@ -120,21 +120,21 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: citadelbuy-alerts
-  namespace: citadelbuy-production
+  name: broxiva-alerts
+  namespace: broxiva-production
   labels:
-    app: citadelbuy
+    app: broxiva
     environment: production
     prometheus: main
 spec:
   groups:
-    - name: citadelbuy-api
+    - name: broxiva-api
       interval: 30s
       rules:
         - alert: HighErrorRate
           expr: |
-            rate(http_requests_total{job="citadelbuy-api",status=~"5.."}[5m])
-            / rate(http_requests_total{job="citadelbuy-api"}[5m]) > 0.05
+            rate(http_requests_total{job="broxiva-api",status=~"5.."}[5m])
+            / rate(http_requests_total{job="broxiva-api"}[5m]) > 0.05
           for: 5m
           labels:
             severity: critical
@@ -146,7 +146,7 @@ spec:
         - alert: HighResponseTime
           expr: |
             histogram_quantile(0.95,
-              rate(http_request_duration_seconds_bucket{job="citadelbuy-api"}[5m])
+              rate(http_request_duration_seconds_bucket{job="broxiva-api"}[5m])
             ) > 2
           for: 5m
           labels:
@@ -159,7 +159,7 @@ spec:
         - alert: PodCrashLooping
           expr: |
             rate(kube_pod_container_status_restarts_total{
-              namespace="citadelbuy-production"
+              namespace="broxiva-production"
             }[15m]) > 0
           for: 15m
           labels:
@@ -171,8 +171,8 @@ spec:
         - alert: HighMemoryUsage
           expr: |
             container_memory_usage_bytes{
-              namespace="citadelbuy-production",
-              pod=~"citadelbuy-.*"
+              namespace="broxiva-production",
+              pod=~"broxiva-.*"
             } / container_spec_memory_limit_bytes > 0.9
           for: 5m
           labels:
@@ -184,8 +184,8 @@ spec:
         - alert: HighCPUUsage
           expr: |
             rate(container_cpu_usage_seconds_total{
-              namespace="citadelbuy-production",
-              pod=~"citadelbuy-.*"
+              namespace="broxiva-production",
+              pod=~"broxiva-.*"
             }[5m]) / container_spec_cpu_quota * 100 > 80
           for: 5m
           labels:
@@ -196,7 +196,7 @@ spec:
 
         - alert: DatabaseConnectionPoolExhausted
           expr: |
-            pg_stat_activity_count{namespace="citadelbuy-production"}
+            pg_stat_activity_count{namespace="broxiva-production"}
             / pg_settings_max_connections > 0.8
           for: 5m
           labels:
@@ -206,12 +206,12 @@ spec:
             summary: "Database connection pool nearly exhausted"
             description: "Using {{ $value | humanizePercentage }} of available connections"
 
-    - name: citadelbuy-availability
+    - name: broxiva-availability
       interval: 30s
       rules:
         - alert: ServiceDown
           expr: |
-            up{namespace="citadelbuy-production"} == 0
+            up{namespace="broxiva-production"} == 0
           for: 2m
           labels:
             severity: critical
@@ -222,7 +222,7 @@ spec:
         - alert: HighPodRestartRate
           expr: |
             increase(kube_pod_container_status_restarts_total{
-              namespace="citadelbuy-production"
+              namespace="broxiva-production"
             }[1h]) > 3
           labels:
             severity: warning
@@ -233,7 +233,7 @@ spec:
         - alert: InsufficientReplicas
           expr: |
             kube_deployment_status_replicas_available{
-              namespace="citadelbuy-production"
+              namespace="broxiva-production"
             } < kube_deployment_spec_replicas * 0.5
           for: 5m
           labels:
@@ -247,23 +247,23 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: citadelbuy-dashboard
-  namespace: citadelbuy-production
+  name: broxiva-dashboard
+  namespace: broxiva-production
   labels:
     grafana_dashboard: "1"
 data:
-  citadelbuy-overview.json: |
+  broxiva-overview.json: |
     {
       "dashboard": {
-        "title": "CitadelBuy Production Overview",
-        "tags": ["citadelbuy", "production"],
+        "title": "Broxiva Production Overview",
+        "tags": ["broxiva", "production"],
         "timezone": "browser",
         "panels": [
           {
             "title": "Request Rate",
             "targets": [
               {
-                "expr": "rate(http_requests_total{namespace=\"citadelbuy-production\"}[5m])"
+                "expr": "rate(http_requests_total{namespace=\"broxiva-production\"}[5m])"
               }
             ]
           },
@@ -271,7 +271,7 @@ data:
             "title": "Error Rate",
             "targets": [
               {
-                "expr": "rate(http_requests_total{namespace=\"citadelbuy-production\",status=~\"5..\"}[5m])"
+                "expr": "rate(http_requests_total{namespace=\"broxiva-production\",status=~\"5..\"}[5m])"
               }
             ]
           },
@@ -279,7 +279,7 @@ data:
             "title": "Response Time (p95)",
             "targets": [
               {
-                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{namespace=\"citadelbuy-production\"}[5m]))"
+                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{namespace=\"broxiva-production\"}[5m]))"
               }
             ]
           }

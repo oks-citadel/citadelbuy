@@ -169,7 +169,7 @@ export class ApiGatewayAgent extends BaseAgent {
 
       t('should support version in Accept header', async (ctx) => {
         const { status } = await this.http.get('/products', {
-          headers: { 'Accept': 'application/vnd.citadelbuy.v1+json' },
+          headers: { 'Accept': 'application/vnd.broxiva.v1+json' },
         });
 
         assert.ok(
@@ -191,7 +191,7 @@ export class ApiGatewayAgent extends BaseAgent {
 
       t('should return 406 Not Acceptable for unsupported versions', async (ctx) => {
         const { status } = await this.http.get('/products', {
-          headers: { 'Accept': 'application/vnd.citadelbuy.v999+json' },
+          headers: { 'Accept': 'application/vnd.broxiva.v999+json' },
         });
 
         assert.ok(

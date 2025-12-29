@@ -1,26 +1,18 @@
-// UI Components for CitadelBuy platform
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+/**
+ * Broxiva Design System - Main Package Export
+ * Premium UI components and design tokens for luxury e-commerce
+ */
 
-// Utility function for combining Tailwind classes
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+// Export design system tokens
+export * from './design-system';
 
-// Re-export utilities
-export { clsx } from 'clsx';
+// Export components
+export * from './components';
+
+// Export utilities
+export * from './utils';
+
+// Re-export common utilities
+export { clsx, type ClassValue } from 'clsx';
 export { twMerge } from 'tailwind-merge';
 export { cva, type VariantProps } from 'class-variance-authority';
-
-// Placeholder exports for components
-// These will be implemented as needed
-export const Button = () => null;
-export const Input = () => null;
-export const Card = () => null;
-export const Badge = () => null;
-export const Avatar = () => null;
-export const Skeleton = () => null;
-export const Spinner = () => null;
-export const Modal = () => null;
-export const Toast = () => null;
-export const Tooltip = () => null;

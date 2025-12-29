@@ -26,7 +26,7 @@ async def test_basic_llm_call():
         client = LLMClient(provider="anthropic", fallback_provider="openai")
 
         response: LLMResponse = await client.generate(
-            prompt="Say 'Hello from CitadelBuy AI Agents!' and explain in one sentence what you can help with.",
+            prompt="Say 'Hello from Broxiva AI Agents!' and explain in one sentence what you can help with.",
             temperature=0.7,
             max_tokens=100
         )
@@ -313,7 +313,7 @@ async def check_environment():
 async def main():
     """Run all tests."""
     print("\n" + "="*60)
-    print("CitadelBuy AI Agents - LLM Integration Test Suite")
+    print("Broxiva AI Agents - LLM Integration Test Suite")
     print("="*60)
 
     # Check environment first

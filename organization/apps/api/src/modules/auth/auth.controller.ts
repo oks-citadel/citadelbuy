@@ -1,5 +1,5 @@
 import { Throttle } from '@nestjs/throttler';
-import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -11,6 +11,10 @@ import {
   RegisterDto,
   LoginDto,
   RefreshTokenDto,
+  MfaSetupDto,
+  MfaVerifyDto,
+  VerifyEmailDto,
+  ResendVerificationDto,
 } from './dto';
 import { SocialProvider } from './dto/social-login.dto';
 
@@ -298,5 +302,172 @@ export class AuthController {
       provider: SocialProvider.GITHUB,
       accessToken: body.token,
     }, req);
+  }
+
+  // ==================== MFA Endpoints ====================
+
+  @Post('mfa/setup')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Setup MFA for user account',
+    description: 'Generates a TOTP secret and QR code for setting up multi-factor authentication. Returns backup codes for account recovery.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'MFA setup initiated successfully',
+    schema: {
+      example: {
+        secret: 'JBSWY3DPEHPK3PXP',
+        qrCode: 'data:image/png;base64,...',
+        backupCodes: ['ABC123', 'DEF456', 'GHI789', 'JKL012', 'MNO345'],
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - invalid or missing token' })
+  @ApiResponse({ status: 400, description: 'MFA is already enabled for this account' })
+  @ApiBody({ type: MfaSetupDto })
+  async setupMfa(@Request() req: any, @Body() mfaSetupDto: MfaSetupDto) {
+    return this.authService.setupMfa(req.user.id);
+  }
+
+  @Post('mfa/verify')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Verify and enable MFA',
+    description: 'Verifies the TOTP code from authenticator app and enables MFA for the account.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'MFA enabled successfully',
+    schema: {
+      example: {
+        message: 'MFA enabled successfully',
+        mfaEnabled: true,
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - invalid or missing token' })
+  @ApiResponse({ status: 400, description: 'Invalid verification code or MFA not setup' })
+  @ApiBody({ type: MfaVerifyDto })
+  async verifyMfa(@Request() req: any, @Body() mfaVerifyDto: MfaVerifyDto) {
+    return this.authService.verifyMfa(req.user.id, mfaVerifyDto.code);
+  }
+
+  @Get('mfa/status')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get MFA status for current user',
+    description: 'Returns whether MFA is enabled for the authenticated user.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'MFA status retrieved',
+    schema: {
+      example: {
+        mfaEnabled: true,
+        mfaMethod: 'totp',
+      },
+    },
+  })
+  async getMfaStatus(@Request() req: any) {
+    return this.authService.getMfaStatus(req.user.id);
+  }
+
+  @Post('mfa/disable')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Disable MFA for user account',
+    description: 'Disables multi-factor authentication. Requires valid TOTP code or backup code.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'MFA disabled successfully',
+    schema: {
+      example: {
+        message: 'MFA disabled successfully',
+        mfaEnabled: false,
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - invalid or missing token' })
+  @ApiResponse({ status: 400, description: 'Invalid verification code' })
+  @ApiBody({ type: MfaVerifyDto })
+  async disableMfa(@Request() req: any, @Body() mfaVerifyDto: MfaVerifyDto) {
+    return this.authService.disableMfa(req.user.id, mfaVerifyDto.code);
+  }
+
+  // ==================== Email Verification Endpoints ====================
+
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Verify email address',
+    description: 'Verifies the user email address using the token sent via email.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Email verified successfully',
+    schema: {
+      example: {
+        message: 'Email verified successfully',
+        verified: true,
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid or expired verification token' })
+  @ApiBody({ type: VerifyEmailDto })
+  async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
+    return this.authService.verifyEmail(verifyEmailDto.token);
+  }
+
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Resend verification email',
+    description: 'Resends the email verification link to the provided email address.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Verification email sent if address exists',
+    schema: {
+      example: {
+        message: 'If your email is registered, you will receive a verification email shortly',
+      },
+    },
+  })
+  @ApiResponse({ status: 429, description: 'Too many requests - please wait before trying again' })
+  @ApiBody({ type: ResendVerificationDto })
+  async resendVerification(@Body() resendDto: ResendVerificationDto) {
+    return this.authService.resendVerificationEmail(resendDto.email);
+  }
+
+  @Post('send-verification')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Send verification email to current user',
+    description: 'Sends a verification email to the currently authenticated user.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Verification email sent successfully',
+    schema: {
+      example: {
+        message: 'Verification email sent successfully',
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Email already verified' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - invalid or missing token' })
+  async sendVerification(@Request() req: any) {
+    return this.authService.sendVerificationEmail(req.user.id);
   }
 }

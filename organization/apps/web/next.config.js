@@ -7,7 +7,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**.citadelbuy.com',
+        hostname: '**.broxiva.com',
       },
       {
         protocol: 'https',
@@ -15,7 +15,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'cdn.citadelbuy.com',
+        hostname: 'cdn.broxiva.com',
       },
     ],
   },

@@ -91,7 +91,7 @@ export class CustomsDutyService {
       NG: 0.07 * value, // 7% ETLS levy
     };
 
-    return fees[country] || 0;
+    return (fees as Record<string, number>)[country] || 0;
   }
 
   private getHSDescription(hsCode: string): string {

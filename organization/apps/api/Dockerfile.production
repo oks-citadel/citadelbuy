@@ -1,7 +1,7 @@
 # ==========================================
-# CitadelBuy NestJS API - Production Dockerfile
+# Broxiva NestJS API - Production Dockerfile
 # Multi-stage build for optimized image size
-# Node.js 20 Alpine with security hardening
+# ENCODING-HARDENED: UTF-8 safe across all environments
 # ==========================================
 
 # ==========================================
@@ -10,19 +10,30 @@
 # ==========================================
 FROM node:20-alpine AS deps
 
-# Install system dependencies for native modules
+# ENCODING FIX: Set UTF-8 locale for Alpine
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install system dependencies for native modules and bash
 RUN apk add --no-cache \
     libc6-compat \
     python3 \
     make \
     g++ \
+    bash \
     && rm -rf /var/cache/apk/*
+
+# ENCODING FIX: Use bash shell for consistent behavior
+SHELL ["/bin/bash", "-c"]
 
 WORKDIR /app
 
 # Copy package manager files
-# Using pnpm for efficient dependency management
 COPY package.json pnpm-lock.yaml* package-lock.json* ./
+
+# ENCODING FIX: Normalize CRLF line endings from Windows
+RUN find . -type f \( -name "*.json" -o -name "*.yaml" -o -name "*.yml" \) -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
 
 # Install pnpm globally
 RUN npm install -g pnpm@10.23.0
@@ -37,6 +48,17 @@ RUN pnpm install || npm install
 # ==========================================
 FROM node:20-alpine AS builder
 
+# ENCODING FIX: Set UTF-8 locale
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install bash for consistent shell behavior
+RUN apk add --no-cache bash && rm -rf /var/cache/apk/*
+
+# ENCODING FIX: Use bash shell
+SHELL ["/bin/bash", "-c"]
+
 WORKDIR /app
 
 # Copy dependencies from deps stage
@@ -45,13 +67,15 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy application source code
 COPY . .
 
+# ENCODING FIX: Normalize source files (exclude node_modules to preserve binary permissions)
+RUN find . -path ./node_modules -prune -o -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.prisma" -o -name "*.sh" \) -print -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
+
 # Generate Prisma Client
-# This is required before building the NestJS application
 RUN npx prisma generate
 
 # Build the NestJS application
-# Creates optimized production bundle in dist/
 ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN npm run build
 
 # ==========================================
@@ -60,16 +84,29 @@ RUN npm run build
 # ==========================================
 FROM node:20-alpine AS prod-deps
 
+# ENCODING FIX: Set UTF-8 locale
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install bash
+RUN apk add --no-cache bash && rm -rf /var/cache/apk/*
+
+# ENCODING FIX: Use bash shell
+SHELL ["/bin/bash", "-c"]
+
 WORKDIR /app
 
 # Copy package manager files
 COPY package.json pnpm-lock.yaml* package-lock.json* ./
 
+# ENCODING FIX: Normalize CRLF
+RUN find . -type f -name "*.json" -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
+
 # Install pnpm globally
 RUN npm install -g pnpm@10.23.0
 
 # Install only production dependencies
-# Reduces final image size significantly
 RUN pnpm install --prod || npm install --only=production
 
 # ==========================================
@@ -78,17 +115,24 @@ RUN pnpm install --prod || npm install --only=production
 # ==========================================
 FROM node:20-alpine AS runner
 
-# Install dumb-init for proper signal handling
-# Install curl for health checks
+# ENCODING FIX: Set UTF-8 locale for runtime
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install dumb-init for signal handling, curl for health checks, and bash
 RUN apk add --no-cache \
     dumb-init \
     curl \
+    bash \
     && rm -rf /var/cache/apk/*
+
+# ENCODING FIX: Use bash shell
+SHELL ["/bin/bash", "-c"]
 
 WORKDIR /app
 
 # Create non-root user for security
-# Running as non-root reduces attack surface
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001 -G nodejs
 
@@ -99,9 +143,7 @@ COPY --from=prod-deps --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 
 # Copy Prisma schema and generated client
-# Required for database migrations and queries
 COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
-# Copy Prisma generated client (may be in different locations depending on package manager)
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 
 # Copy package.json for runtime metadata
@@ -111,54 +153,26 @@ COPY --chown=nestjs:nodejs package.json ./
 ENV NODE_ENV=production
 
 # Expose API port
-# Default NestJS port is 4000
 EXPOSE 4000
 
 # Switch to non-root user
 USER nestjs
 
 # Health check endpoint
-# Verifies the API is responding correctly
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:4000/api/health || exit 1
 
 # Use dumb-init to handle signals properly
-# Ensures graceful shutdown on SIGTERM
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start the application
-# Using node directly for better performance than npm
 CMD ["node", "dist/main.js"]
 
 # ==========================================
-# Build Instructions:
+# ENCODING HARDENING APPLIED:
 # ==========================================
-# Build: docker build -f Dockerfile.production -t citadelbuy-api:prod .
-# Run:   docker run -p 4000:4000 --env-file .env.production citadelbuy-api:prod
-#
-# Multi-platform build:
-# docker buildx build --platform linux/amd64,linux/arm64 \
-#   -f Dockerfile.production -t citadelbuy-api:prod .
-# ==========================================
-
-# ==========================================
-# Security Features:
-# ==========================================
-# ✓ Non-root user (nestjs:1001)
-# ✓ Multi-stage build (minimal attack surface)
-# ✓ Alpine base (small, security-focused)
-# ✓ No development dependencies in production
-# ✓ Health check for container orchestration
-# ✓ Proper signal handling with dumb-init
-# ✓ Read-only file system compatible
-# ==========================================
-
-# ==========================================
-# Size Optimizations:
-# ==========================================
-# ✓ Alpine Linux base (~5MB)
-# ✓ Multi-stage build (only runtime files)
-# ✓ Production dependencies only
-# ✓ No source code in final image
-# ✓ Expected final image size: ~200-300MB
+# - LANG=C.UTF-8, LC_ALL=C.UTF-8 in all stages
+# - SHELL ["/bin/bash", "-c"] for consistent behavior
+# - CRLF normalization (sed 's/\r$//') for Windows compatibility
+# - bash installed in Alpine for reliable scripting
 # ==========================================

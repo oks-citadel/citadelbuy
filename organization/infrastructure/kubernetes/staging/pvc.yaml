@@ -1,4 +1,4 @@
-# PersistentVolumeClaims for CitadelBuy Staging Environment
+# PersistentVolumeClaims for Broxiva Staging Environment
 
 ---
 # PVC for PostgreSQL Data
@@ -6,7 +6,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-pvc
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
   labels:
     app: postgres
     tier: database
@@ -26,7 +26,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: redis-pvc
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
   labels:
     app: redis
     tier: cache
@@ -45,7 +45,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: elasticsearch-pvc
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
   labels:
     app: elasticsearch
     tier: search

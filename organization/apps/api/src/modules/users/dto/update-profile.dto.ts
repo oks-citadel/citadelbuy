@@ -22,7 +22,7 @@ export class UpdateProfileDto {
 
   @ApiProperty({
     description: 'Avatar URL',
-    example: 'https://cdn.citadelbuy.com/avatars/user-123.jpg',
+    example: 'https://cdn.broxiva.com/avatars/user-123.jpg',
     required: false,
   })
   @IsUrl()

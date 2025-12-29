@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderStatus } from '@prisma/client';
@@ -730,5 +730,93 @@ export class OrdersService {
     // Default to US if not found (or could throw error)
     this.logger.warn(`Unknown country: ${country}, defaulting to US`);
     return 'US';
+  }
+
+  /**
+   * Cancel an order
+   * Only allows cancellation if order is in PENDING or PROCESSING status
+   */
+  async cancelOrder(orderId: string, userId: string) {
+    const order = await this.prisma.order.findFirst({
+      where: {
+        id: orderId,
+        userId,
+      },
+      include: {
+        user: {
+          select: {
+            email: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    // Check if order belongs to user
+    if (order.userId !== userId) {
+      throw new ForbiddenException('You are not authorized to cancel this order');
+    }
+
+    // Check if order can be cancelled
+    const cancellableStatuses = ['PENDING', 'PROCESSING'];
+    if (!cancellableStatuses.includes(order.status)) {
+      throw new BadRequestException(
+        `Order cannot be cancelled. Current status: ${order.status}. ` +
+        `Orders can only be cancelled when in ${cancellableStatuses.join(' or ')} status.`
+      );
+    }
+
+    // Update status history
+    const currentHistory = (order.statusHistory as any[]) || [];
+    const statusHistory = [
+      ...currentHistory,
+      {
+        status: 'CANCELLED',
+        timestamp: new Date().toISOString(),
+        note: 'Order cancelled by customer',
+      },
+    ];
+
+    // Cancel the order
+    const cancelledOrder = await this.prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status: 'CANCELLED',
+        statusHistory,
+        updatedAt: new Date(),
+      },
+    });
+
+    // Send cancellation email
+    const email = order.user?.email || (order as any).guestEmail;
+    const name = order.user?.name || 'Customer';
+
+    if (email) {
+      this.emailService
+        .sendOrderStatusUpdate(email, {
+          customerName: name,
+          orderNumber: order.id.slice(-8).toUpperCase(),
+          orderDate: order.createdAt.toLocaleDateString(),
+          status: 'cancelled',
+          statusMessage: 'Your order has been cancelled as requested.',
+          items: [],
+        })
+        .catch((error) => {
+          this.logger.error('Failed to send order cancellation email:', error);
+        });
+    }
+
+    this.logger.log(`Order ${orderId} cancelled by user ${userId}`);
+
+    return {
+      id: cancelledOrder.id,
+      orderNumber: cancelledOrder.id.slice(-8).toUpperCase(),
+      status: cancelledOrder.status,
+      message: 'Order has been cancelled successfully',
+    };
   }
 }

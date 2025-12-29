@@ -1,5 +1,5 @@
 /**
- * TypeScript type definitions for CitadelBuy Mobile App
+ * TypeScript type definitions for Broxiva Mobile App
  */
 
 export * from './navigation';

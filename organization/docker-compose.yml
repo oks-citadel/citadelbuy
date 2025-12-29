@@ -1,5 +1,5 @@
 # ==================================
-# CitadelBuy E-Commerce Platform
+# Broxiva E-Commerce Platform
 # Full Stack Development Environment
 # ==================================
 # Docker Compose for local development with all services
@@ -33,30 +33,30 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: citadelbuy-postgres
+    container_name: broxiva-postgres
     restart: unless-stopped
     environment:
       # Set POSTGRES_PASSWORD in .env file - do not use the default!
-      POSTGRES_USER: ${POSTGRES_USER:-citadelbuy}
+      POSTGRES_USER: ${POSTGRES_USER:-broxiva}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env file}
-      POSTGRES_DB: ${POSTGRES_DB:-citadelbuy_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-broxiva_dev}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U citadelbuy -d citadelbuy_dev"]
+      test: ["CMD-SHELL", "pg_isready -U broxiva -d broxiva_dev"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
   # Redis Cache & Sessions
   redis:
     image: redis:7-alpine
-    container_name: citadelbuy-redis
+    container_name: broxiva-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -69,12 +69,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
   # Elasticsearch for Product Search
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: citadelbuy-elasticsearch
+    container_name: broxiva-elasticsearch
     restart: unless-stopped
     environment:
       - discovery.type=single-node
@@ -91,16 +91,16 @@ services:
       timeout: 10s
       retries: 10
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
   # MinIO for S3-compatible File Storage
   minio:
     image: minio/minio:RELEASE.2024-01-16T16-07-38Z
-    container_name: citadelbuy-minio
+    container_name: broxiva-minio
     restart: unless-stopped
     environment:
       # Set MINIO_ROOT_PASSWORD in .env file - do not use the default!
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-citadelbuy_admin}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-broxiva_admin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set in .env file}
     ports:
       - "9000:9000"
@@ -114,7 +114,7 @@ services:
       timeout: 20s
       retries: 3
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
   # ============================================
   # BACKEND LAYER
@@ -125,13 +125,13 @@ services:
     build:
       context: ./apps/api
       dockerfile: Dockerfile.dev
-    container_name: citadelbuy-api
+    container_name: broxiva-api
     restart: unless-stopped
     environment:
       NODE_ENV: development
       PORT: 4000
       # DATABASE_URL uses POSTGRES_PASSWORD from .env file
-      DATABASE_URL: postgresql://${POSTGRES_USER:-citadelbuy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-citadelbuy_dev}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-broxiva}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-broxiva_dev}?schema=public
       REDIS_URL: redis://redis:6379
       ELASTICSEARCH_URL: http://elasticsearch:9200
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
@@ -154,7 +154,7 @@ services:
       timeout: 10s
       retries: 5
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
   # ============================================
   # FRONTEND LAYER
@@ -165,7 +165,7 @@ services:
     build:
       context: ./apps/web
       dockerfile: Dockerfile.dev
-    container_name: citadelbuy-web
+    container_name: broxiva-web
     restart: unless-stopped
     environment:
       NODE_ENV: development
@@ -180,7 +180,7 @@ services:
     depends_on:
       - api
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
   # ============================================
   # API GATEWAY LAYER
@@ -189,7 +189,7 @@ services:
   # Nginx Reverse Proxy / Load Balancer
   nginx:
     image: nginx:1.25.4-alpine
-    container_name: citadelbuy-nginx
+    container_name: broxiva-nginx
     restart: unless-stopped
     ports:
       - "80:80"
@@ -202,7 +202,7 @@ services:
       - api
       - web
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
   # ============================================
   # MONITORING LAYER
@@ -211,7 +211,7 @@ services:
   # Prometheus for Metrics
   prometheus:
     image: prom/prometheus:v2.48.1
-    container_name: citadelbuy-prometheus
+    container_name: broxiva-prometheus
     restart: unless-stopped
     ports:
       - "9090:9090"
@@ -222,12 +222,12 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
   # Grafana for Dashboards
   grafana:
     image: grafana/grafana:10.2.3
-    container_name: citadelbuy-grafana
+    container_name: broxiva-grafana
     restart: unless-stopped
     environment:
       # Set GRAFANA_ADMIN_PASSWORD in .env file - do not use the default!
@@ -242,7 +242,7 @@ services:
     depends_on:
       - prometheus
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
   # ============================================
   # MESSAGE QUEUE (Optional)
@@ -251,11 +251,11 @@ services:
   # RabbitMQ for Async Tasks
   rabbitmq:
     image: rabbitmq:3-management-alpine
-    container_name: citadelbuy-rabbitmq
+    container_name: broxiva-rabbitmq
     restart: unless-stopped
     environment:
       # Set RABBITMQ_PASSWORD in .env file - do not use the default!
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-citadelbuy}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-broxiva}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set in .env file}
     ports:
       - "5672:5672"
@@ -268,7 +268,7 @@ services:
       timeout: 10s
       retries: 5
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
 # ============================================
 # VOLUMES
@@ -293,6 +293,6 @@ volumes:
 # NETWORKS
 # ============================================
 networks:
-  citadelbuy-network:
+  broxiva-network:
     driver: bridge
-    name: citadelbuy-network
+    name: broxiva-network

@@ -1,5 +1,5 @@
 groups:
-  - name: citadelbuy_alerts
+  - name: broxiva_alerts
     interval: 30s
     rules:
       # Service Availability Alerts
@@ -117,7 +117,7 @@ groups:
 
       # Container Alerts
       - alert: ContainerHighCPU
-        expr: rate(container_cpu_usage_seconds_total{name=~"citadelbuy.*"}[5m]) > 0.8
+        expr: rate(container_cpu_usage_seconds_total{name=~"broxiva.*"}[5m]) > 0.8
         for: 10m
         labels:
           severity: warning
@@ -126,7 +126,7 @@ groups:
           description: "Container CPU usage is {{ $value }}%"
 
       - alert: ContainerHighMemory
-        expr: container_memory_usage_bytes{name=~"citadelbuy.*"} / container_spec_memory_limit_bytes{name=~"citadelbuy.*"} > 0.85
+        expr: container_memory_usage_bytes{name=~"broxiva.*"} / container_spec_memory_limit_bytes{name=~"broxiva.*"} > 0.85
         for: 10m
         labels:
           severity: warning
@@ -135,7 +135,7 @@ groups:
           description: "Container memory usage is above 85%"
 
       - alert: ContainerRestarting
-        expr: rate(container_last_seen{name=~"citadelbuy.*"}[5m]) > 2
+        expr: rate(container_last_seen{name=~"broxiva.*"}[5m]) > 2
         for: 5m
         labels:
           severity: warning

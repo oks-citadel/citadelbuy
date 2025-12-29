@@ -35,7 +35,7 @@ def fix_index_order(schema_path):
         return False
 
 def main():
-    schema_path = r'C:\Users\citad\OneDrive\Documents\citadelbuy-master\organization\apps\api\prisma\schema.prisma'
+    schema_path = r'C:\Users\citad\OneDrive\Documents\broxiva-master\organization\apps\api\prisma\schema.prisma'
     print("Fixing index order in Prisma schema...")
     print("=" * 80)
     fix_index_order(schema_path)

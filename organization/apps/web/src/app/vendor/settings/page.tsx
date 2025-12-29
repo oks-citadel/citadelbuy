@@ -179,7 +179,7 @@ export default function VendorSettingsPage() {
                       </label>
                       <div className="flex">
                         <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 bg-muted text-sm text-muted-foreground">
-                          citadelbuy.com/store/
+                          broxiva.com/store/
                         </span>
                         <Input
                           value={storeSettings.storeUrl}

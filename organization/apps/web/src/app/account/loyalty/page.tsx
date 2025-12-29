@@ -89,7 +89,7 @@ export default function LoyaltyPage() {
 
   const handleCopyReferral = () => {
     const referralCode = referrals[0]?.code || 'YOUR_CODE';
-    navigator.clipboard.writeText(`https://citadelbuy.com/ref/${referralCode}`);
+    navigator.clipboard.writeText(`https://broxiva.com/ref/${referralCode}`);
     setCopiedReferral(true);
     setTimeout(() => setCopiedReferral(false), 2000);
   };
@@ -470,7 +470,7 @@ export default function LoyaltyPage() {
                 <div className="flex gap-2">
                   <Input
                     readOnly
-                    value={`https://citadelbuy.com/ref/${referrals[0]?.code || 'YOUR_CODE'}`}
+                    value={`https://broxiva.com/ref/${referrals[0]?.code || 'YOUR_CODE'}`}
                     className="font-mono"
                   />
                   <Button onClick={handleCopyReferral}>

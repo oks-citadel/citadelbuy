@@ -1,8 +1,8 @@
-// CitadelBuy Service Worker
-const CACHE_NAME = 'citadelbuy-v1';
-const STATIC_CACHE = 'citadelbuy-static-v1';
-const DYNAMIC_CACHE = 'citadelbuy-dynamic-v1';
-const IMAGE_CACHE = 'citadelbuy-images-v1';
+// Broxiva Service Worker
+const CACHE_NAME = 'broxiva-v1';
+const STATIC_CACHE = 'broxiva-static-v1';
+const DYNAMIC_CACHE = 'broxiva-dynamic-v1';
+const IMAGE_CACHE = 'broxiva-images-v1';
 
 // Assets to cache immediately
 const STATIC_ASSETS = [
@@ -101,7 +101,7 @@ self.addEventListener('fetch', (event) => {
 // Push notification event
 self.addEventListener('push', (event) => {
   const options = {
-    body: event.data?.text() || 'New notification from CitadelBuy',
+    body: event.data?.text() || 'New notification from Broxiva',
     icon: '/icons/icon-192x192.png',
     badge: '/icons/badge-72x72.png',
     vibrate: [100, 50, 100],
@@ -119,7 +119,7 @@ self.addEventListener('push', (event) => {
     try {
       const data = event.data.json();
       options.body = data.body || options.body;
-      options.title = data.title || 'CitadelBuy';
+      options.title = data.title || 'Broxiva';
       options.data = { ...options.data, ...data };
     } catch (e) {
       // Use default text
@@ -127,7 +127,7 @@ self.addEventListener('push', (event) => {
   }
 
   event.waitUntil(
-    self.registration.showNotification(options.title || 'CitadelBuy', options)
+    self.registration.showNotification(options.title || 'Broxiva', options)
   );
 });
 
@@ -177,7 +177,7 @@ self.addEventListener('sync', (event) => {
 });
 
 async function syncCart() {
-  const cache = await caches.open('citadelbuy-offline-operations');
+  const cache = await caches.open('broxiva-offline-operations');
   const operations = await cache.match('cart-operations');
 
   if (operations) {
@@ -198,7 +198,7 @@ async function syncCart() {
 }
 
 async function syncWishlist() {
-  const cache = await caches.open('citadelbuy-offline-operations');
+  const cache = await caches.open('broxiva-offline-operations');
   const operations = await cache.match('wishlist-operations');
 
   if (operations) {

@@ -1,5 +1,5 @@
 {
-  "name": "CitadelBuy Shipping & Tracking Updates",
+  "name": "Broxiva Shipping & Tracking Updates",
   "nodes": [
     {
       "parameters": {
@@ -216,9 +216,9 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "=https://api.citadelbuy.com/v1/orders/{{ $json.orderNumber }}",
+        "url": "=https://api.broxiva.com/v1/orders/{{ $json.orderNumber }}",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "options": {
           "response": {
             "response": {
@@ -233,9 +233,9 @@
       "typeVersion": 4.1,
       "position": [1340, 410],
       "credentials": {
-        "citadelBuyApi": {
-          "id": "citadelbuy-api",
-          "name": "CitadelBuy API"
+        "broxivaApi": {
+          "id": "broxiva-api",
+          "name": "Broxiva API"
         }
       }
     },
@@ -307,7 +307,7 @@
             {
               "id": "tracking-url",
               "name": "trackingUrl",
-              "value": "={{ \n  $json.carrier.toLowerCase().includes('fedex') ? 'https://www.fedex.com/fedextrack/?tracknumbers=' + $json.trackingNumber :\n  $json.carrier.toLowerCase().includes('ups') ? 'https://www.ups.com/track?tracknum=' + $json.trackingNumber :\n  $json.carrier.toLowerCase().includes('usps') ? 'https://tools.usps.com/go/TrackConfirmAction?tLabels=' + $json.trackingNumber :\n  $json.carrier.toLowerCase().includes('dhl') ? 'https://www.dhl.com/en/express/tracking.html?AWB=' + $json.trackingNumber :\n  'https://citadelbuy.com/track-order?tracking=' + $json.trackingNumber\n}}",
+              "value": "={{ \n  $json.carrier.toLowerCase().includes('fedex') ? 'https://www.fedex.com/fedextrack/?tracknumbers=' + $json.trackingNumber :\n  $json.carrier.toLowerCase().includes('ups') ? 'https://www.ups.com/track?tracknum=' + $json.trackingNumber :\n  $json.carrier.toLowerCase().includes('usps') ? 'https://tools.usps.com/go/TrackConfirmAction?tLabels=' + $json.trackingNumber :\n  $json.carrier.toLowerCase().includes('dhl') ? 'https://www.dhl.com/en/express/tracking.html?AWB=' + $json.trackingNumber :\n  'https://broxiva.com/track-order?tracking=' + $json.trackingNumber\n}}",
               "type": "string"
             },
             {
@@ -531,7 +531,7 @@
             {
               "id": "email-data-shipped",
               "name": "emailData",
-              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  trackingUrl: $json.trackingUrl,\n  carrier: $json.carrier,\n  estimatedDelivery: $json.estimatedDelivery,\n  items: $('Fetch Order Details').item.json.items,\n  supportUrl: 'https://citadelbuy.com/support'\n} }}",
+              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  trackingUrl: $json.trackingUrl,\n  carrier: $json.carrier,\n  estimatedDelivery: $json.estimatedDelivery,\n  items: $('Fetch Order Details').item.json.items,\n  supportUrl: 'https://broxiva.com/support'\n} }}",
               "type": "object"
             },
             {
@@ -569,7 +569,7 @@
             {
               "id": "email-data-transit",
               "name": "emailData",
-              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  trackingUrl: $json.trackingUrl,\n  carrier: $json.carrier,\n  estimatedDelivery: $json.estimatedDelivery,\n  estimatedDeliveryFormatted: new Date($json.estimatedDelivery).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),\n  supportUrl: 'https://citadelbuy.com/support'\n} }}",
+              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  trackingUrl: $json.trackingUrl,\n  carrier: $json.carrier,\n  estimatedDelivery: $json.estimatedDelivery,\n  estimatedDeliveryFormatted: new Date($json.estimatedDelivery).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),\n  supportUrl: 'https://broxiva.com/support'\n} }}",
               "type": "object"
             },
             {
@@ -607,7 +607,7 @@
             {
               "id": "email-data-out-delivery",
               "name": "emailData",
-              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  trackingUrl: $json.trackingUrl,\n  carrier: $json.carrier,\n  deliveryAddress: $('Fetch Order Details').item.json.shippingAddress,\n  supportUrl: 'https://citadelbuy.com/support'\n} }}",
+              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  trackingUrl: $json.trackingUrl,\n  carrier: $json.carrier,\n  deliveryAddress: $('Fetch Order Details').item.json.shippingAddress,\n  supportUrl: 'https://broxiva.com/support'\n} }}",
               "type": "object"
             },
             {
@@ -645,7 +645,7 @@
             {
               "id": "email-data-delivered",
               "name": "emailData",
-              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  deliveredDate: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),\n  deliveryAddress: $('Fetch Order Details').item.json.shippingAddress,\n  reviewUrl: 'https://citadelbuy.com/review?order=' + $json.orderNumber,\n  reviewTeaser: 'Love your purchase? Share your experience and help others!',\n  supportUrl: 'https://citadelbuy.com/support'\n} }}",
+              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  deliveredDate: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),\n  deliveryAddress: $('Fetch Order Details').item.json.shippingAddress,\n  reviewUrl: 'https://broxiva.com/review?order=' + $json.orderNumber,\n  reviewTeaser: 'Love your purchase? Share your experience and help others!',\n  supportUrl: 'https://broxiva.com/support'\n} }}",
               "type": "object"
             },
             {
@@ -695,9 +695,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/coupons/generate",
+        "url": "https://api.broxiva.com/v1/coupons/generate",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"code\": \"DELAY{{ $json.orderNumber }}\",\n  \"discountType\": \"percentage\",\n  \"discountValue\": 10,\n  \"expiresIn\": 30,\n  \"customerId\": \"{{ $('Fetch Order Details').item.json.customer.id }}\",\n  \"reason\": \"shipping_delay_apology\",\n  \"maxUses\": 1\n}",
@@ -715,9 +715,9 @@
       "typeVersion": 4.1,
       "position": [2440, 580],
       "credentials": {
-        "citadelBuyApi": {
-          "id": "citadelbuy-api",
-          "name": "CitadelBuy API"
+        "broxivaApi": {
+          "id": "broxiva-api",
+          "name": "Broxiva API"
         }
       }
     },
@@ -740,7 +740,7 @@
             {
               "id": "email-data-delay",
               "name": "emailData",
-              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  trackingUrl: $json.trackingUrl,\n  carrier: $json.carrier,\n  delayDays: $json.delayDays,\n  newEstimatedDelivery: new Date($json.estimatedDelivery).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),\n  discountCode: $('Generate 10% Discount Code').item.json.code,\n  discountAmount: '10%',\n  supportUrl: 'https://citadelbuy.com/support',\n  contactEmail: 'support@citadelbuy.com'\n} }}",
+              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  trackingUrl: $json.trackingUrl,\n  carrier: $json.carrier,\n  delayDays: $json.delayDays,\n  newEstimatedDelivery: new Date($json.estimatedDelivery).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),\n  discountCode: $('Generate 10% Discount Code').item.json.code,\n  discountAmount: '10%',\n  supportUrl: 'https://broxiva.com/support',\n  contactEmail: 'support@broxiva.com'\n} }}",
               "type": "object"
             },
             {
@@ -778,7 +778,7 @@
             {
               "id": "email-data-exception",
               "name": "emailData",
-              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  trackingUrl: $json.trackingUrl,\n  carrier: $json.carrier,\n  exceptionReason: $json.status,\n  supportUrl: 'https://citadelbuy.com/support',\n  contactEmail: 'support@citadelbuy.com',\n  contactPhone: '1-800-CITADEL'\n} }}",
+              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  trackingUrl: $json.trackingUrl,\n  carrier: $json.carrier,\n  exceptionReason: $json.status,\n  supportUrl: 'https://broxiva.com/support',\n  contactEmail: 'support@broxiva.com',\n  contactPhone: '1-800-CITADEL'\n} }}",
               "type": "object"
             },
             {
@@ -816,7 +816,7 @@
             {
               "id": "email-data-failed",
               "name": "emailData",
-              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  trackingUrl: $json.trackingUrl,\n  carrier: $json.carrier,\n  attemptDate: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),\n  rescheduleUrl: $json.trackingUrl,\n  deliveryAddress: $('Fetch Order Details').item.json.shippingAddress,\n  supportUrl: 'https://citadelbuy.com/support',\n  contactEmail: 'support@citadelbuy.com'\n} }}",
+              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  trackingUrl: $json.trackingUrl,\n  carrier: $json.carrier,\n  attemptDate: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),\n  rescheduleUrl: $json.trackingUrl,\n  deliveryAddress: $('Fetch Order Details').item.json.shippingAddress,\n  supportUrl: 'https://broxiva.com/support',\n  contactEmail: 'support@broxiva.com'\n} }}",
               "type": "object"
             },
             {
@@ -867,7 +867,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://citadelbuy.zendesk.com/api/v2/tickets",
+        "url": "https://broxiva.zendesk.com/api/v2/tickets",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "zendeskApi",
         "sendBody": true,
@@ -896,9 +896,9 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.citadelbuy.com/v1/orders/replacement",
+        "url": "https://api.broxiva.com/v1/orders/replacement",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"originalOrderId\": \"{{ $json.orderNumber }}\",\n  \"reason\": \"lost_package\",\n  \"trackingNumber\": \"{{ $json.trackingNumber }}\",\n  \"carrier\": \"{{ $json.carrier }}\",\n  \"priority\": \"high\",\n  \"expeditedShipping\": true,\n  \"zendeskTicketId\": \"{{ $('Create Zendesk Escalation Ticket').item.json.ticket.id }}\"\n}",
@@ -916,9 +916,9 @@
       "typeVersion": 4.1,
       "position": [2880, 660],
       "credentials": {
-        "citadelBuyApi": {
-          "id": "citadelbuy-api",
-          "name": "CitadelBuy API"
+        "broxivaApi": {
+          "id": "broxiva-api",
+          "name": "Broxiva API"
         }
       }
     },
@@ -941,7 +941,7 @@
             {
               "id": "email-data-lost",
               "name": "emailData",
-              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  carrier: $json.carrier,\n  replacementOrderNumber: $('Trigger Replacement Order').item.json.replacementOrderId,\n  zendeskTicketId: $('Create Zendesk Escalation Ticket').item.json.ticket.id,\n  estimatedReplacementDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),\n  supportUrl: 'https://citadelbuy.com/support',\n  contactEmail: 'support@citadelbuy.com'\n} }}",
+              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  carrier: $json.carrier,\n  replacementOrderNumber: $('Trigger Replacement Order').item.json.replacementOrderId,\n  zendeskTicketId: $('Create Zendesk Escalation Ticket').item.json.ticket.id,\n  estimatedReplacementDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),\n  supportUrl: 'https://broxiva.com/support',\n  contactEmail: 'support@broxiva.com'\n} }}",
               "type": "object"
             },
             {
@@ -998,11 +998,11 @@
     },
     {
       "parameters": {
-        "fromEmail": "shipping@citadelbuy.com",
+        "fromEmail": "shipping@broxiva.com",
         "toEmail": "={{ $('Fetch Order Details').item.json.customer.email }}",
         "subject": "={{ $json.emailSubject }}",
         "emailType": "html",
-        "message": "=<!-- Email template will be rendered here -->\n<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n    .container { max-width: 600px; margin: 0 auto; padding: 20px; }\n    .header { background: #0066cc; color: white; padding: 20px; text-align: center; }\n    .content { background: #f9f9f9; padding: 30px; }\n    .button { display: inline-block; padding: 12px 24px; background: #0066cc; color: white; text-decoration: none; border-radius: 4px; margin: 10px 0; }\n    .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }\n    .tracking-info { background: white; padding: 15px; border-left: 4px solid #0066cc; margin: 20px 0; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>CitadelBuy Shipping Update</h1>\n    </div>\n    <div class=\"content\">\n      <h2>Hello {{ $json.emailData.customerName }}!</h2>\n      \n      {% if notificationType == 'shipped' %}\n        <p>Great news! Your order has been shipped and is on its way to you.</p>\n        <div class=\"tracking-info\">\n          <strong>Order Number:</strong> {{ $json.emailData.orderNumber }}<br>\n          <strong>Tracking Number:</strong> {{ $json.emailData.trackingNumber }}<br>\n          <strong>Carrier:</strong> {{ $json.emailData.carrier }}<br>\n          <strong>Estimated Delivery:</strong> {{ $json.emailData.estimatedDelivery }}\n        </div>\n        <a href=\"{{ $json.emailData.trackingUrl }}\" class=\"button\">Track Your Package</a>\n      {% endif %}\n      \n      {% if notificationType == 'in_transit' %}\n        <p>Your order is currently in transit and making its way to you!</p>\n        <div class=\"tracking-info\">\n          <strong>Order Number:</strong> {{ $json.emailData.orderNumber }}<br>\n          <strong>Estimated Delivery:</strong> {{ $json.emailData.estimatedDeliveryFormatted }}\n        </div>\n        <a href=\"{{ $json.emailData.trackingUrl }}\" class=\"button\">Track Your Package</a>\n      {% endif %}\n      \n      {% if notificationType == 'out_for_delivery' %}\n        <p><strong>Arriving today!</strong> Your package is out for delivery and should arrive shortly.</p>\n        <div class=\"tracking-info\">\n          <strong>Order Number:</strong> {{ $json.emailData.orderNumber }}<br>\n          <strong>Delivery Address:</strong> {{ $json.emailData.deliveryAddress.street }}, {{ $json.emailData.deliveryAddress.city }}\n        </div>\n      {% endif %}\n      \n      {% if notificationType == 'delivered' %}\n        <p>Your order has been delivered! We hope you love it.</p>\n        <div class=\"tracking-info\">\n          <strong>Order Number:</strong> {{ $json.emailData.orderNumber }}<br>\n          <strong>Delivered:</strong> {{ $json.emailData.deliveredDate }}\n        </div>\n        <p>{{ $json.emailData.reviewTeaser }}</p>\n        <a href=\"{{ $json.emailData.reviewUrl }}\" class=\"button\">Share Your Review</a>\n      {% endif %}\n      \n      {% if notificationType == 'delayed_apology' %}\n        <p>We sincerely apologize for the delay with your order. Your package has been delayed by {{ $json.emailData.delayDays }} days.</p>\n        <div class=\"tracking-info\">\n          <strong>New Estimated Delivery:</strong> {{ $json.emailData.newEstimatedDelivery }}\n        </div>\n        <p>As an apology, we'd like to offer you a <strong>{{ $json.emailData.discountAmount }} discount</strong> on your next order:</p>\n        <p style=\"font-size: 18px; font-weight: bold; color: #0066cc;\">Code: {{ $json.emailData.discountCode }}</p>\n      {% endif %}\n      \n      {% if notificationType == 'delivery_failed' %}\n        <p>We attempted to deliver your order on {{ $json.emailData.attemptDate }}, but were unable to complete the delivery.</p>\n        <div class=\"tracking-info\">\n          <strong>Order Number:</strong> {{ $json.emailData.orderNumber }}<br>\n          <strong>Delivery Address:</strong> {{ $json.emailData.deliveryAddress.street }}, {{ $json.emailData.deliveryAddress.city }}\n        </div>\n        <a href=\"{{ $json.emailData.rescheduleUrl }}\" class=\"button\">Reschedule Delivery</a>\n      {% endif %}\n      \n      {% if notificationType == 'lost_package' %}\n        <p>We're sorry to inform you that your package appears to be lost in transit. We're already taking action to make this right.</p>\n        <p><strong>We've automatically created a replacement order ({{ $json.emailData.replacementOrderNumber }}) with expedited shipping at no additional cost to you.</strong></p>\n        <div class=\"tracking-info\">\n          <strong>Original Order:</strong> {{ $json.emailData.orderNumber }}<br>\n          <strong>Replacement Order:</strong> {{ $json.emailData.replacementOrderNumber }}<br>\n          <strong>Estimated Delivery:</strong> {{ $json.emailData.estimatedReplacementDate }}<br>\n          <strong>Support Ticket:</strong> #{{ $json.emailData.zendeskTicketId }}\n        </div>\n      {% endif %}\n      \n      <p>If you have any questions, please don't hesitate to <a href=\"{{ $json.emailData.supportUrl }}\">contact our support team</a>.</p>\n    </div>\n    <div class=\"footer\">\n      <p>&copy; 2025 CitadelBuy. All rights reserved.</p>\n      <p>You're receiving this email because you placed an order with us.</p>\n    </div>\n  </div>\n</body>\n</html>",
+        "message": "=<!-- Email template will be rendered here -->\n<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n    .container { max-width: 600px; margin: 0 auto; padding: 20px; }\n    .header { background: #0066cc; color: white; padding: 20px; text-align: center; }\n    .content { background: #f9f9f9; padding: 30px; }\n    .button { display: inline-block; padding: 12px 24px; background: #0066cc; color: white; text-decoration: none; border-radius: 4px; margin: 10px 0; }\n    .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }\n    .tracking-info { background: white; padding: 15px; border-left: 4px solid #0066cc; margin: 20px 0; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>Broxiva Shipping Update</h1>\n    </div>\n    <div class=\"content\">\n      <h2>Hello {{ $json.emailData.customerName }}!</h2>\n      \n      {% if notificationType == 'shipped' %}\n        <p>Great news! Your order has been shipped and is on its way to you.</p>\n        <div class=\"tracking-info\">\n          <strong>Order Number:</strong> {{ $json.emailData.orderNumber }}<br>\n          <strong>Tracking Number:</strong> {{ $json.emailData.trackingNumber }}<br>\n          <strong>Carrier:</strong> {{ $json.emailData.carrier }}<br>\n          <strong>Estimated Delivery:</strong> {{ $json.emailData.estimatedDelivery }}\n        </div>\n        <a href=\"{{ $json.emailData.trackingUrl }}\" class=\"button\">Track Your Package</a>\n      {% endif %}\n      \n      {% if notificationType == 'in_transit' %}\n        <p>Your order is currently in transit and making its way to you!</p>\n        <div class=\"tracking-info\">\n          <strong>Order Number:</strong> {{ $json.emailData.orderNumber }}<br>\n          <strong>Estimated Delivery:</strong> {{ $json.emailData.estimatedDeliveryFormatted }}\n        </div>\n        <a href=\"{{ $json.emailData.trackingUrl }}\" class=\"button\">Track Your Package</a>\n      {% endif %}\n      \n      {% if notificationType == 'out_for_delivery' %}\n        <p><strong>Arriving today!</strong> Your package is out for delivery and should arrive shortly.</p>\n        <div class=\"tracking-info\">\n          <strong>Order Number:</strong> {{ $json.emailData.orderNumber }}<br>\n          <strong>Delivery Address:</strong> {{ $json.emailData.deliveryAddress.street }}, {{ $json.emailData.deliveryAddress.city }}\n        </div>\n      {% endif %}\n      \n      {% if notificationType == 'delivered' %}\n        <p>Your order has been delivered! We hope you love it.</p>\n        <div class=\"tracking-info\">\n          <strong>Order Number:</strong> {{ $json.emailData.orderNumber }}<br>\n          <strong>Delivered:</strong> {{ $json.emailData.deliveredDate }}\n        </div>\n        <p>{{ $json.emailData.reviewTeaser }}</p>\n        <a href=\"{{ $json.emailData.reviewUrl }}\" class=\"button\">Share Your Review</a>\n      {% endif %}\n      \n      {% if notificationType == 'delayed_apology' %}\n        <p>We sincerely apologize for the delay with your order. Your package has been delayed by {{ $json.emailData.delayDays }} days.</p>\n        <div class=\"tracking-info\">\n          <strong>New Estimated Delivery:</strong> {{ $json.emailData.newEstimatedDelivery }}\n        </div>\n        <p>As an apology, we'd like to offer you a <strong>{{ $json.emailData.discountAmount }} discount</strong> on your next order:</p>\n        <p style=\"font-size: 18px; font-weight: bold; color: #0066cc;\">Code: {{ $json.emailData.discountCode }}</p>\n      {% endif %}\n      \n      {% if notificationType == 'delivery_failed' %}\n        <p>We attempted to deliver your order on {{ $json.emailData.attemptDate }}, but were unable to complete the delivery.</p>\n        <div class=\"tracking-info\">\n          <strong>Order Number:</strong> {{ $json.emailData.orderNumber }}<br>\n          <strong>Delivery Address:</strong> {{ $json.emailData.deliveryAddress.street }}, {{ $json.emailData.deliveryAddress.city }}\n        </div>\n        <a href=\"{{ $json.emailData.rescheduleUrl }}\" class=\"button\">Reschedule Delivery</a>\n      {% endif %}\n      \n      {% if notificationType == 'lost_package' %}\n        <p>We're sorry to inform you that your package appears to be lost in transit. We're already taking action to make this right.</p>\n        <p><strong>We've automatically created a replacement order ({{ $json.emailData.replacementOrderNumber }}) with expedited shipping at no additional cost to you.</strong></p>\n        <div class=\"tracking-info\">\n          <strong>Original Order:</strong> {{ $json.emailData.orderNumber }}<br>\n          <strong>Replacement Order:</strong> {{ $json.emailData.replacementOrderNumber }}<br>\n          <strong>Estimated Delivery:</strong> {{ $json.emailData.estimatedReplacementDate }}<br>\n          <strong>Support Ticket:</strong> #{{ $json.emailData.zendeskTicketId }}\n        </div>\n      {% endif %}\n      \n      <p>If you have any questions, please don't hesitate to <a href=\"{{ $json.emailData.supportUrl }}\">contact our support team</a>.</p>\n    </div>\n    <div class=\"footer\">\n      <p>&copy; 2025 Broxiva. All rights reserved.</p>\n      <p>You're receiving this email because you placed an order with us.</p>\n    </div>\n  </div>\n</body>\n</html>",
         "options": {}
       },
       "id": "send-email-sendgrid",
@@ -1058,7 +1058,7 @@
       "parameters": {
         "fromPhoneNumber": "+1234567890",
         "toPhoneNumber": "={{ $('Fetch Order Details').item.json.customer.phone }}",
-        "message": "={{ \n  $json.notificationType === 'shipped' ? 'CitadelBuy: Order #' + $json.orderNumber + ' shipped! Track: ' + $json.trackingUrl :\n  $json.notificationType === 'in_transit' ? 'CitadelBuy: Order #' + $json.orderNumber + ' in transit. ETA: ' + $json.emailData.estimatedDeliveryFormatted :\n  $json.notificationType === 'out_for_delivery' ? 'CitadelBuy: Your order #' + $json.orderNumber + ' is arriving today! 🎉' :\n  $json.notificationType === 'delivered' ? 'CitadelBuy: Order #' + $json.orderNumber + ' delivered! Love it? Share a review: ' + $json.emailData.reviewUrl :\n  $json.notificationType === 'delayed_apology' ? 'CitadelBuy: Sorry for the delay on order #' + $json.orderNumber + '. Use code ' + $json.emailData.discountCode + ' for 10% off your next order.' :\n  $json.notificationType === 'delivery_failed' ? 'CitadelBuy: Delivery attempt failed for order #' + $json.orderNumber + '. Reschedule: ' + $json.emailData.rescheduleUrl :\n  $json.notificationType === 'lost_package' ? 'CitadelBuy: We\\'re sending a replacement for order #' + $json.orderNumber + '. New order #' + $json.emailData.replacementOrderNumber + ' with expedited shipping.' :\n  'CitadelBuy: Update on order #' + $json.orderNumber + '. Check email for details.'\n}}",
+        "message": "={{ \n  $json.notificationType === 'shipped' ? 'Broxiva: Order #' + $json.orderNumber + ' shipped! Track: ' + $json.trackingUrl :\n  $json.notificationType === 'in_transit' ? 'Broxiva: Order #' + $json.orderNumber + ' in transit. ETA: ' + $json.emailData.estimatedDeliveryFormatted :\n  $json.notificationType === 'out_for_delivery' ? 'Broxiva: Your order #' + $json.orderNumber + ' is arriving today! 🎉' :\n  $json.notificationType === 'delivered' ? 'Broxiva: Order #' + $json.orderNumber + ' delivered! Love it? Share a review: ' + $json.emailData.reviewUrl :\n  $json.notificationType === 'delayed_apology' ? 'Broxiva: Sorry for the delay on order #' + $json.orderNumber + '. Use code ' + $json.emailData.discountCode + ' for 10% off your next order.' :\n  $json.notificationType === 'delivery_failed' ? 'Broxiva: Delivery attempt failed for order #' + $json.orderNumber + '. Reschedule: ' + $json.emailData.rescheduleUrl :\n  $json.notificationType === 'lost_package' ? 'Broxiva: We\\'re sending a replacement for order #' + $json.orderNumber + '. New order #' + $json.emailData.replacementOrderNumber + ' with expedited shipping.' :\n  'Broxiva: Update on order #' + $json.orderNumber + '. Check email for details.'\n}}",
         "options": {}
       },
       "id": "send-sms-twilio",
@@ -1114,7 +1114,7 @@
       "parameters": {
         "fromPhoneNumber": "whatsapp:+1234567890",
         "toPhoneNumber": "=whatsapp:{{ $('Fetch Order Details').item.json.customer.whatsappNumber }}",
-        "message": "={{ \n  $json.notificationType === 'shipped' ? '📦 Great news! Your CitadelBuy order #' + $json.orderNumber + ' has shipped!\\n\\nTrack your package: ' + $json.trackingUrl + '\\n\\nEstimated delivery: ' + $json.emailData.estimatedDelivery :\n  $json.notificationType === 'in_transit' ? '🚚 Your order #' + $json.orderNumber + ' is on its way!\\n\\nExpected delivery: ' + $json.emailData.estimatedDeliveryFormatted + '\\n\\nTrack: ' + $json.trackingUrl :\n  $json.notificationType === 'out_for_delivery' ? '🎉 Arriving today! Your order #' + $json.orderNumber + ' is out for delivery!\\n\\nGet ready to receive your package soon.' :\n  $json.notificationType === 'delivered' ? '✅ Delivered! Order #' + $json.orderNumber + ' has arrived.\\n\\nLove your purchase? Share your experience:\\n' + $json.emailData.reviewUrl :\n  $json.notificationType === 'delayed_apology' ? '⚠️ We sincerely apologize - order #' + $json.orderNumber + ' has been delayed.\\n\\nNew ETA: ' + $json.emailData.newEstimatedDelivery + '\\n\\nAs an apology, here\\'s 10% off your next order:\\nCode: ' + $json.emailData.discountCode :\n  $json.notificationType === 'delivery_failed' ? '❌ Delivery attempt failed for order #' + $json.orderNumber + '.\\n\\nPlease reschedule:\\n' + $json.emailData.rescheduleUrl :\n  $json.notificationType === 'lost_package' ? '🔄 We\\'re sorry - your package appears lost.\\n\\nDon\\'t worry! We\\'ve already created replacement order #' + $json.emailData.replacementOrderNumber + ' with expedited shipping.\\n\\nNew ETA: ' + $json.emailData.estimatedReplacementDate :\n  'Update on your CitadelBuy order #' + $json.orderNumber + '. Check your email for full details.'\n}}",
+        "message": "={{ \n  $json.notificationType === 'shipped' ? '📦 Great news! Your Broxiva order #' + $json.orderNumber + ' has shipped!\\n\\nTrack your package: ' + $json.trackingUrl + '\\n\\nEstimated delivery: ' + $json.emailData.estimatedDelivery :\n  $json.notificationType === 'in_transit' ? '🚚 Your order #' + $json.orderNumber + ' is on its way!\\n\\nExpected delivery: ' + $json.emailData.estimatedDeliveryFormatted + '\\n\\nTrack: ' + $json.trackingUrl :\n  $json.notificationType === 'out_for_delivery' ? '🎉 Arriving today! Your order #' + $json.orderNumber + ' is out for delivery!\\n\\nGet ready to receive your package soon.' :\n  $json.notificationType === 'delivered' ? '✅ Delivered! Order #' + $json.orderNumber + ' has arrived.\\n\\nLove your purchase? Share your experience:\\n' + $json.emailData.reviewUrl :\n  $json.notificationType === 'delayed_apology' ? '⚠️ We sincerely apologize - order #' + $json.orderNumber + ' has been delayed.\\n\\nNew ETA: ' + $json.emailData.newEstimatedDelivery + '\\n\\nAs an apology, here\\'s 10% off your next order:\\nCode: ' + $json.emailData.discountCode :\n  $json.notificationType === 'delivery_failed' ? '❌ Delivery attempt failed for order #' + $json.orderNumber + '.\\n\\nPlease reschedule:\\n' + $json.emailData.rescheduleUrl :\n  $json.notificationType === 'lost_package' ? '🔄 We\\'re sorry - your package appears lost.\\n\\nDon\\'t worry! We\\'ve already created replacement order #' + $json.emailData.replacementOrderNumber + ' with expedited shipping.\\n\\nNew ETA: ' + $json.emailData.estimatedReplacementDate :\n  'Update on your Broxiva order #' + $json.orderNumber + '. Check your email for full details.'\n}}",
         "options": {}
       },
       "id": "send-whatsapp-twilio",
@@ -1132,9 +1132,9 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "=https://api.citadelbuy.com/v1/orders/{{ $json.orderNumber }}",
+        "url": "=https://api.broxiva.com/v1/orders/{{ $json.orderNumber }}",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "citadelBuyApi",
+        "nodeCredentialType": "broxivaApi",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"status\": \"{{ \n    $json.milestone === 'shipped' ? 'shipped' :\n    $json.milestone === 'in_transit' ? 'in_transit' :\n    $json.milestone === 'out_for_delivery' ? 'out_for_delivery' :\n    $json.milestone === 'delivered' ? 'delivered' :\n    $json.milestone === 'exception' ? 'exception' :\n    $json.milestone === 'delivery_failed' ? 'delivery_failed' :\n    'processing'\n  }}\",\n  \"trackingInfo\": {\n    \"trackingNumber\": \"{{ $json.trackingNumber }}\",\n    \"carrier\": \"{{ $json.carrier }}\",\n    \"trackingUrl\": \"{{ $json.trackingUrl }}\",\n    \"lastUpdate\": \"{{ $json.timestamp }}\",\n    \"estimatedDelivery\": \"{{ $json.estimatedDelivery }}\"\n  },\n  \"shipmentHistory\": [\n    {\n      \"status\": \"{{ $json.milestone }}\",\n      \"timestamp\": \"{{ $json.timestamp }}\",\n      \"location\": \"{{ $('Get Detailed Tracking Info').item.json.currentLocation || 'Unknown' }}\"\n    }\n  ]\n}",
@@ -1147,14 +1147,14 @@
         }
       },
       "id": "update-order-status",
-      "name": "Update Order Status in CitadelBuy",
+      "name": "Update Order Status in Broxiva",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [3540, 300],
       "credentials": {
-        "citadelBuyApi": {
-          "id": "citadelbuy-api",
-          "name": "CitadelBuy API"
+        "broxivaApi": {
+          "id": "broxiva-api",
+          "name": "Broxiva API"
         }
       }
     },
@@ -1266,7 +1266,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://citadelbuy.zendesk.com/api/v2/tickets",
+        "url": "https://broxiva.zendesk.com/api/v2/tickets",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "zendeskApi",
         "sendBody": true,
@@ -1684,7 +1684,7 @@
             "index": 0
           },
           {
-            "node": "Update Order Status in CitadelBuy",
+            "node": "Update Order Status in Broxiva",
             "type": "main",
             "index": 0
           }
@@ -1724,7 +1724,7 @@
         ]
       ]
     },
-    "Update Order Status in CitadelBuy": {
+    "Update Order Status in Broxiva": {
       "main": [
         [
           {
@@ -1768,7 +1768,7 @@
   "versionId": "1",
   "id": "workflow-07-shipping-tracking",
   "meta": {
-    "instanceId": "citadelbuy-production"
+    "instanceId": "broxiva-production"
   },
   "tags": [
     {

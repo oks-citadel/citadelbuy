@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateCampaignDto, UpdateCampaignDto, CampaignStatus, CampaignMetricsDto } from './dto/campaign.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class CampaignService {
@@ -298,7 +299,7 @@ export class CampaignService {
           {
             targeting: {
               path: ['regions'],
-              equals: null,
+              equals: Prisma.JsonNull,
             },
           },
         ],

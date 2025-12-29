@@ -17,14 +17,14 @@ export default function TermsPage() {
         <div className="max-w-3xl mx-auto prose prose-gray">
           <h2>1. Acceptance of Terms</h2>
           <p>
-            By accessing or using CitadelBuy&apos;s website and services, you agree to be bound
+            By accessing or using Broxiva&apos;s website and services, you agree to be bound
             by these Terms of Service. If you do not agree to these terms, please do not
             use our services.
           </p>
 
           <h2>2. Description of Service</h2>
           <p>
-            CitadelBuy is an e-commerce platform that connects buyers with sellers. We provide
+            Broxiva is an e-commerce platform that connects buyers with sellers. We provide
             a marketplace for purchasing various products and services.
           </p>
 
@@ -38,7 +38,7 @@ export default function TermsPage() {
           </ul>
 
           <h2>4. Purchases and Payments</h2>
-          <p>When making purchases through CitadelBuy:</p>
+          <p>When making purchases through Broxiva:</p>
           <ul>
             <li>All prices are displayed in USD unless otherwise stated</li>
             <li>Prices are subject to change without notice</li>
@@ -63,7 +63,7 @@ export default function TermsPage() {
 
           <h2>7. Intellectual Property</h2>
           <p>
-            All content on CitadelBuy, including text, graphics, logos, and software,
+            All content on Broxiva, including text, graphics, logos, and software,
             is our property or the property of our licensors and is protected by
             intellectual property laws.
           </p>
@@ -87,14 +87,14 @@ export default function TermsPage() {
 
           <h2>10. Limitation of Liability</h2>
           <p>
-            To the maximum extent permitted by law, CitadelBuy shall not be liable for any
+            To the maximum extent permitted by law, Broxiva shall not be liable for any
             indirect, incidental, special, consequential, or punitive damages arising from
             your use of our services.
           </p>
 
           <h2>11. Indemnification</h2>
           <p>
-            You agree to indemnify and hold harmless CitadelBuy and its officers, directors,
+            You agree to indemnify and hold harmless Broxiva and its officers, directors,
             employees, and agents from any claims arising from your use of our services
             or violation of these terms.
           </p>
@@ -116,7 +116,7 @@ export default function TermsPage() {
             For questions about these Terms, please contact us at:
           </p>
           <ul>
-            <li>Email: legal@citadelbuy.com</li>
+            <li>Email: legal@broxiva.com</li>
             <li>Address: 123 Commerce Street, San Francisco, CA 94102</li>
           </ul>
         </div>

@@ -1,0 +1,307 @@
+# CitadelBuy IAM Policies for Per-App-Per-Environment Vault Access
+# Implements principle of least privilege for all applications
+
+# Variables specific to IAM
+variable "aks_cluster_name" {
+  description = "AKS cluster name"
+  type        = string
+}
+
+variable "aks_resource_group" {
+  description = "AKS cluster resource group"
+  type        = string
+}
+
+data "azurerm_kubernetes_cluster" "main" {
+  name                = var.aks_cluster_name
+  resource_group_name = var.aks_resource_group
+}
+
+# ============================================================
+# Managed Identities for Workload Identity
+# ============================================================
+
+# API Application Managed Identity
+resource "azurerm_user_assigned_identity" "api" {
+  name                = "${var.project_name}-${var.environment}-api-identity"
+  location            = data.azurerm_kubernetes_cluster.main.location
+  resource_group_name = var.aks_resource_group
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    App         = "api"
+  }
+}
+
+# Web Application Managed Identity
+resource "azurerm_user_assigned_identity" "web" {
+  name                = "${var.project_name}-${var.environment}-web-identity"
+  location            = data.azurerm_kubernetes_cluster.main.location
+  resource_group_name = var.aks_resource_group
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    App         = "web"
+  }
+}
+
+# Mobile Backend Managed Identity
+resource "azurerm_user_assigned_identity" "mobile" {
+  name                = "${var.project_name}-${var.environment}-mobile-identity"
+  location            = data.azurerm_kubernetes_cluster.main.location
+  resource_group_name = var.aks_resource_group
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    App         = "mobile"
+  }
+}
+
+# Services (microservices) Managed Identity
+resource "azurerm_user_assigned_identity" "services" {
+  name                = "${var.project_name}-${var.environment}-services-identity"
+  location            = data.azurerm_kubernetes_cluster.main.location
+  resource_group_name = var.aks_resource_group
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    App         = "services"
+  }
+}
+
+# ============================================================
+# Federated Identity Credentials for Kubernetes Service Accounts
+# ============================================================
+
+resource "azurerm_federated_identity_credential" "api" {
+  name                = "${var.project_name}-${var.environment}-api-federated"
+  resource_group_name = var.aks_resource_group
+  parent_id           = azurerm_user_assigned_identity.api.id
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = data.azurerm_kubernetes_cluster.main.oidc_issuer_url
+  subject             = "system:serviceaccount:citadelbuy-api:api-service-account"
+}
+
+resource "azurerm_federated_identity_credential" "web" {
+  name                = "${var.project_name}-${var.environment}-web-federated"
+  resource_group_name = var.aks_resource_group
+  parent_id           = azurerm_user_assigned_identity.web.id
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = data.azurerm_kubernetes_cluster.main.oidc_issuer_url
+  subject             = "system:serviceaccount:citadelbuy-web:web-service-account"
+}
+
+resource "azurerm_federated_identity_credential" "mobile" {
+  name                = "${var.project_name}-${var.environment}-mobile-federated"
+  resource_group_name = var.aks_resource_group
+  parent_id           = azurerm_user_assigned_identity.mobile.id
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = data.azurerm_kubernetes_cluster.main.oidc_issuer_url
+  subject             = "system:serviceaccount:citadelbuy-mobile:mobile-service-account"
+}
+
+resource "azurerm_federated_identity_credential" "services" {
+  name                = "${var.project_name}-${var.environment}-services-federated"
+  resource_group_name = var.aks_resource_group
+  parent_id           = azurerm_user_assigned_identity.services.id
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = data.azurerm_kubernetes_cluster.main.oidc_issuer_url
+  subject             = "system:serviceaccount:citadelbuy-services:services-service-account"
+}
+
+# ============================================================
+# Key Vault Data Sources (from key-vault-per-app.tf)
+# ============================================================
+
+data "azurerm_key_vault" "shared" {
+  name                = "${var.project_name}-${var.environment}-shared-kv"
+  resource_group_name = "${var.project_name}-rg-keyvaults-${var.environment}"
+}
+
+data "azurerm_key_vault" "api" {
+  name                = "${var.project_name}-${var.environment}-api-kv"
+  resource_group_name = "${var.project_name}-rg-keyvaults-${var.environment}"
+}
+
+data "azurerm_key_vault" "web" {
+  name                = "${var.project_name}-${var.environment}-web-kv"
+  resource_group_name = "${var.project_name}-rg-keyvaults-${var.environment}"
+}
+
+data "azurerm_key_vault" "mobile" {
+  name                = "${var.project_name}-${var.environment}-mobile-kv"
+  resource_group_name = "${var.project_name}-rg-keyvaults-${var.environment}"
+}
+
+data "azurerm_key_vault" "services" {
+  name                = "${var.project_name}-${var.environment}-services-kv"
+  resource_group_name = "${var.project_name}-rg-keyvaults-${var.environment}"
+}
+
+# ============================================================
+# Role Assignments - Principle of Least Privilege
+# ============================================================
+
+# API Identity - Access to API vault (read-only)
+resource "azurerm_role_assignment" "api_own_vault" {
+  scope                = data.azurerm_key_vault.api.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_user_assigned_identity.api.principal_id
+}
+
+# API Identity - Access to shared vault (read-only)
+resource "azurerm_role_assignment" "api_shared_vault" {
+  scope                = data.azurerm_key_vault.shared.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_user_assigned_identity.api.principal_id
+}
+
+# Web Identity - Access to Web vault only (read-only)
+resource "azurerm_role_assignment" "web_own_vault" {
+  scope                = data.azurerm_key_vault.web.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_user_assigned_identity.web.principal_id
+}
+
+# Mobile Identity - Access to Mobile vault only (read-only)
+resource "azurerm_role_assignment" "mobile_own_vault" {
+  scope                = data.azurerm_key_vault.mobile.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_user_assigned_identity.mobile.principal_id
+}
+
+# Services Identity - Access to Services vault (read-only)
+resource "azurerm_role_assignment" "services_own_vault" {
+  scope                = data.azurerm_key_vault.services.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_user_assigned_identity.services.principal_id
+}
+
+# Services Identity - Access to shared vault (read-only)
+resource "azurerm_role_assignment" "services_shared_vault" {
+  scope                = data.azurerm_key_vault.shared.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_user_assigned_identity.services.principal_id
+}
+
+# ============================================================
+# Azure AD Groups for Administrative Access
+# ============================================================
+
+# Secrets Administrators Group
+resource "azuread_group" "secrets_admins" {
+  display_name     = "${var.project_name}-${var.environment}-secrets-admins"
+  security_enabled = true
+  description      = "Administrators who can manage secrets in all Key Vaults"
+
+  owners = [data.azurerm_client_config.current.object_id]
+}
+
+# Secrets Readers Group (for debugging/support)
+resource "azuread_group" "secrets_readers" {
+  display_name     = "${var.project_name}-${var.environment}-secrets-readers"
+  security_enabled = true
+  description      = "Users who can read secrets for debugging purposes"
+
+  owners = [data.azurerm_client_config.current.object_id]
+}
+
+# Admin group gets Secrets Officer on all vaults
+resource "azurerm_role_assignment" "admin_shared" {
+  scope                = data.azurerm_key_vault.shared.id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = azuread_group.secrets_admins.object_id
+}
+
+resource "azurerm_role_assignment" "admin_api" {
+  scope                = data.azurerm_key_vault.api.id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = azuread_group.secrets_admins.object_id
+}
+
+resource "azurerm_role_assignment" "admin_web" {
+  scope                = data.azurerm_key_vault.web.id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = azuread_group.secrets_admins.object_id
+}
+
+resource "azurerm_role_assignment" "admin_mobile" {
+  scope                = data.azurerm_key_vault.mobile.id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = azuread_group.secrets_admins.object_id
+}
+
+resource "azurerm_role_assignment" "admin_services" {
+  scope                = data.azurerm_key_vault.services.id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = azuread_group.secrets_admins.object_id
+}
+
+# Reader group gets Secrets User on all vaults (for debugging)
+resource "azurerm_role_assignment" "reader_shared" {
+  scope                = data.azurerm_key_vault.shared.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azuread_group.secrets_readers.object_id
+}
+
+resource "azurerm_role_assignment" "reader_api" {
+  scope                = data.azurerm_key_vault.api.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azuread_group.secrets_readers.object_id
+}
+
+resource "azurerm_role_assignment" "reader_web" {
+  scope                = data.azurerm_key_vault.web.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azuread_group.secrets_readers.object_id
+}
+
+resource "azurerm_role_assignment" "reader_mobile" {
+  scope                = data.azurerm_key_vault.mobile.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azuread_group.secrets_readers.object_id
+}
+
+resource "azurerm_role_assignment" "reader_services" {
+  scope                = data.azurerm_key_vault.services.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azuread_group.secrets_readers.object_id
+}
+
+# ============================================================
+# Outputs
+# ============================================================
+
+output "api_identity_client_id" {
+  description = "API Managed Identity Client ID"
+  value       = azurerm_user_assigned_identity.api.client_id
+}
+
+output "web_identity_client_id" {
+  description = "Web Managed Identity Client ID"
+  value       = azurerm_user_assigned_identity.web.client_id
+}
+
+output "mobile_identity_client_id" {
+  description = "Mobile Managed Identity Client ID"
+  value       = azurerm_user_assigned_identity.mobile.client_id
+}
+
+output "services_identity_client_id" {
+  description = "Services Managed Identity Client ID"
+  value       = azurerm_user_assigned_identity.services.client_id
+}
+
+output "secrets_admins_group_id" {
+  description = "Secrets Administrators Azure AD Group ID"
+  value       = azuread_group.secrets_admins.object_id
+}
+
+output "secrets_readers_group_id" {
+  description = "Secrets Readers Azure AD Group ID"
+  value       = azuread_group.secrets_readers.object_id
+}

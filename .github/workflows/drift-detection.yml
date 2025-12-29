@@ -1,0 +1,838 @@
+name: Infrastructure Drift Detection
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to check for drift'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - prod
+          - staging
+          - dev
+          - africa
+          - asia
+      notification_channel:
+        description: 'Notification channel'
+        required: false
+        default: 'slack'
+        type: choice
+        options:
+          - slack
+          - teams
+          - both
+      skip_repair:
+        description: 'Skip automatic repair'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  TF_VERSION: '1.6.0'
+  KUBECTL_VERSION: '1.28.0'
+  AZURE_CLI_VERSION: '2.54.0'
+  DRIFT_REPORT_DIR: './drift-reports'
+  DRIFT_HISTORY_DIR: './drift-history'
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  setup-drift-detection:
+    name: Setup Drift Detection
+    runs-on: ubuntu-latest
+    outputs:
+      environments: ${{ steps.set-matrix.outputs.environments }}
+      timestamp: ${{ steps.set-timestamp.outputs.timestamp }}
+      run_id: ${{ steps.set-run-id.outputs.run_id }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set environment matrix
+        id: set-matrix
+        run: |
+          if [ "${{ github.event.inputs.environment }}" == "all" ] || [ -z "${{ github.event.inputs.environment }}" ]; then
+            echo 'environments=["prod","staging","dev","africa","asia"]' >> $GITHUB_OUTPUT
+          else
+            echo 'environments=["${{ github.event.inputs.environment }}"]' >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set timestamp
+        id: set-timestamp
+        run: |
+          echo "timestamp=$(date -u +%Y%m%d_%H%M%S)" >> $GITHUB_OUTPUT
+
+      - name: Set run ID
+        id: set-run-id
+        run: |
+          echo "run_id=drift_${{ github.run_number }}_$(date -u +%Y%m%d_%H%M%S)" >> $GITHUB_OUTPUT
+
+  terraform-drift-detection:
+    name: Terraform Drift - ${{ matrix.environment }}
+    needs: setup-drift-detection
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJson(needs.setup-drift-detection.outputs.environments) }}
+      fail-fast: false
+    outputs:
+      has_drift: ${{ steps.drift-check.outputs.has_drift }}
+      drift_summary: ${{ steps.drift-summary.outputs.summary }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Configure Terraform Backend
+        run: |
+          cat > backend-config.tfvars <<EOF
+          resource_group_name  = "${{ secrets.TF_STATE_RESOURCE_GROUP }}"
+          storage_account_name = "${{ secrets.TF_STATE_STORAGE_ACCOUNT }}"
+          container_name       = "${{ secrets.TF_STATE_CONTAINER }}"
+          key                  = "${{ matrix.environment }}/terraform.tfstate"
+          EOF
+
+      - name: Terraform Init
+        working-directory: ./infrastructure/terraform/environments/${{ matrix.environment }}
+        run: |
+          terraform init -backend-config=../../../../backend-config.tfvars
+
+      - name: Terraform Plan - Detect Drift
+        id: plan
+        working-directory: ./infrastructure/terraform/environments/${{ matrix.environment }}
+        run: |
+          terraform plan -detailed-exitcode -out=tfplan.binary -no-color 2>&1 | tee plan.log
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Convert Plan to JSON
+        if: steps.plan.outputs.exit_code != 0
+        working-directory: ./infrastructure/terraform/environments/${{ matrix.environment }}
+        run: |
+          terraform show -json tfplan.binary > tfplan.json
+
+      - name: Analyze Drift
+        id: drift-check
+        if: steps.plan.outputs.exit_code != 0
+        working-directory: ./infrastructure/terraform/environments/${{ matrix.environment }}
+        run: |
+          # Check if there's actual drift (exit code 2 means changes detected)
+          if [ "${{ steps.plan.outputs.exit_code }}" == "2" ]; then
+            echo "has_drift=true" >> $GITHUB_OUTPUT
+
+            # Extract drift details
+            cat > drift_analyzer.py <<'PYTHON'
+          import json
+          import sys
+
+          with open('tfplan.json', 'r') as f:
+              plan = json.load(f)
+
+          drift_items = {
+              'create': [],
+              'update': [],
+              'delete': [],
+              'replace': []
+          }
+
+          for resource in plan.get('resource_changes', []):
+              actions = resource.get('change', {}).get('actions', [])
+              address = resource.get('address', 'unknown')
+
+              if 'create' in actions:
+                  drift_items['create'].append(address)
+              elif 'update' in actions:
+                  drift_items['update'].append(address)
+              elif 'delete' in actions:
+                  drift_items['delete'].append(address)
+              elif 'delete' in actions and 'create' in actions:
+                  drift_items['replace'].append(address)
+
+          print(json.dumps(drift_items, indent=2))
+          PYTHON
+
+            python3 drift_analyzer.py > drift_items.json
+            cat drift_items.json
+          else
+            echo "has_drift=false" >> $GITHUB_OUTPUT
+            echo '{"create":[],"update":[],"delete":[],"replace":[]}' > drift_items.json
+          fi
+
+      - name: Generate Drift Report
+        if: steps.drift-check.outputs.has_drift == 'true'
+        working-directory: ./infrastructure/terraform/environments/${{ matrix.environment }}
+        run: |
+          mkdir -p ${{ env.DRIFT_REPORT_DIR }}
+
+          cat > ${{ env.DRIFT_REPORT_DIR }}/terraform-${{ matrix.environment }}.md <<'EOF'
+          # Terraform Drift Report - ${{ matrix.environment }}
+
+          **Environment:** ${{ matrix.environment }}
+          **Timestamp:** ${{ needs.setup-drift-detection.outputs.timestamp }}
+          **Run ID:** ${{ needs.setup-drift-detection.outputs.run_id }}
+
+          ## Summary
+
+          Terraform detected configuration drift between the desired state and actual infrastructure.
+
+          ## Drift Details
+
+          ```json
+          $(cat drift_items.json)
+          ```
+
+          ## Full Plan Output
+
+          ```hcl
+          $(cat plan.log)
+          ```
+
+          ## Recommended Actions
+
+          1. Review the drift details above
+          2. Determine if drift is expected or unauthorized
+          3. If unauthorized, trigger the drift repair workflow
+          4. If expected, update Terraform configuration to match
+
+          ## Next Steps
+
+          - [ ] Review drift items
+          - [ ] Determine root cause
+          - [ ] Apply repair or update configuration
+          - [ ] Document changes
+          EOF
+
+      - name: Create Drift Summary
+        id: drift-summary
+        if: steps.drift-check.outputs.has_drift == 'true'
+        run: |
+          summary="Terraform drift detected in ${{ matrix.environment }}"
+          echo "summary=$summary" >> $GITHUB_OUTPUT
+
+      - name: Upload Drift Report
+        if: steps.drift-check.outputs.has_drift == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-drift-${{ matrix.environment }}-${{ needs.setup-drift-detection.outputs.timestamp }}
+          path: ./infrastructure/terraform/environments/${{ matrix.environment }}/${{ env.DRIFT_REPORT_DIR }}
+          retention-days: 90
+
+  kubernetes-drift-detection:
+    name: Kubernetes Drift - ${{ matrix.environment }}
+    needs: setup-drift-detection
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJson(needs.setup-drift-detection.outputs.environments) }}
+      fail-fast: false
+    outputs:
+      has_drift: ${{ steps.k8s-drift.outputs.has_drift }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get AKS Credentials
+        run: |
+          az aks get-credentials \
+            --resource-group broxiva-${{ matrix.environment }}-rg \
+            --name broxiva-${{ matrix.environment }}-aks \
+            --overwrite-existing
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: ${{ env.KUBECTL_VERSION }}
+
+      - name: Detect Kubernetes Drift
+        id: k8s-drift
+        run: |
+          mkdir -p ${{ env.DRIFT_REPORT_DIR }}
+
+          # Compare desired state (YAML manifests) vs actual state (cluster)
+          DRIFT_FOUND=false
+
+          # Function to check resource drift
+          check_drift() {
+            local manifest=$1
+            local namespace=$2
+
+            echo "Checking drift for: $manifest"
+
+            # Apply with dry-run to see what would change
+            if kubectl apply -f "$manifest" -n "$namespace" --dry-run=server --validate=true 2>&1 | grep -q "configured\|created\|deleted"; then
+              echo "DRIFT DETECTED in $manifest"
+              kubectl apply -f "$manifest" -n "$namespace" --dry-run=server -o yaml > "${{ env.DRIFT_REPORT_DIR }}/drift-$(basename $manifest)"
+              DRIFT_FOUND=true
+            fi
+          }
+
+          # Check all Kubernetes manifests
+          for env_dir in ./infrastructure/kubernetes/${{ matrix.environment }} ./infrastructure/kubernetes/production ./infrastructure/kubernetes/staging; do
+            if [ -d "$env_dir" ]; then
+              for manifest in "$env_dir"/*.yaml; do
+                if [ -f "$manifest" ]; then
+                  namespace=$(yq eval '.metadata.namespace // "default"' "$manifest" 2>/dev/null || echo "default")
+                  check_drift "$manifest" "$namespace" || true
+                fi
+              done
+            fi
+          done
+
+          # Check replica drift
+          echo "## Replica Drift Analysis" >> ${{ env.DRIFT_REPORT_DIR }}/k8s-drift-summary.md
+
+          kubectl get deployments --all-namespaces -o json | jq -r '
+            .items[] |
+            select(.spec.replicas != .status.replicas) |
+            "Deployment: \(.metadata.namespace)/\(.metadata.name) - Desired: \(.spec.replicas), Actual: \(.status.replicas)"
+          ' >> ${{ env.DRIFT_REPORT_DIR }}/k8s-drift-summary.md || echo "No replica drift" >> ${{ env.DRIFT_REPORT_DIR }}/k8s-drift-summary.md
+
+          # Check image drift
+          echo -e "\n## Image Drift Analysis" >> ${{ env.DRIFT_REPORT_DIR }}/k8s-drift-summary.md
+
+          kubectl get pods --all-namespaces -o json | jq -r '
+            .items[] |
+            .spec.containers[] |
+            select(.image | contains(":latest") | not) |
+            "\(.name): \(.image)"
+          ' | sort -u >> ${{ env.DRIFT_REPORT_DIR }}/k8s-drift-summary.md
+
+          if [ "$DRIFT_FOUND" = true ]; then
+            echo "has_drift=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_drift=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate K8s Drift Report
+        if: steps.k8s-drift.outputs.has_drift == 'true'
+        run: |
+          cat > ${{ env.DRIFT_REPORT_DIR }}/kubernetes-${{ matrix.environment }}.md <<EOF
+          # Kubernetes Drift Report - ${{ matrix.environment }}
+
+          **Environment:** ${{ matrix.environment }}
+          **Timestamp:** ${{ needs.setup-drift-detection.outputs.timestamp }}
+          **Cluster:** broxiva-${{ matrix.environment }}-aks
+
+          ## Summary
+
+          Configuration drift detected between desired state (manifests) and actual cluster state.
+
+          $(cat ${{ env.DRIFT_REPORT_DIR }}/k8s-drift-summary.md)
+
+          ## Drift Files
+
+          See attached artifact for detailed drift manifests.
+
+          ## Recommended Actions
+
+          1. Review replica and image drift
+          2. Check for unauthorized manual changes
+          3. Trigger repair workflow if needed
+          4. Update GitOps configuration
+          EOF
+
+      - name: Upload K8s Drift Report
+        if: steps.k8s-drift.outputs.has_drift == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: k8s-drift-${{ matrix.environment }}-${{ needs.setup-drift-detection.outputs.timestamp }}
+          path: ${{ env.DRIFT_REPORT_DIR }}
+          retention-days: 90
+
+  acr-image-drift-detection:
+    name: ACR Image Drift - ${{ matrix.environment }}
+    needs: setup-drift-detection
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJson(needs.setup-drift-detection.outputs.environments) }}
+      fail-fast: false
+    outputs:
+      has_drift: ${{ steps.acr-drift.outputs.has_drift }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Detect ACR Image Drift
+        id: acr-drift
+        run: |
+          mkdir -p ${{ env.DRIFT_REPORT_DIR }}
+
+          ACR_NAME="broxiva${{ matrix.environment }}acr"
+
+          # Get AKS credentials
+          az aks get-credentials \
+            --resource-group broxiva-${{ matrix.environment }}-rg \
+            --name broxiva-${{ matrix.environment }}-aks \
+            --overwrite-existing
+
+          # Get deployed images from cluster
+          echo "# ACR Image Drift Report - ${{ matrix.environment }}" > ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+          echo "" >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+          echo "## Deployed Images vs ACR Registry" >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+          echo "" >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+
+          DRIFT_FOUND=false
+
+          # Get all deployed container images
+          deployed_images=$(kubectl get pods --all-namespaces -o json | \
+            jq -r '.items[].spec.containers[].image' | \
+            grep "$ACR_NAME" | sort -u)
+
+          echo "### Deployed Images:" >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+          echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+          echo "$deployed_images" >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+          echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+          echo "" >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+
+          # Get latest images from ACR
+          echo "### Latest ACR Images:" >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+          echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+
+          for repo in api web worker recommendation-service ai-gateway; do
+            latest_tag=$(az acr repository show-tags \
+              --name $ACR_NAME \
+              --repository $repo \
+              --orderby time_desc \
+              --top 1 \
+              --output tsv 2>/dev/null || echo "not-found")
+
+            echo "$repo:$latest_tag" >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+
+            # Check if deployed image matches latest
+            if ! echo "$deployed_images" | grep -q "$repo:$latest_tag"; then
+              echo "DRIFT: $repo is not using latest tag ($latest_tag)" >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+              DRIFT_FOUND=true
+            fi
+          done
+
+          echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+
+          # Check for untagged or old images
+          echo "" >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+          echo "### Stale Images (>30 days old):" >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+          echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+
+          az acr repository list --name $ACR_NAME --output tsv | while read repo; do
+            az acr repository show-manifests \
+              --name $ACR_NAME \
+              --repository $repo \
+              --query "[?lastUpdateTime < '$(date -u -d '30 days ago' +%Y-%m-%d)'].{repository:'$repo', tag:tags[0], date:lastUpdateTime}" \
+              --output table >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md 2>/dev/null || true
+          done
+
+          echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/acr-drift.md
+
+          if [ "$DRIFT_FOUND" = true ]; then
+            echo "has_drift=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_drift=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload ACR Drift Report
+        if: steps.acr-drift.outputs.has_drift == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: acr-drift-${{ matrix.environment }}-${{ needs.setup-drift-detection.outputs.timestamp }}
+          path: ${{ env.DRIFT_REPORT_DIR }}
+          retention-days: 90
+
+  aks-cluster-drift-detection:
+    name: AKS Cluster Drift - ${{ matrix.environment }}
+    needs: setup-drift-detection
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJson(needs.setup-drift-detection.outputs.environments) }}
+      fail-fast: false
+    outputs:
+      has_drift: ${{ steps.aks-drift.outputs.has_drift }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Detect AKS Configuration Drift
+        id: aks-drift
+        run: |
+          mkdir -p ${{ env.DRIFT_REPORT_DIR }}
+
+          CLUSTER_NAME="broxiva-${{ matrix.environment }}-aks"
+          RG_NAME="broxiva-${{ matrix.environment }}-rg"
+
+          echo "# AKS Cluster Drift Report - ${{ matrix.environment }}" > ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+          echo "" >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+
+          # Get current AKS configuration
+          current_config=$(az aks show \
+            --name $CLUSTER_NAME \
+            --resource-group $RG_NAME \
+            --output json)
+
+          # Extract key configuration items
+          current_k8s_version=$(echo "$current_config" | jq -r '.currentKubernetesVersion')
+          current_node_count=$(echo "$current_config" | jq -r '.agentPoolProfiles[0].count')
+          current_vm_size=$(echo "$current_config" | jq -r '.agentPoolProfiles[0].vmSize')
+          auto_upgrade=$(echo "$current_config" | jq -r '.autoUpgradeProfile.upgradeChannel')
+
+          echo "## Current AKS Configuration" >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+          echo "" >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+          echo "- Kubernetes Version: $current_k8s_version" >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+          echo "- Node Count: $current_node_count" >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+          echo "- VM Size: $current_vm_size" >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+          echo "- Auto Upgrade: $auto_upgrade" >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+          echo "" >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+
+          # Check node pool health
+          echo "## Node Pool Health" >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+          echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+          az aks nodepool list \
+            --cluster-name $CLUSTER_NAME \
+            --resource-group $RG_NAME \
+            --query '[].{Name:name, Count:count, VMSize:vmSize, State:provisioningState}' \
+            --output table >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+          echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+
+          # Check for available upgrades
+          echo "" >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+          echo "## Available Upgrades" >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+          echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+          az aks get-upgrades \
+            --name $CLUSTER_NAME \
+            --resource-group $RG_NAME \
+            --output table >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md 2>/dev/null || echo "No upgrades available" >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+          echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/aks-drift.md
+
+          # Always upload report for AKS monitoring
+          echo "has_drift=true" >> $GITHUB_OUTPUT
+
+      - name: Upload AKS Drift Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: aks-drift-${{ matrix.environment }}-${{ needs.setup-drift-detection.outputs.timestamp }}
+          path: ${{ env.DRIFT_REPORT_DIR }}
+          retention-days: 90
+
+  azure-resource-drift-detection:
+    name: Azure Resource Drift - ${{ matrix.environment }}
+    needs: setup-drift-detection
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJson(needs.setup-drift-detection.outputs.environments) }}
+      fail-fast: false
+    outputs:
+      has_drift: ${{ steps.azure-drift.outputs.has_drift }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Detect Azure Resource Drift
+        id: azure-drift
+        run: |
+          mkdir -p ${{ env.DRIFT_REPORT_DIR }}
+
+          RG_NAME="broxiva-${{ matrix.environment }}-rg"
+
+          echo "# Azure Resource Drift Report - ${{ matrix.environment }}" > ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+          echo "" >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+
+          # List all resources in resource group
+          echo "## Resource Inventory" >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+          echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+          az resource list \
+            --resource-group $RG_NAME \
+            --query '[].{Name:name, Type:type, Location:location}' \
+            --output table >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+          echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+
+          # Check for resources with tags drift
+          echo "" >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+          echo "## Tag Compliance" >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+          echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+          az resource list \
+            --resource-group $RG_NAME \
+            --query "[?tags.Environment != '${{ matrix.environment }}' || tags.Project != 'Broxiva'].{Name:name, Tags:tags}" \
+            --output json | jq '.' >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+          echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+
+          # Check for unexpected resources (not in Terraform state)
+          echo "" >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+          echo "## Resource Count Comparison" >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+          resource_count=$(az resource list --resource-group $RG_NAME --query 'length(@)')
+          echo "Current resource count: $resource_count" >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+
+          # Check diagnostic settings
+          echo "" >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+          echo "## Diagnostic Settings Status" >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+          echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+          for resource_id in $(az resource list --resource-group $RG_NAME --query '[].id' -o tsv); do
+            diag_settings=$(az monitor diagnostic-settings list --resource "$resource_id" --query 'value' -o json 2>/dev/null || echo "[]")
+            if [ "$diag_settings" = "[]" ]; then
+              echo "Missing diagnostic settings: $resource_id" >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+            fi
+          done
+          echo '```' >> ${{ env.DRIFT_REPORT_DIR }}/azure-drift.md
+
+          echo "has_drift=true" >> $GITHUB_OUTPUT
+
+      - name: Upload Azure Resource Drift Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: azure-drift-${{ matrix.environment }}-${{ needs.setup-drift-detection.outputs.timestamp }}
+          path: ${{ env.DRIFT_REPORT_DIR }}
+          retention-days: 90
+
+  consolidate-drift-reports:
+    name: Consolidate Drift Reports
+    needs:
+      - setup-drift-detection
+      - terraform-drift-detection
+      - kubernetes-drift-detection
+      - acr-image-drift-detection
+      - aks-cluster-drift-detection
+      - azure-resource-drift-detection
+    runs-on: ubuntu-latest
+    if: always()
+    outputs:
+      has_any_drift: ${{ steps.consolidate.outputs.has_any_drift }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all drift reports
+        uses: actions/download-artifact@v4
+        with:
+          path: ./all-drift-reports
+
+      - name: Consolidate Reports
+        id: consolidate
+        run: |
+          mkdir -p consolidated-reports
+
+          cat > consolidated-reports/DRIFT_SUMMARY.md <<'EOF'
+          # Infrastructure Drift Summary Report
+
+          **Timestamp:** ${{ needs.setup-drift-detection.outputs.timestamp }}
+          **Run ID:** ${{ needs.setup-drift-detection.outputs.run_id }}
+          **Workflow:** ${{ github.workflow }}
+
+          ## Overview
+
+          This report consolidates all drift detection findings across:
+          - Terraform infrastructure state
+          - Kubernetes cluster configuration
+          - ACR container images
+          - AKS cluster settings
+          - Azure resource compliance
+
+          ## Drift Detection Results
+
+          EOF
+
+          # Check if any drift was found
+          HAS_DRIFT=false
+
+          if [ -d "./all-drift-reports" ]; then
+            # List all downloaded reports
+            find ./all-drift-reports -type f -name "*.md" | while read report; do
+              echo "### $(basename $(dirname $report))" >> consolidated-reports/DRIFT_SUMMARY.md
+              echo "" >> consolidated-reports/DRIFT_SUMMARY.md
+              cat "$report" >> consolidated-reports/DRIFT_SUMMARY.md
+              echo "" >> consolidated-reports/DRIFT_SUMMARY.md
+              echo "---" >> consolidated-reports/DRIFT_SUMMARY.md
+              echo "" >> consolidated-reports/DRIFT_SUMMARY.md
+              HAS_DRIFT=true
+            done
+          fi
+
+          if [ "$HAS_DRIFT" = true ]; then
+            echo "has_any_drift=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_any_drift=false" >> $GITHUB_OUTPUT
+            echo "No drift detected across all environments and systems." >> consolidated-reports/DRIFT_SUMMARY.md
+          fi
+
+      - name: Store Drift History
+        run: |
+          mkdir -p ${{ env.DRIFT_HISTORY_DIR }}/${{ needs.setup-drift-detection.outputs.timestamp }}
+          cp -r consolidated-reports/* ${{ env.DRIFT_HISTORY_DIR }}/${{ needs.setup-drift-detection.outputs.timestamp }}/
+
+          # Keep only last 30 drift reports
+          ls -t ${{ env.DRIFT_HISTORY_DIR }} | tail -n +31 | xargs -r rm -rf
+
+      - name: Upload Consolidated Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: consolidated-drift-report-${{ needs.setup-drift-detection.outputs.timestamp }}
+          path: consolidated-reports/
+          retention-days: 90
+
+      - name: Commit Drift History
+        if: steps.consolidate.outputs.has_any_drift == 'true'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add ${{ env.DRIFT_HISTORY_DIR }}
+          git commit -m "chore: add drift detection history for ${{ needs.setup-drift-detection.outputs.timestamp }}" || echo "No changes to commit"
+          git push || echo "No changes to push"
+
+  notify-drift:
+    name: Notify Drift Detection
+    needs:
+      - setup-drift-detection
+      - consolidate-drift-reports
+    runs-on: ubuntu-latest
+    if: needs.consolidate-drift-reports.outputs.has_any_drift == 'true'
+    steps:
+      - name: Download Consolidated Report
+        uses: actions/download-artifact@v4
+        with:
+          name: consolidated-drift-report-${{ needs.setup-drift-detection.outputs.timestamp }}
+          path: ./drift-report
+
+      - name: Notify Slack
+        if: ${{ github.event.inputs.notification_channel == 'slack' || github.event.inputs.notification_channel == 'both' || github.event.inputs.notification_channel == '' }}
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Infrastructure Drift Detected",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": ":warning: Infrastructure Drift Detected"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Timestamp:*\n${{ needs.setup-drift-detection.outputs.timestamp }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Run ID:*\n${{ needs.setup-drift-detection.outputs.run_id }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Configuration drift has been detected in the infrastructure. Review the drift report and consider triggering the repair workflow."
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Report"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    },
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "Trigger Repair"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/workflows/drift-repair.yml"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Teams
+        if: ${{ github.event.inputs.notification_channel == 'teams' || github.event.inputs.notification_channel == 'both' }}
+        uses: jdcargile/ms-teams-notification@v1.4
+        with:
+          github-token: ${{ github.token }}
+          ms-teams-webhook-uri: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          notification-summary: "Infrastructure Drift Detected - ${{ needs.setup-drift-detection.outputs.timestamp }}"
+          notification-color: warning
+          timezone: UTC
+
+  trigger-repair:
+    name: Trigger Drift Repair
+    needs:
+      - setup-drift-detection
+      - consolidate-drift-reports
+    runs-on: ubuntu-latest
+    if: |
+      needs.consolidate-drift-reports.outputs.has_any_drift == 'true' &&
+      github.event.inputs.skip_repair != 'true'
+    steps:
+      - name: Trigger Repair Workflow
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'drift-repair.yml',
+              ref: 'main',
+              inputs: {
+                drift_report_id: '${{ needs.setup-drift-detection.outputs.run_id }}',
+                auto_approve: 'false'
+              }
+            });

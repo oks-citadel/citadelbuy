@@ -1,7 +1,7 @@
 /**
  * Test Agents - Main Entry Point
  *
- * Comprehensive testing framework for CitadelBuy platform.
+ * Comprehensive testing framework for Broxiva platform.
  * Provides orchestrated execution of all testing agents.
  */
 
@@ -76,7 +76,7 @@ async function main() {
 
   if (args.includes('--help') || args.includes('-h')) {
     console.log(`
-CitadelBuy Test Agent Framework
+Broxiva Test Agent Framework
 
 Usage:
   npx ts-node tests/agents/index.ts [options] [agents...]

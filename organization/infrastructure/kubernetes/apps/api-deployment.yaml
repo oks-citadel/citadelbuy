@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: citadelbuy-api
-  namespace: citadelbuy
+  name: broxiva-api
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     tier: backend
 spec:
-  replicas: 3
+  replicas: 1  # Cost-saving: minimum replicas
   selector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
   template:
     metadata:
       labels:
-        app: citadelbuy-api
+        app: broxiva-api
         tier: backend
     spec:
-      serviceAccountName: citadelbuy-api
+      serviceAccountName: broxiva-api
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -28,16 +28,16 @@ spec:
         supplementalGroups: [4000]
       containers:
         - name: api
-          image: citadelplatforms/citadelbuy-ecommerce:backend-latest
+          image: broxivaprodacr.azurecr.io/broxiva-api:v1.0.0-production  # Static version
           ports:
-            - containerPort: 3000
+            - containerPort: 4000
               name: http
               protocol: TCP
           envFrom:
             - configMapRef:
-                name: citadelbuy-config
+                name: broxiva-config
             - secretRef:
-                name: citadelbuy-secrets
+                name: broxiva-secrets
           securityContext:
             allowPrivilegeEscalation: false
             runAsNonRoot: true
@@ -64,24 +64,24 @@ spec:
               cpu: "500m"
           livenessProbe:
             httpGet:
-              path: /health
-              port: 3000
+              path: /api/health
+              port: 4000
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /health
-              port: 3000
+              path: /api/health
+              port: 4000
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
           startupProbe:
             httpGet:
-              path: /health
-              port: 3000
+              path: /api/health
+              port: 4000
             initialDelaySeconds: 0
             periodSeconds: 5
             timeoutSeconds: 3
@@ -95,28 +95,28 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: citadelbuy-api
-  namespace: citadelbuy
+  name: broxiva-api
+  namespace: broxiva-production
 spec:
   selector:
-    app: citadelbuy-api
+    app: broxiva-api
   ports:
     - port: 80
-      targetPort: 3000
+      targetPort: 4000
   type: ClusterIP
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: citadelbuy-api-hpa
-  namespace: citadelbuy
+  name: broxiva-api-hpa
+  namespace: broxiva-production
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: citadelbuy-api
-  minReplicas: 3
-  maxReplicas: 10
+    name: broxiva-api
+  minReplicas: 1  # Cost-saving
+  maxReplicas: 3  # Cost-saving
   metrics:
     - type: Resource
       resource:

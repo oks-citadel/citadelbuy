@@ -219,6 +219,28 @@ interface FeatureFlagsProps {
  * />
  * ```
  */
+/**
+ * Internal component for checking a single flag.
+ * This ensures hooks are called at the top level of a component, following React's Rules of Hooks.
+ */
+function FeatureFlagChecker({
+  flag,
+  userId,
+  onResult,
+}: {
+  flag: FeatureFlagEnum;
+  userId?: string;
+  onResult: (flag: FeatureFlagEnum, isEnabled: boolean) => void;
+}) {
+  const { isEnabled } = useFeatureFlag(flag, { userId });
+
+  React.useEffect(() => {
+    onResult(flag, isEnabled);
+  }, [flag, isEnabled, onResult]);
+
+  return null;
+}
+
 export function FeatureFlags({
   flags,
   mode = 'all',
@@ -227,31 +249,42 @@ export function FeatureFlags({
   userId,
   render,
 }: FeatureFlagsProps) {
-  // Check each flag individually
-  const flagStates = flags.map(flag => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { isEnabled } = useFeatureFlag(flag, { userId });
-    return { flag, isEnabled };
+  // Store flag states - initialize with all flags as false
+  const [flagStates, setFlagStates] = React.useState<Record<FeatureFlagEnum, boolean>>(() => {
+    return flags.reduce((acc, flag) => {
+      acc[flag] = false;
+      return acc;
+    }, {} as Record<FeatureFlagEnum, boolean>);
   });
+
+  // Callback to update individual flag state - memoized to prevent infinite loops
+  const handleFlagResult = React.useCallback((flag: FeatureFlagEnum, isEnabled: boolean) => {
+    setFlagStates(prev => {
+      if (prev[flag] === isEnabled) return prev;
+      return { ...prev, [flag]: isEnabled };
+    });
+  }, []);
 
   // Determine if the condition is met based on mode
   const conditionMet = mode === 'all'
-    ? flagStates.every(({ isEnabled }) => isEnabled)
-    : flagStates.some(({ isEnabled }) => isEnabled);
+    ? flags.every(flag => flagStates[flag])
+    : flags.some(flag => flagStates[flag]);
 
-  // Build enabled flags map for render prop
-  const enabledFlagsMap = flagStates.reduce((acc, { flag, isEnabled }) => {
-    acc[flag] = isEnabled;
-    return acc;
-  }, {} as Record<FeatureFlagEnum, boolean>);
-
-  // Use render prop if provided
-  if (render) {
-    return <>{render(enabledFlagsMap)}</>;
-  }
-
-  // Show children if condition is met, otherwise show fallback
-  return <>{conditionMet ? children : fallback}</>;
+  return (
+    <>
+      {/* Render checker components for each flag - each calls hooks properly at top level */}
+      {flags.map(flag => (
+        <FeatureFlagChecker
+          key={flag}
+          flag={flag}
+          userId={userId}
+          onResult={handleFlagResult}
+        />
+      ))}
+      {/* Render content based on render prop or condition */}
+      {render ? render(flagStates) : (conditionMet ? children : fallback)}
+    </>
+  );
 }
 
 /**

@@ -1,7 +1,7 @@
 {
-  "name": "@citadelbuy/ui",
+  "name": "@broxiva/ui",
   "version": "1.0.0",
-  "description": "Shared UI components for CitadelBuy platform",
+  "description": "Shared UI components for Broxiva platform",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -42,13 +42,14 @@
     "react-dom": "^18.2.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
-    "vitest": "^1.0.0"
+    "vitest": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0"
   },
   "keywords": [
     "ui",
     "components",
     "react",
-    "citadelbuy"
+    "broxiva"
   ],
   "license": "UNLICENSED"
 }

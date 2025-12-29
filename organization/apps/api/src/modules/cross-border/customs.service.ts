@@ -235,7 +235,6 @@ export class CustomsService {
             product: true,
           },
         },
-        shippingAddress: true,
       },
     });
 
@@ -243,29 +242,32 @@ export class CustomsService {
       throw new Error('Order not found');
     }
 
+    // Parse shipping address from JSON string
+    const shippingAddr = order.shippingAddress ? JSON.parse(order.shippingAddress) : {};
+
     const declaration = {
       orderId: order.id,
       declarationNumber: this.generateDeclarationNumber(),
       declarationDate: new Date(),
       shipper: {
         // Seller information
-        name: 'CitadelBuy Marketplace',
+        name: 'Broxiva Marketplace',
         address: 'Marketplace Address',
         country: 'US',
       },
       consignee: {
-        name: order.shippingAddress?.name,
-        address: `${order.shippingAddress?.address1}, ${order.shippingAddress?.city}`,
-        country: order.shippingAddress?.country,
+        name: shippingAddr?.name || '',
+        address: `${shippingAddr?.address1 || ''}, ${shippingAddr?.city || ''}`,
+        country: shippingAddr?.country || '',
       },
       items: order.items.map((item) => ({
         description: item.product.name,
-        hsCode: item.product.hsCode || '9999.99.99',
+        hsCode: (item.product as any).hsCode || '9999.99.99',
         quantity: item.quantity,
         unitValue: item.price,
         totalValue: item.price * item.quantity,
         weight: item.product.weight || 0,
-        originCountry: item.product.originCountry || 'US',
+        originCountry: (item.product as any).originCountry || 'US',
       })),
       totalValue: order.subtotal,
       currency: order.currency || 'USD',

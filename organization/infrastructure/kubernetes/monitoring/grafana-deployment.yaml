@@ -2,7 +2,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: grafana-pvc
-  namespace: citadelbuy-monitoring
+  namespace: broxiva-monitoring
   labels:
     app: grafana
     tier: monitoring
@@ -18,7 +18,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-datasources
-  namespace: citadelbuy-monitoring
+  namespace: broxiva-monitoring
   labels:
     app: grafana
     tier: monitoring
@@ -41,7 +41,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-dashboards-config
-  namespace: citadelbuy-monitoring
+  namespace: broxiva-monitoring
   labels:
     app: grafana
     tier: monitoring
@@ -49,9 +49,9 @@ data:
   dashboards.yaml: |
     apiVersion: 1
     providers:
-      - name: 'CitadelBuy Dashboards'
+      - name: 'Broxiva Dashboards'
         orgId: 1
-        folder: 'CitadelBuy'
+        folder: 'Broxiva'
         type: file
         disableDeletion: false
         updateIntervalSeconds: 10
@@ -64,7 +64,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-api-dashboard
-  namespace: citadelbuy-monitoring
+  namespace: broxiva-monitoring
   labels:
     app: grafana
     tier: monitoring
@@ -72,8 +72,8 @@ data:
   api-dashboard.json: |
     {
       "dashboard": {
-        "title": "CitadelBuy API Metrics",
-        "tags": ["citadelbuy", "api"],
+        "title": "Broxiva API Metrics",
+        "tags": ["broxiva", "api"],
         "timezone": "browser",
         "panels": [
           {
@@ -82,7 +82,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "rate(http_requests_total{job=\"citadelbuy-api\"}[5m])",
+                "expr": "rate(http_requests_total{job=\"broxiva-api\"}[5m])",
                 "legendFormat": "{{method}} {{path}}"
               }
             ],
@@ -94,7 +94,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "rate(http_requests_total{job=\"citadelbuy-api\",status=~\"5..\"}[5m])",
+                "expr": "rate(http_requests_total{job=\"broxiva-api\",status=~\"5..\"}[5m])",
                 "legendFormat": "{{status}}"
               }
             ],
@@ -106,7 +106,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"citadelbuy-api\"}[5m]))",
+                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"broxiva-api\"}[5m]))",
                 "legendFormat": "{{method}} {{path}}"
               }
             ],
@@ -118,7 +118,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=\"citadelbuy-api\"}[5m]))",
+                "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=\"broxiva-api\"}[5m]))",
                 "legendFormat": "{{method}} {{path}}"
               }
             ],
@@ -130,7 +130,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "sum(http_server_active_connections{job=\"citadelbuy-api\"})",
+                "expr": "sum(http_server_active_connections{job=\"broxiva-api\"})",
                 "legendFormat": "Active Connections"
               }
             ],
@@ -142,7 +142,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "rate(container_cpu_usage_seconds_total{pod=~\"citadelbuy-api.*\"}[5m]) * 100",
+                "expr": "rate(container_cpu_usage_seconds_total{pod=~\"broxiva-api.*\"}[5m]) * 100",
                 "legendFormat": "{{pod}}"
               }
             ],
@@ -154,7 +154,7 @@ data:
             "type": "graph",
             "targets": [
               {
-                "expr": "container_memory_usage_bytes{pod=~\"citadelbuy-api.*\"} / 1024 / 1024",
+                "expr": "container_memory_usage_bytes{pod=~\"broxiva-api.*\"} / 1024 / 1024",
                 "legendFormat": "{{pod}}"
               }
             ],
@@ -170,7 +170,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-database-dashboard
-  namespace: citadelbuy-monitoring
+  namespace: broxiva-monitoring
   labels:
     app: grafana
     tier: monitoring
@@ -178,8 +178,8 @@ data:
   database-dashboard.json: |
     {
       "dashboard": {
-        "title": "CitadelBuy Database Metrics",
-        "tags": ["citadelbuy", "database", "postgres", "redis", "elasticsearch"],
+        "title": "Broxiva Database Metrics",
+        "tags": ["broxiva", "database", "postgres", "redis", "elasticsearch"],
         "timezone": "browser",
         "panels": [
           {
@@ -292,7 +292,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: grafana
-  namespace: citadelbuy-monitoring
+  namespace: broxiva-monitoring
   labels:
     app: grafana
     tier: monitoring
@@ -327,7 +327,7 @@ spec:
             - name: GF_INSTALL_PLUGINS
               value: "grafana-piechart-panel,grafana-clock-panel"
             - name: GF_SERVER_ROOT_URL
-              value: "http://grafana.citadelbuy.com"
+              value: "http://grafana.broxiva.com"
             - name: GF_AUTH_ANONYMOUS_ENABLED
               value: "false"
           resources:
@@ -385,7 +385,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: grafana
-  namespace: citadelbuy-monitoring
+  namespace: broxiva-monitoring
   labels:
     app: grafana
     tier: monitoring
@@ -403,7 +403,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: grafana-secrets
-  namespace: citadelbuy-monitoring
+  namespace: broxiva-monitoring
   labels:
     app: grafana
     tier: monitoring

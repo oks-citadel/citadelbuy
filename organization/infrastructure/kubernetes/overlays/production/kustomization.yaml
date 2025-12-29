@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: citadelbuy
+namespace: broxiva
 
 resources:
   - ../../base
@@ -9,9 +9,9 @@ resources:
   - ../../ai-services
 
 replicas:
-  - name: citadelbuy-api
+  - name: broxiva-api
     count: 5
-  - name: citadelbuy-web
+  - name: broxiva-web
     count: 5
   - name: ai-gateway
     count: 3
@@ -19,13 +19,13 @@ replicas:
     count: 3
 
 images:
-  - name: citadelplatforms/citadelbuy-ecommerce
+  - name: broxivaprodacr.azurecr.io/broxiva-ecommerce
     newTag: v2.0-stable
-  - name: citadelplatforms/citadelbuy-ai
+  - name: broxivaprodacr.azurecr.io/broxiva-ai
     newTag: v2.0-stable
 
 configMapGenerator:
-  - name: citadelbuy-config
+  - name: broxiva-config
     behavior: merge
     literals:
       - APP_ENV=production
@@ -43,7 +43,7 @@ patches:
         value: 1000m
     target:
       kind: Deployment
-      name: citadelbuy-api
+      name: broxiva-api
 
 commonLabels:
   environment: production

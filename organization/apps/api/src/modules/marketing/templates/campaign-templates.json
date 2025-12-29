@@ -26,7 +26,7 @@
           "delay": "immediate",
           "channel": "email",
           "template": "buyer-welcome-email",
-          "subject": "Welcome to CitadelBuy - Your Gateway to African Suppliers",
+          "subject": "Welcome to Broxiva - Your Gateway to African Suppliers",
           "content": {
             "headline": "Start Sourcing from Verified African Suppliers Today",
             "cta": "Browse Suppliers",
@@ -72,7 +72,7 @@
           "template": "feature-tutorial",
           "subject": "How to Submit Your First RFQ (Step-by-Step Guide)",
           "content": {
-            "videoUrl": "https://citadelbuy.com/videos/rfq-tutorial",
+            "videoUrl": "https://broxiva.com/videos/rfq-tutorial",
             "cta": "Submit Your First RFQ"
           }
         },
@@ -157,7 +157,7 @@
           "delay": "immediate",
           "channel": "email",
           "template": "exporter-welcome-email",
-          "subject": "Welcome to CitadelBuy - Start Exporting to Global Markets",
+          "subject": "Welcome to Broxiva - Start Exporting to Global Markets",
           "languages": ["en", "fr"],
           "content": {
             "headline": "Connect with International Buyers",
@@ -176,7 +176,7 @@
           "channel": "whatsapp",
           "template": "whatsapp-welcome",
           "content": {
-            "message": "Welcome to CitadelBuy! Reply YES to get personalized tips on growing your export business.",
+            "message": "Welcome to Broxiva! Reply YES to get personalized tips on growing your export business.",
             "quickReplies": ["YES", "Learn More", "Contact Support"]
           }
         },
@@ -186,7 +186,7 @@
           "delay": "1 day",
           "channel": "email",
           "template": "verification-guide",
-          "subject": "How to Get Verified on CitadelBuy (Required Documents)",
+          "subject": "How to Get Verified on Broxiva (Required Documents)",
           "content": {
             "documentsRequired": [
               "Business registration certificate",
@@ -205,7 +205,7 @@
           "template": "listing-tutorial",
           "subject": "How to Create High-Converting Product Listings",
           "content": {
-            "videoUrl": "https://citadelbuy.com/videos/create-listing",
+            "videoUrl": "https://broxiva.com/videos/create-listing",
             "tips": [
               "Use high-quality product photos",
               "Write detailed descriptions",
@@ -288,7 +288,7 @@
           "delay": "21 days",
           "channel": "email",
           "template": "milestone-celebration",
-          "subject": "You're Now Live on CitadelBuy!",
+          "subject": "You're Now Live on Broxiva!",
           "content": {
             "milestone": "Profile verified and active",
             "stats": {
@@ -531,7 +531,7 @@
           "channel": "email",
           "condition": "total_orders >= 3",
           "template": "loyalty-program-invite",
-          "subject": "You're Invited: CitadelBuy Preferred Buyer Program",
+          "subject": "You're Invited: Broxiva Preferred Buyer Program",
           "content": {
             "benefits": [
               "Reduced transaction fees",

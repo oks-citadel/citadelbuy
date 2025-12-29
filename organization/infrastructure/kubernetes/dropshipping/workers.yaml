@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: worker
-          image: ghcr.io/citadelplatforms/citadelbuy-backend:latest
+          image: broxivaprodacr.azurecr.io/broxiva-backend:latest
           command: ["node", "dist/workers/inventory-sync.worker.js"]
           resources:
             requests:
@@ -40,12 +40,12 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: citadelbuy-secrets
+                  name: broxiva-secrets
                   key: database-url
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:
-                  name: citadelbuy-secrets
+                  name: broxiva-secrets
                   key: redis-url
             - name: SUPPLIER_SERVICE_URL
               value: "http://supplier-integration:8001"
@@ -73,7 +73,7 @@ spec:
     spec:
       containers:
         - name: worker
-          image: ghcr.io/citadelplatforms/citadelbuy-backend:latest
+          image: broxivaprodacr.azurecr.io/broxiva-backend:latest
           command: ["node", "dist/workers/price-sync.worker.js"]
           resources:
             requests:
@@ -92,12 +92,12 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: citadelbuy-secrets
+                  name: broxiva-secrets
                   key: database-url
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:
-                  name: citadelbuy-secrets
+                  name: broxiva-secrets
                   key: redis-url
             - name: AI_SERVICE_URL
               value: "http://ai-engine:8002"
@@ -125,7 +125,7 @@ spec:
     spec:
       containers:
         - name: worker
-          image: ghcr.io/citadelplatforms/citadelbuy-backend:latest
+          image: broxivaprodacr.azurecr.io/broxiva-backend:latest
           command: ["node", "dist/workers/order-routing.worker.js"]
           resources:
             requests:
@@ -144,12 +144,12 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: citadelbuy-secrets
+                  name: broxiva-secrets
                   key: database-url
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:
-                  name: citadelbuy-secrets
+                  name: broxiva-secrets
                   key: redis-url
             - name: SUPPLIER_SERVICE_URL
               value: "http://supplier-integration:8001"
@@ -177,7 +177,7 @@ spec:
     spec:
       containers:
         - name: worker
-          image: ghcr.io/citadelplatforms/citadelbuy-backend:latest
+          image: broxivaprodacr.azurecr.io/broxiva-backend:latest
           command: ["node", "dist/workers/tracking-sync.worker.js"]
           resources:
             requests:
@@ -196,12 +196,12 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: citadelbuy-secrets
+                  name: broxiva-secrets
                   key: database-url
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:
-                  name: citadelbuy-secrets
+                  name: broxiva-secrets
                   key: redis-url
             - name: SUPPLIER_SERVICE_URL
               value: "http://supplier-integration:8001"
@@ -229,7 +229,7 @@ spec:
     spec:
       containers:
         - name: worker
-          image: ghcr.io/citadelplatforms/citadelbuy-backend:latest
+          image: broxivaprodacr.azurecr.io/broxiva-backend:latest
           command: ["node", "dist/workers/fraud-detection.worker.js"]
           resources:
             requests:
@@ -248,12 +248,12 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: citadelbuy-secrets
+                  name: broxiva-secrets
                   key: database-url
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:
-                  name: citadelbuy-secrets
+                  name: broxiva-secrets
                   key: redis-url
             - name: AI_SERVICE_URL
               value: "http://ai-engine:8002"

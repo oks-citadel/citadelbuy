@@ -129,7 +129,7 @@ export class PrivacyController {
   ) {
     const exportData = await this.privacyService.generateDataExport(req.user.id, format);
 
-    const filename = `citadelbuy-data-export-${req.user.id}-${new Date().toISOString().split('T')[0]}.${format}`;
+    const filename = `broxiva-data-export-${req.user.id}-${new Date().toISOString().split('T')[0]}.${format}`;
     const contentType = format === 'json' ? 'application/json' : 'text/csv';
 
     res.setHeader('Content-Type', contentType);

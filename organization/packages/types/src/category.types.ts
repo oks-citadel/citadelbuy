@@ -1,5 +1,5 @@
 /**
- * CitadelBuy Category Types
+ * Broxiva Category Types
  * Comprehensive type definitions for the category system
  */
 

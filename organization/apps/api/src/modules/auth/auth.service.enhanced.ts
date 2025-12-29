@@ -481,7 +481,7 @@ export class AuthService {
       const payload = jwt.verify(identityToken, publicKey, {
         algorithms: ['RS256'],
         issuer: 'https://appleid.apple.com',
-        audience: appBundleId || 'com.citadelbuy.app',
+        audience: appBundleId || 'com.broxiva.app',
       }) as jwt.JwtPayload;
 
       if (!payload.sub) {

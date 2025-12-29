@@ -1,7 +1,7 @@
 /**
  * Alert Notification System
  *
- * Provides production-ready alerting capabilities for CitadelBuy
+ * Provides production-ready alerting capabilities for Broxiva
  * with support for Slack, PagerDuty, and email notifications.
  *
  * @module alerts

@@ -14,7 +14,7 @@ variable "tenant_id" {
 variable "db_admin_username" {
   description = "Database administrator username"
   type        = string
-  default     = "citadelbuy_admin"
+  default     = "broxiva_admin"
 }
 
 variable "db_admin_password" {
@@ -82,5 +82,12 @@ variable "slack_webhook_url" {
   description = "Slack webhook URL"
   type        = string
   sensitive   = true
+  default     = ""
+}
+
+# DNS Configuration
+variable "azure_verification_code" {
+  description = "Azure domain verification code for broxiva.com (TXT record)"
+  type        = string
   default     = ""
 }

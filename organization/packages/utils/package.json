@@ -1,7 +1,7 @@
 {
-  "name": "@citadelbuy/utils",
+  "name": "@broxiva/utils",
   "version": "1.0.0",
-  "description": "Shared utilities for CitadelBuy platform",
+  "description": "Shared utilities for Broxiva platform",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -16,7 +16,7 @@
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
     "lint": "eslint src/",
-    "test": "vitest",
+    "test": "vitest run",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -29,12 +29,13 @@
     "eslint": "^8.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
-    "vitest": "^1.0.0"
+    "vitest": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0"
   },
   "keywords": [
     "utils",
     "utilities",
-    "citadelbuy"
+    "broxiva"
   ],
   "license": "UNLICENSED"
 }

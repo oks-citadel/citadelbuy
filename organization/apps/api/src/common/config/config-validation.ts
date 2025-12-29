@@ -104,7 +104,7 @@ export class EnvironmentVariables {
   /**
    * CORS Allowed Origins
    * CRITICAL: Required in production. Comma-separated list of allowed origins.
-   * Example: https://citadelbuy.com,https://www.citadelbuy.com
+   * Example: https://broxiva.com,https://www.broxiva.com
    */
   @IsOptional()
   @IsString()
@@ -170,7 +170,7 @@ export class EnvironmentVariables {
 
   @IsString()
   @IsNotEmpty()
-  EMAIL_FROM: string = 'noreply@citadelbuy.com';
+  EMAIL_FROM: string = 'noreply@broxiva.com';
 
   // ==================== STORAGE ====================
 
@@ -261,7 +261,7 @@ function performProductionValidation(config: EnvironmentVariables): void {
     errors.push(
       '❌ CORS_ORIGIN is required in production\n' +
       '   Set it to a comma-separated list of allowed origins.\n' +
-      '   Example: CORS_ORIGIN=https://citadelbuy.com,https://www.citadelbuy.com'
+      '   Example: CORS_ORIGIN=https://broxiva.com,https://www.broxiva.com'
     );
   } else {
     // Validate each CORS origin is HTTPS in production
@@ -312,7 +312,7 @@ function performProductionValidation(config: EnvironmentVariables): void {
     errors.push(
       '❌ FRONTEND_URL must use HTTPS in production\n' +
       `   Current value: ${config.FRONTEND_URL}\n` +
-      '   Example: FRONTEND_URL=https://citadelbuy.com'
+      '   Example: FRONTEND_URL=https://broxiva.com'
     );
   }
 

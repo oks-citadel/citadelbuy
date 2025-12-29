@@ -1,0 +1,148 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: broxiva-development
+
+# Reference base resources
+bases:
+  - ../../base
+
+# Common labels applied to all resources
+commonLabels:
+  app: broxiva
+  environment: development
+  managed-by: kustomize
+
+# Common annotations
+commonAnnotations:
+  contact: "devops@broxiva.com"
+  documentation: "https://docs.broxiva.com/infrastructure"
+
+# Resources specific to development
+resources:
+  - configmap-dev.yaml
+  - namespace-dev.yaml
+
+# Image transformations for development
+images:
+  - name: broxivaprodacr.azurecr.io/broxiva-api
+    newName: broxivaprodacr.azurecr.io/broxiva-api
+    newTag: dev-latest
+  - name: broxivaprodacr.azurecr.io/broxiva-web
+    newName: broxivaprodacr.azurecr.io/broxiva-web
+    newTag: dev-latest
+  - name: broxivaprodacr.azurecr.io/broxiva-worker
+    newName: broxivaprodacr.azurecr.io/broxiva-worker
+    newTag: dev-latest
+
+# ConfigMap generator for deployment metadata
+configMapGenerator:
+  - name: deployment-info
+    literals:
+      - DEPLOYMENT_ENV=development
+      - DEPLOYMENT_TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+      - GIT_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+      - GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "develop")
+      - DEPLOYED_BY=$(git config user.name 2>/dev/null || echo "ci-cd")
+      - K8S_CLUSTER=development
+    options:
+      disableNameSuffixHash: false
+
+# Replicas for development environment (minimal)
+replicas:
+  - name: broxiva-api
+    count: 1
+  - name: broxiva-web
+    count: 1
+  - name: email-worker
+    count: 1
+  - name: cart-abandonment-worker
+    count: 1
+  - name: order-processing-worker
+    count: 1
+
+# Patches for development-specific configuration
+patchesStrategicMerge:
+  - |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: broxiva-api
+    spec:
+      template:
+        metadata:
+          annotations:
+            prometheus.io/scrape: "true"
+            prometheus.io/port: "9090"
+        spec:
+          containers:
+          - name: api
+            env:
+            - name: ENVIRONMENT
+              value: "development"
+            - name: NODE_ENV
+              value: "development"
+            - name: LOG_LEVEL
+              value: "debug"
+            - name: ENABLE_DEBUG
+              value: "true"
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "100m"
+              limits:
+                memory: "512Mi"
+                cpu: "500m"
+  - |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: broxiva-web
+    spec:
+      template:
+        metadata:
+          annotations:
+            prometheus.io/scrape: "false"
+        spec:
+          containers:
+          - name: web
+            env:
+            - name: ENVIRONMENT
+              value: "development"
+            - name: NODE_ENV
+              value: "development"
+            - name: ENABLE_DEBUG
+              value: "true"
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "50m"
+              limits:
+                memory: "256Mi"
+                cpu: "250m"
+
+# JSON patches for fine-grained modifications
+patchesJson6902:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: broxiva-api
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: DEBUG_MODE
+          value: "true"
+
+# Generation behavior
+generatorOptions:
+  disableNameSuffixHash: false
+  labels:
+    environment: development
+    managed-by: kustomize
+  annotations:
+    generated-by: kustomize
+
+# Build metadata
+buildMetadata: [managedByLabel, originAnnotations]

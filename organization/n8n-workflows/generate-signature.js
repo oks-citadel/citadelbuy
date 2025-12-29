@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * HMAC-SHA256 Signature Generator for CitadelBuy Webhooks
+ * HMAC-SHA256 Signature Generator for Broxiva Webhooks
  *
  * Usage:
  *   node generate-signature.js <payload-file> [secret]
@@ -9,7 +9,7 @@
  *   node generate-signature.js custom-payload.json my-webhook-secret
  *
  * Environment Variables:
- *   CITADELBUY_WEBHOOK_SECRET - Default webhook secret if not provided as argument
+ *   BROXIVA_WEBHOOK_SECRET - Default webhook secret if not provided as argument
  */
 
 const crypto = require('crypto');
@@ -51,7 +51,7 @@ function formatBytes(bytes) {
 function main() {
   console.log(`${colors.bright}${colors.cyan}`);
   console.log('═══════════════════════════════════════════════════════════');
-  console.log('  CitadelBuy Webhook HMAC-SHA256 Signature Generator');
+  console.log('  Broxiva Webhook HMAC-SHA256 Signature Generator');
   console.log('═══════════════════════════════════════════════════════════');
   console.log(colors.reset);
 
@@ -64,19 +64,19 @@ function main() {
     console.log('  node generate-signature.js test-payloads.json');
     console.log('  node generate-signature.js custom-payload.json my-webhook-secret\n');
     console.log(`${colors.yellow}Environment Variables:${colors.reset}`);
-    console.log('  CITADELBUY_WEBHOOK_SECRET - Default webhook secret\n');
+    console.log('  BROXIVA_WEBHOOK_SECRET - Default webhook secret\n');
     console.log(`${colors.yellow}Examples:${colors.reset}`);
     console.log('  node generate-signature.js test-payloads.json');
-    console.log('  CITADELBUY_WEBHOOK_SECRET=abc123 node generate-signature.js test.json');
+    console.log('  BROXIVA_WEBHOOK_SECRET=abc123 node generate-signature.js test.json');
     process.exit(0);
   }
 
   const payloadFile = args[0];
-  const secret = args[1] || process.env.CITADELBUY_WEBHOOK_SECRET || 'your-webhook-secret-key';
+  const secret = args[1] || process.env.BROXIVA_WEBHOOK_SECRET || 'your-webhook-secret-key';
 
   // Validate secret
   if (secret === 'your-webhook-secret-key') {
-    console.log(`${colors.red}⚠️  WARNING: Using default secret. Set CITADELBUY_WEBHOOK_SECRET or pass as argument.${colors.reset}\n`);
+    console.log(`${colors.red}⚠️  WARNING: Using default secret. Set BROXIVA_WEBHOOK_SECRET or pass as argument.${colors.reset}\n`);
   }
 
   if (secret.length < 32) {
@@ -140,12 +140,12 @@ function main() {
   console.log(`${colors.bright}${colors.cyan}Sample cURL Commands:${colors.reset}\n`);
 
   for (const result of results) {
-    const webhookUrl = process.env.N8N_WEBHOOK_URL || 'https://your-n8n.com/webhook/citadelbuy-order-webhook';
+    const webhookUrl = process.env.N8N_WEBHOOK_URL || 'https://your-n8n.com/webhook/broxiva-order-webhook';
 
     console.log(`${colors.bright}# Test: ${result.name}${colors.reset}`);
     console.log(`curl -X POST '${webhookUrl}' \\`);
     console.log(`  -H 'Content-Type: application/json' \\`);
-    console.log(`  -H 'X-CitadelBuy-Signature: ${result.signature}' \\`);
+    console.log(`  -H 'X-Broxiva-Signature: ${result.signature}' \\`);
     console.log(`  -d '${JSON.stringify(result.payload).replace(/'/g, "'\"'\"'")}'`);
     console.log();
   }
@@ -166,12 +166,12 @@ async function sendWebhook(payload) {
     .digest('hex');
 
   const response = await axios.post(
-    'https://your-n8n.com/webhook/citadelbuy-order-webhook',
+    'https://your-n8n.com/webhook/broxiva-order-webhook',
     payload,
     {
       headers: {
         'Content-Type': 'application/json',
-        'X-CitadelBuy-Signature': signature
+        'X-Broxiva-Signature': signature
       }
     }
   );
@@ -190,7 +190,7 @@ ${colors.reset}`);
   const output = {
     generated_at: new Date().toISOString(),
     secret_preview: secret.substring(0, 8) + '...',
-    webhook_url: process.env.N8N_WEBHOOK_URL || 'https://your-n8n.com/webhook/citadelbuy-order-webhook',
+    webhook_url: process.env.N8N_WEBHOOK_URL || 'https://your-n8n.com/webhook/broxiva-order-webhook',
     signatures: results.map(r => ({
       name: r.name,
       signature: r.signature,

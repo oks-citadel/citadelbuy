@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: citadelbuy-inventory-ai
+    container_name: broxiva-inventory-ai
     ports:
       - "8007:8007"
     environment:
@@ -25,9 +25,9 @@ services:
       retries: 3
       start_period: 10s
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
 networks:
-  citadelbuy-network:
-    name: citadelbuy-network
+  broxiva-network:
+    name: broxiva-network
     external: true

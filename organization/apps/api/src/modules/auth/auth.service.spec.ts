@@ -363,7 +363,7 @@ describe('AuthService', () => {
     it('should work for admin users', async () => {
       const mockAdminUser = {
         id: 'admin-123',
-        email: 'admin@citadelbuy.com',
+        email: 'admin@broxiva.com',
         name: 'Admin User',
         role: 'ADMIN',
       };

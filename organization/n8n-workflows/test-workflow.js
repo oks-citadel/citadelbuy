@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * CitadelBuy Order Processing Workflow Test Suite
+ * Broxiva Order Processing Workflow Test Suite
  *
  * This script runs comprehensive tests against the n8n workflow
  * to ensure all scenarios are handled correctly.
@@ -20,8 +20,8 @@ const path = require('path');
 
 // Configuration
 const CONFIG = {
-  webhookUrl: process.env.WEBHOOK_URL || process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/citadelbuy-order-webhook',
-  webhookSecret: process.env.CITADELBUY_WEBHOOK_SECRET || 'your-webhook-secret-key',
+  webhookUrl: process.env.WEBHOOK_URL || process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/broxiva-order-webhook',
+  webhookSecret: process.env.BROXIVA_WEBHOOK_SECRET || 'your-webhook-secret-key',
   timeout: parseInt(process.env.TEST_TIMEOUT) || 30000,
   verbose: process.argv.includes('--verbose') || process.argv.includes('-v'),
   scenarioFilter: null
@@ -67,7 +67,7 @@ async function sendWebhook(payload, options = {}) {
     url: CONFIG.webhookUrl,
     headers: {
       'Content-Type': 'application/json',
-      'X-CitadelBuy-Signature': signature,
+      'X-Broxiva-Signature': signature,
       ...options.headers
     },
     data: payload,
@@ -223,7 +223,7 @@ async function testHMACValidation() {
 
   // Test 2: Invalid signature
   const invalidResponse = await sendWebhook(payload, {
-    headers: { 'X-CitadelBuy-Signature': 'invalid-signature-12345' }
+    headers: { 'X-Broxiva-Signature': 'invalid-signature-12345' }
   });
   logTest(
     'HMAC: Invalid signature rejected',
@@ -381,7 +381,7 @@ async function testConcurrency() {
 async function main() {
   console.log(`${colors.bright}${colors.cyan}`);
   console.log('═══════════════════════════════════════════════════════════');
-  console.log('  CitadelBuy Order Processing Workflow Test Suite');
+  console.log('  Broxiva Order Processing Workflow Test Suite');
   console.log('═══════════════════════════════════════════════════════════');
   console.log(colors.reset);
 

@@ -1,8 +1,8 @@
-# Sample Azure Pipeline for CitadelBuy
+# Sample Azure Pipeline for Broxiva
 # This is a reference implementation for converting GitHub Actions to Azure Pipelines
 # Use this as a template when creating your pipelines
 
-name: CitadelBuy-CI-CD-$(Date:yyyyMMdd)$(Rev:.r)
+name: Broxiva-CI-CD-$(Date:yyyyMMdd)$(Rev:.r)
 
 # Triggers
 trigger:
@@ -33,7 +33,7 @@ pr:
 # Pipeline variables
 variables:
   # Common variables from variable group
-  - group: citadelbuy-common
+  - group: broxiva-common
 
   # Inline variables
   - name: vmImage
@@ -275,7 +275,7 @@ stages:
             displayName: 'Build and Push API Image'
             inputs:
               command: 'buildAndPush'
-              repository: 'citadelbuy-api'
+              repository: 'broxiva-api'
               dockerfile: 'apps/api/Dockerfile'
               buildContext: 'apps/api'
               tags: |
@@ -286,14 +286,14 @@ stages:
                 --build-arg NODE_ENV=production
                 --build-arg BUILD_DATE=$(Build.BuildNumber)
                 --build-arg VERSION=$(Build.BuildId)
-                --cache-from=$(AZURE_CONTAINER_REGISTRY)/citadelbuy-api:latest
+                --cache-from=$(AZURE_CONTAINER_REGISTRY)/broxiva-api:latest
 
           # Build Web Image
           - task: Docker@2
             displayName: 'Build and Push Web Image'
             inputs:
               command: 'buildAndPush'
-              repository: 'citadelbuy-web'
+              repository: 'broxiva-web'
               dockerfile: 'apps/web/Dockerfile'
               buildContext: 'apps/web'
               tags: |
@@ -304,14 +304,14 @@ stages:
                 --build-arg NODE_ENV=production
                 --build-arg NEXT_PUBLIC_API_URL=$(API_URL)
                 --build-arg BUILD_DATE=$(Build.BuildNumber)
-                --cache-from=$(AZURE_CONTAINER_REGISTRY)/citadelbuy-web:latest
+                --cache-from=$(AZURE_CONTAINER_REGISTRY)/broxiva-web:latest
 
           # Scan Docker images for vulnerabilities
           - script: |
               docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
                 aquasec/trivy:latest image \
                 --severity HIGH,CRITICAL \
-                $(AZURE_CONTAINER_REGISTRY)/citadelbuy-api:$(Build.BuildId)
+                $(AZURE_CONTAINER_REGISTRY)/broxiva-api:$(Build.BuildId)
             displayName: 'Scan API Image with Trivy'
             continueOnError: true
 
@@ -319,7 +319,7 @@ stages:
               docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
                 aquasec/trivy:latest image \
                 --severity HIGH,CRITICAL \
-                $(AZURE_CONTAINER_REGISTRY)/citadelbuy-web:$(Build.BuildId)
+                $(AZURE_CONTAINER_REGISTRY)/broxiva-web:$(Build.BuildId)
             displayName: 'Scan Web Image with Trivy'
             continueOnError: true
 
@@ -337,7 +337,7 @@ stages:
     dependsOn: Build
     condition: and(succeeded(), eq(variables.isDevelop, true))
     variables:
-      - group: citadelbuy-staging
+      - group: broxiva-staging
     jobs:
       - deployment: DeployToStaging
         displayName: 'Deploy to AKS Staging'
@@ -358,8 +358,8 @@ stages:
                     scriptLocation: 'inlineScript'
                     inlineScript: |
                       az aks get-credentials \
-                        --resource-group citadelbuy-staging-rg \
-                        --name citadelbuy-staging-aks \
+                        --resource-group broxiva-staging-rg \
+                        --name broxiva-staging-aks \
                         --overwrite-existing
 
                 - task: Kubernetes@1
@@ -367,9 +367,9 @@ stages:
                   inputs:
                     connectionType: 'Azure Resource Manager'
                     azureSubscription: 'AKS-Staging-Connection'
-                    azureResourceGroup: 'citadelbuy-staging-rg'
-                    kubernetesCluster: 'citadelbuy-staging-aks'
-                    namespace: 'citadelbuy-staging'
+                    azureResourceGroup: 'broxiva-staging-rg'
+                    kubernetesCluster: 'broxiva-staging-aks'
+                    namespace: 'broxiva-staging'
                     command: 'apply'
                     useConfigurationFile: true
                     configuration: 'infrastructure/kubernetes/staging/'
@@ -379,31 +379,31 @@ stages:
                   inputs:
                     connectionType: 'Azure Resource Manager'
                     azureSubscription: 'AKS-Staging-Connection'
-                    azureResourceGroup: 'citadelbuy-staging-rg'
-                    kubernetesCluster: 'citadelbuy-staging-aks'
-                    namespace: 'citadelbuy-staging'
+                    azureResourceGroup: 'broxiva-staging-rg'
+                    kubernetesCluster: 'broxiva-staging-aks'
+                    namespace: 'broxiva-staging'
                     command: 'set'
-                    arguments: 'image deployment/api api=$(AZURE_CONTAINER_REGISTRY)/citadelbuy-api:$(Build.BuildId)'
+                    arguments: 'image deployment/api api=$(AZURE_CONTAINER_REGISTRY)/broxiva-api:$(Build.BuildId)'
 
                 - task: Kubernetes@1
                   displayName: 'Update Web Deployment'
                   inputs:
                     connectionType: 'Azure Resource Manager'
                     azureSubscription: 'AKS-Staging-Connection'
-                    azureResourceGroup: 'citadelbuy-staging-rg'
-                    kubernetesCluster: 'citadelbuy-staging-aks'
-                    namespace: 'citadelbuy-staging'
+                    azureResourceGroup: 'broxiva-staging-rg'
+                    kubernetesCluster: 'broxiva-staging-aks'
+                    namespace: 'broxiva-staging'
                     command: 'set'
-                    arguments: 'image deployment/web web=$(AZURE_CONTAINER_REGISTRY)/citadelbuy-web:$(Build.BuildId)'
+                    arguments: 'image deployment/web web=$(AZURE_CONTAINER_REGISTRY)/broxiva-web:$(Build.BuildId)'
 
                 - task: Kubernetes@1
                   displayName: 'Wait for API Rollout'
                   inputs:
                     connectionType: 'Azure Resource Manager'
                     azureSubscription: 'AKS-Staging-Connection'
-                    azureResourceGroup: 'citadelbuy-staging-rg'
-                    kubernetesCluster: 'citadelbuy-staging-aks'
-                    namespace: 'citadelbuy-staging'
+                    azureResourceGroup: 'broxiva-staging-rg'
+                    kubernetesCluster: 'broxiva-staging-aks'
+                    namespace: 'broxiva-staging'
                     command: 'rollout'
                     arguments: 'status deployment/api --timeout=300s'
 
@@ -412,9 +412,9 @@ stages:
                   inputs:
                     connectionType: 'Azure Resource Manager'
                     azureSubscription: 'AKS-Staging-Connection'
-                    azureResourceGroup: 'citadelbuy-staging-rg'
-                    kubernetesCluster: 'citadelbuy-staging-aks'
-                    namespace: 'citadelbuy-staging'
+                    azureResourceGroup: 'broxiva-staging-rg'
+                    kubernetesCluster: 'broxiva-staging-aks'
+                    namespace: 'broxiva-staging'
                     command: 'rollout'
                     arguments: 'status deployment/web --timeout=300s'
 
@@ -423,7 +423,7 @@ stages:
                     sleep 30
 
                     # Health check
-                    response=$(curl -s -o /dev/null -w "%{http_code}" https://staging.citadelbuy.com/api/health)
+                    response=$(curl -s -o /dev/null -w "%{http_code}" https://staging.broxiva.com/api/health)
                     if [ $response != "200" ]; then
                       echo "Health check failed with status: $response"
                       exit 1
@@ -443,7 +443,7 @@ stages:
                             type = "section"
                             text = @{
                               type = "mrkdwn"
-                              text = "*CitadelBuy Staging Deployed*`nBuild: $(Build.BuildNumber)`nBranch: $(Build.SourceBranchName)`nCommit: $(Build.SourceVersion)"
+                              text = "*Broxiva Staging Deployed*`nBuild: $(Build.BuildNumber)`nBranch: $(Build.SourceBranchName)`nCommit: $(Build.SourceVersion)"
                             }
                           }
                         )
@@ -481,7 +481,7 @@ stages:
               pnpm test:e2e
             displayName: 'Run E2E Tests'
             env:
-              BASE_URL: 'https://staging.citadelbuy.com'
+              BASE_URL: 'https://staging.broxiva.com'
               TEST_USER_EMAIL: $(TEST_USER_EMAIL)
               TEST_USER_PASSWORD: $(TEST_USER_PASSWORD)
 
@@ -510,7 +510,7 @@ stages:
       - E2ETests
     condition: and(succeeded(), eq(variables.isMain, true))
     variables:
-      - group: citadelbuy-prod
+      - group: broxiva-prod
     jobs:
       - deployment: DeployToProduction
         displayName: 'Deploy to AKS Production'
@@ -531,8 +531,8 @@ stages:
                     scriptLocation: 'inlineScript'
                     inlineScript: |
                       az aks get-credentials \
-                        --resource-group citadelbuy-prod-rg \
-                        --name citadelbuy-prod-aks \
+                        --resource-group broxiva-prod-rg \
+                        --name broxiva-prod-aks \
                         --overwrite-existing
 
                 # Blue-Green Deployment Strategy
@@ -544,22 +544,22 @@ stages:
 
                     # Update green deployment
                     kubectl set image deployment/api-green \
-                      api=$(AZURE_CONTAINER_REGISTRY)/citadelbuy-api:$(Build.BuildId) \
-                      -n citadelbuy-prod
+                      api=$(AZURE_CONTAINER_REGISTRY)/broxiva-api:$(Build.BuildId) \
+                      -n broxiva-prod
 
                     kubectl set image deployment/web-green \
-                      web=$(AZURE_CONTAINER_REGISTRY)/citadelbuy-web:$(Build.BuildId) \
-                      -n citadelbuy-prod
+                      web=$(AZURE_CONTAINER_REGISTRY)/broxiva-web:$(Build.BuildId) \
+                      -n broxiva-prod
 
                     # Wait for rollout
-                    kubectl rollout status deployment/api-green -n citadelbuy-prod --timeout=300s
-                    kubectl rollout status deployment/web-green -n citadelbuy-prod --timeout=300s
+                    kubectl rollout status deployment/api-green -n broxiva-prod --timeout=300s
+                    kubectl rollout status deployment/web-green -n broxiva-prod --timeout=300s
                   displayName: 'Deploy to Green Slot'
 
                 - script: |
                     # Smoke tests on green
                     sleep 30
-                    response=$(curl -s -o /dev/null -w "%{http_code}" https://green.citadelbuy.com/api/health)
+                    response=$(curl -s -o /dev/null -w "%{http_code}" https://green.broxiva.com/api/health)
                     if [ $response != "200" ]; then
                       echo "Smoke test failed on green slot"
                       exit 1
@@ -569,10 +569,10 @@ stages:
 
                 - script: |
                     # Switch traffic to green
-                    kubectl patch service api-service -n citadelbuy-prod \
+                    kubectl patch service api-service -n broxiva-prod \
                       -p '{"spec":{"selector":{"app":"api-green"}}}'
 
-                    kubectl patch service web-service -n citadelbuy-prod \
+                    kubectl patch service web-service -n broxiva-prod \
                       -p '{"spec":{"selector":{"app":"web-green"}}}'
 
                     echo "Traffic switched to green slot"
@@ -581,7 +581,7 @@ stages:
                 - script: |
                     # Final verification
                     sleep 30
-                    response=$(curl -s -o /dev/null -w "%{http_code}" https://citadelbuy.com/api/health)
+                    response=$(curl -s -o /dev/null -w "%{http_code}" https://broxiva.com/api/health)
                     if [ $response != "200" ]; then
                       echo "Production health check failed"
                       exit 1
@@ -601,7 +601,7 @@ stages:
                             type = "section"
                             text = @{
                               type = "mrkdwn"
-                              text = "*CitadelBuy Production Deployed*`n`n✅ API: Healthy`n✅ Web: Healthy`n`nBuild: $(Build.BuildNumber)`nCommit: $(Build.SourceVersion)"
+                              text = "*Broxiva Production Deployed*`n`n✅ API: Healthy`n✅ Web: Healthy`n`nBuild: $(Build.BuildNumber)`nCommit: $(Build.SourceVersion)"
                             }
                           },
                           @{
@@ -613,7 +613,7 @@ stages:
                                   type = "plain_text"
                                   text = "View Application"
                                 }
-                                url = "https://citadelbuy.com"
+                                url = "https://broxiva.com"
                               }
                             )
                           }

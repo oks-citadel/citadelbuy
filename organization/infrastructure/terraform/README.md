@@ -1,6 +1,6 @@
-# CitadelBuy Terraform Infrastructure
+# Broxiva Terraform Infrastructure
 
-Multi-cloud infrastructure as code for the CitadelBuy e-commerce platform, supporting both Azure and AWS deployments.
+Multi-cloud infrastructure as code for the Broxiva e-commerce platform, supporting both Azure and AWS deployments.
 
 ## Table of Contents
 
@@ -18,7 +18,7 @@ Multi-cloud infrastructure as code for the CitadelBuy e-commerce platform, suppo
 
 ## Overview
 
-This Terraform configuration provides a complete, production-ready infrastructure for the CitadelBuy platform with support for:
+This Terraform configuration provides a complete, production-ready infrastructure for the Broxiva platform with support for:
 
 - **Multi-cloud deployment**: Azure and AWS
 - **Multiple environments**: Development, Staging, Production
@@ -181,8 +181,8 @@ terraform apply
 
 ```bash
 az aks get-credentials \
-  --resource-group citadelbuy-dev-rg \
-  --name citadelbuy-dev-aks
+  --resource-group broxiva-dev-rg \
+  --name broxiva-dev-aks
 
 kubectl get nodes
 ```
@@ -192,7 +192,7 @@ kubectl get nodes
 ```bash
 aws eks update-kubeconfig \
   --region us-east-1 \
-  --name citadelbuy-dev-eks
+  --name broxiva-dev-eks
 
 kubectl get nodes
 ```
@@ -541,12 +541,12 @@ aws ce get-cost-and-usage \
 az storage blob lease break \
   --container-name tfstate \
   --blob-name prod.terraform.tfstate \
-  --account-name citadelbuytfstate
+  --account-name broxivatfstate
 
 # AWS (DynamoDB)
 aws dynamodb delete-item \
   --table-name terraform-state-lock \
-  --key '{"LockID":{"S":"citadelbuy-prod"}}'
+  --key '{"LockID":{"S":"broxiva-prod"}}'
 ```
 
 #### 2. Kubernetes Access Issues
@@ -554,14 +554,14 @@ aws dynamodb delete-item \
 ```bash
 # Azure - Reset AKS credentials
 az aks get-credentials \
-  --resource-group citadelbuy-prod-rg \
-  --name citadelbuy-prod-aks \
+  --resource-group broxiva-prod-rg \
+  --name broxiva-prod-aks \
   --overwrite-existing
 
 # AWS - Update kubeconfig
 aws eks update-kubeconfig \
   --region us-east-1 \
-  --name citadelbuy-prod-eks \
+  --name broxiva-prod-eks \
   --kubeconfig ~/.kube/config
 ```
 
@@ -630,13 +630,13 @@ terraform apply
 ```bash
 # Azure - Manual backup
 az postgres flexible-server backup create \
-  --resource-group citadelbuy-prod-rg \
-  --name citadelbuy-prod-postgres \
+  --resource-group broxiva-prod-rg \
+  --name broxiva-prod-postgres \
   --backup-name manual-backup-$(date +%Y%m%d)
 
 # AWS - Manual snapshot
 aws rds create-db-snapshot \
-  --db-instance-identifier citadelbuy-prod-postgres \
+  --db-instance-identifier broxiva-prod-postgres \
   --db-snapshot-identifier manual-backup-$(date +%Y%m%d)
 ```
 
@@ -665,7 +665,7 @@ terraform state pull > terraform.tfstate.backup-$(date +%Y%m%d)
 
 ## License
 
-Copyright (c) 2024 CitadelBuy Platform Team
+Copyright (c) 2024 Broxiva Platform Team
 
 ## Support
 

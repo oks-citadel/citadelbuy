@@ -35,7 +35,7 @@ export class UsersController {
         phone: '+1 (555) 123-4567',
         role: 'CUSTOMER',
         emailVerified: true,
-        avatar: 'https://cdn.citadelbuy.com/avatars/user-123.jpg',
+        avatar: 'https://cdn.broxiva.com/avatars/user-123.jpg',
         preferences: {
           newsletter: true,
           notifications: true,
@@ -74,7 +74,7 @@ export class UsersController {
         avatar: {
           type: 'string',
           description: 'Avatar URL',
-          example: 'https://cdn.citadelbuy.com/avatars/user-123.jpg',
+          example: 'https://cdn.broxiva.com/avatars/user-123.jpg',
         },
         preferences: {
           type: 'object',
@@ -222,9 +222,7 @@ export class UsersController {
   @ApiResponse({ status: 400, description: 'Invalid verification code' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async verifyPhoneNumber(@Request() req: any, @Body() verifyPhoneDto: VerifyPhoneDto) {
-    // TODO: Implement verification code validation
-    // For now, just mark as verified
-    return this.usersService.markPhoneAsVerified(req.user.id);
+    return this.usersService.verifyPhoneWithCode(req.user.id, verifyPhoneDto.code);
   }
 
   // ===== ADDRESS MANAGEMENT ENDPOINTS =====

@@ -2,7 +2,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-pvc
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: postgres
     tier: database
@@ -18,13 +18,13 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-config
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: postgres
     tier: database
 data:
-  POSTGRES_DB: "citadelbuy"
-  POSTGRES_USER: "citadelbuy"
+  POSTGRES_DB: "broxiva"
+  POSTGRES_USER: "broxiva"
   # Max connections
   max_connections: "200"
   shared_buffers: "256MB"
@@ -43,7 +43,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: postgres
     tier: database
@@ -88,7 +88,7 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: citadelbuy-secrets
+                  name: broxiva-secrets
                   key: DATABASE_PASSWORD
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
@@ -125,7 +125,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - pg_isready -U citadelbuy
+                - pg_isready -U broxiva
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
@@ -135,7 +135,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - pg_isready -U citadelbuy
+                - pg_isready -U broxiva
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 3
@@ -145,7 +145,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - pg_isready -U citadelbuy
+                - pg_isready -U broxiva
             initialDelaySeconds: 0
             periodSeconds: 5
             timeoutSeconds: 3
@@ -163,7 +163,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: postgres
     tier: database
@@ -182,7 +182,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres-exporter
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: postgres-exporter
     tier: monitoring
@@ -216,7 +216,7 @@ spec:
             - name: DATA_SOURCE_NAME
               valueFrom:
                 secretKeyRef:
-                  name: citadelbuy-secrets
+                  name: broxiva-secrets
                   key: POSTGRES_EXPORTER_DATA_SOURCE_NAME
           securityContext:
             allowPrivilegeEscalation: false
@@ -246,7 +246,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres-exporter
-  namespace: citadelbuy
+  namespace: broxiva
   labels:
     app: postgres-exporter
     tier: monitoring

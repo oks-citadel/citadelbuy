@@ -208,7 +208,7 @@ export class PricingStrategyService {
           trafficSplit: 'Equal distribution',
         },
         tracking: {
-          dashboardUrl: `https://admin.citadelbuy.com/ab-tests/${testId}`,
+          dashboardUrl: `https://admin.broxiva.com/ab-tests/${testId}`,
           apiEndpoint: `/api/price-tests/${testId}/metrics`,
         },
         estimatedResults: {

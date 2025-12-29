@@ -150,3 +150,11 @@ export function LanguageSwitcher({
     </div>
   );
 }
+// Export Language type for external use
+export type { Language } from './config';
+
+// Export LanguageSwitcherProps for external use
+export type { LanguageSwitcherProps };
+
+// Export languages array for external use
+export const languages = SUPPORTED_LANGUAGES;

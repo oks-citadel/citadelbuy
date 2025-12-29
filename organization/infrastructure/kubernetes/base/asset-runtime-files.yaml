@@ -1,0 +1,169 @@
+# ==========================================
+# Azure Files Runtime Asset Mounting
+# Alternative approach using persistent storage
+# ==========================================
+# This manifest demonstrates how to mount Azure Files
+# as a persistent volume for shared asset access
+
+---
+# Storage Class for Azure Files
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azurefile-premium
+provisioner: file.csi.azure.com
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+mountOptions:
+  - dir_mode=0755
+  - file_mode=0644
+  - uid=1001
+  - gid=1001
+  - mfsymlinks
+  - cache=strict
+  - actimeo=30
+parameters:
+  skuName: Premium_LRS
+  location: eastus
+  # Use existing storage account
+  storageAccount: broxivaprodstorage
+  # Enable private endpoint for security
+  networkEndpointType: privateEndpoint
+
+---
+# Secret for Azure Files authentication
+apiVersion: v1
+kind: Secret
+metadata:
+  name: azure-files-secret
+  namespace: broxiva
+type: Opaque
+stringData:
+  azurestorageaccountname: "broxivaprodstorage"
+  azurestorageaccountkey: "REPLACE_WITH_ACTUAL_KEY"
+
+---
+# Persistent Volume for Azure Files Share
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: broxiva-assets-pv
+  labels:
+    usage: broxiva-assets
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadOnlyMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: azurefile-premium
+  csi:
+    driver: file.csi.azure.com
+    readOnly: true
+    volumeHandle: broxiva-assets-share
+    volumeAttributes:
+      shareName: assets-prod
+      storageAccount: broxivaprodstorage
+    nodeStageSecretRef:
+      name: azure-files-secret
+      namespace: broxiva
+
+---
+# Persistent Volume Claim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: broxiva-assets-pvc
+  namespace: broxiva
+spec:
+  accessModes:
+    - ReadOnlyMany
+  storageClassName: azurefile-premium
+  resources:
+    requests:
+      storage: 100Gi
+  selector:
+    matchLabels:
+      usage: broxiva-assets
+
+---
+# Example deployment using Azure Files PVC
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-with-files-assets
+  namespace: broxiva
+  labels:
+    app: broxiva-api
+    asset-source: files
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: broxiva-api
+  template:
+    metadata:
+      labels:
+        app: broxiva-api
+    spec:
+      containers:
+        - name: api
+          image: broxivaprodacr.azurecr.io/api:latest
+          ports:
+            - containerPort: 4000
+          env:
+            - name: ASSET_SOURCE
+              value: "files"
+            - name: ASSET_PATH
+              value: "/app/assets"
+            - name: NODE_ENV
+              value: "production"
+          volumeMounts:
+            - name: assets-volume
+              mountPath: /app/assets
+              readOnly: true
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 4000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+      volumes:
+        - name: assets-volume
+          persistentVolumeClaim:
+            claimName: broxiva-assets-pvc
+            readOnly: true
+
+---
+# Environment-specific Kustomization
+# Use this in overlays for different environments
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata:
+  name: assets-config
+resources:
+  - asset-runtime-files.yaml
+
+# Patch for development environment
+# patches:
+#   - target:
+#       kind: PersistentVolume
+#       name: broxiva-assets-pv
+#     patch: |
+#       - op: replace
+#         path: /spec/csi/volumeAttributes/shareName
+#         value: assets-dev

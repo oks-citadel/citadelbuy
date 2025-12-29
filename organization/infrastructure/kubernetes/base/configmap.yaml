@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: citadelbuy-config
-  namespace: citadelbuy
+  name: broxiva-config
+  namespace: broxiva
   labels:
-    app: citadelbuy
+    app: broxiva
     tier: config
 data:
   # Application Configuration
@@ -21,7 +21,7 @@ data:
 
   # CORS Configuration
   CORS_ENABLED: "true"
-  CORS_ORIGINS: "https://citadelbuy.com,https://www.citadelbuy.com,https://app.citadelbuy.com"
+  CORS_ORIGINS: "https://broxiva.com,https://www.broxiva.com,https://app.broxiva.com"
   CORS_CREDENTIALS: "true"
 
   # Production Rate Limiting Configuration
@@ -64,26 +64,26 @@ data:
   DB_SSL_ENABLED: "true"
 
   # Redis Configuration
-  REDIS_HOST: "redis.citadelbuy.svc.cluster.local"
+  REDIS_HOST: "redis.broxiva.svc.cluster.local"
   REDIS_PORT: "6379"
   REDIS_TTL: "3600"
   REDIS_MAX_RETRIES: "3"
   REDIS_RETRY_DELAY: "1000"
-  REDIS_KEY_PREFIX: "citadelbuy:"
+  REDIS_KEY_PREFIX: "broxiva:"
   REDIS_ENABLE_OFFLINE_QUEUE: "true"
   REDIS_CONNECT_TIMEOUT: "10000"
 
   # Elasticsearch Configuration
-  ELASTICSEARCH_NODE: "http://elasticsearch.citadelbuy.svc.cluster.local:9200"
+  ELASTICSEARCH_NODE: "http://elasticsearch.broxiva.svc.cluster.local:9200"
   ELASTICSEARCH_MAX_RETRIES: "3"
   ELASTICSEARCH_REQUEST_TIMEOUT: "30000"
   ELASTICSEARCH_PING_TIMEOUT: "3000"
 
   # PostgreSQL Configuration
-  DATABASE_HOST: "postgres.citadelbuy.svc.cluster.local"
+  DATABASE_HOST: "postgres.broxiva.svc.cluster.local"
   DATABASE_PORT: "5432"
-  DATABASE_NAME: "citadelbuy"
-  DATABASE_USERNAME: "citadelbuy"
+  DATABASE_NAME: "broxiva"
+  DATABASE_USERNAME: "broxiva"
   DATABASE_SSL_MODE: "require"
 
   # Session Configuration
@@ -139,7 +139,7 @@ data:
   # Email Configuration
   EMAIL_ENABLED: "true"
   EMAIL_QUEUE_ENABLED: "true"
-  EMAIL_FROM_NAME: "CitadelBuy"
+  EMAIL_FROM_NAME: "Broxiva"
   EMAIL_RATE_LIMIT: "100"  # Per hour
 
   # File Upload Configuration

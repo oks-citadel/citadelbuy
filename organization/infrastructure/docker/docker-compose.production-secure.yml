@@ -1,5 +1,5 @@
 # ==================================
-# CitadelBuy E-Commerce Platform
+# Broxiva E-Commerce Platform
 # SECURE Production Docker Compose Configuration
 # Version: 2.1.0 - Security Hardened
 # ==================================
@@ -33,7 +33,7 @@ version: '3.9'
 # Networks - Segregated for Security
 # ==================================
 networks:
-  citadelbuy-network:
+  broxiva-network:
     driver: bridge
     ipam:
       config:
@@ -73,7 +73,7 @@ services:
   # ==================================
   nginx:
     image: nginx:1.25-alpine
-    container_name: citadelbuy-nginx-prod
+    container_name: broxiva-nginx-prod
     restart: unless-stopped
     ports:
       - '80:80'
@@ -84,7 +84,7 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - nginx-logs:/var/log/nginx
     networks:
-      - citadelbuy-network
+      - broxiva-network
     depends_on:
       - frontend
       - backend
@@ -95,8 +95,8 @@ services:
       retries: 3
       start_period: 40s
     labels:
-      - "com.citadelbuy.service=nginx"
-      - "com.citadelbuy.description=API Gateway and Load Balancer"
+      - "com.broxiva.service=nginx"
+      - "com.broxiva.description=API Gateway and Load Balancer"
     # Security: Run as non-root user
     user: "101:101"
     # Security: Read-only root filesystem
@@ -119,8 +119,8 @@ services:
         NEXT_PUBLIC_GOOGLE_ANALYTICS_ID: ${NEXT_PUBLIC_GOOGLE_ANALYTICS_ID}
         NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN}
         NEXT_PUBLIC_CDN_URL: ${NEXT_PUBLIC_CDN_URL}
-    image: citadelplatforms/citadelbuy-ecommerce:frontend-latest
-    container_name: citadelbuy-frontend-prod
+    image: broxiva/broxiva-ecommerce:frontend-latest
+    container_name: broxiva-frontend-prod
     restart: unless-stopped
     ports:
       - '3000:3000'
@@ -128,7 +128,7 @@ services:
       - NODE_ENV=production
       - PORT=3000
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
       interval: 30s
@@ -136,8 +136,8 @@ services:
       retries: 3
       start_period: 40s
     labels:
-      - "com.citadelbuy.service=frontend"
-      - "com.citadelbuy.description=Next.js Frontend Application"
+      - "com.broxiva.service=frontend"
+      - "com.broxiva.description=Next.js Frontend Application"
     deploy:
       resources:
         limits:
@@ -162,8 +162,8 @@ services:
     build:
       context: ../../backend
       dockerfile: Dockerfile
-    image: citadelplatforms/citadelbuy-ecommerce:backend-latest
-    container_name: citadelbuy-backend-prod
+    image: broxiva/broxiva-ecommerce:backend-latest
+    container_name: broxiva-backend-prod
     restart: unless-stopped
     ports:
       - '4000:4000'
@@ -174,7 +174,7 @@ services:
       - API_PREFIX=api
 
       # Database
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-citadelbuy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-citadelbuy_prod}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-broxiva}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-broxiva_prod}
       - DATABASE_CONNECTION_LIMIT=${DATABASE_CONNECTION_LIMIT:-20}
       - DATABASE_POOL_TIMEOUT=${DATABASE_POOL_TIMEOUT:-10}
 
@@ -225,9 +225,9 @@ services:
       - CORS_ORIGIN=${CORS_ORIGIN:-https://yourdomain.com}
 
       # RabbitMQ
-      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-citadelbuy}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-broxiva}:${RABBITMQ_PASSWORD}@rabbitmq:5672
     networks:
-      - citadelbuy-network
+      - broxiva-network
     depends_on:
       postgres:
         condition: service_healthy
@@ -244,8 +244,8 @@ services:
       retries: 3
       start_period: 60s
     labels:
-      - "com.citadelbuy.service=backend"
-      - "com.citadelbuy.description=NestJS Backend API"
+      - "com.broxiva.service=backend"
+      - "com.broxiva.description=NestJS Backend API"
     deploy:
       resources:
         limits:
@@ -271,30 +271,30 @@ services:
   # ==================================
   postgres:
     image: postgres:16-alpine
-    container_name: citadelbuy-postgres-prod
+    container_name: broxiva-postgres-prod
     restart: unless-stopped
     ports:
       - '127.0.0.1:5432:5432'  # Bind to localhost only for security
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-citadelbuy}
+      - POSTGRES_USER=${POSTGRES_USER:-broxiva}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
-      - POSTGRES_DB=${POSTGRES_DB:-citadelbuy_prod}
+      - POSTGRES_DB=${POSTGRES_DB:-broxiva_prod}
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-citadelbuy}']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-broxiva}']
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
     labels:
-      - "com.citadelbuy.service=postgres"
-      - "com.citadelbuy.description=PostgreSQL Database"
+      - "com.broxiva.service=postgres"
+      - "com.broxiva.description=PostgreSQL Database"
     deploy:
       resources:
         limits:
@@ -346,19 +346,19 @@ services:
   # ==================================
   mongodb:
     image: mongo:7
-    container_name: citadelbuy-mongodb-prod
+    container_name: broxiva-mongodb-prod
     restart: unless-stopped
     ports:
       - '127.0.0.1:27017:27017'  # Bind to localhost only for security
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-citadelbuy}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-broxiva}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:?MONGO_PASSWORD must be set}
-      - MONGO_INITDB_DATABASE=citadelbuy
+      - MONGO_INITDB_DATABASE=broxiva
     volumes:
       - mongodb-data:/data/db
       - ./mongodb/init.js:/docker-entrypoint-initdb.d/init.js:ro
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.adminCommand("ping").ok']
       interval: 10s
@@ -366,8 +366,8 @@ services:
       retries: 5
       start_period: 30s
     labels:
-      - "com.citadelbuy.service=mongodb"
-      - "com.citadelbuy.description=MongoDB Document Store"
+      - "com.broxiva.service=mongodb"
+      - "com.broxiva.description=MongoDB Document Store"
     deploy:
       resources:
         limits:
@@ -384,7 +384,7 @@ services:
   # ==================================
   redis:
     image: redis:7-alpine
-    container_name: citadelbuy-redis-prod
+    container_name: broxiva-redis-prod
     restart: unless-stopped
     ports:
       - '127.0.0.1:6379:6379'  # Bind to localhost only for security
@@ -394,7 +394,7 @@ services:
       - redis-data:/data
       - ./redis/redis-production.conf:/usr/local/etc/redis/redis.conf:ro
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD}', 'ping']
       interval: 10s
@@ -402,8 +402,8 @@ services:
       retries: 5
       start_period: 20s
     labels:
-      - "com.citadelbuy.service=redis"
-      - "com.citadelbuy.description=Redis Cache and Session Store"
+      - "com.broxiva.service=redis"
+      - "com.broxiva.description=Redis Cache and Session Store"
     deploy:
       resources:
         limits:
@@ -429,21 +429,21 @@ services:
   # ==================================
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
-    container_name: citadelbuy-rabbitmq-prod
+    container_name: broxiva-rabbitmq-prod
     restart: unless-stopped
     ports:
       - '127.0.0.1:5672:5672'   # AMQP - Bind to localhost
       - '127.0.0.1:15672:15672' # Management UI - Bind to localhost
     environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-citadelbuy}
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-broxiva}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set}
-      - RABBITMQ_DEFAULT_VHOST=citadelbuy
+      - RABBITMQ_DEFAULT_VHOST=broxiva
       # Security: Disable guest user
       - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit loopback_users []
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ['CMD', 'rabbitmq-diagnostics', 'ping']
       interval: 30s
@@ -451,8 +451,8 @@ services:
       retries: 5
       start_period: 40s
     labels:
-      - "com.citadelbuy.service=rabbitmq"
-      - "com.citadelbuy.description=RabbitMQ Message Queue"
+      - "com.broxiva.service=rabbitmq"
+      - "com.broxiva.description=RabbitMQ Message Queue"
     deploy:
       resources:
         limits:
@@ -467,7 +467,7 @@ services:
   # ==================================
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: citadelbuy-elasticsearch-prod
+    container_name: broxiva-elasticsearch-prod
     restart: unless-stopped
     ports:
       - '127.0.0.1:9200:9200'  # Bind to localhost only for security
@@ -486,7 +486,7 @@ services:
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
     networks:
-      - citadelbuy-network
+      - broxiva-network
     healthcheck:
       test: ['CMD-SHELL', 'curl -u elastic:${ELASTICSEARCH_PASSWORD} -f http://localhost:9200/_cluster/health || exit 1']
       interval: 30s
@@ -494,8 +494,8 @@ services:
       retries: 5
       start_period: 60s
     labels:
-      - "com.citadelbuy.service=elasticsearch"
-      - "com.citadelbuy.description=Elasticsearch Search Engine"
+      - "com.broxiva.service=elasticsearch"
+      - "com.broxiva.description=Elasticsearch Search Engine"
     deploy:
       resources:
         limits:
@@ -519,7 +519,7 @@ services:
   # ==================================
   prometheus:
     image: prom/prometheus:latest
-    container_name: citadelbuy-prometheus-prod
+    container_name: broxiva-prometheus-prod
     restart: unless-stopped
     ports:
       - '127.0.0.1:9090:9090'  # Bind to localhost only for security
@@ -527,7 +527,7 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     networks:
-      - citadelbuy-network
+      - broxiva-network
       - monitoring-network
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -536,8 +536,8 @@ services:
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
     labels:
-      - "com.citadelbuy.service=prometheus"
-      - "com.citadelbuy.description=Prometheus Metrics"
+      - "com.broxiva.service=prometheus"
+      - "com.broxiva.description=Prometheus Metrics"
     deploy:
       resources:
         limits:
@@ -551,7 +551,7 @@ services:
   # ==================================
   grafana:
     image: grafana/grafana:latest
-    container_name: citadelbuy-grafana-prod
+    container_name: broxiva-grafana-prod
     restart: unless-stopped
     ports:
       - '127.0.0.1:3001:3000'  # Bind to localhost only for security
@@ -577,8 +577,8 @@ services:
     depends_on:
       - prometheus
     labels:
-      - "com.citadelbuy.service=grafana"
-      - "com.citadelbuy.description=Grafana Monitoring Dashboard"
+      - "com.broxiva.service=grafana"
+      - "com.broxiva.description=Grafana Monitoring Dashboard"
     deploy:
       resources:
         limits:

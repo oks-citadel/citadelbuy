@@ -1,9 +1,9 @@
 # =========================================================
-# CitadelBuy Kibana Production Configuration
+# Broxiva Kibana Production Configuration
 # =========================================================
 
 # ========== Server Settings ==========
-server.name: citadelbuy-kibana
+server.name: broxiva-kibana
 server.host: "0.0.0.0"
 server.port: 5601
 

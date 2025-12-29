@@ -207,7 +207,7 @@ export class SentryExceptionFilter implements ExceptionFilter {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Sentry-Auth': `Sentry sentry_version=7, sentry_client=citadelbuy-nestjs/1.0, sentry_key=${parsedDsn.publicKey}`,
+        'X-Sentry-Auth': `Sentry sentry_version=7, sentry_client=broxiva-nestjs/1.0, sentry_key=${parsedDsn.publicKey}`,
       },
       body: JSON.stringify(event),
     });

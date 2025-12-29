@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================
-# CitadelBuy Smoke Test Suite
+# Broxiva Smoke Test Suite
 # ============================================
 # Comprehensive smoke tests for staging environment
 # Tests critical paths and validates deployment health
@@ -22,7 +22,7 @@ readonly TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 readonly TEST_LOG="${PROJECT_ROOT}/logs/smoke-tests-${TIMESTAMP}.log"
 
 # Test Configuration
-readonly K8S_NAMESPACE="${1:-citadelbuy-staging}"
+readonly K8S_NAMESPACE="${1:-broxiva-staging}"
 readonly CONFIG_FILE="${PROJECT_ROOT}/tests/smoke/smoke-config.json"
 readonly MAX_RETRIES=5
 readonly RETRY_DELAY=3
@@ -84,10 +84,10 @@ get_ingress_url() {
         # Fallback to default staging URL
         case $service in
             *api*)
-                echo "${STAGING_API_URL:-https://staging-api.citadelbuy.com}"
+                echo "${STAGING_API_URL:-https://staging-api.broxiva.com}"
                 ;;
             *web*)
-                echo "${STAGING_WEB_URL:-https://staging.citadelbuy.com}"
+                echo "${STAGING_WEB_URL:-https://staging.broxiva.com}"
                 ;;
             *)
                 echo ""
@@ -183,7 +183,7 @@ test_api_readiness() {
     log INFO "Running: $test_name"
 
     local api_url
-    api_url=$(get_ingress_url "citadelbuy-api")
+    api_url=$(get_ingress_url "broxiva-api")
 
     if [ -z "$api_url" ]; then
         test_failed "$test_name" "Could not determine API URL"
@@ -211,7 +211,7 @@ test_database_connection() {
     log INFO "Running: $test_name"
 
     local api_url
-    api_url=$(get_ingress_url "citadelbuy-api")
+    api_url=$(get_ingress_url "broxiva-api")
 
     if [ -z "$api_url" ]; then
         test_failed "$test_name" "Could not determine API URL"
@@ -245,7 +245,7 @@ test_redis_connection() {
     log INFO "Running: $test_name"
 
     local api_url
-    api_url=$(get_ingress_url "citadelbuy-api")
+    api_url=$(get_ingress_url "broxiva-api")
 
     if [ -z "$api_url" ]; then
         test_failed "$test_name" "Could not determine API URL"
@@ -283,7 +283,7 @@ test_auth_login() {
     log INFO "Running: $test_name"
 
     local api_url
-    api_url=$(get_ingress_url "citadelbuy-api")
+    api_url=$(get_ingress_url "broxiva-api")
 
     if [ -z "$api_url" ]; then
         test_failed "$test_name" "Could not determine API URL"
@@ -317,7 +317,7 @@ test_auth_register_endpoint() {
     log INFO "Running: $test_name"
 
     local api_url
-    api_url=$(get_ingress_url "citadelbuy-api")
+    api_url=$(get_ingress_url "broxiva-api")
 
     if [ -z "$api_url" ]; then
         test_failed "$test_name" "Could not determine API URL"
@@ -352,7 +352,7 @@ test_product_listing() {
     log INFO "Running: $test_name"
 
     local api_url
-    api_url=$(get_ingress_url "citadelbuy-api")
+    api_url=$(get_ingress_url "broxiva-api")
 
     if [ -z "$api_url" ]; then
         test_failed "$test_name" "Could not determine API URL"
@@ -387,7 +387,7 @@ test_product_search() {
     log INFO "Running: $test_name"
 
     local api_url
-    api_url=$(get_ingress_url "citadelbuy-api")
+    api_url=$(get_ingress_url "broxiva-api")
 
     if [ -z "$api_url" ]; then
         test_failed "$test_name" "Could not determine API URL"
@@ -419,7 +419,7 @@ test_cart_operations() {
     log INFO "Running: $test_name"
 
     local api_url
-    api_url=$(get_ingress_url "citadelbuy-api")
+    api_url=$(get_ingress_url "broxiva-api")
 
     if [ -z "$api_url" ]; then
         test_failed "$test_name" "Could not determine API URL"
@@ -453,7 +453,7 @@ test_checkout_endpoint() {
     log INFO "Running: $test_name"
 
     local api_url
-    api_url=$(get_ingress_url "citadelbuy-api")
+    api_url=$(get_ingress_url "broxiva-api")
 
     if [ -z "$api_url" ]; then
         test_failed "$test_name" "Could not determine API URL"
@@ -487,7 +487,7 @@ test_admin_access() {
     log INFO "Running: $test_name"
 
     local api_url
-    api_url=$(get_ingress_url "citadelbuy-api")
+    api_url=$(get_ingress_url "broxiva-api")
 
     if [ -z "$api_url" ]; then
         test_failed "$test_name" "Could not determine API URL"
@@ -521,7 +521,7 @@ test_api_response_time() {
     log INFO "Running: $test_name"
 
     local api_url
-    api_url=$(get_ingress_url "citadelbuy-api")
+    api_url=$(get_ingress_url "broxiva-api")
 
     if [ -z "$api_url" ]; then
         test_failed "$test_name" "Could not determine API URL"
@@ -559,7 +559,7 @@ test_web_homepage() {
     log INFO "Running: $test_name"
 
     local web_url
-    web_url=$(get_ingress_url "citadelbuy-web")
+    web_url=$(get_ingress_url "broxiva-web")
 
     if [ -z "$web_url" ]; then
         test_skipped "$test_name" "Could not determine Web URL"
@@ -637,7 +637,7 @@ generate_test_report() {
     local report_file="${PROJECT_ROOT}/logs/smoke-tests-report-${TIMESTAMP}.txt"
 
     cat > "$report_file" << EOF
-CitadelBuy Smoke Test Report
+Broxiva Smoke Test Report
 =============================
 Timestamp: $(date)
 Namespace: $K8S_NAMESPACE
@@ -664,7 +664,7 @@ EOF
 # ============================================
 
 main() {
-    log INFO "CitadelBuy Smoke Test Suite"
+    log INFO "Broxiva Smoke Test Suite"
     log INFO "Test log: $TEST_LOG"
     echo ""
 

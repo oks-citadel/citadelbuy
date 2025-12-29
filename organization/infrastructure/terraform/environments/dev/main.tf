@@ -1,5 +1,5 @@
 # Development Environment Configuration
-# CitadelBuy E-commerce Platform - Multi-Cloud Infrastructure
+# Broxiva E-commerce Platform - Multi-Cloud Infrastructure
 
 terraform {
   required_version = ">= 1.0"
@@ -20,8 +20,8 @@ terraform {
   }
 
   backend "azurerm" {
-    resource_group_name  = "citadelbuy-tfstate-rg"
-    storage_account_name = "citadelbuytfstate"
+    resource_group_name  = "broxiva-tfstate-rg"
+    storage_account_name = "broxivatfstate"
     container_name       = "tfstate"
     key                  = "dev.terraform.tfstate"
   }
@@ -46,14 +46,14 @@ provider "aws" {
 # Local Variables
 # ============================================
 locals {
-  project_name     = "citadelbuy"
+  project_name     = "broxiva"
   environment      = "dev"
   cloud_provider   = var.cloud_provider # "azure" or "aws"
   location         = var.cloud_provider == "azure" ? "eastus" : null
   aws_region       = var.cloud_provider == "aws" ? var.aws_region : null
 
   tags = {
-    Project     = "CitadelBuy"
+    Project     = "Broxiva"
     Environment = "Development"
     ManagedBy   = "Terraform"
     CostCenter  = "Engineering"
@@ -137,7 +137,7 @@ module "database" {
   redis_num_cache_nodes     = 1
   redis_snapshot_retention_days = 1
 
-  administrator_login    = "citadeladmin"
+  administrator_login    = "broxivaadmin"
   administrator_password = var.db_admin_password
 
   tags = local.tags
@@ -247,7 +247,7 @@ module "monitoring" {
   eks_cluster_name = var.cloud_provider == "aws" ? module.compute.eks_cluster_name : ""
   rds_instance_id  = var.cloud_provider == "aws" ? module.database.rds_endpoint : ""
 
-  app_url = "https://dev.citadelbuy.com"
+  app_url = "https://dev.broxiva.com"
 
   tags = local.tags
 }

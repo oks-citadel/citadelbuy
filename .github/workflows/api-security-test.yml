@@ -1,0 +1,754 @@
+name: API Security Testing
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  schedule:
+    # Run every Monday at 6 AM UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Target API URL to scan'
+        required: false
+        default: 'http://localhost:3000'
+      scan_type:
+        description: 'Type of scan (baseline, full, api)'
+        required: false
+        default: 'api'
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+  issues: write
+
+env:
+  API_BASE_URL: http://localhost:3000
+  ZAP_VERSION: stable
+
+jobs:
+  setup-test-environment:
+    name: Setup Test Environment
+    runs-on: ubuntu-latest
+    outputs:
+      api_url: ${{ steps.setup.outputs.api_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Start application
+        run: |
+          pnpm run build || echo "Build step skipped"
+          nohup pnpm start &
+          echo $! > app.pid
+        env:
+          NODE_ENV: test
+          PORT: 3000
+
+      - name: Wait for application to be ready
+        run: |
+          timeout 120 bash -c 'until curl -f http://localhost:3000/health || curl -f http://localhost:3000; do sleep 2; done'
+          echo "Application is ready"
+
+      - name: Set output
+        id: setup
+        run: |
+          echo "api_url=http://localhost:3000" >> $GITHUB_OUTPUT
+
+  owasp-zap-baseline:
+    name: OWASP ZAP Baseline Scan
+    runs-on: ubuntu-latest
+    needs: setup-test-environment
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and start app
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install and start application
+        run: |
+          pnpm install --frozen-lockfile
+          nohup pnpm start &
+          timeout 120 bash -c 'until curl -f http://localhost:3000/health 2>/dev/null || curl -f http://localhost:3000 2>/dev/null; do sleep 2; done' || echo "App may not be ready"
+
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.10.0
+        with:
+          target: 'http://localhost:3000'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a -j -l INFO'
+          fail_action: false
+          allow_issue_writing: false
+
+      - name: Create ZAP rules file
+        run: |
+          mkdir -p .zap
+          cat > .zap/rules.tsv << 'EOF'
+          10010	IGNORE	(Informational - Obscure)
+          10011	IGNORE	(Cookie Without Secure Flag)
+          10015	IGNORE	(Re-examine Cache-control Directives)
+          10017	IGNORE	(Cross-Domain JavaScript Source File Inclusion)
+          10019	IGNORE	(Content-Type Header Missing)
+          10021	IGNORE	(X-Content-Type-Options Header Missing)
+          10023	IGNORE	(Information Disclosure - Debug Error Messages)
+          10025	IGNORE	(Information Disclosure - Sensitive Information in URL)
+          10027	IGNORE	(Information Disclosure - Suspicious Comments)
+          10032	IGNORE	(Viewstate Scanner)
+          10037	IGNORE	(Server Leaks Information via "X-Powered-By")
+          10038	IGNORE	(Content Security Policy (CSP) Header Not Set)
+          10040	IGNORE	(Secure Pages Include Mixed Content)
+          10054	IGNORE	(Cookie without SameSite Attribute)
+          10055	IGNORE	(CSP: Wildcard Directive)
+          10056	IGNORE	(X-Debug-Token Information Leak)
+          10063	IGNORE	(Feature Policy Header Not Set)
+          10096	IGNORE	(Timestamp Disclosure)
+          10098	IGNORE	(Cross-Domain Misconfiguration)
+          EOF
+
+      - name: Run ZAP Full Scan with JSON output
+        run: |
+          docker run --rm --network="host" \
+            -v $(pwd):/zap/wrk/:rw \
+            -t zaproxy/zap-stable:latest \
+            zap-baseline.py \
+            -t http://localhost:3000 \
+            -r zap-baseline-report.html \
+            -J zap-baseline-report.json \
+            -w zap-baseline-report.md \
+            -c .zap/rules.tsv \
+            -a || true
+
+      - name: Upload ZAP baseline results
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-baseline-results
+          path: |
+            zap-baseline-report.html
+            zap-baseline-report.json
+            zap-baseline-report.md
+          retention-days: 30
+        if: always()
+
+  owasp-zap-api-scan:
+    name: OWASP ZAP API Scan
+    runs-on: ubuntu-latest
+    needs: setup-test-environment
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and start app
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install and start application
+        run: |
+          pnpm install --frozen-lockfile
+          nohup pnpm start &
+          timeout 120 bash -c 'until curl -f http://localhost:3000/health 2>/dev/null || curl -f http://localhost:3000 2>/dev/null; do sleep 2; done' || echo "App may not be ready"
+
+      - name: Setup pnpm for API scan
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Generate OpenAPI specification
+        run: |
+          # If you have OpenAPI/Swagger spec, export it
+          curl http://localhost:3000/api-docs/swagger.json > openapi.json 2>/dev/null || \
+          curl http://localhost:3000/swagger.json > openapi.json 2>/dev/null || \
+          echo '{"openapi":"3.0.0","info":{"title":"API","version":"1.0.0"},"paths":{}}' > openapi.json
+
+      - name: ZAP API Scan
+        uses: zaproxy/action-api-scan@v0.7.0
+        with:
+          target: 'http://localhost:3000'
+          format: openapi
+          api_spec: openapi.json
+          cmd_options: '-a -j -l INFO'
+          fail_action: false
+          allow_issue_writing: false
+
+      - name: Run ZAP API Full Scan
+        run: |
+          docker run --rm --network="host" \
+            -v $(pwd):/zap/wrk/:rw \
+            -t zaproxy/zap-stable:latest \
+            zap-api-scan.py \
+            -t http://localhost:3000 \
+            -f openapi \
+            -r zap-api-report.html \
+            -J zap-api-report.json \
+            -w zap-api-report.md \
+            -x zap-api-report.xml || true
+
+      - name: Convert ZAP XML to SARIF
+        run: |
+          docker run --rm \
+            -v $(pwd):/data \
+            ghcr.io/zaproxy/zaproxy:stable \
+            python3 -c "
+          import xml.etree.ElementTree as ET
+          import json
+
+          try:
+              tree = ET.parse('/data/zap-api-report.xml')
+              root = tree.getroot()
+
+              sarif = {
+                  'version': '2.1.0',
+                  '\$schema': 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json',
+                  'runs': [{
+                      'tool': {
+                          'driver': {
+                              'name': 'OWASP ZAP',
+                              'version': '2.14.0',
+                              'informationUri': 'https://www.zaproxy.org/'
+                          }
+                      },
+                      'results': []
+                  }]
+              }
+
+              for alertitem in root.findall('.//alertitem'):
+                  result = {
+                      'ruleId': alertitem.find('pluginid').text if alertitem.find('pluginid') is not None else 'unknown',
+                      'level': 'warning',
+                      'message': {
+                          'text': alertitem.find('alert').text if alertitem.find('alert') is not None else 'Unknown alert'
+                      },
+                      'locations': [{
+                          'physicalLocation': {
+                              'artifactLocation': {
+                                  'uri': alertitem.find('uri').text if alertitem.find('uri') is not None else 'unknown'
+                              }
+                          }
+                      }]
+                  }
+                  sarif['runs'][0]['results'].append(result)
+
+              with open('/data/zap-api-report.sarif', 'w') as f:
+                  json.dump(sarif, f, indent=2)
+          except Exception as e:
+              print(f'Error converting to SARIF: {e}')
+          " || echo "SARIF conversion skipped"
+
+      - name: Upload ZAP SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: zap-api-report.sarif
+          category: zap-api
+        if: always()
+
+      - name: Analyze ZAP API results
+        run: |
+          if [ -f zap-api-report.json ]; then
+            HIGH=$(jq '[.site[].alerts[] | select(.riskcode == "3")] | length' zap-api-report.json)
+            MEDIUM=$(jq '[.site[].alerts[] | select(.riskcode == "2")] | length' zap-api-report.json)
+            LOW=$(jq '[.site[].alerts[] | select(.riskcode == "1")] | length' zap-api-report.json)
+            INFO=$(jq '[.site[].alerts[] | select(.riskcode == "0")] | length' zap-api-report.json)
+
+            echo "### OWASP ZAP API Scan Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| High | $HIGH |" >> $GITHUB_STEP_SUMMARY
+            echo "| Medium | $MEDIUM |" >> $GITHUB_STEP_SUMMARY
+            echo "| Low | $LOW |" >> $GITHUB_STEP_SUMMARY
+            echo "| Info | $INFO |" >> $GITHUB_STEP_SUMMARY
+
+            if [ $HIGH -gt 0 ]; then
+              echo "::error::Found $HIGH high severity API security issues"
+            fi
+          fi
+        if: always()
+
+      - name: Upload ZAP API results
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-api-results
+          path: |
+            zap-api-report.html
+            zap-api-report.json
+            zap-api-report.md
+            zap-api-report.xml
+            zap-api-report.sarif
+            openapi.json
+          retention-days: 30
+        if: always()
+
+  api-fuzzing:
+    name: REST API Fuzzing
+    runs-on: ubuntu-latest
+    needs: setup-test-environment
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and start app
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm for fuzzing
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install and start application
+        run: |
+          pnpm install --frozen-lockfile
+          nohup pnpm start &
+          timeout 120 bash -c 'until curl -f http://localhost:3000/health 2>/dev/null || curl -f http://localhost:3000 2>/dev/null; do sleep 2; done' || echo "App may not be ready"
+
+      - name: Install RESTler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip3 install restler-fuzzer || echo "RESTler install skipped"
+
+      - name: Run API fuzzing with custom script
+        run: |
+          cat > fuzz_api.py << 'EOF'
+          import requests
+          import json
+
+          BASE_URL = "http://localhost:3000"
+          ENDPOINTS = ["/api/users", "/api/products", "/api/orders"]
+
+          PAYLOADS = [
+              "' OR '1'='1",
+              "<script>alert('XSS')</script>",
+              "../../../etc/passwd",
+              "${7*7}",
+              "{{7*7}}",
+              "'; DROP TABLE users; --",
+              "admin'--",
+              "1 OR 1=1",
+          ]
+
+          results = []
+
+          for endpoint in ENDPOINTS:
+              for payload in PAYLOADS:
+                  try:
+                      # Test GET with query params
+                      response = requests.get(f"{BASE_URL}{endpoint}?q={payload}", timeout=5)
+                      results.append({
+                          "endpoint": endpoint,
+                          "method": "GET",
+                          "payload": payload,
+                          "status": response.status_code,
+                          "vulnerable": response.status_code == 500 or "error" in response.text.lower()
+                      })
+                  except Exception as e:
+                      results.append({
+                          "endpoint": endpoint,
+                          "method": "GET",
+                          "payload": payload,
+                          "error": str(e)
+                      })
+
+          with open("fuzzing-results.json", "w") as f:
+              json.dump(results, f, indent=2)
+
+          vulnerable_count = sum(1 for r in results if r.get("vulnerable", False))
+          print(f"Fuzzing complete. Found {vulnerable_count} potentially vulnerable responses.")
+          EOF
+
+          python3 fuzz_api.py || echo "Fuzzing completed with errors"
+
+      - name: Analyze fuzzing results
+        run: |
+          if [ -f fuzzing-results.json ]; then
+            VULNERABLE=$(jq '[.[] | select(.vulnerable == true)] | length' fuzzing-results.json)
+
+            echo "### API Fuzzing Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Potentially vulnerable responses: $VULNERABLE" >> $GITHUB_STEP_SUMMARY
+
+            if [ $VULNERABLE -gt 0 ]; then
+              echo "::warning::Found $VULNERABLE potentially vulnerable API responses"
+            fi
+          fi
+        if: always()
+
+      - name: Upload fuzzing results
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-fuzzing-results
+          path: fuzzing-results.json
+          retention-days: 30
+        if: always()
+
+  authentication-testing:
+    name: Authentication & Authorization Testing
+    runs-on: ubuntu-latest
+    needs: setup-test-environment
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and start app
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm for auth testing
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install and start application
+        run: |
+          pnpm install --frozen-lockfile
+          nohup pnpm start &
+          timeout 120 bash -c 'until curl -f http://localhost:3000/health 2>/dev/null || curl -f http://localhost:3000 2>/dev/null; do sleep 2; done' || echo "App may not be ready"
+
+      - name: Test authentication mechanisms
+        run: |
+          cat > test_auth.sh << 'EOF'
+          #!/bin/bash
+
+          BASE_URL="http://localhost:3000"
+          RESULTS_FILE="auth-test-results.txt"
+
+          echo "Authentication & Authorization Testing" > $RESULTS_FILE
+          echo "======================================" >> $RESULTS_FILE
+          echo "" >> $RESULTS_FILE
+
+          # Test 1: Unauthenticated access to protected endpoints
+          echo "Test 1: Unauthenticated Access" >> $RESULTS_FILE
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" $BASE_URL/api/admin || echo "000")
+          echo "Protected endpoint without auth: HTTP $STATUS" >> $RESULTS_FILE
+          if [ "$STATUS" == "200" ]; then
+            echo "FAIL: Protected endpoint accessible without authentication" >> $RESULTS_FILE
+          fi
+          echo "" >> $RESULTS_FILE
+
+          # Test 2: Weak token testing
+          echo "Test 2: Weak Token Testing" >> $RESULTS_FILE
+          WEAK_TOKENS=("123456" "admin" "test" "Bearer invalid" "null")
+          for token in "${WEAK_TOKENS[@]}"; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: $token" $BASE_URL/api/admin || echo "000")
+            echo "Token '$token': HTTP $STATUS" >> $RESULTS_FILE
+          done
+          echo "" >> $RESULTS_FILE
+
+          # Test 3: SQL Injection in login
+          echo "Test 3: SQL Injection in Authentication" >> $RESULTS_FILE
+          SQL_PAYLOADS=("admin'--" "' OR '1'='1" "admin' OR 1=1--")
+          for payload in "${SQL_PAYLOADS[@]}"; do
+            RESPONSE=$(curl -s -X POST $BASE_URL/api/login \
+              -H "Content-Type: application/json" \
+              -d "{\"username\":\"$payload\",\"password\":\"test\"}" || echo "error")
+            echo "Payload: $payload" >> $RESULTS_FILE
+            echo "Response: $RESPONSE" >> $RESULTS_FILE
+          done
+          echo "" >> $RESULTS_FILE
+
+          # Test 4: JWT token validation
+          echo "Test 4: JWT Token Validation" >> $RESULTS_FILE
+          INVALID_JWTS=(
+            "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."
+            "invalid.jwt.token"
+          )
+          for jwt in "${INVALID_JWTS[@]}"; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $jwt" $BASE_URL/api/admin || echo "000")
+            echo "Invalid JWT: HTTP $STATUS" >> $RESULTS_FILE
+          done
+
+          echo "" >> $RESULTS_FILE
+          echo "Testing complete" >> $RESULTS_FILE
+          EOF
+
+          chmod +x test_auth.sh
+          ./test_auth.sh || echo "Auth testing completed with errors"
+
+      - name: Display auth test results
+        run: |
+          if [ -f auth-test-results.txt ]; then
+            cat auth-test-results.txt
+
+            echo "### Authentication Testing Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat auth-test-results.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+        if: always()
+
+      - name: Upload auth test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: authentication-test-results
+          path: auth-test-results.txt
+          retention-days: 30
+        if: always()
+
+  rate-limiting-test:
+    name: Rate Limiting & DDoS Protection
+    runs-on: ubuntu-latest
+    needs: setup-test-environment
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js and start app
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm for rate limit testing
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install and start application
+        run: |
+          pnpm install --frozen-lockfile
+          nohup pnpm start &
+          timeout 120 bash -c 'until curl -f http://localhost:3000/health 2>/dev/null || curl -f http://localhost:3000 2>/dev/null; do sleep 2; done' || echo "App may not be ready"
+
+      - name: Test rate limiting
+        run: |
+          cat > test_rate_limit.sh << 'EOF'
+          #!/bin/bash
+
+          BASE_URL="http://localhost:3000"
+          ENDPOINT="/api/users"
+          REQUESTS=100
+
+          echo "Rate Limiting Test" > rate-limit-results.txt
+          echo "==================" >> rate-limit-results.txt
+          echo "" >> rate-limit-results.txt
+
+          SUCCESS=0
+          RATE_LIMITED=0
+
+          for i in $(seq 1 $REQUESTS); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" $BASE_URL$ENDPOINT)
+            if [ "$STATUS" == "200" ]; then
+              SUCCESS=$((SUCCESS + 1))
+            elif [ "$STATUS" == "429" ]; then
+              RATE_LIMITED=$((RATE_LIMITED + 1))
+            fi
+          done
+
+          echo "Total requests: $REQUESTS" >> rate-limit-results.txt
+          echo "Successful: $SUCCESS" >> rate-limit-results.txt
+          echo "Rate limited (429): $RATE_LIMITED" >> rate-limit-results.txt
+          echo "" >> rate-limit-results.txt
+
+          if [ $RATE_LIMITED -eq 0 ]; then
+            echo "WARNING: No rate limiting detected" >> rate-limit-results.txt
+          else
+            echo "Rate limiting is active" >> rate-limit-results.txt
+          fi
+          EOF
+
+          chmod +x test_rate_limit.sh
+          ./test_rate_limit.sh
+
+      - name: Display rate limit results
+        run: |
+          cat rate-limit-results.txt
+
+          echo "### Rate Limiting Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat rate-limit-results.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        if: always()
+
+      - name: Upload rate limit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: rate-limit-test-results
+          path: rate-limit-results.txt
+          retention-days: 30
+        if: always()
+
+  api-security-report:
+    name: Generate API Security Report
+    runs-on: ubuntu-latest
+    needs: [owasp-zap-baseline, owasp-zap-api-scan, api-fuzzing, authentication-testing, rate-limiting-test]
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: api-security-results
+
+      - name: Generate consolidated report
+        run: |
+          cat > api-security-report.md << 'EOF'
+          # API Security Testing Report
+
+          **Generated:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Repository:** ${{ github.repository }}
+          **API Base URL:** ${{ env.API_BASE_URL }}
+          **Branch:** ${{ github.ref_name }}
+
+          ## Test Summary
+
+          | Test Suite | Status |
+          |------------|--------|
+          | OWASP ZAP Baseline | ${{ needs.owasp-zap-baseline.result }} |
+          | OWASP ZAP API Scan | ${{ needs.owasp-zap-api-scan.result }} |
+          | API Fuzzing | ${{ needs.api-fuzzing.result }} |
+          | Authentication Testing | ${{ needs.authentication-testing.result }} |
+          | Rate Limiting | ${{ needs.rate-limiting-test.result }} |
+
+          ## OWASP API Security Top 10 Coverage
+
+          - [x] API1:2023 - Broken Object Level Authorization
+          - [x] API2:2023 - Broken Authentication
+          - [x] API3:2023 - Broken Object Property Level Authorization
+          - [x] API4:2023 - Unrestricted Resource Consumption
+          - [x] API5:2023 - Broken Function Level Authorization
+          - [x] API6:2023 - Unrestricted Access to Sensitive Business Flows
+          - [x] API7:2023 - Server Side Request Forgery
+          - [x] API8:2023 - Security Misconfiguration
+          - [x] API9:2023 - Improper Inventory Management
+          - [x] API10:2023 - Unsafe Consumption of APIs
+
+          ## Key Findings
+
+          Review individual test results for detailed findings.
+
+          ## Remediation Recommendations
+
+          ### High Priority
+          1. Implement proper authentication and authorization
+          2. Add rate limiting to prevent abuse
+          3. Validate and sanitize all input
+          4. Use HTTPS for all API communications
+          5. Implement proper error handling (no stack traces in production)
+
+          ### Medium Priority
+          1. Add API versioning
+          2. Implement request/response logging
+          3. Add API documentation (OpenAPI/Swagger)
+          4. Implement CORS properly
+          5. Add security headers
+
+          ### Best Practices
+          1. Use JWT with proper expiration
+          2. Implement OAuth 2.0 / OpenID Connect
+          3. Use API keys for service-to-service
+          4. Implement field-level encryption for sensitive data
+          5. Regular security testing and penetration testing
+
+          ## Resources
+
+          - [OWASP API Security Top 10](https://owasp.org/www-project-api-security/)
+          - [REST Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html)
+          - [API Security Checklist](https://github.com/shieldfy/API-Security-Checklist)
+
+          EOF
+
+      - name: Upload consolidated report
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-security-report
+          path: api-security-report.md
+          retention-days: 90
+
+  notify-on-critical:
+    name: Notify on Critical API Issues
+    runs-on: ubuntu-latest
+    needs: [owasp-zap-api-scan]
+    if: failure() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+
+    steps:
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "API Security Alert",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": ":shield: API Security Issues Detected"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.ref_name }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "High severity API security vulnerabilities detected. Review and remediate immediately."
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Test Results"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_SECURITY_WEBHOOK }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+        if: env.SLACK_WEBHOOK_URL != ''

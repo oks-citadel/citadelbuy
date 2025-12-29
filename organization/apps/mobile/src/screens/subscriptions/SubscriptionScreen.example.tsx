@@ -137,7 +137,7 @@ export default function SubscriptionScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Choose Your Plan</Text>
         <Text style={styles.subtitle}>
-          Unlock premium features and support CitadelBuy
+          Unlock premium features and support Broxiva
         </Text>
       </View>
 

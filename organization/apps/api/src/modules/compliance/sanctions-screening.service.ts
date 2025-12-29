@@ -1,5 +1,15 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '@/common/prisma/prisma.service';
+
+interface ScreeningCache {
+  entityId: string;
+  entityType: 'VENDOR' | 'USER';
+  results: ScreeningResult[];
+  lastScreened: Date;
+}
+
+const screeningCache = new Map<string, ScreeningCache>();
 
 export enum SanctionsListType {
   OFAC_SDN = 'OFAC_SDN', // US Treasury OFAC Specially Designated Nationals
@@ -78,7 +88,10 @@ export class SanctionsScreeningService {
   private readonly logger = new Logger(SanctionsScreeningService.name);
   private readonly provider: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {
     this.provider = this.configService.get<string>('SANCTIONS_PROVIDER', 'mock');
   }
 
@@ -302,14 +315,44 @@ export class SanctionsScreeningService {
   async continuousMonitoring(entityId: string): Promise<ScreeningResult> {
     this.logger.log(`Running continuous monitoring for entity: ${entityId}`);
 
-    // In production:
-    // 1. Retrieve entity details from database
-    // 2. Re-screen against latest sanctions lists
-    // 3. Compare with previous screening results
-    // 4. Alert if new matches found
-    // 5. Update screening record
+    // Try to find entity in vendor table
+    const vendor = await this.prisma.vendor.findUnique({
+      where: { id: entityId },
+    });
 
-    throw new Error('Not implemented');
+    let entityType: 'VENDOR' | 'USER' = 'VENDOR';
+    let name: string;
+    let type: 'INDIVIDUAL' | 'BUSINESS';
+
+    // If not found in vendor, try user table
+    if (!vendor) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: entityId },
+      });
+
+      if (!user) {
+        throw new NotFoundException(`Entity with ID ${entityId} not found`);
+      }
+
+      entityType = 'USER';
+      name = user.name || 'Unknown';
+      type = 'INDIVIDUAL';
+    } else {
+      name = vendor.name || 'Unknown';
+      type = 'BUSINESS';
+    }
+
+    // Use empty defaults for country and identifiers since those fields don't exist in schema
+    const country = 'Unknown';
+    const identifiers = {};
+
+    // Perform screening
+    const result = await this.screenEntity(name, type, country, identifiers);
+
+    // Store result in cache
+    this.storeScreeningResult(entityId, entityType, result);
+
+    return result;
   }
 
   /**
@@ -402,7 +445,10 @@ export class SanctionsScreeningService {
    * Get screening history for entity
    */
   async getScreeningHistory(entityId: string): Promise<ScreeningResult[]> {
-    // In production, retrieve from database
+    const cached = screeningCache.get(entityId);
+    if (cached) {
+      return cached.results;
+    }
     return [];
   }
 
@@ -484,13 +530,103 @@ export class SanctionsScreeningService {
   ): Promise<Buffer | object> {
     this.logger.log(`Exporting screening report for entity: ${entityId}`);
 
-    // In production:
-    // 1. Retrieve all screening history
-    // 2. Generate comprehensive report
-    // 3. Include all matches, risk assessments
-    // 4. Export as PDF or JSON
+    // Get screening history from cache
+    let history = await this.getScreeningHistory(entityId);
 
-    throw new Error('Not implemented');
+    // If no history exists, run continuous monitoring first
+    if (history.length === 0) {
+      const result = await this.continuousMonitoring(entityId);
+      history = [result];
+    }
+
+    // Try to get vendor details
+    const vendor = await this.prisma.vendor.findUnique({
+      where: { id: entityId },
+    });
+
+    // If not vendor, try user
+    const user = !vendor ? await this.prisma.user.findUnique({
+      where: { id: entityId },
+    }) : null;
+
+    const entityDetails = vendor || user;
+
+    // Build comprehensive report
+    const report = {
+      entityId,
+      entityName: vendor?.name || user?.name || 'Unknown',
+      entityType: vendor ? 'VENDOR' : 'USER',
+      reportGeneratedAt: new Date().toISOString(),
+      totalScreenings: history.length,
+      screeningHistory: history.map((screening) => ({
+        screenedAt: screening.screenedAt,
+        status: screening.status,
+        riskLevel: screening.riskLevel,
+        recommendation: screening.recommendation,
+        matchesFound: screening.matches.length,
+        matches: screening.matches,
+        listsChecked: screening.listsChecked,
+        requiresManualReview: screening.requiresManualReview,
+      })),
+      currentStatus: history[history.length - 1]?.status || 'UNKNOWN',
+      currentRiskLevel: history[history.length - 1]?.riskLevel || 'UNKNOWN',
+      summary: {
+        totalMatches: history.reduce((sum, h) => sum + h.matches.length, 0),
+        highestRiskLevel: this.getHighestRiskLevel(history),
+        requiresAction: history.some(h => h.requiresManualReview),
+      },
+    };
+
+    // Return based on format
+    if (format === 'JSON') {
+      return report;
+    }
+
+    // For PDF format, generate a simple text-based PDF buffer
+    // In production, use a proper PDF library like pdfkit or puppeteer
+    const pdfContent = JSON.stringify(report, null, 2);
+    return Buffer.from(pdfContent, 'utf-8');
+  }
+
+  /**
+   * Store screening result in cache
+   */
+  private storeScreeningResult(
+    entityId: string,
+    entityType: 'VENDOR' | 'USER',
+    result: ScreeningResult,
+  ): void {
+    const existing = screeningCache.get(entityId);
+
+    if (existing) {
+      existing.results.push(result);
+      existing.lastScreened = new Date();
+    } else {
+      screeningCache.set(entityId, {
+        entityId,
+        entityType,
+        results: [result],
+        lastScreened: new Date(),
+      });
+    }
+  }
+
+  /**
+   * Get highest risk level from screening history
+   */
+  private getHighestRiskLevel(
+    history: ScreeningResult[],
+  ): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' {
+    const riskOrder = { LOW: 0, MEDIUM: 1, HIGH: 2, CRITICAL: 3 };
+    let highest: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'LOW';
+
+    for (const screening of history) {
+      if (riskOrder[screening.riskLevel] > riskOrder[highest]) {
+        highest = screening.riskLevel;
+      }
+    }
+
+    return highest;
   }
 
   /**

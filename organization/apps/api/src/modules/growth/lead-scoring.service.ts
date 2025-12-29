@@ -43,7 +43,8 @@ export class LeadScoringService {
       where: { id: userId },
       include: {
         orders: true,
-        organizationMembers: true,
+        organizationMemberships: true,
+        profile: true,
       },
     });
 
@@ -67,7 +68,7 @@ export class LeadScoringService {
     }
 
     // Organization member
-    if (user.organizationMembers && user.organizationMembers.length > 0) {
+    if (user.organizationMemberships && user.organizationMemberships.length > 0) {
       factors.organizationMember = 20;
       totalScore += 20;
     }

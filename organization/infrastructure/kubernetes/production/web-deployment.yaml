@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: citadelbuy-web
-  namespace: citadelbuy-production
+  name: broxiva-web
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-web
+    app: broxiva-web
     tier: frontend
     environment: production
     version: v1
@@ -17,12 +17,12 @@ spec:
       maxUnavailable: 0
   selector:
     matchLabels:
-      app: citadelbuy-web
+      app: broxiva-web
       tier: frontend
   template:
     metadata:
       labels:
-        app: citadelbuy-web
+        app: broxiva-web
         tier: frontend
         environment: production
         version: v1
@@ -32,7 +32,7 @@ spec:
         prometheus.io/path: "/api/metrics"
         sidecar.istio.io/inject: "true"
     spec:
-      serviceAccountName: citadelbuy-web
+      serviceAccountName: broxiva-web
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -50,7 +50,7 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - citadelbuy-web
+                  - broxiva-web
               topologyKey: kubernetes.io/hostname
           - weight: 50
             podAffinityTerm:
@@ -59,7 +59,7 @@ spec:
                 - key: app
                   operator: In
                   values:
-                  - citadelbuy-web
+                  - broxiva-web
               topologyKey: topology.kubernetes.io/zone
       topologySpreadConstraints:
       - maxSkew: 1
@@ -67,16 +67,16 @@ spec:
         whenUnsatisfiable: DoNotSchedule
         labelSelector:
           matchLabels:
-            app: citadelbuy-web
+            app: broxiva-web
       - maxSkew: 2
         topologyKey: kubernetes.io/hostname
         whenUnsatisfiable: ScheduleAnyway
         labelSelector:
           matchLabels:
-            app: citadelbuy-web
+            app: broxiva-web
       containers:
       - name: web
-        image: ghcr.io/citadelplatforms/citadelbuy-web:production-latest
+        image: broxivaprodacr.azurecr.io/broxiva-web:production-latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
@@ -88,27 +88,27 @@ spec:
         - name: NEXT_PUBLIC_API_URL
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: NEXT_PUBLIC_API_URL
         - name: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
         - name: NEXT_PUBLIC_GOOGLE_ANALYTICS_ID
           valueFrom:
             configMapKeyRef:
-              name: citadelbuy-config
+              name: broxiva-config
               key: NEXT_PUBLIC_GOOGLE_ANALYTICS_ID
         - name: NEXT_PUBLIC_SENTRY_DSN
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: NEXT_PUBLIC_SENTRY_DSN
         - name: SENTRY_AUTH_TOKEN
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: SENTRY_AUTH_TOKEN
         - name: NEXT_TELEMETRY_DISABLED
           value: "1"
@@ -184,10 +184,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: citadelbuy-web
-  namespace: citadelbuy-production
+  name: broxiva-web
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-web
+    app: broxiva-web
     tier: frontend
     environment: production
   annotations:
@@ -206,29 +206,29 @@ spec:
     protocol: TCP
     name: http
   selector:
-    app: citadelbuy-web
+    app: broxiva-web
     tier: frontend
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: citadelbuy-web
-  namespace: citadelbuy-production
+  name: broxiva-web
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-web
+    app: broxiva-web
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/citadelbuy-web-production
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/broxiva-web-production
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: citadelbuy-web-pdb
-  namespace: citadelbuy-production
+  name: broxiva-web-pdb
+  namespace: broxiva-production
   labels:
-    app: citadelbuy-web
+    app: broxiva-web
 spec:
   minAvailable: 3
   selector:
     matchLabels:
-      app: citadelbuy-web
+      app: broxiva-web
       tier: frontend

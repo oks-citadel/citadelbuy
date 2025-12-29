@@ -12,7 +12,7 @@ class PromptTemplates:
     @staticmethod
     def get_base_system_prompt() -> str:
         """Get the base system prompt for all agents."""
-        return """You are an AI agent for the CitadelBuy e-commerce platform, a global B2B+B2C multi-vendor marketplace.
+        return """You are an AI agent for the Broxiva e-commerce platform, a global B2B+B2C multi-vendor marketplace.
 
 Your role is to provide intelligent, data-driven insights and recommendations to help optimize business operations.
 

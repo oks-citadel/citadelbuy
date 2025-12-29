@@ -47,8 +47,8 @@ const mockCampaigns: EmailCampaign[] = [
     },
     content: {
       subject: 'Welcome to Our Store! 🎉',
-      fromName: 'CitadelBuy',
-      fromEmail: 'hello@citadelbuy.com',
+      fromName: 'Broxiva',
+      fromEmail: 'hello@broxiva.com',
       htmlContent: '',
     },
     metrics: {
@@ -90,8 +90,8 @@ const mockCampaigns: EmailCampaign[] = [
     },
     content: {
       subject: 'You left something behind! 🛒',
-      fromName: 'CitadelBuy',
-      fromEmail: 'hello@citadelbuy.com',
+      fromName: 'Broxiva',
+      fromEmail: 'hello@broxiva.com',
       htmlContent: '',
     },
     metrics: {
@@ -127,8 +127,8 @@ const mockCampaigns: EmailCampaign[] = [
     },
     content: {
       subject: '🔥 FLASH SALE: 50% OFF Everything!',
-      fromName: 'CitadelBuy',
-      fromEmail: 'deals@citadelbuy.com',
+      fromName: 'Broxiva',
+      fromEmail: 'deals@broxiva.com',
       htmlContent: '',
     },
     schedule: {
@@ -174,8 +174,8 @@ const mockCampaigns: EmailCampaign[] = [
     },
     content: {
       subject: 'We miss you! Come back for 20% off 💝',
-      fromName: 'CitadelBuy',
-      fromEmail: 'hello@citadelbuy.com',
+      fromName: 'Broxiva',
+      fromEmail: 'hello@broxiva.com',
       htmlContent: '',
     },
     metrics: {

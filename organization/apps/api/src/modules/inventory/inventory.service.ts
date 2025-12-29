@@ -2,7 +2,6 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import {
@@ -255,7 +254,7 @@ export class InventoryService {
     return result;
   }
 
-  async reserveStock(productId: string, warehouseId: string, quantity: number, orderId: string) {
+  async reserveStock(productId: string, warehouseId: string, quantity: number, _orderId: string) {
     const inventoryItem = await this.prisma.inventoryItem.findUnique({
       where: {
         productId_warehouseId: {

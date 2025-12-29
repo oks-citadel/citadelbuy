@@ -21,7 +21,23 @@ export interface NotificationOptions {
 
 export type NotificationPermission = 'default' | 'granted' | 'denied';
 
-export function useNotifications() {
+export interface UseNotificationsReturn {
+  permission: NotificationPermission;
+  isSupported: boolean;
+  isSubscribed: boolean;
+  requestPermission: () => Promise<NotificationPermission>;
+  subscribe: () => Promise<PushSubscription | null>;
+  unsubscribe: () => Promise<void>;
+  showNotification: (options: NotificationOptions) => Promise<void>;
+  notifyOrderPlaced: (orderId: string, total: string) => void;
+  notifyOrderShipped: (orderId: string, trackingNumber?: string) => void;
+  notifyOrderDelivered: (orderId: string) => void;
+  notifyPriceDrop: (productName: string, productId: string, newPrice: string, oldPrice: string) => void;
+  notifyBackInStock: (productName: string, productId: string) => void;
+  notifyPromotion: (title: string, message: string, promoCode?: string) => void;
+}
+
+export function useNotifications(): UseNotificationsReturn {
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -37,7 +53,7 @@ export function useNotifications() {
     }
   }, []);
 
-  const checkSubscription = async () => {
+  const checkSubscription = async (): Promise<void> => {
     try {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();

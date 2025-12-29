@@ -116,7 +116,7 @@ function RegisterForm() {
             <div className="mb-8">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
                 <Sparkles className="h-4 w-4" />
-                Join CitadelBuy
+                Join Broxiva
               </div>
               <h1 className="text-4xl font-bold mb-4">
                 Create your account and start shopping smarter
@@ -145,7 +145,7 @@ function RegisterForm() {
 
             <div className="mt-8 p-6 bg-muted/50 rounded-xl">
               <p className="text-sm text-muted-foreground">
-                "CitadelBuy's AI recommendations helped me find exactly what I was
+                "Broxiva's AI recommendations helped me find exactly what I was
                 looking for. The visual search feature is a game-changer!"
               </p>
               <div className="flex items-center gap-3 mt-4">

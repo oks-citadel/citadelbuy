@@ -1376,7 +1376,7 @@ export class DealsService {
           </tr>
           <tr>
             <td style="background-color: #f8f8f8; padding: 20px 30px; text-align: center; border-top: 1px solid #eeeeee;">
-              <p style="font-size: 12px; color: #999999; margin: 0;">© 2025 CitadelBuy. All rights reserved.</p>
+              <p style="font-size: 12px; color: #999999; margin: 0;">© 2025 Broxiva. All rights reserved.</p>
             </td>
           </tr>
         </table>

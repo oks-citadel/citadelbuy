@@ -132,3 +132,28 @@ export function useLanguage() {
     isLoading: context.isLoading,
   };
 }
+
+/**
+ * Supported locale types
+ */
+export type SupportedLocale = LanguageCode;
+
+/**
+ * Translation context type
+ */
+export type TranslationContext = {
+  locale: SupportedLocale;
+  translations: Record<string, string>;
+};
+
+/**
+ * Alias for useLanguage hook (for compatibility)
+ */
+export function useLocale() {
+  return useLanguage();
+}
+
+/**
+ * Re-export LanguageProvider as I18nProvider for compatibility
+ */
+export { LanguageProvider as I18nProvider } from './LanguageProvider';

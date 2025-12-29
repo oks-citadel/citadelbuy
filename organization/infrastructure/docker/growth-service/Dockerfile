@@ -70,9 +70,9 @@ ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "dist/main.js"]
 
 # Labels for metadata
-LABEL maintainer="DevOps Team <devops@citadelbuy.com>" \
+LABEL maintainer="DevOps Team <devops@broxiva.com>" \
       service="growth-service" \
       version="1.0.0" \
       description="User growth and experimentation service" \
-      com.citadelbuy.team="growth" \
-      com.citadelbuy.tier="application"
+      com.broxiva.team="growth" \
+      com.broxiva.tier="application"

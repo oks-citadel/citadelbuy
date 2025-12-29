@@ -9,8 +9,8 @@ describe('EmailService', () => {
   const mockConfigService = {
     get: jest.fn((key: string, defaultValue?: string) => {
       const config = {
-        EMAIL_FROM: 'test@citadelbuy.com',
-        EMAIL_FROM_NAME: 'CitadelBuy Test',
+        EMAIL_FROM: 'test@broxiva.com',
+        EMAIL_FROM_NAME: 'Broxiva Test',
         FRONTEND_URL: 'http://localhost:3000',
         SENDGRID_API_KEY: undefined, // Test without SendGrid
         NODE_ENV: 'test',
@@ -55,7 +55,7 @@ describe('EmailService', () => {
       // Assert
       expect(sendEmailSpy).toHaveBeenCalledWith({
         to,
-        subject: 'Welcome to CitadelBuy Test! 🎉',
+        subject: 'Welcome to Broxiva Test! 🎉',
         html: expect.stringContaining(userName),
       });
       expect(sendEmailSpy).toHaveBeenCalledTimes(1);
@@ -73,7 +73,7 @@ describe('EmailService', () => {
       // Assert
       const emailCall = sendEmailSpy.mock.calls[0][0];
       expect(emailCall.html).toContain(userName);
-      expect(emailCall.html).toContain('Welcome to CitadelBuy Test');
+      expect(emailCall.html).toContain('Welcome to Broxiva Test');
       expect(emailCall.html).toContain('Browse Products');
     });
 

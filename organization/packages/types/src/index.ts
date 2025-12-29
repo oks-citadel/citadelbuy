@@ -1,5 +1,5 @@
 /**
- * CitadelBuy Shared Types
+ * Broxiva Shared Types
  * Type definitions shared across all applications and services
  */
 

@@ -1,4 +1,4 @@
-# CitadelBuy Load Testing Configuration
+# Broxiva Load Testing Configuration
 # Run: artillery run tests/load/artillery.config.yml
 
 config:
@@ -28,7 +28,7 @@ config:
     metrics-by-endpoint: {}
 
   variables:
-    testEmail: "loadtest@citadelbuy.com"
+    testEmail: "loadtest@broxiva.com"
     testPassword: "LoadTest123!"
 
 scenarios:
@@ -101,7 +101,7 @@ scenarios:
       - post:
           url: "/api/auth/login"
           json:
-            email: "customer@citadelbuy.com"
+            email: "customer@broxiva.com"
             password: "password123"
           capture:
             - json: "$.accessToken"
@@ -135,7 +135,7 @@ scenarios:
       - post:
           url: "/api/auth/login"
           json:
-            email: "customer@citadelbuy.com"
+            email: "customer@broxiva.com"
             password: "password123"
           capture:
             - json: "$.accessToken"

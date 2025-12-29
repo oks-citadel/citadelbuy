@@ -6,7 +6,7 @@ subscription_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 tenant_id       = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
 # Database Configuration
-db_admin_username = "citadelbuy_admin"
+db_admin_username = "broxiva_admin"
 db_admin_password = "CHANGE_ME_STAGING_PASSWORD"
 
 # AKS Admin Group (Azure AD Group Object IDs)
@@ -24,8 +24,8 @@ allowed_ip_ranges = [
 jwt_secret = "CHANGE_ME_STAGING_JWT_SECRET"
 
 # Monitoring Configuration
-oncall_email = "dev-team@citadelbuy.com"
-team_email   = "platform-team@citadelbuy.com"
+oncall_email = "dev-team@broxiva.com"
+team_email   = "platform-team@broxiva.com"
 
 # Slack Integration (optional)
 slack_webhook_url = ""

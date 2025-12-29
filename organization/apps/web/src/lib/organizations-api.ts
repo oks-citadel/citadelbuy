@@ -37,7 +37,7 @@ export const organizationsApi = {
   },
 
   // Billing
-  getBilling: async (orgId: string) => {
+  getBilling: async (slug: string) => {
     const response = await apiClient.get<{
       plan: {
         id: string;
@@ -64,11 +64,24 @@ export const organizationsApi = {
         expiryMonth: number;
         expiryYear: number;
       };
-    }>(`/api/organizations/${orgId}/billing`);
+    }>(`/api/v1/organizations/${slug}/billing`);
     return response.data;
   },
 
-  subscribe: async (orgId: string, data: {
+  getSubscription: async (slug: string) => {
+    const response = await apiClient.get<{
+      id: string;
+      status: 'active' | 'canceled' | 'past_due' | 'trialing';
+      planId: string;
+      interval: 'monthly' | 'yearly';
+      currentPeriodStart: string;
+      currentPeriodEnd: string;
+      cancelAtPeriodEnd: boolean;
+    }>(`/api/v1/organizations/${slug}/billing/subscription`);
+    return response.data;
+  },
+
+  subscribe: async (slug: string, data: {
     planId: string;
     interval: 'monthly' | 'yearly';
     paymentMethodId?: string;
@@ -77,26 +90,26 @@ export const organizationsApi = {
       subscriptionId: string;
       clientSecret?: string;
       status: string;
-    }>(`/api/organizations/${orgId}/billing/subscribe`, data);
+    }>(`/api/v1/organizations/${slug}/billing/subscribe`, data);
     return response.data;
   },
 
-  updateSubscription: async (orgId: string, data: {
+  updateSubscription: async (slug: string, data: {
     planId?: string;
     interval?: 'monthly' | 'yearly';
   }) => {
-    const response = await apiClient.patch<any>(`/api/organizations/${orgId}/billing/subscription`, data);
+    const response = await apiClient.patch<any>(`/api/v1/organizations/${slug}/billing/subscription`, data);
     return response.data;
   },
 
-  cancelSubscription: async (orgId: string, cancelAtPeriodEnd: boolean = true) => {
-    const response = await apiClient.post<any>(`/api/organizations/${orgId}/billing/cancel`, {
-      cancelAtPeriodEnd,
+  cancelSubscription: async (slug: string, cancelAtPeriodEnd: boolean = true) => {
+    const response = await apiClient.delete<any>(`/api/v1/organizations/${slug}/billing/subscription`, {
+      data: { cancelAtPeriodEnd },
     });
     return response.data;
   },
 
-  getInvoices: async (orgId: string, params?: { page?: number; limit?: number }) => {
+  getInvoices: async (slug: string, params?: { page?: number; limit?: number }) => {
     const response = await apiClient.get<{
       invoices: Array<{
         id: string;
@@ -109,27 +122,27 @@ export const organizationsApi = {
         pdfUrl: string;
       }>;
       total: number;
-    }>(`/api/organizations/${orgId}/billing/invoices`, { params });
+    }>(`/api/v1/organizations/${slug}/billing/invoices`, { params });
     return response.data;
   },
 
-  downloadInvoice: async (orgId: string, invoiceId: string) => {
+  downloadInvoice: async (slug: string, invoiceId: string) => {
     const response = await apiClient.get<Blob>(
-      `/api/organizations/${orgId}/billing/invoices/${invoiceId}/pdf`,
+      `/api/v1/organizations/${slug}/billing/invoices/${invoiceId}/pdf`,
       { responseType: 'blob' }
     );
     return response.data;
   },
 
-  addPaymentMethod: async (orgId: string, data: {
+  addPaymentMethod: async (slug: string, data: {
     paymentMethodId: string;
     setAsDefault?: boolean;
   }) => {
-    const response = await apiClient.post<any>(`/api/organizations/${orgId}/billing/payment-methods`, data);
+    const response = await apiClient.post<any>(`/api/v1/organizations/${slug}/billing/payment-methods`, data);
     return response.data;
   },
 
-  getPaymentMethods: async (orgId: string) => {
+  getPaymentMethods: async (slug: string) => {
     const response = await apiClient.get<Array<{
       id: string;
       type: string;
@@ -138,17 +151,17 @@ export const organizationsApi = {
       expiryMonth: number;
       expiryYear: number;
       isDefault: boolean;
-    }>>(`/api/organizations/${orgId}/billing/payment-methods`);
+    }>>(`/api/v1/organizations/${slug}/billing/payment-methods`);
     return response.data;
   },
 
-  removePaymentMethod: async (orgId: string, paymentMethodId: string) => {
-    await apiClient.delete(`/api/organizations/${orgId}/billing/payment-methods/${paymentMethodId}`);
+  removePaymentMethod: async (slug: string, paymentMethodId: string) => {
+    await apiClient.delete(`/api/v1/organizations/${slug}/billing/payment-methods/${paymentMethodId}`);
   },
 
-  setDefaultPaymentMethod: async (orgId: string, paymentMethodId: string) => {
+  setDefaultPaymentMethod: async (slug: string, paymentMethodId: string) => {
     const response = await apiClient.post<any>(
-      `/api/organizations/${orgId}/billing/payment-methods/${paymentMethodId}/default`
+      `/api/v1/organizations/${slug}/billing/payment-methods/${paymentMethodId}/default`
     );
     return response.data;
   },

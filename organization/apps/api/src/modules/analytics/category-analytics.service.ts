@@ -538,12 +538,12 @@ export class CategoryAnalyticsService {
         const conversionRate = views > 0 ? (totalOrders / views) * 100 : 0;
 
         // Get product counts
-        // Note: isActive field is not in the Product model yet
-        // For now, we count all products and set activeProducts equal to totalProducts
         const totalProducts = await this.prisma.product.count({
           where: { categoryId: category.id },
         });
-        const activeProducts = totalProducts; // TODO: Add isActive field to Product model
+        const activeProducts = await this.prisma.product.count({
+          where: { categoryId: category.id, isActive: true },
+        });
 
         // Upsert analytics record
         await this.prisma.categoryAnalytics.upsert({

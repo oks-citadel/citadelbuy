@@ -37,25 +37,25 @@ variable "regional_endpoints" {
 
   default = {
     primary = {
-      hostname                 = "api-us-east.citadelbuy.com"
+      hostname                 = "api-us-east.broxiva.com"
       priority                 = 1
       weight                   = 1000
       session_affinity_enabled = false
     }
     europe = {
-      hostname                 = "api-eu-west.citadelbuy.com"
+      hostname                 = "api-eu-west.broxiva.com"
       priority                 = 1
       weight                   = 1000
       session_affinity_enabled = false
     }
     africa = {
-      hostname                 = "api-af-south.citadelbuy.com"
+      hostname                 = "api-af-south.broxiva.com"
       priority                 = 1
       weight                   = 1000
       session_affinity_enabled = false
     }
     asia = {
-      hostname                 = "api-ap-southeast.citadelbuy.com"
+      hostname                 = "api-ap-southeast.broxiva.com"
       priority                 = 1
       weight                   = 1000
       session_affinity_enabled = false

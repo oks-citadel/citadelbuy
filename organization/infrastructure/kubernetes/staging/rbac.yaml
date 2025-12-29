@@ -1,4 +1,4 @@
-# RBAC Configuration for CitadelBuy Staging Environment
+# RBAC Configuration for Broxiva Staging Environment
 # Implements least privilege access control
 
 ---
@@ -6,10 +6,10 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: citadelbuy-api
-  namespace: citadelbuy-staging
+  name: broxiva-api
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     tier: backend
     environment: staging
 automountServiceAccountToken: true
@@ -19,10 +19,10 @@ automountServiceAccountToken: true
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: citadelbuy-web
-  namespace: citadelbuy-staging
+  name: broxiva-web
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy-web
+    app: broxiva-web
     tier: frontend
     environment: staging
 automountServiceAccountToken: true
@@ -33,7 +33,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: postgres
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
   labels:
     app: postgres
     tier: database
@@ -46,7 +46,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: redis
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
   labels:
     app: redis
     tier: cache
@@ -58,20 +58,20 @@ automountServiceAccountToken: false
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: citadelbuy-api-role
-  namespace: citadelbuy-staging
+  name: broxiva-api-role
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     environment: staging
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get", "list", "watch"]
-    resourceNames: ["citadelbuy-config", "deployment-info"]
+    resourceNames: ["broxiva-config", "deployment-info"]
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "list", "watch"]
-    resourceNames: ["citadelbuy-secrets"]
+    resourceNames: ["broxiva-secrets"]
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list"]
@@ -84,35 +84,35 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: citadelbuy-api-rolebinding
-  namespace: citadelbuy-staging
+  name: broxiva-api-rolebinding
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     environment: staging
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: citadelbuy-api-role
+  name: broxiva-api-role
 subjects:
   - kind: ServiceAccount
-    name: citadelbuy-api
-    namespace: citadelbuy-staging
+    name: broxiva-api
+    namespace: broxiva-staging
 
 ---
 # Role for Web Frontend
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: citadelbuy-web-role
-  namespace: citadelbuy-staging
+  name: broxiva-web-role
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy-web
+    app: broxiva-web
     environment: staging
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get", "list", "watch"]
-    resourceNames: ["citadelbuy-config"]
+    resourceNames: ["broxiva-config"]
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list"]
@@ -125,19 +125,19 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: citadelbuy-web-rolebinding
-  namespace: citadelbuy-staging
+  name: broxiva-web-rolebinding
+  namespace: broxiva-staging
   labels:
-    app: citadelbuy-web
+    app: broxiva-web
     environment: staging
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: citadelbuy-web-role
+  name: broxiva-web-role
 subjects:
   - kind: ServiceAccount
-    name: citadelbuy-web
-    namespace: citadelbuy-staging
+    name: broxiva-web
+    namespace: broxiva-staging
 
 ---
 # Role for viewing pod logs (debugging in staging)
@@ -145,7 +145,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: pod-log-reader
-  namespace: citadelbuy-staging
+  namespace: broxiva-staging
   labels:
     environment: staging
 rules:

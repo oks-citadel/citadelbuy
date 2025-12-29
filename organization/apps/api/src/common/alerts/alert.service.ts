@@ -100,7 +100,7 @@ export class AlertService {
       ? recipientsString.split(',').map((email) => email.trim())
       : [];
 
-    this.emailFrom = this.configService.get<string>('EMAIL_FROM', 'alerts@citadelbuy.com');
+    this.emailFrom = this.configService.get<string>('EMAIL_FROM', 'alerts@broxiva.com');
 
     // Determine which channels are enabled
     this.enableSlack = !!this.slackWebhookUrl;
@@ -200,7 +200,7 @@ export class AlertService {
   async sendAlert(notification: AlertNotification): Promise<void> {
     // Set default values
     notification.timestamp = notification.timestamp || new Date();
-    notification.source = notification.source || 'CitadelBuy-API';
+    notification.source = notification.source || 'Broxiva-API';
 
     // Generate alert key for rate limiting
     const alertKey = `${notification.level}-${notification.title}`;
@@ -378,7 +378,7 @@ export class AlertService {
         payload: {
           summary: `${notification.title}: ${notification.message}`,
           severity,
-          source: notification.source || 'citadelbuy-api',
+          source: notification.source || 'broxiva-api',
           timestamp: notification.timestamp ? notification.timestamp.toISOString() : new Date().toISOString(),
           custom_details: notification.details,
         },
@@ -502,7 +502,7 @@ export class AlertService {
         </div>
 
         <div style="margin-top: 20px; padding: 15px; background-color: #f0f0f0; border-radius: 5px; text-align: center; font-size: 12px; color: #666;">
-          <p style="margin: 0;">This is an automated alert from CitadelBuy</p>
+          <p style="margin: 0;">This is an automated alert from Broxiva</p>
           <p style="margin: 5px 0 0 0;">Please do not reply to this email</p>
         </div>
       </body>
@@ -536,7 +536,7 @@ Source: ${notification.source}
 Timestamp: ${notification.timestamp ? notification.timestamp.toISOString() : new Date().toISOString()}
 
 ---
-This is an automated alert from CitadelBuy
+This is an automated alert from Broxiva
 `;
 
     return text;
@@ -587,7 +587,7 @@ This is an automated alert from CitadelBuy
     await this.sendAlert({
       level: AlertLevel.INFO,
       title: 'Test Alert',
-      message: 'This is a test alert from CitadelBuy Alert Service',
+      message: 'This is a test alert from Broxiva Alert Service',
       details: {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',

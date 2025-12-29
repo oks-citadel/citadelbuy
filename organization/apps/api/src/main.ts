@@ -197,15 +197,15 @@ async function bootstrap() {
   // Swagger documentation (disabled in production for security)
   if (!isProduction) {
     const config = new DocumentBuilder()
-      .setTitle('CitadelBuy API')
+      .setTitle('Broxiva API')
       .setDescription(
-        'CitadelBuy E-Commerce Platform - Comprehensive REST API for multi-vendor marketplace with advanced features including AI-powered recommendations, real-time inventory, cart abandonment recovery, and organization management.',
+        'Broxiva E-Commerce Platform - Comprehensive REST API for multi-vendor marketplace with advanced features including AI-powered recommendations, real-time inventory, cart abandonment recovery, and organization management.',
       )
       .setVersion('1.0.0')
       .setContact(
-        'CitadelBuy Support',
-        'https://citadelbuy.com',
-        'support@citadelbuy.com',
+        'Broxiva Support',
+        'https://broxiva.com',
+        'support@broxiva.com',
       )
       .setLicense('MIT', 'https://opensource.org/licenses/MIT')
       .addBearerAuth(
@@ -279,8 +279,8 @@ async function bootstrap() {
 
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs', app, document, {
-      customSiteTitle: 'CitadelBuy API Documentation',
-      customfavIcon: 'https://citadelbuy.com/favicon.ico',
+      customSiteTitle: 'Broxiva API Documentation',
+      customfavIcon: 'https://broxiva.com/favicon.ico',
       customCss: `
         .swagger-ui .topbar { display: none }
         .swagger-ui .info .title { color: #2c3e50; }

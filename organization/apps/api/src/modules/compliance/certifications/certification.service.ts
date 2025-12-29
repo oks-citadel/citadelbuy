@@ -1,5 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
+
+// In-memory certification cache
+const certificationCache = new Map<string, Certification>();
 
 export enum CertificationType {
   // Security & Compliance
@@ -124,6 +127,9 @@ export class CertificationService {
       notificationsSent: 0,
     };
 
+    // Store certification in cache
+    certificationCache.set(cert.id, cert);
+
     // Schedule renewal notifications
     await this.scheduleRenewalNotifications(cert);
 
@@ -136,8 +142,15 @@ export class CertificationService {
   async getVendorCertifications(vendorId: string): Promise<Certification[]> {
     this.logger.log(`Retrieving certifications for vendor: ${vendorId}`);
 
-    // In production, retrieve from database
-    return [];
+    // Retrieve from cache filtered by vendorId
+    const certifications: Certification[] = [];
+    for (const cert of certificationCache.values()) {
+      if (cert.vendorId === vendorId) {
+        certifications.push(cert);
+      }
+    }
+
+    return certifications;
   }
 
   /**
@@ -147,8 +160,7 @@ export class CertificationService {
     const now = new Date();
     return (
       certification.status === 'ACTIVE' &&
-      certification.expiryDate > now &&
-      certification.status !== 'REVOKED'
+      certification.expiryDate > now
     );
   }
 
@@ -181,14 +193,30 @@ export class CertificationService {
   ): Promise<Certification> {
     this.logger.log(`Renewing certification: ${certificationId}`);
 
-    // In production:
-    // 1. Update certification record
-    // 2. Upload new certificate document
-    // 3. Reset notification counter
-    // 4. Update status to ACTIVE
-    // 5. Schedule new renewal notifications
+    // Look up certification from cache
+    const certification = certificationCache.get(certificationId);
 
-    throw new Error('Not implemented');
+    if (!certification) {
+      throw new NotFoundException(`Certification with ID ${certificationId} not found`);
+    }
+
+    // Update the certification with new details
+    certification.expiryDate = newExpiryDate;
+
+    if (documentUrl) {
+      certification.documentUrl = documentUrl;
+    }
+
+    certification.status = 'ACTIVE';
+    certification.notificationsSent = 0;
+
+    // Store the updated certification in the cache
+    certificationCache.set(certificationId, certification);
+
+    // Schedule new renewal notifications
+    await this.scheduleRenewalNotifications(certification);
+
+    return certification;
   }
 
   /**

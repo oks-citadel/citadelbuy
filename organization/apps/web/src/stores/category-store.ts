@@ -95,8 +95,8 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
     try {
       const response = await categoriesApi.getAll(params);
       set({ categories: response.categories, isLoading: false });
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error) {
+      set({ error: error instanceof Error ? (error as Error).message : "Failed to fetch categories", isLoading: false });
     }
   },
 
@@ -105,8 +105,8 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
     try {
       const tree = await categoriesApi.getTree({ maxDepth, includeProducts: true });
       set({ categoryTree: tree, isLoadingTree: false });
-    } catch (error: any) {
-      set({ error: error.message, isLoadingTree: false });
+    } catch (error) {
+      set({ error: error instanceof Error ? (error as Error).message : "Failed to fetch categories", isLoadingTree: false });
     }
   },
 
@@ -115,8 +115,8 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
     try {
       const featured = await categoriesApi.getFeatured(limit);
       set({ featuredCategories: featured, isLoading: false });
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error) {
+      set({ error: error instanceof Error ? (error as Error).message : "Failed to fetch categories", isLoading: false });
     }
   },
 
@@ -125,8 +125,8 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
     try {
       const trending = await categoriesApi.getTrending({ period, limit });
       set({ trendingCategories: trending, isLoading: false });
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error) {
+      set({ error: error instanceof Error ? (error as Error).message : "Failed to fetch categories", isLoading: false });
     }
   },
 
@@ -153,8 +153,8 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
 
       // Track view
       get().trackCategoryView(category.id);
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error) {
+      set({ error: error instanceof Error ? (error as Error).message : "Failed to fetch categories", isLoading: false });
     }
   },
 
@@ -162,8 +162,8 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
     try {
       const response = await categoriesApi.getProducts(id, params);
       return response;
-    } catch (error: any) {
-      set({ error: error.message });
+    } catch (error) {
+      set({ error: (error as Error).message });
       throw error;
     }
   },
@@ -172,8 +172,8 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
     try {
       const filters = await categoriesApi.getFilters(id);
       set({ filters });
-    } catch (error: any) {
-      set({ error: error.message });
+    } catch (error) {
+      set({ error: (error as Error).message });
     }
   },
 
@@ -186,8 +186,8 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
     try {
       const results = await categoriesApi.search(query, { fuzzy: true, limit: 10 });
       set({ searchResults: results });
-    } catch (error: any) {
-      set({ error: error.message });
+    } catch (error) {
+      set({ error: (error as Error).message });
     }
   },
 

@@ -125,3 +125,21 @@ docs/.vitepress/cache/
 !.env.local.example
 !citadelbuy/backend/.env.example
 !citadelbuy/frontend/.env.local.example
+
+# ==============================================
+# Terraform
+# ==============================================
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+*.tfvars
+tfplan
+*.tfplan
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc

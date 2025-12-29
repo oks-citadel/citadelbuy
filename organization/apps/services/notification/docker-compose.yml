@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: citadelbuy-notification-ai
+    container_name: broxiva-notification-ai
     ports:
       - "8009:8009"
     environment:
@@ -24,9 +24,9 @@ services:
       retries: 3
       start_period: 10s
     networks:
-      - citadelbuy-network
+      - broxiva-network
 
 networks:
-  citadelbuy-network:
-    name: citadelbuy-network
+  broxiva-network:
+    name: broxiva-network
     external: true

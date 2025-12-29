@@ -82,7 +82,7 @@ export class AffirmProvider extends BaseBnplProvider {
           user_confirmation_url: request.returnUrl,
           user_cancel_url: request.cancelUrl,
           user_confirmation_url_action: 'GET',
-          name: 'CitadelBuy',
+          name: 'Broxiva',
         },
         shipping: {
           name: {
@@ -126,7 +126,7 @@ export class AffirmProvider extends BaseBnplProvider {
         tax_amount: 0,
         shipping_amount: 0,
         metadata: {
-          platform: 'citadelbuy',
+          platform: 'broxiva',
           order_id: request.orderId,
         },
       };

@@ -1,6 +1,7 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
+import axios, { AxiosInstance, AxiosError } from 'axios';
 import {
   IKycProvider,
   KycProviderType,
@@ -23,43 +24,73 @@ import {
  * https://documentation.onfido.com/
  *
  * Features:
- * - Document verification
- * - Facial similarity checks
- * - Identity verification
+ * - Document verification (ID documents, passports, driver's licenses)
+ * - Facial similarity checks and liveness detection
+ * - Identity verification with data extraction
  * - Proof of address verification
- * - Webhook support for async updates
- * - Mock mode for development
+ * - AML/Sanctions screening (via Identity Enhanced reports)
+ * - Webhook support for async verification updates
+ * - Automatic retry logic with exponential backoff
+ * - Rate limit handling
+ * - Mock mode for development/testing
+ *
+ * Environment Variables:
+ * - ONFIDO_API_TOKEN: Your Onfido API token (required for production)
+ * - ONFIDO_WEBHOOK_TOKEN: Webhook signing token for signature verification
+ * - ONFIDO_REGION: API region (us, eu, ca) - defaults to 'us'
+ * - NODE_ENV: Set to 'production' to enforce real provider
  */
 @Injectable()
 export class OnfidoProvider implements IKycProvider {
   private readonly logger = new Logger(OnfidoProvider.name);
-  private readonly client: any;
+  private readonly client: AxiosInstance;
   private readonly apiToken: string;
   private readonly webhookToken: string;
   private readonly isMockMode: boolean;
   private readonly baseUrl: string;
+  private readonly maxRetries = 3;
+  private readonly retryDelay = 1000; // milliseconds
 
   constructor(private readonly configService: ConfigService) {
     this.apiToken = this.configService.get<string>('ONFIDO_API_TOKEN', '');
     this.webhookToken = this.configService.get<string>('ONFIDO_WEBHOOK_TOKEN', '');
     this.isMockMode = !this.apiToken || this.configService.get<string>('NODE_ENV') === 'development';
 
-    // Onfido API base URLs
+    // Onfido API base URLs by region
     const region = this.configService.get<string>('ONFIDO_REGION', 'us');
-    this.baseUrl = region === 'eu'
-      ? 'https://api.eu.onfido.com/v3.6'
-      : 'https://api.us.onfido.com/v3.6';
+    const regionUrls: Record<string, string> = {
+      us: 'https://api.us.onfido.com/v3.6',
+      eu: 'https://api.eu.onfido.com/v3.6',
+      ca: 'https://api.ca.onfido.com/v3.6',
+    };
+    this.baseUrl = regionUrls[region] || regionUrls.us;
+
+    // Initialize axios client with auth and retry interceptors
+    this.client = axios.create({
+      baseURL: this.baseUrl,
+      headers: {
+        'Authorization': `Token token=${this.apiToken}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'Broxiva-KYC/1.0',
+      },
+      timeout: 30000, // 30 seconds
+    });
+
+    // Add response interceptor for error handling and rate limiting
+    this.client.interceptors.response.use(
+      (response) => response,
+      async (error: AxiosError) => {
+        return this.handleAxiosError(error);
+      },
+    );
 
     if (this.isMockMode) {
       this.logger.warn(
         'Onfido provider running in MOCK mode. Set ONFIDO_API_TOKEN for production.',
       );
+    } else {
+      this.logger.log(`Onfido provider initialized with region: ${region}`);
     }
-
-    // Initialize HTTP client (axios will be imported dynamically)
-    // Note: Using dynamic import to avoid TypeScript module resolution issues
-    // The actual axios instance will be created when needed
-    this.client = null;
   }
 
   getProviderName(): KycProviderType {
@@ -378,6 +409,86 @@ export class OnfidoProvider implements IKycProvider {
 
   // Helper methods
 
+  /**
+   * Handle axios errors with retry logic and rate limiting
+   */
+  private async handleAxiosError(error: AxiosError): Promise<any> {
+    const config = error.config;
+    const status = error.response?.status;
+
+    // Handle rate limiting (429)
+    if (status === 429) {
+      const retryAfter = error.response?.headers['retry-after'];
+      const delay = retryAfter ? parseInt(retryAfter) * 1000 : 5000;
+
+      this.logger.warn(`Rate limited by Onfido. Retrying after ${delay}ms`);
+      await this.sleep(delay);
+
+      // Retry the request
+      return this.client.request(config);
+    }
+
+    // Handle server errors (5xx) with exponential backoff
+    if (status >= 500 && status < 600) {
+      const retryCount = (config as any)._retryCount || 0;
+
+      if (retryCount < this.maxRetries) {
+        (config as any)._retryCount = retryCount + 1;
+        const delay = this.retryDelay * Math.pow(2, retryCount);
+
+        this.logger.warn(
+          `Server error ${status}. Retry ${retryCount + 1}/${this.maxRetries} after ${delay}ms`,
+        );
+
+        await this.sleep(delay);
+        return this.client.request(config);
+      }
+    }
+
+    // Log detailed error information
+    this.logger.error(
+      `Onfido API error: ${status} - ${error.message}`,
+      error.response?.data,
+    );
+
+    throw error;
+  }
+
+  /**
+   * Sleep utility for retry delays
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Execute request with retry logic
+   */
+  private async executeWithRetry<T>(fn: () => Promise<T>): Promise<T> {
+    let lastError: Error;
+
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error;
+
+        // Don't retry client errors (4xx except 429)
+        if (error.response?.status >= 400 && error.response?.status < 500 && error.response?.status !== 429) {
+          throw error;
+        }
+
+        if (attempt < this.maxRetries - 1) {
+          const delay = this.retryDelay * Math.pow(2, attempt);
+          this.logger.warn(`Request failed. Retrying in ${delay}ms (attempt ${attempt + 1}/${this.maxRetries})`);
+          await this.sleep(delay);
+        }
+      }
+    }
+
+    throw lastError;
+  }
+
   private mapDocumentType(type: string): string {
     const mapping: Record<string, string> = {
       passport: 'passport',
@@ -396,11 +507,21 @@ export class OnfidoProvider implements IKycProvider {
     }
     if (checkTypes.includes(KycCheckType.FACIAL_SIMILARITY)) {
       reports.push('facial_similarity_photo');
+      reports.push('facial_similarity_video'); // Liveness detection
     }
     if (checkTypes.includes(KycCheckType.IDENTITY)) {
+      // Identity Enhanced includes:
+      // - PEP (Politically Exposed Persons) screening
+      // - Sanctions list screening
+      // - Adverse media screening
+      // - Watchlist monitoring
       reports.push('identity_enhanced');
     }
+    if (checkTypes.includes(KycCheckType.PROOF_OF_ADDRESS)) {
+      reports.push('proof_of_address');
+    }
 
+    // Default to document verification if no types specified
     return reports.length > 0 ? reports : ['document'];
   }
 

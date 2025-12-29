@@ -303,7 +303,7 @@ function DefaultErrorFallback({
 
           {/* Support Message */}
           <p className="text-xs text-gray-500 text-center mt-6">
-            If the problem persists, please contact our support team at support@citadelbuy.com
+            If the problem persists, please contact our support team at support@broxiva.com
           </p>
         </div>
       </div>

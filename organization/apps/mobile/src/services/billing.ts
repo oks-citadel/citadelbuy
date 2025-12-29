@@ -11,25 +11,21 @@
  */
 
 import { Platform, Linking } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import * as _SecureStore from 'expo-secure-store';
 import * as InAppPurchases from 'expo-in-app-purchases';
 import type {
   IAPItemDetails,
   InAppPurchase,
-  IAPQueryResponse,
 } from 'expo-in-app-purchases';
 import { api } from './api';
 import {
   getPlatformProductIds,
   findProductById,
-  SUBSCRIPTION_PRODUCTS,
-  CREDIT_PACKAGES,
 } from '../config/iap-products';
 import type {
   PurchaseResult,
   PurchaseError,
   EnrichedProduct,
-  SubscriptionStatus,
   IAPLogEntry,
 } from '../types/iap.types';
 import { IAPErrorCode } from '../types/iap.types';

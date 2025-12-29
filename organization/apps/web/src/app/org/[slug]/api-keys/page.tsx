@@ -177,7 +177,7 @@ export default function ApiKeysPage() {
               Getting Started with API Keys
             </CardTitle>
             <CardDescription>
-              Learn how to use API keys to integrate with CitadelBuy
+              Learn how to use API keys to integrate with Broxiva
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -221,7 +221,7 @@ export default function ApiKeysPage() {
             <div className="p-4 bg-muted rounded-lg">
               <p className="text-sm font-medium mb-2">Example Request</p>
               <pre className="text-xs bg-background p-3 rounded overflow-x-auto">
-                <code>{`curl https://api.citadelbuy.com/v1/products \\
+                <code>{`curl https://api.broxiva.com/v1/products \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json"`}</code>
               </pre>
@@ -279,7 +279,7 @@ export default function ApiKeysPage() {
               <div className="flex flex-wrap gap-2 mt-3">
                 <Button variant="outline" size="sm" asChild>
                   <a
-                    href="https://docs.citadelbuy.com/api"
+                    href="https://docs.broxiva.com/api"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -288,7 +288,7 @@ export default function ApiKeysPage() {
                 </Button>
                 <Button variant="outline" size="sm" asChild>
                   <a
-                    href="https://docs.citadelbuy.com/guides"
+                    href="https://docs.broxiva.com/guides"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -297,7 +297,7 @@ export default function ApiKeysPage() {
                 </Button>
                 <Button variant="outline" size="sm" asChild>
                   <a
-                    href="https://docs.citadelbuy.com/examples"
+                    href="https://docs.broxiva.com/examples"
                     target="_blank"
                     rel="noopener noreferrer"
                   >

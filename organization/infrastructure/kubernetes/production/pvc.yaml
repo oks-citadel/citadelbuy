@@ -1,4 +1,4 @@
-# PersistentVolumeClaims for CitadelBuy Production Environment
+# PersistentVolumeClaims for Broxiva Production Environment
 
 ---
 # PVC for PostgreSQL Primary Data
@@ -6,7 +6,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-primary-pvc
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: postgres
     tier: database
@@ -27,7 +27,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-replica-1-pvc
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: postgres
     tier: database
@@ -47,7 +47,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: redis-master-pvc
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: redis
     tier: cache
@@ -67,7 +67,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: redis-replica-1-pvc
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: redis
     tier: cache
@@ -87,7 +87,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: elasticsearch-master-1-pvc
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: elasticsearch
     tier: search
@@ -107,7 +107,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: elasticsearch-data-1-pvc
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: elasticsearch
     tier: search
@@ -127,7 +127,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: elasticsearch-data-2-pvc
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: elasticsearch
     tier: search
@@ -147,9 +147,9 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: application-logs-pvc
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
-    app: citadelbuy
+    app: broxiva
     tier: logging
     environment: production
 spec:
@@ -166,7 +166,7 @@ apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshot
 metadata:
   name: postgres-backup-snapshot
-  namespace: citadelbuy-production
+  namespace: broxiva-production
   labels:
     app: postgres
     tier: database

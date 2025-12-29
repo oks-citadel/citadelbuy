@@ -90,11 +90,11 @@ variable "acr_allowed_ip_ranges" {
 variable "oncall_email" {
   description = "On-call email for critical alerts"
   type        = string
-  default     = "dev-oncall@citadelbuy.com"
+  default     = "dev-oncall@broxiva.com"
 }
 
 variable "team_email" {
   description = "Team email for general alerts"
   type        = string
-  default     = "dev-team@citadelbuy.com"
+  default     = "dev-team@broxiva.com"
 }

@@ -141,7 +141,7 @@ export default function CookiesPage() {
             If you have questions about our use of cookies, please contact us at:
           </p>
           <ul>
-            <li>Email: privacy@citadelbuy.com</li>
+            <li>Email: privacy@broxiva.com</li>
           </ul>
         </div>
       </div>

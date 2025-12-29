@@ -203,7 +203,7 @@ def analyze_missing_indexes(models):
     return missing_indexes
 
 def main():
-    schema_path = r'C:\Users\citad\OneDrive\Documents\citadelbuy-master\organization\apps\api\prisma\schema.prisma'
+    schema_path = r'C:\Users\citad\OneDrive\Documents\broxiva-master\organization\apps\api\prisma\schema.prisma'
 
     print("Analyzing Prisma schema for missing indexes...")
     print("=" * 80)

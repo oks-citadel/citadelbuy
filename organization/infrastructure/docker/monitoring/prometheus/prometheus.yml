@@ -2,7 +2,7 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
-    cluster: 'citadelbuy'
+    cluster: 'broxiva'
     environment: 'production'
 
 # Alertmanager configuration
@@ -60,7 +60,7 @@ scrape_configs:
       - targets: ['backend:4000']
         labels:
           service: 'backend'
-          app: 'citadelbuy'
+          app: 'broxiva'
 
   # Frontend Application Metrics (if exposed)
   - job_name: 'frontend'
@@ -69,7 +69,7 @@ scrape_configs:
       - targets: ['frontend:3000']
         labels:
           service: 'frontend'
-          app: 'citadelbuy'
+          app: 'broxiva'
 
   # Nginx metrics (if nginx-prometheus-exporter is installed)
   - job_name: 'nginx'

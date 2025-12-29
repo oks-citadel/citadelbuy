@@ -21,7 +21,7 @@ export const ExportersAfricaLandingPage = () => {
               </h1>
               <p className="text-xl mb-8">
                 Connect with verified international buyers actively seeking African products.
-                CitadelBuy provides the platform, trade finance, logistics, and support you
+                Broxiva provides the platform, trade finance, logistics, and support you
                 need to grow your export business.
               </p>
               <div className="flex gap-4">
@@ -77,7 +77,7 @@ export const ExportersAfricaLandingPage = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-4">
-            Why African Exporters Choose CitadelBuy
+            Why African Exporters Choose Broxiva
           </h2>
           <p className="text-center text-gray-600 mb-12 text-lg">
             Everything you need to export successfully
@@ -361,7 +361,7 @@ export const ExportersAfricaLandingPage = () => {
               </div>
               <h3 className="text-2xl font-semibold mb-2">From $200K to $2M in Annual Sales</h3>
               <p className="text-gray-600 mb-4">
-                "CitadelBuy helped us find 15 U.S. buyers in our first 6 months. We went from
+                "Broxiva helped us find 15 U.S. buyers in our first 6 months. We went from
                 exporting to 2 countries to 8 countries across 3 continents."
               </p>
               <div className="flex items-center gap-3">
@@ -400,7 +400,7 @@ export const ExportersAfricaLandingPage = () => {
             Ready to Grow Your Export Business?
           </h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Join 1,000+ African exporters connecting with global buyers on CitadelBuy.
+            Join 1,000+ African exporters connecting with global buyers on Broxiva.
             Start your free 14-day trial today - no credit card required.
           </p>
           <div className="flex gap-4 justify-center">
@@ -412,7 +412,7 @@ export const ExportersAfricaLandingPage = () => {
             </Button>
           </div>
           <p className="mt-6 text-sm">
-            Questions? WhatsApp us at +234-XXX-XXXX or email exporters@citadelbuy.com
+            Questions? WhatsApp us at +234-XXX-XXXX or email exporters@broxiva.com
           </p>
         </div>
       </section>

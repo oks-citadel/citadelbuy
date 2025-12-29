@@ -118,7 +118,7 @@ export class PayPalProvider implements IPaymentProvider, ISubscriptionProvider {
           items: items.length > 0 ? items : undefined,
         }],
         application_context: {
-          brand_name: 'CitadelBuy',
+          brand_name: 'Broxiva',
           landing_page: 'LOGIN',
           user_action: 'PAY_NOW',
           return_url: request.returnUrl || `${this.configService.get('APP_URL')}/checkout/success`,
@@ -142,7 +142,7 @@ export class PayPalProvider implements IPaymentProvider, ISubscriptionProvider {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
-          'PayPal-Request-Id': `citadelbuy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          'PayPal-Request-Id': `broxiva_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         },
         body: JSON.stringify(orderPayload),
       });

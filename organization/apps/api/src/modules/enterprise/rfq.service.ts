@@ -201,7 +201,7 @@ export class RFQService {
       throw new BadRequestException('RFQ is not accepting responses');
     }
 
-    if (new Date() > new Date(rfq.deadline)) {
+    if (rfq.deadline && new Date() > new Date(rfq.deadline)) {
       throw new BadRequestException('RFQ deadline has passed');
     }
 
@@ -219,8 +219,10 @@ export class RFQService {
 
     const response = await this.prisma.rFQResponse.create({
       data: {
-        rfqId: data.rfqId,
-        vendorId: data.vendorId,
+        rfq: { connect: { id: data.rfqId } },
+        vendor: { connect: { id: data.vendorId } },
+        proposal: data.items as any,
+        quotedPrice: data.totalPrice,
         items: data.items as any,
         totalPrice: data.totalPrice,
         currency: data.currency,
@@ -254,7 +256,7 @@ export class RFQService {
             id: true,
             name: true,
             rating: true,
-            organizationId: true,
+            businessName: true,
           },
         },
       },
@@ -277,11 +279,11 @@ export class RFQService {
     }
 
     const comparison = {
-      lowestPrice: Math.min(...responses.map((r) => r.totalPrice)),
-      highestPrice: Math.max(...responses.map((r) => r.totalPrice)),
-      averagePrice: responses.reduce((sum, r) => sum + r.totalPrice, 0) / responses.length,
-      fastestDelivery: Math.min(...responses.map((r) => r.deliveryTime)),
-      slowestDelivery: Math.max(...responses.map((r) => r.deliveryTime)),
+      lowestPrice: Math.min(...responses.map((r) => r.totalPrice ?? 0)),
+      highestPrice: Math.max(...responses.map((r) => r.totalPrice ?? 0)),
+      averagePrice: responses.reduce((sum, r) => sum + (r.totalPrice ?? 0), 0) / responses.length,
+      fastestDelivery: Math.min(...responses.map((r) => r.deliveryTime ?? 0)),
+      slowestDelivery: Math.max(...responses.map((r) => r.deliveryTime ?? 0)),
       recommendedVendor: this.selectRecommendedVendor(responses),
     };
 
@@ -291,8 +293,8 @@ export class RFQService {
       responses: responses.map((r) => ({
         id: r.id,
         vendorId: r.vendorId,
-        vendorName: r.vendor.name,
-        vendorRating: r.vendor.rating,
+        vendorName: (r as any).vendor?.name || 'Unknown',
+        vendorRating: (r as any).vendor?.rating || 0,
         totalPrice: r.totalPrice,
         deliveryTime: r.deliveryTime,
         score: this.calculateResponseScore(r, comparison),
@@ -437,10 +439,10 @@ export class RFQService {
 
     for (const response of responses) {
       const comparison = {
-        lowestPrice: Math.min(...responses.map((r) => r.totalPrice)),
-        highestPrice: Math.max(...responses.map((r) => r.totalPrice)),
-        fastestDelivery: Math.min(...responses.map((r) => r.deliveryTime)),
-        slowestDelivery: Math.max(...responses.map((r) => r.deliveryTime)),
+        lowestPrice: Math.min(...responses.map((r) => r.totalPrice ?? 0)),
+        highestPrice: Math.max(...responses.map((r) => r.totalPrice ?? 0)),
+        fastestDelivery: Math.min(...responses.map((r) => r.deliveryTime ?? 0)),
+        slowestDelivery: Math.max(...responses.map((r) => r.deliveryTime ?? 0)),
       };
 
       const score = this.calculateResponseScore(response, comparison);

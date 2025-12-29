@@ -47,7 +47,7 @@ export async function fedexSchedulePickup(
       pickupContactInfo: {
         personName: address.name || 'Pickup Contact',
         phoneNumber: address.phone || '1234567890',
-        companyName: address.name || 'CitadelBuy',
+        companyName: address.name || 'Broxiva',
       },
       totalWeight: {
         units: 'LB',
@@ -159,7 +159,7 @@ export async function upsSchedulePickup(
           PickupDate: pickupDate.toISOString().split('T')[0].replace(/-/g, ''),
         },
         PickupAddress: {
-          CompanyName: address.name || 'CitadelBuy',
+          CompanyName: address.name || 'Broxiva',
           ContactName: address.name || 'Pickup Contact',
           AddressLine: address.street1,
           City: address.city,
@@ -187,7 +187,7 @@ export async function upsSchedulePickup(
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
         'transId': `pickup-${Date.now()}`,
-        'transactionSrc': 'CitadelBuy',
+        'transactionSrc': 'Broxiva',
       },
       body: JSON.stringify(requestBody),
     });
@@ -231,7 +231,7 @@ export async function upsCancelPickup(
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'transId': `cancel-pickup-${Date.now()}`,
-          'transactionSrc': 'CitadelBuy',
+          'transactionSrc': 'Broxiva',
         },
       }
     );
@@ -275,7 +275,7 @@ export async function dhlSchedulePickup(
       ],
       specialInstructions: [
         {
-          value: specialInstructions || 'Pickup scheduled via CitadelBuy',
+          value: specialInstructions || 'Pickup scheduled via Broxiva',
           typeCode: 'TBD',
         },
       ],
@@ -289,9 +289,9 @@ export async function dhlSchedulePickup(
             addressLine1: address.street1,
           },
           contactInformation: {
-            email: address.email || 'pickup@citadelbuy.com',
+            email: address.email || 'pickup@broxiva.com',
             phone: address.phone || '1234567890',
-            companyName: address.name || 'CitadelBuy',
+            companyName: address.name || 'Broxiva',
             fullName: address.name || 'Pickup Contact',
           },
         },
@@ -389,7 +389,7 @@ export async function uspsSchedulePickup(
       <CarrierPickupScheduleRequest USERID="${this.apiKey}">
         <FirstName>${address.name?.split(' ')[0] || 'Customer'}</FirstName>
         <LastName>${address.name?.split(' ')[1] || 'Customer'}</LastName>
-        <FirmName>${address.name || 'CitadelBuy'}</FirmName>
+        <FirmName>${address.name || 'Broxiva'}</FirmName>
         <SuiteOrApt>${address.street2 || ''}</SuiteOrApt>
         <Address2>${address.street1}</Address2>
         <Urbanization></Urbanization>
@@ -406,7 +406,7 @@ export async function uspsSchedulePickup(
         <EstimatedWeight>${Math.ceil(totalWeight)}</EstimatedWeight>
         <PackageLocation>Front Door</PackageLocation>
         <SpecialInstructions>${specialInstructions || ''}</SpecialInstructions>
-        <EmailAddress>${address.email || 'pickup@citadelbuy.com'}</EmailAddress>
+        <EmailAddress>${address.email || 'pickup@broxiva.com'}</EmailAddress>
       </CarrierPickupScheduleRequest>
     `;
 

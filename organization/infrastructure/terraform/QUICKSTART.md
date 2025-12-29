@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get your CitadelBuy infrastructure up and running in minutes.
+Get your Broxiva infrastructure up and running in minutes.
 
 ## Prerequisites
 
@@ -65,8 +65,8 @@ Type `yes` when prompted.
 **Azure:**
 ```bash
 az aks get-credentials \
-  --resource-group citadelbuy-dev-rg \
-  --name citadelbuy-dev-aks
+  --resource-group broxiva-dev-rg \
+  --name broxiva-dev-aks
 
 kubectl get nodes
 ```
@@ -75,7 +75,7 @@ kubectl get nodes
 ```bash
 aws eks update-kubeconfig \
   --region us-east-1 \
-  --name citadelbuy-dev-eks
+  --name broxiva-dev-eks
 
 kubectl get nodes
 ```
@@ -155,8 +155,8 @@ kubectl apply -f k8s/ingress.yaml
 ```bash
 # Get connection details
 DB_HOST=$(terraform output -raw database_endpoint)
-DB_NAME="citadelbuy_dev"
-DB_USER="citadeladmin"
+DB_NAME="broxiva_dev"
+DB_USER="broxivaadmin"
 DB_PASS="YourPasswordHere"
 
 # Connect with psql
@@ -169,14 +169,14 @@ psql "postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}/${DB_NAME}"
 ```bash
 # Application Insights
 az monitor app-insights query \
-  --app citadelbuy-dev-appinsights \
+  --app broxiva-dev-appinsights \
   --analytics-query "requests | limit 100"
 ```
 
 **AWS:**
 ```bash
 # CloudWatch Logs
-aws logs tail /aws/application/citadelbuy-dev --follow
+aws logs tail /aws/application/broxiva-dev --follow
 ```
 
 ### Scale Kubernetes Cluster
@@ -266,12 +266,12 @@ terraform destroy -target=module.database
 az storage blob lease break \
   --container-name tfstate \
   --blob-name dev.terraform.tfstate \
-  --account-name citadelbuytfstate
+  --account-name broxivatfstate
 
 # AWS
 aws dynamodb delete-item \
   --table-name terraform-state-lock \
-  --key '{"LockID":{"S":"citadelbuy-dev"}}'
+  --key '{"LockID":{"S":"broxiva-dev"}}'
 ```
 
 ### Issue: Authentication Failed
@@ -334,8 +334,8 @@ Already configured in `backend` block:
 **Azure:**
 ```hcl
 backend "azurerm" {
-  resource_group_name  = "citadelbuy-tfstate-rg"
-  storage_account_name = "citadelbuytfstate"
+  resource_group_name  = "broxiva-tfstate-rg"
+  storage_account_name = "broxivatfstate"
   container_name       = "tfstate"
   key                  = "dev.terraform.tfstate"
 }
@@ -344,7 +344,7 @@ backend "azurerm" {
 **AWS:**
 ```hcl
 backend "s3" {
-  bucket         = "citadelbuy-tfstate"
+  bucket         = "broxiva-tfstate"
   key            = "dev/terraform.tfstate"
   region         = "us-east-1"
   dynamodb_table = "terraform-state-lock"

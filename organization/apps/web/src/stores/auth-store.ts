@@ -54,7 +54,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
           });
-        } catch (error: any) {
+        } catch (error) {
           const message = error instanceof Error ? error.message : 'Login failed';
           set({ error: message, isLoading: false });
           throw error;
@@ -71,7 +71,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
           });
-        } catch (error: any) {
+        } catch (error) {
           const message = error instanceof Error ? error.message : 'Registration failed';
           set({ error: message, isLoading: false });
           throw error;
@@ -116,7 +116,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const updatedUser = await authApi.updateProfile(data);
           set({ user: updatedUser as User, isLoading: false });
-        } catch (error: any) {
+        } catch (error) {
           const message = error instanceof Error ? error.message : 'Profile update failed';
           set({ error: message, isLoading: false });
           throw error;
@@ -133,7 +133,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           await authApi.forgotPassword(email);
           set({ isLoading: false });
-        } catch (error: any) {
+        } catch (error) {
           const message = error instanceof Error ? error.message : 'Failed to send reset email';
           set({ error: message, isLoading: false });
           throw error;
@@ -145,7 +145,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           await authApi.resetPassword(token, password);
           set({ isLoading: false });
-        } catch (error: any) {
+        } catch (error) {
           const message = error instanceof Error ? error.message : 'Password reset failed';
           set({ error: message, isLoading: false });
           throw error;
@@ -158,7 +158,7 @@ export const useAuthStore = create<AuthState>()(
           // Verify email endpoint
           const user = await authApi.getProfile();
           set({ user: user as User, isLoading: false });
-        } catch (error: any) {
+        } catch (error) {
           const message = error instanceof Error ? error.message : 'Email verification failed';
           set({ error: message, isLoading: false });
           throw error;
@@ -175,7 +175,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
           });
-        } catch (error: any) {
+        } catch (error) {
           const message = error instanceof Error ? error.message : 'Social login failed';
           set({ error: message, isLoading: false });
           throw error;

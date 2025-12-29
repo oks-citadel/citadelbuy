@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ###############################################################################
-# Sentry Release Creation Script for CitadelBuy
+# Sentry Release Creation Script for Broxiva
 #
 # This script creates Sentry releases manually for both backend and frontend.
 # Useful for local testing or manual deployments.
@@ -45,7 +45,7 @@ NC='\033[0m' # No Color
 ENVIRONMENT="development"
 PROJECT_TYPE="all"
 VERSION=""
-SENTRY_ORG="${SENTRY_ORG:-citadelbuy}"
+SENTRY_ORG="${SENTRY_ORG:-broxiva}"
 
 # Function to print colored output
 print_info() {
@@ -138,21 +138,21 @@ fi
 
 # Determine Sentry projects based on environment
 if [[ "$ENVIRONMENT" == "production" ]]; then
-    BACKEND_PROJECT="citadelbuy-backend-prod"
-    FRONTEND_PROJECT="citadelbuy-web-prod"
+    BACKEND_PROJECT="broxiva-backend-prod"
+    FRONTEND_PROJECT="broxiva-web-prod"
 elif [[ "$ENVIRONMENT" == "staging" ]]; then
-    BACKEND_PROJECT="citadelbuy-backend-staging"
-    FRONTEND_PROJECT="citadelbuy-web-staging"
+    BACKEND_PROJECT="broxiva-backend-staging"
+    FRONTEND_PROJECT="broxiva-web-staging"
 else
-    BACKEND_PROJECT="citadelbuy-backend-dev"
-    FRONTEND_PROJECT="citadelbuy-web-dev"
+    BACKEND_PROJECT="broxiva-backend-dev"
+    FRONTEND_PROJECT="broxiva-web-dev"
 fi
 
 # Function to create backend release
 create_backend_release() {
     print_info "Creating backend release..."
 
-    BACKEND_RELEASE="citadelbuy-backend@$VERSION"
+    BACKEND_RELEASE="broxiva-backend@$VERSION"
 
     # Create release
     print_info "Creating release: $BACKEND_RELEASE"
@@ -201,7 +201,7 @@ create_backend_release() {
 create_frontend_release() {
     print_info "Creating frontend release..."
 
-    FRONTEND_RELEASE="citadelbuy-web@$VERSION"
+    FRONTEND_RELEASE="broxiva-web@$VERSION"
 
     # Create release
     print_info "Creating release: $FRONTEND_RELEASE"

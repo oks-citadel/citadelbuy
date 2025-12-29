@@ -32,7 +32,7 @@ def count_indexes_by_model(schema_path):
     return models_with_indexes
 
 def main():
-    schema_path = r'C:\Users\citad\OneDrive\Documents\citadelbuy-master\organization\apps\api\prisma\schema.prisma'
+    schema_path = r'C:\Users\citad\OneDrive\Documents\broxiva-master\organization\apps\api\prisma\schema.prisma'
 
     print("Validating all indexes in schema...")
     print("=" * 80)

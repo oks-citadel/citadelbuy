@@ -59,7 +59,7 @@ describe('AuthService - Enhanced Tests', () => {
         GOOGLE_CLIENT_ID: 'google-client-id',
         FACEBOOK_APP_ID: 'facebook-app-id',
         FACEBOOK_APP_SECRET: 'facebook-app-secret',
-        APPLE_CLIENT_ID: 'com.citadelbuy.app',
+        APPLE_CLIENT_ID: 'com.broxiva.app',
       };
       return config[key];
     }),
@@ -775,7 +775,7 @@ describe('AuthService - Enhanced Tests', () => {
         cookies: { _fbp: 'facebook-pixel', ttclid: 'tiktok-click-id' },
         headers: {
           'user-agent': 'Mozilla/5.0',
-          origin: 'https://citadelbuy.com',
+          origin: 'https://broxiva.com',
         },
       };
 
@@ -810,7 +810,7 @@ describe('AuthService - Enhanced Tests', () => {
         fbc: expect.stringContaining('facebook-click-id'),
         fbp: 'facebook-pixel',
         ttclid: 'tiktok-click-id',
-        pageUrl: 'https://citadelbuy.com/auth/register',
+        pageUrl: 'https://broxiva.com/auth/register',
       });
     });
 

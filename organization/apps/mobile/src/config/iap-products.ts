@@ -34,10 +34,10 @@ export interface IAPCreditPackage extends IAPProduct {
 export const SUBSCRIPTION_PRODUCTS: IAPSubscriptionProduct[] = [
   {
     id: 'citadel_basic_monthly',
-    name: 'CitadelBuy Basic - Monthly',
-    description: 'Monthly subscription to CitadelBuy Basic',
-    appleProductId: 'com.citadelbuy.subscription.basic.monthly',
-    googleProductId: 'citadelbuy_basic_monthly',
+    name: 'Broxiva Basic - Monthly',
+    description: 'Monthly subscription to Broxiva Basic',
+    appleProductId: 'com.broxiva.subscription.basic.monthly',
+    googleProductId: 'broxiva_basic_monthly',
     type: 'subscription',
     interval: 'month',
     trialPeriod: {
@@ -47,10 +47,10 @@ export const SUBSCRIPTION_PRODUCTS: IAPSubscriptionProduct[] = [
   },
   {
     id: 'citadel_basic_yearly',
-    name: 'CitadelBuy Basic - Yearly',
-    description: 'Yearly subscription to CitadelBuy Basic (Save 20%)',
-    appleProductId: 'com.citadelbuy.subscription.basic.yearly',
-    googleProductId: 'citadelbuy_basic_yearly',
+    name: 'Broxiva Basic - Yearly',
+    description: 'Yearly subscription to Broxiva Basic (Save 20%)',
+    appleProductId: 'com.broxiva.subscription.basic.yearly',
+    googleProductId: 'broxiva_basic_yearly',
     type: 'subscription',
     interval: 'year',
     trialPeriod: {
@@ -60,10 +60,10 @@ export const SUBSCRIPTION_PRODUCTS: IAPSubscriptionProduct[] = [
   },
   {
     id: 'citadel_premium_monthly',
-    name: 'CitadelBuy Premium - Monthly',
-    description: 'Monthly subscription to CitadelBuy Premium',
-    appleProductId: 'com.citadelbuy.subscription.premium.monthly',
-    googleProductId: 'citadelbuy_premium_monthly',
+    name: 'Broxiva Premium - Monthly',
+    description: 'Monthly subscription to Broxiva Premium',
+    appleProductId: 'com.broxiva.subscription.premium.monthly',
+    googleProductId: 'broxiva_premium_monthly',
     type: 'subscription',
     interval: 'month',
     trialPeriod: {
@@ -73,10 +73,10 @@ export const SUBSCRIPTION_PRODUCTS: IAPSubscriptionProduct[] = [
   },
   {
     id: 'citadel_premium_yearly',
-    name: 'CitadelBuy Premium - Yearly',
-    description: 'Yearly subscription to CitadelBuy Premium (Save 25%)',
-    appleProductId: 'com.citadelbuy.subscription.premium.yearly',
-    googleProductId: 'citadelbuy_premium_yearly',
+    name: 'Broxiva Premium - Yearly',
+    description: 'Yearly subscription to Broxiva Premium (Save 25%)',
+    appleProductId: 'com.broxiva.subscription.premium.yearly',
+    googleProductId: 'broxiva_premium_yearly',
     type: 'subscription',
     interval: 'year',
     trialPeriod: {
@@ -92,18 +92,18 @@ export const CREDIT_PACKAGES: IAPCreditPackage[] = [
   {
     id: 'credits_100',
     name: '100 Credits',
-    description: '100 CitadelBuy credits',
-    appleProductId: 'com.citadelbuy.credits.100',
-    googleProductId: 'citadelbuy_credits_100',
+    description: '100 Broxiva credits',
+    appleProductId: 'com.broxiva.credits.100',
+    googleProductId: 'broxiva_credits_100',
     type: 'consumable',
     credits: 100,
   },
   {
     id: 'credits_500',
     name: '500 Credits',
-    description: '500 CitadelBuy credits',
-    appleProductId: 'com.citadelbuy.credits.500',
-    googleProductId: 'citadelbuy_credits_500',
+    description: '500 Broxiva credits',
+    appleProductId: 'com.broxiva.credits.500',
+    googleProductId: 'broxiva_credits_500',
     type: 'consumable',
     credits: 500,
     bonus: 25, // 5% bonus
@@ -111,9 +111,9 @@ export const CREDIT_PACKAGES: IAPCreditPackage[] = [
   {
     id: 'credits_1000',
     name: '1000 Credits',
-    description: '1000 CitadelBuy credits',
-    appleProductId: 'com.citadelbuy.credits.1000',
-    googleProductId: 'citadelbuy_credits_1000',
+    description: '1000 Broxiva credits',
+    appleProductId: 'com.broxiva.credits.1000',
+    googleProductId: 'broxiva_credits_1000',
     type: 'consumable',
     credits: 1000,
     bonus: 100, // 10% bonus
@@ -121,9 +121,9 @@ export const CREDIT_PACKAGES: IAPCreditPackage[] = [
   {
     id: 'credits_5000',
     name: '5000 Credits',
-    description: '5000 CitadelBuy credits',
-    appleProductId: 'com.citadelbuy.credits.5000',
-    googleProductId: 'citadelbuy_credits_5000',
+    description: '5000 Broxiva credits',
+    appleProductId: 'com.broxiva.credits.5000',
+    googleProductId: 'broxiva_credits_5000',
     type: 'consumable',
     credits: 5000,
     bonus: 750, // 15% bonus

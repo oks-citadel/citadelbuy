@@ -296,7 +296,7 @@ function DefaultErrorFallback({
 
         {/* Support Message */}
         <Text style={styles.supportText}>
-          If the problem persists, please contact our support team at support@citadelbuy.com
+          If the problem persists, please contact our support team at support@broxiva.com
         </Text>
       </ScrollView>
     </SafeAreaView>

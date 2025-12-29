@@ -23,7 +23,7 @@ async function main() {
   console.log('👥 Creating users...');
   const admin = await prisma.user.create({
     data: {
-      email: 'admin@citadelbuy.com',
+      email: 'admin@broxiva.com',
       password: hashedPassword,
       name: 'Admin User',
       role: 'ADMIN',
@@ -32,7 +32,7 @@ async function main() {
 
   const vendor1 = await prisma.user.create({
     data: {
-      email: 'vendor1@citadelbuy.com',
+      email: 'vendor1@broxiva.com',
       password: hashedPassword,
       name: 'TechStore Vendor',
       role: 'VENDOR',
@@ -41,7 +41,7 @@ async function main() {
 
   const vendor2 = await prisma.user.create({
     data: {
-      email: 'vendor2@citadelbuy.com',
+      email: 'vendor2@broxiva.com',
       password: hashedPassword,
       name: 'Fashion Boutique',
       role: 'VENDOR',
@@ -50,7 +50,7 @@ async function main() {
 
   const customer1 = await prisma.user.create({
     data: {
-      email: 'customer@citadelbuy.com',
+      email: 'customer@broxiva.com',
       password: hashedPassword,
       name: 'John Customer',
       role: 'CUSTOMER',
@@ -527,22 +527,22 @@ async function main() {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ADMIN:
-  Email: admin@citadelbuy.com
+  Email: admin@broxiva.com
   Password: password123
   Role: ADMIN
 
 VENDOR 1 (TechStore):
-  Email: vendor1@citadelbuy.com
+  Email: vendor1@broxiva.com
   Password: password123
   Role: VENDOR
 
 VENDOR 2 (Fashion Boutique):
-  Email: vendor2@citadelbuy.com
+  Email: vendor2@broxiva.com
   Password: password123
   Role: VENDOR
 
 CUSTOMER 1:
-  Email: customer@citadelbuy.com
+  Email: customer@broxiva.com
   Password: password123
   Role: CUSTOMER
 
