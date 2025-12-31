@@ -3,7 +3,7 @@
 # ENCODING-HARDENED: UTF-8 safe across all environments
 
 # Stage 1: Dependencies
-FROM node:20-slim AS deps
+FROM public.ecr.aws/docker/library/node:20-slim AS deps
 
 # Set UTF-8 locale
 ENV LANG=C.UTF-8 \
@@ -20,7 +20,7 @@ COPY apps/web/package*.json ./
 RUN npm install --legacy-peer-deps --omit=dev
 
 # Stage 2: Build
-FROM node:20-slim AS builder
+FROM public.ecr.aws/docker/library/node:20-slim AS builder
 
 # Set UTF-8 locale
 ENV LANG=C.UTF-8 \
@@ -55,7 +55,7 @@ RUN echo "{\"version\":\"${VERSION}\",\"commit\":\"${VCS_REF}\",\"buildDate\":\"
 RUN npm run build
 
 # Stage 3: Production
-FROM node:20-slim AS runner
+FROM public.ecr.aws/docker/library/node:20-slim AS runner
 
 # Build arguments for OCI labels
 ARG BUILD_DATE

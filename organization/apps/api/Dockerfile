@@ -7,7 +7,7 @@
 # DO NOT use sed/iconv on data/model/asset directories
 
 # Stage 1: Builder
-FROM node:20-slim AS builder
+FROM public.ecr.aws/docker/library/node:20-slim AS builder
 LABEL stage=builder
 
 # Set UTF-8 locale (debian-based - more reliable than Alpine)
@@ -49,7 +49,7 @@ ENV NODE_OPTIONS="--max_old_space_size=4096"
 RUN npm run build
 
 # Stage 2: Production Runtime
-FROM node:20-slim AS production
+FROM public.ecr.aws/docker/library/node:20-slim AS production
 
 # Build arguments for OCI labels
 ARG BUILD_DATE
