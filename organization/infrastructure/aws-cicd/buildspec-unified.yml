@@ -22,7 +22,6 @@ phases:
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - export IMAGE_TAG="${BUILD_DATE}-${COMMIT_HASH}"
       - echo "Build tag is $IMAGE_TAG"
-      - echo "Working directory is $CODEBUILD_SRC_DIR"
 
   build:
     commands:
@@ -35,14 +34,16 @@ phases:
       - echo "===== BUILDING API ====="
       - pnpm build
       - echo "===== BUILDING DOCKER IMAGE FOR API ====="
-      - docker build -t broxiva/api:$IMAGE_TAG .
+      - cd $CODEBUILD_SRC_DIR/organization
+      - docker build -t broxiva/api:$IMAGE_TAG -f apps/api/Dockerfile .
       - docker tag broxiva/api:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:$IMAGE_TAG
       - docker tag broxiva/api:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:latest
       - echo "===== BUILDING WEB ====="
       - cd $CODEBUILD_SRC_DIR/organization/apps/web
       - pnpm build
       - echo "===== BUILDING DOCKER IMAGE FOR WEB ====="
-      - docker build -t broxiva/web:$IMAGE_TAG .
+      - cd $CODEBUILD_SRC_DIR/organization
+      - docker build -t broxiva/web:$IMAGE_TAG -f apps/web/Dockerfile .
       - docker tag broxiva/web:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG
       - docker tag broxiva/web:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:latest
 
@@ -56,7 +57,6 @@ phases:
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:latest
       - echo "===== BUILD COMPLETE ====="
-      - echo "Creating image definitions..."
       - cd $CODEBUILD_SRC_DIR
       - printf '[{"name":"api","imageUri":"%s"},{"name":"web","imageUri":"%s"}]' "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:$IMAGE_TAG" "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG" > imagedefinitions.json
       - cat imagedefinitions.json
