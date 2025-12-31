@@ -45,7 +45,7 @@ export class BillingService {
     }
 
     // Get or create billing record
-    let billing = await this.prisma.organizationBilling.findUnique({
+    const billing = await this.prisma.organizationBilling.findUnique({
       where: { organizationId },
     });
 
@@ -224,6 +224,9 @@ export class BillingService {
       },
     });
 
+    // CRITICAL: Revoke premium access on cancellation
+    await this.revokeAccess(organizationId, 'Subscription cancelled');
+
     // Clear cache
     await this.clearBillingCache(organizationId);
 
@@ -233,6 +236,62 @@ export class BillingService {
       success: true,
       message: 'Subscription cancelled successfully',
     };
+  }
+
+  /**
+   * Revoke premium access for an organization
+   * Called on subscription cancellation, downgrade, or payment failure
+   * @param organizationId - Organization ID
+   * @param reason - Reason for revocation
+   */
+  async revokeAccess(organizationId: string, reason: string): Promise<void> {
+    this.logger.warn(`Revoking access for organization ${organizationId}: ${reason}`);
+
+    // Disable API keys
+    await this.prisma.apiKey.updateMany({
+      where: {
+        organizationId,
+        isActive: true,
+      },
+      data: {
+        isActive: false,
+        revokedAt: new Date(),
+        revokedReason: reason,
+      },
+    });
+
+    // Downgrade organization to free tier
+    await this.prisma.organization.update({
+      where: { id: organizationId },
+      data: {
+        planTier: 'FREE',
+        featuresEnabled: [],
+      },
+    });
+
+    // Clear any cached permissions
+    await this.redis.del(`org:permissions:${organizationId}`);
+    await this.redis.del(`org:features:${organizationId}`);
+
+    this.logger.warn(`Access revoked for organization ${organizationId}`);
+  }
+
+  /**
+   * Check if organization has valid subscription before allowing premium features
+   * @param organizationId - Organization ID
+   * @returns Boolean indicating if subscription is valid
+   */
+  async hasValidSubscription(organizationId: string): Promise<boolean> {
+    const billing = await this.prisma.organizationBilling.findUnique({
+      where: { organizationId },
+    });
+
+    if (!billing) {
+      return false;
+    }
+
+    // Only 'active' and 'trialing' statuses are considered valid
+    return ['active', 'trialing'].includes(billing.status || '');
   }
 
   /**

@@ -171,7 +171,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: router
-        image: broxiva/geo-routing-engine:latest
+        image: broxiva/geo-routing-engine:v2.0.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
@@ -493,7 +493,7 @@ spec:
     spec:
       containers:
       - name: checker
-        image: broxiva/health-checker:latest
+        image: broxiva/health-checker:v2.0.0
         imagePullPolicy: IfNotPresent
         env:
         - name: CHECK_INTERVAL

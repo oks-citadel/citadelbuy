@@ -33,7 +33,7 @@ export interface IAPCreditPackage extends IAPProduct {
 
 export const SUBSCRIPTION_PRODUCTS: IAPSubscriptionProduct[] = [
   {
-    id: 'citadel_basic_monthly',
+    id: 'broxiva_basic_monthly',
     name: 'Broxiva Basic - Monthly',
     description: 'Monthly subscription to Broxiva Basic',
     appleProductId: 'com.broxiva.subscription.basic.monthly',
@@ -46,7 +46,7 @@ export const SUBSCRIPTION_PRODUCTS: IAPSubscriptionProduct[] = [
     },
   },
   {
-    id: 'citadel_basic_yearly',
+    id: 'broxiva_basic_yearly',
     name: 'Broxiva Basic - Yearly',
     description: 'Yearly subscription to Broxiva Basic (Save 20%)',
     appleProductId: 'com.broxiva.subscription.basic.yearly',
@@ -59,7 +59,7 @@ export const SUBSCRIPTION_PRODUCTS: IAPSubscriptionProduct[] = [
     },
   },
   {
-    id: 'citadel_premium_monthly',
+    id: 'broxiva_premium_monthly',
     name: 'Broxiva Premium - Monthly',
     description: 'Monthly subscription to Broxiva Premium',
     appleProductId: 'com.broxiva.subscription.premium.monthly',
@@ -72,7 +72,7 @@ export const SUBSCRIPTION_PRODUCTS: IAPSubscriptionProduct[] = [
     },
   },
   {
-    id: 'citadel_premium_yearly',
+    id: 'broxiva_premium_yearly',
     name: 'Broxiva Premium - Yearly',
     description: 'Yearly subscription to Broxiva Premium (Save 25%)',
     appleProductId: 'com.broxiva.subscription.premium.yearly',

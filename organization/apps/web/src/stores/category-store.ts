@@ -189,7 +189,16 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
   fetchCategoryProducts: async (id, params) => {
     try {
       const response = await categoriesApi.getProducts(id, params);
-      return response;
+      const page = params?.page ?? 1;
+      const limit = params?.limit ?? 20;
+      const hasMore = page * limit < response.total;
+      return {
+        products: response.products,
+        total: response.total,
+        page,
+        limit,
+        hasMore,
+      };
     } catch (error) {
       set({ error: (error as Error).message });
       throw error;

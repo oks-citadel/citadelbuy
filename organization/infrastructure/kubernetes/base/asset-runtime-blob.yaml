@@ -116,7 +116,7 @@ spec:
 
       containers:
         - name: api
-          image: broxivaprodacr.azurecr.io/api:latest
+          image: broxivaprodacr.azurecr.io/api:v2.0.0
           ports:
             - containerPort: 4000
           env:

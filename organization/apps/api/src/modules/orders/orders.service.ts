@@ -62,12 +62,32 @@ export class OrdersService {
   async create(userId: string, createOrderDto: CreateOrderDto) {
     const { items, shippingAddress, subtotal, shipping } = createOrderDto;
 
-    // Get product details to extract category IDs
+    // Get product details to extract category IDs and verify stock
     const productIds = items.map((item) => item.productId);
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, categoryId: true },
+      select: { id: true, categoryId: true, stock: true, name: true },
     });
+
+    // CRITICAL: Verify stock availability before creating order
+    const insufficientStock: string[] = [];
+    for (const item of items) {
+      const product = products.find((p) => p.id === item.productId);
+      if (!product) {
+        throw new NotFoundException(`Product ${item.productId} not found`);
+      }
+      if (product.stock < item.quantity) {
+        insufficientStock.push(
+          `${product.name}: requested ${item.quantity}, available ${product.stock}`
+        );
+      }
+    }
+
+    if (insufficientStock.length > 0) {
+      throw new BadRequestException(
+        `Insufficient stock for: ${insufficientStock.join('; ')}`
+      );
+    }
 
     const categoryIds = products
       .map((p) => p.categoryId)
@@ -101,43 +121,76 @@ export class OrdersService {
     // Calculate total with tax
     const total = subtotal + shipping + calculatedTax;
 
-    // Create order with items in a transaction
-    const order = await this.prisma.order.create({
-      data: {
-        userId,
-        status: 'PENDING',
-        total,
-        subtotal,
-        tax: calculatedTax,
-        shipping,
-        shippingAddress: JSON.stringify(shippingAddress),
-        items: {
-          create: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-          })),
+    // CRITICAL: Use transaction to atomically reserve inventory and create order
+    // This prevents overselling by ensuring stock is decremented in the same transaction
+    const order = await this.prisma.$transaction(async (tx) => {
+      // Reserve inventory (decrement stock) for each item
+      for (const item of items) {
+        const product = await tx.product.findUnique({
+          where: { id: item.productId },
+          select: { stock: true, name: true },
+        });
+
+        if (!product || product.stock < item.quantity) {
+          throw new BadRequestException(
+            `Insufficient stock for ${product?.name || item.productId}. ` +
+            `Available: ${product?.stock || 0}, Requested: ${item.quantity}`
+          );
+        }
+
+        // Decrement stock atomically
+        await tx.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
+          },
+        });
+
+        this.logger.log(
+          `Reserved ${item.quantity} units of product ${item.productId}`
+        );
+      }
+
+      // Create order with items
+      return tx.order.create({
+        data: {
+          userId,
+          status: 'PENDING',
+          total,
+          subtotal,
+          tax: calculatedTax,
+          shipping,
+          shippingAddress: JSON.stringify(shippingAddress),
+          items: {
+            create: items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              price: item.price,
+            })),
+          },
         },
-      },
-      include: {
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                images: true,
+        include: {
+          items: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  images: true,
+                },
               },
             },
           },
-        },
-        user: {
-          select: {
-            email: true,
-            name: true,
+          user: {
+            select: {
+              email: true,
+              name: true,
+            },
           },
         },
-      },
+      });
     });
 
     // Store tax calculation in database
@@ -781,14 +834,50 @@ export class OrdersService {
       },
     ];
 
-    // Cancel the order
-    const cancelledOrder = await this.prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status: 'CANCELLED',
-        statusHistory,
-        updatedAt: new Date(),
-      },
+    // Cancel the order and restore inventory in a transaction
+    const cancelledOrder = await this.prisma.$transaction(async (tx) => {
+      // Get order items to restore inventory
+      const orderWithItems = await tx.order.findUnique({
+        where: { id: orderId },
+        include: {
+          items: {
+            select: {
+              productId: true,
+              quantity: true,
+            },
+          },
+        },
+      });
+
+      if (!orderWithItems) {
+        throw new NotFoundException('Order not found');
+      }
+
+      // Restore inventory for each item
+      for (const item of orderWithItems.items) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              increment: item.quantity,
+            },
+          },
+        });
+
+        this.logger.log(
+          `Restored ${item.quantity} units to product ${item.productId}`
+        );
+      }
+
+      // Update order status
+      return tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: 'CANCELLED',
+          statusHistory,
+          updatedAt: new Date(),
+        },
+      });
     });
 
     // Send cancellation email

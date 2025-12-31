@@ -1,11 +1,17 @@
-import { Controller, Post, Get, Body, Param, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Post, Get, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { UserRole } from '@prisma/client';
 import { FraudDetectionService } from './fraud-detection.service';
 import { TransactionAnalysisService } from './transaction-analysis.service';
 import { AccountSecurityService } from './account-security.service';
 
 @ApiTags('AI - Fraud Detection')
 @Controller('ai/fraud-detection')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@ApiBearerAuth()
 export class FraudDetectionController {
   constructor(
     private readonly fraudDetectionService: FraudDetectionService,
@@ -14,6 +20,7 @@ export class FraudDetectionController {
   ) {}
 
   @Post('analyze-transaction')
+  @Roles(UserRole.ADMIN, UserRole.VENDOR)
   @ApiOperation({ summary: 'Analyze transaction for fraud risk' })
   async analyzeTransaction(@Body() data: {
     transactionId: string;
@@ -67,7 +74,8 @@ export class FraudDetectionController {
   }
 
   @Get('risk-score/:userId')
-  @ApiOperation({ summary: 'Get user risk score and profile' })
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get user risk score and profile (Admin only)' })
   async getUserRiskScore(@Param('userId') userId: string) {
     return this.fraudDetectionService.getUserRiskScore(userId);
   }
@@ -83,7 +91,8 @@ export class FraudDetectionController {
   }
 
   @Get('fraud-alerts')
-  @ApiOperation({ summary: 'Get recent fraud alerts' })
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get recent fraud alerts (Admin only)' })
   async getFraudAlerts(@Query('severity') severity?: string) {
     return this.fraudDetectionService.getFraudAlerts(severity);
   }

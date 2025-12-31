@@ -1,9 +1,12 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PersonalizationService } from './personalization.service';
 
 @ApiTags('AI - Personalization Engine')
 @Controller('ai/personalization')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class PersonalizationController {
   constructor(
     private readonly personalizationService: PersonalizationService,

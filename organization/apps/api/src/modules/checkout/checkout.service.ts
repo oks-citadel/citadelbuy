@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { PaymentsService } from '../payments/payments.service';
 import { OrdersService } from '../orders/orders.service';
 import { CouponsService } from '../coupons/coupons.service';
 import { CartAbandonmentService } from '../cart/cart-abandonment.service';
+import { ShippingService } from '../shipping/shipping.service';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 
@@ -71,7 +72,7 @@ export interface GuestCheckoutRequest {
 }
 
 @Injectable()
-export class CheckoutService {
+export class CheckoutService implements OnModuleInit {
   private readonly logger = new Logger(CheckoutService.name);
   private stripe: Stripe;
 
@@ -81,12 +82,43 @@ export class CheckoutService {
     private ordersService: OrdersService,
     private couponsService: CouponsService,
     private cartAbandonmentService: CartAbandonmentService,
+    private shippingService: ShippingService,
     private configService: ConfigService,
   ) {
     const apiKey = this.configService.get('STRIPE_SECRET_KEY');
+    // Validate Stripe key in production - CRITICAL for revenue
+    if (!apiKey || apiKey.includes('placeholder') || apiKey === 'sk_test_dummy') {
+      const nodeEnv = this.configService.get('NODE_ENV');
+      if (nodeEnv === 'production') {
+        throw new Error(
+          'CRITICAL: Stripe API key is not configured for production! ' +
+          'Set STRIPE_SECRET_KEY to a valid production key. ' +
+          'Payments will fail without a valid key.'
+        );
+      }
+      this.logger.warn(
+        'WARNING: Stripe is using a placeholder/test key. ' +
+        'Payments will fail. Set STRIPE_SECRET_KEY for production.'
+      );
+    }
     this.stripe = new Stripe(apiKey || 'sk_test_dummy', {
       apiVersion: '2024-12-18.acacia',
     });
+  }
+
+  onModuleInit() {
+    // Validate critical configuration on startup
+    const stripeKey = this.configService.get('STRIPE_SECRET_KEY');
+    const nodeEnv = this.configService.get('NODE_ENV');
+
+    if (nodeEnv === 'production') {
+      if (!stripeKey || stripeKey.includes('placeholder') || stripeKey === 'sk_test_dummy') {
+        this.logger.error('FATAL: Invalid Stripe configuration in production!');
+      }
+      if (!stripeKey?.startsWith('sk_live_')) {
+        this.logger.warn('Stripe key does not appear to be a production key (should start with sk_live_)');
+      }
+    }
   }
 
   // ==================== Address Management ====================
@@ -219,7 +251,7 @@ export class CheckoutService {
     }
 
     // Get or create Stripe customer
-    let stripeCustomerId = await this.getOrCreateStripeCustomer(userId, user.email);
+    const stripeCustomerId = await this.getOrCreateStripeCustomer(userId, user.email);
 
     try {
       const paymentMethods = await this.stripe.paymentMethods.list({
@@ -488,9 +520,21 @@ export class CheckoutService {
       }
     }
 
-    // Calculate totals
-    const shipping = 0; // Could calculate based on address
-    const tax = Math.round(subtotal * 0.08 * 100) / 100; // 8% tax approximation
+    // Calculate shipping using the shipping service
+    const shipping = await this.calculateShippingCost(
+      items,
+      {
+        street: shippingAddress.street,
+        city: shippingAddress.city,
+        state: shippingAddress.state,
+        postalCode: shippingAddress.postalCode,
+        country: shippingAddress.country,
+      },
+      subtotal,
+    );
+
+    // Calculate tax (8% approximation - should integrate with tax service for accuracy)
+    const tax = Math.round(subtotal * 0.08 * 100) / 100;
     const total = subtotal - discount + shipping + tax;
 
     // Get or use payment method
@@ -674,8 +718,19 @@ export class CheckoutService {
       }
     }
 
-    // Calculate totals
-    const shipping = 0;
+    // Calculate shipping for guest checkout
+    const shipping = await this.calculateShippingCost(
+      items,
+      {
+        street: shippingAddress.street,
+        city: shippingAddress.city,
+        state: shippingAddress.state,
+        postalCode: shippingAddress.postalCode,
+        country: shippingAddress.country,
+      },
+      subtotal,
+    );
+
     const tax = Math.round(subtotal * 0.08 * 100) / 100;
     const total = subtotal - discount + shipping + tax;
 
@@ -842,8 +897,22 @@ export class CheckoutService {
       }
     }
 
-    // Calculate totals
-    const shipping = 0;
+    // Calculate shipping if address is selected
+    let shipping = 0;
+    if (selectedAddress) {
+      shipping = await this.calculateShippingCost(
+        items.map(i => ({ productId: i.productId, quantity: i.quantity, price: i.price })),
+        {
+          street: selectedAddress.street,
+          city: selectedAddress.city,
+          state: selectedAddress.state,
+          postalCode: selectedAddress.postalCode,
+          country: selectedAddress.country,
+        },
+        subtotal,
+      );
+    }
+
     const tax = Math.round(subtotal * 0.08 * 100) / 100;
     const total = subtotal - discount + shipping + tax;
 
@@ -871,6 +940,97 @@ export class CheckoutService {
   }
 
   // ==================== Helper Methods ====================
+
+  /**
+   * Calculate shipping cost using the shipping service
+   * Falls back to flat rate if shipping service fails
+   */
+  private async calculateShippingCost(
+    items: Array<{ productId: string; quantity: number; price: number }>,
+    shippingAddress: {
+      street: string;
+      city: string;
+      state: string;
+      postalCode: string;
+      country: string;
+    },
+    subtotal: number,
+  ): Promise<number> {
+    try {
+      // Calculate package dimensions from products
+      const productIds = items.map(i => i.productId);
+      const packageInfo = await this.shippingService.calculatePackageDimensions(productIds);
+
+      // Get shipping rates with free shipping threshold check
+      const ratesResult = await this.shippingService.compareRates(
+        {
+          fromAddress: {
+            name: 'Broxiva Warehouse',
+            street1: '123 Warehouse Ave',
+            city: 'Los Angeles',
+            state: 'CA',
+            postalCode: '90001',
+            country: 'US',
+          },
+          toAddress: {
+            name: 'Customer',
+            street1: shippingAddress.street,
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+            postalCode: shippingAddress.postalCode,
+            country: shippingAddress.country,
+          },
+          package: {
+            type: 'SMALL_PACKAGE' as any,
+            weight: packageInfo.weight,
+            length: packageInfo.length,
+            width: packageInfo.width,
+            height: packageInfo.height,
+          },
+        },
+        subtotal,
+      );
+
+      // If eligible for free shipping, return 0
+      if (ratesResult.freeShippingEligible) {
+        this.logger.log('Customer qualifies for free shipping');
+        return 0;
+      }
+
+      // Use the cheapest rate available
+      if (ratesResult.rates.length > 0) {
+        const cheapestRate = ratesResult.rates[0].totalRate;
+        this.logger.log(`Calculated shipping rate: $${cheapestRate}`);
+        return cheapestRate;
+      }
+
+      // Fallback to flat rate if no rates available
+      this.logger.warn('No shipping rates available, using flat rate');
+      return this.calculateFlatRateShipping(subtotal, shippingAddress.country);
+    } catch (error) {
+      this.logger.error('Shipping calculation failed, using flat rate', error);
+      return this.calculateFlatRateShipping(subtotal, shippingAddress.country);
+    }
+  }
+
+  /**
+   * Flat rate shipping fallback
+   */
+  private calculateFlatRateShipping(subtotal: number, country: string): number {
+    // Free shipping threshold
+    const FREE_SHIPPING_THRESHOLD = 75;
+    if (subtotal >= FREE_SHIPPING_THRESHOLD) {
+      return 0;
+    }
+
+    // Domestic vs International rates
+    if (country === 'US' || country === 'USA' || country === 'United States') {
+      return 7.99; // Flat rate domestic
+    }
+
+    // International shipping
+    return 19.99;
+  }
 
   private async getOrCreateStripeCustomer(userId: string, email: string): Promise<string> {
     // Check if we have a stored customer ID

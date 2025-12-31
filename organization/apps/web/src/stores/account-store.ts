@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import type { Order, Review, LoyaltyProgram } from '@/types';
 import type {
   WishlistItem,
@@ -9,12 +8,10 @@ import type {
   GiftCard,
   StoreCredit,
   UserSubscription,
-  BNPLOrder,
   LoyaltyReward,
   LoyaltyRedemption,
   Referral,
   SavedAddress,
-  SavedPaymentMethod,
 } from '@/types/extended';
 import {
   ordersApi,
@@ -24,11 +21,8 @@ import {
   supportApi,
   giftCardsApi,
   subscriptionsApi,
-  bnplApi,
   loyaltyApi,
   addressApi,
-  paymentMethodsApi,
-  profileApi,
 } from '@/services/account-api';
 
 // ==================== ORDERS STORE ====================
@@ -53,7 +47,7 @@ export const useOrdersStore = create<OrdersState>((set) => ({
     try {
       const data = await ordersApi.getOrders();
       set({ orders: data || [], isLoading: false });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch orders', isLoading: false });
     }
   },
@@ -63,7 +57,7 @@ export const useOrdersStore = create<OrdersState>((set) => ({
     try {
       const data = await ordersApi.getOrderById(id);
       set({ currentOrder: data || null, isLoading: false });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch order', isLoading: false });
     }
   },
@@ -78,7 +72,7 @@ export const useOrdersStore = create<OrdersState>((set) => ({
         ),
         isLoading: false,
       }));
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to cancel order', isLoading: false });
     }
   },
@@ -101,7 +95,7 @@ interface WishlistState {
   checkInWishlist: (productId: string) => Promise<boolean>;
 }
 
-export const useWishlistStore = create<WishlistState>((set, get) => ({
+export const useWishlistStore = create<WishlistState>((set) => ({
   items: [],
   collections: [],
   count: 0,
@@ -120,7 +114,7 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
         count: countData?.count || 0,
         isLoading: false,
       });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch wishlist', isLoading: false });
     }
   },
@@ -129,7 +123,7 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
     try {
       const data = await wishlistApi.getCollections();
       set({ collections: data || [] });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch collections' });
     }
   },
@@ -143,7 +137,7 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
           count: state.count + 1,
         }));
       }
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to add to wishlist' });
     }
   },
@@ -155,7 +149,7 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
         items: state.items.filter((item) => item.productId !== productId),
         count: Math.max(0, state.count - 1),
       }));
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to remove from wishlist' });
     }
   },
@@ -164,7 +158,7 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
     try {
       await wishlistApi.clearWishlist();
       set({ items: [], count: 0 });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to clear wishlist' });
     }
   },
@@ -177,7 +171,7 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
           collections: [...state.collections, data],
         }));
       }
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to create collection' });
     }
   },
@@ -188,7 +182,7 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
       set((state) => ({
         collections: state.collections.filter((c) => c.id !== id),
       }));
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to delete collection' });
     }
   },
@@ -228,7 +222,7 @@ export const useReviewsStore = create<ReviewsState>((set) => ({
     try {
       const data = await reviewsApi.getMyReviews();
       set({ myReviews: data || [], isLoading: false });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch reviews', isLoading: false });
     }
   },
@@ -243,7 +237,7 @@ export const useReviewsStore = create<ReviewsState>((set) => ({
           isLoading: false,
         }));
       }
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to create review', isLoading: false });
     }
   },
@@ -254,7 +248,7 @@ export const useReviewsStore = create<ReviewsState>((set) => ({
       set((state) => ({
         myReviews: state.myReviews.filter((r) => r.id !== id),
       }));
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to delete review' });
     }
   },
@@ -287,7 +281,7 @@ export const useReturnsStore = create<ReturnsState>((set) => ({
     try {
       const data = await returnsApi.getMyReturns();
       set({ returns: data || [], isLoading: false });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch returns', isLoading: false });
     }
   },
@@ -297,7 +291,7 @@ export const useReturnsStore = create<ReturnsState>((set) => ({
     try {
       const data = await returnsApi.getReturnById(id);
       set({ currentReturn: data || null, isLoading: false });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch return', isLoading: false });
     }
   },
@@ -312,7 +306,7 @@ export const useReturnsStore = create<ReturnsState>((set) => ({
           isLoading: false,
         }));
       }
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to create return', isLoading: false });
     }
   },
@@ -325,7 +319,7 @@ export const useReturnsStore = create<ReturnsState>((set) => ({
           r.id === id ? { ...r, status: 'CANCELLED' as const } : r
         ),
       }));
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to cancel return' });
     }
   },
@@ -358,7 +352,7 @@ export const useSupportStore = create<SupportState>((set) => ({
     try {
       const data = await supportApi.getTickets();
       set({ tickets: data || [], isLoading: false });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch tickets', isLoading: false });
     }
   },
@@ -368,7 +362,7 @@ export const useSupportStore = create<SupportState>((set) => ({
     try {
       const data = await supportApi.getTicketById(id);
       set({ currentTicket: data || null, isLoading: false });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch ticket', isLoading: false });
     }
   },
@@ -383,7 +377,7 @@ export const useSupportStore = create<SupportState>((set) => ({
           isLoading: false,
         }));
       }
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to create ticket', isLoading: false });
     }
   },
@@ -394,7 +388,7 @@ export const useSupportStore = create<SupportState>((set) => ({
       // Refresh ticket to get updated messages
       const data = await supportApi.getTicketById(ticketId);
       set({ currentTicket: data || null });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to add message' });
     }
   },
@@ -432,7 +426,7 @@ export const useGiftCardsStore = create<GiftCardsState>((set) => ({
     try {
       const data = await giftCardsApi.getMyPurchases();
       set({ myGiftCards: data || [], isLoading: false });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch gift cards', isLoading: false });
     }
   },
@@ -441,7 +435,7 @@ export const useGiftCardsStore = create<GiftCardsState>((set) => ({
     try {
       const data = await giftCardsApi.getStoreCredit();
       set({ storeCredit: data || null });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch store credit' });
     }
   },
@@ -456,7 +450,7 @@ export const useGiftCardsStore = create<GiftCardsState>((set) => ({
           isLoading: false,
         }));
       }
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to purchase gift card', isLoading: false });
     }
   },
@@ -470,7 +464,7 @@ export const useGiftCardsStore = create<GiftCardsState>((set) => ({
         set({ storeCredit: creditData || null });
       }
       return data || { success: false, creditsAdded: 0 };
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to redeem gift card' });
       return { success: false, creditsAdded: 0 };
     }
@@ -509,7 +503,7 @@ export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
     try {
       const data = await subscriptionsApi.getMySubscription();
       set({ subscription: data || null, isLoading: false });
-    } catch (error) {
+    } catch {
       set({ subscription: null, isLoading: false });
     }
   },
@@ -519,7 +513,7 @@ export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
     try {
       const data = await subscriptionsApi.getPlans(type);
       set({ plans: data || [], isLoading: false });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch plans', isLoading: false });
     }
   },
@@ -529,7 +523,7 @@ export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
     try {
       const data = await subscriptionsApi.subscribe({ planId, billingCycle });
       set({ subscription: data || null, isLoading: false });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to subscribe', isLoading: false });
     }
   },
@@ -547,7 +541,7 @@ export const useSubscriptionsStore = create<SubscriptionsState>((set, get) => ({
           : null,
         isLoading: false,
       }));
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to cancel subscription', isLoading: false });
     }
   },
@@ -582,7 +576,7 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
     try {
       const data = await loyaltyApi.getMyAccount();
       set({ account: data || null, isLoading: false });
-    } catch (error) {
+    } catch {
       set({ account: null, isLoading: false });
     }
   },
@@ -591,7 +585,7 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
     try {
       const data = await loyaltyApi.getAvailableRewards();
       set({ rewards: data || [] });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch rewards' });
     }
   },
@@ -600,7 +594,7 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
     try {
       const data = await loyaltyApi.getMyRedemptions();
       set({ redemptions: data || [] });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch redemptions' });
     }
   },
@@ -609,7 +603,7 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
     try {
       const data = await loyaltyApi.getMyReferrals();
       set({ referrals: data || [] });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch referrals' });
     }
   },
@@ -627,7 +621,7 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
         const accountData = await loyaltyApi.getMyAccount();
         set({ account: accountData || null });
       }
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to redeem reward', isLoading: false });
     }
   },
@@ -640,7 +634,7 @@ export const useLoyaltyStore = create<LoyaltyState>((set) => ({
           referrals: [...state.referrals, data],
         }));
       }
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to create referral' });
     }
   },
@@ -669,7 +663,7 @@ export const useAddressStore = create<AddressState>((set) => ({
     try {
       const data = await addressApi.getAddresses();
       set({ addresses: data || [], isLoading: false });
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to fetch addresses', isLoading: false });
     }
   },
@@ -684,7 +678,7 @@ export const useAddressStore = create<AddressState>((set) => ({
           isLoading: false,
         }));
       }
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to add address', isLoading: false });
     }
   },
@@ -699,7 +693,7 @@ export const useAddressStore = create<AddressState>((set) => ({
           ),
         }));
       }
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to update address' });
     }
   },
@@ -710,7 +704,7 @@ export const useAddressStore = create<AddressState>((set) => ({
       set((state) => ({
         addresses: state.addresses.filter((a) => a.id !== id),
       }));
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to delete address' });
     }
   },
@@ -724,7 +718,7 @@ export const useAddressStore = create<AddressState>((set) => ({
           isDefaultShipping: a.id === id,
         })),
       }));
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to set default shipping' });
     }
   },
@@ -738,7 +732,7 @@ export const useAddressStore = create<AddressState>((set) => ({
           isDefaultBilling: a.id === id,
         })),
       }));
-    } catch (error) {
+    } catch {
       set({ error: 'Failed to set default billing' });
     }
   },

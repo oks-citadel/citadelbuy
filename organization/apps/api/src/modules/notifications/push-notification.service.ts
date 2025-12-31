@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
 
@@ -29,7 +29,7 @@ export interface SendPushResult {
 }
 
 @Injectable()
-export class PushNotificationService {
+export class PushNotificationService implements OnModuleInit {
   private readonly logger = new Logger(PushNotificationService.name);
   private firebaseApp: any = null;
   private isInitialized = false;
@@ -39,6 +39,23 @@ export class PushNotificationService {
     private configService: ConfigService,
   ) {
     this.initializeFirebase();
+  }
+
+  onModuleInit() {
+    // In production, fail loudly if Firebase is not configured
+    const nodeEnv = this.configService.get('NODE_ENV');
+    if (nodeEnv === 'production' && !this.isInitialized) {
+      this.logger.error(
+        'CRITICAL: Firebase is not configured in production! ' +
+        'Push notifications will fail. ' +
+        'Set FIREBASE_SERVICE_ACCOUNT_PATH, FIREBASE_SERVICE_ACCOUNT_JSON, or FIREBASE_PROJECT_ID.'
+      );
+      // Throw error to prevent silent failures in production
+      throw new Error(
+        'Firebase must be configured for production. ' +
+        'Push notifications are required for order updates and user engagement.'
+      );
+    }
   }
 
   /**

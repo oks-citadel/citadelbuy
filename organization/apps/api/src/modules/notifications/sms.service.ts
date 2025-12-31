@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
 
@@ -24,7 +24,7 @@ export interface SendSmsResult {
 }
 
 @Injectable()
-export class SmsService {
+export class SmsService implements OnModuleInit {
   private readonly logger = new Logger(SmsService.name);
   private twilioClient: any = null;
   private fromNumber: string | null = null;
@@ -35,6 +35,22 @@ export class SmsService {
     private configService: ConfigService,
   ) {
     this.initializeTwilio();
+  }
+
+  onModuleInit() {
+    // In production, warn loudly if Twilio is not configured
+    // SMS is optional but important for verification and alerts
+    const nodeEnv = this.configService.get('NODE_ENV');
+    if (nodeEnv === 'production' && !this.isInitialized) {
+      this.logger.error(
+        'WARNING: Twilio SMS is not configured in production! ' +
+        'Phone verification, order SMS notifications, and delivery alerts will fail. ' +
+        'Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER.'
+      );
+      // SMS is less critical than push, so we warn rather than throw
+      // Uncomment the following to make SMS required in production:
+      // throw new Error('Twilio must be configured for production SMS functionality.');
+    }
   }
 
   /**

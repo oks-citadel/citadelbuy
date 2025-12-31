@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ProductCreationGuard } from '../subscriptions/guards/subscription-feature.guard';
 import { ProductsService } from './products.service';
 import { QueryProductsDto } from './dto/query-products.dto';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -142,12 +143,13 @@ export class ProductsController {
     return this.productsService.getRelatedProducts(id, limitNum);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, ProductCreationGuard)
   @Post()
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create new product' })
+  @ApiOperation({ summary: 'Create new product (checks subscription product limits)' })
   @ApiResponse({ status: 201, description: 'Product created successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Product limit reached for subscription tier' })
   async create(@Body() data: CreateProductDto) {
     return this.productsService.create(data);
   }

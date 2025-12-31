@@ -14,6 +14,8 @@ import {
   AdminFeaturedListingsController,
 } from './featured-listings.controller';
 import { FeaturedListingsService } from './featured-listings.service';
+import { VendorCommissionsController, AdminCommissionsController } from './vendor-commissions.controller';
+import { VendorCommissionsService } from './vendor-commissions.service';
 import { PrismaModule } from '@/common/prisma/prisma.module';
 
 @Module({
@@ -27,6 +29,8 @@ import { PrismaModule } from '@/common/prisma/prisma.module';
     FeaturedProductsController,
     VendorFeaturedListingsController,
     AdminFeaturedListingsController,
+    VendorCommissionsController,
+    AdminCommissionsController,
   ],
   providers: [
     VendorsService,
@@ -34,6 +38,7 @@ import { PrismaModule } from '@/common/prisma/prisma.module';
     BulkUploadService,
     VendorPayoutsService,
     FeaturedListingsService,
+    VendorCommissionsService,
   ],
   exports: [
     VendorsService,
@@ -41,6 +46,7 @@ import { PrismaModule } from '@/common/prisma/prisma.module';
     BulkUploadService,
     VendorPayoutsService,
     FeaturedListingsService,
+    VendorCommissionsService,
   ],
 })
 export class VendorsModule {}

@@ -1,6 +1,6 @@
-# Contributing to CitadelBuy
+# Contributing to Broxiva
 
-Thank you for your interest in contributing to CitadelBuy! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to Broxiva! This document provides guidelines and instructions for contributing to the project.
 
 ## Table of Contents
 
@@ -37,8 +37,8 @@ Before you begin, ensure you have the following installed:
 
 1. **Fork and clone the repository:**
    ```bash
-   git clone https://github.com/your-username/citadelbuy.git
-   cd citadelbuy/organization
+   git clone https://github.com/your-username/broxiva.git
+   cd broxiva/organization
    ```
 
 2. **Install dependencies:**
@@ -578,8 +578,8 @@ When asking for help:
 
 ## License
 
-By contributing to CitadelBuy, you agree that your contributions will be licensed under the same license as the project.
+By contributing to Broxiva, you agree that your contributions will be licensed under the same license as the project.
 
 ## Thank You!
 
-Your contributions make CitadelBuy better for everyone. We appreciate your time and effort!
+Your contributions make Broxiva better for everyone. We appreciate your time and effort!

@@ -161,27 +161,21 @@ export function ChatWidget() {
   };
 
   const startVoiceInput = async () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    // Check for Web Speech API support (standard or vendor-prefixed)
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognitionAPI) {
       alert('Voice input is not supported in this browser');
       return;
     }
 
     setIsListening(true);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      setIsListening(false);
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
+    const recognition = new SpeechRecognitionAPI();
     recognition.lang = 'en-US';
     recognition.interimResults = false;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       const transcript = event.results[0][0].transcript;
       setInputValue(transcript);
       setIsListening(false);

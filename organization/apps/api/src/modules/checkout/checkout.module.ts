@@ -6,6 +6,7 @@ import { PaymentsModule } from '../payments/payments.module';
 import { OrdersModule } from '../orders/orders.module';
 import { CouponsModule } from '../coupons/coupons.module';
 import { CartModule } from '../cart/cart.module';
+import { ShippingModule } from '../shipping/shipping.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
@@ -16,6 +17,7 @@ import { ConfigModule } from '@nestjs/config';
     forwardRef(() => OrdersModule),
     forwardRef(() => CouponsModule),
     forwardRef(() => CartModule),
+    forwardRef(() => ShippingModule),
   ],
   controllers: [CheckoutController],
   providers: [CheckoutService],

@@ -114,6 +114,34 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Set value only if key does not exist (atomic operation)
+   * CRITICAL: Use this for distributed locks and idempotency checks
+   * @param key Cache key
+   * @param value Value to set
+   * @param ttl Time to live in seconds
+   * @returns true if key was set (didn't exist), false if key already existed
+   */
+  async setNx<T>(key: string, value: T, ttl: number = 3600): Promise<boolean> {
+    if (!this.isConnected) {
+      this.logger.warn('Redis not connected, skipping setNx operation');
+      return false;
+    }
+
+    try {
+      // Use SET with NX (only set if not exists) and EX (expiry in seconds)
+      const result = await this.client.set(key, JSON.stringify(value), {
+        NX: true,
+        EX: ttl,
+      });
+      // Result is 'OK' if set was successful, null if key already exists
+      return result === 'OK';
+    } catch (error) {
+      this.logger.error(`Error in setNx for key ${key}:`, error);
+      return false;
+    }
+  }
+
+  /**
    * Delete key from cache
    */
   async del(key: string): Promise<boolean> {

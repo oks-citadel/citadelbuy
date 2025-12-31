@@ -414,7 +414,7 @@ export class TaxService {
     });
 
     // 3. Calculate taxable amount
-    let taxableAmount = dto.subtotal;
+    const taxableAmount = dto.subtotal;
     let shippingTax = 0;
 
     // 4. Calculate tax for each applicable rate

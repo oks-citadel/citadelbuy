@@ -315,7 +315,7 @@ resource "azurerm_linux_web_app" "api" {
     container_registry_use_managed_identity = true
 
     application_stack {
-      docker_image_name   = "${azurerm_container_registry.main.login_server}/api:latest"
+      docker_image_name   = "${azurerm_container_registry.main.login_server}/api:v2.0.0"
       docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
     }
 
@@ -395,7 +395,7 @@ resource "azurerm_linux_web_app" "web" {
     container_registry_use_managed_identity = true
 
     application_stack {
-      docker_image_name   = "${azurerm_container_registry.main.login_server}/web:latest"
+      docker_image_name   = "${azurerm_container_registry.main.login_server}/web:v2.0.0"
       docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
     }
   }

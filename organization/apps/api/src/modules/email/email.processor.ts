@@ -229,7 +229,7 @@ export class EmailProcessor {
 
       // Generate tracking ID if tracking is enabled
       await job.progress(60);
-      let trackingId = emailLogId;
+      const trackingId = emailLogId;
 
       if (data.trackingEnabled && emailLogId) {
         // Update metadata with tracking information

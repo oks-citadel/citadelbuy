@@ -634,7 +634,7 @@ export class ShippingService {
       : undefined;
 
     // Get rates from all carriers
-    let rates = await this.calculateRates(dto);
+    const rates = await this.calculateRates(dto);
 
     // If eligible for free shipping, add a free ground shipping option
     if (freeShippingEligible) {

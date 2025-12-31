@@ -324,7 +324,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: classifier
-        image: broxivaprodacr.azurecr.io/broxiva-data-classification:latest
+        image: broxivaprodacr.azurecr.io/broxiva-data-classification:v2.0.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

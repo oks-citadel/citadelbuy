@@ -1,9 +1,12 @@
-import { Controller, Get, Post, Patch, Delete, Body, UseGuards, Request, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, UseGuards, Request, Param, Query, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { UsersService } from './users.service';
 import { AddressService } from './address.service';
+import { DataExportService } from './data-export.service';
+import { DataDeletionService } from './data-deletion.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdatePreferencesDto } from './dto/update-preferences.dto';
 import { CreateAddressDto, UpdateAddressDto } from './dto/address.dto';
@@ -15,6 +18,8 @@ export class UsersController {
   constructor(
     private usersService: UsersService,
     private addressService: AddressService,
+    private dataExportService: DataExportService,
+    private dataDeletionService: DataDeletionService,
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -439,5 +444,171 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async deleteUser(@Param('id') id: string) {
     return this.usersService.remove(id);
+  }
+
+  // ===== GDPR COMPLIANCE ENDPOINTS =====
+
+  @UseGuards(JwtAuthGuard)
+  @Get('gdpr/export')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Export user data (GDPR Article 20)',
+    description: 'Request a complete export of all user data in JSON format. Complies with GDPR Right to Data Portability.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User data exported successfully',
+    schema: {
+      example: {
+        exportedAt: '2024-02-20T15:45:00Z',
+        dataVersion: '1.0',
+        user: {
+          email: 'john@example.com',
+          name: 'John Doe',
+          orders: [],
+          reviews: [],
+          wishlist: [],
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async exportUserData(@Request() req: any, @Res() res: Response) {
+    const exportData = await this.dataExportService.exportUserData(req.user.id);
+
+    // Set headers for download
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="user-data-export-${req.user.id}.json"`);
+
+    return res.json(exportData);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('gdpr/export-request')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Request data export (GDPR)',
+    description: 'Create a data export request. The export will be processed and made available for download.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Export request created',
+    schema: {
+      example: {
+        exportId: '123e4567-e89b-12d3-a456-426614174000',
+        status: 'pending',
+      },
+    },
+  })
+  async createExportRequest(@Request() req: any) {
+    return this.dataExportService.createExportRequest(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('gdpr/export-status/:exportId')
+  @ApiBearerAuth()
+  @ApiParam({ name: 'exportId', description: 'Export request ID' })
+  @ApiOperation({
+    summary: 'Check export status',
+    description: 'Check the status of a data export request.',
+  })
+  @ApiResponse({ status: 200, description: 'Export status retrieved' })
+  async getExportStatus(@Param('exportId') exportId: string) {
+    return this.dataExportService.getExportStatus(exportId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('gdpr/delete-request')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Request account deletion (GDPR Article 17)',
+    description: 'Request complete deletion of user account and all associated data. 30-day grace period applies.',
+  })
+  @ApiBody({
+    schema: {
+      properties: {
+        reason: {
+          type: 'string',
+          description: 'Optional reason for deletion',
+          example: 'No longer using the service',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Deletion request created',
+    schema: {
+      example: {
+        requestId: '123e4567-e89b-12d3-a456-426614174000',
+        scheduledDate: '2024-03-20T00:00:00Z',
+        cancellationDeadline: '2024-03-13T00:00:00Z',
+        message: 'Your account is scheduled for deletion. You can cancel this request within 23 days.',
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async requestAccountDeletion(@Request() req: any, @Body('reason') reason?: string) {
+    const result = await this.dataDeletionService.requestDeletion(req.user.id, 'soft');
+    return {
+      ...result,
+      message: `Your account is scheduled for deletion on ${result.scheduledDate.toISOString()}. You can cancel this request before ${result.cancellationDeadline.toISOString()}.`,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('gdpr/delete-request/:requestId')
+  @ApiBearerAuth()
+  @ApiParam({ name: 'requestId', description: 'Deletion request ID' })
+  @ApiOperation({
+    summary: 'Cancel deletion request',
+    description: 'Cancel a pending account deletion request before the cancellation deadline.',
+  })
+  @ApiResponse({ status: 200, description: 'Deletion request cancelled' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Request not found' })
+  async cancelDeletionRequest(@Param('requestId') requestId: string) {
+    await this.dataDeletionService.cancelDeletion(requestId);
+    return { message: 'Deletion request cancelled successfully' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('gdpr/deletion-status/:requestId')
+  @ApiBearerAuth()
+  @ApiParam({ name: 'requestId', description: 'Deletion request ID' })
+  @ApiOperation({
+    summary: 'Check deletion status',
+    description: 'Check the status of an account deletion request.',
+  })
+  @ApiResponse({ status: 200, description: 'Deletion status retrieved' })
+  async getDeletionStatus(@Param('requestId') requestId: string) {
+    return this.dataDeletionService.getDeletionStatus(requestId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('gdpr/data-retention')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get data retention info',
+    description: 'Get information about data retention policies and deletion options.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Data retention info retrieved',
+    schema: {
+      example: {
+        dataTypes: ['profile', 'orders', 'addresses', 'reviews'],
+        retentionPeriod: 365,
+        deletionScheduled: false,
+        deletionOptions: {
+          gracePeriodDays: 30,
+          strategies: ['hard', 'soft', 'anonymize'],
+          hardDelete: true,
+        },
+      },
+    },
+  })
+  async getDataRetentionInfo(@Request() req: any) {
+    return this.dataDeletionService.getDataRetentionInfo(req.user.id);
   }
 }

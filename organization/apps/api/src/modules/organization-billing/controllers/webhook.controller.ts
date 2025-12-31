@@ -130,7 +130,7 @@ export class WebhookController {
     }
 
     // Find or create invoice record
-    let invoiceRecord = await this.prisma.organizationInvoice.findFirst({
+    const invoiceRecord = await this.prisma.organizationInvoice.findFirst({
       where: { stripeInvoiceId: invoice.id },
     });
 
@@ -160,15 +160,17 @@ export class WebhookController {
 
   /**
    * Handle invoice.payment_failed event
+   * CRITICAL: This now revokes access to prevent free usage after payment failure
    */
   private async handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
     this.logger.log(`Processing invoice.payment_failed event: ${invoice.id}`);
 
     const customerId = invoice.customer as string;
 
-    // Find billing record
+    // Find billing record with organization
     const billing = await this.prisma.organizationBilling.findFirst({
       where: { stripeCustomerId: customerId },
+      include: { organization: true },
     });
 
     if (!billing) {
@@ -181,10 +183,39 @@ export class WebhookController {
       where: { id: billing.id },
       data: {
         status: 'past_due',
+        // Set access revocation timestamp for grace period tracking
+        accessRevokedAt: new Date(),
       },
     });
 
-    this.logger.log(`Billing status updated to past_due for customer: ${customerId}`);
+    // CRITICAL: Revoke premium feature access
+    // Disable API keys for the organization
+    await this.prisma.apiKey.updateMany({
+      where: {
+        organizationId: billing.organizationId,
+        isActive: true,
+      },
+      data: {
+        isActive: false,
+        revokedAt: new Date(),
+        revokedReason: 'Payment failed - subscription past due',
+      },
+    });
+
+    // Update organization to restrict access
+    await this.prisma.organization.update({
+      where: { id: billing.organizationId },
+      data: {
+        // Downgrade to free tier limits
+        planTier: 'FREE',
+        featuresEnabled: [],
+      },
+    });
+
+    this.logger.warn(
+      `ACCESS REVOKED: Organization ${billing.organizationId} downgraded due to payment failure. ` +
+      `Customer: ${customerId}, Invoice: ${invoice.id}`
+    );
   }
 
   /**

@@ -78,6 +78,8 @@ export class WebhookIdempotencyService {
 
   /**
    * Check and lock an event for processing
+   * FIXED: Uses atomic SETNX to prevent race conditions
+   * Returns true if lock acquired (event not processed), false if already locked/processed
    */
   async checkAndLockEvent(
     eventId: string,
@@ -85,12 +87,32 @@ export class WebhookIdempotencyService {
     eventType?: string,
     metadata?: Record<string, any>,
   ): Promise<boolean> {
-    const isProcessed = await this.isProcessed(eventId);
-    if (isProcessed) {
-      return false;
+    try {
+      const key = `${this.keyPrefix}lock:${eventId}`;
+      const lockValue = JSON.stringify({
+        provider,
+        eventType,
+        lockedAt: new Date().toISOString(),
+        ...metadata,
+      });
+
+      // Use Redis SETNX (SET if Not eXists) for atomic check-and-set
+      // This prevents race conditions where two requests could both pass isProcessed check
+      const lockAcquired = await this.redisService.setNx(key, lockValue, this.defaultTtlSeconds);
+
+      if (!lockAcquired) {
+        this.logger.warn(`Webhook event ${eventId} already being processed (lock exists)`);
+        return false;
+      }
+
+      this.logger.debug(`Lock acquired for webhook event ${eventId}`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Error acquiring lock for ${eventId}:`, error);
+      // Fail open - allow processing if Redis is unavailable
+      // In production, consider failing closed instead for critical payment webhooks
+      return true;
     }
-    await this.markProcessed(eventId);
-    return true;
   }
 
   /**

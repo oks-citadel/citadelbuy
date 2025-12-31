@@ -113,7 +113,7 @@ export class ConversationalService {
     const lowerQuery = query.toLowerCase();
 
     let type = 'search';
-    let entities: Record<string, any> = {};
+    const entities: Record<string, any> = {};
 
     if (lowerQuery.includes('under') || lowerQuery.includes('less than')) {
       type = 'price_filtered_search';

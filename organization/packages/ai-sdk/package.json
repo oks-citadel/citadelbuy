@@ -7,34 +7,34 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     },
     "./recommendation": {
+      "types": "./dist/recommendation.d.ts",
       "import": "./dist/recommendation.mjs",
-      "require": "./dist/recommendation.js",
-      "types": "./dist/recommendation.d.ts"
+      "require": "./dist/recommendation.js"
     },
     "./search": {
+      "types": "./dist/search.d.ts",
       "import": "./dist/search.mjs",
-      "require": "./dist/search.js",
-      "types": "./dist/search.d.ts"
+      "require": "./dist/search.js"
     },
     "./personalization": {
+      "types": "./dist/personalization.d.ts",
       "import": "./dist/personalization.mjs",
-      "require": "./dist/personalization.js",
-      "types": "./dist/personalization.d.ts"
+      "require": "./dist/personalization.js"
     },
     "./fraud": {
+      "types": "./dist/fraud.d.ts",
       "import": "./dist/fraud.mjs",
-      "require": "./dist/fraud.js",
-      "types": "./dist/fraud.d.ts"
+      "require": "./dist/fraud.js"
     },
     "./chatbot": {
+      "types": "./dist/chatbot.d.ts",
       "import": "./dist/chatbot.mjs",
-      "require": "./dist/chatbot.js",
-      "types": "./dist/chatbot.d.ts"
+      "require": "./dist/chatbot.js"
     }
   },
   "scripts": {

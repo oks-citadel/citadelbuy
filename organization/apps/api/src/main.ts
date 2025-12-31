@@ -115,6 +115,29 @@ async function bootstrap() {
   // Cookie parser
   app.use(cookieParser());
 
+  // HTTPS Enforcement Middleware
+  // CRITICAL: Always enforce HTTPS in production to protect sensitive data
+  if (isProduction) {
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      // Check for HTTPS via X-Forwarded-Proto header (common behind load balancers)
+      // or via the secure connection directly
+      const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+
+      if (!isHttps) {
+        // Redirect to HTTPS
+        const httpsUrl = `https://${req.headers.host}${req.url}`;
+        logger.warn(`Redirecting HTTP request to HTTPS: ${req.url}`);
+        return res.redirect(301, httpsUrl);
+      }
+
+      // Set HSTS header to enforce HTTPS for future requests
+      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+
+      next();
+    });
+    logger.log('🔒 HTTPS enforcement enabled for production');
+  }
+
   // CSRF Protection Middleware
   // SECURITY: This validates CSRF tokens for state-changing operations (POST, PUT, PATCH, DELETE)
   // Protects against Cross-Site Request Forgery attacks by requiring a token that only the legitimate
