@@ -3,7 +3,6 @@ version: 0.2
 env:
   variables:
     AWS_DEFAULT_REGION: us-east-1
-    IMAGE_TAG: latest
 
 phases:
   install:
@@ -23,51 +22,49 @@ phases:
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - export IMAGE_TAG="${BUILD_DATE}-${COMMIT_HASH}"
       - echo "Build tag is $IMAGE_TAG"
-      - cd organization
-      - pnpm install --frozen-lockfile || pnpm install
-      - echo "Generating Prisma client..."
-      - cd apps/api
-      - npx prisma generate
-      - cd ../..
+      - echo "Working directory is $CODEBUILD_SRC_DIR"
 
   build:
     commands:
-      - echo "===== BUILDING NODE.JS SERVICES ====="
-      - echo "Building API..."
-      - cd apps/api
-      - pnpm build || echo "API build completed with warnings"
-      - docker build -t broxiva/api:$IMAGE_TAG -f Dockerfile . || echo "API Docker build skipped"
-      - docker tag broxiva/api:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:$IMAGE_TAG || true
-      - docker tag broxiva/api:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:latest || true
-      - cd ../..
-      - echo "Building Web..."
-      - cd apps/web
-      - pnpm build || echo "Web build completed with warnings"
-      - docker build -t broxiva/web:$IMAGE_TAG -f Dockerfile . || echo "Web Docker build skipped"
-      - docker tag broxiva/web:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG || true
-      - docker tag broxiva/web:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:latest || true
-      - cd ../..
-      - echo "===== BUILDING PYTHON MICROSERVICES ====="
-      - for SERVICE in inventory media notification personalization; do echo "Building $SERVICE..."; if [ -d "apps/services/$SERVICE" ] && [ -f "apps/services/$SERVICE/Dockerfile" ]; then docker build -t broxiva/$SERVICE:$IMAGE_TAG apps/services/$SERVICE && docker tag broxiva/$SERVICE:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:$IMAGE_TAG && docker tag broxiva/$SERVICE:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:latest; else echo "Skipping $SERVICE - no Dockerfile"; fi; done || true
+      - echo "===== INSTALLING DEPENDENCIES ====="
+      - cd $CODEBUILD_SRC_DIR/organization
+      - pnpm install --frozen-lockfile || pnpm install
+      - echo "===== GENERATING PRISMA CLIENT ====="
+      - cd $CODEBUILD_SRC_DIR/organization/apps/api
+      - npx prisma generate
+      - echo "===== BUILDING API ====="
+      - pnpm build
+      - echo "===== BUILDING DOCKER IMAGE FOR API ====="
+      - docker build -t broxiva/api:$IMAGE_TAG .
+      - docker tag broxiva/api:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:$IMAGE_TAG
+      - docker tag broxiva/api:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:latest
+      - echo "===== BUILDING WEB ====="
+      - cd $CODEBUILD_SRC_DIR/organization/apps/web
+      - pnpm build
+      - echo "===== BUILDING DOCKER IMAGE FOR WEB ====="
+      - docker build -t broxiva/web:$IMAGE_TAG .
+      - docker tag broxiva/web:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG
+      - docker tag broxiva/web:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:latest
 
   post_build:
     commands:
       - echo "===== PUSHING IMAGES TO ECR ====="
       - echo "Pushing API..."
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:$IMAGE_TAG || echo "API push skipped"
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:latest || echo "API latest push skipped"
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:$IMAGE_TAG
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:latest
       - echo "Pushing Web..."
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG || echo "Web push skipped"
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:latest || echo "Web latest push skipped"
-      - for SERVICE in inventory media notification personalization; do if docker images | grep -q "broxiva/$SERVICE"; then echo "Pushing $SERVICE..." && docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:$IMAGE_TAG && docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:latest; fi; done || true
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:latest
       - echo "===== BUILD COMPLETE ====="
+      - echo "Creating image definitions..."
+      - cd $CODEBUILD_SRC_DIR
       - printf '[{"name":"api","imageUri":"%s"},{"name":"web","imageUri":"%s"}]' "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:$IMAGE_TAG" "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG" > imagedefinitions.json
+      - cat imagedefinitions.json
 
 artifacts:
   files:
     - imagedefinitions.json
-    - '**/*'
-  discard-paths: no
+  discard-paths: yes
 
 cache:
   paths:
