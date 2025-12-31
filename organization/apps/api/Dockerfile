@@ -44,8 +44,8 @@ COPY apps/api/src ./src
 COPY apps/api/tsconfig*.json ./
 COPY apps/api/nest-cli.json ./
 
-# Build application with increased memory
-ENV NODE_OPTIONS="--max_old_space_size=4096"
+# Build application with increased memory (8GB heap)
+ENV NODE_OPTIONS="--max_old_space_size=8192"
 RUN npm run build
 
 # Stage 2: Production Runtime
