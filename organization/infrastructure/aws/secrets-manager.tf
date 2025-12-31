@@ -1,5 +1,5 @@
-# CitadelBuy AWS Secrets Manager Configuration
-# This Terraform configuration manages secrets for the CitadelBuy platform using AWS Secrets Manager
+# Broxiva AWS Secrets Manager Configuration
+# This Terraform configuration manages secrets for the Broxiva platform using AWS Secrets Manager
 
 terraform {
   required_version = ">= 1.5.0"
@@ -22,7 +22,7 @@ variable "environment" {
 variable "project_name" {
   description = "Project name"
   type        = string
-  default     = "citadelbuy"
+  default     = "broxiva"
 }
 
 variable "aws_region" {
@@ -80,12 +80,12 @@ resource "aws_secretsmanager_secret" "postgres_credentials" {
 resource "aws_secretsmanager_secret_version" "postgres_credentials" {
   secret_id = aws_secretsmanager_secret.postgres_credentials.id
   secret_string = jsonencode({
-    username = "citadelbuy_admin"
+    username = "broxiva_admin"
     password = random_password.postgres.result
-    host     = "postgres.${var.environment}.citadelbuy.internal"
+    host     = "postgres.${var.environment}.broxiva.internal"
     port     = 5432
-    database = "citadelbuy"
-    url      = "postgresql://citadelbuy_admin:${random_password.postgres.result}@postgres.${var.environment}.citadelbuy.internal:5432/citadelbuy"
+    database = "broxiva"
+    url      = "postgresql://broxiva_admin:${random_password.postgres.result}@postgres.${var.environment}.broxiva.internal:5432/broxiva"
   })
 }
 
@@ -108,9 +108,9 @@ resource "aws_secretsmanager_secret_version" "redis_credentials" {
   secret_id = aws_secretsmanager_secret.redis_credentials.id
   secret_string = jsonencode({
     password = random_password.redis.result
-    host     = "redis.${var.environment}.citadelbuy.internal"
+    host     = "redis.${var.environment}.broxiva.internal"
     port     = 6379
-    url      = "redis://:${random_password.redis.result}@redis.${var.environment}.citadelbuy.internal:6379"
+    url      = "redis://:${random_password.redis.result}@redis.${var.environment}.broxiva.internal:6379"
   })
 }
 

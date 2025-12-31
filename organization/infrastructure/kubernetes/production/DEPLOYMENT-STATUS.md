@@ -1,29 +1,28 @@
 # Broxiva Production Environment - Deployment Status
 
-**Date**: 2025-12-14
-**Cluster**: broxiva-aks-prod
-**Namespace**: broxiva-prod
-**ACR**: broxivaprodacr.azurecr.io
+**Date**: 2025-12-30
+**Cluster**: broxiva-prod-eks
+**Namespace**: broxiva-production
+**ECR**: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com
 
 ## Executive Summary
 
-The production Kubernetes namespace `broxiva-prod` has been prepared with all necessary infrastructure components for deploying the Broxiva e-commerce platform. Secret management, RBAC configuration, and deployment automation scripts have been created and are ready for use.
+The production Kubernetes namespace `broxiva-production` has been prepared with all necessary infrastructure components for deploying the Broxiva e-commerce platform on AWS EKS. Secret management, RBAC configuration, and deployment automation scripts have been created and are ready for use.
 
 ## Current Status
 
 ### Namespace
 - **Status**: ✅ ACTIVE
-- **Name**: broxiva-prod
-- **Age**: 84 minutes
+- **Name**: broxiva-production
 - **Labels**: environment=production, app=broxiva
 - **Resource Quotas**: Not yet applied
 - **Limit Ranges**: Not yet applied
 
 ### Container Registry Integration
-- **ACR Name**: broxivaprodacr.azurecr.io
-- **AKS Integration**: Configured via managed identity
+- **ECR Registry**: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com
+- **EKS Integration**: Configured via IRSA (IAM Roles for Service Accounts)
 - **Status**: ✅ READY
-- **Note**: AKS can pull images from ACR without additional secrets
+- **Note**: EKS can pull images from ECR using IAM roles
 
 ### Secrets Management
 
@@ -384,7 +383,7 @@ kubectl port-forward -n broxiva-prod service/broxiva-api 8080:4000
 az aks show --resource-group broxiva-rg --name broxiva-aks-prod
 
 # Check ACR integration
-az aks check-acr --resource-group broxiva-rg --name broxiva-aks-prod --acr broxivaprodacr.azurecr.io
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com
 
 # List images in ACR
 az acr repository list --name broxivaprodacr

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# CitadelBuy AWS Secrets Manager Sync Script
+# Broxiva AWS Secrets Manager Sync Script
 # This script synchronizes secrets between local .env files and AWS Secrets Manager
 # Usage: ./aws-secrets-sync.sh [push|pull|list|rotate] [environment]
 
@@ -14,7 +14,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-PROJECT_NAME="${PROJECT_NAME:-citadelbuy}"
+PROJECT_NAME="${PROJECT_NAME:-broxiva}"
 AWS_REGION="${AWS_REGION:-us-east-1}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"

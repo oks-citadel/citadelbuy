@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: supplier-integration
-          image: broxivaprodacr.azurecr.io/broxiva-supplier-integration:v2.0.0
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/supplier-integration:v2.0.0
           ports:
             - containerPort: 8001
               name: http

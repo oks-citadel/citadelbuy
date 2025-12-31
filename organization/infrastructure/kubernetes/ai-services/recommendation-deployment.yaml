@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: recommendation
-          image: broxivaprodacr.azurecr.io/broxiva-ai:recommendation-latest
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/ai:recommendation-v2.0.0
           ports:
             - containerPort: 8001
           env:

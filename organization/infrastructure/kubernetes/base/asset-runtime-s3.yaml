@@ -1,0 +1,83 @@
+# ==========================================
+# AWS S3 Runtime Asset Configuration
+# Primary approach using S3 for asset storage
+# ==========================================
+# This manifest demonstrates how to configure
+# S3 access for shared asset access using IRSA
+
+---
+# Service Account with S3 access via IRSA
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: broxiva-s3-access
+  namespace: broxiva-production
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::${AWS_ACCOUNT_ID}:role/broxiva-s3-access-role
+  labels:
+    app: broxiva
+    component: storage
+
+---
+# ConfigMap for S3 configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: s3-asset-config
+  namespace: broxiva-production
+  labels:
+    app: broxiva
+    component: storage
+data:
+  AWS_REGION: "us-east-1"
+  S3_BUCKET: "broxiva-prod-media"
+  S3_PREFIX: "assets/"
+  CLOUDFRONT_DOMAIN: "cdn.broxiva.com"
+  ASSET_SOURCE: "s3"
+
+---
+# Example deployment using S3 for assets
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-with-s3-assets
+  namespace: broxiva-production
+  labels:
+    app: broxiva-api
+    asset-source: s3
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: broxiva-api
+  template:
+    metadata:
+      labels:
+        app: broxiva-api
+    spec:
+      serviceAccountName: broxiva-s3-access
+      containers:
+        - name: api
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/api:v2.0.0
+          ports:
+            - containerPort: 4000
+          envFrom:
+            - configMapRef:
+                name: s3-asset-config
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: STORAGE_PROVIDER
+              value: "s3"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false

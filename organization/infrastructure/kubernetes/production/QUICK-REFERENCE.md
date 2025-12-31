@@ -5,10 +5,10 @@ One-page reference for common production operations.
 ## Environment Details
 
 ```
-Cluster:    broxiva-aks-prod
-Namespace:  broxiva-prod
-ACR:        broxivaprodacr.azurecr.io
-Region:     (Azure region)
+Cluster:    broxiva-production-eks
+Namespace:  broxiva-productionuction
+ECR:        ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com
+Region:     us-east-1
 ```
 
 ## Quick Setup
@@ -27,37 +27,37 @@ Region:     (Azure region)
 
 ```bash
 # All resources
-kubectl get all -n broxiva-prod
+kubectl get all -n broxiva-production
 
 # Secrets (names only)
-kubectl get secrets -n broxiva-prod
+kubectl get secrets -n broxiva-production
 
 # ConfigMaps
-kubectl get configmaps -n broxiva-prod
+kubectl get configmaps -n broxiva-production
 
 # Pods with status
-kubectl get pods -n broxiva-prod -o wide
+kubectl get pods -n broxiva-production -o wide
 
 # Services
-kubectl get svc -n broxiva-prod
+kubectl get svc -n broxiva-production
 ```
 
 ### Secret Management
 
 ```bash
 # View secret (no values shown)
-kubectl describe secret broxiva-secrets -n broxiva-prod
+kubectl describe secret broxiva-secrets -n broxiva-production
 
 # Get specific secret value
-kubectl get secret broxiva-secrets -n broxiva-prod -o jsonpath='{.data.JWT_SECRET}' | base64 -d
+kubectl get secret broxiva-secrets -n broxiva-production -o jsonpath='{.data.JWT_SECRET}' | base64 -d
 
 # Update single secret value
-kubectl patch secret broxiva-secrets -n broxiva-prod \
+kubectl patch secret broxiva-secrets -n broxiva-production \
   --type='json' \
   -p='[{"op":"replace","path":"/data/KEY_NAME","value":"'$(echo -n "NEW_VALUE" | base64)'"}]'
 
 # Backup all secrets
-kubectl get secrets -n broxiva-prod -o yaml > backup-$(date +%Y%m%d).yaml
+kubectl get secrets -n broxiva-production -o yaml > backup-$(date +%Y%m%d).yaml
 ```
 
 ### Deployment Operations
@@ -67,48 +67,48 @@ kubectl get secrets -n broxiva-prod -o yaml > backup-$(date +%Y%m%d).yaml
 kubectl apply -f deployment.yaml
 
 # Rolling restart
-kubectl rollout restart deployment broxiva-api -n broxiva-prod
+kubectl rollout restart deployment broxiva-api -n broxiva-production
 
 # Check rollout status
-kubectl rollout status deployment broxiva-api -n broxiva-prod
+kubectl rollout status deployment broxiva-api -n broxiva-production
 
 # Rollback deployment
-kubectl rollout undo deployment broxiva-api -n broxiva-prod
+kubectl rollout undo deployment broxiva-api -n broxiva-production
 
 # Scale deployment
-kubectl scale deployment broxiva-api -n broxiva-prod --replicas=5
+kubectl scale deployment broxiva-api -n broxiva-production --replicas=5
 ```
 
 ### Logs and Debugging
 
 ```bash
 # View logs (last 100 lines)
-kubectl logs -n broxiva-prod deployment/broxiva-api --tail=100
+kubectl logs -n broxiva-production deployment/broxiva-api --tail=100
 
 # Follow logs
-kubectl logs -n broxiva-prod deployment/broxiva-api -f
+kubectl logs -n broxiva-production deployment/broxiva-api -f
 
 # Logs from all pods
-kubectl logs -n broxiva-prod -l app=broxiva-api --all-containers=true
+kubectl logs -n broxiva-production -l app=broxiva-api --all-containers=true
 
 # Execute command in pod
-kubectl exec -it POD_NAME -n broxiva-prod -- /bin/bash
+kubectl exec -it POD_NAME -n broxiva-production -- /bin/bash
 
 # Port forward for local access
-kubectl port-forward -n broxiva-prod svc/broxiva-api 8080:4000
+kubectl port-forward -n broxiva-production svc/broxiva-api 8080:4000
 ```
 
 ### Health Checks
 
 ```bash
 # Check pod health
-kubectl get pods -n broxiva-prod
+kubectl get pods -n broxiva-production
 
 # Describe pod for events
-kubectl describe pod POD_NAME -n broxiva-prod
+kubectl describe pod POD_NAME -n broxiva-production
 
 # View pod resource usage
-kubectl top pods -n broxiva-prod
+kubectl top pods -n broxiva-production
 
 # View node resource usage
 kubectl top nodes
@@ -118,17 +118,17 @@ kubectl top nodes
 
 ```bash
 # Connect to PostgreSQL
-kubectl exec -it postgres-0 -n broxiva-prod -- psql -U broxiva -d broxiva_production
+kubectl exec -it postgres-0 -n broxiva-production -- psql -U broxiva -d broxiva_production
 
 # Database backup
-kubectl exec postgres-0 -n broxiva-prod -- \
+kubectl exec postgres-0 -n broxiva-production -- \
   pg_dump -U broxiva broxiva_production > backup-$(date +%Y%m%d).sql
 
 # Connect to Redis
-kubectl exec -it redis-0 -n broxiva-prod -- redis-cli -a "$REDIS_PASSWORD"
+kubectl exec -it redis-0 -n broxiva-production -- redis-cli -a "$REDIS_PASSWORD"
 
 # Redis ping test
-kubectl exec -it redis-0 -n broxiva-prod -- redis-cli PING
+kubectl exec -it redis-0 -n broxiva-production -- redis-cli PING
 ```
 
 ### ACR Operations
@@ -144,36 +144,36 @@ az acr repository list --name broxivaprodacr
 az acr repository show-tags --name broxivaprodacr --repository broxiva-api
 
 # Check ACR integration
-az aks check-acr --resource-group broxiva-rg --name broxiva-aks-prod --acr broxivaprodacr.azurecr.io
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com
 ```
 
 ### Azure Key Vault
 
 ```bash
 # Store secret
-az keyvault secret set --vault-name broxiva-prod-kv --name SECRET_NAME --value "VALUE"
+az keyvault secret set --vault-name broxiva-production-kv --name SECRET_NAME --value "VALUE"
 
 # Get secret
-az keyvault secret show --vault-name broxiva-prod-kv --name SECRET_NAME --query value -o tsv
+az keyvault secret show --vault-name broxiva-production-kv --name SECRET_NAME --query value -o tsv
 
 # List secrets
-az keyvault secret list --vault-name broxiva-prod-kv
+az keyvault secret list --vault-name broxiva-production-kv
 ```
 
 ### Monitoring
 
 ```bash
 # View events
-kubectl get events -n broxiva-prod --sort-by='.lastTimestamp'
+kubectl get events -n broxiva-production --sort-by='.lastTimestamp'
 
 # Watch pod status
-kubectl get pods -n broxiva-prod -w
+kubectl get pods -n broxiva-production -w
 
 # Resource quotas
-kubectl describe quota -n broxiva-prod
+kubectl describe quota -n broxiva-production
 
 # Limit ranges
-kubectl describe limitrange -n broxiva-prod
+kubectl describe limitrange -n broxiva-production
 ```
 
 ## Update External API Keys
@@ -181,31 +181,31 @@ kubectl describe limitrange -n broxiva-prod
 ### Stripe
 
 ```bash
-kubectl patch secret broxiva-secrets -n broxiva-prod \
+kubectl patch secret broxiva-secrets -n broxiva-production \
   --type='json' \
   -p='[{"op":"replace","path":"/data/STRIPE_SECRET_KEY","value":"'$(echo -n "sk_live_XXX" | base64)'"}]'
 
-kubectl rollout restart deployment broxiva-api -n broxiva-prod
+kubectl rollout restart deployment broxiva-api -n broxiva-production
 ```
 
 ### SendGrid
 
 ```bash
-kubectl patch secret broxiva-secrets -n broxiva-prod \
+kubectl patch secret broxiva-secrets -n broxiva-production \
   --type='json' \
   -p='[{"op":"replace","path":"/data/SENDGRID_API_KEY","value":"'$(echo -n "SG.XXX" | base64)'"}]'
 
-kubectl rollout restart deployment broxiva-api -n broxiva-prod
+kubectl rollout restart deployment broxiva-api -n broxiva-production
 ```
 
 ### Sentry
 
 ```bash
-kubectl patch secret broxiva-secrets -n broxiva-prod \
+kubectl patch secret broxiva-secrets -n broxiva-production \
   --type='json' \
   -p='[{"op":"replace","path":"/data/SENTRY_DSN","value":"'$(echo -n "https://XXX@sentry.io/XXX" | base64)'"}]'
 
-kubectl rollout restart deployment broxiva-api -n broxiva-prod
+kubectl rollout restart deployment broxiva-api -n broxiva-production
 ```
 
 ## Emergency Procedures
@@ -213,32 +213,32 @@ kubectl rollout restart deployment broxiva-api -n broxiva-prod
 ### Rollback to Previous Version
 
 ```bash
-kubectl rollout undo deployment broxiva-api -n broxiva-prod
-kubectl rollout status deployment broxiva-api -n broxiva-prod
+kubectl rollout undo deployment broxiva-api -n broxiva-production
+kubectl rollout status deployment broxiva-api -n broxiva-production
 ```
 
 ### Restore Secrets from Backup
 
 ```bash
 kubectl apply -f backup-YYYYMMDD.yaml
-kubectl rollout restart deployment broxiva-api -n broxiva-prod
-kubectl rollout restart deployment broxiva-worker -n broxiva-prod
+kubectl rollout restart deployment broxiva-api -n broxiva-production
+kubectl rollout restart deployment broxiva-worker -n broxiva-production
 ```
 
 ### Scale Down (Maintenance Mode)
 
 ```bash
-kubectl scale deployment broxiva-api -n broxiva-prod --replicas=0
-kubectl scale deployment broxiva-worker -n broxiva-prod --replicas=0
-kubectl scale deployment broxiva-web -n broxiva-prod --replicas=1
+kubectl scale deployment broxiva-api -n broxiva-production --replicas=0
+kubectl scale deployment broxiva-worker -n broxiva-production --replicas=0
+kubectl scale deployment broxiva-web -n broxiva-production --replicas=1
 ```
 
 ### Scale Up (Resume Operations)
 
 ```bash
-kubectl scale deployment broxiva-api -n broxiva-prod --replicas=3
-kubectl scale deployment broxiva-worker -n broxiva-prod --replicas=2
-kubectl scale deployment broxiva-web -n broxiva-prod --replicas=3
+kubectl scale deployment broxiva-api -n broxiva-production --replicas=3
+kubectl scale deployment broxiva-worker -n broxiva-production --replicas=2
+kubectl scale deployment broxiva-web -n broxiva-production --replicas=3
 ```
 
 ## Testing and Verification
@@ -261,15 +261,15 @@ curl -X POST https://api.broxiva.com/auth/login \
 ### Test Database Connection
 
 ```bash
-kubectl run -it --rm debug --image=postgres:15 --restart=Never -n broxiva-prod -- \
-  psql postgresql://broxiva:PASSWORD@postgres.broxiva-prod.svc.cluster.local:5432/broxiva_production
+kubectl run -it --rm debug --image=postgres:15 --restart=Never -n broxiva-production -- \
+  psql postgresql://broxiva:PASSWORD@postgres.broxiva-production.svc.cluster.local:5432/broxiva_production
 ```
 
 ### Test Redis Connection
 
 ```bash
-kubectl run -it --rm debug --image=redis:7 --restart=Never -n broxiva-prod -- \
-  redis-cli -h redis.broxiva-prod.svc.cluster.local -a PASSWORD PING
+kubectl run -it --rm debug --image=redis:7 --restart=Never -n broxiva-production -- \
+  redis-cli -h redis.broxiva-production.svc.cluster.local -a PASSWORD PING
 ```
 
 ## Security Checks
@@ -279,23 +279,23 @@ kubectl run -it --rm debug --image=redis:7 --restart=Never -n broxiva-prod -- \
 ```bash
 # Check if service account can get secrets
 kubectl auth can-i get secrets \
-  --as=system:serviceaccount:broxiva-prod:broxiva-api \
-  -n broxiva-prod
+  --as=system:serviceaccount:broxiva-production:broxiva-api \
+  -n broxiva-production
 
 # List all permissions for service account
 kubectl auth can-i --list \
-  --as=system:serviceaccount:broxiva-prod:broxiva-api \
-  -n broxiva-prod
+  --as=system:serviceaccount:broxiva-production:broxiva-api \
+  -n broxiva-production
 ```
 
 ### Check Pod Security
 
 ```bash
 # Describe pod security context
-kubectl get pod POD_NAME -n broxiva-prod -o jsonpath='{.spec.securityContext}'
+kubectl get pod POD_NAME -n broxiva-production -o jsonpath='{.spec.securityContext}'
 
 # Check for privileged containers
-kubectl get pods -n broxiva-prod -o json | \
+kubectl get pods -n broxiva-production -o json | \
   jq '.items[] | select(.spec.containers[].securityContext.privileged==true) | .metadata.name'
 ```
 
@@ -305,24 +305,24 @@ kubectl get pods -n broxiva-prod -o json | \
 
 ```bash
 # Current usage
-kubectl top pods -n broxiva-prod
+kubectl top pods -n broxiva-production
 
 # Historical metrics (requires metrics-server)
-kubectl get --raw /apis/metrics.k8s.io/v1beta1/namespaces/broxiva-prod/pods
+kubectl get --raw /apis/metrics.k8s.io/v1beta1/namespaces/broxiva-production/pods
 ```
 
 ### Adjust HPA (Horizontal Pod Autoscaler)
 
 ```bash
 # Create HPA
-kubectl autoscale deployment broxiva-api -n broxiva-prod \
+kubectl autoscale deployment broxiva-api -n broxiva-production \
   --cpu-percent=70 --min=2 --max=10
 
 # View HPA status
-kubectl get hpa -n broxiva-prod
+kubectl get hpa -n broxiva-production
 
 # Describe HPA
-kubectl describe hpa broxiva-api -n broxiva-prod
+kubectl describe hpa broxiva-api -n broxiva-production
 ```
 
 ## Useful Aliases
@@ -330,13 +330,13 @@ kubectl describe hpa broxiva-api -n broxiva-prod
 Add to your `.bashrc` or `.zshrc`:
 
 ```bash
-alias kp='kubectl -n broxiva-prod'
-alias kpg='kubectl -n broxiva-prod get'
-alias kpd='kubectl -n broxiva-prod describe'
-alias kpl='kubectl -n broxiva-prod logs'
-alias kpe='kubectl -n broxiva-prod exec -it'
-alias kpa='kubectl -n broxiva-prod apply -f'
-alias kpdel='kubectl -n broxiva-prod delete'
+alias kp='kubectl -n broxiva-production'
+alias kpg='kubectl -n broxiva-production get'
+alias kpd='kubectl -n broxiva-production describe'
+alias kpl='kubectl -n broxiva-production logs'
+alias kpe='kubectl -n broxiva-production exec -it'
+alias kpa='kubectl -n broxiva-production apply -f'
+alias kpdel='kubectl -n broxiva-production delete'
 
 # Usage examples:
 # kpg pods

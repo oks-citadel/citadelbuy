@@ -29,7 +29,7 @@ spec:
       serviceAccountName: organization-service
       containers:
       - name: organization-service
-        image: broxivaprodacr.azurecr.io/broxiva:organization-latest
+        image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/organization:v2.0.0
         imagePullPolicy: Always
         ports:
         - name: http

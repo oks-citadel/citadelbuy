@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# CitadelBuy HashiCorp Vault Sync Script
+# Broxiva HashiCorp Vault Sync Script
 # This script synchronizes secrets between local .env files and HashiCorp Vault
 # Usage: ./vault-secrets-sync.sh [push|pull|list|backup|init] [environment]
 
@@ -14,8 +14,8 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-PROJECT_NAME="${PROJECT_NAME:-citadelbuy}"
-VAULT_ADDR="${VAULT_ADDR:-https://vault.citadelbuy.internal:8200}"
+PROJECT_NAME="${PROJECT_NAME:-broxiva}"
+VAULT_ADDR="${VAULT_ADDR:-https://vault.broxiva.internal:8200}"
 VAULT_NAMESPACE="${VAULT_NAMESPACE:-}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"

@@ -1,5 +1,5 @@
-# CitadelBuy HashiCorp Vault Configuration
-# This configuration file sets up Vault for the CitadelBuy platform
+# Broxiva HashiCorp Vault Configuration
+# This configuration file sets up Vault for the Broxiva platform
 
 # Storage backend - PostgreSQL
 storage "postgresql" {
@@ -41,10 +41,10 @@ listener "tcp" {
 }
 
 # API address
-api_addr = "https://vault.citadelbuy.internal:8200"
+api_addr = "https://vault.broxiva.internal:8200"
 
 # Cluster address (for HA)
-cluster_addr = "https://vault.citadelbuy.internal:8201"
+cluster_addr = "https://vault.broxiva.internal:8201"
 
 # UI
 ui = true
@@ -71,7 +71,7 @@ seal "awskms" {
 #   tenant_id      = "AZURE_TENANT_ID"
 #   client_id      = "AZURE_CLIENT_ID"
 #   client_secret  = "AZURE_CLIENT_SECRET"
-#   vault_name     = "citadelbuy-vault-unseal"
+#   vault_name     = "broxiva-vault-unseal"
 #   key_name       = "vault-unseal-key"
 # }
 
@@ -99,7 +99,7 @@ plugin_directory = "/vault/plugins"
 raw_storage_endpoint = false
 
 # Cluster name
-cluster_name = "citadelbuy-vault-cluster"
+cluster_name = "broxiva-vault-cluster"
 
 # Disable cache
 disable_cache = false

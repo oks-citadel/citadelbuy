@@ -22,9 +22,9 @@ resources:
 
 # Image transformations
 images:
-  - name: broxivaprodacr.azurecr.io/broxiva-api
+  - name: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-api
     newTag: staging-latest
-  - name: broxivaprodacr.azurecr.io/broxiva-web
+  - name: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-web
     newTag: staging-latest
 
 # ConfigMap generator for additional configuration

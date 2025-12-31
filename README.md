@@ -1,8 +1,8 @@
-# CitadelBuy - AI-Powered E-Commerce Platform
+# Broxiva - AI-Powered E-Commerce Platform
 
 > Enterprise-grade e-commerce platform with advanced AI capabilities for intelligent product discovery, hyper-personalization, and automated operations.
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/oks-citadel/citadelbuy)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/broxiva/broxiva)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 
@@ -12,8 +12,8 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/oks-citadel/citadelbuy.git
-cd citadelbuy
+git clone https://github.com/broxiva/broxiva.git
+cd broxiva
 
 # Install dependencies
 npm install
@@ -30,7 +30,7 @@ npm run dev
 ## 📁 Project Structure
 
 ```
-citadelbuy/
+broxiva/
 ├── app/                      # Client Applications
 │   ├── mobile/              # React Native Mobile App (iOS & Android)
 │   └── web/                 # Next.js Web Application

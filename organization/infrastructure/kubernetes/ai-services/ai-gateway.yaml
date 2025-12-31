@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: gateway
-          image: broxivaprodacr.azurecr.io/broxiva-ai:gateway-latest
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/ai:gateway-v2.0.0
           ports:
             - containerPort: 8000
           env:

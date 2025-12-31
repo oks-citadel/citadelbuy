@@ -25,14 +25,14 @@ resources:
 
 # Image transformations for development
 images:
-  - name: broxivaprodacr.azurecr.io/broxiva-api
-    newName: broxivaprodacr.azurecr.io/broxiva-api
+  - name: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-api
+    newName: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-api
     newTag: dev-latest
-  - name: broxivaprodacr.azurecr.io/broxiva-web
-    newName: broxivaprodacr.azurecr.io/broxiva-web
+  - name: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-web
+    newName: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-web
     newTag: dev-latest
-  - name: broxivaprodacr.azurecr.io/broxiva-worker
-    newName: broxivaprodacr.azurecr.io/broxiva-worker
+  - name: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-worker
+    newName: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-worker
     newTag: dev-latest
 
 # ConfigMap generator for deployment metadata

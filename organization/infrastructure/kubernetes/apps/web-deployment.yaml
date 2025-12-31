@@ -28,7 +28,7 @@ spec:
         supplementalGroups: [4000]
       containers:
         - name: web
-          image: broxivaprodacr.azurecr.io/broxiva-web:v1.0.0-production  # Static version
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/web:v2.0.0
           ports:
             - containerPort: 3000
               name: http

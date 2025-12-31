@@ -19,9 +19,9 @@ replicas:
     count: 3
 
 images:
-  - name: broxivaprodacr.azurecr.io/broxiva-ecommerce
+  - name: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-ecommerce
     newTag: v2.0-stable
-  - name: broxivaprodacr.azurecr.io/broxiva-ai
+  - name: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-ai
     newTag: v2.0-stable
 
 configMapGenerator:

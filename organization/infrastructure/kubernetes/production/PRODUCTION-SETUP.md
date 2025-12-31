@@ -4,17 +4,17 @@ This document provides step-by-step instructions for setting up the production K
 
 ## Prerequisites
 
-- `kubectl` configured and authenticated to `broxiva-aks-prod` cluster
-- `az` CLI authenticated
+- `kubectl` configured and authenticated to `broxiva-prod-eks` cluster
+- `aws` CLI authenticated
 - `openssl` installed
 - Cluster admin permissions
 
 ## Environment Details
 
-- **AKS Cluster**: broxiva-aks-prod
-- **Namespace**: broxiva-prod
-- **ACR**: broxivaprodacr.azurecr.io
-- **Resource Group**: broxiva-rg
+- **EKS Cluster**: broxiva-prod-eks
+- **Namespace**: broxiva-production
+- **ECR**: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com
+- **Region**: us-east-1
 
 ## Quick Setup (Automated)
 
@@ -295,7 +295,7 @@ kubectl auth can-i get secrets --as=system:serviceaccount:broxiva-prod:broxiva-a
 
 Verify ACR integration:
 ```bash
-az aks check-acr --resource-group broxiva-rg --name broxiva-aks-prod --acr broxivaprodacr.azurecr.io
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com
 ```
 
 ### Database Connection Issues

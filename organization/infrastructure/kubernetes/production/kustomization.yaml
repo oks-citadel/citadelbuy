@@ -31,11 +31,11 @@ bases:
 
 # Image transformations
 images:
-  - name: broxivaprodacr.azurecr.io/broxiva-api
-    newName: broxivaprodacr.azurecr.io/broxiva-api
+  - name: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-api
+    newName: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-api
     newTag: production-latest
-  - name: broxivaprodacr.azurecr.io/broxiva-web
-    newName: broxivaprodacr.azurecr.io/broxiva-web
+  - name: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-web
+    newName: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-web
     newTag: production-latest
 
 # ConfigMap generator for deployment metadata

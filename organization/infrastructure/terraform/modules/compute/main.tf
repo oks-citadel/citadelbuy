@@ -1,5 +1,6 @@
-# Compute Module - AKS, ACR, and App Service
-# CitadelBuy E-commerce Platform
+# Compute Module - AKS, ACR, and App Service (Legacy Azure)
+# Broxiva E-commerce Platform
+# NOTE: For AWS deployments, use infrastructure/terraform/environments/aws-prod/
 
 terraform {
   required_version = ">= 1.0"
