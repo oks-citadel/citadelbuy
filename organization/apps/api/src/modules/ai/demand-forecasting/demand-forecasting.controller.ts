@@ -1,7 +1,8 @@
-import { Controller, Post, Get, Body, Query } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { DemandForecastingService } from './demand-forecasting.service';
 import { InventoryOptimizationService } from './inventory-optimization.service';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @ApiTags('AI - Demand Forecasting')
 @Controller('ai/demand-forecasting')
@@ -12,6 +13,7 @@ export class DemandForecastingController {
   ) {}
 
   @Post('forecast')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Generate demand forecast for product' })
   async forecastDemand(@Body() data: {
     productId: string;
@@ -28,6 +30,7 @@ export class DemandForecastingController {
   }
 
   @Post('flash-sale-impact')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Predict flash sale impact' })
   async predictFlashSaleImpact(@Body() data: {
     productId: string;
@@ -44,6 +47,7 @@ export class DemandForecastingController {
   }
 
   @Post('inventory-optimization')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get inventory optimization recommendations' })
   async optimizeInventory(@Body() data: {
     productId?: string;
@@ -59,6 +63,7 @@ export class DemandForecastingController {
   }
 
   @Post('reorder-recommendation')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get reorder recommendations' })
   async getReorderRecommendations(@Body() data: {
     productId: string;

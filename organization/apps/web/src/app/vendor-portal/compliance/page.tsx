@@ -1,12 +1,29 @@
 'use client';
 
 import * as React from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, Upload, CheckCircle, AlertTriangle, FileText, Award, Globe } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Shield, Upload, CheckCircle, AlertTriangle, FileText, Award, Globe, Eye, RefreshCw } from 'lucide-react';
+
+interface Certification {
+  name: string;
+  region: string;
+  status: string;
+  validUntil: string | null;
+  uploaded: boolean;
+}
 
 export default function VendorCompliancePage() {
-  const certifications = [
+  const certifications: Certification[] = [
     {
       name: 'ISO 9001:2015',
       region: 'Global',
@@ -36,6 +53,118 @@ export default function VendorCompliancePage() {
       uploaded: false,
     },
   ];
+
+  // State for dialogs
+  const [viewDialogOpen, setViewDialogOpen] = React.useState(false);
+  const [renewDialogOpen, setRenewDialogOpen] = React.useState(false);
+  const [selectedCert, setSelectedCert] = React.useState<Certification | null>(null);
+
+  // File input refs
+  const certFileInputRef = React.useRef<HTMLInputElement>(null);
+  const newCertFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Handler for Review button (expiring certifications alert)
+  const handleReviewExpiring = () => {
+    const expiringCerts = certifications.filter((c) => c.status === 'expiring_soon');
+    if (expiringCerts.length > 0) {
+      setSelectedCert(expiringCerts[0]);
+      setRenewDialogOpen(true);
+    } else {
+      toast.info('No certifications expiring soon');
+    }
+  };
+
+  // Handler for View button
+  const handleViewCertification = (cert: Certification) => {
+    setSelectedCert(cert);
+    setViewDialogOpen(true);
+  };
+
+  // Handler for Renew button
+  const handleRenewCertification = (cert: Certification) => {
+    setSelectedCert(cert);
+    setRenewDialogOpen(true);
+  };
+
+  // Handler for Upload button (for missing certifications)
+  const handleUploadCertification = (cert: Certification) => {
+    setSelectedCert(cert);
+    certFileInputRef.current?.click();
+  };
+
+  // Handler for Choose Files button (new certification upload)
+  const handleChooseFiles = () => {
+    newCertFileInputRef.current?.click();
+  };
+
+  // Handler for certification file selection
+  const handleCertFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      // Validate file type
+      const validTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+      if (!validTypes.includes(file.type)) {
+        toast.error('Invalid file type. Please upload PDF, JPG, or PNG files.');
+        return;
+      }
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('File too large. Maximum size is 10MB.');
+        return;
+      }
+
+      // TODO: Replace with actual API call
+      toast.promise(
+        new Promise((resolve) => setTimeout(resolve, 1500)),
+        {
+          loading: `Uploading ${selectedCert?.name || 'certification'}...`,
+          success: `${selectedCert?.name || 'Certification'} uploaded successfully`,
+          error: 'Failed to upload certification',
+        }
+      );
+    }
+    // Reset the input
+    event.target.value = '';
+  };
+
+  // Handler for new certification file selection
+  const handleNewCertFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      // Validate file type
+      const validTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+      if (!validTypes.includes(file.type)) {
+        toast.error('Invalid file type. Please upload PDF, JPG, or PNG files.');
+        return;
+      }
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('File too large. Maximum size is 10MB.');
+        return;
+      }
+
+      // TODO: Replace with actual API call
+      toast.promise(
+        new Promise((resolve) => setTimeout(resolve, 1500)),
+        {
+          loading: `Uploading ${file.name}...`,
+          success: `${file.name} uploaded successfully. It will be reviewed shortly.`,
+          error: 'Failed to upload certification',
+        }
+      );
+    }
+    // Reset the input
+    event.target.value = '';
+  };
+
+  // Handler for renew confirmation
+  const handleConfirmRenew = () => {
+    if (!selectedCert) return;
+    setRenewDialogOpen(false);
+    certFileInputRef.current?.click();
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -130,7 +259,7 @@ export default function VendorCompliancePage() {
                 1 certification expiring in 30 days. Upload renewed documents to maintain compliance.
               </p>
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleReviewExpiring}>
               Review
             </Button>
           </div>
@@ -180,15 +309,17 @@ export default function VendorCompliancePage() {
                 </div>
                 {cert.uploaded ? (
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" onClick={() => handleViewCertification(cert)}>
+                      <Eye className="h-4 w-4 mr-1" />
                       View
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => handleRenewCertification(cert)}>
+                      <RefreshCw className="h-4 w-4 mr-1" />
                       Renew
                     </Button>
                   </div>
                 ) : (
-                  <Button size="sm" className="gap-2">
+                  <Button size="sm" className="gap-2" onClick={() => handleUploadCertification(cert)}>
                     <Upload className="h-4 w-4" />
                     Upload
                   </Button>
@@ -215,7 +346,7 @@ export default function VendorCompliancePage() {
             <p className="text-sm text-muted-foreground mb-4">
               Supported formats: PDF, JPG, PNG (max 10MB)
             </p>
-            <Button>Choose Files</Button>
+            <Button onClick={handleChooseFiles}>Choose Files</Button>
           </div>
         </CardContent>
       </Card>
@@ -258,6 +389,119 @@ export default function VendorCompliancePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Hidden file inputs */}
+      <input
+        type="file"
+        ref={certFileInputRef}
+        className="hidden"
+        accept=".pdf,.jpg,.jpeg,.png"
+        onChange={handleCertFileChange}
+      />
+      <input
+        type="file"
+        ref={newCertFileInputRef}
+        className="hidden"
+        accept=".pdf,.jpg,.jpeg,.png"
+        onChange={handleNewCertFileChange}
+      />
+
+      {/* View Certification Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              {selectedCert?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Certification details and document preview
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Region:</span>
+                <p className="text-muted-foreground">{selectedCert?.region}</p>
+              </div>
+              <div>
+                <span className="font-medium">Status:</span>
+                <p className="text-muted-foreground capitalize">{selectedCert?.status?.replace('_', ' ')}</p>
+              </div>
+              <div>
+                <span className="font-medium">Valid Until:</span>
+                <p className="text-muted-foreground">{selectedCert?.validUntil || 'N/A'}</p>
+              </div>
+              <div>
+                <span className="font-medium">Document:</span>
+                <p className="text-muted-foreground">{selectedCert?.uploaded ? 'Uploaded' : 'Not uploaded'}</p>
+              </div>
+            </div>
+            <div className="border rounded-lg p-8 bg-muted/50 text-center">
+              <FileText className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Document preview would appear here</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              toast.success('Document download started');
+              setViewDialogOpen(false);
+            }}>
+              Download
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Renew Certification Dialog */}
+      <Dialog open={renewDialogOpen} onOpenChange={setRenewDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5" />
+              Renew {selectedCert?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Upload a new certification document to replace the existing one
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedCert?.status === 'expiring_soon' && (
+              <div className="flex items-start gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-yellow-900">Expiring Soon</p>
+                  <p className="text-sm text-yellow-800">
+                    This certification expires on {selectedCert.validUntil}. Please upload a renewed document to maintain compliance.
+                  </p>
+                </div>
+              </div>
+            )}
+            <div className="text-sm">
+              <p className="mb-2">Current certification details:</p>
+              <ul className="space-y-1 text-muted-foreground">
+                <li>Region: {selectedCert?.region}</li>
+                <li>Valid Until: {selectedCert?.validUntil || 'N/A'}</li>
+              </ul>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Supported formats: PDF, JPG, PNG (max 10MB)
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenewDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmRenew}>
+              <Upload className="h-4 w-4 mr-2" />
+              Upload New Document
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

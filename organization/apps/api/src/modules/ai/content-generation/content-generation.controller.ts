@@ -6,12 +6,14 @@ import {
   Param,
   UploadedFile,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiConsumes } from '@nestjs/swagger';
 import { ContentGenerationService } from './content-generation.service';
 import { ImageEnhancementService } from './image-enhancement.service';
 import { SeoOptimizationService } from './seo-optimization.service';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @ApiTags('AI - Content Generation')
 @Controller('ai/content-generation')
@@ -23,6 +25,7 @@ export class ContentGenerationController {
   ) {}
 
   @Post('product-description')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Generate SEO-optimized product description' })
   async generateProductDescription(@Body() data: {
     productName: string;
@@ -36,6 +39,7 @@ export class ContentGenerationController {
   }
 
   @Post('variant-descriptions')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Generate multiple description variants' })
   async generateVariantDescriptions(@Body() data: {
     productName: string;
@@ -47,6 +51,7 @@ export class ContentGenerationController {
   }
 
   @Post('enhance-image')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Enhance product image quality' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('image'))
@@ -58,6 +63,7 @@ export class ContentGenerationController {
   }
 
   @Post('remove-background')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Remove background from product image' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('image'))
@@ -66,6 +72,7 @@ export class ContentGenerationController {
   }
 
   @Post('summarize-reviews')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Generate summary from product reviews' })
   async summarizeReviews(@Body() data: {
     productId: string;
@@ -79,6 +86,7 @@ export class ContentGenerationController {
   }
 
   @Post('social-media-content')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Generate social media post content' })
   async generateSocialContent(@Body() data: {
     productId: string;
@@ -90,6 +98,7 @@ export class ContentGenerationController {
   }
 
   @Post('email-content')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Generate email marketing content' })
   async generateEmailContent(@Body() data: {
     emailType: 'welcome' | 'abandoned_cart' | 'promotion' | 'restock' | 'recommendation';
@@ -104,6 +113,7 @@ export class ContentGenerationController {
   }
 
   @Post('seo-optimize')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Optimize content for SEO' })
   async optimizeForSEO(@Body() data: {
     content: string;
@@ -114,6 +124,7 @@ export class ContentGenerationController {
   }
 
   @Post('generate-meta-tags')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Generate SEO meta tags' })
   async generateMetaTags(@Body() data: {
     productName: string;
@@ -125,6 +136,7 @@ export class ContentGenerationController {
   }
 
   @Post('category-description')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Generate category page description' })
   async generateCategoryDescription(@Body() data: {
     categoryName: string;

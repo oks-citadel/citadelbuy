@@ -18,11 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { OrdersService } from '../orders/orders.service';
 import { OrderStatus } from '@prisma/client';
-
-class UpdateOrderStatusDto {
-  status: OrderStatus;
-  trackingNumber?: string;
-}
+import { AdminUpdateOrderStatusDto } from './dto';
 
 @ApiTags('admin/orders')
 @Controller('admin/orders')
@@ -52,7 +48,7 @@ export class AdminOrdersController {
   @ApiResponse({ status: 404, description: 'Order not found' })
   async updateOrderStatus(
     @Param('id') orderId: string,
-    @Body() updateDto: UpdateOrderStatusDto,
+    @Body() updateDto: AdminUpdateOrderStatusDto,
   ) {
     return this.ordersService.updateOrderStatus(
       orderId,

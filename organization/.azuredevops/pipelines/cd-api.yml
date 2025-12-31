@@ -1,11 +1,11 @@
 # ==========================================
-# CitadelBuy - API Continuous Deployment
+# Broxiva - API Continuous Deployment
 # Deploys NestJS API to Azure Kubernetes Service
 # Environments: dev, staging, production
 # ==========================================
 #
 # NOTE: Production deployments require approval.
-# Configure approvals in Azure DevOps: Project Settings > Environments > citadelbuy-production
+# Configure approvals in Azure DevOps: Project Settings > Environments > broxiva-production
 
 trigger:
   branches:
@@ -22,14 +22,14 @@ trigger:
 pr: none  # CD pipeline doesn't run on PR
 
 variables:
-  - group: citadelbuy-common
-  - group: citadelbuy-acr
+  - group: broxiva-common
+  - group: broxiva-acr
   - name: dockerfilePath
     value: '$(Build.SourcesDirectory)/apps/api/Dockerfile.production'
   - name: imageRepository
-    value: 'citadelbuy-api'
+    value: 'broxiva-api'
   - name: containerRegistry
-    value: 'citadelbuyprod.azurecr.io'
+    value: 'broxivaprod.azurecr.io'
   - name: tag
     value: '$(Build.BuildNumber)'
 
@@ -53,7 +53,7 @@ stages:
             displayName: 'Login to ACR'
             inputs:
               command: login
-              containerRegistry: 'citadelbuy-acr-connection'
+              containerRegistry: 'broxiva-acr-connection'
 
           # Build and push Docker image
           - task: Docker@2
@@ -62,7 +62,7 @@ stages:
               command: buildAndPush
               repository: $(imageRepository)
               dockerfile: $(dockerfilePath)
-              containerRegistry: 'citadelbuy-acr-connection'
+              containerRegistry: 'broxiva-acr-connection'
               tags: |
                 $(tag)
                 $(Build.SourceBranchName)
@@ -71,7 +71,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'Scan Image for Vulnerabilities'
             inputs:
-              azureSubscription: 'citadelbuy-azure-connection'
+              azureSubscription: 'broxiva-azure-connection'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
@@ -101,17 +101,17 @@ stages:
     dependsOn: Build
     condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/develop'), eq(variables['Build.SourceBranch'], 'refs/heads/main')))
     variables:
-      - group: citadelbuy-dev
+      - group: broxiva-dev
       - name: environment
         value: 'dev'
       - name: namespace
-        value: 'citadelbuy-dev'
+        value: 'broxiva-dev'
     jobs:
       - deployment: DeployToDevAKS
         displayName: 'Deploy to Dev AKS'
         pool:
           vmImage: 'ubuntu-latest'
-        environment: 'citadelbuy-dev'
+        environment: 'broxiva-dev'
         strategy:
           runOnce:
             deploy:
@@ -142,7 +142,7 @@ stages:
                   displayName: 'Deploy API to AKS Dev'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-dev'
+                    kubernetesServiceConnection: 'broxiva-aks-dev'
                     namespace: '$(namespace)'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/api/deployment.yaml
@@ -154,10 +154,10 @@ stages:
                   displayName: 'Run Database Migrations'
                   inputs:
                     connectionType: 'Kubernetes Service Connection'
-                    kubernetesServiceEndpoint: 'citadelbuy-aks-dev'
+                    kubernetesServiceEndpoint: 'broxiva-aks-dev'
                     namespace: '$(namespace)'
                     command: 'exec'
-                    arguments: 'deployment/citadelbuy-api -- npx prisma migrate deploy'
+                    arguments: 'deployment/broxiva-api -- npx prisma migrate deploy'
 
       # Smoke Tests for Dev
       - job: SmokeTestDev
@@ -170,7 +170,7 @@ stages:
               echo "Running smoke tests against Dev environment..."
 
               # Health check
-              response=$(curl -s -o /dev/null -w "%{http_code}" https://api-dev.citadelbuy.com/api/health)
+              response=$(curl -s -o /dev/null -w "%{http_code}" https://api-dev.broxiva.com/api/health)
               if [ $response -eq 200 ]; then
                 echo "✓ Health check passed"
               else
@@ -179,7 +179,7 @@ stages:
               fi
 
               # API version check
-              curl -s https://api-dev.citadelbuy.com/api | grep -q "version"
+              curl -s https://api-dev.broxiva.com/api | grep -q "version"
               if [ $? -eq 0 ]; then
                 echo "✓ API version endpoint accessible"
               else
@@ -196,17 +196,17 @@ stages:
     dependsOn: DeployDev
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
     variables:
-      - group: citadelbuy-staging
+      - group: broxiva-staging
       - name: environment
         value: 'staging'
       - name: namespace
-        value: 'citadelbuy-staging'
+        value: 'broxiva-staging'
     jobs:
       - deployment: DeployToStagingAKS
         displayName: 'Deploy to Staging AKS'
         pool:
           vmImage: 'ubuntu-latest'
-        environment: 'citadelbuy-staging'
+        environment: 'broxiva-staging'
         strategy:
           runOnce:
             deploy:
@@ -225,7 +225,7 @@ stages:
                   displayName: 'Deploy API to AKS Staging'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-staging'
+                    kubernetesServiceConnection: 'broxiva-aks-staging'
                     namespace: '$(namespace)'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/api/deployment.yaml
@@ -236,10 +236,10 @@ stages:
                   displayName: 'Run Database Migrations'
                   inputs:
                     connectionType: 'Kubernetes Service Connection'
-                    kubernetesServiceEndpoint: 'citadelbuy-aks-staging'
+                    kubernetesServiceEndpoint: 'broxiva-aks-staging'
                     namespace: '$(namespace)'
                     command: 'exec'
-                    arguments: 'deployment/citadelbuy-api -- npx prisma migrate deploy'
+                    arguments: 'deployment/broxiva-api -- npx prisma migrate deploy'
 
       - job: SmokeTestStaging
         displayName: 'Smoke Tests - Staging'
@@ -249,7 +249,7 @@ stages:
         steps:
           - script: |
               echo "Running smoke tests against Staging environment..."
-              response=$(curl -s -o /dev/null -w "%{http_code}" https://api-staging.citadelbuy.com/api/health)
+              response=$(curl -s -o /dev/null -w "%{http_code}" https://api-staging.broxiva.com/api/health)
               if [ $response -eq 200 ]; then
                 echo "✓ Staging health check passed"
               else
@@ -266,17 +266,17 @@ stages:
     dependsOn: DeployStaging
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
     variables:
-      - group: citadelbuy-production
+      - group: broxiva-production
       - name: environment
         value: 'production'
       - name: namespace
-        value: 'citadelbuy-prod'
+        value: 'broxiva-prod'
     jobs:
       - deployment: DeployToProdAKS
         displayName: 'Deploy to Production AKS'
         pool:
           vmImage: 'ubuntu-latest'
-        environment: 'citadelbuy-production'
+        environment: 'broxiva-production'
         strategy:
           runOnce:
             deploy:
@@ -287,7 +287,7 @@ stages:
                 - task: AzureCLI@2
                   displayName: 'Backup Database'
                   inputs:
-                    azureSubscription: 'citadelbuy-azure-connection'
+                    azureSubscription: 'broxiva-azure-connection'
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
@@ -307,7 +307,7 @@ stages:
                   displayName: 'Deploy API to AKS Production (Blue-Green)'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-production'
+                    kubernetesServiceConnection: 'broxiva-aks-production'
                     namespace: '$(namespace)'
                     strategy: 'canary'
                     percentage: '25'
@@ -320,10 +320,10 @@ stages:
                   displayName: 'Run Database Migrations'
                   inputs:
                     connectionType: 'Kubernetes Service Connection'
-                    kubernetesServiceEndpoint: 'citadelbuy-aks-production'
+                    kubernetesServiceEndpoint: 'broxiva-aks-production'
                     namespace: '$(namespace)'
                     command: 'exec'
-                    arguments: 'deployment/citadelbuy-api -- npx prisma migrate deploy'
+                    arguments: 'deployment/broxiva-api -- npx prisma migrate deploy'
 
       # Production Smoke Tests
       - job: SmokeTestProduction
@@ -337,9 +337,9 @@ stages:
 
               # Critical endpoints check
               endpoints=(
-                "https://api.citadelbuy.com/api/health"
-                "https://api.citadelbuy.com/api/products"
-                "https://api.citadelbuy.com/api/auth/status"
+                "https://api.broxiva.com/api/health"
+                "https://api.broxiva.com/api/products"
+                "https://api.broxiva.com/api/auth/status"
               )
 
               for endpoint in "${endpoints[@]}"; do
@@ -366,7 +366,7 @@ stages:
             displayName: 'Promote to 100% traffic'
             inputs:
               action: 'promote'
-              kubernetesServiceConnection: 'citadelbuy-aks-production'
+              kubernetesServiceConnection: 'broxiva-aks-production'
               namespace: '$(namespace)'
               strategy: 'canary'
               manifests: |
@@ -376,7 +376,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'Send Deployment Notification'
             inputs:
-              azureSubscription: 'citadelbuy-azure-connection'
+              azureSubscription: 'broxiva-azure-connection'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |

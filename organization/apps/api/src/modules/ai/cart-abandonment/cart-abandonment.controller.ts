@@ -1,7 +1,8 @@
-import { Controller, Post, Get, Body, Param, Query } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CartAbandonmentService } from './cart-abandonment.service';
 import { RecoveryStrategyService } from './recovery-strategy.service';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @ApiTags('AI - Cart Abandonment')
 @Controller('ai/cart-abandonment')
@@ -12,6 +13,7 @@ export class CartAbandonmentController {
   ) {}
 
   @Post('predict-abandonment')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Predict cart abandonment likelihood' })
   async predictAbandonment(@Body() data: {
     userId: string;
@@ -29,6 +31,7 @@ export class CartAbandonmentController {
   }
 
   @Post('generate-recovery-strategy')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Generate personalized recovery strategy' })
   async generateRecoveryStrategy(@Body() data: {
     userId: string;
@@ -41,6 +44,7 @@ export class CartAbandonmentController {
   }
 
   @Post('calculate-incentive')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Calculate optimal recovery incentive' })
   async calculateIncentive(@Body() data: {
     userId: string;
@@ -59,6 +63,7 @@ export class CartAbandonmentController {
   }
 
   @Post('track-abandonment')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Track cart abandonment event' })
   async trackAbandonment(@Body() data: {
     userId: string;
@@ -72,6 +77,7 @@ export class CartAbandonmentController {
   }
 
   @Post('recovery-campaign')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Launch automated recovery campaign' })
   async launchRecoveryCampaign(@Body() data: {
     cartId: string;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  ImageSourcePropType,
   FlatList,
   RefreshControl,
 } from 'react-native';
@@ -18,6 +19,10 @@ import { productsApi } from '../../services/api';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+// Placeholder image configuration
+const PLACEHOLDER_IMAGE_URL = 'https://placehold.co/150x150/e5e7eb/9ca3af?text=Product';
+const FALLBACK_PLACEHOLDER = require('../../../assets/icon.png');
 
 interface Product {
   id: string;
@@ -46,20 +51,32 @@ const categories: Category[] = [
 ];
 
 const mockProducts: Product[] = [
-  { id: '1', name: 'Wireless Headphones', price: 79.99, originalPrice: 99.99, image: 'https://via.placeholder.com/150', rating: 4.5, reviewCount: 234 },
-  { id: '2', name: 'Smart Watch Pro', price: 199.99, image: 'https://via.placeholder.com/150', rating: 4.8, reviewCount: 567 },
-  { id: '3', name: 'Running Shoes', price: 89.99, originalPrice: 119.99, image: 'https://via.placeholder.com/150', rating: 4.3, reviewCount: 189 },
-  { id: '4', name: 'Laptop Stand', price: 49.99, image: 'https://via.placeholder.com/150', rating: 4.6, reviewCount: 98 },
+  { id: '1', name: 'Wireless Headphones', price: 79.99, originalPrice: 99.99, image: PLACEHOLDER_IMAGE_URL, rating: 4.5, reviewCount: 234 },
+  { id: '2', name: 'Smart Watch Pro', price: 199.99, image: PLACEHOLDER_IMAGE_URL, rating: 4.8, reviewCount: 567 },
+  { id: '3', name: 'Running Shoes', price: 89.99, originalPrice: 119.99, image: PLACEHOLDER_IMAGE_URL, rating: 4.3, reviewCount: 189 },
+  { id: '4', name: 'Laptop Stand', price: 49.99, image: PLACEHOLDER_IMAGE_URL, rating: 4.6, reviewCount: 98 },
 ];
 
 const mockDeals: Product[] = [
-  { id: '5', name: 'Bluetooth Speaker', price: 29.99, originalPrice: 59.99, image: 'https://via.placeholder.com/150', rating: 4.2, reviewCount: 156 },
-  { id: '6', name: 'Phone Case', price: 14.99, originalPrice: 24.99, image: 'https://via.placeholder.com/150', rating: 4.0, reviewCount: 89 },
+  { id: '5', name: 'Bluetooth Speaker', price: 29.99, originalPrice: 59.99, image: PLACEHOLDER_IMAGE_URL, rating: 4.2, reviewCount: 156 },
+  { id: '6', name: 'Phone Case', price: 14.99, originalPrice: 24.99, image: PLACEHOLDER_IMAGE_URL, rating: 4.0, reviewCount: 89 },
 ];
 
 export default function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
-  const [refreshing, setRefreshing] = React.useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+  const handleImageError = useCallback((imageId: string) => {
+    setFailedImages(prev => new Set(prev).add(imageId));
+  }, []);
+
+  const getImageSource = useCallback((imageUrl: string, imageId: string): ImageSourcePropType => {
+    if (failedImages.has(imageId)) {
+      return FALLBACK_PLACEHOLDER;
+    }
+    return { uri: imageUrl };
+  }, [failedImages]);
 
   const { data: featuredProducts, refetch: refetchFeatured } = useQuery({
     queryKey: ['featured-products'],
@@ -82,7 +99,11 @@ export default function HomeScreen() {
       style={styles.productCard}
       onPress={() => navigation.navigate('ProductDetail', { productId: item.id })}
     >
-      <Image source={{ uri: item.image }} style={styles.productImage} />
+      <Image
+        source={getImageSource(item.image, `product-${item.id}`)}
+        style={styles.productImage}
+        onError={() => handleImageError(`product-${item.id}`)}
+      />
       {item.originalPrice && (
         <View style={styles.saleBadge}>
           <Text style={styles.saleBadgeText}>

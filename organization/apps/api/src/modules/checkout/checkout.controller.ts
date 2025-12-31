@@ -11,239 +11,19 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import {
-  CheckoutService,
-  SavedAddress,
-  ExpressCheckoutRequest,
-  GuestCheckoutRequest,
-} from './checkout.service';
+import { CheckoutService } from './checkout.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '@/common/guards/optional-jwt-auth.guard';
 import { AuthRequest } from '@/common/types/auth-request.types';
-import { IsString, IsBoolean, IsOptional, IsEmail, IsNumber, IsArray, ValidateNested, Min } from 'class-validator';
-import { Type } from 'class-transformer';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
-
-// ==================== DTOs ====================
-
-class AddressDto {
-  @IsString()
-  fullName: string;
-
-  @IsEmail()
-  @IsOptional()
-  email?: string;
-
-  @IsString()
-  @IsOptional()
-  phone?: string;
-
-  @IsString()
-  street: string;
-
-  @IsString()
-  city: string;
-
-  @IsString()
-  state: string;
-
-  @IsString()
-  postalCode: string;
-
-  @IsString()
-  country: string;
-
-  @IsBoolean()
-  @IsOptional()
-  isDefault?: boolean;
-}
-
-class UpdateAddressDto {
-  @IsString()
-  @IsOptional()
-  fullName?: string;
-
-  @IsEmail()
-  @IsOptional()
-  email?: string;
-
-  @IsString()
-  @IsOptional()
-  phone?: string;
-
-  @IsString()
-  @IsOptional()
-  street?: string;
-
-  @IsString()
-  @IsOptional()
-  city?: string;
-
-  @IsString()
-  @IsOptional()
-  state?: string;
-
-  @IsString()
-  @IsOptional()
-  postalCode?: string;
-
-  @IsString()
-  @IsOptional()
-  country?: string;
-
-  @IsBoolean()
-  @IsOptional()
-  isDefault?: boolean;
-}
-
-class ExpressCheckoutDto implements ExpressCheckoutRequest {
-  @IsString()
-  @IsOptional()
-  cartId?: string;
-
-  @IsString()
-  @IsOptional()
-  productId?: string;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(1)
-  quantity?: number;
-
-  @IsString()
-  @IsOptional()
-  shippingAddressId?: string;
-
-  @IsString()
-  @IsOptional()
-  paymentMethodId?: string;
-
-  @IsString()
-  @IsOptional()
-  couponCode?: string;
-
-  @IsBoolean()
-  @IsOptional()
-  useGiftCard?: boolean;
-
-  @IsString()
-  @IsOptional()
-  giftCardCode?: string;
-}
-
-class GuestCheckoutItemDto {
-  @IsString()
-  productId: string;
-
-  @IsNumber()
-  @Min(1)
-  quantity: number;
-
-  @IsNumber()
-  @Min(0)
-  price: number;
-}
-
-class GuestShippingAddressDto {
-  @IsString()
-  fullName: string;
-
-  @IsEmail()
-  email: string;
-
-  @IsString()
-  phone: string;
-
-  @IsString()
-  street: string;
-
-  @IsString()
-  city: string;
-
-  @IsString()
-  state: string;
-
-  @IsString()
-  postalCode: string;
-
-  @IsString()
-  country: string;
-}
-
-class GuestBillingAddressDto {
-  @IsString()
-  fullName: string;
-
-  @IsString()
-  street: string;
-
-  @IsString()
-  city: string;
-
-  @IsString()
-  state: string;
-
-  @IsString()
-  postalCode: string;
-
-  @IsString()
-  country: string;
-}
-
-class GuestCheckoutDto implements GuestCheckoutRequest {
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => GuestCheckoutItemDto)
-  items: GuestCheckoutItemDto[];
-
-  @ValidateNested()
-  @Type(() => GuestShippingAddressDto)
-  shippingAddress: GuestShippingAddressDto;
-
-  @ValidateNested()
-  @Type(() => GuestBillingAddressDto)
-  @IsOptional()
-  billingAddress?: GuestBillingAddressDto;
-
-  @IsString()
-  @IsOptional()
-  couponCode?: string;
-
-  @IsEmail()
-  guestEmail: string;
-}
-
-class AttachPaymentMethodDto {
-  @IsString()
-  paymentMethodId: string;
-
-  @IsBoolean()
-  @IsOptional()
-  setAsDefault?: boolean;
-}
-
-class InitializeCheckoutDto {
-  @IsString()
-  @IsOptional()
-  cartId?: string;
-
-  @IsString()
-  @IsOptional()
-  productId?: string;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(1)
-  quantity?: number;
-
-  @IsString()
-  @IsOptional()
-  shippingAddressId?: string;
-
-  @IsString()
-  @IsOptional()
-  couponCode?: string;
-}
+import {
+  CreateCheckoutAddressDto,
+  UpdateCheckoutAddressDto,
+  AttachPaymentMethodDto,
+  InitializeCheckoutDto,
+  ExpressCheckoutDto,
+  GuestCheckoutDto,
+} from './dto';
 
 @ApiTags('Checkout')
 @Controller('checkout')
@@ -266,7 +46,7 @@ export class CheckoutController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Save a new address' })
   @ApiResponse({ status: 201, description: 'Address saved successfully' })
-  async saveAddress(@Request() req: AuthRequest, @Body() dto: AddressDto) {
+  async saveAddress(@Request() req: AuthRequest, @Body() dto: CreateCheckoutAddressDto) {
     return this.checkoutService.saveAddress(req.user.id, {
       isDefault: dto.isDefault ?? false,
       fullName: dto.fullName,
@@ -289,7 +69,7 @@ export class CheckoutController {
   async updateAddress(
     @Request() req: AuthRequest,
     @Param('id') addressId: string,
-    @Body() dto: UpdateAddressDto,
+    @Body() dto: UpdateCheckoutAddressDto,
   ) {
     return this.checkoutService.updateAddress(req.user.id, addressId, dto);
   }

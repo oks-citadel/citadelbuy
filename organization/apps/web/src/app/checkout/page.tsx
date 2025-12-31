@@ -3,6 +3,9 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import {
   CreditCard,
   Truck,
@@ -28,6 +31,145 @@ import { fraudDetectionService, pricingService } from '@/services/ai';
 import { formatCurrency, cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { checkoutApi, addressesApi } from '@/lib/api-client';
+
+// Luhn algorithm for credit card number validation
+const isValidLuhn = (cardNumber: string): boolean => {
+  const digits = cardNumber.replace(/\D/g, '');
+  if (digits.length < 13 || digits.length > 19) return false;
+
+  let sum = 0;
+  let isEven = false;
+
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let digit = parseInt(digits[i], 10);
+
+    if (isEven) {
+      digit *= 2;
+      if (digit > 9) {
+        digit -= 9;
+      }
+    }
+
+    sum += digit;
+    isEven = !isEven;
+  }
+
+  return sum % 10 === 0;
+};
+
+// Check if card is expired
+const isCardExpired = (expiry: string): boolean => {
+  const [monthStr, yearStr] = expiry.split('/');
+  if (!monthStr || !yearStr) return true;
+
+  const month = parseInt(monthStr, 10);
+  const year = parseInt('20' + yearStr, 10);
+
+  if (month < 1 || month > 12) return true;
+
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
+  if (year < currentYear) return true;
+  if (year === currentYear && month < currentMonth) return true;
+
+  return false;
+};
+
+// Shipping address validation schema
+const shippingSchema = z.object({
+  firstName: z.string().min(1, 'First name is required').min(2, 'First name must be at least 2 characters'),
+  lastName: z.string().min(1, 'Last name is required').min(2, 'Last name must be at least 2 characters'),
+  email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
+  phone: z
+    .string()
+    .min(1, 'Phone number is required')
+    .regex(
+      /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/,
+      'Please enter a valid phone number (e.g., 123-456-7890 or (123) 456-7890)'
+    ),
+  address1: z.string().min(1, 'Street address is required').min(5, 'Please enter a complete street address'),
+  address2: z.string().optional(),
+  city: z.string().min(1, 'City is required').min(2, 'Please enter a valid city name'),
+  state: z.string().min(1, 'State is required').min(2, 'Please enter a valid state'),
+  zipCode: z
+    .string()
+    .min(1, 'ZIP code is required')
+    .regex(
+      /^\d{5}(-\d{4})?$/,
+      'Please enter a valid US ZIP code (e.g., 12345 or 12345-6789)'
+    ),
+  country: z.string().min(1, 'Country is required'),
+});
+
+// Payment validation schema
+const paymentSchema = z.object({
+  type: z.enum(['card', 'paypal', 'applepay', 'googlepay', 'klarna']),
+  cardNumber: z
+    .string()
+    .optional()
+    .refine((val) => {
+      if (!val) return true;
+      return isValidLuhn(val);
+    }, 'Please enter a valid card number'),
+  cardExpiry: z
+    .string()
+    .optional()
+    .refine((val) => {
+      if (!val) return true;
+      return /^\d{2}\/\d{2}$/.test(val);
+    }, 'Please enter expiry in MM/YY format')
+    .refine((val) => {
+      if (!val || !/^\d{2}\/\d{2}$/.test(val)) return true;
+      return !isCardExpired(val);
+    }, 'This card has expired'),
+  cardCvc: z
+    .string()
+    .optional()
+    .refine((val) => {
+      if (!val) return true;
+      const digits = val.replace(/\D/g, '');
+      return digits.length >= 3 && digits.length <= 4;
+    }, 'CVC must be 3 or 4 digits'),
+  cardName: z.string().optional(),
+}).refine((data) => {
+  if (data.type === 'card') {
+    return data.cardNumber && data.cardNumber.length >= 13;
+  }
+  return true;
+}, {
+  message: 'Card number is required',
+  path: ['cardNumber'],
+}).refine((data) => {
+  if (data.type === 'card') {
+    return data.cardExpiry && data.cardExpiry.length === 5;
+  }
+  return true;
+}, {
+  message: 'Expiry date is required',
+  path: ['cardExpiry'],
+}).refine((data) => {
+  if (data.type === 'card') {
+    const cvcDigits = data.cardCvc?.replace(/\D/g, '') || '';
+    return cvcDigits.length >= 3 && cvcDigits.length <= 4;
+  }
+  return true;
+}, {
+  message: 'CVC is required (3-4 digits)',
+  path: ['cardCvc'],
+}).refine((data) => {
+  if (data.type === 'card') {
+    return data.cardName && data.cardName.length >= 2;
+  }
+  return true;
+}, {
+  message: 'Name on card is required',
+  path: ['cardName'],
+});
+
+type ShippingFormData = z.infer<typeof shippingSchema>;
+type PaymentFormData = z.infer<typeof paymentSchema>;
 
 type CheckoutStep = 'shipping' | 'payment' | 'review';
 
@@ -125,6 +267,35 @@ export default function CheckoutPage() {
     cardName: '',
   });
 
+  // Shipping form with react-hook-form and zod validation
+  const shippingForm = useForm<ShippingFormData>({
+    resolver: zodResolver(shippingSchema),
+    defaultValues: {
+      firstName: user?.name?.split(' ')[0] || '',
+      lastName: user?.name?.split(' ').slice(1).join(' ') || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+      address1: '',
+      address2: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      country: 'US',
+    },
+  });
+
+  // Payment form with react-hook-form and zod validation
+  const paymentForm = useForm<PaymentFormData>({
+    resolver: zodResolver(paymentSchema),
+    defaultValues: {
+      type: 'card',
+      cardNumber: '',
+      cardExpiry: '',
+      cardCvc: '',
+      cardName: '',
+    },
+  });
+
   const [giftWrap, setGiftWrap] = React.useState(false);
   const [giftMessage, setGiftMessage] = React.useState('');
   const [taxRate, setTaxRate] = React.useState(0.08); // Default 8%
@@ -145,18 +316,25 @@ export default function CheckoutPage() {
     }
   }, [isAuthenticated, router]);
 
+  // Watch form values for effects
+  const watchedZipCode = shippingForm.watch('zipCode');
+  const watchedCity = shippingForm.watch('city');
+  const watchedState = shippingForm.watch('state');
+  const watchedCountry = shippingForm.watch('country');
+  const watchedCardNumber = paymentForm.watch('cardNumber');
+
   // Fetch dynamic shipping rates and tax when address changes
   React.useEffect(() => {
     const fetchShippingAndTax = async () => {
-      if (shippingAddress.zipCode && shippingAddress.city && shippingAddress.state) {
+      if (watchedZipCode && watchedCity && watchedState) {
         setLoadingShippingRates(true);
         try {
           // Fetch dynamic shipping rates from API
           const rates = await checkoutApi.getShippingRates({
-            city: shippingAddress.city,
-            state: shippingAddress.state,
-            zipCode: shippingAddress.zipCode,
-            country: shippingAddress.country,
+            city: watchedCity,
+            state: watchedState,
+            zipCode: watchedZipCode,
+            country: watchedCountry,
           });
 
           if (rates && rates.length > 0) {
@@ -187,7 +365,7 @@ export default function CheckoutPage() {
             'SD': 0.045, 'ND': 0.05, 'AK': 0, 'VT': 0.06, 'DC': 0.06,
             'WY': 0.04,
           };
-          const stateCode = shippingAddress.state.toUpperCase();
+          const stateCode = watchedState.toUpperCase();
           setTaxRate(stateTaxRates[stateCode] || 0.08);
         } catch (error: any) {
           const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch shipping rates';
@@ -203,17 +381,17 @@ export default function CheckoutPage() {
     };
 
     fetchShippingAndTax();
-  }, [shippingAddress.zipCode, shippingAddress.city, shippingAddress.state, shippingAddress.country]);
+  }, [watchedZipCode, watchedCity, watchedState, watchedCountry]);
 
   // Run fraud detection when payment info changes
   React.useEffect(() => {
     const runFraudCheck = async () => {
-      if (paymentMethod.cardNumber && paymentMethod.cardNumber.length >= 16) {
+      if (watchedCardNumber && watchedCardNumber.length >= 16) {
         try {
           const addressForFraud = {
-            city: shippingAddress.city,
-            country: shippingAddress.country,
-            postalCode: shippingAddress.zipCode,
+            city: shippingAddress.city || watchedCity,
+            country: shippingAddress.country || watchedCountry,
+            postalCode: shippingAddress.zipCode || watchedZipCode,
           };
           const result = await fraudDetectionService.analyzeTransaction({
             orderId: '', // Will be assigned on order creation
@@ -238,7 +416,7 @@ export default function CheckoutPage() {
       }
     };
     runFraudCheck();
-  }, [paymentMethod.cardNumber, user?.id]);
+  }, [watchedCardNumber, user?.id, shippingAddress.city, shippingAddress.country, shippingAddress.zipCode, watchedCity, watchedCountry, watchedZipCode]);
 
   const getShippingCost = () => {
     const option = dynamicShippingOptions.find((o) => o.id === selectedShipping);
@@ -263,15 +441,34 @@ export default function CheckoutPage() {
     return subtotal - discount + shipping + giftWrapCost + tax;
   };
 
-  const handleShippingSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleShippingSubmit = shippingForm.handleSubmit((data) => {
+    // Update the shipping address state with validated data
+    setShippingAddress({
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      address1: data.address1,
+      address2: data.address2 || '',
+      city: data.city,
+      state: data.state,
+      zipCode: data.zipCode,
+      country: data.country,
+    });
     setCurrentStep('payment');
-  };
+  });
 
-  const handlePaymentSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePaymentSubmit = paymentForm.handleSubmit((data) => {
+    // Update the payment method state with validated data
+    setPaymentMethod({
+      type: data.type,
+      cardNumber: data.cardNumber || '',
+      cardExpiry: data.cardExpiry || '',
+      cardCvc: data.cardCvc || '',
+      cardName: data.cardName || '',
+    });
     setCurrentStep('review');
-  };
+  });
 
   const handlePlaceOrder = async () => {
     setIsProcessing(true);
@@ -471,84 +668,77 @@ export default function CheckoutPage() {
                     <CardContent>
                       <form onSubmit={handleShippingSubmit} className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
-                          <Input
-                            placeholder="First name"
-                            value={shippingAddress.firstName}
-                            onChange={(e) =>
-                              setShippingAddress({ ...shippingAddress, firstName: e.target.value })
-                            }
-                            required
-                          />
-                          <Input
-                            placeholder="Last name"
-                            value={shippingAddress.lastName}
-                            onChange={(e) =>
-                              setShippingAddress({ ...shippingAddress, lastName: e.target.value })
-                            }
-                            required
-                          />
+                          <div>
+                            <Input
+                              {...shippingForm.register('firstName')}
+                              placeholder="First name"
+                              error={shippingForm.formState.errors.firstName?.message}
+                            />
+                          </div>
+                          <div>
+                            <Input
+                              {...shippingForm.register('lastName')}
+                              placeholder="Last name"
+                              error={shippingForm.formState.errors.lastName?.message}
+                            />
+                          </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Input
+                              {...shippingForm.register('email')}
+                              type="email"
+                              placeholder="Email"
+                              error={shippingForm.formState.errors.email?.message}
+                            />
+                          </div>
+                          <div>
+                            <Input
+                              {...shippingForm.register('phone')}
+                              type="tel"
+                              placeholder="Phone (e.g., 123-456-7890)"
+                              error={shippingForm.formState.errors.phone?.message}
+                            />
+                          </div>
+                        </div>
+                        <div>
                           <Input
-                            type="email"
-                            placeholder="Email"
-                            value={shippingAddress.email}
-                            onChange={(e) =>
-                              setShippingAddress({ ...shippingAddress, email: e.target.value })
-                            }
-                            required
-                          />
-                          <Input
-                            type="tel"
-                            placeholder="Phone"
-                            value={shippingAddress.phone}
-                            onChange={(e) =>
-                              setShippingAddress({ ...shippingAddress, phone: e.target.value })
-                            }
-                            required
+                            {...shippingForm.register('address1')}
+                            placeholder="Street address"
+                            error={shippingForm.formState.errors.address1?.message}
                           />
                         </div>
-                        <Input
-                          placeholder="Street address"
-                          value={shippingAddress.address1}
-                          onChange={(e) =>
-                            setShippingAddress({ ...shippingAddress, address1: e.target.value })
-                          }
-                          required
-                        />
-                        <Input
-                          placeholder="Apartment, suite, etc. (optional)"
-                          value={shippingAddress.address2}
-                          onChange={(e) =>
-                            setShippingAddress({ ...shippingAddress, address2: e.target.value })
-                          }
-                        />
+                        <div>
+                          <Input
+                            {...shippingForm.register('address2')}
+                            placeholder="Apartment, suite, etc. (optional)"
+                            error={shippingForm.formState.errors.address2?.message}
+                          />
+                        </div>
                         <div className="grid grid-cols-3 gap-4">
-                          <Input
-                            placeholder="City"
-                            value={shippingAddress.city}
-                            onChange={(e) =>
-                              setShippingAddress({ ...shippingAddress, city: e.target.value })
-                            }
-                            required
-                          />
-                          <Input
-                            placeholder="State"
-                            value={shippingAddress.state}
-                            onChange={(e) =>
-                              setShippingAddress({ ...shippingAddress, state: e.target.value })
-                            }
-                            required
-                          />
-                          <Input
-                            placeholder="ZIP code"
-                            value={shippingAddress.zipCode}
-                            onChange={(e) =>
-                              setShippingAddress({ ...shippingAddress, zipCode: e.target.value })
-                            }
-                            required
-                          />
+                          <div>
+                            <Input
+                              {...shippingForm.register('city')}
+                              placeholder="City"
+                              error={shippingForm.formState.errors.city?.message}
+                            />
+                          </div>
+                          <div>
+                            <Input
+                              {...shippingForm.register('state')}
+                              placeholder="State"
+                              error={shippingForm.formState.errors.state?.message}
+                            />
+                          </div>
+                          <div>
+                            <Input
+                              {...shippingForm.register('zipCode')}
+                              placeholder="ZIP code (e.g., 12345)"
+                              error={shippingForm.formState.errors.zipCode?.message}
+                            />
+                          </div>
                         </div>
+                        <input type="hidden" {...shippingForm.register('country')} />
 
                         {/* Shipping Options */}
                         <div className="pt-4 border-t mt-6">
@@ -673,10 +863,13 @@ export default function CheckoutPage() {
                               <button
                                 key={type}
                                 type="button"
-                                onClick={() => setPaymentMethod({ ...paymentMethod, type })}
+                                onClick={() => {
+                                  paymentForm.setValue('type', type);
+                                  setPaymentMethod({ ...paymentMethod, type });
+                                }}
                                 className={cn(
                                   'p-3 rounded-lg border text-center transition-colors',
-                                  paymentMethod.type === type
+                                  paymentForm.watch('type') === type
                                     ? 'border-primary bg-primary/5'
                                     : 'hover:border-muted-foreground/50'
                                 )}
@@ -687,55 +880,56 @@ export default function CheckoutPage() {
                           )}
                         </div>
 
-                        {paymentMethod.type === 'card' && (
+                        {paymentForm.watch('type') === 'card' && (
                           <div className="space-y-4">
-                            <Input
-                              placeholder="Card number"
-                              value={paymentMethod.cardNumber}
-                              onChange={(e) =>
-                                setPaymentMethod({
-                                  ...paymentMethod,
-                                  cardNumber: e.target.value.replace(/\D/g, '').slice(0, 16),
-                                })
-                              }
-                              leftIcon={<CreditCard className="h-4 w-4" />}
-                              required
-                            />
-                            <div className="grid grid-cols-2 gap-4">
+                            <div>
                               <Input
-                                placeholder="MM/YY"
-                                value={paymentMethod.cardExpiry}
+                                placeholder="Card number"
+                                value={paymentForm.watch('cardNumber') || ''}
                                 onChange={(e) => {
-                                  let value = e.target.value.replace(/\D/g, '');
-                                  if (value.length >= 2) {
-                                    value = value.slice(0, 2) + '/' + value.slice(2, 4);
-                                  }
-                                  setPaymentMethod({ ...paymentMethod, cardExpiry: value });
+                                  const value = e.target.value.replace(/\D/g, '').slice(0, 16);
+                                  paymentForm.setValue('cardNumber', value, { shouldValidate: true });
                                 }}
-                                maxLength={5}
-                                required
-                              />
-                              <Input
-                                placeholder="CVC"
-                                value={paymentMethod.cardCvc}
-                                onChange={(e) =>
-                                  setPaymentMethod({
-                                    ...paymentMethod,
-                                    cardCvc: e.target.value.replace(/\D/g, '').slice(0, 4),
-                                  })
-                                }
-                                maxLength={4}
-                                required
+                                leftIcon={<CreditCard className="h-4 w-4" />}
+                                error={paymentForm.formState.errors.cardNumber?.message}
                               />
                             </div>
-                            <Input
-                              placeholder="Name on card"
-                              value={paymentMethod.cardName}
-                              onChange={(e) =>
-                                setPaymentMethod({ ...paymentMethod, cardName: e.target.value })
-                              }
-                              required
-                            />
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Input
+                                  placeholder="MM/YY"
+                                  value={paymentForm.watch('cardExpiry') || ''}
+                                  onChange={(e) => {
+                                    let value = e.target.value.replace(/\D/g, '');
+                                    if (value.length >= 2) {
+                                      value = value.slice(0, 2) + '/' + value.slice(2, 4);
+                                    }
+                                    paymentForm.setValue('cardExpiry', value, { shouldValidate: true });
+                                  }}
+                                  maxLength={5}
+                                  error={paymentForm.formState.errors.cardExpiry?.message}
+                                />
+                              </div>
+                              <div>
+                                <Input
+                                  placeholder="CVC (3-4 digits)"
+                                  value={paymentForm.watch('cardCvc') || ''}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                                    paymentForm.setValue('cardCvc', value, { shouldValidate: true });
+                                  }}
+                                  maxLength={4}
+                                  error={paymentForm.formState.errors.cardCvc?.message}
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <Input
+                                {...paymentForm.register('cardName')}
+                                placeholder="Name on card"
+                                error={paymentForm.formState.errors.cardName?.message}
+                              />
+                            </div>
 
                             {/* AI Fraud Detection Result */}
                             {fraudCheckResult && (
@@ -771,9 +965,9 @@ export default function CheckoutPage() {
                           </div>
                         )}
 
-                        {paymentMethod.type !== 'card' && (
+                        {paymentForm.watch('type') !== 'card' && (
                           <div className="text-center py-8 text-muted-foreground">
-                            <p>You will be redirected to complete payment with {paymentMethod.type}</p>
+                            <p>You will be redirected to complete payment with {paymentForm.watch('type')}</p>
                           </div>
                         )}
 

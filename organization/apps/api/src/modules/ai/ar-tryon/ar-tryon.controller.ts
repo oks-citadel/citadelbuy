@@ -1,8 +1,9 @@
-import { Controller, Post, Get, Body, Param, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UploadedFile, UseInterceptors, UseGuards } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiConsumes } from '@nestjs/swagger';
 import { ArTryonService } from './ar-tryon.service';
 import { FitRecommendationService } from './fit-recommendation.service';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @ApiTags('AI - AR Virtual Try-On')
 @Controller('ai/ar-tryon')
@@ -13,6 +14,7 @@ export class ArTryonController {
   ) {}
 
   @Post('virtual-tryon')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Generate virtual try-on for clothing/accessories' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('image'))
@@ -24,6 +26,7 @@ export class ArTryonController {
   }
 
   @Post('body-measurements')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Extract body measurements from photo' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('image'))
@@ -32,6 +35,7 @@ export class ArTryonController {
   }
 
   @Post('fit-recommendation')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get size and fit recommendations' })
   async getFitRecommendation(@Body() data: {
     productId: string;
@@ -48,6 +52,7 @@ export class ArTryonController {
   }
 
   @Post('ar-placement')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Generate AR placement for furniture/home decor' })
   async generateARPlacement(@Body() data: {
     productId: string;
@@ -64,6 +69,7 @@ export class ArTryonController {
   }
 
   @Post('fit-feedback')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Submit fit feedback for ML improvement' })
   async submitFitFeedback(@Body() feedback: {
     productId: string;

@@ -25,6 +25,127 @@ const cardBrands: Record<string, { color: string; icon: string }> = {
   paypal: { color: 'bg-blue-700', icon: 'PP' },
 };
 
+// Form state interface
+interface CardFormData {
+  cardNumber: string;
+  expiryDate: string;
+  cvc: string;
+  cardholderName: string;
+}
+
+// Form errors interface
+interface CardFormErrors {
+  cardNumber?: string;
+  expiryDate?: string;
+  cvc?: string;
+  cardholderName?: string;
+  general?: string;
+}
+
+// Initial form state
+const initialFormData: CardFormData = {
+  cardNumber: '',
+  expiryDate: '',
+  cvc: '',
+  cardholderName: '',
+};
+
+// Validation helpers
+const formatCardNumber = (value: string): string => {
+  const digits = value.replace(/\D/g, '');
+  const groups = digits.match(/.{1,4}/g) || [];
+  return groups.join(' ').substring(0, 19);
+};
+
+const formatExpiryDate = (value: string): string => {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length >= 2) {
+    return `${digits.substring(0, 2)}/${digits.substring(2, 4)}`;
+  }
+  return digits;
+};
+
+const validateCardNumber = (cardNumber: string): string | undefined => {
+  const digits = cardNumber.replace(/\s/g, '');
+  if (!digits) {
+    return 'Card number is required';
+  }
+  if (digits.length < 13 || digits.length > 19) {
+    return 'Card number must be 13-19 digits';
+  }
+  if (!/^\d+$/.test(digits)) {
+    return 'Card number must contain only digits';
+  }
+  // Luhn algorithm validation
+  let sum = 0;
+  let isEven = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let digit = parseInt(digits[i], 10);
+    if (isEven) {
+      digit *= 2;
+      if (digit > 9) {
+        digit -= 9;
+      }
+    }
+    sum += digit;
+    isEven = !isEven;
+  }
+  if (sum % 10 !== 0) {
+    return 'Invalid card number';
+  }
+  return undefined;
+};
+
+const validateExpiryDate = (expiryDate: string): string | undefined => {
+  if (!expiryDate) {
+    return 'Expiry date is required';
+  }
+  const match = expiryDate.match(/^(\d{2})\/(\d{2})$/);
+  if (!match) {
+    return 'Expiry date must be in MM/YY format';
+  }
+  const month = parseInt(match[1], 10);
+  const year = parseInt(match[2], 10) + 2000;
+  if (month < 1 || month > 12) {
+    return 'Invalid month';
+  }
+  const now = new Date();
+  const expiry = new Date(year, month - 1);
+  if (expiry < now) {
+    return 'Card has expired';
+  }
+  return undefined;
+};
+
+const validateCVC = (cvc: string): string | undefined => {
+  if (!cvc) {
+    return 'CVC is required';
+  }
+  if (!/^\d{3,4}$/.test(cvc)) {
+    return 'CVC must be 3 or 4 digits';
+  }
+  return undefined;
+};
+
+const validateCardholderName = (name: string): string | undefined => {
+  if (!name.trim()) {
+    return 'Cardholder name is required';
+  }
+  if (name.trim().length < 2) {
+    return 'Name is too short';
+  }
+  return undefined;
+};
+
+const detectCardBrand = (cardNumber: string): string => {
+  const digits = cardNumber.replace(/\s/g, '');
+  if (/^4/.test(digits)) return 'visa';
+  if (/^5[1-5]/.test(digits) || /^2[2-7]/.test(digits)) return 'mastercard';
+  if (/^3[47]/.test(digits)) return 'amex';
+  if (/^6(?:011|5)/.test(digits)) return 'discover';
+  return 'unknown';
+};
+
 export default function PaymentMethodsPage() {
   const [paymentMethods, setPaymentMethods] = useState<SavedPaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,6 +153,11 @@ export default function PaymentMethodsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [settingDefaultId, setSettingDefaultId] = useState<string | null>(null);
+
+  // Form state
+  const [formData, setFormData] = useState<CardFormData>(initialFormData);
+  const [formErrors, setFormErrors] = useState<CardFormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     loadPaymentMethods();
@@ -106,6 +232,109 @@ export default function PaymentMethodsPage() {
     } finally {
       setSettingDefaultId(null);
     }
+  };
+
+  // Form input handlers
+  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCardNumber(e.target.value);
+    setFormData((prev) => ({ ...prev, cardNumber: formatted }));
+    if (formErrors.cardNumber) {
+      setFormErrors((prev) => ({ ...prev, cardNumber: undefined }));
+    }
+  };
+
+  const handleExpiryDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatExpiryDate(e.target.value);
+    setFormData((prev) => ({ ...prev, expiryDate: formatted }));
+    if (formErrors.expiryDate) {
+      setFormErrors((prev) => ({ ...prev, expiryDate: undefined }));
+    }
+  };
+
+  const handleCVCChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').substring(0, 4);
+    setFormData((prev) => ({ ...prev, cvc: value }));
+    if (formErrors.cvc) {
+      setFormErrors((prev) => ({ ...prev, cvc: undefined }));
+    }
+  };
+
+  const handleCardholderNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({ ...prev, cardholderName: e.target.value }));
+    if (formErrors.cardholderName) {
+      setFormErrors((prev) => ({ ...prev, cardholderName: undefined }));
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const errors: CardFormErrors = {};
+
+    const cardNumberError = validateCardNumber(formData.cardNumber);
+    if (cardNumberError) errors.cardNumber = cardNumberError;
+
+    const expiryDateError = validateExpiryDate(formData.expiryDate);
+    if (expiryDateError) errors.expiryDate = expiryDateError;
+
+    const cvcError = validateCVC(formData.cvc);
+    if (cvcError) errors.cvc = cvcError;
+
+    const cardholderNameError = validateCardholderName(formData.cardholderName);
+    if (cardholderNameError) errors.cardholderName = cardholderNameError;
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const resetForm = () => {
+    setFormData(initialFormData);
+    setFormErrors({});
+    setShowAddCard(false);
+  };
+
+  const handleSaveCard = async () => {
+    if (!validateForm()) {
+      toast.error('Please fix the form errors before submitting');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setFormErrors((prev) => ({ ...prev, general: undefined }));
+
+    try {
+      // In production, you would first tokenize the card with Stripe/payment processor
+      // and then send the token to the server. For demo purposes, we simulate this.
+      const cardDigits = formData.cardNumber.replace(/\s/g, '');
+      const brand = detectCardBrand(formData.cardNumber);
+      const expiryParts = formData.expiryDate.split('/');
+
+      // Create a simulated token (in production, this comes from Stripe.js)
+      const simulatedToken = `tok_${brand}_${cardDigits.slice(-4)}_${Date.now()}`;
+
+      const newPaymentMethod = await paymentMethodsApi.addPaymentMethod({
+        type: 'CARD',
+        token: simulatedToken,
+      });
+
+      setPaymentMethods((prev) => [...prev, newPaymentMethod]);
+      toast.success('Payment method added successfully');
+      resetForm();
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to save payment method';
+      console.error('Failed to save payment method:', error);
+      setFormErrors((prev) => ({ ...prev, general: errorMessage }));
+      toast.error(errorMessage, {
+        description: 'Please check your card details and try again',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancelAddCard = () => {
+    resetForm();
   };
 
   const getCardBrand = (brand: string | undefined) => {
@@ -209,17 +438,50 @@ export default function PaymentMethodsPage() {
               </div>
             </div>
 
+            {/* General error message */}
+            {formErrors.general && (
+              <div className="bg-red-50 border border-red-200 p-4 rounded-lg mb-4">
+                <div className="flex gap-3">
+                  <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                  <p className="text-sm text-red-800">{formErrors.general}</p>
+                </div>
+              </div>
+            )}
+
             <div className="grid gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Card Number
                 </label>
-                <input
-                  type="text"
-                  placeholder="1234 5678 9012 3456"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  maxLength={19}
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="1234 5678 9012 3456"
+                    value={formData.cardNumber}
+                    onChange={handleCardNumberChange}
+                    className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary ${
+                      formErrors.cardNumber
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300'
+                    }`}
+                    maxLength={19}
+                    disabled={isSubmitting}
+                  />
+                  {formData.cardNumber && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div
+                        className={`w-8 h-5 rounded flex items-center justify-center text-white font-bold text-xs ${
+                          cardBrands[detectCardBrand(formData.cardNumber)]?.color || 'bg-gray-400'
+                        }`}
+                      >
+                        {cardBrands[detectCardBrand(formData.cardNumber)]?.icon || 'CC'}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {formErrors.cardNumber && (
+                  <p className="text-sm text-red-600 mt-1">{formErrors.cardNumber}</p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -229,9 +491,19 @@ export default function PaymentMethodsPage() {
                   <input
                     type="text"
                     placeholder="MM/YY"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    value={formData.expiryDate}
+                    onChange={handleExpiryDateChange}
+                    className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary ${
+                      formErrors.expiryDate
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300'
+                    }`}
                     maxLength={5}
+                    disabled={isSubmitting}
                   />
+                  {formErrors.expiryDate && (
+                    <p className="text-sm text-red-600 mt-1">{formErrors.expiryDate}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -240,9 +512,19 @@ export default function PaymentMethodsPage() {
                   <input
                     type="text"
                     placeholder="123"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    value={formData.cvc}
+                    onChange={handleCVCChange}
+                    className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary ${
+                      formErrors.cvc
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300'
+                    }`}
                     maxLength={4}
+                    disabled={isSubmitting}
                   />
+                  {formErrors.cvc && (
+                    <p className="text-sm text-red-600 mt-1">{formErrors.cvc}</p>
+                  )}
                 </div>
               </div>
               <div>
@@ -252,16 +534,39 @@ export default function PaymentMethodsPage() {
                 <input
                   type="text"
                   placeholder="John Doe"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  value={formData.cardholderName}
+                  onChange={handleCardholderNameChange}
+                  className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary ${
+                    formErrors.cardholderName
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
+                  }`}
+                  disabled={isSubmitting}
                 />
+                {formErrors.cardholderName && (
+                  <p className="text-sm text-red-600 mt-1">{formErrors.cardholderName}</p>
+                )}
               </div>
             </div>
 
             <div className="flex gap-3 mt-6">
-              <Button variant="outline" onClick={() => setShowAddCard(false)}>
+              <Button
+                variant="outline"
+                onClick={handleCancelAddCard}
+                disabled={isSubmitting}
+              >
                 Cancel
               </Button>
-              <Button>Save Card</Button>
+              <Button onClick={handleSaveCard} disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Card'
+                )}
+              </Button>
             </div>
           </CardContent>
         </Card>

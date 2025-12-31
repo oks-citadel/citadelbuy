@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import {
   TrendingUp,
@@ -18,41 +18,136 @@ import {
   Store,
   Star,
   Activity,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  adminDashboardApi,
+  type DashboardStats,
+  type RecentOrder,
+  type SystemAlert,
+  type TopProduct,
+} from '@/services/admin-api';
+
+// Loading skeleton for stats
+function StatsSkeleton() {
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {[...Array(4)].map((_, i) => (
+        <Card key={i}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <Skeleton className="h-12 w-12 rounded-full" />
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+// Loading skeleton for orders/products list
+function ListSkeleton() {
+  return (
+    <div className="space-y-4">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+          </div>
+          <Skeleton className="h-6 w-20" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Error state component
+function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center p-8 text-center">
+      <AlertTriangle className="h-12 w-12 text-yellow-500 mb-4" />
+      <p className="text-muted-foreground mb-4">{message}</p>
+      {onRetry && (
+        <Button variant="outline" onClick={onRetry}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Try Again
+        </Button>
+      )}
+    </div>
+  );
+}
 
 export default function AdminDashboardPage() {
-  // Demo stats
-  const stats = {
-    revenue: { value: 125430, change: 12.5, period: 'vs last month' },
-    orders: { value: 1284, change: 8.2, period: 'vs last month' },
-    customers: { value: 5420, change: 15.3, period: 'vs last month' },
-    products: { value: 892, active: 756, period: 'active' },
+  // Fetch dashboard stats
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    error: statsError,
+    refetch: refetchStats,
+  } = useQuery({
+    queryKey: ['admin', 'dashboard', 'stats'],
+    queryFn: adminDashboardApi.getStats,
+  });
+
+  // Fetch recent orders
+  const {
+    data: recentOrders,
+    isLoading: ordersLoading,
+    error: ordersError,
+    refetch: refetchOrders,
+  } = useQuery({
+    queryKey: ['admin', 'dashboard', 'recentOrders'],
+    queryFn: () => adminDashboardApi.getRecentOrders(5),
+  });
+
+  // Fetch system alerts
+  const {
+    data: alerts,
+    isLoading: alertsLoading,
+    error: alertsError,
+    refetch: refetchAlerts,
+  } = useQuery({
+    queryKey: ['admin', 'dashboard', 'alerts'],
+    queryFn: adminDashboardApi.getAlerts,
+  });
+
+  // Fetch top products
+  const {
+    data: topProducts,
+    isLoading: productsLoading,
+    error: productsError,
+    refetch: refetchProducts,
+  } = useQuery({
+    queryKey: ['admin', 'dashboard', 'topProducts'],
+    queryFn: () => adminDashboardApi.getTopProducts(4),
+  });
+
+  // Default values for when data is loading or unavailable
+  const defaultStats: DashboardStats = {
+    revenue: { value: 0, change: 0, period: 'vs last month' },
+    orders: { value: 0, change: 0, period: 'vs last month' },
+    customers: { value: 0, change: 0, period: 'vs last month' },
+    products: { value: 0, active: 0, period: 'active' },
   };
 
-  const recentOrders = [
-    { id: 'ORD-001', customer: 'John Doe', amount: 249.99, status: 'PENDING', time: '5 min ago' },
-    { id: 'ORD-002', customer: 'Jane Smith', amount: 89.50, status: 'PROCESSING', time: '12 min ago' },
-    { id: 'ORD-003', customer: 'Bob Johnson', amount: 450.00, status: 'SHIPPED', time: '1 hour ago' },
-    { id: 'ORD-004', customer: 'Alice Brown', amount: 125.00, status: 'DELIVERED', time: '2 hours ago' },
-    { id: 'ORD-005', customer: 'Charlie Wilson', amount: 75.25, status: 'PENDING', time: '3 hours ago' },
-  ];
-
-  const alerts = [
-    { type: 'warning', message: '5 products running low on stock', action: 'View Inventory' },
-    { type: 'info', message: '3 new vendor applications pending', action: 'Review' },
-    { type: 'warning', message: '12 support tickets awaiting response', action: 'View Tickets' },
-    { type: 'success', message: 'AI fraud detection prevented 2 suspicious orders', action: 'Details' },
-  ];
-
-  const topProducts = [
-    { name: 'Wireless Headphones', sales: 245, revenue: 19600, stock: 45 },
-    { name: 'Smart Watch Pro', sales: 189, revenue: 28350, stock: 23 },
-    { name: 'Premium T-Shirt', sales: 312, revenue: 9360, stock: 156 },
-    { name: 'Leather Wallet', sales: 156, revenue: 7800, stock: 89 },
-  ];
+  const displayStats = stats || defaultStats;
+  const displayOrders = recentOrders || [];
+  const displayAlerts = alerts || [];
+  const displayProducts = topProducts || [];
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
@@ -88,84 +183,113 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {statsLoading ? (
+        <StatsSkeleton />
+      ) : statsError ? (
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-bold">${stats.revenue.value.toLocaleString()}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                  <span className="text-sm text-green-600">+{stats.revenue.change}%</span>
-                  <span className="text-xs text-muted-foreground">{stats.revenue.period}</span>
+          <ErrorState
+            message="Failed to load dashboard statistics"
+            onRetry={() => refetchStats()}
+          />
+        </Card>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Revenue</p>
+                  <p className="text-2xl font-bold">${displayStats.revenue.value.toLocaleString()}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {displayStats.revenue.change >= 0 ? (
+                      <TrendingUp className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4 text-red-500" />
+                    )}
+                    <span className={`text-sm ${displayStats.revenue.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {displayStats.revenue.change >= 0 ? '+' : ''}{displayStats.revenue.change}%
+                    </span>
+                    <span className="text-xs text-muted-foreground">{displayStats.revenue.period}</span>
+                  </div>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                  <DollarSign className="h-6 w-6 text-green-600" />
                 </div>
               </div>
-              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Orders</p>
-                <p className="text-2xl font-bold">{stats.orders.value.toLocaleString()}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                  <span className="text-sm text-green-600">+{stats.orders.change}%</span>
-                  <span className="text-xs text-muted-foreground">{stats.orders.period}</span>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Orders</p>
+                  <p className="text-2xl font-bold">{displayStats.orders.value.toLocaleString()}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {displayStats.orders.change >= 0 ? (
+                      <TrendingUp className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4 text-red-500" />
+                    )}
+                    <span className={`text-sm ${displayStats.orders.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {displayStats.orders.change >= 0 ? '+' : ''}{displayStats.orders.change}%
+                    </span>
+                    <span className="text-xs text-muted-foreground">{displayStats.orders.period}</span>
+                  </div>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                  <ShoppingBag className="h-6 w-6 text-blue-600" />
                 </div>
               </div>
-              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <ShoppingBag className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Customers</p>
-                <p className="text-2xl font-bold">{stats.customers.value.toLocaleString()}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                  <span className="text-sm text-green-600">+{stats.customers.change}%</span>
-                  <span className="text-xs text-muted-foreground">{stats.customers.period}</span>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Customers</p>
+                  <p className="text-2xl font-bold">{displayStats.customers.value.toLocaleString()}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {displayStats.customers.change >= 0 ? (
+                      <TrendingUp className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4 text-red-500" />
+                    )}
+                    <span className={`text-sm ${displayStats.customers.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {displayStats.customers.change >= 0 ? '+' : ''}{displayStats.customers.change}%
+                    </span>
+                    <span className="text-xs text-muted-foreground">{displayStats.customers.period}</span>
+                  </div>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-purple-600" />
                 </div>
               </div>
-              <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
-                <Users className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Products</p>
-                <p className="text-2xl font-bold">{stats.products.value}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span className="text-sm text-muted-foreground">
-                    {stats.products.active} {stats.products.period}
-                  </span>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Products</p>
+                  <p className="text-2xl font-bold">{displayStats.products.value}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-sm text-muted-foreground">
+                      {displayStats.products.active} {displayStats.products.period}
+                    </span>
+                  </div>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
+                  <Package className="h-6 w-6 text-orange-600" />
                 </div>
               </div>
-              <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
-                <Package className="h-6 w-6 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Alerts */}
       <Card>
@@ -176,35 +300,66 @@ export default function AdminDashboardPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {alerts.map((alert, i) => (
-              <div
-                key={i}
-                className={`flex items-center justify-between p-3 rounded-lg ${
-                  alert.type === 'warning'
-                    ? 'bg-yellow-50'
-                    : alert.type === 'success'
-                    ? 'bg-green-50'
-                    : 'bg-blue-50'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  {alert.type === 'warning' ? (
-                    <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                  ) : alert.type === 'success' ? (
-                    <CheckCircle className="h-5 w-5 text-green-600" />
+          {alertsLoading ? (
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full" />
+              ))}
+            </div>
+          ) : alertsError ? (
+            <ErrorState
+              message="Failed to load system alerts"
+              onRetry={() => refetchAlerts()}
+            />
+          ) : displayAlerts.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+              <p>No alerts at this time</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {displayAlerts.map((alert, i) => (
+                <div
+                  key={i}
+                  className={`flex items-center justify-between p-3 rounded-lg ${
+                    alert.type === 'warning'
+                      ? 'bg-yellow-50'
+                      : alert.type === 'success'
+                      ? 'bg-green-50'
+                      : alert.type === 'error'
+                      ? 'bg-red-50'
+                      : 'bg-blue-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    {alert.type === 'warning' ? (
+                      <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                    ) : alert.type === 'success' ? (
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    ) : alert.type === 'error' ? (
+                      <AlertTriangle className="h-5 w-5 text-red-600" />
+                    ) : (
+                      <Clock className="h-5 w-5 text-blue-600" />
+                    )}
+                    <span className="text-sm font-medium">{alert.message}</span>
+                  </div>
+                  {alert.link ? (
+                    <Link href={alert.link}>
+                      <Button variant="ghost" size="sm">
+                        {alert.action}
+                        <ArrowRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </Link>
                   ) : (
-                    <Clock className="h-5 w-5 text-blue-600" />
+                    <Button variant="ghost" size="sm">
+                      {alert.action}
+                      <ArrowRight className="h-4 w-4 ml-1" />
+                    </Button>
                   )}
-                  <span className="text-sm font-medium">{alert.message}</span>
                 </div>
-                <Button variant="ghost" size="sm">
-                  {alert.action}
-                  <ArrowRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -223,33 +378,50 @@ export default function AdminDashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentOrders.map((order) => (
-                <div
-                  key={order.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                      <ShoppingBag className="h-5 w-5 text-muted-foreground" />
+            {ordersLoading ? (
+              <ListSkeleton />
+            ) : ordersError ? (
+              <ErrorState
+                message="Failed to load recent orders"
+                onRetry={() => refetchOrders()}
+              />
+            ) : displayOrders.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <ShoppingBag className="h-12 w-12 mx-auto mb-4" />
+                <p>No recent orders</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {displayOrders.map((order) => (
+                  <Link
+                    key={order.id}
+                    href={`/admin/orders/${order.id}`}
+                    className="block"
+                  >
+                    <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                          <ShoppingBag className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{order.orderNumber || order.id}</p>
+                          <p className="text-sm text-muted-foreground">{order.customer}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">${order.amount.toFixed(2)}</p>
+                        <div className="flex items-center gap-2">
+                          <Badge className={getStatusBadge(order.status)} variant="outline">
+                            {order.status}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">{order.time}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">{order.id}</p>
-                      <p className="text-sm text-muted-foreground">{order.customer}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">${order.amount.toFixed(2)}</p>
-                    <div className="flex items-center gap-2">
-                      <Badge className={getStatusBadge(order.status)} variant="outline">
-                        {order.status}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">{order.time}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -267,31 +439,48 @@ export default function AdminDashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {topProducts.map((product, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-3 border rounded-lg"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center font-bold text-muted-foreground">
-                      #{i + 1}
+            {productsLoading ? (
+              <ListSkeleton />
+            ) : productsError ? (
+              <ErrorState
+                message="Failed to load top products"
+                onRetry={() => refetchProducts()}
+              />
+            ) : displayProducts.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Package className="h-12 w-12 mx-auto mb-4" />
+                <p>No product data available</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {displayProducts.map((product, i) => (
+                  <Link
+                    key={product.id || i}
+                    href={`/admin/products/${product.id}`}
+                    className="block"
+                  >
+                    <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center font-bold text-muted-foreground">
+                          #{i + 1}
+                        </div>
+                        <div>
+                          <p className="font-medium">{product.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {product.sales} sales | Stock: {product.stock}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium text-green-600">
+                          ${product.revenue.toLocaleString()}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">{product.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {product.sales} sales | Stock: {product.stock}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-green-600">
-                      ${product.revenue.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

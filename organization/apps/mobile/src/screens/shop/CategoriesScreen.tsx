@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
+  ImageSourcePropType,
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +18,11 @@ import { productsApi } from '../../services/api';
 import { RootStackParamList } from '../../navigation/RootNavigator';
 
 type CategoriesScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+// Placeholder image configuration
+const PLACEHOLDER_CATEGORY_URL = 'https://placehold.co/300x300/e5e7eb/9ca3af?text=Category';
+const PLACEHOLDER_FEATURED_URL = 'https://placehold.co/120x120/e5e7eb/9ca3af?text=Product';
+const FALLBACK_PLACEHOLDER = require('../../../assets/icon.png');
 
 interface Category {
   id: string;
@@ -40,7 +46,7 @@ const categories: Category[] = [
     name: 'Electronics',
     icon: 'laptop-outline',
     color: '#3b82f6',
-    image: 'https://via.placeholder.com/300',
+    image: PLACEHOLDER_CATEGORY_URL,
     productCount: 1234,
     subcategories: [
       { id: '1-1', name: 'Smartphones', productCount: 245 },
@@ -56,7 +62,7 @@ const categories: Category[] = [
     name: 'Fashion',
     icon: 'shirt-outline',
     color: '#ec4899',
-    image: 'https://via.placeholder.com/300',
+    image: PLACEHOLDER_CATEGORY_URL,
     productCount: 2567,
     subcategories: [
       { id: '2-1', name: "Men's Clothing", productCount: 567 },
@@ -72,7 +78,7 @@ const categories: Category[] = [
     name: 'Home & Garden',
     icon: 'home-outline',
     color: '#f59e0b',
-    image: 'https://via.placeholder.com/300',
+    image: PLACEHOLDER_CATEGORY_URL,
     productCount: 1876,
     subcategories: [
       { id: '3-1', name: 'Furniture', productCount: 345 },
@@ -88,7 +94,7 @@ const categories: Category[] = [
     name: 'Beauty',
     icon: 'sparkles-outline',
     color: '#8b5cf6',
-    image: 'https://via.placeholder.com/300',
+    image: PLACEHOLDER_CATEGORY_URL,
     productCount: 987,
     subcategories: [
       { id: '4-1', name: 'Skincare', productCount: 234 },
@@ -103,7 +109,7 @@ const categories: Category[] = [
     name: 'Sports & Fitness',
     icon: 'fitness-outline',
     color: '#10b981',
-    image: 'https://via.placeholder.com/300',
+    image: PLACEHOLDER_CATEGORY_URL,
     productCount: 756,
     subcategories: [
       { id: '5-1', name: 'Exercise Equipment', productCount: 156 },
@@ -118,7 +124,7 @@ const categories: Category[] = [
     name: 'Books & Media',
     icon: 'book-outline',
     color: '#6366f1',
-    image: 'https://via.placeholder.com/300',
+    image: PLACEHOLDER_CATEGORY_URL,
     productCount: 1456,
     subcategories: [
       { id: '6-1', name: 'Fiction', productCount: 345 },
@@ -133,7 +139,7 @@ const categories: Category[] = [
     name: 'Toys & Games',
     icon: 'game-controller-outline',
     color: '#ef4444',
-    image: 'https://via.placeholder.com/300',
+    image: PLACEHOLDER_CATEGORY_URL,
     productCount: 654,
     subcategories: [
       { id: '7-1', name: 'Video Games', productCount: 234 },
@@ -147,7 +153,7 @@ const categories: Category[] = [
     name: 'Groceries',
     icon: 'cart-outline',
     color: '#14b8a6',
-    image: 'https://via.placeholder.com/300',
+    image: PLACEHOLDER_CATEGORY_URL,
     productCount: 2345,
     subcategories: [
       { id: '8-1', name: 'Fresh Food', productCount: 567 },
@@ -162,6 +168,18 @@ const categories: Category[] = [
 export default function CategoriesScreen() {
   const navigation = useNavigation<CategoriesScreenNavigationProp>();
   const [selectedCategory, setSelectedCategory] = useState<Category>(categories[0]);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+  const handleImageError = useCallback((imageId: string) => {
+    setFailedImages(prev => new Set(prev).add(imageId));
+  }, []);
+
+  const getImageSource = useCallback((imageUrl: string, imageId: string): ImageSourcePropType => {
+    if (failedImages.has(imageId)) {
+      return FALLBACK_PLACEHOLDER;
+    }
+    return { uri: imageUrl };
+  }, [failedImages]);
 
   const { data: apiCategories } = useQuery({
     queryKey: ['categories'],
@@ -212,8 +230,9 @@ export default function CategoriesScreen() {
           {/* Category Header */}
           <View style={styles.categoryHeader}>
             <Image
-              source={{ uri: selectedCategory.image }}
+              source={getImageSource(selectedCategory.image, `category-${selectedCategory.id}`)}
               style={styles.categoryImage}
+              onError={() => handleImageError(`category-${selectedCategory.id}`)}
             />
             <View style={styles.categoryOverlay}>
               <Text style={styles.categoryTitle}>{selectedCategory.name}</Text>
@@ -256,8 +275,9 @@ export default function CategoriesScreen() {
                   onPress={() => navigation.navigate('ProductDetail', { productId: String(item) })}
                 >
                   <Image
-                    source={{ uri: 'https://via.placeholder.com/120' }}
+                    source={getImageSource(PLACEHOLDER_FEATURED_URL, `featured-${selectedCategory.id}-${item}`)}
                     style={styles.featuredImage}
+                    onError={() => handleImageError(`featured-${selectedCategory.id}-${item}`)}
                   />
                   <Text style={styles.featuredName} numberOfLines={2}>
                     Product Name Here

@@ -1,8 +1,9 @@
-import { Controller, Post, Get, Body, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { SubscriptionIntelligenceService } from './subscription-intelligence.service';
 import { ChurnPredictionService } from './churn-prediction.service';
 import { ReplenishmentService } from './replenishment.service';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @ApiTags('AI - Subscription Intelligence')
 @Controller('ai/subscription')
@@ -14,6 +15,7 @@ export class SubscriptionIntelligenceController {
   ) {}
 
   @Post('predict-churn')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Predict subscription churn risk' })
   async predictChurn(@Body() data: {
     subscriptionId: string;
@@ -25,6 +27,7 @@ export class SubscriptionIntelligenceController {
   }
 
   @Post('retention-strategy')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Generate retention strategy' })
   async generateRetentionStrategy(@Body() data: {
     userId: string;
@@ -36,6 +39,7 @@ export class SubscriptionIntelligenceController {
   }
 
   @Post('optimize-frequency')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Optimize subscription delivery frequency' })
   async optimizeFrequency(@Body() data: {
     userId: string;
@@ -47,6 +51,7 @@ export class SubscriptionIntelligenceController {
   }
 
   @Post('replenishment-prediction')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Predict replenishment needs' })
   async predictReplenishment(@Body() data: {
     userId: string;
@@ -58,6 +63,7 @@ export class SubscriptionIntelligenceController {
   }
 
   @Post('subscription-recommendations')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Recommend subscription products' })
   async recommendSubscriptions(@Body() data: {
     userId: string;
@@ -67,6 +73,7 @@ export class SubscriptionIntelligenceController {
   }
 
   @Post('personalize-subscription')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Personalize subscription offering' })
   async personalizeSubscription(@Body() data: {
     userId: string;
@@ -83,6 +90,7 @@ export class SubscriptionIntelligenceController {
   }
 
   @Post('smart-pause')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Suggest subscription pause timing' })
   async suggestPauseTiming(@Body() data: {
     subscriptionId: string;

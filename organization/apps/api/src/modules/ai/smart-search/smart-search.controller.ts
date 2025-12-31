@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Query, Body } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { SmartSearchService } from './smart-search.service';
 import { AutocompleteService } from './autocomplete.service';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @ApiTags('AI - Smart Search')
 @Controller('ai/smart-search')
@@ -30,6 +31,7 @@ export class SmartSearchController {
   }
 
   @Post('track')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Track search query for analytics' })
   async trackSearch(@Body() trackData: { query: string; userId?: string; results: number }) {
     return this.smartSearchService.trackQuery(trackData);

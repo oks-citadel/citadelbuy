@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import {
   ShoppingBag,
@@ -17,120 +18,91 @@ import {
   XCircle,
   Clock,
   RefreshCw,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  adminOrdersApi,
+  type AdminOrder,
+  type OrdersResponse,
+} from '@/services/admin-api';
 
-interface Order {
-  id: string;
-  orderNumber: string;
-  customer: {
-    name: string;
-    email: string;
-  };
-  items: number;
-  total: number;
-  status: 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED';
-  paymentStatus: 'PAID' | 'PENDING' | 'FAILED' | 'REFUNDED';
-  createdAt: string;
-  shippingMethod: string;
+// Loading skeleton for table
+function TableSkeleton() {
+  return (
+    <div className="space-y-4">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="flex items-center gap-4 p-4 border-b">
+          <Skeleton className="h-4 w-4" />
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-6 w-24" />
+          <Skeleton className="h-6 w-16" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-8 w-16 ml-auto" />
+        </div>
+      ))}
+    </div>
+  );
 }
 
-const demoOrders: Order[] = [
-  {
-    id: '1',
-    orderNumber: 'ORD-2024-001',
-    customer: { name: 'John Doe', email: 'john@example.com' },
-    items: 3,
-    total: 249.99,
-    status: 'PENDING',
-    paymentStatus: 'PAID',
-    createdAt: '2024-03-15T10:30:00Z',
-    shippingMethod: 'Standard',
-  },
-  {
-    id: '2',
-    orderNumber: 'ORD-2024-002',
-    customer: { name: 'Jane Smith', email: 'jane@example.com' },
-    items: 1,
-    total: 89.50,
-    status: 'PROCESSING',
-    paymentStatus: 'PAID',
-    createdAt: '2024-03-15T09:15:00Z',
-    shippingMethod: 'Express',
-  },
-  {
-    id: '3',
-    orderNumber: 'ORD-2024-003',
-    customer: { name: 'Bob Johnson', email: 'bob@example.com' },
-    items: 5,
-    total: 450.00,
-    status: 'SHIPPED',
-    paymentStatus: 'PAID',
-    createdAt: '2024-03-14T16:45:00Z',
-    shippingMethod: 'Standard',
-  },
-  {
-    id: '4',
-    orderNumber: 'ORD-2024-004',
-    customer: { name: 'Alice Brown', email: 'alice@example.com' },
-    items: 2,
-    total: 125.00,
-    status: 'DELIVERED',
-    paymentStatus: 'PAID',
-    createdAt: '2024-03-14T11:20:00Z',
-    shippingMethod: 'Standard',
-  },
-  {
-    id: '5',
-    orderNumber: 'ORD-2024-005',
-    customer: { name: 'Charlie Wilson', email: 'charlie@example.com' },
-    items: 1,
-    total: 75.25,
-    status: 'CANCELLED',
-    paymentStatus: 'REFUNDED',
-    createdAt: '2024-03-14T08:00:00Z',
-    shippingMethod: 'Express',
-  },
-  {
-    id: '6',
-    orderNumber: 'ORD-2024-006',
-    customer: { name: 'Diana Prince', email: 'diana@example.com' },
-    items: 4,
-    total: 320.00,
-    status: 'PENDING',
-    paymentStatus: 'PENDING',
-    createdAt: '2024-03-15T11:00:00Z',
-    shippingMethod: 'Standard',
-  },
-];
+// Error state component
+function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center p-12 text-center">
+      <AlertTriangle className="h-12 w-12 text-yellow-500 mb-4" />
+      <p className="text-muted-foreground mb-4">{message}</p>
+      {onRetry && (
+        <Button variant="outline" onClick={onRetry}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Try Again
+        </Button>
+      )}
+    </div>
+  );
+}
 
 export default function AdminOrdersPage() {
-  const [orders] = useState<Order[]>(demoOrders);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
-  const filteredOrders = orders.filter((order) => {
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      if (
-        !order.orderNumber.toLowerCase().includes(query) &&
-        !order.customer.name.toLowerCase().includes(query) &&
-        !order.customer.email.toLowerCase().includes(query)
-      ) {
-        return false;
-      }
-    }
-    if (statusFilter !== 'all' && order.status !== statusFilter) {
-      return false;
-    }
-    return true;
+  // Fetch orders from API
+  const {
+    data: ordersData,
+    isLoading,
+    error,
+    refetch,
+    isFetching,
+  } = useQuery({
+    queryKey: ['admin', 'orders', { page, limit, status: statusFilter, search: searchQuery }],
+    queryFn: () => adminOrdersApi.getAll({
+      page,
+      limit,
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      search: searchQuery || undefined,
+    }),
   });
 
-  const getStatusIcon = (status: Order['status']) => {
+  const orders = ordersData?.orders || [];
+  const totalOrders = ordersData?.total || 0;
+  const stats = ordersData?.stats || { pending: 0, processing: 0, shipped: 0, delivered: 0 };
+  const totalPages = Math.ceil(totalOrders / limit);
+
+  // Client-side filtering is a fallback - API should handle filtering
+  // This is kept for any additional client-side filtering needs
+  const filteredOrders = orders;
+
+  const getStatusIcon = (status: AdminOrder['status']) => {
     switch (status) {
       case 'PENDING':
         return <Clock className="h-4 w-4" />;
@@ -146,8 +118,8 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const getStatusBadge = (status: Order['status']) => {
-    const styles: Record<Order['status'], string> = {
+  const getStatusBadge = (status: AdminOrder['status']) => {
+    const styles: Record<AdminOrder['status'], string> = {
       PENDING: 'bg-yellow-100 text-yellow-800',
       PROCESSING: 'bg-blue-100 text-blue-800',
       SHIPPED: 'bg-purple-100 text-purple-800',
@@ -158,8 +130,8 @@ export default function AdminOrdersPage() {
     return styles[status];
   };
 
-  const getPaymentBadge = (status: Order['paymentStatus']) => {
-    const styles: Record<Order['paymentStatus'], string> = {
+  const getPaymentBadge = (status: AdminOrder['paymentStatus']) => {
+    const styles: Record<AdminOrder['paymentStatus'], string> = {
       PAID: 'bg-green-100 text-green-800',
       PENDING: 'bg-yellow-100 text-yellow-800',
       FAILED: 'bg-red-100 text-red-800',
@@ -168,10 +140,23 @@ export default function AdminOrdersPage() {
     return styles[status];
   };
 
-  const pendingCount = orders.filter((o) => o.status === 'PENDING').length;
-  const processingCount = orders.filter((o) => o.status === 'PROCESSING').length;
-  const shippedCount = orders.filter((o) => o.status === 'SHIPPED').length;
-  const deliveredCount = orders.filter((o) => o.status === 'DELIVERED').length;
+  // Use stats from API response
+  const pendingCount = stats.pending;
+  const processingCount = stats.processing;
+  const shippedCount = stats.shipped;
+  const deliveredCount = stats.delivered;
+
+  // Handle search with debounce-like behavior via query key
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    setPage(1); // Reset to first page on search
+  };
+
+  // Handle status filter change
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+    setPage(1); // Reset to first page on filter change
+  };
 
   return (
     <div className="space-y-6">
@@ -256,14 +241,17 @@ export default function AdminOrdersPage() {
               <Input
                 placeholder="Search by order #, customer name or email..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearch(e.target.value)}
                 className="pl-10"
               />
+              {isFetching && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+              )}
             </div>
             <select
               className="rounded-md border px-3 py-2 text-sm"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => handleStatusChange(e.target.value)}
             >
               <option value="all">All Status</option>
               <option value="PENDING">Pending</option>
@@ -283,119 +271,131 @@ export default function AdminOrdersPage() {
       {/* Orders Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="p-4 text-left">
-                    <input
-                      type="checkbox"
-                      className="rounded border-gray-300"
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedOrders(filteredOrders.map((o) => o.id));
-                        } else {
-                          setSelectedOrders([]);
-                        }
-                      }}
-                    />
-                  </th>
-                  <th className="p-4 text-left text-sm font-medium text-muted-foreground">Order</th>
-                  <th className="p-4 text-left text-sm font-medium text-muted-foreground">Customer</th>
-                  <th className="p-4 text-left text-sm font-medium text-muted-foreground">Items</th>
-                  <th className="p-4 text-left text-sm font-medium text-muted-foreground">Total</th>
-                  <th className="p-4 text-left text-sm font-medium text-muted-foreground">Status</th>
-                  <th className="p-4 text-left text-sm font-medium text-muted-foreground">Payment</th>
-                  <th className="p-4 text-left text-sm font-medium text-muted-foreground">Date</th>
-                  <th className="p-4 text-right text-sm font-medium text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-muted/50">
-                    <td className="p-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedOrders.includes(order.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedOrders([...selectedOrders, order.id]);
-                          } else {
-                            setSelectedOrders(selectedOrders.filter((id) => id !== order.id));
-                          }
-                        }}
-                        className="rounded border-gray-300"
-                      />
-                    </td>
-                    <td className="p-4">
-                      <Link
-                        href={`/admin/orders/${order.id}`}
-                        className="font-medium text-primary hover:underline"
-                      >
-                        {order.orderNumber}
-                      </Link>
-                    </td>
-                    <td className="p-4">
-                      <div>
-                        <p className="font-medium">{order.customer.name}</p>
-                        <p className="text-sm text-muted-foreground">{order.customer.email}</p>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span>{order.items} item(s)</span>
-                    </td>
-                    <td className="p-4">
-                      <span className="font-medium">${order.total.toFixed(2)}</span>
-                    </td>
-                    <td className="p-4">
-                      <Badge className={getStatusBadge(order.status)}>
-                        <span className="flex items-center gap-1">
-                          {getStatusIcon(order.status)}
-                          {order.status}
-                        </span>
-                      </Badge>
-                    </td>
-                    <td className="p-4">
-                      <Badge className={getPaymentBadge(order.paymentStatus)} variant="outline">
-                        {order.paymentStatus}
-                      </Badge>
-                    </td>
-                    <td className="p-4">
-                      <div>
-                        <p className="text-sm">
-                          {new Date(order.createdAt).toLocaleDateString()}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(order.createdAt).toLocaleTimeString()}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex justify-end gap-1">
-                        <Link href={`/admin/orders/${order.id}`}>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {isLoading ? (
+            <TableSkeleton />
+          ) : error ? (
+            <ErrorState
+              message="Failed to load orders. Please try again."
+              onRetry={() => refetch()}
+            />
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="p-4 text-left">
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300"
+                          checked={selectedOrders.length === filteredOrders.length && filteredOrders.length > 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedOrders(filteredOrders.map((o) => o.id));
+                            } else {
+                              setSelectedOrders([]);
+                            }
+                          }}
+                        />
+                      </th>
+                      <th className="p-4 text-left text-sm font-medium text-muted-foreground">Order</th>
+                      <th className="p-4 text-left text-sm font-medium text-muted-foreground">Customer</th>
+                      <th className="p-4 text-left text-sm font-medium text-muted-foreground">Items</th>
+                      <th className="p-4 text-left text-sm font-medium text-muted-foreground">Total</th>
+                      <th className="p-4 text-left text-sm font-medium text-muted-foreground">Status</th>
+                      <th className="p-4 text-left text-sm font-medium text-muted-foreground">Payment</th>
+                      <th className="p-4 text-left text-sm font-medium text-muted-foreground">Date</th>
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {filteredOrders.map((order) => (
+                      <tr key={order.id} className="hover:bg-muted/50">
+                        <td className="p-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedOrders.includes(order.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedOrders([...selectedOrders, order.id]);
+                              } else {
+                                setSelectedOrders(selectedOrders.filter((id) => id !== order.id));
+                              }
+                            }}
+                            className="rounded border-gray-300"
+                          />
+                        </td>
+                        <td className="p-4">
+                          <Link
+                            href={`/admin/orders/${order.id}`}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            {order.orderNumber}
+                          </Link>
+                        </td>
+                        <td className="p-4">
+                          <div>
+                            <p className="font-medium">{order.customer.name}</p>
+                            <p className="text-sm text-muted-foreground">{order.customer.email}</p>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <span>{order.items} item(s)</span>
+                        </td>
+                        <td className="p-4">
+                          <span className="font-medium">${order.total.toFixed(2)}</span>
+                        </td>
+                        <td className="p-4">
+                          <Badge className={getStatusBadge(order.status)}>
+                            <span className="flex items-center gap-1">
+                              {getStatusIcon(order.status)}
+                              {order.status}
+                            </span>
+                          </Badge>
+                        </td>
+                        <td className="p-4">
+                          <Badge className={getPaymentBadge(order.paymentStatus)} variant="outline">
+                            {order.paymentStatus}
+                          </Badge>
+                        </td>
+                        <td className="p-4">
+                          <div>
+                            <p className="text-sm">
+                              {new Date(order.createdAt).toLocaleDateString()}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(order.createdAt).toLocaleTimeString()}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex justify-end gap-1">
+                            <Link href={`/admin/orders/${order.id}`}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-          {filteredOrders.length === 0 && (
-            <div className="p-12 text-center">
-              <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-medium text-gray-900 mb-2">No orders found</h3>
-              <p className="text-muted-foreground">
-                Try adjusting your search or filters
-              </p>
-            </div>
+              {filteredOrders.length === 0 && (
+                <div className="p-12 text-center">
+                  <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="font-medium text-gray-900 mb-2">No orders found</h3>
+                  <p className="text-muted-foreground">
+                    Try adjusting your search or filters
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
@@ -403,14 +403,31 @@ export default function AdminOrdersPage() {
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Showing {filteredOrders.length} of {orders.length} orders
+          {isLoading ? (
+            <Skeleton className="h-4 w-40" />
+          ) : (
+            <>Showing {filteredOrders.length} of {totalOrders} orders</>
+          )}
         </p>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" disabled>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1 || isLoading}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
             <ChevronLeft className="h-4 w-4 mr-1" />
             Previous
           </Button>
-          <Button variant="outline" size="sm" disabled>
+          <span className="flex items-center text-sm text-muted-foreground px-2">
+            Page {page} of {totalPages || 1}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages || isLoading}
+            onClick={() => setPage((p) => p + 1)}
+          >
             Next
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>

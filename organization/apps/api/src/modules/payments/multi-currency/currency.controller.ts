@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Query, Param, UseGuards } from '@nestjs/common';
 import { ExchangeRateService } from './exchange-rate.service';
+import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { CurrencyConversionService } from './currency-conversion.service';
 import {
   SUPPORTED_CURRENCIES,
@@ -162,6 +163,7 @@ export class CurrencyController {
    * Convert amount from one currency to another
    */
   @Post('convert')
+  @UseGuards(JwtAuthGuard)
   async convertCurrency(
     @Body()
     body: {
@@ -419,6 +421,7 @@ export class CurrencyController {
    * Convert multiple amounts in batch
    */
   @Post('batch-convert')
+  @UseGuards(JwtAuthGuard)
   async batchConvert(
     @Body()
     body: {

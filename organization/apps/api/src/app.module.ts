@@ -57,6 +57,9 @@ import { WebhookModule } from './modules/webhooks/webhook.module';
 import { PrivacyModule } from './modules/privacy/privacy.module';
 import { AutomationModule } from './modules/automation/automation.module';
 import { MeModule } from './modules/me/me.module';
+import { AiModule } from './modules/ai/ai.module';
+import { MarketingModule } from './modules/marketing/marketing.module';
+import { ComplianceModule } from './modules/compliance/compliance.module';
 import { validate } from './common/config/config-validation';
 
 @Module({
@@ -130,6 +133,9 @@ import { validate } from './common/config/config-validation';
     PrivacyModule,
     AutomationModule,
     MeModule,
+    AiModule,
+    MarketingModule,
+    ComplianceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

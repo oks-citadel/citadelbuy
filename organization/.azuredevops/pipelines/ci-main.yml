@@ -1,5 +1,5 @@
 # ==========================================
-# CitadelBuy - Main CI Pipeline
+# Broxiva - Main CI Pipeline
 # Continuous Integration for Pull Requests
 # Triggers on PR to main/master branches
 # ==========================================
@@ -22,7 +22,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  - group: citadelbuy-ci-variables
+  - group: broxiva-ci-variables
   - name: NODE_VERSION
     value: '20.x'
   - name: PNPM_VERSION
@@ -298,7 +298,7 @@ stages:
 
           - script: |
               echo "================================================"
-              echo "CitadelBuy CI Pipeline Summary"
+              echo "Broxiva CI Pipeline Summary"
               echo "================================================"
               echo "Build ID: $(Build.BuildId)"
               echo "Build Number: $(Build.BuildNumber)"

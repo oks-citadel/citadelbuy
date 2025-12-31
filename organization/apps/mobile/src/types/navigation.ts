@@ -32,21 +32,24 @@ export type AuthStackParamList = {
 // Main Tab Navigator
 export type MainTabParamList = {
   Home: undefined;
-  Shop: undefined;
-  Cart: undefined;
+  Search: undefined;
+  Categories: undefined;
+  Wishlist: undefined;
   Account: NavigatorScreenParams<AccountStackParamList>;
 };
 
 // Account Stack
 export type AccountStackParamList = {
-  AccountHome: undefined;
+  AccountMain: undefined;
   Orders: undefined;
   OrderDetail: { orderId: string };
+  TrackOrder: { orderId: string };
   Wishlist: undefined;
   Addresses: undefined;
   Settings: undefined;
   Notifications: undefined;
   MyReviews: undefined;
+  ProfileEdit: undefined;
 };
 
 // Screen Props Types

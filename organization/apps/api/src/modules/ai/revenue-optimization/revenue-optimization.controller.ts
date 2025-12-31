@@ -1,9 +1,10 @@
-import { Controller, Post, Get, Body, Param, Query } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { RevenueOptimizationService } from './revenue-optimization.service';
 import { BundleOptimizationService } from './bundle-optimization.service';
 import { UpsellCrosssellService } from './upsell-crosssell.service';
 import { PricingStrategyService } from './pricing-strategy.service';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @ApiTags('AI - Revenue Optimization')
 @Controller('ai/revenue-optimization')
@@ -16,6 +17,7 @@ export class RevenueOptimizationController {
   ) {}
 
   @Post('optimize-bundle')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Generate optimized product bundle' })
   async optimizeBundle(@Body() data: {
     productIds: string[];
@@ -26,6 +28,7 @@ export class RevenueOptimizationController {
   }
 
   @Post('suggest-bundles')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Suggest bundles for a product' })
   async suggestBundles(@Body() data: {
     productId: string;
@@ -36,6 +39,7 @@ export class RevenueOptimizationController {
   }
 
   @Post('upsell-recommendations')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get upsell recommendations' })
   async getUpsellRecommendations(@Body() data: {
     productId: string;
@@ -46,6 +50,7 @@ export class RevenueOptimizationController {
   }
 
   @Post('crosssell-recommendations')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get cross-sell recommendations' })
   async getCrosssellRecommendations(@Body() data: {
     cartItems: Array<{ productId: string; quantity: number }>;
@@ -55,6 +60,7 @@ export class RevenueOptimizationController {
   }
 
   @Post('optimize-pricing')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Calculate optimal price' })
   async optimizePricing(@Body() data: {
     productId: string;
@@ -66,6 +72,7 @@ export class RevenueOptimizationController {
   }
 
   @Post('dynamic-discount')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Calculate dynamic discount' })
   async calculateDynamicDiscount(@Body() data: {
     userId: string;
@@ -83,6 +90,7 @@ export class RevenueOptimizationController {
   }
 
   @Post('aov-optimization')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Optimize average order value' })
   async optimizeAOV(@Body() data: {
     userId: string;
@@ -102,6 +110,7 @@ export class RevenueOptimizationController {
   }
 
   @Post('price-test')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Set up A/B price testing' })
   async setupPriceTest(@Body() data: {
     productId: string;

@@ -1,10 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Image,
+  ImageSourcePropType,
+  ImageErrorEventData,
+  NativeSyntheticEvent,
   Dimensions,
   ActivityIndicator,
   Alert,
@@ -23,6 +26,10 @@ type ARTryOnNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const { width, height } = Dimensions.get('window');
 
+// Placeholder image configuration
+const PLACEHOLDER_IMAGE_URL = 'https://placehold.co/100x100/e5e7eb/9ca3af?text=Product';
+const FALLBACK_PLACEHOLDER = require('../../../assets/icon.png');
+
 // Supported product categories for AR
 type ARCategory = 'eyewear' | 'accessories' | 'jewelry' | 'hats' | 'watches' | 'furniture';
 
@@ -37,10 +44,10 @@ interface ARProduct {
 
 // Mock AR products for demo
 const mockARProducts: ARProduct[] = [
-  { id: '1', name: 'Classic Sunglasses', image: 'https://via.placeholder.com/100', category: 'eyewear', price: 129.99 },
-  { id: '2', name: 'Aviator Glasses', image: 'https://via.placeholder.com/100', category: 'eyewear', price: 149.99 },
-  { id: '3', name: 'Round Frames', image: 'https://via.placeholder.com/100', category: 'eyewear', price: 99.99 },
-  { id: '4', name: 'Cat Eye Shades', image: 'https://via.placeholder.com/100', category: 'eyewear', price: 159.99 },
+  { id: '1', name: 'Classic Sunglasses', image: PLACEHOLDER_IMAGE_URL, category: 'eyewear', price: 129.99 },
+  { id: '2', name: 'Aviator Glasses', image: PLACEHOLDER_IMAGE_URL, category: 'eyewear', price: 149.99 },
+  { id: '3', name: 'Round Frames', image: PLACEHOLDER_IMAGE_URL, category: 'eyewear', price: 99.99 },
+  { id: '4', name: 'Cat Eye Shades', image: PLACEHOLDER_IMAGE_URL, category: 'eyewear', price: 159.99 },
 ];
 
 export default function ARTryOnScreen() {
@@ -55,6 +62,18 @@ export default function ARTryOnScreen() {
   const [isCapturing, setIsCapturing] = useState(false);
   const [arOverlayPosition, setAROverlayPosition] = useState({ x: width / 2, y: height / 3 });
   const [arOverlayScale, setAROverlayScale] = useState(1);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+  const handleImageError = useCallback((imageId: string) => {
+    setFailedImages(prev => new Set(prev).add(imageId));
+  }, []);
+
+  const getImageSource = useCallback((imageUrl: string, imageId: string): ImageSourcePropType => {
+    if (failedImages.has(imageId)) {
+      return FALLBACK_PLACEHOLDER;
+    }
+    return { uri: imageUrl };
+  }, [failedImages]);
 
   useEffect(() => {
     (async () => {
@@ -169,9 +188,10 @@ export default function ARTryOnScreen() {
           >
             {/* This would be replaced with actual AR rendering from ARKit/ARCore */}
             <Image
-              source={{ uri: selectedProduct.image }}
+              source={getImageSource(selectedProduct.image, `ar-${selectedProduct.id}`)}
               style={styles.arProductImage}
               resizeMode="contain"
+              onError={() => handleImageError(`ar-${selectedProduct.id}`)}
             />
           </View>
         )}
@@ -205,8 +225,9 @@ export default function ARTryOnScreen() {
         {selectedProduct && (
           <View style={styles.selectedProductCard}>
             <Image
-              source={{ uri: selectedProduct.image }}
+              source={getImageSource(selectedProduct.image, `selected-${selectedProduct.id}`)}
               style={styles.selectedProductImage}
+              onError={() => handleImageError(`selected-${selectedProduct.id}`)}
             />
             <View style={styles.selectedProductInfo}>
               <Text style={styles.selectedProductName}>{selectedProduct.name}</Text>
@@ -303,8 +324,9 @@ export default function ARTryOnScreen() {
               onPress={() => handleProductSelect(product)}
             >
               <Image
-                source={{ uri: product.image }}
+                source={getImageSource(product.image, `list-${product.id}`)}
                 style={styles.productImage}
+                onError={() => handleImageError(`list-${product.id}`)}
               />
               <Text style={styles.productName} numberOfLines={1}>
                 {product.name}

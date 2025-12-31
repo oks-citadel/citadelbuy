@@ -4,6 +4,22 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../stores/auth-store';
 
+// Re-export navigation types from canonical types file
+export type {
+  RootStackParamList,
+  AuthStackParamList,
+  MainTabParamList,
+  AccountStackParamList,
+} from '../types/navigation';
+
+// Import types for use in this file
+import type {
+  RootStackParamList,
+  AuthStackParamList,
+  MainTabParamList,
+  AccountStackParamList,
+} from '../types/navigation';
+
 // Auth Screens
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
@@ -25,6 +41,8 @@ import WishlistScreen from '../screens/account/WishlistScreen';
 import AddressesScreen from '../screens/account/AddressesScreen';
 import SettingsScreen from '../screens/account/SettingsScreen';
 import NotificationsScreen from '../screens/account/NotificationsScreen';
+import ProfileEditScreen from '../screens/account/ProfileEditScreen';
+import TrackOrderScreen from '../screens/account/TrackOrderScreen';
 
 
 // AI Features
@@ -45,48 +63,6 @@ import CreditPackagesScreen from '../screens/credits/CreditPackagesScreen';
 import WriteReviewScreen from '../screens/reviews/WriteReviewScreen';
 import EditReviewScreen from '../screens/reviews/EditReviewScreen';
 import MyReviewsScreen from '../screens/reviews/MyReviewsScreen';
-
-export type RootStackParamList = {
-  Auth: undefined;
-  Main: undefined;
-  ProductDetail: { productId: string };
-  Cart: undefined;
-  Checkout: undefined;
-  Payment: { amount: number; currency: string; orderId?: string; items?: any[] };
-  OrderDetail: { orderId: string };
-  AIAssistant: undefined;
-  ARTryOn: { productId?: string; category?: string };
-  WriteReview: { productId: string; productName?: string; productImage?: string; orderId?: string };
-  EditReview: { reviewId: string };
-  Subscription: undefined;
-  CreditPackages: undefined;
-  Wallet: undefined;
-};
-
-export type AuthStackParamList = {
-  Login: undefined;
-  Register: undefined;
-  ForgotPassword: undefined;
-};
-
-export type MainTabParamList = {
-  Home: undefined;
-  Search: undefined;
-  Categories: undefined;
-  Wishlist: undefined;
-  Account: undefined;
-};
-
-export type AccountStackParamList = {
-  AccountMain: undefined;
-  Orders: undefined;
-  OrderDetail: { orderId: string };
-  Wishlist: undefined;
-  Addresses: undefined;
-  Settings: undefined;
-  Notifications: undefined;
-  MyReviews: undefined;
-};
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -129,6 +105,16 @@ function AccountNavigator() {
         name="MyReviews"
         component={MyReviewsScreen}
         options={{ title: 'My Reviews' }}
+      />
+      <AccountStack.Screen
+        name="ProfileEdit"
+        component={ProfileEditScreen}
+        options={{ title: 'Edit Profile' }}
+      />
+      <AccountStack.Screen
+        name="TrackOrder"
+        component={TrackOrderScreen}
+        options={{ title: 'Track Order' }}
       />
     </AccountStack.Navigator>
   );
