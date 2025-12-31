@@ -55,13 +55,13 @@ variable "environment" {
 variable "github_owner" {
   description = "GitHub repository owner/organization"
   type        = string
-  default     = "broxiva"
+  default     = "oks-citadel"
 }
 
 variable "github_repo" {
   description = "GitHub repository name"
   type        = string
-  default     = "broxiva"
+  default     = "citadelbuy"
 }
 
 variable "github_branch" {

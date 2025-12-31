@@ -1,5 +1,5 @@
 # ==========================================
-# CitadelBuy - Infrastructure Pipeline
+# Broxiva - Infrastructure Pipeline
 # Terraform-based infrastructure provisioning
 # Environments: dev, staging, production
 # ==========================================
@@ -27,8 +27,8 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  - group: citadelbuy-common
-  - group: citadelbuy-terraform
+  - group: broxiva-common
+  - group: broxiva-terraform
   - name: terraformVersion
     value: '1.6.0'
   - name: terraformWorkingDirectory
@@ -113,7 +113,7 @@ stages:
     dependsOn: Validate
     condition: succeeded()
     variables:
-      - group: citadelbuy-dev
+      - group: broxiva-dev
       - name: environment
         value: 'dev'
     jobs:
@@ -131,7 +131,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'Terraform Init & Plan - Dev'
             inputs:
-              azureSubscription: 'citadelbuy-azure-connection'
+              azureSubscription: 'broxiva-azure-connection'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
@@ -175,7 +175,7 @@ stages:
     dependsOn: PlanDev
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
     variables:
-      - group: citadelbuy-dev
+      - group: broxiva-dev
       - name: environment
         value: 'dev'
     jobs:
@@ -183,7 +183,7 @@ stages:
         displayName: 'Terraform Apply for Dev'
         pool:
           vmImage: 'ubuntu-latest'
-        environment: 'citadelbuy-dev-infra'
+        environment: 'broxiva-dev-infra'
         strategy:
           runOnce:
             deploy:
@@ -206,7 +206,7 @@ stages:
                 - task: AzureCLI@2
                   displayName: 'Terraform Apply - Dev'
                   inputs:
-                    azureSubscription: 'citadelbuy-azure-connection'
+                    azureSubscription: 'broxiva-azure-connection'
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
@@ -234,7 +234,7 @@ stages:
     dependsOn: ApplyDev
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
     variables:
-      - group: citadelbuy-staging
+      - group: broxiva-staging
       - name: environment
         value: 'staging'
     jobs:
@@ -252,7 +252,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'Terraform Init & Plan - Staging'
             inputs:
-              azureSubscription: 'citadelbuy-azure-connection'
+              azureSubscription: 'broxiva-azure-connection'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
@@ -284,7 +284,7 @@ stages:
     dependsOn: PlanStaging
     condition: succeeded()
     variables:
-      - group: citadelbuy-staging
+      - group: broxiva-staging
       - name: environment
         value: 'staging'
     jobs:
@@ -292,7 +292,7 @@ stages:
         displayName: 'Terraform Apply for Staging'
         pool:
           vmImage: 'ubuntu-latest'
-        environment: 'citadelbuy-staging-infra'
+        environment: 'broxiva-staging-infra'
         strategy:
           runOnce:
             deploy:
@@ -315,7 +315,7 @@ stages:
                 - task: AzureCLI@2
                   displayName: 'Terraform Apply - Staging'
                   inputs:
-                    azureSubscription: 'citadelbuy-azure-connection'
+                    azureSubscription: 'broxiva-azure-connection'
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
@@ -339,7 +339,7 @@ stages:
     dependsOn: ApplyStaging
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
     variables:
-      - group: citadelbuy-production
+      - group: broxiva-production
       - name: environment
         value: 'production'
     jobs:
@@ -357,7 +357,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'Terraform Init & Plan - Production'
             inputs:
-              azureSubscription: 'citadelbuy-azure-connection'
+              azureSubscription: 'broxiva-azure-connection'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
@@ -396,7 +396,7 @@ stages:
     dependsOn: PlanProduction
     condition: succeeded()
     variables:
-      - group: citadelbuy-production
+      - group: broxiva-production
       - name: environment
         value: 'production'
     jobs:
@@ -404,7 +404,7 @@ stages:
         displayName: 'Terraform Apply for Production'
         pool:
           vmImage: 'ubuntu-latest'
-        environment: 'citadelbuy-production-infra'
+        environment: 'broxiva-production-infra'
         strategy:
           runOnce:
             deploy:
@@ -428,7 +428,7 @@ stages:
                 - task: AzureCLI@2
                   displayName: 'Backup Terraform State'
                   inputs:
-                    azureSubscription: 'citadelbuy-azure-connection'
+                    azureSubscription: 'broxiva-azure-connection'
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
@@ -443,7 +443,7 @@ stages:
                 - task: AzureCLI@2
                   displayName: 'Terraform Apply - Production'
                   inputs:
-                    azureSubscription: 'citadelbuy-azure-connection'
+                    azureSubscription: 'broxiva-azure-connection'
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |
@@ -471,7 +471,7 @@ stages:
                 - task: AzureCLI@2
                   displayName: 'Verify Infrastructure'
                   inputs:
-                    azureSubscription: 'citadelbuy-azure-connection'
+                    azureSubscription: 'broxiva-azure-connection'
                     scriptType: 'bash'
                     scriptLocation: 'inlineScript'
                     inlineScript: |

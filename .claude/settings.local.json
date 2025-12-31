@@ -201,7 +201,15 @@
       "Bash(terraform plan:*)",
       "Bash(terraform apply:*)",
       "Bash(GIT_AUTHOR_NAME=\"Kenny Ogunmola\" GIT_AUTHOR_EMAIL=\"kogun@broxiva.com\" GIT_COMMITTER_NAME=\"Kenny Ogunmola\" GIT_COMMITTER_EMAIL=\"kogun@broxiva.com\" git commit -m \"$\\(cat <<''EOF''\nPhase 76: AWS Compliance Recovery - Critical Security Fixes\n\n## Summary\nComprehensive security and compliance remediation addressing all AWS AUP concerns.\n\n## Security Fixes\n\n### JWT Authentication Hardening\n- Removed development fallback secret \\(CRITICAL\\)\n- Enforced 32-character minimum for JWT_SECRET\n- Required JWT_SECRET in ALL environments \\(not just production\\)\n\n### CI/CD Pipeline Security\n- Removed `continue-on-error: true` from lint and test jobs\n- Lint failures now block deployment\n- Test failures now block deployment\n- Updated all branding from CitadelBuy to Broxiva\n\n### Infrastructure Security\n- Disabled EKS public endpoint access\n- Removed all database port exposures from docker-compose:\n  - PostgreSQL 5432 \\(now internal only\\)\n  - Redis 6379 \\(now internal only\\)\n  - Elasticsearch 9200/9300 \\(now internal only\\)\n  - RabbitMQ 5672/15672 \\(now internal only\\)\n- Enabled Elasticsearch xpack.security\n\n## Email Compliance \\(CAN-SPAM/AWS SES\\)\n\n### Rate Limiting Implemented\n- Per-user: 50 emails/hour\n- Marketing global: 1,000/hour, 10,000/day\n- Bulk recipients: 500 max per batch\n- Cart abandonment: 1 per user per day\n\n### Consent Management\n- Marketing emails require verified opt-in consent\n- Cart abandonment emails check promotionalEmails preference\n- Unsubscribe records checked before any marketing send\n\n### SES Bounce/Complaint Handling\n- Added webhook endpoint: POST /email/webhooks/ses\n- Automatic suppression for hard bounces\n- Immediate suppression for spam complaints\n- Compliance audit trail logging\n- Suppression list management endpoints\n\n## Documentation Added\n- AWS_SUPPORT_APPEAL.md - Appeal document for AWS support\n- DATA_PRESERVATION_STRATEGY.md - DR and backup procedures\n\n## Files Changed\n- apps/api/src/modules/auth/strategies/jwt.strategy.ts\n- apps/api/src/modules/email/email-queue.service.ts\n- apps/api/src/modules/email/email.controller.ts\n- .github/workflows/ci-cd.yml\n- docker-compose.yml\n- infrastructure/terraform/environments/aws-prod/main.tf\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(for repo in api web ai-agents ai-engine analytics chatbot fraud-detection inventory media notification personalization pricing recommendation search supplier-integration)",
+      "Bash(do)",
+      "Bash(aws ecr create-repository:*)",
+      "Bash(aws ecr describe-repositories:*)",
+      "Bash(for service in api web ai-agents ai-engine analytics chatbot fraud-detection inventory media notification personalization pricing recommendation search supplier-integration)",
+      "Bash(do echo \"Importing broxiva/$service...\")",
+      "Bash(terraform import:*)",
+      "Bash(aws codestar-connections:*)"
     ],
     "deny": [],
     "ask": []

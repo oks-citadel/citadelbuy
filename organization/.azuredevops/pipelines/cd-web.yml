@@ -129,7 +129,7 @@ stages:
                   displayName: 'Deploy Web to AKS Dev'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-dev'
+                    kubernetesServiceConnection: 'broxiva-aks-dev'
                     namespace: '$(namespace)'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/web/deployment.yaml
@@ -142,10 +142,10 @@ stages:
                   displayName: 'Wait for Rollout'
                   inputs:
                     connectionType: 'Kubernetes Service Connection'
-                    kubernetesServiceEndpoint: 'citadelbuy-aks-dev'
+                    kubernetesServiceEndpoint: 'broxiva-aks-dev'
                     namespace: '$(namespace)'
                     command: 'rollout'
-                    arguments: 'status deployment/citadelbuy-web'
+                    arguments: 'status deployment/broxiva-web'
 
       - job: SmokeTestDev
         displayName: 'Smoke Tests - Dev'
@@ -157,7 +157,7 @@ stages:
               echo "Running smoke tests against Dev..."
 
               # Homepage check
-              response=$(curl -s -o /dev/null -w "%{http_code}" https://dev.citadelbuy.com)
+              response=$(curl -s -o /dev/null -w "%{http_code}" https://dev.broxiva.com)
               if [ $response -eq 200 ]; then
                 echo "✓ Homepage accessible"
               else
@@ -172,7 +172,7 @@ stages:
               )
 
               for page in "${pages[@]}"; do
-                response=$(curl -s -o /dev/null -w "%{http_code}" https://dev.citadelbuy.com$page)
+                response=$(curl -s -o /dev/null -w "%{http_code}" https://dev.broxiva.com$page)
                 if [ $response -eq 200 ] || [ $response -eq 401 ]; then
                   echo "✓ $page is accessible"
                 else
@@ -202,19 +202,19 @@ stages:
     dependsOn: DeployDev
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
     variables:
-      - group: citadelbuy-staging
+      - group: broxiva-staging
       - name: environment
         value: 'staging'
       - name: namespace
-        value: 'citadelbuy-staging'
+        value: 'broxiva-staging'
       - name: appUrl
-        value: 'https://staging.citadelbuy.com'
+        value: 'https://staging.broxiva.com'
     jobs:
       - deployment: DeployToStagingAKS
         displayName: 'Deploy to Staging AKS'
         pool:
           vmImage: 'ubuntu-latest'
-        environment: 'citadelbuy-staging'
+        environment: 'broxiva-staging'
         strategy:
           runOnce:
             deploy:
@@ -233,7 +233,7 @@ stages:
                   displayName: 'Deploy Web to AKS Staging'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-staging'
+                    kubernetesServiceConnection: 'broxiva-aks-staging'
                     namespace: '$(namespace)'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/web/deployment.yaml
@@ -245,10 +245,10 @@ stages:
                   displayName: 'Wait for Rollout'
                   inputs:
                     connectionType: 'Kubernetes Service Connection'
-                    kubernetesServiceEndpoint: 'citadelbuy-aks-staging'
+                    kubernetesServiceEndpoint: 'broxiva-aks-staging'
                     namespace: '$(namespace)'
                     command: 'rollout'
-                    arguments: 'status deployment/citadelbuy-web'
+                    arguments: 'status deployment/broxiva-web'
 
       - job: E2ETestStaging
         displayName: 'E2E Tests - Staging'
@@ -271,7 +271,7 @@ stages:
           - script: |
               cd apps/web
               npx playwright install --with-deps
-              BASE_URL=https://staging.citadelbuy.com pnpm run test:e2e
+              BASE_URL=https://staging.broxiva.com pnpm run test:e2e
             displayName: 'Run Playwright E2E Tests'
             env:
               CI: true
@@ -292,19 +292,19 @@ stages:
     dependsOn: DeployStaging
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
     variables:
-      - group: citadelbuy-production
+      - group: broxiva-production
       - name: environment
         value: 'production'
       - name: namespace
-        value: 'citadelbuy-prod'
+        value: 'broxiva-prod'
       - name: appUrl
-        value: 'https://citadelbuy.com'
+        value: 'https://broxiva.com'
     jobs:
       - deployment: DeployToProdAKS
         displayName: 'Deploy to Production AKS'
         pool:
           vmImage: 'ubuntu-latest'
-        environment: 'citadelbuy-production'
+        environment: 'broxiva-production'
         strategy:
           runOnce:
             deploy:
@@ -324,7 +324,7 @@ stages:
                   displayName: 'Deploy Web to Production (Canary)'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-production'
+                    kubernetesServiceConnection: 'broxiva-aks-production'
                     namespace: '$(namespace)'
                     strategy: 'canary'
                     percentage: '25'
@@ -352,7 +352,7 @@ stages:
               )
 
               for page in "${pages[@]}"; do
-                response=$(curl -s -o /dev/null -w "%{http_code}" https://citadelbuy.com$page)
+                response=$(curl -s -o /dev/null -w "%{http_code}" https://broxiva.com$page)
                 if [ $response -eq 200 ] || [ $response -eq 401 ]; then
                   echo "✓ $page is accessible"
                 else
@@ -374,7 +374,7 @@ stages:
             displayName: 'Promote to 100% traffic'
             inputs:
               action: 'promote'
-              kubernetesServiceConnection: 'citadelbuy-aks-production'
+              kubernetesServiceConnection: 'broxiva-aks-production'
               namespace: '$(namespace)'
               strategy: 'canary'
               manifests: |
@@ -384,7 +384,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'Purge CDN Cache'
             inputs:
-              azureSubscription: 'citadelbuy-azure-connection'
+              azureSubscription: 'broxiva-azure-connection'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
@@ -394,5 +394,5 @@ stages:
           # Send notification
           - script: |
               echo "Web v$(tag) successfully deployed to production"
-              echo "URL: https://citadelbuy.com"
+              echo "URL: https://broxiva.com"
             displayName: 'Deployment Complete'
