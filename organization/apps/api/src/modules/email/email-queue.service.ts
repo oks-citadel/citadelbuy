@@ -1,15 +1,30 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue, Job } from 'bull';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { EmailType, EmailStatus } from '@prisma/client';
 import { SendEmailDto } from './dto/send-email.dto';
+import { InjectRedis } from '@nestjs-modules/ioredis';
+import Redis from 'ioredis';
 
 export enum EmailPriority {
   HIGH = 1,
   NORMAL = 5,
   LOW = 10,
 }
+
+// COMPLIANCE: Rate limits to prevent abuse and protect AWS SES reputation
+const RATE_LIMITS = {
+  // Per-user limits (emails per hour)
+  USER_PER_HOUR: 50,
+  // Global marketing email limits
+  MARKETING_PER_HOUR: 1000,
+  MARKETING_PER_DAY: 10000,
+  // Bulk email limits
+  BULK_MAX_RECIPIENTS: 500,
+  // Cart abandonment limits (prevent spam)
+  CART_ABANDONMENT_PER_USER_DAY: 1,
+};
 
 export interface EmailJobData {
   to: string;
@@ -32,7 +47,98 @@ export class EmailQueueService {
   constructor(
     @InjectQueue('email') private emailQueue: Queue,
     private prisma: PrismaService,
+    @InjectRedis() private redis: Redis,
   ) {}
+
+  /**
+   * COMPLIANCE: Check rate limit before sending
+   * Returns true if within limits, false if rate limited
+   */
+  private async checkRateLimit(key: string, limit: number, windowSeconds: number): Promise<boolean> {
+    const current = await this.redis.incr(key);
+    if (current === 1) {
+      await this.redis.expire(key, windowSeconds);
+    }
+    return current <= limit;
+  }
+
+  /**
+   * COMPLIANCE: Check if user has given consent for marketing emails
+   */
+  private async hasMarketingConsent(userId?: string, email?: string): Promise<boolean> {
+    if (!userId && !email) return false;
+
+    try {
+      // Check notification preferences
+      if (userId) {
+        const preferences = await this.prisma.notificationPreference.findUnique({
+          where: { userId },
+        });
+        if (!preferences?.promotionalEmails) {
+          this.logger.warn(`User ${userId} has not opted into promotional emails`);
+          return false;
+        }
+      }
+
+      // Check for unsubscribe record
+      const unsubscribed = await this.prisma.emailUnsubscribe?.findFirst({
+        where: {
+          OR: [
+            { userId: userId || undefined },
+            { email: email || undefined },
+          ],
+          type: { in: ['MARKETING', 'ALL'] },
+        },
+      });
+
+      if (unsubscribed) {
+        this.logger.warn(`Email ${email || userId} is unsubscribed from marketing`);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      // If table doesn't exist or other error, be conservative
+      this.logger.warn('Error checking marketing consent, defaulting to no consent', error);
+      return false;
+    }
+  }
+
+  /**
+   * COMPLIANCE: Enforce rate limiting
+   */
+  private async enforceRateLimits(
+    type: EmailType,
+    userId?: string,
+  ): Promise<void> {
+    // User rate limit
+    if (userId) {
+      const userKey = `email:rate:user:${userId}:hourly`;
+      const withinLimit = await this.checkRateLimit(userKey, RATE_LIMITS.USER_PER_HOUR, 3600);
+      if (!withinLimit) {
+        throw new HttpException(
+          'Email rate limit exceeded. Please try again later.',
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+    }
+
+    // Marketing email global limits
+    if (type === EmailType.MARKETING) {
+      const hourlyKey = 'email:rate:marketing:hourly';
+      const dailyKey = 'email:rate:marketing:daily';
+
+      const withinHourly = await this.checkRateLimit(hourlyKey, RATE_LIMITS.MARKETING_PER_HOUR, 3600);
+      const withinDaily = await this.checkRateLimit(dailyKey, RATE_LIMITS.MARKETING_PER_DAY, 86400);
+
+      if (!withinHourly || !withinDaily) {
+        throw new HttpException(
+          'Marketing email rate limit exceeded. Campaign will be queued.',
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+    }
+  }
 
   /**
    * Add email to queue with priority
@@ -180,13 +286,31 @@ export class EmailQueueService {
 
   /**
    * Queue cart abandonment email (LOW priority, with delay)
+   * COMPLIANCE: Requires user consent and enforces daily limit per user
    */
   async queueCartAbandonmentEmail(
     email: string,
     cartData: any,
     userId?: string,
     delayMinutes: number = 60,
-  ): Promise<Job<EmailJobData>> {
+  ): Promise<Job<EmailJobData> | null> {
+    // COMPLIANCE: Check consent before sending cart abandonment emails
+    const hasConsent = await this.hasMarketingConsent(userId, email);
+    if (!hasConsent) {
+      this.logger.log(`Skipping cart abandonment email - no consent: ${email}`);
+      return null;
+    }
+
+    // COMPLIANCE: Limit cart abandonment emails to 1 per user per day
+    if (userId) {
+      const dailyKey = `email:cart:${userId}:daily`;
+      const withinLimit = await this.checkRateLimit(dailyKey, RATE_LIMITS.CART_ABANDONMENT_PER_USER_DAY, 86400);
+      if (!withinLimit) {
+        this.logger.log(`Cart abandonment email already sent today for user: ${userId}`);
+        return null;
+      }
+    }
+
     const delayMs = delayMinutes * 60 * 1000;
 
     return this.addEmailToQueue(
@@ -196,7 +320,7 @@ export class EmailQueueService {
         htmlContent: '', // Will be populated by processor
         type: EmailType.MARKETING,
         userId,
-        metadata: { ...cartData, templateName: 'cart-abandonment' },
+        metadata: { ...cartData, templateName: 'cart-abandonment', consentVerified: true },
         trackingEnabled: true,
       },
       EmailPriority.LOW,
@@ -206,6 +330,7 @@ export class EmailQueueService {
 
   /**
    * Queue marketing/promotional email (LOW priority)
+   * COMPLIANCE: Enforces recipient limit, rate limits, and consent checks
    */
   async queueMarketingEmail(
     recipients: string[],
@@ -213,21 +338,44 @@ export class EmailQueueService {
     htmlContent: string,
     metadata?: any,
   ): Promise<Job<EmailJobData>[]> {
+    // COMPLIANCE: Enforce maximum recipients per batch
+    if (recipients.length > RATE_LIMITS.BULK_MAX_RECIPIENTS) {
+      throw new HttpException(
+        `Maximum ${RATE_LIMITS.BULK_MAX_RECIPIENTS} recipients per batch. Use batchSendEmails for larger campaigns.`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // COMPLIANCE: Check global rate limits
+    await this.enforceRateLimits(EmailType.MARKETING);
+
     const jobs: Job<EmailJobData>[] = [];
+    const skippedNoConsent: string[] = [];
 
     for (const recipient of recipients) {
+      // COMPLIANCE: Verify consent for each recipient
+      const hasConsent = await this.hasMarketingConsent(undefined, recipient);
+      if (!hasConsent) {
+        skippedNoConsent.push(recipient);
+        continue;
+      }
+
       const job = await this.addEmailToQueue(
         {
           to: recipient,
           subject,
           htmlContent,
           type: EmailType.MARKETING,
-          metadata,
+          metadata: { ...metadata, consentVerified: true },
           trackingEnabled: true,
         },
         EmailPriority.LOW,
       );
       jobs.push(job);
+    }
+
+    if (skippedNoConsent.length > 0) {
+      this.logger.warn(`Skipped ${skippedNoConsent.length} recipients without marketing consent`);
     }
 
     return jobs;

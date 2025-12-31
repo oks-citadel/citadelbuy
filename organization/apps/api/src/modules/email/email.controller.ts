@@ -9,6 +9,10 @@ import {
   Query,
   UseGuards,
   Request,
+  Logger,
+  Headers,
+  RawBodyRequest,
+  Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { EmailService } from './email.service';
@@ -22,14 +26,48 @@ import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { UserRole, EmailType, EmailStatus } from '@prisma/client';
 import { AuthRequest } from '@/common/types/auth-request.types';
+import { PrismaService } from '@/common/prisma/prisma.service';
+
+// AWS SES Notification Types
+interface SESBounce {
+  bounceType: 'Permanent' | 'Transient' | 'Undetermined';
+  bounceSubType: string;
+  bouncedRecipients: Array<{
+    emailAddress: string;
+    action?: string;
+    status?: string;
+    diagnosticCode?: string;
+  }>;
+  timestamp: string;
+}
+
+interface SESComplaint {
+  complainedRecipients: Array<{
+    emailAddress: string;
+  }>;
+  complaintFeedbackType?: string;
+  timestamp: string;
+}
+
+interface SNSNotification {
+  Type: 'Notification' | 'SubscriptionConfirmation' | 'UnsubscribeConfirmation';
+  MessageId: string;
+  TopicArn: string;
+  Message: string;
+  Timestamp: string;
+  SubscribeURL?: string;
+}
 
 @ApiTags('Email & Notifications')
 @Controller('email')
 export class EmailController {
+  private readonly logger = new Logger(EmailController.name);
+
   constructor(
     private readonly emailService: EmailService,
     private readonly emailQueueService: EmailQueueService,
     private readonly emailProcessor: EmailProcessor,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Post('send')
@@ -313,5 +351,251 @@ export class EmailController {
   @ApiResponse({ status: 404, description: 'Dead letter entry not found' })
   async retryFromDeadLetterQueue(@Param('id') id: string) {
     return this.emailProcessor.retryFromDeadLetterQueue(id);
+  }
+
+  // ==================== AWS SES Bounce/Complaint Handling ====================
+  // COMPLIANCE: Required for AWS SES reputation management
+
+  @Post('webhooks/ses')
+  @ApiOperation({ summary: 'AWS SES SNS webhook for bounce/complaint handling' })
+  @ApiResponse({ status: 200, description: 'Notification processed successfully' })
+  async handleSESWebhook(
+    @Body() body: SNSNotification,
+    @Headers('x-amz-sns-message-type') messageType: string,
+  ) {
+    this.logger.log(`Received SES webhook: ${messageType}`);
+
+    // Handle SNS subscription confirmation
+    if (body.Type === 'SubscriptionConfirmation' && body.SubscribeURL) {
+      this.logger.log('SNS Subscription confirmation request received');
+      // Auto-confirm by fetching the SubscribeURL
+      try {
+        const response = await fetch(body.SubscribeURL);
+        if (response.ok) {
+          this.logger.log('SNS Subscription confirmed successfully');
+          return { message: 'Subscription confirmed' };
+        }
+      } catch (error) {
+        this.logger.error('Failed to confirm SNS subscription', error);
+      }
+      return { message: 'Subscription confirmation attempted' };
+    }
+
+    // Process notification
+    if (body.Type === 'Notification') {
+      try {
+        const message = JSON.parse(body.Message);
+        const notificationType = message.notificationType;
+
+        if (notificationType === 'Bounce') {
+          await this.handleBounce(message.bounce);
+        } else if (notificationType === 'Complaint') {
+          await this.handleComplaint(message.complaint);
+        } else if (notificationType === 'Delivery') {
+          await this.handleDelivery(message.delivery);
+        }
+
+        return { message: 'Notification processed' };
+      } catch (error) {
+        this.logger.error('Error processing SES notification', error);
+        return { message: 'Error processing notification' };
+      }
+    }
+
+    return { message: 'Unknown notification type' };
+  }
+
+  /**
+   * COMPLIANCE: Handle email bounces
+   * Permanently suppresses hard-bounced addresses to protect sender reputation
+   */
+  private async handleBounce(bounce: SESBounce) {
+    this.logger.warn(`Processing bounce: ${bounce.bounceType}`);
+
+    for (const recipient of bounce.bouncedRecipients) {
+      const email = recipient.emailAddress.toLowerCase();
+
+      this.logger.warn(`Bounce for ${email}: ${bounce.bounceType}/${bounce.bounceSubType}`);
+
+      // For permanent/hard bounces, suppress the email address
+      if (bounce.bounceType === 'Permanent') {
+        await this.suppressEmail(email, 'BOUNCE', {
+          bounceType: bounce.bounceType,
+          bounceSubType: bounce.bounceSubType,
+          diagnosticCode: recipient.diagnosticCode,
+          timestamp: bounce.timestamp,
+        });
+      }
+
+      // Log all bounces for monitoring
+      await this.logEmailEvent(email, 'BOUNCE', {
+        bounceType: bounce.bounceType,
+        bounceSubType: bounce.bounceSubType,
+        diagnosticCode: recipient.diagnosticCode,
+      });
+    }
+  }
+
+  /**
+   * COMPLIANCE: Handle spam complaints
+   * Immediately suppresses complained addresses (critical for SES reputation)
+   */
+  private async handleComplaint(complaint: SESComplaint) {
+    this.logger.error('Processing spam complaint - CRITICAL');
+
+    for (const recipient of complaint.complainedRecipients) {
+      const email = recipient.emailAddress.toLowerCase();
+
+      this.logger.error(`Spam complaint from ${email}`);
+
+      // Immediately suppress email for all communication types
+      await this.suppressEmail(email, 'COMPLAINT', {
+        complaintFeedbackType: complaint.complaintFeedbackType,
+        timestamp: complaint.timestamp,
+      });
+
+      // Log for compliance audit trail
+      await this.logEmailEvent(email, 'COMPLAINT', {
+        complaintFeedbackType: complaint.complaintFeedbackType,
+      });
+    }
+  }
+
+  /**
+   * Handle successful delivery (optional, for analytics)
+   */
+  private async handleDelivery(delivery: any) {
+    this.logger.debug(`Delivery confirmed: ${delivery.recipients?.join(', ')}`);
+    // Optional: Update email log status
+  }
+
+  /**
+   * COMPLIANCE: Suppress email address from future sends
+   */
+  private async suppressEmail(
+    email: string,
+    reason: 'BOUNCE' | 'COMPLAINT' | 'UNSUBSCRIBE',
+    metadata?: any,
+  ) {
+    try {
+      // Check if already suppressed
+      const existing = await this.prisma.emailSuppression?.findUnique({
+        where: { email },
+      });
+
+      if (existing) {
+        // Update existing suppression with new reason if more severe
+        const severityOrder = { UNSUBSCRIBE: 1, BOUNCE: 2, COMPLAINT: 3 };
+        if (severityOrder[reason] > severityOrder[existing.reason as keyof typeof severityOrder]) {
+          await this.prisma.emailSuppression?.update({
+            where: { email },
+            data: { reason, metadata, updatedAt: new Date() },
+          });
+        }
+        return;
+      }
+
+      // Create new suppression record
+      await this.prisma.emailSuppression?.create({
+        data: {
+          email,
+          reason,
+          metadata,
+        },
+      });
+
+      this.logger.warn(`Email suppressed: ${email} (${reason})`);
+
+      // Also update notification preferences to disable emails
+      const user = await this.prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (user) {
+        await this.prisma.notificationPreference.upsert({
+          where: { userId: user.id },
+          update: { emailEnabled: false },
+          create: { userId: user.id, emailEnabled: false },
+        });
+      }
+    } catch (error) {
+      this.logger.error(`Failed to suppress email ${email}`, error);
+    }
+  }
+
+  /**
+   * Log email event for audit trail
+   */
+  private async logEmailEvent(
+    email: string,
+    eventType: string,
+    metadata?: any,
+  ) {
+    try {
+      await this.prisma.emailEvent?.create({
+        data: {
+          email,
+          eventType,
+          metadata,
+        },
+      });
+    } catch (error) {
+      // Don't fail on logging errors
+      this.logger.warn(`Failed to log email event for ${email}`, error);
+    }
+  }
+
+  // ==================== Suppression List Management ====================
+
+  @Get('suppressions')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get suppressed email addresses (Admin only)' })
+  @ApiQuery({ name: 'reason', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Suppression list retrieved' })
+  async getSuppressions(
+    @Query('reason') reason?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const skip = ((page || 1) - 1) * (limit || 20);
+
+    const where = reason ? { reason } : {};
+
+    const [suppressions, total] = await Promise.all([
+      this.prisma.emailSuppression?.findMany({
+        where,
+        skip,
+        take: limit || 20,
+        orderBy: { createdAt: 'desc' },
+      }) || [],
+      this.prisma.emailSuppression?.count({ where }) || 0,
+    ]);
+
+    return {
+      suppressions,
+      pagination: {
+        page: page || 1,
+        limit: limit || 20,
+        total,
+        totalPages: Math.ceil(total / (limit || 20)),
+      },
+    };
+  }
+
+  @Delete('suppressions/:email')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove email from suppression list (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Email removed from suppression list' })
+  async removeSuppression(@Param('email') email: string) {
+    await this.prisma.emailSuppression?.delete({
+      where: { email: email.toLowerCase() },
+    });
+    return { message: 'Email removed from suppression list' };
   }
 }

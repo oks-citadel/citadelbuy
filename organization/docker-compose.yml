@@ -40,8 +40,11 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-broxiva}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env file}
       POSTGRES_DB: ${POSTGRES_DB:-broxiva_dev}
-    ports:
-      - "5432:5432"
+    # SECURITY: No host port exposure - only internal network access
+    # ports:
+    #   - "5432:5432"  # DISABLED for security
+    expose:
+      - "5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
@@ -58,8 +61,11 @@ services:
     image: redis:7-alpine
     container_name: broxiva-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    # SECURITY: No host port exposure - only internal network access
+    # ports:
+    #   - "6379:6379"  # DISABLED for security
+    expose:
+      - "6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
@@ -78,11 +84,15 @@ services:
     restart: unless-stopped
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=false
+      - xpack.security.enabled=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ports:
-      - "9200:9200"
-      - "9300:9300"
+    # SECURITY: No host port exposure - only internal network access
+    # ports:
+    #   - "9200:9200"  # DISABLED for security
+    #   - "9300:9300"  # DISABLED for security
+    expose:
+      - "9200"
+      - "9300"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     healthcheck:
@@ -257,9 +267,13 @@ services:
       # Set RABBITMQ_PASSWORD in .env file - do not use the default!
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-broxiva}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD must be set in .env file}
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+    # SECURITY: No host port exposure - only internal network access
+    # ports:
+    #   - "5672:5672"   # DISABLED for security
+    #   - "15672:15672" # DISABLED for security
+    expose:
+      - "5672"
+      - "15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:

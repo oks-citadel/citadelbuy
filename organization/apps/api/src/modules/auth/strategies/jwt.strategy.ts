@@ -15,21 +15,27 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   ) {
     const jwtSecret = configService.get<string>('JWT_SECRET');
 
-    // In production, JWT_SECRET is required
-    if (!jwtSecret && process.env.NODE_ENV === 'production') {
-      throw new Error('JWT_SECRET environment variable is required in production');
+    // SECURITY: JWT_SECRET is required in ALL environments
+    // Never fall back to weak secrets - this prevents accidental production deployments
+    if (!jwtSecret) {
+      throw new Error(
+        'JWT_SECRET environment variable is required. ' +
+        'Generate a secure secret with: openssl rand -base64 64'
+      );
     }
 
-    // In development, warn but use fallback
-    if (!jwtSecret) {
-      const logger = new Logger(JwtStrategy.name);
-      logger.warn('JWT_SECRET not set. Using development fallback. DO NOT use in production!');
+    // Validate secret strength (minimum 32 characters)
+    if (jwtSecret.length < 32) {
+      throw new Error(
+        'JWT_SECRET must be at least 32 characters for security. ' +
+        'Generate a secure secret with: openssl rand -base64 64'
+      );
     }
 
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: jwtSecret || 'dev-only-secret-change-in-production',
+      secretOrKey: jwtSecret,
       // Pass the request to validate() so we can access the raw token
       passReqToCallback: true,
     });

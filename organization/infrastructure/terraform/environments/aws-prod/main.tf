@@ -111,7 +111,8 @@ module "eks" {
   vpc_id                          = module.vpc.vpc_id
   subnet_ids                      = module.vpc.private_subnets
   control_plane_subnet_ids        = module.vpc.private_subnets
-  cluster_endpoint_public_access  = true
+  # SECURITY: Disable public endpoint - access only via VPN/bastion
+  cluster_endpoint_public_access  = false
   cluster_endpoint_private_access = true
 
   # Cluster addons
