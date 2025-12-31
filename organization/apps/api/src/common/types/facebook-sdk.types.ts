@@ -14,18 +14,18 @@ import { UserData, CustomData } from 'facebook-nodejs-business-sdk';
  * Extended UserData interface with additional methods available in SDK v24+
  * These methods exist at runtime but may not be present in older type definitions.
  */
-export interface ExtendedUserData extends UserData {
-  setZipCode?(zipCodes: string[]): UserData;
-  setZipCodes?(zipCodes: string[]): UserData;
-  setCountry?(countries: string[]): UserData;
-  setCountries?(countries: string[]): UserData;
+export interface ExtendedUserData {
+  setZipCode?(zipCodes: string[]): unknown;
+  setZipCodes?(zipCodes: string[]): unknown;
+  setCountry?(countries: string[]): unknown;
+  setCountries?(countries: string[]): unknown;
 }
 
 /**
  * Extended CustomData interface with additional methods available in SDK v24+
  */
-export interface ExtendedCustomData extends CustomData {
-  setCustomProperties?(key: string, value: unknown): CustomData;
+export interface ExtendedCustomData {
+  setCustomProperties?(key: string, value: unknown): unknown;
 }
 
 /**
@@ -33,7 +33,7 @@ export interface ExtendedCustomData extends CustomData {
  * Handles both the singular and plural method names that have existed across SDK versions
  */
 export function setUserDataZipCode(userData: UserData, hashedZipCodes: string[]): void {
-  const extendedUserData = userData as ExtendedUserData;
+  const extendedUserData = userData as unknown as ExtendedUserData;
   if (typeof extendedUserData.setZipCodes === 'function') {
     extendedUserData.setZipCodes(hashedZipCodes);
   } else if (typeof extendedUserData.setZipCode === 'function') {
@@ -41,7 +41,7 @@ export function setUserDataZipCode(userData: UserData, hashedZipCodes: string[])
   } else {
     // Fallback: directly set the property if method doesn't exist
     // The SDK will serialize this correctly in the API request
-    (userData as Record<string, unknown>)['zp'] = hashedZipCodes;
+    (userData as unknown as Record<string, unknown>)['zp'] = hashedZipCodes;
   }
 }
 
@@ -50,14 +50,14 @@ export function setUserDataZipCode(userData: UserData, hashedZipCodes: string[])
  * Handles both the singular and plural method names that have existed across SDK versions
  */
 export function setUserDataCountry(userData: UserData, hashedCountries: string[]): void {
-  const extendedUserData = userData as ExtendedUserData;
+  const extendedUserData = userData as unknown as ExtendedUserData;
   if (typeof extendedUserData.setCountries === 'function') {
     extendedUserData.setCountries(hashedCountries);
   } else if (typeof extendedUserData.setCountry === 'function') {
     extendedUserData.setCountry(hashedCountries);
   } else {
     // Fallback: directly set the property if method doesn't exist
-    (userData as Record<string, unknown>)['country'] = hashedCountries;
+    (userData as unknown as Record<string, unknown>)['country'] = hashedCountries;
   }
 }
 
@@ -65,12 +65,12 @@ export function setUserDataCountry(userData: UserData, hashedCountries: string[]
  * Type-safe wrapper to set custom properties on CustomData
  */
 export function setCustomDataProperty(customData: CustomData, key: string, value: unknown): void {
-  const extendedCustomData = customData as ExtendedCustomData;
+  const extendedCustomData = customData as unknown as ExtendedCustomData;
   if (typeof extendedCustomData.setCustomProperties === 'function') {
     extendedCustomData.setCustomProperties(key, value);
   } else {
     // Fallback: add to custom_data object directly
-    const customDataAny = customData as Record<string, unknown>;
+    const customDataAny = customData as unknown as Record<string, unknown>;
     if (!customDataAny['custom_data']) {
       customDataAny['custom_data'] = {};
     }

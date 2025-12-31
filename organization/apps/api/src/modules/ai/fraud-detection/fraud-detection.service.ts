@@ -411,9 +411,6 @@ export class FraudDetectionService {
       // Get all orders for the user
       const orders = await this.prisma.order.findMany({
         where: { userId },
-        include: {
-          payments: true,
-        },
       });
 
       const totalTransactions = orders.length;
@@ -427,20 +424,9 @@ export class FraudDetectionService {
       const totalValue = orders.reduce((sum, o) => sum + o.total, 0);
       const averageOrderValue = totalTransactions > 0 ? totalValue / totalTransactions : 0;
 
-      // Count chargebacks and declined payments from payment records
-      let chargebacks = 0;
-      let declinedPayments = 0;
-
-      for (const order of orders) {
-        for (const payment of order.payments) {
-          if (payment.status === 'REFUNDED' && payment.refundReason?.toLowerCase().includes('chargeback')) {
-            chargebacks++;
-          }
-          if (payment.status === 'FAILED') {
-            declinedPayments++;
-          }
-        }
-      }
+      // Count chargebacks and declined payments from order status
+      const chargebacks = orders.filter(o => o.status === 'REFUNDED').length;
+      const declinedPayments = orders.filter(o => o.status === 'FAILED' || o.status === 'CANCELLED').length;
 
       return {
         totalTransactions,
@@ -487,7 +473,7 @@ export class FraudDetectionService {
         select: {
           id: true,
           rating: true,
-          content: true,
+          comment: true,
           createdAt: true,
           status: true,
         },
@@ -500,9 +486,9 @@ export class FraudDetectionService {
         ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
         : 0;
 
-      // Count suspicious reviews (flagged or rejected)
+      // Count suspicious reviews (rejected or pending)
       const suspiciousReviews = reviews.filter(
-        r => r.status === 'REJECTED' || r.status === 'FLAGGED'
+        r => r.status === 'REJECTED' || r.status === 'PENDING'
       ).length;
 
       return {

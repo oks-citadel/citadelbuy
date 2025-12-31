@@ -239,8 +239,8 @@ export class SeoOptimizationService {
     score += (readability.score / 100) * 30;
 
     // Content length (30 points)
-    const wordCount = Object.values(keywordAnalysis).reduce(
-      (sum: number, k: any) => sum + k.count,
+    const wordCount: number = Object.values(keywordAnalysis).reduce<number>(
+      (sum, k: { count: number }) => sum + k.count,
       0,
     );
     if (wordCount >= 300) score += 30;

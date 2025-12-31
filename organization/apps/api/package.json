@@ -104,6 +104,7 @@
     "@types/express": "^5.0.0",
     "@types/facebook-nodejs-business-sdk": "^23.0.0",
     "@types/jest": "^29.5.14",
+    "@types/multer": "^1.4.12",
     "@types/node": "^22.10.1",
     "@types/nodemailer": "^7.0.4",
     "@types/passport-jwt": "^4.0.0",

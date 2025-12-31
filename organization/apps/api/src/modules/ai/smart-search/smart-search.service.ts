@@ -218,16 +218,17 @@ export class SmartSearchService {
         },
         take: 50, // Limit to top 50 results for NLP scoring
         orderBy: [
-          { salesCount: 'desc' },
           { stock: 'desc' },
+          { createdAt: 'desc' },
         ],
       });
 
       // Calculate relevance scores for each product
       const scoredResults: ProductResult[] = products.map(product => {
+        const productReviews = product.reviews || [];
         const relevanceScore = this.calculateRelevanceScore(product, searchTerms, entities);
-        const avgRating = product.reviews.length > 0
-          ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length
+        const avgRating = productReviews.length > 0
+          ? productReviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / productReviews.length
           : null;
 
         return {
@@ -236,13 +237,13 @@ export class SmartSearchService {
           description: product.description,
           price: product.price,
           images: product.images,
-          categoryId: product.category.id,
-          categoryName: product.category.name,
-          vendorId: product.vendor.id,
-          vendorName: product.vendor.name,
+          categoryId: product.category?.id ?? product.categoryId,
+          categoryName: product.category?.name ?? '',
+          vendorId: product.vendor?.id ?? product.vendorId,
+          vendorName: product.vendor?.name ?? '',
           stock: product.stock,
           avgRating,
-          reviewCount: product.reviews.length,
+          reviewCount: productReviews.length,
           relevanceScore,
         };
       });

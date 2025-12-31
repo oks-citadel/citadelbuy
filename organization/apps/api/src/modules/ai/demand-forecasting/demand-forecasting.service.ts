@@ -147,7 +147,7 @@ export class DemandForecastingService {
           breakeven: data.discount > 30 ? false : true,
         },
         recommendations: [
-          discount > 30
+          data.discount > 30
             ? 'Consider reducing discount to maintain profitability'
             : 'Discount level is optimal',
           `Prepare ${predictedSales} units in inventory`,
