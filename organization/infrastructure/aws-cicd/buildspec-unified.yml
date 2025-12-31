@@ -3,6 +3,7 @@ version: 0.2
 env:
   variables:
     AWS_DEFAULT_REGION: us-east-1
+    NODE_OPTIONS: "--max-old-space-size=8192"
 
 phases:
   install:
