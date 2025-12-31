@@ -10,6 +10,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Marketplace High-Gradient Design System */
+@import './marketplace-gradients.css';
+
 @layer base {
   :root {
     /* Broxiva Color System - Light Mode */
