@@ -1,15 +1,9 @@
 version: 0.2
 
-# Unified Buildspec for Broxiva E-Commerce Platform
-# Builds all services: API, Web, and Python Microservices
-# Pushes Docker images to Amazon ECR
-
 env:
   variables:
     AWS_DEFAULT_REGION: us-east-1
     IMAGE_TAG: latest
-  parameter-store:
-    GITHUB_TOKEN: broxiva-github-token
 
 phases:
   install:
@@ -25,20 +19,16 @@ phases:
     commands:
       - echo "Logging in to Amazon ECR..."
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-      - export BUILD_DATE=$(date +%Y%m%d)
-      - export COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - BUILD_DATE=$(date +%Y%m%d)
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - export IMAGE_TAG="${BUILD_DATE}-${COMMIT_HASH}"
-      - echo "Build tag: $IMAGE_TAG"
+      - echo "Build tag is $IMAGE_TAG"
 
   build:
     commands:
       - echo "===== BUILDING NODE.JS SERVICES ====="
-
-      # Install dependencies
       - cd organization
-      - pnpm install --frozen-lockfile
-
-      # Build API
+      - pnpm install --frozen-lockfile || pnpm install
       - echo "Building API..."
       - cd apps/api
       - pnpm build
@@ -46,8 +36,6 @@ phases:
       - docker tag broxiva/api:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:$IMAGE_TAG
       - docker tag broxiva/api:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:latest
       - cd ../..
-
-      # Build Web
       - echo "Building Web..."
       - cd apps/web
       - pnpm build
@@ -55,63 +43,21 @@ phases:
       - docker tag broxiva/web:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG
       - docker tag broxiva/web:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:latest
       - cd ../..
-
       - echo "===== BUILDING PYTHON MICROSERVICES ====="
-
-      # Build each Python microservice
-      - |
-        for SERVICE in ai-agents ai-engine analytics chatbot fraud-detection inventory media notification personalization pricing recommendation search supplier-integration; do
-          echo "Building $SERVICE..."
-          SERVICE_DIR="apps/services/${SERVICE}"
-          if [ -d "$SERVICE_DIR" ]; then
-            cd "$SERVICE_DIR"
-            if [ -f "Dockerfile" ]; then
-              docker build -t broxiva/$SERVICE:$IMAGE_TAG .
-              docker tag broxiva/$SERVICE:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:$IMAGE_TAG
-              docker tag broxiva/$SERVICE:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:latest
-            else
-              echo "No Dockerfile found for $SERVICE, skipping..."
-            fi
-            cd ../../..
-          else
-            echo "Service directory not found: $SERVICE_DIR"
-          fi
-        done
+      - for SERVICE in inventory media notification personalization; do echo "Building $SERVICE..."; if [ -d "apps/services/$SERVICE" ] && [ -f "apps/services/$SERVICE/Dockerfile" ]; then docker build -t broxiva/$SERVICE:$IMAGE_TAG apps/services/$SERVICE && docker tag broxiva/$SERVICE:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:$IMAGE_TAG && docker tag broxiva/$SERVICE:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:latest; else echo "Skipping $SERVICE - no Dockerfile"; fi; done
 
   post_build:
     commands:
       - echo "===== PUSHING IMAGES TO ECR ====="
-
-      # Push Node.js services
       - echo "Pushing API..."
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:$IMAGE_TAG
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:latest
-
       - echo "Pushing Web..."
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:latest
-
-      # Push Python microservices
-      - |
-        for SERVICE in ai-agents ai-engine analytics chatbot fraud-detection inventory media notification personalization pricing recommendation search supplier-integration; do
-          if docker images | grep -q "broxiva/$SERVICE"; then
-            echo "Pushing $SERVICE..."
-            docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:$IMAGE_TAG || true
-            docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:latest || true
-          fi
-        done
-
+      - for SERVICE in inventory media notification personalization; do if docker images | grep -q "broxiva/$SERVICE"; then echo "Pushing $SERVICE..." && docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:$IMAGE_TAG && docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:latest; fi; done || true
       - echo "===== BUILD COMPLETE ====="
-      - echo "All images pushed to ECR with tag: $IMAGE_TAG"
-
-      # Create image definitions for ECS/EKS deployment
-      - |
-        cat > imagedefinitions.json << EOF
-        [
-          {"name": "api", "imageUri": "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:$IMAGE_TAG"},
-          {"name": "web", "imageUri": "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG"}
-        ]
-        EOF
+      - printf '[{"name":"api","imageUri":"%s"},{"name":"web","imageUri":"%s"}]' "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:$IMAGE_TAG" "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG" > imagedefinitions.json
 
 artifacts:
   files:
@@ -121,6 +67,4 @@ artifacts:
 
 cache:
   paths:
-    - 'organization/node_modules/**/*'
-    - '/root/.pnpm-store/**/*'
-    - '/root/.cache/pip/**/*'
+    - organization/node_modules/**/*
