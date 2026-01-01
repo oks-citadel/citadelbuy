@@ -165,7 +165,7 @@ export function Footer() {
             {/* Brand */}
             <div className="col-span-2 md:col-span-3 lg:col-span-2">
               <Link href="/" className="flex items-center gap-3 mb-6">
-                <div className="h-10 w-10 rounded-xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #0E3A8A 0%, #3B82F6 100%)' }}">
+                <div className="h-10 w-10 rounded-xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #0E3A8A 0%, #3B82F6 100%)' }}>
                   <span className="text-white font-bold text-xl">B</span>
                 </div>
                 <span className="font-bold text-2xl text-white">Broxiva</span>
