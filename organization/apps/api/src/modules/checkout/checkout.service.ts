@@ -90,7 +90,8 @@ export class CheckoutService implements OnModuleInit {
     // Validate Stripe key in production - CRITICAL for revenue
     if (!apiKey || apiKey.includes('placeholder') || apiKey === 'sk_test_dummy') {
       const nodeEnv = this.configService.get('NODE_ENV');
-      if (nodeEnv === 'production' && !skipValidation) {
+      const skipValidation = this.configService.get('SKIP_PRODUCTION_VALIDATION') === 'true';
+    if (nodeEnv === 'production' && !skipValidation) {
         throw new Error(
           'CRITICAL: Stripe API key is not configured for production! ' +
           'Set STRIPE_SECRET_KEY to a valid production key. ' +
@@ -112,6 +113,7 @@ export class CheckoutService implements OnModuleInit {
     const stripeKey = this.configService.get('STRIPE_SECRET_KEY');
     const nodeEnv = this.configService.get('NODE_ENV');
 
+    const skipValidation = this.configService.get('SKIP_PRODUCTION_VALIDATION') === 'true';
     if (nodeEnv === 'production' && !skipValidation) {
       if (!stripeKey || stripeKey.includes('placeholder') || stripeKey === 'sk_test_dummy') {
         this.logger.error('FATAL: Invalid Stripe configuration in production!');

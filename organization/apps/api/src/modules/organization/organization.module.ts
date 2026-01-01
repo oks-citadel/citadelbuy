@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
-import { EventEmitterModule } from '@nestjs/event-emitter';
 
 // Controllers
 import { OrganizationController } from './controllers/organization.controller';
@@ -36,7 +35,7 @@ import { EmailModule } from '../email/email.module';
     OrganizationRolesModule,
     OrganizationAuditModule,
     EmailModule,
-    EventEmitterModule.forRoot(),
+    
     BullModule.registerQueue({
       name: 'organization-events',
     }),

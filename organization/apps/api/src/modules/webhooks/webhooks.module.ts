@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { EventEmitterModule } from '@nestjs/event-emitter';
 import { WebhookService, WEBHOOK_QUEUE } from './webhook.service';
 import { WebhookController } from './webhook.controller';
 import { WebhookProcessor } from './webhook.processor';
@@ -35,7 +34,7 @@ import { PrismaModule } from '@/common/prisma/prisma.module';
       timeout: 30000,
       maxRedirects: 5,
     }),
-    EventEmitterModule.forRoot(),
+    
     BullModule.registerQueueAsync({
       name: WEBHOOK_QUEUE,
       imports: [ConfigModule],

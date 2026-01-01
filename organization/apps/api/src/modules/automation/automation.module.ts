@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { EventEmitterModule } from '@nestjs/event-emitter';
-import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
 import { WorkflowEngineService } from './workflow-engine.service';
 import { AutomationRulesService } from './automation-rules.service';
@@ -64,23 +62,6 @@ import { PrismaService } from '../../common/prisma/prisma.service';
  */
 @Module({
   imports: [
-    EventEmitterModule.forRoot({
-      // Use wildcards to allow dynamic event names
-      wildcard: true,
-      // Set the delimiter used to segment namespaces
-      delimiter: '.',
-      // Set this to true if you want to emit the newListener event
-      newListener: false,
-      // Set this to true if you want to emit the removeListener event
-      removeListener: false,
-      // The maximum amount of listeners that can be assigned to an event
-      maxListeners: 20,
-      // Show event name in memory leak message when more than maximum amount of listeners is assigned
-      verboseMemoryLeak: true,
-      // Disable throwing uncaughtException if an error event is emitted and it has no listeners
-      ignoreErrors: false,
-    }),
-    ScheduleModule.forRoot(),
     HttpModule.register({
       timeout: 10000,
       maxRedirects: 5,
