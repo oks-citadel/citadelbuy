@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { QueryDto, ConversationDto } from './dto/conversational.dto';
 
-interface Intent {
+export interface Intent {
   type: string;
   confidence: number;
   entities: Record<string, any>;

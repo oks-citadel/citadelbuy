@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-interface Message {
+export interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;

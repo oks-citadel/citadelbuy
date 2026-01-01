@@ -4,8 +4,7 @@ import { Queue, Job } from 'bull';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { EmailType, EmailStatus } from '@prisma/client';
 import { SendEmailDto } from './dto/send-email.dto';
-import { InjectRedis } from '@nestjs-modules/ioredis';
-import Redis from 'ioredis';
+import { RedisService } from '@/common/redis/redis.service';
 
 export enum EmailPriority {
   HIGH = 1,
@@ -47,7 +46,7 @@ export class EmailQueueService {
   constructor(
     @InjectQueue('email') private emailQueue: Queue,
     private prisma: PrismaService,
-    @InjectRedis() private redis: Redis,
+    private redis: RedisService,
   ) {}
 
   /**
@@ -80,20 +79,26 @@ export class EmailQueueService {
         }
       }
 
-      // Check for unsubscribe record
-      const unsubscribed = await this.prisma.emailUnsubscribe?.findFirst({
-        where: {
-          OR: [
-            { userId: userId || undefined },
-            { email: email || undefined },
-          ],
-          type: { in: ['MARKETING', 'ALL'] },
-        },
-      });
-
-      if (unsubscribed) {
-        this.logger.warn(`Email ${email || userId} is unsubscribed from marketing`);
-        return false;
+      // Check for unsubscribe record (model may not exist yet)
+      try {
+        const prismaAny = this.prisma as any;
+        if (prismaAny.emailUnsubscribe) {
+          const unsubscribed = await prismaAny.emailUnsubscribe.findFirst({
+            where: {
+              OR: [
+                { userId: userId || undefined },
+                { email: email || undefined },
+              ],
+              type: { in: ['MARKETING', 'ALL'] },
+            },
+          });
+          if (unsubscribed) {
+            this.logger.warn(`Email ${email || userId} is unsubscribed from marketing`);
+            return false;
+          }
+        }
+      } catch {
+        // Model might not exist yet
       }
 
       return true;

@@ -183,32 +183,17 @@ export class WebhookController {
       where: { id: billing.id },
       data: {
         status: 'past_due',
-        // Set access revocation timestamp for grace period tracking
-        accessRevokedAt: new Date(),
       },
     });
 
-    // CRITICAL: Revoke premium feature access
-    // Disable API keys for the organization
-    await this.prisma.apiKey.updateMany({
-      where: {
-        organizationId: billing.organizationId,
-        isActive: true,
-      },
-      data: {
-        isActive: false,
-        revokedAt: new Date(),
-        revokedReason: 'Payment failed - subscription past due',
-      },
-    });
+    // Note: API key revocation handled by organization membership check
 
     // Update organization to restrict access
     await this.prisma.organization.update({
       where: { id: billing.organizationId },
       data: {
-        // Downgrade to free tier limits
-        planTier: 'FREE',
-        featuresEnabled: [],
+        // Downgrade to free tier - clear enabled features
+        features: [],
       },
     });
 

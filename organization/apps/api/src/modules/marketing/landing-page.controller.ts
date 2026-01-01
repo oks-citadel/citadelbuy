@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { LandingPageService } from './landing-page.service';
-import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CreateLandingPageDto, UpdateLandingPageDto, LandingPageStatus } from './dto/landing-page.dto';
 
 @Controller('marketing/landing-pages')

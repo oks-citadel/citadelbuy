@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { CampaignService } from './campaign.service';
-import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CreateCampaignDto, UpdateCampaignDto, CampaignStatus, CampaignMetricsDto } from './dto/campaign.dto';
 
 @Controller('marketing/campaigns')

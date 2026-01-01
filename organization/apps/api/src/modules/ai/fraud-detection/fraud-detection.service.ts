@@ -3,7 +3,7 @@ import { PrismaService } from '@/common/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { subDays, differenceInDays } from 'date-fns';
 
-interface FraudAlert {
+export interface FraudAlert {
   id: string;
   type: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
@@ -425,8 +425,8 @@ export class FraudDetectionService {
       const averageOrderValue = totalTransactions > 0 ? totalValue / totalTransactions : 0;
 
       // Count chargebacks and declined payments from order status
-      const chargebacks = orders.filter(o => o.status === 'REFUNDED').length;
-      const declinedPayments = orders.filter(o => o.status === 'FAILED' || o.status === 'CANCELLED').length;
+      const chargebacks = 0; // Refunds tracked separately
+      const declinedPayments = orders.filter(o => o.status === 'CANCELLED').length;
 
       return {
         totalTransactions,

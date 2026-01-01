@@ -3,7 +3,7 @@ import { PrismaService } from '@/common/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import natural from 'natural';
 
-interface SearchQuery {
+export interface SearchQuery {
   original: string;
   corrected: string;
   intent: string;
@@ -11,7 +11,7 @@ interface SearchQuery {
   confidence: number;
 }
 
-interface ProductResult {
+export interface ProductResult {
   id: string;
   name: string;
   description: string | null;

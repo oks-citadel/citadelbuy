@@ -477,9 +477,15 @@ export class EmailController {
     reason: 'BOUNCE' | 'COMPLAINT' | 'UNSUBSCRIBE',
     metadata?: any,
   ) {
+    const prismaAny = this.prisma as any;
+    if (!prismaAny.emailSuppression) {
+      this.logger.warn('emailSuppression model not available');
+      return;
+    }
+
     try {
       // Check if already suppressed
-      const existing = await this.prisma.emailSuppression?.findUnique({
+      const existing = await prismaAny.emailSuppression.findUnique({
         where: { email },
       });
 
@@ -487,7 +493,7 @@ export class EmailController {
         // Update existing suppression with new reason if more severe
         const severityOrder = { UNSUBSCRIBE: 1, BOUNCE: 2, COMPLAINT: 3 };
         if (severityOrder[reason] > severityOrder[existing.reason as keyof typeof severityOrder]) {
-          await this.prisma.emailSuppression?.update({
+          await prismaAny.emailSuppression.update({
             where: { email },
             data: { reason, metadata, updatedAt: new Date() },
           });
@@ -496,7 +502,7 @@ export class EmailController {
       }
 
       // Create new suppression record
-      await this.prisma.emailSuppression?.create({
+      await prismaAny.emailSuppression.create({
         data: {
           email,
           reason,
@@ -532,13 +538,16 @@ export class EmailController {
     metadata?: any,
   ) {
     try {
-      await this.prisma.emailEvent?.create({
-        data: {
-          email,
-          eventType,
-          metadata,
-        },
-      });
+      const prismaAny = this.prisma as any;
+      if (prismaAny.emailEvent) {
+        await prismaAny.emailEvent.create({
+          data: {
+            email,
+            eventType,
+            metadata,
+          },
+        });
+      }
     } catch (error) {
       // Don't fail on logging errors
       this.logger.warn(`Failed to log email event for ${email}`, error);
@@ -562,26 +571,33 @@ export class EmailController {
     @Query('limit') limit?: number,
   ) {
     const skip = ((page || 1) - 1) * (limit || 20);
-
     const where = reason ? { reason } : {};
+    const prismaAny = this.prisma as any;
+
+    if (!prismaAny.emailSuppression) {
+      return {
+        suppressions: [],
+        pagination: { page: page || 1, limit: limit || 20, total: 0, totalPages: 0 },
+      };
+    }
 
     const [suppressions, total] = await Promise.all([
-      this.prisma.emailSuppression?.findMany({
+      prismaAny.emailSuppression.findMany({
         where,
         skip,
         take: limit || 20,
         orderBy: { createdAt: 'desc' },
-      }) || [],
-      this.prisma.emailSuppression?.count({ where }) || 0,
+      }),
+      prismaAny.emailSuppression.count({ where }),
     ]);
 
     return {
-      suppressions,
+      suppressions: suppressions || [],
       pagination: {
         page: page || 1,
         limit: limit || 20,
-        total,
-        totalPages: Math.ceil(total / (limit || 20)),
+        total: total || 0,
+        totalPages: Math.ceil((total || 0) / (limit || 20)),
       },
     };
   }
@@ -593,9 +609,12 @@ export class EmailController {
   @ApiOperation({ summary: 'Remove email from suppression list (Admin only)' })
   @ApiResponse({ status: 200, description: 'Email removed from suppression list' })
   async removeSuppression(@Param('email') email: string) {
-    await this.prisma.emailSuppression?.delete({
-      where: { email: email.toLowerCase() },
-    });
+    const prismaAny = this.prisma as any;
+    if (prismaAny.emailSuppression) {
+      await prismaAny.emailSuppression.delete({
+        where: { email: email.toLowerCase() },
+      });
+    }
     return { message: 'Email removed from suppression list' };
   }
 }

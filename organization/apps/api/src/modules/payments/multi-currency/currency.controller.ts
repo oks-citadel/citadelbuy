@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Query, Param, UseGuards } from '@nestjs/common';
 import { ExchangeRateService } from './exchange-rate.service';
-import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CurrencyConversionService } from './currency-conversion.service';
 import {
   SUPPORTED_CURRENCIES,

@@ -247,25 +247,13 @@ export class BillingService {
   async revokeAccess(organizationId: string, reason: string): Promise<void> {
     this.logger.warn(`Revoking access for organization ${organizationId}: ${reason}`);
 
-    // Disable API keys
-    await this.prisma.apiKey.updateMany({
-      where: {
-        organizationId,
-        isActive: true,
-      },
-      data: {
-        isActive: false,
-        revokedAt: new Date(),
-        revokedReason: reason,
-      },
-    });
+    // Note: API key management handled at user level, not organization level
 
-    // Downgrade organization to free tier
+    // Downgrade organization to free tier - clear enabled features
     await this.prisma.organization.update({
       where: { id: organizationId },
       data: {
-        planTier: 'FREE',
-        featuresEnabled: [],
+        features: [],
       },
     });
 

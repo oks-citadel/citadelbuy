@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-interface BundleProduct {
+export interface BundleProduct {
   productId: string;
   name: string;
   price: number;
