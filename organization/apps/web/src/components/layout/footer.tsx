@@ -115,7 +115,7 @@ export function Footer() {
       </div>
 
       {/* Newsletter Section */}
-      <div className="relative bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-500 py-16">
+      <div className="relative bg-gradient-to-r from-blue-900 via-blue-700 to-blue-500 py-16">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
         <div className="container relative">
           <div className="max-w-2xl mx-auto text-center">
@@ -165,8 +165,8 @@ export function Footer() {
             {/* Brand */}
             <div className="col-span-2 md:col-span-3 lg:col-span-2">
               <Link href="/" className="flex items-center gap-3 mb-6">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25">
-                  <span className="text-white font-bold text-xl">C</span>
+                <div className="h-10 w-10 rounded-xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #0E3A8A 0%, #3B82F6 100%)' }}">
+                  <span className="text-white font-bold text-xl">B</span>
                 </div>
                 <span className="font-bold text-2xl text-white">Broxiva</span>
               </Link>

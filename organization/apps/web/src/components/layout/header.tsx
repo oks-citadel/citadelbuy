@@ -103,10 +103,10 @@ export function Header() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">C</span>
+            <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0E3A8A 0%, #3B82F6 100%)' }}>
+              <span className="text-white font-bold text-lg">B</span>
             </div>
-            <span className="hidden sm:inline-block font-bold text-xl">Broxiva</span>
+            <span className="hidden sm:inline-block font-bold text-xl text-white">Broxiva</span>
           </Link>
 
           {/* Search bar - Desktop */}
