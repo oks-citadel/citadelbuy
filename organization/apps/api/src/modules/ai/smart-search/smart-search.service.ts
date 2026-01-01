@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import natural from 'natural';
+// natural library disabled due to ESM compatibility - using simple implementations
 
 export interface SearchQuery {
   original: string;
@@ -30,9 +30,9 @@ export interface ProductResult {
 @Injectable()
 export class SmartSearchService {
   private readonly logger = new Logger(SmartSearchService.name);
-  private readonly tokenizer = new natural.WordTokenizer();
-  private readonly stemmer = natural.PorterStemmer;
-  private readonly spellCheck = new natural.Spellcheck(['product', 'shoes', 'shirt', 'pants', 'jacket', 'watch', 'phone', 'laptop', 'tablet', 'dress', 'electronics', 'clothing', 'accessories', 'furniture', 'beauty', 'sports', 'toys', 'books', 'food', 'drinks']);
+  private readonly tokenizer = { tokenize: (text: string) => text.toLowerCase().split(/\s+/).filter(t => t.length > 0) };
+  private readonly stemmer = { stem: (word: string) => word.toLowerCase().replace(/(ing|ed|es|s|ly)$/g, '') };
+  private readonly spellCheck = { getCorrections: (word: string, n: number) => [word] };
 
   // In-memory caching with TTL for search history (use Redis in production)
   private searchHistory: Map<string, any[]> = new Map();
@@ -277,8 +277,8 @@ export class SmartSearchService {
     let score = 0;
     const productName = product.name.toLowerCase();
     const productDesc = (product.description || '').toLowerCase();
-    const categoryName = product.category.name.toLowerCase();
-    const vendorName = product.vendor.name.toLowerCase();
+    const categoryName = product.category?.name?.toLowerCase() || '';
+    const vendorName = product.vendor?.name?.toLowerCase() || '';
 
     // Term matching in name (highest weight)
     for (const term of searchTerms) {
