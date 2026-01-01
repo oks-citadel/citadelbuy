@@ -4,7 +4,7 @@
 
 **Status:** Azure Pipelines exist but are non-functional due to:
 1. Missing template files
-2. Incorrect ACR name (citadelbuyacr vs broxivaprodacr)
+2. Incorrect ACR name (broxivaacr vs broxivaprodacr)
 3. Unverified service connections
 
 **Solution:** Use the new `azure-pipelines-working.yml` file.
@@ -15,7 +15,7 @@
 
 ### Step 1: Create Service Connections (5 min)
 
-Go to Azure DevOps: https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_settings/adminservices
+Go to Azure DevOps: https://dev.azure.com/broxivacloudmanagement/Broxiva/_settings/adminservices
 
 #### Create Azure Resource Manager Connection
 
@@ -54,7 +54,7 @@ containerRegistry: 'BroxivaACR'  # ← Must match your ACR connection name
 ### Step 3: Commit and Push (1 min)
 
 ```bash
-cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy
+cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva
 git add azure-pipelines-working.yml AZURE_DEVOPS_PIPELINE_ANALYSIS.md AZURE_DEVOPS_QUICK_START.md
 git commit -m "Add working Azure DevOps pipeline with documentation"
 git push origin main
@@ -62,10 +62,10 @@ git push origin main
 
 ### Step 4: Create Pipeline in Azure DevOps (5 min)
 
-1. Go to https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_build
+1. Go to https://dev.azure.com/broxivacloudmanagement/Broxiva/_build
 2. Click "New Pipeline"
 3. Select "Azure Repos Git"
-4. Select "CitadelBuy" repository
+4. Select "Broxiva" repository
 5. Select "Existing Azure Pipelines YAML file"
 6. Path: `/azure-pipelines-working.yml`
 7. Click "Continue"
@@ -74,7 +74,7 @@ git push origin main
 ### Step 5: Monitor Pipeline
 
 Watch the pipeline run at:
-https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_build
+https://dev.azure.com/broxivacloudmanagement/Broxiva/_build
 
 ---
 
@@ -183,15 +183,15 @@ ls -la organization/apps/web/Dockerfile.production
 ```bash
 # List pipelines
 az pipelines list \
-  --organization "https://dev.azure.com/citadelcloudmanagement" \
-  --project "CitadelBuy" \
+  --organization "https://dev.azure.com/broxivacloudmanagement" \
+  --project "Broxiva" \
   -o table
 
 # Run pipeline
 az pipelines run \
-  --name "CitadelBuy-Working-Pipeline" \
-  --organization "https://dev.azure.com/citadelcloudmanagement" \
-  --project "CitadelBuy" \
+  --name "Broxiva-Working-Pipeline" \
+  --organization "https://dev.azure.com/broxivacloudmanagement" \
+  --project "Broxiva" \
   --branch main
 ```
 
@@ -232,9 +232,9 @@ After getting this basic pipeline working:
 
 ## Support
 
-- Azure DevOps Project: https://dev.azure.com/citadelcloudmanagement/CitadelBuy
-- Pipeline Runs: https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_build
-- Service Connections: https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_settings/adminservices
+- Azure DevOps Project: https://dev.azure.com/broxivacloudmanagement/Broxiva
+- Pipeline Runs: https://dev.azure.com/broxivacloudmanagement/Broxiva/_build
+- Service Connections: https://dev.azure.com/broxivacloudmanagement/Broxiva/_settings/adminservices
 
 ---
 

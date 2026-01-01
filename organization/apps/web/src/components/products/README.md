@@ -1,6 +1,6 @@
 # Product Status Toggle Feature
 
-This directory contains the Product Status Toggle feature for the CitadelBuy admin products page.
+This directory contains the Product Status Toggle feature for the Broxiva admin products page.
 
 ## Components
 

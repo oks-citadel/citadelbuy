@@ -1,6 +1,6 @@
-# CitadelBuy Web Frontend
+# Broxiva Web Frontend
 
-The CitadelBuy Web Frontend is a modern, high-performance Next.js application that delivers an exceptional shopping experience. Built with React 18, TypeScript, and Tailwind CSS, it features AI-powered recommendations, real-time updates, advanced search, and a fully responsive design optimized for all devices.
+The Broxiva Web Frontend is a modern, high-performance Next.js application that delivers an exceptional shopping experience. Built with React 18, TypeScript, and Tailwind CSS, it features AI-powered recommendations, real-time updates, advanced search, and a fully responsive design optimized for all devices.
 
 ## Table of Contents
 
@@ -233,7 +233,7 @@ Organized by domain:
 1. **Clone the repository** (if not already done):
    ```bash
    git clone <repository-url>
-   cd citadelbuy-master/organization
+   cd broxiva-master/organization
    ```
 
 2. **Install dependencies**:
@@ -270,7 +270,7 @@ NEXT_PUBLIC_WS_URL=ws://localhost:4000
 
 #### Application
 ```env
-NEXT_PUBLIC_APP_NAME=CitadelBuy
+NEXT_PUBLIC_APP_NAME=Broxiva
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NODE_ENV=development
 ```
@@ -313,7 +313,7 @@ NEXT_PUBLIC_ENABLE_CHATBOT=true
 
 #### CDN (Optional)
 ```env
-NEXT_PUBLIC_CDN_URL=https://cdn.citadelbuy.com
+NEXT_PUBLIC_CDN_URL=https://cdn.broxiva.com
 NEXT_PUBLIC_IMAGE_OPTIMIZATION=true
 ```
 
@@ -450,10 +450,10 @@ The build creates:
 
 ```bash
 # Staging build
-NODE_ENV=production NEXT_PUBLIC_API_URL=https://staging-api.citadelbuy.com pnpm build
+NODE_ENV=production NEXT_PUBLIC_API_URL=https://staging-api.broxiva.com pnpm build
 
 # Production build
-NODE_ENV=production NEXT_PUBLIC_API_URL=https://api.citadelbuy.com pnpm build
+NODE_ENV=production NEXT_PUBLIC_API_URL=https://api.broxiva.com pnpm build
 ```
 
 ## Common Development Tasks

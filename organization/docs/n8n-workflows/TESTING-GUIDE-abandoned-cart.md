@@ -7,9 +7,9 @@
 Create a `.env` file for testing:
 
 ```bash
-# CitadelBuy API
-CITADELBUY_API_KEY=test_api_key_xxxxxxxxxx
-CITADELBUY_API_BASE=https://api-staging.citadelbuy.com/v1
+# Broxiva API
+BROXIVA_API_KEY=test_api_key_xxxxxxxxxx
+BROXIVA_API_BASE=https://api-staging.broxiva.com/v1
 
 # Klaviyo
 KLAVIYO_PUBLIC_API_KEY=pk_test_xxxxxxxxxx
@@ -21,8 +21,8 @@ ALGOLIA_APP_ID=TEST_APP_ID
 ALGOLIA_API_KEY=test_search_key_xxxxxxxxxx
 
 # Zendesk
-ZENDESK_SUBDOMAIN=citadelbuy-sandbox
-ZENDESK_EMAIL=test@citadelbuy.com
+ZENDESK_SUBDOMAIN=broxiva-sandbox
+ZENDESK_EMAIL=test@broxiva.com
 ZENDESK_API_TOKEN=test_token_xxxxxxxxxx
 
 # Mixpanel
@@ -34,8 +34,8 @@ MIXPANEL_PROJECT_TOKEN=test_xxxxxxxxxx
 #### Create Test Abandoned Cart
 
 ```bash
-curl -X POST https://api-staging.citadelbuy.com/v1/carts/test \
-  -H "Authorization: Bearer ${CITADELBUY_API_KEY}" \
+curl -X POST https://api-staging.broxiva.com/v1/carts/test \
+  -H "Authorization: Bearer ${BROXIVA_API_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
     "cart_id": "test_cart_001",
@@ -51,7 +51,7 @@ curl -X POST https://api-staging.citadelbuy.com/v1/carts/test \
       {
         "sku": "CB-PROD-001",
         "name": "Premium Widget",
-        "image_url": "https://cdn.citadelbuy.com/products/widget.jpg",
+        "image_url": "https://cdn.broxiva.com/products/widget.jpg",
         "price": 49.99,
         "quantity": 2,
         "category": "widgets"
@@ -59,7 +59,7 @@ curl -X POST https://api-staging.citadelbuy.com/v1/carts/test \
       {
         "sku": "CB-PROD-002",
         "name": "Deluxe Gadget",
-        "image_url": "https://cdn.citadelbuy.com/products/gadget.jpg",
+        "image_url": "https://cdn.broxiva.com/products/gadget.jpg",
         "price": 50.01,
         "quantity": 1,
         "category": "gadgets"
@@ -162,8 +162,8 @@ const testCart5 = {
 **Setup:**
 ```bash
 # Create test order for customer
-curl -X POST https://api-staging.citadelbuy.com/v1/orders \
-  -H "Authorization: Bearer ${CITADELBUY_API_KEY}" \
+curl -X POST https://api-staging.broxiva.com/v1/orders \
+  -H "Authorization: Bearer ${BROXIVA_API_KEY}" \
   -d '{
     "customer_id": "test_cust_001",
     "created_at": "2024-01-15T10:00:00Z",
@@ -236,8 +236,8 @@ curl -X POST https://api-staging.citadelbuy.com/v1/orders \
 **Setup:**
 ```bash
 # Create open Zendesk ticket
-curl -X POST https://citadelbuy-sandbox.zendesk.com/api/v2/tickets \
-  -H "Authorization: Basic $(echo -n 'test@citadelbuy.com/token:${ZENDESK_API_TOKEN}' | base64)" \
+curl -X POST https://broxiva-sandbox.zendesk.com/api/v2/tickets \
+  -H "Authorization: Basic $(echo -n 'test@broxiva.com/token:${ZENDESK_API_TOKEN}' | base64)" \
   -d '{
     "ticket": {
       "subject": "Test ticket",
@@ -287,7 +287,7 @@ curl -X POST https://citadelbuy-sandbox.zendesk.com/api/v2/tickets \
       objectID: "prod_123",
       name: "Similar Widget Pro",
       sku: "CB-PROD-010",
-      image_url: "https://cdn.citadelbuy.com/products/similar-widget.jpg",
+      image_url: "https://cdn.broxiva.com/products/similar-widget.jpg",
       price: 54.99,
       category: "widgets",
       slug: "similar-widget-pro"
@@ -323,7 +323,7 @@ curl -X POST https://citadelbuy-sandbox.zendesk.com/api/v2/tickets \
     {
       name: "Premium Widget",
       sku: "CB-PROD-001",
-      image_url: "https://cdn.citadelbuy.com/products/widget.jpg",
+      image_url: "https://cdn.broxiva.com/products/widget.jpg",
       price: "49.99",
       quantity: 2,
       subtotal: "99.98"
@@ -336,8 +336,8 @@ curl -X POST https://citadelbuy-sandbox.zendesk.com/api/v2/tickets \
   urgency_message: "Your cart is waiting for you!",
   discount_code: null,
   related_products: [],
-  cart_url: "https://citadelbuy.com/cart/test_cart_001",
-  checkout_url: "https://citadelbuy.com/checkout/test_cart_001",
+  cart_url: "https://broxiva.com/cart/test_cart_001",
+  checkout_url: "https://broxiva.com/checkout/test_cart_001",
   campaign_name: "abandoned_cart_stage_1"
 }
 ```
@@ -451,7 +451,7 @@ curl -X POST https://citadelbuy-sandbox.zendesk.com/api/v2/tickets \
 **Setup:**
 ```bash
 # Create cart 73 hours old at Stage 2
-curl -X POST https://api-staging.citadelbuy.com/v1/carts/test \
+curl -X POST https://api-staging.broxiva.com/v1/carts/test \
   -d '{
     "cart_id": "test_cart_discount",
     "updated_at": "'$(date -d '73 hours ago' -Iseconds)'",
@@ -528,7 +528,7 @@ if (recoveryStage === 3 && hoursSinceUpdate >= 0) { // Stage 4
 Use invalid API credentials temporarily
 
 **Steps:**
-1. Set `CITADELBUY_API_KEY` to invalid value
+1. Set `BROXIVA_API_KEY` to invalid value
 2. Trigger workflow
 3. Check error handling
 
@@ -554,7 +554,7 @@ Use invalid API credentials temporarily
 ```bash
 # Create 10 test carts
 for i in {1..10}; do
-  curl -X POST https://api-staging.citadelbuy.com/v1/carts/test \
+  curl -X POST https://api-staging.broxiva.com/v1/carts/test \
     -d "{\"cart_id\": \"batch_test_$i\", \"recovery_stage\": 0}"
 done
 ```
@@ -744,10 +744,10 @@ node test-workflow.js
 
 ```bash
 # Check execution logs
-n8n executions:list --workflow="CitadelBuy Abandoned Cart Recovery" --status=success
+n8n executions:list --workflow="Broxiva Abandoned Cart Recovery" --status=success
 
 # Check error rate
-n8n executions:list --workflow="CitadelBuy Abandoned Cart Recovery" --status=error
+n8n executions:list --workflow="Broxiva Abandoned Cart Recovery" --status=error
 
 # Check Mixpanel dashboard
 # View: Abandoned Cart Email Sent (last 24 hours)

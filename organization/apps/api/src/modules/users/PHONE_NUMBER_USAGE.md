@@ -2,7 +2,7 @@
 
 ## Quick Reference
 
-This guide provides quick examples for working with the phone number feature in the CitadelBuy platform.
+This guide provides quick examples for working with the phone number feature in the Broxiva platform.
 
 ## Database Schema
 

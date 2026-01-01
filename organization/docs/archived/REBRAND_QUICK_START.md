@@ -15,7 +15,7 @@ See `TYPESCRIPT_REBRAND_SUMMARY.md` for complete details.
 
 ```bash
 # Navigate to the organization directory
-cd CitadelBuy/organization
+cd Broxiva/organization
 
 # Run the Python rebrand script
 python rebrand-typescript.py
@@ -38,11 +38,11 @@ Updated files:
 ### 3. Verify the Changes
 
 ```bash
-# Check for any remaining "citadelbuy" references
-grep -ri "citadelbuy" apps/web/src apps/api/src apps/mobile/src packages/*/src tests --include="*.ts" --include="*.tsx"
+# Check for any remaining "broxiva" references
+grep -ri "broxiva" apps/web/src apps/api/src apps/mobile/src packages/*/src tests --include="*.ts" --include="*.tsx"
 
 # Check for old class name
-grep -r "CitadelBuyAI" apps/web/src apps/api/src apps/mobile/src packages/*/src tests --include="*.ts" --include="*.tsx"
+grep -r "BroxivaAI" apps/web/src apps/api/src apps/mobile/src packages/*/src tests --include="*.ts" --include="*.tsx"
 ```
 
 If the above commands return no results, the rebrand is complete!
@@ -64,14 +64,14 @@ pnpm test
 
 ```bash
 git add .
-git commit -m "Rebrand: Update TypeScript source files from CitadelBuy to Broxiva
+git commit -m "Rebrand: Update TypeScript source files from Broxiva to Broxiva
 
-- Renamed CitadelBuyAI class to BroxivaAI
-- Updated all storage keys (citadelbuy_ → broxiva_)
-- Updated email addresses (@citadelbuy.com → @broxiva.com)
-- Updated URLs and domains (citadelbuy.com → broxiva.com)
+- Renamed BroxivaAI class to BroxivaAI
+- Updated all storage keys (broxiva_ → broxiva_)
+- Updated email addresses (@broxiva.com → @broxiva.com)
+- Updated URLs and domains (broxiva.com → broxiva.com)
 - Updated all user-facing text and comments
-- Updated package identifiers (com.citadelbuy.* → com.broxiva.*)
+- Updated package identifiers (com.broxiva.* → com.broxiva.*)
 
 Total files updated: XXX TypeScript files across:
 - packages/* (core libraries)
@@ -88,13 +88,13 @@ Total files updated: XXX TypeScript files across:
 
 The script performs these replacements:
 
-1. **Class Names**: `CitadelBuyAI` → `BroxivaAI`
-2. **Brand Names**: `CitadelBuy` → `Broxiva`, `CitadelBuy's` → `Broxiva's`
-3. **Storage Keys**: `citadelbuy_*` → `broxiva_*`, `CITADELBUY_*` → `BROXIVA_*`
-4. **Email Addresses**: `*@citadelbuy.com` → `*@broxiva.com`
-5. **URLs**: `citadelbuy.com` → `broxiva.com`
-6. **Package IDs**: `com.citadelbuy.*` → `com.broxiva.*`
-7. **Social Handles**: `@citadelbuy` → `@broxiva`
+1. **Class Names**: `BroxivaAI` → `BroxivaAI`
+2. **Brand Names**: `Broxiva` → `Broxiva`, `Broxiva's` → `Broxiva's`
+3. **Storage Keys**: `broxiva_*` → `broxiva_*`, `BROXIVA_*` → `BROXIVA_*`
+4. **Email Addresses**: `*@broxiva.com` → `*@broxiva.com`
+5. **URLs**: `broxiva.com` → `broxiva.com`
+6. **Package IDs**: `com.broxiva.*` → `com.broxiva.*`
+7. **Social Handles**: `@broxiva` → `@broxiva`
 
 ### Files Covered
 
@@ -110,7 +110,7 @@ The script performs these replacements:
 ```bash
 # Ensure you're in the correct directory
 pwd
-# Should show: /path/to/Citadelbuy/CitadelBuy/organization
+# Should show: /path/to/Broxivabuy/Broxiva/organization
 
 # Verify script exists
 ls -la rebrand-typescript.py
@@ -136,7 +136,7 @@ python rebrand-typescript.py
 ### No Files Updated
 This likely means all files have already been updated. Verify with:
 ```bash
-grep -ri "citadelbuy" apps/web/src --include="*.ts" --include="*.tsx" | wc -l
+grep -ri "broxiva" apps/web/src --include="*.ts" --include="*.tsx" | wc -l
 ```
 
 If the count is 0, you're done!
@@ -163,8 +163,8 @@ After running the script, manually review these critical files:
 
 ## Success Criteria
 
-✅ No "citadelbuy" references in TypeScript files
-✅ No "CitadelBuyAI" class references
+✅ No "broxiva" references in TypeScript files
+✅ No "BroxivaAI" class references
 ✅ TypeScript compilation succeeds
 ✅ All tests pass
 ✅ Application starts without errors

@@ -1,4 +1,4 @@
-# CitadelBuy - Pipeline Implementation Checklist
+# Broxiva - Pipeline Implementation Checklist
 
 ## Overview
 
@@ -10,49 +10,49 @@ Use this checklist to validate the complete implementation of the Unified Pipeli
 
 ### Azure DevOps Organization Setup
 
-- [ ] Organization exists: `citadelcloudmanagement`
-- [ ] Project created: `CitadelBuy`
+- [ ] Organization exists: `broxivacloudmanagement`
+- [ ] Project created: `Broxiva`
 - [ ] Project permissions configured
 - [ ] Team members added with appropriate roles
 
 ### Azure Resources
 
-- [ ] Azure Container Registry created: `citadelbuyacr.azurecr.io`
+- [ ] Azure Container Registry created: `broxivaacr.azurecr.io`
 - [ ] ACR admin access enabled
-- [ ] Dev AKS cluster provisioned: `citadelbuy-dev-aks`
-- [ ] Staging AKS cluster provisioned: `citadelbuy-staging-aks`
-- [ ] Production AKS cluster provisioned: `citadelbuy-prod-aks`
+- [ ] Dev AKS cluster provisioned: `broxiva-dev-aks`
+- [ ] Staging AKS cluster provisioned: `broxiva-staging-aks`
+- [ ] Production AKS cluster provisioned: `broxiva-prod-aks`
 - [ ] Azure Key Vault created for secrets
 - [ ] Terraform state storage account created
 - [ ] Log Analytics workspace configured
 
 ### Service Connections
 
-- [ ] Azure Resource Manager connection: `CitadelBuyAzure`
+- [ ] Azure Resource Manager connection: `BroxivaAzure`
   - [ ] Subscription access verified
   - [ ] AKS management permissions
   - [ ] Key Vault access granted
   - [ ] ACR access granted
 
-- [ ] Azure Container Registry connection: `CitadelBuyACR`
+- [ ] Azure Container Registry connection: `BroxivaACR`
   - [ ] Push/pull permissions verified
   - [ ] Vulnerability scanning enabled
 
 ### Variable Groups
 
-- [ ] `CitadelBuy-Common` variable group created
+- [ ] `Broxiva-Common` variable group created
   - [ ] Non-sensitive shared variables added
   - [ ] Linked to Key Vault for secrets
 
-- [ ] `CitadelBuy-Dev` variable group created
+- [ ] `Broxiva-Dev` variable group created
   - [ ] Dev environment variables added
   - [ ] Dev-specific secrets added
 
-- [ ] `CitadelBuy-Staging` variable group created
+- [ ] `Broxiva-Staging` variable group created
   - [ ] Staging environment variables added
   - [ ] Staging-specific secrets added
 
-- [ ] `CitadelBuy-Production` variable group created
+- [ ] `Broxiva-Production` variable group created
   - [ ] Production environment variables added
   - [ ] Production-specific secrets added
 
@@ -106,7 +106,7 @@ Use this checklist to validate the complete implementation of the Unified Pipeli
 ### Pipeline Configuration
 
 - [ ] Pipeline created in Azure DevOps
-- [ ] Pipeline name: `CitadelBuy-Unified-Pipeline`
+- [ ] Pipeline name: `Broxiva-Unified-Pipeline`
 - [ ] YAML file path set: `.azuredevops/pipelines/main.yml`
 - [ ] Default branch configured
 - [ ] Build validation enabled for PRs
@@ -143,10 +143,10 @@ Use this checklist to validate the complete implementation of the Unified Pipeli
 
 ## Phase 4: Kubernetes Configuration
 
-### Dev Cluster (citadelbuy-dev-aks)
+### Dev Cluster (broxiva-dev-aks)
 
 - [ ] Cluster accessible via Azure CLI
-- [ ] Namespace created: `citadelbuy-dev`
+- [ ] Namespace created: `broxiva-dev`
 - [ ] RBAC configured
 - [ ] Service principal has deployment permissions
 - [ ] Container registry credentials configured
@@ -155,10 +155,10 @@ Use this checklist to validate the complete implementation of the Unified Pipeli
 - [ ] Cert-manager configured
 - [ ] Monitoring agents installed
 
-### Staging Cluster (citadelbuy-staging-aks)
+### Staging Cluster (broxiva-staging-aks)
 
 - [ ] Cluster accessible via Azure CLI
-- [ ] Namespace created: `citadelbuy-staging`
+- [ ] Namespace created: `broxiva-staging`
 - [ ] RBAC configured
 - [ ] Service principal has deployment permissions
 - [ ] Container registry credentials configured
@@ -168,10 +168,10 @@ Use this checklist to validate the complete implementation of the Unified Pipeli
 - [ ] Monitoring agents installed
 - [ ] Network policies applied
 
-### Production Cluster (citadelbuy-prod-aks)
+### Production Cluster (broxiva-prod-aks)
 
 - [ ] Cluster accessible via Azure CLI
-- [ ] Namespace created: `citadelbuy-prod`
+- [ ] Namespace created: `broxiva-prod`
 - [ ] RBAC configured (strict)
 - [ ] Service principal has deployment permissions
 - [ ] Container registry credentials configured
@@ -564,7 +564,7 @@ Use this section to track any exceptions, special configurations, or important n
 
 ### Pipeline URL
 ```
-https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_build?definitionId=<pipeline-id>
+https://dev.azure.com/broxivacloudmanagement/Broxiva/_build?definitionId=<pipeline-id>
 ```
 
 ### Useful Commands
@@ -576,7 +576,7 @@ az pipelines validate --yaml-path .azuredevops/pipelines/main.yml
 
 **Queue Pipeline:**
 ```bash
-az pipelines run --name CitadelBuy-Unified-Pipeline
+az pipelines run --name Broxiva-Unified-Pipeline
 ```
 
 **Get Pipeline Run:**
@@ -593,7 +593,7 @@ az pipelines runs show --id <run-id> --open
 
 **Pipeline Support:**
 - Slack: #devops-support
-- Email: devops@citadelbuy.com
+- Email: devops@broxiva.com
 
 **Emergency Contacts:**
 - On-Call DevOps: [Phone Number]

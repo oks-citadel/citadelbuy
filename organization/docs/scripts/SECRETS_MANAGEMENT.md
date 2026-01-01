@@ -1,6 +1,6 @@
 # Secrets Management Scripts
 
-This directory contains automated scripts for generating and validating production secrets for CitadelBuy.
+This directory contains automated scripts for generating and validating production secrets for Broxiva.
 
 ## Overview
 
@@ -89,7 +89,7 @@ Production deployments require cryptographically secure secrets for:
 
 ```env
 ################################################################################
-# CitadelBuy Production Secrets
+# Broxiva Production Secrets
 ################################################################################
 # Generated: 2024-12-04 12:34:56 UTC
 #
@@ -218,7 +218,7 @@ ENCRYPTION_KEY=7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b
 
 ```
 ╔════════════════════════════════════════════════════════════════════╗
-║  CitadelBuy Secrets Validation                                    ║
+║  Broxiva Secrets Validation                                    ║
 ╚════════════════════════════════════════════════════════════════════╝
 
 Validating: .env.production
@@ -270,7 +270,7 @@ cat .env.production
 # Step 4: Copy secrets to your secrets manager
 # AWS Example:
 aws secretsmanager create-secret \
-  --name citadelbuy/production/jwt-secret \
+  --name broxiva/production/jwt-secret \
   --secret-string "$(grep JWT_SECRET .env.production | cut -d= -f2)"
 
 # Step 5: Delete the local file
@@ -447,7 +447,7 @@ Fix each issue and re-validate.
 
 ## Support
 
-**Security Issues**: security@citadelbuy.com
+**Security Issues**: security@broxiva.com
 
 **DO NOT** post secrets or security issues in public repositories or forums.
 

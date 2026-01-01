@@ -2,7 +2,7 @@
 
 ## Overview
 
-Comprehensive error tracking and monitoring has been added to CitadelBuy platform using Sentry and Prometheus.
+Comprehensive error tracking and monitoring has been added to Broxiva platform using Sentry and Prometheus.
 
 ## What Was Implemented
 
@@ -388,7 +388,7 @@ Check Sentry dashboard for the error.
 
 ### Contact
 - DevOps Team: `#monitoring` on Slack
-- Email: devops@citadelbuy.com
+- Email: devops@broxiva.com
 
 ---
 

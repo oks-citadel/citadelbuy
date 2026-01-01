@@ -122,12 +122,12 @@ Create incident report:
 
 ```bash
 # Clone a backup copy
-git clone --mirror https://github.com/citadelbuy/citadelbuy.git citadelbuy-backup.git
-cd citadelbuy-backup.git
-tar -czf ../citadelbuy-backup-$(date +%Y%m%d).tar.gz .
+git clone --mirror https://github.com/broxiva/broxiva.git broxiva-backup.git
+cd broxiva-backup.git
+tar -czf ../broxiva-backup-$(date +%Y%m%d).tar.gz .
 
 # Verify backup
-tar -tzf ../citadelbuy-backup-$(date +%Y%m%d).tar.gz | head
+tar -tzf ../broxiva-backup-$(date +%Y%m%d).tar.gz | head
 ```
 
 ### Notify Team
@@ -182,8 +182,8 @@ alias bfg='java -jar bfg-1.14.0.jar'
 
 ```bash
 # Clone fresh mirror (no working directory)
-git clone --mirror https://github.com/citadelbuy/citadelbuy.git
-cd citadelbuy.git
+git clone --mirror https://github.com/broxiva/broxiva.git
+cd broxiva.git
 ```
 
 ### Remove Files
@@ -210,7 +210,7 @@ bfg --delete-folders credentials
 ```bash
 # Create replacement file
 cat > passwords.txt << 'EOF'
-citadelbuy123===>***REMOVED***
+broxiva123===>***REMOVED***
 old-jwt-secret-here===>***REMOVED***
 sk_live_abc123===>***REMOVED***
 EOF
@@ -262,8 +262,8 @@ git filter-repo --version
 
 ```bash
 # Clone (NOT mirror this time)
-git clone https://github.com/citadelbuy/citadelbuy.git citadelbuy-clean
-cd citadelbuy-clean
+git clone https://github.com/broxiva/broxiva.git broxiva-clean
+cd broxiva-clean
 ```
 
 ### Remove Files from History
@@ -301,7 +301,7 @@ git filter-repo --replace-text replacements.txt
 
 ```bash
 # Add remote (filter-repo removes remotes)
-git remote add origin https://github.com/citadelbuy/citadelbuy.git
+git remote add origin https://github.com/broxiva/broxiva.git
 
 # Force push
 git push --force --all
@@ -440,13 +440,13 @@ The git history rewrite is complete. You MUST re-clone the repository.
 
 STEPS TO RE-CLONE:
 1. Save any uncommitted work (git stash or backup)
-2. DELETE your local citadelbuy directory:
-   rm -rf citadelbuy  # Or move to trash
+2. DELETE your local broxiva directory:
+   rm -rf broxiva  # Or move to trash
 3. Re-clone:
-   git clone https://github.com/citadelbuy/citadelbuy.git
+   git clone https://github.com/broxiva/broxiva.git
 4. Get new .env file:
-   - Backend: Copy from 1Password → "CitadelBuy API Env"
-   - Frontend: Copy from 1Password → "CitadelBuy Web Env"
+   - Backend: Copy from 1Password → "Broxiva API Env"
+   - Frontend: Copy from 1Password → "Broxiva Web Env"
 5. Verify secrets are new (don't use old .env)
 
 VERIFICATION:
@@ -454,7 +454,7 @@ VERIFICATION:
 git log --oneline | head -5
 
 # Should NOT find secrets
-git log -p | grep -i "citadelbuy123"
+git log -p | grep -i "broxiva123"
 
 Common Issues:
 Q: Can I just pull?
@@ -466,7 +466,7 @@ A: Re-create it from main after re-cloning.
 Q: My commits are gone!
 A: Check #engineering - we may need to cherry-pick.
 
-Status: https://status.citadelbuy.internal/incident/123
+Status: https://status.broxiva.internal/incident/123
 ```
 
 ---
@@ -498,7 +498,7 @@ fi
 
 echo ""
 echo "Checking for database passwords..."
-if git log --all -p | grep -q "password.*citadelbuy123"; then
+if git log --all -p | grep -q "password.*broxiva123"; then
     echo "❌ FOUND: Weak password in history"
     FOUND_SECRETS=$((FOUND_SECRETS + 1))
 else
@@ -583,8 +583,8 @@ git rev-list --all --count
 # Team members seeing this after re-clone
 # Solution: They need to DELETE (not pull) their local repo and re-clone
 
-rm -rf citadelbuy
-git clone https://github.com/citadelbuy/citadelbuy.git
+rm -rf broxiva
+git clone https://github.com/broxiva/broxiva.git
 ```
 
 ### Issue: Protected branch preventing force push
@@ -631,7 +631,7 @@ brew install git-secrets  # macOS
 apt-get install git-secrets  # Linux
 
 # Initialize in repo
-cd /path/to/citadelbuy
+cd /path/to/broxiva
 git secrets --install
 git secrets --register-aws
 
@@ -739,7 +739,7 @@ Schedule quarterly security training covering:
 
 **Remember:** Prevention is better than cleanup. Always verify files before committing!
 
-**For questions:** Contact security@citadelbuy.com or #security Slack channel
+**For questions:** Contact security@broxiva.com or #security Slack channel
 
 ---
 

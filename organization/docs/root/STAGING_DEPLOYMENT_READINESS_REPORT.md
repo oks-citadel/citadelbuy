@@ -1,15 +1,15 @@
-# CitadelBuy Staging Deployment Readiness Report
+# Broxiva Staging Deployment Readiness Report
 
 **Generated:** 2025-12-05
-**Project:** CitadelBuy E-Commerce Platform
-**Location:** C:\Users\citad\OneDrive\Documents\citadelbuy-master\organization
+**Project:** Broxiva E-Commerce Platform
+**Location:** C:\Users\citad\OneDrive\Documents\broxiva-master\organization
 **Environment:** Windows (MINGW64_NT-10.0-26200)
 
 ---
 
 ## Executive Summary
 
-The CitadelBuy platform is **READY for staging deployment** with Docker and Kubernetes infrastructure in place. All required tools are installed and operational. This report provides deployment options, infrastructure status, and step-by-step instructions for both containerized and local development deployment.
+The Broxiva platform is **READY for staging deployment** with Docker and Kubernetes infrastructure in place. All required tools are installed and operational. This report provides deployment options, infrastructure status, and step-by-step instructions for both containerized and local development deployment.
 
 ---
 
@@ -31,7 +31,7 @@ The CitadelBuy platform is **READY for staging deployment** with Docker and Kube
 - **Configuration File:** `docker-compose.yml`
 - **Validation Status:** ✅ PASSED (minor warning: version field is obsolete)
 - **Services Defined:** 11 services
-- **Network:** citadelbuy-network (bridge driver)
+- **Network:** broxiva-network (bridge driver)
 - **Volumes:** 7 persistent volumes configured
 
 ---
@@ -46,18 +46,18 @@ This option runs the entire platform stack including all infrastructure services
 
 | Service | Container | Host Port | Container Port | Status |
 |---------|-----------|-----------|----------------|--------|
-| **PostgreSQL** | citadelbuy-postgres | 5432 | 5432 | Configured |
-| **Redis** | citadelbuy-redis | 6379 | 6379 | Configured |
-| **Elasticsearch** | citadelbuy-elasticsearch | 9200, 9300 | 9200, 9300 | Configured |
-| **MinIO (S3)** | citadelbuy-minio | 9000, 9001 | 9000, 9001 | Configured |
-| **API (NestJS)** | citadelbuy-api | 4000 | 4000 | Configured |
-| **Web (Next.js)** | citadelbuy-web | 3000 | 3000 | Configured |
-| **Nginx** | citadelbuy-nginx | 80, 443 | 80, 443 | Configured |
-| **RabbitMQ** | citadelbuy-rabbitmq | 5672, 15672 | 5672, 15672 | Configured |
-| **Prometheus** | citadelbuy-prometheus | 9090 | 9090 | Configured |
-| **Grafana** | citadelbuy-grafana | 3001 | 3000 | Configured |
+| **PostgreSQL** | broxiva-postgres | 5432 | 5432 | Configured |
+| **Redis** | broxiva-redis | 6379 | 6379 | Configured |
+| **Elasticsearch** | broxiva-elasticsearch | 9200, 9300 | 9200, 9300 | Configured |
+| **MinIO (S3)** | broxiva-minio | 9000, 9001 | 9000, 9001 | Configured |
+| **API (NestJS)** | broxiva-api | 4000 | 4000 | Configured |
+| **Web (Next.js)** | broxiva-web | 3000 | 3000 | Configured |
+| **Nginx** | broxiva-nginx | 80, 443 | 80, 443 | Configured |
+| **RabbitMQ** | broxiva-rabbitmq | 5672, 15672 | 5672, 15672 | Configured |
+| **Prometheus** | broxiva-prometheus | 9090 | 9090 | Configured |
+| **Grafana** | broxiva-grafana | 3001 | 3000 | Configured |
 
-**Note:** Ports 5433 and 6380 are currently in use by other containers. The CitadelBuy stack uses different ports (5432, 6379) as configured.
+**Note:** Ports 5433 and 6380 are currently in use by other containers. The Broxiva stack uses different ports (5432, 6379) as configured.
 
 #### Pre-Deployment Requirements
 
@@ -65,7 +65,7 @@ This option runs the entire platform stack including all infrastructure services
 
 ```bash
 # Navigate to project directory
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization
 
 # Copy example file
 cp .env.example .env
@@ -94,7 +94,7 @@ openssl rand -base64 64
 
 ```bash
 # 1. Navigate to project root
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization
 
 # 2. Ensure .env file is configured (CRITICAL!)
 # Verify it exists and has all required variables
@@ -141,7 +141,7 @@ For a production-like staging environment using Kubernetes.
 
 ```bash
 # Navigate to project root
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization
 
 # Run staging deployment script
 ./scripts/deploy-staging.sh
@@ -163,26 +163,26 @@ cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
 kubectl config use-context staging
 
 # Create namespace
-kubectl create namespace citadelbuy-staging
+kubectl create namespace broxiva-staging
 
 # Apply configurations
-kubectl apply -f infrastructure/kubernetes/staging/ -n citadelbuy-staging
+kubectl apply -f infrastructure/kubernetes/staging/ -n broxiva-staging
 
 # Check deployment status
-kubectl get pods -n citadelbuy-staging
-kubectl get services -n citadelbuy-staging
-kubectl get ingress -n citadelbuy-staging
+kubectl get pods -n broxiva-staging
+kubectl get services -n broxiva-staging
+kubectl get ingress -n broxiva-staging
 
 # View logs
-kubectl logs -f deployment/citadelbuy-api -n citadelbuy-staging
-kubectl logs -f deployment/citadelbuy-web -n citadelbuy-staging
+kubectl logs -f deployment/broxiva-api -n broxiva-staging
+kubectl logs -f deployment/broxiva-web -n broxiva-staging
 
 # Run migrations
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy-staging -- npx prisma migrate deploy
+kubectl exec -it deployment/broxiva-api -n broxiva-staging -- npx prisma migrate deploy
 
 # Rollback if needed
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-staging
-kubectl rollout undo deployment/citadelbuy-web -n citadelbuy-staging
+kubectl rollout undo deployment/broxiva-api -n broxiva-staging
+kubectl rollout undo deployment/broxiva-web -n broxiva-staging
 ```
 
 ---
@@ -202,7 +202,7 @@ For local development without Docker containers.
 
 ```bash
 # Navigate to project root
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization
 
 # Install dependencies (first time only)
 pnpm install
@@ -232,7 +232,7 @@ pnpm dev:web
 
 ```bash
 # Navigate to API directory
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api
 
 # Start development server with hot reload
 pnpm dev
@@ -259,7 +259,7 @@ pnpm start:prod
 
 ```bash
 # Navigate to Web directory
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/web
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/web
 
 # Start development server (port 3000)
 pnpm dev
@@ -293,7 +293,7 @@ curl http://localhost:4000/api/health
 curl http://localhost:3000
 
 # PostgreSQL (requires psql client)
-docker-compose exec postgres pg_isready -U citadelbuy
+docker-compose exec postgres pg_isready -U broxiva
 
 # Redis
 docker-compose exec redis redis-cli ping
@@ -305,7 +305,7 @@ curl http://localhost:9200/_cluster/health
 curl http://localhost:9000/minio/health/live
 
 # RabbitMQ Management
-# Open: http://localhost:15672 (default: citadelbuy / <password from .env>)
+# Open: http://localhost:15672 (default: broxiva / <password from .env>)
 
 # Prometheus
 curl http://localhost:9090/-/healthy
@@ -324,8 +324,8 @@ The following variables **MUST** be set in `.env` file:
 
 **Database:**
 - `POSTGRES_PASSWORD` - PostgreSQL password (min 32 chars)
-- `POSTGRES_USER` - Default: citadelbuy
-- `POSTGRES_DB` - Default: citadelbuy_dev
+- `POSTGRES_USER` - Default: broxiva
+- `POSTGRES_DB` - Default: broxiva_dev
 - `DATABASE_URL` - Connection string
 
 **Authentication:**
@@ -394,10 +394,10 @@ The following variables **MUST** be set in `.env` file:
 - [ ] Kubernetes secrets created
 - [ ] Review staging deployment checklist: `STAGING_DEPLOYMENT_CHECKLIST.md`
 - [ ] Run deployment script: `./scripts/deploy-staging.sh`
-- [ ] Monitor rollout: `kubectl rollout status deployment/citadelbuy-api -n citadelbuy-staging`
-- [ ] Run smoke tests: `./scripts/smoke-tests.sh citadelbuy-staging`
-- [ ] Verify all pods running: `kubectl get pods -n citadelbuy-staging`
-- [ ] Check logs: `kubectl logs -f deployment/citadelbuy-api -n citadelbuy-staging`
+- [ ] Monitor rollout: `kubectl rollout status deployment/broxiva-api -n broxiva-staging`
+- [ ] Run smoke tests: `./scripts/smoke-tests.sh broxiva-staging`
+- [ ] Verify all pods running: `kubectl get pods -n broxiva-staging`
+- [ ] Check logs: `kubectl logs -f deployment/broxiva-api -n broxiva-staging`
 
 ### Local Development Deployment
 
@@ -466,10 +466,10 @@ docker-compose ps postgres
 docker-compose logs postgres
 
 # Test connection
-docker-compose exec postgres pg_isready -U citadelbuy
+docker-compose exec postgres pg_isready -U broxiva
 
 # Access database shell
-docker-compose exec postgres psql -U citadelbuy -d citadelbuy_dev
+docker-compose exec postgres psql -U broxiva -d broxiva_dev
 ```
 
 **4. API Not Responding**
@@ -557,7 +557,7 @@ pnpm test:load
 
 ```bash
 # Run smoke tests (after deployment)
-./scripts/smoke-tests.sh citadelbuy-staging
+./scripts/smoke-tests.sh broxiva-staging
 ```
 
 ---
@@ -580,7 +580,7 @@ pnpm test:load
 
 **RabbitMQ Management:**
 - URL: http://localhost:15672
-- Username: `citadelbuy` (or from `.env`)
+- Username: `broxiva` (or from `.env`)
 - Password: From `.env` file (`RABBITMQ_PASSWORD`)
 
 **Elasticsearch:**
@@ -590,7 +590,7 @@ pnpm test:load
 
 **MinIO Console:**
 - URL: http://localhost:9001
-- Username: `citadelbuy_admin` (or from `.env`)
+- Username: `broxiva_admin` (or from `.env`)
 - Password: From `.env` file (`MINIO_ROOT_PASSWORD`)
 
 ### Log Access
@@ -604,9 +604,9 @@ docker-compose logs -f postgres          # Database
 docker-compose logs --tail=100 api       # Last 100 lines
 
 # Kubernetes logs
-kubectl logs -f deployment/citadelbuy-api -n citadelbuy-staging
-kubectl logs -f deployment/citadelbuy-web -n citadelbuy-staging
-kubectl logs --previous -f pod/<pod-name> -n citadelbuy-staging  # Previous instance
+kubectl logs -f deployment/broxiva-api -n broxiva-staging
+kubectl logs -f deployment/broxiva-web -n broxiva-staging
+kubectl logs --previous -f pod/<pod-name> -n broxiva-staging  # Previous instance
 ```
 
 ---
@@ -629,10 +629,10 @@ kubectl logs --previous -f pod/<pod-name> -n citadelbuy-staging  # Previous inst
 
 URLs depend on ingress configuration. Typical staging URLs:
 
-- **Web Frontend:** https://staging.citadelbuy.com
-- **API:** https://staging-api.citadelbuy.com
-- **API Docs:** https://staging-api.citadelbuy.com/api/docs
-- **API Health:** https://staging-api.citadelbuy.com/api/health
+- **Web Frontend:** https://staging.broxiva.com
+- **API:** https://staging-api.broxiva.com
+- **API Docs:** https://staging-api.broxiva.com/api/docs
+- **API Health:** https://staging-api.broxiva.com/api/health
 
 ---
 
@@ -756,7 +756,7 @@ See `STAGING_DEPLOYMENT_CHECKLIST.md` for emergency contact information.
 
 ## Conclusion
 
-The CitadelBuy platform is **PRODUCTION-READY for staging deployment**. All infrastructure components are properly configured and available. Choose your preferred deployment method based on your requirements:
+The Broxiva platform is **PRODUCTION-READY for staging deployment**. All infrastructure components are properly configured and available. Choose your preferred deployment method based on your requirements:
 
 - **Docker Compose:** Best for local staging and testing
 - **Kubernetes:** Best for production-like staging environment

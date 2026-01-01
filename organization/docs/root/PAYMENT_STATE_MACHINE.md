@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the payment state machine for CitadelBuy, including all payment states, state transitions, webhook event handling, retry mechanisms, and failure scenarios.
+This document describes the payment state machine for Broxiva, including all payment states, state transitions, webhook event handling, retry mechanisms, and failure scenarios.
 
 ## Table of Contents
 
@@ -184,7 +184,7 @@ Return 200 OK
 
 ### Idempotency Strategy
 
-CitadelBuy implements a **dual-layer idempotency system** to ensure webhook events are processed exactly once:
+Broxiva implements a **dual-layer idempotency system** to ensure webhook events are processed exactly once:
 
 #### Layer 1: Redis Cache (Fast Check)
 - **Purpose**: Fast in-memory lookup
@@ -678,4 +678,4 @@ CREATE INDEX idx_payment_webhook_events_processed_at ON payment_webhook_events(p
 
 **Document Version**: 1.0
 **Last Updated**: 2025-12-03
-**Maintained By**: CitadelBuy Engineering Team
+**Maintained By**: Broxiva Engineering Team

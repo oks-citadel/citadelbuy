@@ -1,4 +1,4 @@
-# Security Credentials Guide for CitadelBuy
+# Security Credentials Guide for Broxiva
 
 **Last Updated:** December 3, 2025
 **Status:** Production-Ready
@@ -171,7 +171,7 @@ kL7mN9pQ2rS4tU6vW8xY0zA2bC4dE6fG8hJ0kL2mN4oP6qR8sT0u
 **Use in DATABASE_URL:**
 ```env
 # PostgreSQL
-DATABASE_URL="postgresql://citadelbuy:<password>@localhost:5432/citadelbuy_dev?schema=public"
+DATABASE_URL="postgresql://broxiva:<password>@localhost:5432/broxiva_dev?schema=public"
 
 # Redis with password
 REDIS_URL="redis://:<password>@redis.example.com:6379"
@@ -214,7 +214,7 @@ Create a file `generate-secrets.sh`:
 #!/bin/bash
 
 echo "=========================================="
-echo "CitadelBuy Secret Generator"
+echo "Broxiva Secret Generator"
 echo "=========================================="
 echo ""
 echo "CRITICAL: Copy these to your .env file"
@@ -391,12 +391,12 @@ aws configure
 
 # Create secret
 aws secretsmanager create-secret \
-    --name citadelbuy/production/jwt-secret \
+    --name broxiva/production/jwt-secret \
     --secret-string "$(openssl rand -base64 64)"
 
 # Retrieve secret
 aws secretsmanager get-secret-value \
-    --secret-id citadelbuy/production/jwt-secret \
+    --secret-id broxiva/production/jwt-secret \
     --query SecretString \
     --output text
 ```
@@ -404,7 +404,7 @@ aws secretsmanager get-secret-value \
 **Automatic Rotation:**
 ```bash
 aws secretsmanager rotate-secret \
-    --secret-id citadelbuy/production/database-password \
+    --secret-id broxiva/production/database-password \
     --rotation-lambda-arn arn:aws:lambda:us-east-1:123456789012:function:rotate-db-password \
     --rotation-rules AutomaticallyAfterDays=90
 ```
@@ -423,19 +423,19 @@ az login
 
 # Create Key Vault
 az keyvault create \
-    --name citadelbuy-vault \
-    --resource-group citadelbuy-rg \
+    --name broxiva-vault \
+    --resource-group broxiva-rg \
     --location eastus
 
 # Add secret
 az keyvault secret set \
-    --vault-name citadelbuy-vault \
+    --vault-name broxiva-vault \
     --name jwt-secret \
     --value "$(openssl rand -base64 64)"
 
 # Retrieve secret
 az keyvault secret show \
-    --vault-name citadelbuy-vault \
+    --vault-name broxiva-vault \
     --name jwt-secret \
     --query value \
     --output tsv
@@ -460,10 +460,10 @@ export VAULT_ADDR='http://127.0.0.1:8200'
 export VAULT_TOKEN='<dev-root-token>'
 
 # Store secret
-vault kv put secret/citadelbuy/jwt-secret value="$(openssl rand -base64 64)"
+vault kv put secret/broxiva/jwt-secret value="$(openssl rand -base64 64)"
 
 # Retrieve secret
-vault kv get -field=value secret/citadelbuy/jwt-secret
+vault kv get -field=value secret/broxiva/jwt-secret
 ```
 
 **Cost:** Free (self-hosted) or $0.03/hour per cluster (HCP Vault)
@@ -648,15 +648,15 @@ gcloud secrets versions access latest --secret="jwt-secret"
 1. **Create new database user:**
    ```sql
    -- PostgreSQL
-   CREATE USER citadelbuy_new WITH PASSWORD '<new-password>';
-   GRANT ALL PRIVILEGES ON DATABASE citadelbuy TO citadelbuy_new;
-   GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO citadelbuy_new;
-   GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO citadelbuy_new;
+   CREATE USER broxiva_new WITH PASSWORD '<new-password>';
+   GRANT ALL PRIVILEGES ON DATABASE broxiva TO broxiva_new;
+   GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO broxiva_new;
+   GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO broxiva_new;
    ```
 
 2. **Update connection string:**
    ```env
-   DATABASE_URL="postgresql://citadelbuy_new:<new-password>@localhost:5432/citadelbuy_dev?schema=public"
+   DATABASE_URL="postgresql://broxiva_new:<new-password>@localhost:5432/broxiva_dev?schema=public"
    ```
 
 3. **Deploy updated configuration**
@@ -667,18 +667,18 @@ gcloud secrets versions access latest --secret="jwt-secret"
    ```sql
    SELECT usename, COUNT(*)
    FROM pg_stat_activity
-   WHERE datname = 'citadelbuy'
+   WHERE datname = 'broxiva'
    GROUP BY usename;
    ```
 
 6. **Remove old user:**
    ```sql
-   DROP USER citadelbuy;
+   DROP USER broxiva;
    ```
 
 7. **Optionally rename new user:**
    ```sql
-   ALTER USER citadelbuy_new RENAME TO citadelbuy;
+   ALTER USER broxiva_new RENAME TO broxiva;
    ```
 
 ---
@@ -697,7 +697,7 @@ gcloud secrets versions access latest --secret="jwt-secret"
 2. **Add new key to secrets manager:**
    ```bash
    aws secretsmanager update-secret \
-       --secret-id citadelbuy/production/stripe-secret-key \
+       --secret-id broxiva/production/stripe-secret-key \
        --secret-string "<new-key>"
    ```
 
@@ -806,8 +806,8 @@ gcloud secrets versions access latest --secret="jwt-secret"
    # or download from: https://rtyley.github.io/bfg-repo-cleaner/
 
    # Clone mirror
-   git clone --mirror https://github.com/citadelbuy/citadelbuy.git
-   cd citadelbuy.git
+   git clone --mirror https://github.com/broxiva/broxiva.git
+   cd broxiva.git
 
    # Remove .env files
    bfg --delete-files .env
@@ -902,7 +902,7 @@ logger.info({
 logger.info({
   event: 'secret_rotated',
   secret_name: 'database_password',
-  rotated_by: 'admin@citadelbuy.com',
+  rotated_by: 'admin@broxiva.com',
   timestamp: new Date(),
   old_secret_age_days: 87
 });
@@ -970,11 +970,11 @@ logger.warn({
 ## Support
 
 **For security concerns:**
-- Email: security@citadelbuy.com
-- PGP Key: [Download](https://citadelbuy.com/security.asc)
+- Email: security@broxiva.com
+- PGP Key: [Download](https://broxiva.com/security.asc)
 
 **For secret rotation assistance:**
-- Internal Wiki: `https://wiki.citadelbuy.internal/security/secret-rotation`
+- Internal Wiki: `https://wiki.broxiva.internal/security/secret-rotation`
 - Slack: #security-team
 
 **For incident response:**

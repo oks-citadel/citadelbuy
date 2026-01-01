@@ -1,8 +1,8 @@
-# CitadelBuy Caching Strategy
+# Broxiva Caching Strategy
 
 ## Overview
 
-CitadelBuy implements a comprehensive Redis-based caching strategy to optimize performance, reduce database load, and improve user experience. This document describes the caching architecture, TTL settings, invalidation patterns, and management practices.
+Broxiva implements a comprehensive Redis-based caching strategy to optimize performance, reduce database load, and improve user experience. This document describes the caching architecture, TTL settings, invalidation patterns, and management practices.
 
 ## Architecture
 

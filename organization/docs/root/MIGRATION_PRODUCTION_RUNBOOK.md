@@ -1,4 +1,4 @@
-# CitadelBuy Production Migration Runbook
+# Broxiva Production Migration Runbook
 
 ## Document Purpose
 
@@ -80,13 +80,13 @@ This runbook provides a step-by-step operational guide for executing database mi
 - [ ] **Apply Migrations to Staging**
   ```bash
   # Connect to staging
-  ssh citadelbuy-staging
+  ssh broxiva-staging
 
   # Set environment
   export ENVIRONMENT=staging
 
   # Run migration script
-  cd /opt/citadelbuy/organization
+  cd /opt/broxiva/organization
   ./scripts/apply-migrations.sh --environment staging
   ```
 
@@ -197,14 +197,14 @@ This runbook provides a step-by-step operational guide for executing database mi
   ls -lh /tmp/test_backup.sql
 
   # Test restoration to temporary database
-  createdb citadelbuy_test_restore
-  psql citadelbuy_test_restore < /tmp/test_backup.sql
+  createdb broxiva_test_restore
+  psql broxiva_test_restore < /tmp/test_backup.sql
 
   # Verify restoration
-  psql citadelbuy_test_restore -c "SELECT count(*) FROM users;"
+  psql broxiva_test_restore -c "SELECT count(*) FROM users;"
 
   # Cleanup
-  dropdb citadelbuy_test_restore
+  dropdb broxiva_test_restore
   rm /tmp/test_backup.sql
   ```
 
@@ -261,7 +261,7 @@ This runbook provides a step-by-step operational guide for executing database mi
 - [ ] **Lock Production Branches**
   ```bash
   # GitHub branch protection
-  gh api repos/citadelbuy/citadelbuy-master/branches/main/protection \
+  gh api repos/broxiva/broxiva-master/branches/main/protection \
     --method PUT \
     --field required_approvals=2 \
     --field enforce_admins=true
@@ -301,10 +301,10 @@ This runbook provides a step-by-step operational guide for executing database mi
 - [ ] **Connect to Production**
   ```bash
   # SSH to production database server
-  ssh citadelbuy-prod-db
+  ssh broxiva-prod-db
 
   # Or connect via bastion
-  ssh -J bastion citadelbuy-prod-db
+  ssh -J bastion broxiva-prod-db
   ```
 
 - [ ] **Verify Database Connection**
@@ -355,8 +355,8 @@ This runbook provides a step-by-step operational guide for executing database mi
 
 - [ ] **Application Health Check**
   ```bash
-  curl -f https://api.citadelbuy.com/health || echo "API DOWN"
-  curl -f https://citadelbuy.com || echo "WEB DOWN"
+  curl -f https://api.broxiva.com/health || echo "API DOWN"
+  curl -f https://broxiva.com || echo "WEB DOWN"
   ```
 
 ### T-30 Minutes: Go/No-Go Decision
@@ -455,11 +455,11 @@ psql $DATABASE_URL -c "
 #### 2.1 Create Full Backup
 
 ```bash
-cd /opt/citadelbuy/organization
+cd /opt/broxiva/organization
 
 # Run backup
 pg_dump $DATABASE_URL | gzip > \
-  /backups/citadelbuy_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz
+  /backups/broxiva_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz
 ```
 
 **Estimated Time:** 5-10 minutes (depending on database size)
@@ -468,13 +468,13 @@ pg_dump $DATABASE_URL | gzip > \
 
 ```bash
 # Check backup file
-ls -lh /backups/citadelbuy_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz
+ls -lh /backups/broxiva_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz
 
 # Verify backup integrity
-gunzip -t /backups/citadelbuy_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz
+gunzip -t /backups/broxiva_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz
 
 # Record backup size
-BACKUP_SIZE=$(du -h /backups/citadelbuy_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz | cut -f1)
+BACKUP_SIZE=$(du -h /backups/broxiva_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz | cut -f1)
 echo "Backup size: $BACKUP_SIZE"
 ```
 
@@ -482,14 +482,14 @@ echo "Backup size: $BACKUP_SIZE"
 
 ```bash
 # Upload to S3
-aws s3 cp /backups/citadelbuy_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz \
-  s3://citadelbuy-backups/production/migrations/
+aws s3 cp /backups/broxiva_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz \
+  s3://broxiva-backups/production/migrations/
 
 # Or Azure
 az storage blob upload \
   --container-name backups \
-  --file /backups/citadelbuy_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz \
-  --name production/migrations/citadelbuy_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz
+  --file /backups/broxiva_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz \
+  --name production/migrations/broxiva_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz
 ```
 
 **Checkpoint:** Backup completed
@@ -653,15 +653,15 @@ kubectl wait --for=condition=ready pod -l app=api --timeout=300s
 
 ```bash
 # API health check
-curl -f https://api.citadelbuy.com/health
+curl -f https://api.broxiva.com/health
 # Expected: {"status":"ok","database":"connected"}
 
 # Web health check
-curl -f https://citadelbuy.com
+curl -f https://broxiva.com
 # Expected: HTTP 200
 
 # Database connection pool
-curl -f https://api.citadelbuy.com/health/db
+curl -f https://api.broxiva.com/health/db
 # Expected: {"connections":{"active":X,"idle":Y,"total":Z}}
 ```
 
@@ -830,7 +830,7 @@ ORDER BY seq_tup_read DESC;
 
 ```bash
 # Run rollback using backup
-cd /opt/citadelbuy/organization
+cd /opt/broxiva/organization
 
 # Stop application
 kubectl scale deployment/api --replicas=0
@@ -853,7 +853,7 @@ psql "$BASE_URL/postgres" -c "DROP DATABASE IF EXISTS $DB_NAME;"
 psql "$BASE_URL/postgres" -c "CREATE DATABASE $DB_NAME;"
 
 # Restore from backup
-gunzip -c /backups/citadelbuy_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz | \
+gunzip -c /backups/broxiva_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz | \
   psql $DATABASE_URL
 
 # Verify restoration
@@ -1033,11 +1033,11 @@ psql $DATABASE_URL -f scripts/data-integrity-checks.sql
 
 ```bash
 # Archive migration backup
-aws s3 cp /backups/citadelbuy_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz \
-  s3://citadelbuy-backups/production/migrations/archive/
+aws s3 cp /backups/broxiva_pre_migration_${MIGRATION_TIMESTAMP}.sql.gz \
+  s3://broxiva-backups/production/migrations/archive/
 
 # Remove local backup after 7 days (schedule cleanup)
-find /backups -name "citadelbuy_pre_migration_*.sql.gz" -mtime +7 -delete
+find /backups -name "broxiva_pre_migration_*.sql.gz" -mtime +7 -delete
 ```
 
 ### Post-Mortem Meeting (T+48h)
@@ -1088,7 +1088,7 @@ Create post-mortem document with:
 
 **Body:**
 ```
-Dear CitadelBuy Users,
+Dear Broxiva Users,
 
 We will be performing scheduled maintenance on [DATE] from [START TIME] to [END TIME] [TIMEZONE].
 
@@ -1102,10 +1102,10 @@ This maintenance will improve system performance and add new features.
 
 We apologize for any inconvenience and appreciate your patience.
 
-If you have any questions, please contact support@citadelbuy.com.
+If you have any questions, please contact support@broxiva.com.
 
 Best regards,
-The CitadelBuy Team
+The Broxiva Team
 ```
 
 ### T-4 Hours: Maintenance Starting Soon
@@ -1123,7 +1123,7 @@ Timeline:
 - [TIME]: Expected completion
 - [TIME]: System fully restored
 
-Status updates: https://status.citadelbuy.com
+Status updates: https://status.broxiva.com
 
 Thank you for your patience.
 ```
@@ -1138,14 +1138,14 @@ Scheduled maintenance is now in progress.
 
 The platform is temporarily unavailable. We expect to complete maintenance by [TIME].
 
-Current status: https://status.citadelbuy.com
+Current status: https://status.broxiva.com
 
 Thank you for your patience.
 ```
 
 ### T+Complete: Maintenance Complete
 
-**Subject:** Maintenance Complete - CitadelBuy is Back Online
+**Subject:** Maintenance Complete - Broxiva is Back Online
 
 **Body:**
 ```
@@ -1162,12 +1162,12 @@ What's new:
 - Enhanced search capabilities
 - New features [list key features]
 
-If you experience any issues, please contact support@citadelbuy.com.
+If you experience any issues, please contact support@broxiva.com.
 
 Thank you for your patience during the maintenance window.
 
 Best regards,
-The CitadelBuy Team
+The Broxiva Team
 ```
 
 ### Rollback Notification (if needed)
@@ -1184,7 +1184,7 @@ New expected completion time: [TIME]
 
 We apologize for the extended downtime and will provide updates every 30 minutes.
 
-Current status: https://status.citadelbuy.com
+Current status: https://status.broxiva.com
 
 Thank you for your continued patience.
 ```
@@ -1220,7 +1220,7 @@ Thank you for your continued patience.
 - **Slack:** #migration-prod-YYYYMMDD
 - **Video Call:** [Link]
 - **Phone Bridge:** [Number]
-- **Status Page:** https://status.citadelbuy.com
+- **Status Page:** https://status.broxiva.com
 - **Incident Management:** [PagerDuty/OpsGenie/etc.]
 
 ---

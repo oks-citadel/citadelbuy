@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document summarizes the comprehensive dependency updates and security scanning improvements made to the CitadelBuy platform. All deprecated packages have been updated, and automated security scanning has been enhanced.
+This document summarizes the comprehensive dependency updates and security scanning improvements made to the Broxiva platform. All deprecated packages have been updated, and automated security scanning has been enhanced.
 
 ## Changes Made
 

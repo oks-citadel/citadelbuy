@@ -1,6 +1,6 @@
 # Organization Module Database Migration
 
-This migration adds the complete Organization module schema to the CitadelBuy platform.
+This migration adds the complete Organization module schema to the Broxiva platform.
 
 ## Overview
 
@@ -171,7 +171,7 @@ Categorized permissions for:
 - Analytics
 
 ### Organizations (3)
-- **CitadelBuy Platform** (Marketplace) - Platform organization
+- **Broxiva Platform** (Marketplace) - Platform organization
 - **TechStore** (Small Business) - Electronics vendor
 - **Fashion Boutique** (Small Business) - Fashion vendor
 

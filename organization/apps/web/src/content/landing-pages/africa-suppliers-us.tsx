@@ -328,7 +328,7 @@ export const AfricaSuppliersUSLandingPage = () => {
             </Button>
           </div>
           <p className="mt-6 text-sm">
-            Questions? Call us at 1-800-CITADEL or email sales@broxiva.com
+            Questions? Call us at 1-800-BROXIVA or email sales@broxiva.com
           </p>
         </div>
       </section>

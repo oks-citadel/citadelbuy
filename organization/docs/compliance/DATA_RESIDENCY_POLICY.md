@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-CitadelBuy Global B2B Marketplace operates a multi-region data infrastructure to comply with data localization laws and ensure optimal data sovereignty for all users worldwide.
+Broxiva Global B2B Marketplace operates a multi-region data infrastructure to comply with data localization laws and ensure optimal data sovereignty for all users worldwide.
 
 ## Data Storage Locations
 
@@ -129,7 +129,7 @@ CitadelBuy Global B2B Marketplace operates a multi-region data infrastructure to
 
 ### Standard Contractual Clauses (SCC)
 **Used For:** EU to non-adequate countries
-**Implementation:** Executed between CitadelBuy entities
+**Implementation:** Executed between Broxiva entities
 **Review:** Annual Transfer Impact Assessment
 
 ### Binding Corporate Rules (BCR)
@@ -251,13 +251,13 @@ Documented Data Processing Agreements (DPA) with:
 ## Contact
 
 **Data Protection Officer:**
-- Email: dpo@citadelbuy.com
-- EU Representative: eu-representative@citadelbuy.com
-- UK Representative: uk-representative@citadelbuy.com
+- Email: dpo@broxiva.com
+- EU Representative: eu-representative@broxiva.com
+- UK Representative: uk-representative@broxiva.com
 
 **Data Residency Inquiries:**
-- Email: data-residency@citadelbuy.com
-- Support Portal: https://support.citadelbuy.com/data-residency
+- Email: data-residency@broxiva.com
+- Support Portal: https://support.broxiva.com/data-residency
 
 ## Document Control
 

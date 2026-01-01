@@ -1,4 +1,4 @@
-# CitadelBuy Smoke Tests
+# Broxiva Smoke Tests
 
 Comprehensive smoke tests to verify critical system functionality after deployments.
 
@@ -11,8 +11,8 @@ Comprehensive smoke tests to verify critical system functionality after deployme
 pnpm exec playwright test tests/smoke/smoke-test.spec.ts
 
 # With specific environment
-PLAYWRIGHT_BASE_URL=https://staging.citadelbuy.com \
-API_BASE_URL=https://api-staging.citadelbuy.com \
+PLAYWRIGHT_BASE_URL=https://staging.broxiva.com \
+API_BASE_URL=https://api-staging.broxiva.com \
 pnpm exec playwright test tests/smoke/
 ```
 
@@ -23,10 +23,10 @@ pnpm exec playwright test tests/smoke/
 ./scripts/health-check.sh http://localhost:4000
 
 # Staging API
-./scripts/health-check.sh https://api-staging.citadelbuy.com
+./scripts/health-check.sh https://api-staging.broxiva.com
 
 # Production API
-./scripts/health-check.sh https://api.citadelbuy.com
+./scripts/health-check.sh https://api.broxiva.com
 ```
 
 ### Run Deployment Verification
@@ -131,7 +131,7 @@ SMOKE_TEST_TIMEOUT=30000
 ### Health Check Fails
 
 1. Check if API is running: `curl http://localhost:4000/api/health`
-2. Check database: `psql -U citadelbuy -d citadelbuy_dev -c "SELECT 1;"`
+2. Check database: `psql -U broxiva -d broxiva_dev -c "SELECT 1;"`
 3. Check Redis: `redis-cli ping`
 
 ### E2E Tests Fail

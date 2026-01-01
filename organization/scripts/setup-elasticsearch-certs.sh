@@ -2,7 +2,7 @@
 
 ##############################################################################
 # Elasticsearch SSL Certificate Generation Script
-# CitadelBuy E-Commerce Platform
+# Broxiva E-Commerce Platform
 ##############################################################################
 # This script generates SSL certificates for Elasticsearch cluster:
 # 1. Creates Certificate Authority (CA)
@@ -61,7 +61,7 @@ openssl genrsa -out "$CA_DIR/ca.key" 4096
 
 # Generate CA certificate
 openssl req -new -x509 -days 3650 -key "$CA_DIR/ca.key" -out "$CA_DIR/ca.crt" \
-    -subj "/C=US/ST=State/L=City/O=CitadelBuy/OU=IT/CN=CitadelBuy Elasticsearch CA"
+    -subj "/C=US/ST=State/L=City/O=Broxiva/OU=IT/CN=Broxiva Elasticsearch CA"
 
 log_success "Certificate Authority created"
 
@@ -79,11 +79,11 @@ for node in "${NODES[@]}"; do
 
     # Generate Certificate Signing Request (CSR)
     openssl req -new -key "$NODE_DIR/$node.key" -out "$NODE_DIR/$node.csr" \
-        -subj "/C=US/ST=State/L=City/O=CitadelBuy/OU=IT/CN=$node"
+        -subj "/C=US/ST=State/L=City/O=Broxiva/OU=IT/CN=$node"
 
     # Create extensions file for SAN (Subject Alternative Names)
     cat > "$NODE_DIR/$node.ext" << EOF
-subjectAltName = DNS:$node,DNS:localhost,DNS:citadelbuy-elasticsearch-01,DNS:citadelbuy-elasticsearch-02,DNS:citadelbuy-elasticsearch-03,IP:127.0.0.1
+subjectAltName = DNS:$node,DNS:localhost,DNS:broxiva-elasticsearch-01,DNS:broxiva-elasticsearch-02,DNS:broxiva-elasticsearch-03,IP:127.0.0.1
 extendedKeyUsage = serverAuth,clientAuth
 EOF
 
@@ -120,11 +120,11 @@ openssl genrsa -out "$HTTP_DIR/http.key" 2048
 
 # Generate CSR
 openssl req -new -key "$HTTP_DIR/http.key" -out "$HTTP_DIR/http.csr" \
-    -subj "/C=US/ST=State/L=City/O=CitadelBuy/OU=IT/CN=*.citadelbuy.com"
+    -subj "/C=US/ST=State/L=City/O=Broxiva/OU=IT/CN=*.broxiva.com"
 
 # Create extensions file
 cat > "$HTTP_DIR/http.ext" << EOF
-subjectAltName = DNS:*.citadelbuy.com,DNS:citadelbuy.com,DNS:localhost,IP:127.0.0.1
+subjectAltName = DNS:*.broxiva.com,DNS:broxiva.com,DNS:localhost,IP:127.0.0.1
 extendedKeyUsage = serverAuth
 EOF
 
@@ -209,7 +209,7 @@ echo ""
 echo "Next steps:"
 echo "  1. Start Elasticsearch cluster: docker-compose -f docker-compose.elasticsearch-prod.yml up -d"
 echo "  2. Wait for cluster to be healthy (2-3 minutes)"
-echo "  3. Setup passwords: docker exec citadelbuy-elasticsearch-01 bin/elasticsearch-setup-passwords auto"
+echo "  3. Setup passwords: docker exec broxiva-elasticsearch-01 bin/elasticsearch-setup-passwords auto"
 echo "  4. Save generated passwords securely!"
 echo ""
 

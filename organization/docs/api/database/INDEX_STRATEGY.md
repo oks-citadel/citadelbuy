@@ -1,8 +1,8 @@
-# CitadelBuy Database Index Strategy
+# Broxiva Database Index Strategy
 
 ## Overview
 
-This document outlines the comprehensive indexing strategy for CitadelBuy's PostgreSQL database. The indexes defined in the Prisma schema and migration files are designed to optimize query performance for common access patterns.
+This document outlines the comprehensive indexing strategy for Broxiva's PostgreSQL database. The indexes defined in the Prisma schema and migration files are designed to optimize query performance for common access patterns.
 
 ## Index Types
 

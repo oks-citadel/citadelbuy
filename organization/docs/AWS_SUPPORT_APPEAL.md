@@ -1,7 +1,7 @@
 # AWS Support Appeal - Broxiva E-Commerce Platform
 
 **Date**: December 30, 2024
-**Organization**: Broxiva (formerly CitadelBuy)
+**Organization**: Broxiva (formerly Broxiva)
 **AWS Account**: [REDACTED - Add your account ID]
 **Contact**: ops@broxiva.com
 

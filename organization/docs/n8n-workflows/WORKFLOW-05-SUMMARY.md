@@ -2,7 +2,7 @@
 
 ## Executive Overview
 
-**Workflow Name:** CitadelBuy Customer Feedback & Review Collection
+**Workflow Name:** Broxiva Customer Feedback & Review Collection
 **Workflow ID:** 05
 **File:** `workflow-05-feedback-reviews.json`
 **Created:** 2025-12-03
@@ -42,14 +42,14 @@ Automated system for collecting customer reviews, analyzing sentiment, and manag
 - **Zendesk**: Support ticket creation
 - **Slack**: Real-time alerts to support team
 - **Mixpanel**: Analytics and metrics tracking
-- **CitadelBuy API**: Data storage and retrieval
+- **Broxiva API**: Data storage and retrieval
 
 ---
 
 ## Key Features
 
 ### 1. Multi-Platform Review Collection
-- **CitadelBuy Reviews**: Primary review platform
+- **Broxiva Reviews**: Primary review platform
 - **Google Business**: Boosts local SEO
 - **Trustpilot**: Third-party credibility
 
@@ -67,7 +67,7 @@ Automated system for collecting customer reviews, analyzing sentiment, and manag
 ✅ Track as promoter in Mixpanel
 
 #### Negative Reviews (≤2 stars)
-⚠️ Alert support@citadelbuy.com (urgent)
+⚠️ Alert support@broxiva.com (urgent)
 ⚠️ Create Zendesk ticket (high priority)
 ⚠️ Send Slack notification to #customer-support
 ⚠️ Track for follow-up resolution
@@ -162,13 +162,13 @@ Trigger Daily/Weekly/Monthly NPS Aggregation
 
 | Service | Credential Type | Name | Required |
 |---------|----------------|------|----------|
-| SendGrid | API Key | `sendgrid-citadelbuy` | ✅ Yes |
-| OpenAI | API Key | `openai-citadelbuy` | ✅ Yes |
-| CitadelBuy | Header Auth | `citadelbuy-api-key` | ✅ Yes |
-| Klaviyo | API Key | `klaviyo-citadelbuy` | ⚠️ Optional (for reminders) |
-| Zendesk | API Token | `zendesk-citadelbuy` | ⚠️ Optional (for tickets) |
-| Slack | Webhook | `slack-citadelbuy` | ⚠️ Optional (for alerts) |
-| Mixpanel | Project Token | `mixpanel-citadelbuy` | ⚠️ Optional (for analytics) |
+| SendGrid | API Key | `sendgrid-broxiva` | ✅ Yes |
+| OpenAI | API Key | `openai-broxiva` | ✅ Yes |
+| Broxiva | Header Auth | `broxiva-api-key` | ✅ Yes |
+| Klaviyo | API Key | `klaviyo-broxiva` | ⚠️ Optional (for reminders) |
+| Zendesk | API Token | `zendesk-broxiva` | ⚠️ Optional (for tickets) |
+| Slack | Webhook | `slack-broxiva` | ⚠️ Optional (for alerts) |
+| Mixpanel | Project Token | `mixpanel-broxiva` | ⚠️ Optional (for analytics) |
 
 ### Configurable Parameters
 
@@ -189,7 +189,7 @@ Trigger Daily/Weekly/Monthly NPS Aggregation
 ## SendGrid Email Templates
 
 ### Template 1: Review Request
-**ID**: `d-citadelbuy-review-request-v2`
+**ID**: `d-broxiva-review-request-v2`
 
 **Dynamic Fields**:
 - `{{customer_name}}`
@@ -203,7 +203,7 @@ Trigger Daily/Weekly/Monthly NPS Aggregation
 - `{{tracking_number}}`
 
 ### Template 2: Thank You
-**ID**: `d-citadelbuy-review-thank-you`
+**ID**: `d-broxiva-review-thank-you`
 
 **Dynamic Fields**:
 - `{{customer_name}}`
@@ -212,7 +212,7 @@ Trigger Daily/Weekly/Monthly NPS Aggregation
 - `{{discount_code}}`
 
 ### Template 3: NPS Survey
-**ID**: `d-citadelbuy-nps-survey`
+**ID**: `d-broxiva-nps-survey`
 
 **Dynamic Fields**:
 - `{{customer_name}}`
@@ -224,7 +224,7 @@ Trigger Daily/Weekly/Monthly NPS Aggregation
 
 ## API Requirements
 
-### CitadelBuy API Endpoints
+### Broxiva API Endpoints
 
 #### Read Operations
 ```
@@ -356,7 +356,7 @@ See `test-payloads-workflow-05.json` for comprehensive test data.
 - Link click rate
 - 1-click rating usage vs detailed review
 - Reminder effectiveness
-- Platform distribution (CitadelBuy/Google/Trustpilot)
+- Platform distribution (Broxiva/Google/Trustpilot)
 
 ### Recommended Dashboards
 
@@ -514,8 +514,8 @@ See `test-payloads-workflow-05.json` for comprehensive test data.
 ### Internal
 - **Team**: Platform Engineering
 - **Slack**: #platform-engineering, #customer-support
-- **Email**: dev@citadelbuy.com
-- **Wiki**: https://wiki.citadelbuy.com/workflows/05
+- **Email**: dev@broxiva.com
+- **Wiki**: https://wiki.broxiva.com/workflows/05
 
 ### External
 - **n8n Docs**: https://docs.n8n.io
@@ -544,7 +544,7 @@ See `test-payloads-workflow-05.json` for comprehensive test data.
 
 ## License & Ownership
 
-**Copyright**: © 2025 CitadelBuy Inc.
+**Copyright**: © 2025 Broxiva Inc.
 **License**: Proprietary
 **Access**: Internal use only
 **Distribution**: Prohibited without authorization
@@ -553,7 +553,7 @@ See `test-payloads-workflow-05.json` for comprehensive test data.
 
 ## Acknowledgments
 
-**Created By**: CitadelBuy Platform Engineering Team
+**Created By**: Broxiva Platform Engineering Team
 **Contributors**: AI/Automation Team, Customer Success Team
 **Inspired By**: Industry best practices from Amazon, Shopify, and Zappos
 
@@ -571,24 +571,24 @@ See `test-payloads-workflow-05.json` for comprehensive test data.
 ### Webhook URLs
 ```
 Shipment Delivered:
-POST https://n8n.citadelbuy.com/webhook/shipment-delivered
+POST https://n8n.broxiva.com/webhook/shipment-delivered
 
 Review Submitted:
-POST https://n8n.citadelbuy.com/webhook/review-submitted
+POST https://n8n.broxiva.com/webhook/review-submitted
 
 NPS Response:
-POST https://n8n.citadelbuy.com/webhook/nps-response
+POST https://n8n.broxiva.com/webhook/nps-response
 ```
 
 ### Key Contacts
-- **Support Issues**: support@citadelbuy.com
-- **Technical Issues**: dev@citadelbuy.com
+- **Support Issues**: support@broxiva.com
+- **Technical Issues**: dev@broxiva.com
 - **Slack Alerts**: #customer-support
 
 ### Important Links
-- **n8n Dashboard**: https://n8n.citadelbuy.com
-- **Mixpanel**: https://mixpanel.com/project/citadelbuy
-- **Zendesk**: https://citadelbuy.zendesk.com
+- **n8n Dashboard**: https://n8n.broxiva.com
+- **Mixpanel**: https://mixpanel.com/project/broxiva
+- **Zendesk**: https://broxiva.zendesk.com
 - **SendGrid**: https://app.sendgrid.com
 
 ---

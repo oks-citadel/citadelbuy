@@ -1,6 +1,6 @@
 # Shipping Provider Integrations
 
-This directory contains comprehensive shipping provider implementations for the CitadelBuy e-commerce platform.
+This directory contains comprehensive shipping provider implementations for the Broxiva e-commerce platform.
 
 ## Overview
 
@@ -428,4 +428,4 @@ For issues or questions:
 
 ## License
 
-Proprietary - CitadelBuy Platform
+Proprietary - Broxiva Platform

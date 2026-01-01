@@ -2,7 +2,7 @@
 
 ## Overview
 
-Completed the implementation of Buy Now Pay Later (BNPL) provider integrations for the CitadelBuy platform. The implementation includes three major providers: Klarna, Affirm, and Afterpay.
+Completed the implementation of Buy Now Pay Later (BNPL) provider integrations for the Broxiva platform. The implementation includes three major providers: Klarna, Affirm, and Afterpay.
 
 ## Files Created
 

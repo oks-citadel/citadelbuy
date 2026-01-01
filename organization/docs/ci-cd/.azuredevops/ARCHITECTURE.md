@@ -1,4 +1,4 @@
-# CitadelBuy - Pipeline Architecture Reference
+# Broxiva - Pipeline Architecture Reference
 
 ## Quick Reference Card
 
@@ -9,10 +9,10 @@
 
 ### Organization Details
 ```
-Organization: citadelcloudmanagement
-Project:      CitadelBuy
-ACR:          citadelbuyacr.azurecr.io
-Connection:   CitadelBuyAzure
+Organization: broxivacloudmanagement
+Project:      Broxiva
+ACR:          broxivaacr.azurecr.io
+Connection:   BroxivaAzure
 ```
 
 ---
@@ -67,9 +67,9 @@ PR → Validate → Test → SecurityScan (no deployments)
 
 | Environment | Cluster | Namespace | RG | Strategy | Approval |
 |-------------|---------|-----------|----|--------------------|----------|
-| **Dev** | citadelbuy-dev-aks | citadelbuy-dev | citadelbuy-dev-rg | Rolling | None |
-| **Staging** | citadelbuy-staging-aks | citadelbuy-staging | citadelbuy-staging-rg | Rolling | Optional |
-| **Production** | citadelbuy-prod-aks | citadelbuy-prod | citadelbuy-prod-rg | Blue-Green | Required |
+| **Dev** | broxiva-dev-aks | broxiva-dev | broxiva-dev-rg | Rolling | None |
+| **Staging** | broxiva-staging-aks | broxiva-staging | broxiva-staging-rg | Rolling | Optional |
+| **Production** | broxiva-prod-aks | broxiva-prod | broxiva-prod-rg | Blue-Green | Required |
 
 ---
 
@@ -153,12 +153,12 @@ parameters:
 ### 5. DockerBuild
 **Purpose:** Container image creation
 **Images:**
-- citadelbuy-api
-- citadelbuy-web
-- citadelbuy-worker
-- citadelbuy-notification
-- citadelbuy-payment
-- citadelbuy-inventory
+- broxiva-api
+- broxiva-web
+- broxiva-worker
+- broxiva-notification
+- broxiva-payment
+- broxiva-inventory
 
 **Tags:**
 - BuildId: $(Build.BuildId)
@@ -166,13 +166,13 @@ parameters:
 - Branch: $(BranchName)
 - Latest: latest
 
-**Registry:** citadelbuyacr.azurecr.io
+**Registry:** broxivaacr.azurecr.io
 
 ---
 
 ### 6. DeployDev
 **Purpose:** Development deployment
-**Target:** citadelbuy-dev-aks
+**Target:** broxiva-dev-aks
 **Strategy:** Rolling update
 **Auto-Deploy:** develop, feature/*
 
@@ -187,7 +187,7 @@ parameters:
 
 ### 7. DeployStaging
 **Purpose:** Staging deployment
-**Target:** citadelbuy-staging-aks
+**Target:** broxiva-staging-aks
 **Strategy:** Rolling update
 **Auto-Deploy:** develop, release/*
 
@@ -204,7 +204,7 @@ parameters:
 ### 8. E2ETests
 **Purpose:** End-to-end validation
 **Tool:** Playwright
-**Target:** https://staging.citadelbuy.com
+**Target:** https://staging.broxiva.com
 **Browsers:** Chromium, Firefox, WebKit
 
 **Tests:**
@@ -217,7 +217,7 @@ parameters:
 
 ### 9. DeployProduction
 **Purpose:** Production deployment
-**Target:** citadelbuy-prod-aks
+**Target:** broxiva-prod-aks
 **Strategy:** Blue-Green
 **Auto-Deploy:** main, hotfix/* (with approval)
 
@@ -238,9 +238,9 @@ parameters:
 ### 10. PostDeployVerify
 **Purpose:** Production validation
 **Checks:**
-- API health: https://api.citadelbuy.com/health
-- Web: https://citadelbuy.com
-- Admin: https://admin.citadelbuy.com
+- API health: https://api.broxiva.com/health
+- Web: https://broxiva.com
+- Admin: https://admin.broxiva.com
 - Performance metrics
 - Error rates
 
@@ -252,7 +252,7 @@ parameters:
 **Purpose:** Infrastructure as Code
 **Actions:** plan, apply, destroy
 **Backend:** Azure Storage
-**State:** citadelbuytfstate
+**State:** broxivatfstate
 
 **Approval Required:**
 - apply: Yes
@@ -267,8 +267,8 @@ parameters:
 common.yml (All environments)
 ├── Node.js: 20.x
 ├── PNPM: 10.23.0
-├── ACR: citadelbuyacr.azurecr.io
-└── Service Connection: CitadelBuyAzure
+├── ACR: broxivaacr.azurecr.io
+└── Service Connection: BroxivaAzure
 
 dev.yml (Development)
 ├── Lower resources
@@ -290,14 +290,14 @@ prod.yml (Production)
 
 ## Service Connections Required
 
-### 1. CitadelBuyAzure (Azure Resource Manager)
+### 1. BroxivaAzure (Azure Resource Manager)
 **Permissions:**
 - Subscription access
 - AKS management
 - Key Vault access
 - Resource group management
 
-### 2. CitadelBuyACR (Container Registry)
+### 2. BroxivaACR (Container Registry)
 **Permissions:**
 - Image push/pull
 - Vulnerability scanning
@@ -309,22 +309,22 @@ prod.yml (Production)
 
 ### Variable Groups
 
-**CitadelBuy-Common:**
+**Broxiva-Common:**
 - Shared configuration
 - ACR credentials
 - Build settings
 
-**CitadelBuy-Dev:**
+**Broxiva-Dev:**
 - Dev database URL
 - Dev API keys
 - Debug settings
 
-**CitadelBuy-Staging:**
+**Broxiva-Staging:**
 - Staging database URL
 - Staging API keys
 - Test credentials
 
-**CitadelBuy-Production:**
+**Broxiva-Production:**
 - Production database URL
 - Production API keys
 - Encrypted secrets
@@ -341,7 +341,7 @@ All sensitive secrets stored in Key Vault:
 ## Notification Channels
 
 ### Slack
-**Channel:** #citadelbuy-deployments
+**Channel:** #broxiva-deployments
 **Notifications:**
 - Pipeline start
 - Pipeline complete
@@ -350,7 +350,7 @@ All sensitive secrets stored in Key Vault:
 - Production deployments
 
 ### Microsoft Teams
-**Channel:** CitadelBuy DevOps
+**Channel:** Broxiva DevOps
 **Same notifications as Slack**
 
 ### Email
@@ -393,12 +393,12 @@ az pipelines validate --yaml-path .azuredevops/pipelines/main.yml
 
 ### Run Pipeline
 ```bash
-az pipelines run --name CitadelBuy-Unified-Pipeline
+az pipelines run --name Broxiva-Unified-Pipeline
 ```
 
 ### Run with Parameters
 ```bash
-az pipelines run --name CitadelBuy-Unified-Pipeline \
+az pipelines run --name Broxiva-Unified-Pipeline \
   --parameters deployEnvironment=staging runE2E=true
 ```
 
@@ -451,7 +451,7 @@ az pipelines runs show --id <run-id> --open
 2. Locate blue environment pods
 3. Execute traffic switch:
    ```bash
-   kubectl patch service api-service -n citadelbuy-prod \
+   kubectl patch service api-service -n broxiva-prod \
      -p '{"spec":{"selector":{"app":"api-blue"}}}'
    ```
 4. Verify endpoints
@@ -486,13 +486,13 @@ az pipelines runs show --id <run-id> --open
 
 ### Support Channels
 - **Slack:** #devops-support
-- **Email:** devops@citadelbuy.com
+- **Email:** devops@broxiva.com
 - **Emergency:** [On-call phone]
 
 ### Azure DevOps
-- **Pipeline URL:** https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_build
-- **Environments:** https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_environments
-- **Service Connections:** https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_settings/adminservices
+- **Pipeline URL:** https://dev.azure.com/broxivacloudmanagement/Broxiva/_build
+- **Environments:** https://dev.azure.com/broxivacloudmanagement/Broxiva/_environments
+- **Service Connections:** https://dev.azure.com/broxivacloudmanagement/Broxiva/_settings/adminservices
 
 ---
 

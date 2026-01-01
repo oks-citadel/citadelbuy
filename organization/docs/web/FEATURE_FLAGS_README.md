@@ -1,6 +1,6 @@
 # Feature Flags System
 
-A comprehensive feature flags system for the Citadel Buy web application. This system enables you to control feature rollouts, run A/B tests, and manage feature availability without deploying new code.
+A comprehensive feature flags system for the Broxiva Buy web application. This system enables you to control feature rollouts, run A/B tests, and manage feature availability without deploying new code.
 
 ## Overview
 
@@ -488,4 +488,4 @@ For questions or issues with the feature flags system, please:
 
 ## License
 
-Internal use only - Citadel Buy Application
+Internal use only - Broxiva Buy Application

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Organization KYC (Know Your Customer) module provides secure identity verification and compliance features for organizations on the CitadelBuy platform. This module implements industry-standard security practices including AES-256-GCM encryption, PII masking, and comprehensive audit logging.
+The Organization KYC (Know Your Customer) module provides secure identity verification and compliance features for organizations on the Broxiva platform. This module implements industry-standard security practices including AES-256-GCM encryption, PII masking, and comprehensive audit logging.
 
 ## Features
 
@@ -235,7 +235,7 @@ UNDER_REVIEW               │
 KYC_ENCRYPTION_KEY=your-64-character-hex-string
 
 # Optional
-APP_URL=https://api.citadelbuy.com
+APP_URL=https://api.broxiva.com
 ```
 
 ### Generate Encryption Key
@@ -451,11 +451,11 @@ When contributing to this module:
 
 ## License
 
-Proprietary - CitadelBuy Platform
+Proprietary - Broxiva Platform
 
 ## Support
 
 For issues or questions:
 - Internal: Check #kyc-module Slack channel
-- Security: security@citadelbuy.com
-- General: support@citadelbuy.com
+- Security: security@broxiva.com
+- General: support@broxiva.com

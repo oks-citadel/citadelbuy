@@ -1,7 +1,7 @@
 # Frontend TODO API Integration Summary
 
 ## Overview
-This document summarizes the completion of frontend TODO integrations for CitadelBuy. All three files have been successfully updated to replace mock data with real API calls to the backend.
+This document summarizes the completion of frontend TODO integrations for Broxiva. All three files have been successfully updated to replace mock data with real API calls to the backend.
 
 ## Files Updated
 

@@ -911,7 +911,7 @@ model SubscriptionPlan {
   // Platform settings
   commissionRate   Float? // Platform commission rate for vendors
   prioritySupport  Boolean @default(false)
-  removeBranding   Boolean @default(false) // Remove CitadelBuy branding
+  removeBranding   Boolean @default(false) // Remove Broxiva branding
   customDomain     Boolean @default(false) // Allow custom domain
   apiAccess        Boolean @default(false) // API access enabled
   apiCallsPerMonth Int? // API calls limit (null = unlimited)

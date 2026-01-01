@@ -1,8 +1,8 @@
-# Privacy Compliance Documentation - CitadelBuy
+# Privacy Compliance Documentation - Broxiva
 
 ## Overview
 
-This document outlines CitadelBuy's implementation of GDPR (General Data Protection Regulation) and CCPA (California Consumer Privacy Act) compliance features. Our platform provides comprehensive tools for managing user privacy rights, data portability, and consent management.
+This document outlines Broxiva's implementation of GDPR (General Data Protection Regulation) and CCPA (California Consumer Privacy Act) compliance features. Our platform provides comprehensive tools for managing user privacy rights, data portability, and consent management.
 
 ## Table of Contents
 
@@ -618,7 +618,7 @@ cd apps/api
 npx prisma migrate deploy
 
 # Or manually run the migration
-psql -U your_user -d citadelbuy < prisma/migrations/add_privacy_consent/migration.sql
+psql -U your_user -d broxiva < prisma/migrations/add_privacy_consent/migration.sql
 ```
 
 **Note**: The migration adds:
@@ -677,9 +677,9 @@ If a data breach occurs:
 - Privacy Shield Framework: https://www.privacyshield.gov/
 
 ### Contact
-- Privacy Questions: privacy@citadelbuy.com
-- Data Protection Officer: dpo@citadelbuy.com (if appointed)
-- Security Issues: security@citadelbuy.com
+- Privacy Questions: privacy@broxiva.com
+- Data Protection Officer: dpo@broxiva.com (if appointed)
+- Security Issues: security@broxiva.com
 
 ---
 

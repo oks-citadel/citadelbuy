@@ -1,4 +1,4 @@
-# CitadelBuy Secrets Management Quick Reference
+# Broxiva Secrets Management Quick Reference
 
 This is a quick reference guide for common secrets management operations.
 
@@ -12,30 +12,30 @@ aws secretsmanager list-secrets --region us-east-1
 
 # Get a secret
 aws secretsmanager get-secret-value \
-  --secret-id citadelbuy/production/postgres/credentials \
+  --secret-id broxiva/production/postgres/credentials \
   --region us-east-1
 
 # Create a secret
 aws secretsmanager create-secret \
-  --name citadelbuy/production/new-secret \
+  --name broxiva/production/new-secret \
   --secret-string '{"key":"value"}' \
   --region us-east-1
 
 # Update a secret
 aws secretsmanager put-secret-value \
-  --secret-id citadelbuy/production/new-secret \
+  --secret-id broxiva/production/new-secret \
   --secret-string '{"key":"new-value"}' \
   --region us-east-1
 
 # Delete a secret (with recovery period)
 aws secretsmanager delete-secret \
-  --secret-id citadelbuy/production/old-secret \
+  --secret-id broxiva/production/old-secret \
   --recovery-window-in-days 7 \
   --region us-east-1
 
 # Rotate a secret
 aws secretsmanager rotate-secret \
-  --secret-id citadelbuy/production/postgres/credentials \
+  --secret-id broxiva/production/postgres/credentials \
   --region us-east-1
 
 # Using sync script
@@ -49,33 +49,33 @@ aws secretsmanager rotate-secret \
 
 ```bash
 # List all secrets
-az keyvault secret list --vault-name citadelbuy-production-kv
+az keyvault secret list --vault-name broxiva-production-kv
 
 # Get a secret
 az keyvault secret show \
-  --vault-name citadelbuy-production-kv \
+  --vault-name broxiva-production-kv \
   --name postgres-password
 
 # Create a secret
 az keyvault secret set \
-  --vault-name citadelbuy-production-kv \
+  --vault-name broxiva-production-kv \
   --name new-secret \
   --value "secret-value"
 
 # Update a secret (same as create)
 az keyvault secret set \
-  --vault-name citadelbuy-production-kv \
+  --vault-name broxiva-production-kv \
   --name existing-secret \
   --value "new-value"
 
 # Delete a secret
 az keyvault secret delete \
-  --vault-name citadelbuy-production-kv \
+  --vault-name broxiva-production-kv \
   --name old-secret
 
 # Recover a deleted secret
 az keyvault secret recover \
-  --vault-name citadelbuy-production-kv \
+  --vault-name broxiva-production-kv \
   --name recovered-secret
 
 # Using sync script
@@ -90,7 +90,7 @@ az keyvault secret recover \
 
 ```bash
 # Set environment variables
-export VAULT_ADDR='https://vault.citadelbuy.internal:8200'
+export VAULT_ADDR='https://vault.broxiva.internal:8200'
 export VAULT_TOKEN='your-token'
 
 # Check status
@@ -100,24 +100,24 @@ vault status
 vault login <token>
 
 # List secrets
-vault kv list secret/citadelbuy/production
+vault kv list secret/broxiva/production
 
 # Get a secret
-vault kv get secret/citadelbuy/production/database/postgres
+vault kv get secret/broxiva/production/database/postgres
 
 # Create/update a secret
-vault kv put secret/citadelbuy/production/new-secret \
+vault kv put secret/broxiva/production/new-secret \
   key1=value1 \
   key2=value2
 
 # Delete a secret
-vault kv delete secret/citadelbuy/production/old-secret
+vault kv delete secret/broxiva/production/old-secret
 
 # View secret versions
-vault kv metadata get secret/citadelbuy/production/database/postgres
+vault kv metadata get secret/broxiva/production/database/postgres
 
 # Get a specific version
-vault kv get -version=2 secret/citadelbuy/production/database/postgres
+vault kv get -version=2 secret/broxiva/production/database/postgres
 
 # Using sync script
 export VAULT_TOKEN='your-token'
@@ -142,21 +142,21 @@ helm install external-secrets \
 kubectl get pods -n external-secrets-system
 
 # List SecretStores
-kubectl get secretstores -n citadelbuy
+kubectl get secretstores -n broxiva
 
 # List ExternalSecrets
-kubectl get externalsecrets -n citadelbuy
+kubectl get externalsecrets -n broxiva
 
 # Check ExternalSecret status
-kubectl describe externalsecret citadelbuy-database -n citadelbuy
+kubectl describe externalsecret broxiva-database -n broxiva
 
 # View synced Kubernetes secret
-kubectl get secret citadelbuy-database-secret -n citadelbuy -o yaml
+kubectl get secret broxiva-database-secret -n broxiva -o yaml
 
 # Force sync
-kubectl annotate externalsecret citadelbuy-database \
+kubectl annotate externalsecret broxiva-database \
   force-sync=$(date +%s) \
-  -n citadelbuy
+  -n broxiva
 
 # Check operator logs
 kubectl logs -n external-secrets-system \
@@ -182,7 +182,7 @@ terraform destroy
 
 # Import existing resource
 terraform import aws_secretsmanager_secret.example \
-  citadelbuy/production/existing-secret
+  broxiva/production/existing-secret
 
 # Show current state
 terraform show
@@ -200,11 +200,11 @@ terraform output
 {project}/{environment}/{category}/{name}
 
 Examples:
-citadelbuy/production/database/postgres
-citadelbuy/staging/redis/connection
-citadelbuy/dev/stripe/keys
-citadelbuy/production/oauth/google
-citadelbuy/production/jwt/tokens
+broxiva/production/database/postgres
+broxiva/staging/redis/connection
+broxiva/dev/stripe/keys
+broxiva/production/oauth/google
+broxiva/production/jwt/tokens
 ```
 
 ## Secret Categories
@@ -274,15 +274,15 @@ citadelbuy/production/jwt/tokens
 
 | Environment Variable | Secret Path (AWS) | Secret Key (Azure) | Secret Path (Vault) |
 |---------------------|-------------------|-------------------|---------------------|
-| DATABASE_URL | citadelbuy/{env}/postgres/credentials | postgres-url | citadelbuy/{env}/database/postgres |
-| POSTGRES_PASSWORD | citadelbuy/{env}/postgres/credentials | postgres-password | citadelbuy/{env}/database/postgres |
-| REDIS_URL | citadelbuy/{env}/redis/credentials | redis-url | citadelbuy/{env}/redis/connection |
-| REDIS_PASSWORD | citadelbuy/{env}/redis/credentials | redis-password | citadelbuy/{env}/redis/connection |
-| JWT_SECRET | citadelbuy/{env}/jwt/secrets | jwt-access-secret | citadelbuy/{env}/jwt/tokens |
-| JWT_REFRESH_SECRET | citadelbuy/{env}/jwt/secrets | jwt-refresh-secret | citadelbuy/{env}/jwt/tokens |
-| STRIPE_SECRET_KEY | citadelbuy/{env}/stripe/keys | stripe-secret-key | citadelbuy/{env}/stripe/keys |
-| OPENAI_API_KEY | citadelbuy/{env}/openai/key | openai-api-key | citadelbuy/{env}/openai/api |
-| SESSION_SECRET | citadelbuy/{env}/session/secret | session-secret | citadelbuy/{env}/session/secret |
+| DATABASE_URL | broxiva/{env}/postgres/credentials | postgres-url | broxiva/{env}/database/postgres |
+| POSTGRES_PASSWORD | broxiva/{env}/postgres/credentials | postgres-password | broxiva/{env}/database/postgres |
+| REDIS_URL | broxiva/{env}/redis/credentials | redis-url | broxiva/{env}/redis/connection |
+| REDIS_PASSWORD | broxiva/{env}/redis/credentials | redis-password | broxiva/{env}/redis/connection |
+| JWT_SECRET | broxiva/{env}/jwt/secrets | jwt-access-secret | broxiva/{env}/jwt/tokens |
+| JWT_REFRESH_SECRET | broxiva/{env}/jwt/secrets | jwt-refresh-secret | broxiva/{env}/jwt/tokens |
+| STRIPE_SECRET_KEY | broxiva/{env}/stripe/keys | stripe-secret-key | broxiva/{env}/stripe/keys |
+| OPENAI_API_KEY | broxiva/{env}/openai/key | openai-api-key | broxiva/{env}/openai/api |
+| SESSION_SECRET | broxiva/{env}/session/secret | session-secret | broxiva/{env}/session/secret |
 
 ## Troubleshooting Checklist
 
@@ -346,7 +346,7 @@ citadelbuy/production/jwt/tokens
    # Rotate the compromised secret immediately
    # AWS example:
    aws secretsmanager rotate-secret \
-     --secret-id citadelbuy/production/compromised-secret
+     --secret-id broxiva/production/compromised-secret
    ```
 
 2. **Verify New Secret:**
@@ -359,7 +359,7 @@ citadelbuy/production/jwt/tokens
 3. **Restart Services:**
    ```bash
    # Restart pods to pick up new secret
-   kubectl rollout restart deployment/<name> -n citadelbuy
+   kubectl rollout restart deployment/<name> -n broxiva
    ```
 
 4. **Audit Access:**
@@ -395,7 +395,7 @@ vault status
    # Restore from backup
    # AWS example:
    aws secretsmanager restore-secret \
-     --secret-id citadelbuy/production/lost-secret
+     --secret-id broxiva/production/lost-secret
    ```
 
 2. Or recreate from `.env.example` and update values
@@ -444,6 +444,6 @@ AzureDiagnostics
 
 ## Support Contacts
 
-- Platform Team: platform@citadelbuy.com
-- Security Team: security@citadelbuy.com
+- Platform Team: platform@broxiva.com
+- Security Team: security@broxiva.com
 - On-Call: Use PagerDuty

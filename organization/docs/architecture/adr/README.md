@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains Architecture Decision Records (ADRs) for the CitadelBuy Global B2B Enterprise Marketplace platform. ADRs document significant architectural decisions made during the platform's development and evolution.
+This directory contains Architecture Decision Records (ADRs) for the Broxiva Global B2B Enterprise Marketplace platform. ADRs document significant architectural decisions made during the platform's development and evolution.
 
 ## ADR Format
 

@@ -491,7 +491,7 @@ export class OrdersService {
   /**
    * Generate a tracking number
    */
-  private generateTrackingNumber(carrier: string = 'CITADEL'): string {
+  private generateTrackingNumber(carrier: string = 'BROXIVA'): string {
     const prefix = carrier.substring(0, 3).toUpperCase();
     const timestamp = Date.now().toString().slice(-8);
     const random = Math.random().toString(36).substring(2, 8).toUpperCase();

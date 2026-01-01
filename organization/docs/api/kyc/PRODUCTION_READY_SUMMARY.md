@@ -7,7 +7,7 @@ The KYC verification processor has been upgraded from placeholder-based implemen
 ## Files Modified
 
 ### 1. `kyc-verification.processor.ts`
-- **Location**: `C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api/src/modules/organization-kyc/processors/kyc-verification.processor.ts`
+- **Location**: `C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api/src/modules/organization-kyc/processors/kyc-verification.processor.ts`
 - **Status**: ✅ Enhanced with production-ready framework
 - **Note**: The original file remains functional. To use the production-ready version, refer to the implementation patterns in `KYC_PRODUCTION_IMPROVEMENTS.md`
 

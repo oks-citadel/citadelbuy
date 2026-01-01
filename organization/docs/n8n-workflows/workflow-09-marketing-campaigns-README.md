@@ -1,8 +1,8 @@
-# CitadelBuy Marketing Campaign Automation - Workflow 9
+# Broxiva Marketing Campaign Automation - Workflow 9
 
 ## Overview
 
-This n8n workflow provides comprehensive marketing campaign automation for CitadelBuy, including customer segmentation, AI-powered personalization, multi-channel orchestration, and performance tracking.
+This n8n workflow provides comprehensive marketing campaign automation for Broxiva, including customer segmentation, AI-powered personalization, multi-channel orchestration, and performance tracking.
 
 ## Features
 
@@ -62,7 +62,7 @@ Multi-Channel Follow-up → Performance Tracking
 
 ### Prerequisites
 - n8n instance (self-hosted or cloud)
-- CitadelBuy API access
+- Broxiva API access
 - Klaviyo account and API key
 - Segment CDP account
 - OpenAI API key (GPT-4 access)
@@ -76,9 +76,9 @@ Multi-Channel Follow-up → Performance Tracking
 Set the following environment variables in n8n:
 
 ```bash
-# CitadelBuy API
-CITADELBUY_API_KEY=your_api_key
-CITADELBUY_API_BASE=https://api.citadelbuy.com/v1
+# Broxiva API
+BROXIVA_API_KEY=your_api_key
+BROXIVA_API_BASE=https://api.broxiva.com/v1
 
 # Klaviyo
 KLAVIYO_API_KEY=your_klaviyo_api_key
@@ -129,10 +129,10 @@ MIXPANEL_TOKEN=your_mixpanel_project_token
 
 Create the following credentials in n8n:
 
-1. **CitadelBuy API** (HTTP Header Auth)
-   - Name: `citadelbuy-api`
+1. **Broxiva API** (HTTP Header Auth)
+   - Name: `broxiva-api`
    - Header: `Authorization`
-   - Value: `Bearer ${CITADELBUY_API_KEY}`
+   - Value: `Bearer ${BROXIVA_API_KEY}`
 
 2. **Klaviyo API** (HTTP Header Auth)
    - Name: `klaviyo-api`
@@ -181,11 +181,11 @@ Create the following email templates in Klaviyo:
 
 #### Welcome Series Template
 ```html
-Subject: Welcome to CitadelBuy, {{ first_name }}!
+Subject: Welcome to Broxiva, {{ first_name }}!
 
 Hi {{ first_name }},
 
-Welcome to the CitadelBuy family! We're thrilled to have you.
+Welcome to the Broxiva family! We're thrilled to have you.
 
 {{ email_opening }}
 
@@ -197,7 +197,7 @@ Here are some products we think you'll love:
 Use code WELCOME10 for 10% off your next purchase!
 
 Best regards,
-The CitadelBuy Team
+The Broxiva Team
 ```
 
 #### Win-Back Template
@@ -215,7 +215,7 @@ This offer expires in 7 days, so don't wait!
 Shop now: [Browse Products]
 
 Best,
-CitadelBuy Team
+Broxiva Team
 ```
 
 #### VIP Template
@@ -239,7 +239,7 @@ Your VIP benefits include:
 Shop VIP Exclusives: [Shop Now]
 
 With appreciation,
-CitadelBuy VIP Team
+Broxiva VIP Team
 ```
 
 #### Birthday Template
@@ -257,12 +257,12 @@ Treat yourself: [Shop Now]
 
 Wishing you a fantastic day!
 
-The CitadelBuy Team
+The Broxiva Team
 ```
 
-### Step 5: Configure CitadelBuy API Endpoints
+### Step 5: Configure Broxiva API Endpoints
 
-Ensure your CitadelBuy API has the following endpoints:
+Ensure your Broxiva API has the following endpoints:
 
 #### Segmentation Endpoints
 ```
@@ -403,7 +403,7 @@ AND email_verified = true
 ### Welcome Series (5 Emails over 14 Days)
 
 **Email 1: Welcome** (Day 0)
-- Subject: Welcome to CitadelBuy!
+- Subject: Welcome to Broxiva!
 - Content: Brand introduction, first purchase offer
 - CTA: Browse products, use WELCOME10 code
 
@@ -443,7 +443,7 @@ Steps:
 ### Win-Back Series (3 Emails with Increasing Discounts)
 
 **Email 1: We Miss You** (Day 0 - 60 days inactive)
-- Subject: We miss you at CitadelBuy!
+- Subject: We miss you at Broxiva!
 - Discount: 15%
 - Coupon: WINBACK15
 - CTA: Come back and save
@@ -676,7 +676,7 @@ If NOT Opened:
 **Message Template**:
 ```
 Hi {firstName}! We noticed you haven't opened our email.
-Don't miss out on exclusive offers! Visit: citadelbuy.com/offers
+Don't miss out on exclusive offers! Visit: broxiva.com/offers
 ```
 
 **Best Practices**:
@@ -688,7 +688,7 @@ Don't miss out on exclusive offers! Visit: citadelbuy.com/offers
 ### Facebook Retargeting
 
 **Audience Creation**:
-- Name: `CitadelBuy - Email Non-Openers - {date}`
+- Name: `Broxiva - Email Non-Openers - {date}`
 - Type: Custom Audience
 - Source: Customer file (email/phone)
 - Retention: 30 days
@@ -702,7 +702,7 @@ Don't miss out on exclusive offers! Visit: citadelbuy.com/offers
 ### Google Ads Retargeting
 
 **Audience Creation**:
-- Name: `CitadelBuy - Email Non-Openers - {date}`
+- Name: `Broxiva - Email Non-Openers - {date}`
 - Type: Customer Match
 - Source: First-party data
 - Membership: 30 days
@@ -1050,4 +1050,4 @@ Enable debug mode in n8n to see:
 
 ## License
 
-Proprietary - CitadelBuy Internal Use Only
+Proprietary - Broxiva Internal Use Only

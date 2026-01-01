@@ -74,7 +74,7 @@ PORT=8010
 DEBUG=false
 
 # Database (PostgreSQL)
-DATABASE_URL=postgresql://user:password@localhost:5432/citadelbuy
+DATABASE_URL=postgresql://user:password@localhost:5432/broxiva
 
 # Redis Cache
 REDIS_URL=redis://localhost:6379/7
@@ -88,7 +88,7 @@ PRODUCT_SYNC_BATCH_SIZE=100
 INVENTORY_SYNC_INTERVAL_MINUTES=15
 
 # CORS
-CORS_ORIGINS=["http://localhost:3000", "https://citadelbuy.com"]
+CORS_ORIGINS=["http://localhost:3000", "https://broxiva.com"]
 
 # Supplier API Keys (examples)
 # AliExpress
@@ -107,7 +107,7 @@ CJ_API_SECRET=your_cj_secret
 
 # Webhook URLs
 WEBHOOK_SECRET=your_webhook_secret
-WEBHOOK_BASE_URL=https://api.citadelbuy.com
+WEBHOOK_BASE_URL=https://api.broxiva.com
 
 # Performance
 MAX_CONCURRENT_REQUESTS=50
@@ -264,10 +264,10 @@ python tests/suppliers/test_aliexpress.py
 
 ```bash
 # Build the Docker image
-docker build -t citadelbuy/supplier-integration:latest .
+docker build -t broxiva/supplier-integration:latest .
 
 # Build with specific version
-docker build -t citadelbuy/supplier-integration:v1.0.0 .
+docker build -t broxiva/supplier-integration:v1.0.0 .
 ```
 
 ### Run Container
@@ -278,7 +278,7 @@ docker run -d \
   --name supplier-integration \
   -p 8010:8010 \
   --env-file .env \
-  citadelbuy/supplier-integration:latest
+  broxiva/supplier-integration:latest
 
 # Run with Docker Compose
 docker-compose up supplier-integration
@@ -299,7 +299,7 @@ services:
     ports:
       - "8010:8010"
     environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/citadelbuy
+      - DATABASE_URL=postgresql://postgres:password@db:5432/broxiva
       - REDIS_URL=redis://redis:6379/7
       - AUTO_SYNC_ENABLED=true
     depends_on:
@@ -576,10 +576,10 @@ See [Contributing Guide](../../../CONTRIBUTING.md) for development guidelines.
 
 ## License
 
-Proprietary - CitadelBuy Platform
+Proprietary - Broxiva Platform
 
 ## Support
 
 For issues and questions:
 - Internal Slack: #supplier-integration-support
-- Email: integrations@citadelbuy.com
+- Email: integrations@broxiva.com

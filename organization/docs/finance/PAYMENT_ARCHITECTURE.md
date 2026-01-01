@@ -1,8 +1,8 @@
-# CitadelBuy Global B2B Payment Architecture
+# Broxiva Global B2B Payment Architecture
 
 ## Overview
 
-CitadelBuy's payment infrastructure is designed to handle global B2B transactions with multi-currency support, enterprise payment methods, and comprehensive tax compliance.
+Broxiva's payment infrastructure is designed to handle global B2B transactions with multi-currency support, enterprise payment methods, and comprehensive tax compliance.
 
 ---
 
@@ -456,12 +456,12 @@ Response:
 
 ## 12. Contact & Support
 
-**Technical Support**: fintech@citadelbuy.com
-**Compliance**: compliance@citadelbuy.com
-**Enterprise Sales**: enterprise@citadelbuy.com
+**Technical Support**: fintech@broxiva.com
+**Compliance**: compliance@broxiva.com
+**Enterprise Sales**: enterprise@broxiva.com
 
-**Documentation**: https://docs.citadelbuy.com/payments
-**API Reference**: https://api.citadelbuy.com/docs
+**Documentation**: https://docs.broxiva.com/payments
+**API Reference**: https://api.broxiva.com/docs
 
 ---
 
@@ -494,4 +494,4 @@ All other countries via Stripe/PayPal
 
 **Document Version**: 1.0
 **Last Updated**: 2025-01-XX
-**Author**: Finance Agent - CitadelBuy Engineering
+**Author**: Finance Agent - Broxiva Engineering

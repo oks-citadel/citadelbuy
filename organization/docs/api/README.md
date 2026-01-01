@@ -1,6 +1,6 @@
-# CitadelBuy Backend API
+# Broxiva Backend API
 
-The CitadelBuy Backend API is a comprehensive, enterprise-grade NestJS application that powers the entire CitadelBuy e-commerce platform. It provides robust REST and WebSocket APIs for multi-vendor marketplace functionality, AI-powered features, advanced analytics, and seamless integrations with payment providers, shipping carriers, and third-party services.
+The Broxiva Backend API is a comprehensive, enterprise-grade NestJS application that powers the entire Broxiva e-commerce platform. It provides robust REST and WebSocket APIs for multi-vendor marketplace functionality, AI-powered features, advanced analytics, and seamless integrations with payment providers, shipping carriers, and third-party services.
 
 ## Table of Contents
 
@@ -155,7 +155,7 @@ Before you begin, ensure you have the following installed:
 1. **Clone the repository** (if not already done):
    ```bash
    git clone <repository-url>
-   cd citadelbuy-master/organization
+   cd broxiva-master/organization
    ```
 
 2. **Install dependencies**:
@@ -185,7 +185,7 @@ cp .env.example .env
 
 #### Database
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/citadelbuy_dev?schema=public"
+DATABASE_URL="postgresql://user:password@localhost:5432/broxiva_dev?schema=public"
 REDIS_URL="redis://localhost:6379"
 ```
 
@@ -229,7 +229,7 @@ STORAGE_PROVIDER=S3
 AWS_ACCESS_KEY_ID=...
 AWS_SECRET_ACCESS_KEY=...
 AWS_REGION=us-east-1
-AWS_S3_BUCKET=citadelbuy-uploads
+AWS_S3_BUCKET=broxiva-uploads
 ```
 
 #### Search
@@ -262,10 +262,10 @@ See `.env.example` for the complete list of environment variables with detailed 
 
 **Using Docker**:
 ```bash
-docker run --name citadelbuy-postgres \
-  -e POSTGRES_USER=citadelbuy \
+docker run --name broxiva-postgres \
+  -e POSTGRES_USER=broxiva \
   -e POSTGRES_PASSWORD=your-password \
-  -e POSTGRES_DB=citadelbuy_dev \
+  -e POSTGRES_DB=broxiva_dev \
   -p 5432:5432 \
   -d postgres:14
 ```
@@ -348,8 +348,8 @@ Build and run with Docker:
 docker-compose up api
 
 # Or build separately
-docker build -t citadelbuy-api -f infrastructure/docker/Dockerfile .
-docker run -p 4000:4000 citadelbuy-api
+docker build -t broxiva-api -f infrastructure/docker/Dockerfile .
+docker run -p 4000:4000 broxiva-api
 ```
 
 ## Testing
@@ -543,7 +543,7 @@ kill -9 <PID>
 
 2. Test connection:
    ```bash
-   psql -h localhost -U citadelbuy -d citadelbuy_dev
+   psql -h localhost -U broxiva -d broxiva_dev
    ```
 
 3. Check `DATABASE_URL` in `.env`

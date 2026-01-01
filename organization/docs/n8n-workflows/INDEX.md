@@ -1,4 +1,4 @@
-# CitadelBuy n8n Workflows - File Index
+# Broxiva n8n Workflows - File Index
 
 ## 📦 Workflow 01: Order Processing & Fulfillment
 
@@ -150,7 +150,7 @@ node test-workflow.js --verbose      # Run tests with details
 2. **Technical details?** → See README-workflow-01.md
 3. **Understanding flow?** → Review WORKFLOW-01-DIAGRAM.md
 4. **Testing problems?** → Run `npm test` and check output
-5. **Still stuck?** → Contact engineering@citadelbuy.com
+5. **Still stuck?** → Contact engineering@broxiva.com
 
 ---
 

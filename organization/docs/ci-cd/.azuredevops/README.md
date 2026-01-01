@@ -1,13 +1,13 @@
-# CitadelBuy - Azure DevOps Unified Pipeline Architecture
+# Broxiva - Azure DevOps Unified Pipeline Architecture
 
 ## Overview
 
-This directory contains the **Unified Master Pipeline** architecture for CitadelBuy's CI/CD operations in Azure DevOps.
+This directory contains the **Unified Master Pipeline** architecture for Broxiva's CI/CD operations in Azure DevOps.
 
-**Organization:** citadelcloudmanagement
-**Project:** CitadelBuy
-**ACR:** citadelbuyacr.azurecr.io
-**Service Connection:** CitadelBuyAzure
+**Organization:** broxivacloudmanagement
+**Project:** Broxiva
+**ACR:** broxivaacr.azurecr.io
+**Service Connection:** BroxivaAzure
 
 ## Directory Structure
 
@@ -154,9 +154,9 @@ The master pipeline orchestrates all CI/CD operations across multiple environmen
 **Template:** `templates/stages/deploy-dev.yml`
 
 **Cluster:**
-- Resource Group: `citadelbuy-dev-rg`
-- AKS Cluster: `citadelbuy-dev-aks`
-- Namespace: `citadelbuy-dev`
+- Resource Group: `broxiva-dev-rg`
+- AKS Cluster: `broxiva-dev-aks`
+- Namespace: `broxiva-dev`
 
 **Includes:**
 - Kubernetes manifest deployment
@@ -173,9 +173,9 @@ The master pipeline orchestrates all CI/CD operations across multiple environmen
 **Template:** `templates/stages/deploy-staging.yml`
 
 **Cluster:**
-- Resource Group: `citadelbuy-staging-rg`
-- AKS Cluster: `citadelbuy-staging-aks`
-- Namespace: `citadelbuy-staging`
+- Resource Group: `broxiva-staging-rg`
+- AKS Cluster: `broxiva-staging-aks`
+- Namespace: `broxiva-staging`
 
 **Includes:**
 - Kubernetes manifest deployment
@@ -208,9 +208,9 @@ The master pipeline orchestrates all CI/CD operations across multiple environmen
 **Template:** `templates/stages/deploy-production.yml`
 
 **Cluster:**
-- Resource Group: `citadelbuy-prod-rg`
-- AKS Cluster: `citadelbuy-prod-aks`
-- Namespace: `citadelbuy-prod`
+- Resource Group: `broxiva-prod-rg`
+- AKS Cluster: `broxiva-prod-aks`
+- Namespace: `broxiva-prod`
 
 **Strategy:** Blue-Green Deployment
 
@@ -272,7 +272,7 @@ git push origin feature/new-feature
 ### Deploy to Staging Manually
 
 **Trigger manual pipeline run:**
-1. Go to Azure DevOps → Pipelines → CitadelBuy-Main
+1. Go to Azure DevOps → Pipelines → Broxiva-Main
 2. Click "Run pipeline"
 3. Set parameters:
    - `deployEnvironment`: staging
@@ -304,7 +304,7 @@ git push origin main
 ### Terraform Infrastructure Changes
 
 **Trigger manual pipeline run:**
-1. Go to Azure DevOps → Pipelines → CitadelBuy-Main
+1. Go to Azure DevOps → Pipelines → Broxiva-Main
 2. Click "Run pipeline"
 3. Set parameters:
    - `terraformAction`: plan (or apply)
@@ -326,7 +326,7 @@ Shared across all environments:
 - Node.js version: 20.x
 - PNPM version: 10.23.0
 - Docker BuildKit: Enabled
-- ACR: citadelbuyacr.azurecr.io
+- ACR: broxivaacr.azurecr.io
 
 ### Environment-Specific Variables
 
@@ -359,20 +359,20 @@ Shared across all environments:
 - Third-party service credentials
 
 **Variable Groups:**
-- `CitadelBuy-Common` - Shared secrets
-- `CitadelBuy-Dev` - Dev environment secrets
-- `CitadelBuy-Staging` - Staging environment secrets
-- `CitadelBuy-Production` - Production environment secrets
+- `Broxiva-Common` - Shared secrets
+- `Broxiva-Dev` - Dev environment secrets
+- `Broxiva-Staging` - Staging environment secrets
+- `Broxiva-Production` - Production environment secrets
 
 ### Service Connections
 
 **Required Service Connections:**
-1. `CitadelBuyAzure` - Azure Resource Manager
+1. `BroxivaAzure` - Azure Resource Manager
    - Subscription access
    - AKS management
    - Key Vault access
 
-2. `CitadelBuyACR` - Azure Container Registry
+2. `BroxivaACR` - Azure Container Registry
    - Image push/pull permissions
    - Vulnerability scanning
 
@@ -391,8 +391,8 @@ Shared across all environments:
 ### Pipeline Notifications
 
 **Configured Channels:**
-- Slack: `#citadelbuy-deployments`
-- Microsoft Teams: CitadelBuy DevOps channel
+- Slack: `#broxiva-deployments`
+- Microsoft Teams: Broxiva DevOps channel
 - Email: Development team distribution list
 
 **Notification Triggers:**
@@ -472,13 +472,13 @@ variables:
 ## Contact and Support
 
 **Pipeline Owners:**
-- DevOps Team: devops@citadelbuy.com
-- Platform Team: platform@citadelbuy.com
+- DevOps Team: devops@broxiva.com
+- Platform Team: platform@broxiva.com
 
 **Documentation:**
-- Internal Wiki: https://wiki.citadelbuy.com/azure-devops
-- Runbooks: https://runbooks.citadelbuy.com
+- Internal Wiki: https://wiki.broxiva.com/azure-devops
+- Runbooks: https://runbooks.broxiva.com
 
 **Support Channels:**
 - Slack: #devops-support
-- Email: devops-support@citadelbuy.com
+- Email: devops-support@broxiva.com

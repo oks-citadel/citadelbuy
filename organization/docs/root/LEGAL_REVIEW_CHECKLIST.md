@@ -1,4 +1,4 @@
-# Legal Review Checklist - CitadelBuy
+# Legal Review Checklist - Broxiva
 
 **Version:** 1.0
 **Last Updated:** December 2025
@@ -22,7 +22,7 @@
 ## Privacy Policy Review
 
 ### Section Completeness
-- [ ] Policy clearly identifies CitadelBuy as the data controller
+- [ ] Policy clearly identifies Broxiva as the data controller
 - [ ] Policy includes effective date and last updated date
 - [ ] Policy describes all types of personal data collected
 - [ ] Policy explains purposes for data collection
@@ -146,7 +146,7 @@
 ### Intellectual Property
 - [ ] Platform IP ownership clearly stated
 - [ ] User-generated content rights addressed
-- [ ] License grants to CitadelBuy specified
+- [ ] License grants to Broxiva specified
 - [ ] Trademark usage restrictions outlined
 - [ ] Copyright infringement reporting procedure (DMCA)
 - [ ] User warranty regarding content ownership
@@ -812,7 +812,7 @@
 ## Document Control
 
 **Document Owner:** Legal Department
-**Document Location:** C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/docs/
+**Document Location:** C:/Users/citad/OneDrive/Documents/broxiva-master/organization/docs/
 **Access Level:** Internal - Legal, Compliance, and Senior Management
 **Retention Period:** Permanent with version history
 
@@ -836,4 +836,4 @@
 
 ---
 
-**Note:** This checklist is a comprehensive guide and should be tailored to CitadelBuy's specific business operations, jurisdictions, and product offerings. Legal counsel should be consulted for specific interpretations and implementations of legal requirements. This document does not constitute legal advice.
+**Note:** This checklist is a comprehensive guide and should be tailored to Broxiva's specific business operations, jurisdictions, and product offerings. Legal counsel should be consulted for specific interpretations and implementations of legal requirements. This document does not constitute legal advice.

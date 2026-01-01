@@ -2,7 +2,7 @@
 
 **Document Version:** 1.0
 **Last Updated:** December 3, 2025
-**Platform:** CitadelBuy E-Commerce Platform
+**Platform:** Broxiva E-Commerce Platform
 
 ---
 
@@ -23,7 +23,7 @@
 
 ## Executive Summary
 
-CitadelBuy implements a **zero-trust payment architecture** where cardholder data never enters our systems. By leveraging PCI DSS Level 1 certified payment processors (Stripe and PayPal), we maintain the highest security standards while minimizing compliance burden.
+Broxiva implements a **zero-trust payment architecture** where cardholder data never enters our systems. By leveraging PCI DSS Level 1 certified payment processors (Stripe and PayPal), we maintain the highest security standards while minimizing compliance burden.
 
 **Key Security Principles:**
 
@@ -48,7 +48,7 @@ CitadelBuy implements a **zero-trust payment architecture** where cardholder dat
 │  │  - Stripe Elements (iframed)                           │    │
 │  │  - PayPal Smart Buttons                                │    │
 │  │                                                         │    │
-│  │  Card data NEVER touches CitadelBuy servers           │    │
+│  │  Card data NEVER touches Broxiva servers           │    │
 │  └────────────────┬───────────────────────────────────────┘    │
 └───────────────────┼───────────────────────────────────────────┘
                     │
@@ -69,7 +69,7 @@ CitadelBuy implements a **zero-trust payment architecture** where cardholder dat
               │                       │
               ▼                       ▼
     ┌─────────────────────────────────────────────┐
-    │        CitadelBuy API (NestJS)              │
+    │        Broxiva API (NestJS)              │
     │                                             │
     │  - Receives payment tokens ONLY            │
     │  - Stores tokens in database               │
@@ -425,7 +425,7 @@ const paymentIntent = await stripe.paymentIntents.create({
 
 ### Strict Prohibition
 
-**CitadelBuy NEVER stores the following:**
+**Broxiva NEVER stores the following:**
 
 | Data Element | Status | Notes |
 |--------------|--------|-------|
@@ -1236,7 +1236,7 @@ Before merging payment-related code:
 
 ## Conclusion
 
-CitadelBuy's payment security architecture is designed around the principle of **never touching card data**. By leveraging PCI DSS Level 1 certified payment processors and implementing industry best practices, we ensure:
+Broxiva's payment security architecture is designed around the principle of **never touching card data**. By leveraging PCI DSS Level 1 certified payment processors and implementing industry best practices, we ensure:
 
 - **Customer Trust:** Payment information is handled by industry leaders
 - **Regulatory Compliance:** PCI DSS compliance with minimal burden
@@ -1258,8 +1258,8 @@ CitadelBuy's payment security architecture is designed around the principle of *
 **Next Review:** June 3, 2026
 
 **Contact:**
-- **Security Team:** security@citadelbuy.com
-- **Payment Support:** payments@citadelbuy.com
+- **Security Team:** security@broxiva.com
+- **Payment Support:** payments@broxiva.com
 
 ---
 

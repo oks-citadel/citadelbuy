@@ -1,7 +1,7 @@
-# CitadelBuy API Reference
+# Broxiva API Reference
 
 **Version**: v1.0.0
-**Base URL**: `https://api.citadelbuy.com/api`
+**Base URL**: `https://api.broxiva.com/api`
 **Last Updated**: 2025-12-06
 
 ---
@@ -24,7 +24,7 @@
 
 ### Overview
 
-The CitadelBuy API uses JWT (JSON Web Token) for authentication. Tokens are obtained through the login endpoint and must be included in the Authorization header for protected endpoints.
+The Broxiva API uses JWT (JSON Web Token) for authentication. Tokens are obtained through the login endpoint and must be included in the Authorization header for protected endpoints.
 
 ### Authentication Flow
 
@@ -185,7 +185,7 @@ GET /api/products
       "description": "Premium wireless headphones with active noise cancellation",
       "price": 149.99,
       "currency": "USD",
-      "images": ["https://cdn.citadelbuy.com/products/headphones-main.jpg"],
+      "images": ["https://cdn.broxiva.com/products/headphones-main.jpg"],
       "stock": 150,
       "category": {
         "id": "cat-123",
@@ -227,8 +227,8 @@ GET /api/products/:id
   "currency": "USD",
   "compareAtPrice": 199.99,
   "images": [
-    "https://cdn.citadelbuy.com/products/headphones-main.jpg",
-    "https://cdn.citadelbuy.com/products/headphones-side.jpg"
+    "https://cdn.broxiva.com/products/headphones-main.jpg",
+    "https://cdn.broxiva.com/products/headphones-side.jpg"
   ],
   "stock": 150,
   "sku": "WBH-2024-BLK",
@@ -369,7 +369,7 @@ Authorization: Bearer {accessToken}
       "product": {
         "name": "Wireless Headphones",
         "price": 149.99,
-        "image": "https://cdn.citadelbuy.com/products/headphones.jpg"
+        "image": "https://cdn.broxiva.com/products/headphones.jpg"
       },
       "variantId": "var-123",
       "quantity": 2,
@@ -525,7 +525,7 @@ Authorization: Bearer {accessToken}
   },
   "confirmation": {
     "email": "user@example.com",
-    "trackingUrl": "https://citadelbuy.com/track/order-123"
+    "trackingUrl": "https://broxiva.com/track/order-123"
   }
 }
 ```
@@ -557,7 +557,7 @@ Authorization: Bearer {accessToken}
           "productName": "Wireless Headphones",
           "quantity": 2,
           "price": 149.99,
-          "image": "https://cdn.citadelbuy.com/products/headphones.jpg"
+          "image": "https://cdn.broxiva.com/products/headphones.jpg"
         }
       ],
       "subtotal": 299.98,
@@ -601,7 +601,7 @@ Authorization: Bearer {accessToken}
       "quantity": 2,
       "price": 149.99,
       "subtotal": 299.98,
-      "image": "https://cdn.citadelbuy.com/products/headphones.jpg",
+      "image": "https://cdn.broxiva.com/products/headphones.jpg",
       "vendor": {
         "id": "vendor-123",
         "name": "AudioTech Pro"
@@ -745,7 +745,7 @@ Authorization: Bearer {accessToken}
       "productId": "prod-456",
       "name": "Wireless Earbuds",
       "price": 89.99,
-      "image": "https://cdn.citadelbuy.com/products/earbuds.jpg",
+      "image": "https://cdn.broxiva.com/products/earbuds.jpg",
       "score": 0.95,
       "reason": "Customers who bought this also bought..."
     }
@@ -784,7 +784,7 @@ GET /api/products/:id/reviews
       "helpful": 15,
       "verified": true,
       "createdAt": "2025-11-15T10:00:00Z",
-      "images": ["https://cdn.citadelbuy.com/reviews/123-1.jpg"]
+      "images": ["https://cdn.broxiva.com/reviews/123-1.jpg"]
     }
   ],
   "summary": {
@@ -1467,16 +1467,16 @@ function verifyWebhook(payload, signature, secret) {
 
 ### Official SDKs
 
-- **JavaScript/TypeScript**: `@citadelbuy/api-client`
-- **Python**: `citadelbuy-sdk`
-- **PHP**: `citadelbuy/api-client`
+- **JavaScript/TypeScript**: `@broxiva/api-client`
+- **Python**: `broxiva-sdk`
+- **PHP**: `broxiva/api-client`
 
 ### Example Usage (JavaScript)
 
 ```javascript
-import { CitadelBuyClient } from '@citadelbuy/api-client';
+import { BroxivaClient } from '@broxiva/api-client';
 
-const client = new CitadelBuyClient({
+const client = new BroxivaClient({
   apiKey: 'your_api_key',
   environment: 'production' // or 'staging'
 });
@@ -1502,12 +1502,12 @@ const order = await client.orders.create({
 ## Support
 
 ### API Support
-- **Email**: api-support@citadelbuy.com
-- **Documentation**: https://docs.citadelbuy.com
-- **Status Page**: https://status.citadelbuy.com
+- **Email**: api-support@broxiva.com
+- **Documentation**: https://docs.broxiva.com
+- **Status Page**: https://status.broxiva.com
 
 ### Postman Collection
-Download our Postman collection: [CitadelBuy API Collection](https://api.citadelbuy.com/postman)
+Download our Postman collection: [Broxiva API Collection](https://api.broxiva.com/postman)
 
 ---
 

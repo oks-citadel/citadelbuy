@@ -1,6 +1,6 @@
-# Sentry Setup Guide for CitadelBuy
+# Sentry Setup Guide for Broxiva
 
-This comprehensive guide will walk you through setting up Sentry error tracking and performance monitoring for the CitadelBuy e-commerce platform.
+This comprehensive guide will walk you through setting up Sentry error tracking and performance monitoring for the Broxiva e-commerce platform.
 
 ## Table of Contents
 
@@ -26,14 +26,14 @@ Sentry is an error tracking and performance monitoring platform that helps you:
 - **Replay sessions** to see what users experienced
 - **Set up alerts** to notify your team of critical issues
 
-CitadelBuy uses Sentry in two places:
+Broxiva uses Sentry in two places:
 - **Backend (NestJS API)**: Error tracking and API performance monitoring
 - **Frontend (Next.js Web)**: Error tracking, performance monitoring, and session replay
 
 ## Prerequisites
 
 Before you begin, ensure you have:
-- Admin access to the CitadelBuy codebase
+- Admin access to the Broxiva codebase
 - Ability to set environment variables in your deployment environment
 - Email address for creating a Sentry account
 - Understanding of your deployment workflow (dev, staging, production)
@@ -55,8 +55,8 @@ Before you begin, ensure you have:
 
 1. After signing in, Sentry will prompt you to create an organization
 2. Enter your organization details:
-   - **Organization Name**: `CitadelBuy` (or your company name)
-   - **Organization Slug**: `citadelbuy` (used in URLs and API calls)
+   - **Organization Name**: `Broxiva` (or your company name)
+   - **Organization Slug**: `broxiva` (used in URLs and API calls)
 3. Click "Create Organization"
 
 ### Pricing Considerations
@@ -66,7 +66,7 @@ Sentry offers several plans:
 - **Team**: 50,000 errors/month, 100,000 transactions/month - Good for growing projects
 - **Business**: Custom limits - For production applications
 
-For CitadelBuy, we recommend starting with the **Team** plan for production and using the free plan for development.
+For Broxiva, we recommend starting with the **Team** plan for production and using the free plan for development.
 
 ## Creating Sentry Projects
 
@@ -75,13 +75,13 @@ You need to create **separate projects** for backend and frontend, and separate 
 ### Recommended Project Structure
 
 ```
-Organization: CitadelBuy
-├── citadelbuy-backend-dev (Node.js)
-├── citadelbuy-backend-staging (Node.js)
-├── citadelbuy-backend-prod (Node.js)
-├── citadelbuy-web-dev (Next.js)
-├── citadelbuy-web-staging (Next.js)
-└── citadelbuy-web-prod (Next.js)
+Organization: Broxiva
+├── broxiva-backend-dev (Node.js)
+├── broxiva-backend-staging (Node.js)
+├── broxiva-backend-prod (Node.js)
+├── broxiva-web-dev (Next.js)
+├── broxiva-web-staging (Next.js)
+└── broxiva-web-prod (Next.js)
 ```
 
 ### Creating the Backend Project
@@ -90,7 +90,7 @@ Organization: CitadelBuy
 2. Select platform: **Node.js**
 3. Set alert frequency: **"Alert me on every new issue"** (recommended for production)
 4. Enter project details:
-   - **Project Name**: `citadelbuy-backend-prod` (or dev/staging)
+   - **Project Name**: `broxiva-backend-prod` (or dev/staging)
    - **Team**: Select your team or create a new one
 5. Click **"Create Project"**
 
@@ -100,7 +100,7 @@ Organization: CitadelBuy
 2. Select platform: **Next.js**
 3. Set alert frequency: **"Alert me on every new issue"**
 4. Enter project details:
-   - **Project Name**: `citadelbuy-web-prod` (or dev/staging)
+   - **Project Name**: `broxiva-web-prod` (or dev/staging)
    - **Team**: Select the same team
 5. Click **"Create Project"**
 
@@ -124,7 +124,7 @@ The DSN (Data Source Name) is a unique identifier that tells the Sentry SDK wher
 ### Backend DSN
 
 1. Navigate to **Settings** > **Projects**
-2. Select your backend project (e.g., `citadelbuy-backend-prod`)
+2. Select your backend project (e.g., `broxiva-backend-prod`)
 3. Go to **Settings** > **Client Keys (DSN)**
 4. Copy the **DSN** value
 
@@ -136,7 +136,7 @@ https://1a2b3c4d5e6f7g8h9i0j@o1234567.ingest.sentry.io/7654321
 ### Frontend DSN
 
 1. Navigate to **Settings** > **Projects**
-2. Select your frontend project (e.g., `citadelbuy-web-prod`)
+2. Select your frontend project (e.g., `broxiva-web-prod`)
 3. Go to **Settings** > **Client Keys (DSN)**
 4. Copy the **DSN** value
 
@@ -219,7 +219,7 @@ Release tracking helps you:
 1. Go to **Settings** > **Account** > **API** > **Auth Tokens**
 2. Click **"Create New Token"**
 3. Configure the token:
-   - **Name**: `CitadelBuy CI/CD`
+   - **Name**: `Broxiva CI/CD`
    - **Scopes**: Select:
      - `project:read`
      - `project:write`
@@ -257,15 +257,15 @@ SENTRY_AUTH_TOKEN=your_auth_token_here
 
 #### Backend Release Format
 ```
-citadelbuy-backend@<version>
+broxiva-backend@<version>
 ```
-Example: `citadelbuy-backend@1.2.3`
+Example: `broxiva-backend@1.2.3`
 
 #### Frontend Release Format
 ```
-citadelbuy-web@<version>
+broxiva-web@<version>
 ```
-Example: `citadelbuy-web@1.2.3`
+Example: `broxiva-web@1.2.3`
 
 The release is automatically set in the code from `package.json` version or git commit SHA.
 
@@ -287,7 +287,7 @@ Create `sentry.properties` in the root of `apps/web/`:
 # Sentry Configuration File
 defaults.url=https://sentry.io/
 defaults.org=your-organization-slug
-defaults.project=citadelbuy-web-prod
+defaults.project=broxiva-web-prod
 
 # Auth token (will be overridden by environment variable)
 auth.token=${SENTRY_AUTH_TOKEN}
@@ -360,10 +360,10 @@ Add to your CI/CD build environment:
 
 ```bash
 # Sentry Organization Slug
-SENTRY_ORG=citadelbuy
+SENTRY_ORG=broxiva
 
 # Sentry Project Slug
-SENTRY_PROJECT=citadelbuy-web-prod
+SENTRY_PROJECT=broxiva-web-prod
 
 # Sentry Auth Token (from secrets)
 SENTRY_AUTH_TOKEN=<your-auth-token>
@@ -400,7 +400,7 @@ After building:
 
 **Actions**:
 - Send notification to: `#engineering-alerts` (Slack)
-- Send email to: `engineering@citadelbuy.com`
+- Send email to: `engineering@broxiva.com`
 
 #### High Frequency Alert
 
@@ -480,7 +480,7 @@ export class HealthController {
   @Get('test-sentry')
   testSentry() {
     try {
-      throw new Error('Test error from CitadelBuy backend');
+      throw new Error('Test error from Broxiva backend');
     } catch (error) {
       Sentry.captureException(error);
       throw error;
@@ -509,7 +509,7 @@ import * as Sentry from '@sentry/nextjs';
 export default function TestSentryPage() {
   const throwError = () => {
     try {
-      throw new Error('Test error from CitadelBuy frontend');
+      throw new Error('Test error from Broxiva frontend');
     } catch (error) {
       Sentry.captureException(error);
       throw error;
@@ -753,12 +753,12 @@ setTimeout(() => {
 If you encounter issues:
 1. Check this documentation
 2. Review Sentry's official documentation
-3. Check the CitadelBuy internal wiki
-4. Contact the DevOps team: devops@citadelbuy.com
+3. Check the Broxiva internal wiki
+4. Contact the DevOps team: devops@broxiva.com
 5. Open a support ticket with Sentry (if on paid plan)
 
 ---
 
 **Last Updated**: 2024-12-04
-**Maintained By**: CitadelBuy DevOps Team
+**Maintained By**: Broxiva DevOps Team
 **Version**: 1.0.0

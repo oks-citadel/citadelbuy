@@ -1,6 +1,6 @@
-# CitadelBuy Staging Environment - Kubernetes Configuration
+# Broxiva Staging Environment - Kubernetes Configuration
 
-This directory contains Kubernetes manifests for the CitadelBuy staging environment.
+This directory contains Kubernetes manifests for the Broxiva staging environment.
 
 ## Overview
 
@@ -11,8 +11,8 @@ The staging environment is designed to mirror production as closely as possible 
 ```
 ┌─────────────────────────────────────────────┐
 │         Ingress (nginx-ingress)             │
-│    staging.citadelbuy.com                   │
-│    staging-api.citadelbuy.com               │
+│    staging.broxiva.com                   │
+│    staging-api.broxiva.com               │
 └─────────────┬───────────────────────────────┘
               │
     ┌─────────┴──────────┐
@@ -85,15 +85,15 @@ kubectl apply -f ingress.yaml
 Key environment variables are defined in `configmap.yaml`:
 
 - `NODE_ENV`: staging
-- `NEXT_PUBLIC_API_URL`: https://staging-api.citadelbuy.com
-- `CORS_ORIGIN`: https://staging.citadelbuy.com
+- `NEXT_PUBLIC_API_URL`: https://staging-api.broxiva.com
+- `CORS_ORIGIN`: https://staging.broxiva.com
 
 ### Secrets
 
 Required secrets (must be created separately):
 
 ```yaml
-citadelbuy-secrets:
+broxiva-secrets:
   - DATABASE_URL
   - POSTGRES_PASSWORD
   - JWT_SECRET
@@ -105,8 +105,8 @@ citadelbuy-secrets:
 Create secrets:
 
 ```bash
-kubectl create secret generic citadelbuy-secrets \
-  --namespace=citadelbuy-staging \
+kubectl create secret generic broxiva-secrets \
+  --namespace=broxiva-staging \
   --from-literal=DATABASE_URL="postgresql://..." \
   --from-literal=POSTGRES_PASSWORD="..." \
   --from-literal=JWT_SECRET="..." \
@@ -155,10 +155,10 @@ HPA is configured for both API and Web deployments:
 
 ```bash
 # Scale API
-kubectl scale deployment citadelbuy-api --replicas=3 -n citadelbuy-staging
+kubectl scale deployment broxiva-api --replicas=3 -n broxiva-staging
 
 # Scale Web
-kubectl scale deployment citadelbuy-web --replicas=3 -n citadelbuy-staging
+kubectl scale deployment broxiva-web --replicas=3 -n broxiva-staging
 ```
 
 ## Networking
@@ -167,13 +167,13 @@ kubectl scale deployment citadelbuy-web --replicas=3 -n citadelbuy-staging
 
 Two ingress resources are configured:
 
-1. **API Ingress** - `staging-api.citadelbuy.com`
-   - Routes to citadelbuy-api service
+1. **API Ingress** - `staging-api.broxiva.com`
+   - Routes to broxiva-api service
    - TLS enabled
    - CORS configured
 
-2. **Web Ingress** - `staging.citadelbuy.com`
-   - Routes to citadelbuy-web service
+2. **Web Ingress** - `staging.broxiva.com`
+   - Routes to broxiva-web service
    - TLS enabled
 
 ### Network Policies
@@ -251,32 +251,32 @@ annotations:
 ### Check Pod Status
 
 ```bash
-kubectl get pods -n citadelbuy-staging
-kubectl describe pod <pod-name> -n citadelbuy-staging
+kubectl get pods -n broxiva-staging
+kubectl describe pod <pod-name> -n broxiva-staging
 ```
 
 ### View Logs
 
 ```bash
 # API logs
-kubectl logs -n citadelbuy-staging deployment/citadelbuy-api --tail=100 -f
+kubectl logs -n broxiva-staging deployment/broxiva-api --tail=100 -f
 
 # Web logs
-kubectl logs -n citadelbuy-staging deployment/citadelbuy-web --tail=100 -f
+kubectl logs -n broxiva-staging deployment/broxiva-web --tail=100 -f
 
 # Database logs
-kubectl logs -n citadelbuy-staging statefulset/postgres --tail=100 -f
+kubectl logs -n broxiva-staging statefulset/postgres --tail=100 -f
 ```
 
 ### Check Resources
 
 ```bash
 # Resource usage
-kubectl top pods -n citadelbuy-staging
+kubectl top pods -n broxiva-staging
 kubectl top nodes
 
 # Events
-kubectl get events -n citadelbuy-staging --sort-by='.lastTimestamp'
+kubectl get events -n broxiva-staging --sort-by='.lastTimestamp'
 ```
 
 ### Common Issues
@@ -285,30 +285,30 @@ kubectl get events -n citadelbuy-staging --sort-by='.lastTimestamp'
 
 ```bash
 # Check image exists
-docker pull ghcr.io/citadelplatforms/citadelbuy-api:staging-latest
+docker pull ghcr.io/broxivaplatforms/broxiva-api:staging-latest
 
 # Verify image pull secret
-kubectl get secret ghcr-secret -n citadelbuy-staging
+kubectl get secret ghcr-secret -n broxiva-staging
 ```
 
 #### CrashLoopBackOff
 
 ```bash
 # Check logs for errors
-kubectl logs -n citadelbuy-staging <pod-name> --previous
+kubectl logs -n broxiva-staging <pod-name> --previous
 
 # Check environment variables
-kubectl exec -n citadelbuy-staging <pod-name> -- env
+kubectl exec -n broxiva-staging <pod-name> -- env
 ```
 
 #### Pending Pods
 
 ```bash
 # Check events
-kubectl describe pod <pod-name> -n citadelbuy-staging
+kubectl describe pod <pod-name> -n broxiva-staging
 
 # Check resource quotas
-kubectl describe resourcequota -n citadelbuy-staging
+kubectl describe resourcequota -n broxiva-staging
 ```
 
 ## Maintenance
@@ -317,32 +317,32 @@ kubectl describe resourcequota -n citadelbuy-staging
 
 ```bash
 # Update API image
-kubectl set image deployment/citadelbuy-api \
-  api=ghcr.io/citadelplatforms/citadelbuy-api:staging-abc123 \
-  -n citadelbuy-staging
+kubectl set image deployment/broxiva-api \
+  api=ghcr.io/broxivaplatforms/broxiva-api:staging-abc123 \
+  -n broxiva-staging
 
 # Update Web image
-kubectl set image deployment/citadelbuy-web \
-  web=ghcr.io/citadelplatforms/citadelbuy-web:staging-abc123 \
-  -n citadelbuy-staging
+kubectl set image deployment/broxiva-web \
+  web=ghcr.io/broxivaplatforms/broxiva-web:staging-abc123 \
+  -n broxiva-staging
 ```
 
 ### Rollback
 
 ```bash
 # View rollout history
-kubectl rollout history deployment/citadelbuy-api -n citadelbuy-staging
+kubectl rollout history deployment/broxiva-api -n broxiva-staging
 
 # Rollback to previous version
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-staging
+kubectl rollout undo deployment/broxiva-api -n broxiva-staging
 ```
 
 ### Database Backup
 
 ```bash
 # Create backup
-API_POD=$(kubectl get pods -n citadelbuy-staging -l app=citadelbuy-api -o jsonpath='{.items[0].metadata.name}')
-kubectl exec -n citadelbuy-staging $API_POD -- \
+API_POD=$(kubectl get pods -n broxiva-staging -l app=broxiva-api -o jsonpath='{.items[0].metadata.name}')
+kubectl exec -n broxiva-staging $API_POD -- \
   pg_dump $DATABASE_URL > backup-$(date +%Y%m%d).sql
 ```
 
@@ -363,6 +363,6 @@ This staging environment is automatically deployed via GitHub Actions:
 ## Support
 
 For issues or questions:
-- DevOps Team: devops@citadelbuy.com
+- DevOps Team: devops@broxiva.com
 - Slack: #staging-support
-- Documentation: https://docs.citadelbuy.com
+- Documentation: https://docs.broxiva.com

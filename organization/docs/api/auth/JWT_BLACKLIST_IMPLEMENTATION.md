@@ -455,4 +455,4 @@ For issues or questions:
 
 ## License
 
-Part of the Citadel Buy platform. Internal use only.
+Part of the Broxiva Buy platform. Internal use only.

@@ -1,10 +1,10 @@
-# CitadelBuy Test Quick Reference
+# Broxiva Test Quick Reference
 
 ## Quick Start
 
 ### Run All Tests
 ```bash
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api
 npm test
 ```
 
@@ -36,7 +36,7 @@ npm run test:cov
 ## Test Files Location Map
 
 ```
-C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api/src/modules/
+C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api/src/modules/
 
 ├── payments/
 │   ├── payments.service.spec.ts (EXISTING - 325 lines)

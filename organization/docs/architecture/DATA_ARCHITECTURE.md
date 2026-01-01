@@ -1,8 +1,8 @@
-# CitadelBuy Global Data Architecture
+# Broxiva Global Data Architecture
 
 ## Executive Summary
 
-This document defines the complete data architecture for CitadelBuy's global B2B enterprise marketplace platform. It covers the multi-tenant enterprise data model, regional data residency requirements, multi-currency pricing schema, multi-language content model, and compliance/audit trail schema necessary to support cross-border trade operations across six global regions.
+This document defines the complete data architecture for Broxiva's global B2B enterprise marketplace platform. It covers the multi-tenant enterprise data model, regional data residency requirements, multi-currency pricing schema, multi-language content model, and compliance/audit trail schema necessary to support cross-border trade operations across six global regions.
 
 ## Table of Contents
 

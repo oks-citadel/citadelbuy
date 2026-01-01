@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides comprehensive instructions for setting up and configuring Sentry dashboards for CitadelBuy's multi-environment e-commerce platform. The setup includes monitoring for backend APIs, frontend applications, and mobile apps with proper alerting and team notifications.
+This guide provides comprehensive instructions for setting up and configuring Sentry dashboards for Broxiva's multi-environment e-commerce platform. The setup includes monitoring for backend APIs, frontend applications, and mobile apps with proper alerting and team notifications.
 
 ## Table of Contents
 
@@ -49,19 +49,19 @@ SENTRY_DSN=https://[key]@[org].ingest.sentry.io/[project-id]
 
 ### Recommended Project Organization
 
-CitadelBuy uses a multi-project structure in Sentry to separate concerns:
+Broxiva uses a multi-project structure in Sentry to separate concerns:
 
 ```
-CitadelBuy Organization
-├── citadelbuy-backend-prod
-├── citadelbuy-backend-staging
-├── citadelbuy-backend-dev
-├── citadelbuy-web-prod
-├── citadelbuy-web-staging
-├── citadelbuy-web-dev
-├── citadelbuy-mobile-prod
-├── citadelbuy-mobile-staging
-└── citadelbuy-mobile-dev
+Broxiva Organization
+├── broxiva-backend-prod
+├── broxiva-backend-staging
+├── broxiva-backend-dev
+├── broxiva-web-prod
+├── broxiva-web-staging
+├── broxiva-web-dev
+├── broxiva-mobile-prod
+├── broxiva-mobile-staging
+└── broxiva-mobile-dev
 ```
 
 ### Project Settings
@@ -103,7 +103,7 @@ Navigate to **Dashboards** → **Create Dashboard** in Sentry.
 
 ### Backend API Dashboard
 
-**Name:** CitadelBuy Backend - Production
+**Name:** Broxiva Backend - Production
 **Widgets:**
 
 #### 1. Error Rate Overview
@@ -193,7 +193,7 @@ Limit: 10
 
 ### Frontend Dashboard
 
-**Name:** CitadelBuy Web - Production
+**Name:** Broxiva Web - Production
 **Widgets:**
 
 #### 1. JavaScript Errors
@@ -270,7 +270,7 @@ Steps:
 
 ### Mobile Dashboard
 
-**Name:** CitadelBuy Mobile - Production
+**Name:** Broxiva Mobile - Production
 **Widgets:**
 
 #### 1. Crash-Free Sessions
@@ -376,7 +376,7 @@ Filters:
 **Actions:**
 - Send Slack notification to #incidents-critical
 - Send PagerDuty alert to on-call engineer
-- Send email to engineering-leads@citadelbuy.com
+- Send email to engineering-leads@broxiva.com
 
 #### 2. Database Connection Failures
 
@@ -411,7 +411,7 @@ Filters:
 **Actions:**
 - Send Slack notification to #payments-team
 - Send PagerDuty alert
-- Send email to payments-team@citadelbuy.com
+- Send email to payments-team@broxiva.com
 
 #### 4. API Service Degradation
 
@@ -428,7 +428,7 @@ Filters:
 **Actions:**
 - Send Slack notification to #platform-alerts
 - Create Jira ticket automatically
-- Send email to platform-team@citadelbuy.com
+- Send email to platform-team@broxiva.com
 
 ### Warning Alerts (Monitor & Investigate)
 
@@ -480,7 +480,7 @@ Filters:
 **Actions:**
 - Send Slack notification to #performance-monitoring
 - Create GitHub issue
-- Send email to engineering-team@citadelbuy.com
+- Send email to engineering-team@broxiva.com
 
 #### 8. Session Replay Threshold
 
@@ -512,7 +512,7 @@ Filters:
 - Resolved issues
 - Performance trends
 **Actions:**
-- Send email to engineering-all@citadelbuy.com
+- Send email to engineering-all@broxiva.com
 - Post to #weekly-metrics Slack channel
 
 #### 10. Release Health Report
@@ -526,7 +526,7 @@ Filters:
 - User adoption rate
 - Crash rate comparison
 **Actions:**
-- Send email to release-managers@citadelbuy.com
+- Send email to release-managers@broxiva.com
 - Post to #releases Slack channel
 
 ---
@@ -542,32 +542,32 @@ Configure automatic assignment in **Settings** → **Issue Owners**.
 **ownership.txt Configuration:**
 ```
 # Payment issues
-path:**/checkout/** payments-team@citadelbuy.com
-path:**/payment/** payments-team@citadelbuy.com
-path:**/stripe/** payments-team@citadelbuy.com
+path:**/checkout/** payments-team@broxiva.com
+path:**/payment/** payments-team@broxiva.com
+path:**/stripe/** payments-team@broxiva.com
 
 # Authentication issues
-path:**/auth/** auth-team@citadelbuy.com
-path:**/users/** auth-team@citadelbuy.com
+path:**/auth/** auth-team@broxiva.com
+path:**/users/** auth-team@broxiva.com
 
 # Product catalog
-path:**/products/** catalog-team@citadelbuy.com
-path:**/categories/** catalog-team@citadelbuy.com
+path:**/products/** catalog-team@broxiva.com
+path:**/categories/** catalog-team@broxiva.com
 
 # Cart and orders
-path:**/cart/** cart-team@citadelbuy.com
-path:**/orders/** orders-team@citadelbuy.com
+path:**/cart/** cart-team@broxiva.com
+path:**/orders/** orders-team@broxiva.com
 
 # Frontend components
-path:**/components/** frontend-team@citadelbuy.com
-path:**/pages/** frontend-team@citadelbuy.com
+path:**/components/** frontend-team@broxiva.com
+path:**/pages/** frontend-team@broxiva.com
 
 # Infrastructure
-path:**/common/redis/** infra-team@citadelbuy.com
-path:**/common/monitoring/** infra-team@citadelbuy.com
+path:**/common/redis/** infra-team@broxiva.com
+path:**/common/monitoring/** infra-team@broxiva.com
 
 # Catch-all for unassigned issues
-* engineering-leads@citadelbuy.com
+* engineering-leads@broxiva.com
 ```
 
 #### 2. Issue Priority Matrix
@@ -694,7 +694,7 @@ Configure alert format in **Alert Rules** → **Actions** → **Edit Slack Messa
 Configure email groups in **Settings** → **Teams**.
 
 **Engineering Leadership:**
-- engineering-leads@citadelbuy.com
+- engineering-leads@broxiva.com
 - Alert frequency: Critical only
 - Summary: Daily digest
 
@@ -704,7 +704,7 @@ Configure email groups in **Settings** → **Teams**.
 - Summary: Daily digest
 
 **On-Call Engineers:**
-- oncall@citadelbuy.com (PagerDuty integration)
+- oncall@broxiva.com (PagerDuty integration)
 - Alert frequency: Critical real-time
 - Summary: None
 
@@ -731,9 +731,9 @@ Configure in **User Settings** → **Notifications**.
 
 | Sentry Project | PagerDuty Service | On-Call Schedule |
 |----------------|-------------------|------------------|
-| citadelbuy-backend-prod | CitadelBuy Backend | Platform Team Rotation |
-| citadelbuy-web-prod | CitadelBuy Frontend | Frontend Team Rotation |
-| citadelbuy-mobile-prod | CitadelBuy Mobile | Mobile Team Rotation |
+| broxiva-backend-prod | Broxiva Backend | Platform Team Rotation |
+| broxiva-web-prod | Broxiva Frontend | Frontend Team Rotation |
+| broxiva-mobile-prod | Broxiva Mobile | Mobile Team Rotation |
 
 #### 3. Escalation Policy
 
@@ -833,9 +833,9 @@ Configure in **User Settings** → **Notifications**.
 ## Support Contacts
 
 **Sentry Account Manager:** [Contact via Sentry dashboard]
-**Internal Sentry Admin:** devops-team@citadelbuy.com
-**On-Call Support:** oncall@citadelbuy.com
-**Engineering Leadership:** engineering-leads@citadelbuy.com
+**Internal Sentry Admin:** devops-team@broxiva.com
+**On-Call Support:** oncall@broxiva.com
+**Engineering Leadership:** engineering-leads@broxiva.com
 
 ---
 

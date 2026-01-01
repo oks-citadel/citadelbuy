@@ -1,12 +1,12 @@
-# CitadelBuy Staging Deployment & Smoke Test Infrastructure
+# Broxiva Staging Deployment & Smoke Test Infrastructure
 
 **Created**: 2025-12-04
 **Status**: Complete
-**Environment**: CitadelBuy E-Commerce Platform
+**Environment**: Broxiva E-Commerce Platform
 
 ## Overview
 
-Complete staging deployment and smoke test infrastructure has been implemented for CitadelBuy, providing automated deployment capabilities, comprehensive testing, and production-like staging environment validation.
+Complete staging deployment and smoke test infrastructure has been implemented for Broxiva, providing automated deployment capabilities, comprehensive testing, and production-like staging environment validation.
 
 ## What Was Created
 
@@ -43,7 +43,7 @@ Complete staging deployment and smoke test infrastructure has been implemented f
   - Performance threshold checking
   - Detailed test reporting
   - Exit codes for CI/CD integration
-- **Usage**: `./scripts/smoke-tests.sh citadelbuy-staging`
+- **Usage**: `./scripts/smoke-tests.sh broxiva-staging`
 
 ### 2. Test Configuration
 
@@ -93,8 +93,8 @@ Complete Kubernetes manifests for staging environment:
 
 #### C. Networking & Scaling
 - **ingress.yaml**:
-  - API ingress (staging-api.citadelbuy.com)
-  - Web ingress (staging.citadelbuy.com)
+  - API ingress (staging-api.broxiva.com)
+  - Web ingress (staging.broxiva.com)
   - TLS configuration
   - CORS settings
   - Security headers
@@ -168,16 +168,16 @@ Complete Kubernetes manifests for staging environment:
                       │
 ┌─────────────────────▼───────────────────────────────────────┐
 │              Container Registry (ghcr.io)                    │
-│  citadelplatforms/citadelbuy-api:staging-*                  │
-│  citadelplatforms/citadelbuy-web:staging-*                  │
+│  broxivaplatforms/broxiva-api:staging-*                  │
+│  broxivaplatforms/broxiva-web:staging-*                  │
 └─────────────────────┬───────────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────────┐
 │          Kubernetes Staging Environment                      │
-│                 (citadelbuy-staging)                         │
+│                 (broxiva-staging)                         │
 │                                                              │
 │  ┌──────────────────────────────────────────────────┐      │
-│  │       Ingress (staging.citadelbuy.com)           │      │
+│  │       Ingress (staging.broxiva.com)           │      │
 │  └───────────────────┬──────────────────────────────┘      │
 │                      │                                       │
 │         ┌────────────┴────────────┐                         │
@@ -244,7 +244,7 @@ Complete Kubernetes manifests for staging environment:
 ## File Structure
 
 ```
-citadelbuy-master/organization/
+broxiva-master/organization/
 ├── scripts/
 │   ├── deploy-staging.sh           # Main deployment script
 │   └── smoke-tests.sh              # Smoke test suite
@@ -293,7 +293,7 @@ git push origin main  # Triggers automatic deployment
 
 ```bash
 # Run all tests
-./scripts/smoke-tests.sh citadelbuy-staging
+./scripts/smoke-tests.sh broxiva-staging
 
 # View results
 cat logs/smoke-tests-report-*.txt
@@ -309,9 +309,9 @@ kubectl apply -k infrastructure/kubernetes/staging/
 kubectl apply -f infrastructure/kubernetes/staging/api-deployment.yaml
 
 # Update deployment image
-kubectl set image deployment/citadelbuy-api \
-  api=ghcr.io/citadelplatforms/citadelbuy-api:staging-abc123 \
-  -n citadelbuy-staging
+kubectl set image deployment/broxiva-api \
+  api=ghcr.io/broxivaplatforms/broxiva-api:staging-abc123 \
+  -n broxiva-staging
 ```
 
 ## Testing Checklist
@@ -334,10 +334,10 @@ After deployment, verify:
 
 ## Environment URLs
 
-- **Web Frontend**: https://staging.citadelbuy.com
-- **API Backend**: https://staging-api.citadelbuy.com
-- **Health Check**: https://staging-api.citadelbuy.com/api/health
-- **Detailed Health**: https://staging-api.citadelbuy.com/api/health/detailed
+- **Web Frontend**: https://staging.broxiva.com
+- **API Backend**: https://staging-api.broxiva.com
+- **Health Check**: https://staging-api.broxiva.com/api/health
+- **Detailed Health**: https://staging-api.broxiva.com/api/health/detailed
 
 ## Resource Allocation
 
@@ -396,8 +396,8 @@ After deployment, verify:
 
 ### Quick Rollback
 ```bash
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-staging
-kubectl rollout undo deployment/citadelbuy-web -n citadelbuy-staging
+kubectl rollout undo deployment/broxiva-api -n broxiva-staging
+kubectl rollout undo deployment/broxiva-web -n broxiva-staging
 ```
 
 ### Automated Rollback
@@ -520,7 +520,7 @@ Trigger: Push to main/develop
 - Kubernetes README: `infrastructure/kubernetes/staging/README.md`
 
 ### Contact
-- DevOps Team: devops@citadelbuy.com
+- DevOps Team: devops@broxiva.com
 - Slack Channel: #staging-deployments
 - On-Call: +1-XXX-XXX-XXXX
 

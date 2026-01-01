@@ -1,6 +1,6 @@
-# CitadelBuy Scripts Directory
+# Broxiva Scripts Directory
 
-This directory contains utility scripts for building, deploying, and managing the CitadelBuy platform.
+This directory contains utility scripts for building, deploying, and managing the Broxiva platform.
 
 ---
 

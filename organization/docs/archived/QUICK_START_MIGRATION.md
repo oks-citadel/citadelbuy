@@ -9,7 +9,7 @@
 
 ```bash
 # Navigate to organization directory
-cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization
+cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization
 
 # Make script executable
 chmod +x migrate-cicd-to-broxiva.sh
@@ -23,11 +23,11 @@ git diff --stat .github/workflows/
 # Commit and push
 git checkout -b cicd/migrate-to-broxiva
 git add .
-git commit -m "ci: migrate CI/CD pipelines from CitadelBuy to Broxiva"
+git commit -m "ci: migrate CI/CD pipelines from Broxiva to Broxiva"
 git push origin cicd/migrate-to-broxiva
 
 # Create PR
-gh pr create --title "CI/CD Migration: CitadelBuy → Broxiva" --label "cicd,migration"
+gh pr create --title "CI/CD Migration: Broxiva → Broxiva" --label "cicd,migration"
 ```
 
 ---
@@ -66,15 +66,15 @@ git diff .github/workflows/cd-prod.yml
 git diff .github/workflows/deploy-production-broxiva.yml
 
 # Check for missed references
-grep -r "citadelbuy" .github/workflows/ || echo "✓ No old references found"
+grep -r "broxiva" .github/workflows/ || echo "✓ No old references found"
 ```
 
 ### Step 4: Commit Changes
 ```bash
 git add .
-git commit -m "ci: migrate CI/CD pipelines from CitadelBuy to Broxiva
+git commit -m "ci: migrate CI/CD pipelines from Broxiva to Broxiva
 
-- Replace all citadelbuy references with broxiva
+- Replace all broxiva references with broxiva
 - Update Azure resource group names
 - Update AKS cluster references
 - Update ACR registry references
@@ -91,7 +91,7 @@ git push origin cicd/migrate-to-broxiva
 
 # If you have GitHub CLI
 gh pr create \
-  --title "CI/CD Migration: CitadelBuy → Broxiva" \
+  --title "CI/CD Migration: Broxiva → Broxiva" \
   --body "See CICD_MIGRATION_SUMMARY.md for details" \
   --label "cicd,migration,breaking-change"
 ```
@@ -143,13 +143,13 @@ gh workflow list
 
 | Type | Old | New | Count |
 |------|-----|-----|-------|
-| Resource Groups | `citadelbuy-*-rg` | `broxiva-*-rg` | ~10 |
-| AKS Clusters | `citadelbuy-*-aks` | `broxiva-*-aks` | ~5 |
-| Databases | `citadelbuy-*-postgres` | `broxiva-*-postgres` | ~3 |
-| ACR | `citadelbuyacr.azurecr.io` | `broxivaacr.azurecr.io` | ~20 |
-| URLs | `*.citadelbuy.com` | `*.broxiva.com` | ~30 |
-| Container Images | `ghcr.io/citadelplatforms` | `ghcr.io/broxiva` | ~30 |
-| Terraform State | `citadelbuytfstate` | `broxivatfstate` | ~40 |
+| Resource Groups | `broxiva-*-rg` | `broxiva-*-rg` | ~10 |
+| AKS Clusters | `broxiva-*-aks` | `broxiva-*-aks` | ~5 |
+| Databases | `broxiva-*-postgres` | `broxiva-*-postgres` | ~3 |
+| ACR | `broxivaacr.azurecr.io` | `broxivaacr.azurecr.io` | ~20 |
+| URLs | `*.broxiva.com` | `*.broxiva.com` | ~30 |
+| Container Images | `ghcr.io/broxivaplatforms` | `ghcr.io/broxiva` | ~30 |
+| Terraform State | `broxivatfstate` | `broxivatfstate` | ~40 |
 
 ### Files Modified
 - **Existing Workflows:** 25+ files
@@ -263,7 +263,7 @@ git checkout HEAD~1 .github/workflows/
 
 ### Long-term (Month 1)
 1. ✅ Deploy to production with new workflow
-2. ✅ Decommission old CitadelBuy resources
+2. ✅ Decommission old Broxiva resources
 3. ✅ Update DNS if needed
 4. ✅ Archive old backups
 
@@ -291,7 +291,7 @@ If you encounter issues:
 ## Success Indicators
 
 You'll know the migration was successful when:
-- ✅ No `citadelbuy` references in workflow files
+- ✅ No `broxiva` references in workflow files
 - ✅ All workflows show green in GitHub Actions
 - ✅ Deployments work to dev environment
 - ✅ Cost monitoring creates reports

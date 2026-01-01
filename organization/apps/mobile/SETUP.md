@@ -1,6 +1,6 @@
 # Mobile App Setup Guide
 
-This guide will help you set up and run the CitadelBuy React Native mobile app.
+This guide will help you set up and run the Broxiva React Native mobile app.
 
 ## Prerequisites
 
@@ -57,7 +57,7 @@ EXPO_PUBLIC_API_URL=http://localhost:4000/api
 ### Production
 Update `.env` or create `.env.production`:
 ```env
-EXPO_PUBLIC_API_URL=https://api.citadelbuy.com/api
+EXPO_PUBLIC_API_URL=https://api.broxiva.com/api
 EXPO_PUBLIC_SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
 ```
 
@@ -124,7 +124,7 @@ npm test
    - Notification preferences
 
 5. **Deep Linking**
-   - App URL scheme: `citadelbuy://`
+   - App URL scheme: `broxiva://`
    - Product, category, order links
    - Promotion and search links
 
@@ -151,17 +151,17 @@ Test deep links in development:
 
 ```bash
 # Product detail
-npx uri-scheme open citadelbuy://products/123 --ios
-npx uri-scheme open citadelbuy://products/123 --android
+npx uri-scheme open broxiva://products/123 --ios
+npx uri-scheme open broxiva://products/123 --android
 
 # Search
-npx uri-scheme open "citadelbuy://search?q=shoes" --ios
+npx uri-scheme open "broxiva://search?q=shoes" --ios
 
 # Cart
-npx uri-scheme open citadelbuy://cart --ios
+npx uri-scheme open broxiva://cart --ios
 
 # AI Assistant
-npx uri-scheme open citadelbuy://ai --ios
+npx uri-scheme open broxiva://ai --ios
 ```
 
 ## Push Notifications Setup
@@ -202,7 +202,7 @@ export const SUBSCRIPTION_PRODUCTS = [
     id: 'premium_monthly',
     name: 'Premium Monthly',
     type: 'auto-renewable-subscription',
-    appleProductId: 'com.citadelbuy.premium.monthly',
+    appleProductId: 'com.broxiva.premium.monthly',
     googleProductId: 'premium_monthly',
     // ...
   }

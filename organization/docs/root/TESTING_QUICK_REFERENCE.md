@@ -96,7 +96,7 @@ git ls-files | grep -E "\.env$"  # Should be empty
 npm test
 
 # 5. Security headers (if deployed)
-curl -I https://staging.citadelbuy.com | grep -i "strict-transport"
+curl -I https://staging.broxiva.com | grep -i "strict-transport"
 ```
 
 ## GitHub Actions
@@ -204,7 +204,7 @@ organization/
 - Load Testing Issues: Review [tests/load/README.md](tests/load/README.md)
 - Security Issues: Review [docs/SECURITY_TESTING.md](docs/SECURITY_TESTING.md)
 - CI/CD Issues: Check GitHub Actions logs
-- Critical Security: security@citadelbuy.com
+- Critical Security: security@broxiva.com
 
 ---
 

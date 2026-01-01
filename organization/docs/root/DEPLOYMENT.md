@@ -1,4 +1,4 @@
-# CitadelBuy Platform - Deployment Guide
+# Broxiva Platform - Deployment Guide
 
 ## Table of Contents
 
@@ -66,7 +66,7 @@ cp apps/mobile/.env.example apps/mobile/.env
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@localhost:5432/citadelbuy` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@localhost:5432/broxiva` |
 | `REDIS_URL` | Redis connection string | `redis://localhost:6379` |
 | `JWT_SECRET` | Secret for JWT tokens | Use a 256-bit random string |
 | `JWT_REFRESH_SECRET` | Secret for refresh tokens | Use a different 256-bit random string |
@@ -128,10 +128,10 @@ pnpm dev:mobile
 
 ```bash
 # Build backend
-docker build -t citadelbuy/api:latest ./apps/api
+docker build -t broxiva/api:latest ./apps/api
 
 # Build frontend
-docker build -t citadelbuy/web:latest ./apps/web
+docker build -t broxiva/web:latest ./apps/web
 ```
 
 ### Run with Docker Compose
@@ -146,10 +146,10 @@ docker compose -f infrastructure/docker/docker-compose.prod.yml up -d
 
 ### Docker Image Tags
 
-- `citadelbuy/api:latest` - Latest backend build
-- `citadelbuy/web:latest` - Latest frontend build
-- `citadelbuy/api:v2.0-stable` - Stable release
-- `citadelbuy/web:v2.0-stable` - Stable release
+- `broxiva/api:latest` - Latest backend build
+- `broxiva/web:latest` - Latest frontend build
+- `broxiva/api:v2.0-stable` - Stable release
+- `broxiva/web:v2.0-stable` - Stable release
 
 ---
 
@@ -162,8 +162,8 @@ docker compose -f infrastructure/docker/docker-compose.prod.yml up -d
 export NODE_ENV=production
 
 # 2. Build production images
-docker build -t citadelbuy/api:prod ./apps/api
-docker build -t citadelbuy/web:prod ./apps/web
+docker build -t broxiva/api:prod ./apps/api
+docker build -t broxiva/web:prod ./apps/web
 
 # 3. Deploy with Docker Compose
 docker compose -f infrastructure/docker/docker-compose.prod.yml up -d
@@ -176,7 +176,7 @@ docker compose -f infrastructure/docker/docker-compose.prod.yml up -d
 kubectl apply -f infrastructure/k8s/
 
 # Or use Helm
-helm install citadelbuy ./infrastructure/helm/citadelbuy
+helm install broxiva ./infrastructure/helm/broxiva
 ```
 
 ### Option 3: Platform-as-a-Service
@@ -216,11 +216,11 @@ For production, ensure:
 
 ```bash
 # Create database
-createdb citadelbuy_dev
+createdb broxiva_dev
 
 # Create user
-psql -c "CREATE USER citadelbuy WITH PASSWORD 'your_password';"
-psql -c "GRANT ALL PRIVILEGES ON DATABASE citadelbuy_dev TO citadelbuy;"
+psql -c "CREATE USER broxiva WITH PASSWORD 'your_password';"
+psql -c "GRANT ALL PRIVILEGES ON DATABASE broxiva_dev TO broxiva;"
 ```
 
 ### Run Migrations
@@ -251,10 +251,10 @@ pnpm prisma db seed -- --production
 
 ```bash
 # Backup
-pg_dump -U citadelbuy citadelbuy_prod > backup.sql
+pg_dump -U broxiva broxiva_prod > backup.sql
 
 # Restore
-psql -U citadelbuy citadelbuy_prod < backup.sql
+psql -U broxiva broxiva_prod < backup.sql
 ```
 
 ---
@@ -360,5 +360,5 @@ tail -f apps/api/logs/app.log
 ## Support
 
 For issues and questions:
-- GitHub Issues: https://github.com/citadelbuy/citadelbuy/issues
-- Documentation: https://docs.citadelbuy.com
+- GitHub Issues: https://github.com/broxiva/broxiva/issues
+- Documentation: https://docs.broxiva.com

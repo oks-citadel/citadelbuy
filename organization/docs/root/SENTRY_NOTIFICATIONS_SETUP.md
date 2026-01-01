@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides detailed instructions for setting up team notifications for CitadelBuy's Sentry monitoring. It covers Slack integration, email alerts, PagerDuty on-call rotation, and webhook configurations.
+This guide provides detailed instructions for setting up team notifications for Broxiva's Sentry monitoring. It covers Slack integration, email alerts, PagerDuty on-call rotation, and webhook configurations.
 
 ## Table of Contents
 
@@ -86,7 +86,7 @@ Configure alerts at the project level to route to specific channels.
 2. Configure alert (see Alert Templates document)
 3. In **Actions** section:
    - Select **Send a Slack notification**
-   - Choose workspace: **CitadelBuy**
+   - Choose workspace: **Broxiva**
    - Select channel: **#incidents-critical**
    - Configure message format (see below)
 
@@ -100,7 +100,7 @@ Configure issue-level notifications:
    ```
    When: An event is first seen
    If: level equals error OR fatal
-   Then: Send a notification to Slack workspace CitadelBuy and channel #platform-alerts
+   Then: Send a notification to Slack workspace Broxiva and channel #platform-alerts
    ```
 
 ### Step 4: Customize Slack Message Format
@@ -161,9 +161,9 @@ Configure issue-level notifications:
 ```
 
 *Immediate Actions:*
-1. Check application health: <https://status.citadelbuy.com|Status Page>
+1. Check application health: <https://status.broxiva.com|Status Page>
 2. Review error details: <{{ url }}|View in Sentry>
-3. Follow incident runbook: <https://docs.citadelbuy.com/runbooks/incidents|Runbook>
+3. Follow incident runbook: <https://docs.broxiva.com/runbooks/incidents|Runbook>
 
 *On-Call:* @oncall-engineer
 
@@ -188,14 +188,14 @@ After installation, Sentry provides slash commands in Slack:
 **Usage Example:**
 
 ```
-User: /sentry link https://sentry.io/organizations/citadelbuy/issues/123/
-Bot: ✓ Linked to issue CITADEL-123. Future updates will appear in this thread.
+User: /sentry link https://sentry.io/organizations/broxiva/issues/123/
+Bot: ✓ Linked to issue BROXIVA-123. Future updates will appear in this thread.
 
 User: /sentry assign @john
-Bot: ✓ Assigned issue CITADEL-123 to John Doe
+Bot: ✓ Assigned issue BROXIVA-123 to John Doe
 
 User: /sentry resolve
-Bot: ✓ Marked issue CITADEL-123 as resolved
+Bot: ✓ Marked issue BROXIVA-123 as resolved
 ```
 
 ### Step 6: Configure Thread Replies
@@ -242,8 +242,8 @@ curl -X POST http://localhost:4000/api/test/sentry-error
    SMTP Port: 587
    Username: apikey
    Password: [SendGrid API Key]
-   From Email: sentry@citadelbuy.com
-   From Name: CitadelBuy Sentry
+   From Email: sentry@broxiva.com
+   From Name: Broxiva Sentry
    ```
 
 3. For Sentry.io (cloud), default email is pre-configured
@@ -253,24 +253,24 @@ curl -X POST http://localhost:4000/api/test/sentry-error
 Create email groups for different teams:
 
 **Engineering Leadership:**
-- `engineering-leads@citadelbuy.com`
+- `engineering-leads@broxiva.com`
   - VP Engineering
   - Engineering Managers
   - Tech Leads
 
 **Team Distribution Lists:**
-- `platform-team@citadelbuy.com`
-- `frontend-team@citadelbuy.com`
-- `mobile-team@citadelbuy.com`
-- `payments-team@citadelbuy.com`
-- `infrastructure-team@citadelbuy.com`
-- `security-team@citadelbuy.com`
+- `platform-team@broxiva.com`
+- `frontend-team@broxiva.com`
+- `mobile-team@broxiva.com`
+- `payments-team@broxiva.com`
+- `infrastructure-team@broxiva.com`
+- `security-team@broxiva.com`
 
 **On-Call:**
-- `oncall@citadelbuy.com` (forwards to current on-call engineer via PagerDuty)
+- `oncall@broxiva.com` (forwards to current on-call engineer via PagerDuty)
 
 **All Hands:**
-- `engineering-all@citadelbuy.com` (weekly reports only)
+- `engineering-all@broxiva.com` (weekly reports only)
 
 ### Step 3: Configure Individual Email Preferences
 
@@ -325,8 +325,8 @@ Conditions:
   - Environment: production
 
 Actions:
-  - Send email to: platform-team@citadelbuy.com
-  - Send email to: oncall@citadelbuy.com
+  - Send email to: platform-team@broxiva.com
+  - Send email to: oncall@broxiva.com
   - Frequency: Every 5 minutes (max)
 ```
 
@@ -368,18 +368,18 @@ ACTIONS REQUIRED:
 VIEW IN SENTRY:
 {{ url }}
 
-This is an automated message from CitadelBuy Sentry.
+This is an automated message from Broxiva Sentry.
 To update your notification preferences: {{ settings_url }}
 ```
 
 **Weekly Summary Email Template:**
 
 ```
-Subject: [Weekly Summary] CitadelBuy Sentry Report - Week of {{ week }}
+Subject: [Weekly Summary] Broxiva Sentry Report - Week of {{ week }}
 
 Hello {{ recipient_name }},
 
-Here's your weekly Sentry summary for CitadelBuy:
+Here's your weekly Sentry summary for Broxiva:
 
 === NEW ISSUES ===
 • {{ new_issues_count }} new issues detected
@@ -408,7 +408,7 @@ VIEW FULL DASHBOARD:
 {{ dashboard_url }}
 
 Best regards,
-CitadelBuy Monitoring Team
+Broxiva Monitoring Team
 ```
 
 ---
@@ -424,33 +424,33 @@ CitadelBuy Monitoring Team
 
 ### Step 2: Create PagerDuty Services
 
-In PagerDuty, create services for each CitadelBuy component:
+In PagerDuty, create services for each Broxiva component:
 
 **Services:**
 
 ```
-Service Name: CitadelBuy Backend - Production
+Service Name: Broxiva Backend - Production
 Integration Type: Events API V2
 Escalation Policy: Platform Team Escalation
 Incident Urgency: High urgency for all incidents
 ```
 
 ```
-Service Name: CitadelBuy Frontend - Production
+Service Name: Broxiva Frontend - Production
 Integration Type: Events API V2
 Escalation Policy: Frontend Team Escalation
 Incident Urgency: High urgency for all incidents
 ```
 
 ```
-Service Name: CitadelBuy Mobile - Production
+Service Name: Broxiva Mobile - Production
 Integration Type: Events API V2
 Escalation Policy: Mobile Team Escalation
 Incident Urgency: High urgency for all incidents
 ```
 
 ```
-Service Name: CitadelBuy Payments - Production
+Service Name: Broxiva Payments - Production
 Integration Type: Events API V2
 Escalation Policy: Payments Team Escalation
 Incident Urgency: High urgency for all incidents
@@ -489,9 +489,9 @@ In Sentry:
 
 | Sentry Project | PagerDuty Service |
 |---------------|-------------------|
-| citadelbuy-backend-prod | CitadelBuy Backend - Production |
-| citadelbuy-web-prod | CitadelBuy Frontend - Production |
-| citadelbuy-mobile-prod | CitadelBuy Mobile - Production |
+| broxiva-backend-prod | Broxiva Backend - Production |
+| broxiva-web-prod | Broxiva Frontend - Production |
+| broxiva-mobile-prod | Broxiva Mobile - Production |
 
 ### Step 5: Configure PagerDuty Alert Rules
 
@@ -508,7 +508,7 @@ Conditions:
 
 Actions:
   - Send PagerDuty notification
-  - Service: CitadelBuy Backend - Production
+  - Service: Broxiva Backend - Production
   - Severity: critical
   - Include custom details:
     • Project: {{ project_name }}
@@ -669,7 +669,7 @@ async function handleNewIssue(issue) {
   console.log('New issue:', issue.title);
 
   // Example: Post to internal system
-  await fetch('https://internal.citadelbuy.com/incidents', {
+  await fetch('https://internal.broxiva.com/incidents', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -688,7 +688,7 @@ async function handleNewIssue(issue) {
 2. Click **Add Webhook**
 3. Configure:
    ```
-   URL: https://api.citadelbuy.com/webhooks/sentry
+   URL: https://api.broxiva.com/webhooks/sentry
    Events:
      ☑ issue.created
      ☑ issue.resolved
@@ -760,7 +760,7 @@ Each user can configure personal notification preferences:
 **Example Rules:**
 
 ```
-Project: citadelbuy-backend-prod
+Project: broxiva-backend-prod
 Rule: Notify me when:
   • An issue is assigned to me
   • Someone mentions me in a comment
@@ -790,7 +790,7 @@ Notify team when:
 
 Delivery:
   ☑ Slack channel: #platform-alerts
-  ☑ Email: platform-team@citadelbuy.com
+  ☑ Email: platform-team@broxiva.com
   ☐ PagerDuty (only for critical)
 
 Frequency:
@@ -814,7 +814,7 @@ Default Issue Alert:
   Then:
     • Assign to: Issue owner (based on ownership rules)
     • Send Slack notification to: #platform-alerts
-    • Send email to: platform-team@citadelbuy.com
+    • Send email to: platform-team@broxiva.com
     • Create PagerDuty incident (if critical)
 
 Default Metric Alert:
@@ -822,8 +822,8 @@ Default Metric Alert:
   Threshold: 50 errors in 5 minutes
   Then:
     • Send Slack notification to: #incidents-critical
-    • Send PagerDuty alert to: CitadelBuy Backend - Production
-    • Trigger webhook: https://api.citadelbuy.com/webhooks/high-error-rate
+    • Send PagerDuty alert to: Broxiva Backend - Production
+    • Trigger webhook: https://api.broxiva.com/webhooks/high-error-rate
 ```
 
 ---
@@ -1004,8 +1004,8 @@ Solutions:
 ### Internal Support
 
 **First Line of Support:**
-- DevOps Team: devops-team@citadelbuy.com
-- Documentation: https://docs.citadelbuy.com/monitoring
+- DevOps Team: devops-team@broxiva.com
+- Documentation: https://docs.broxiva.com/monitoring
 
 **Escalation Path:**
 1. Team Lead (< 1 hour)

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The AI Engine is CitadelBuy's core machine learning microservice that powers AI-driven predictions and optimizations for dropshipping operations. Built with FastAPI and Python, it provides intelligent capabilities for product selection, pricing optimization, supplier evaluation, demand forecasting, fraud detection, and conversion prediction.
+The AI Engine is Broxiva's core machine learning microservice that powers AI-driven predictions and optimizations for dropshipping operations. Built with FastAPI and Python, it provides intelligent capabilities for product selection, pricing optimization, supplier evaluation, demand forecasting, fraud detection, and conversion prediction.
 
 ## Key Features
 
@@ -49,7 +49,7 @@ LOG_LEVEL=INFO
 PORT=8002
 
 # Database (PostgreSQL)
-DATABASE_URL=postgresql://user:password@localhost:5432/citadelbuy
+DATABASE_URL=postgresql://user:password@localhost:5432/broxiva
 
 # Redis Cache
 REDIS_URL=redis://localhost:6379/0
@@ -189,10 +189,10 @@ isort src/
 
 ```bash
 # Build the Docker image
-docker build -t citadelbuy/ai-engine:latest .
+docker build -t broxiva/ai-engine:latest .
 
 # Build with specific Python version
-docker build --build-arg PYTHON_VERSION=3.11 -t citadelbuy/ai-engine:latest .
+docker build --build-arg PYTHON_VERSION=3.11 -t broxiva/ai-engine:latest .
 ```
 
 ### Run Container
@@ -203,7 +203,7 @@ docker run -d \
   --name ai-engine \
   -p 8002:8002 \
   --env-file .env \
-  citadelbuy/ai-engine:latest
+  broxiva/ai-engine:latest
 
 # Run with Docker Compose
 docker-compose up ai-engine
@@ -224,7 +224,7 @@ services:
     ports:
       - "8002:8002"
     environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/citadelbuy
+      - DATABASE_URL=postgresql://postgres:password@db:5432/broxiva
       - REDIS_URL=redis://redis:6379/0
     depends_on:
       - db
@@ -377,10 +377,10 @@ See the main [Contributing Guide](../../../CONTRIBUTING.md) for development guid
 
 ## License
 
-Proprietary - CitadelBuy Platform
+Proprietary - Broxiva Platform
 
 ## Support
 
 For issues and questions:
 - Internal Slack: #ai-engine-support
-- Email: dev@citadelbuy.com
+- Email: dev@broxiva.com

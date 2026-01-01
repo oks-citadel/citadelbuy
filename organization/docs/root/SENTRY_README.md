@@ -2,7 +2,7 @@
 
 ## What is Sentry?
 
-Sentry is an error tracking and performance monitoring platform that helps CitadelBuy maintain high application quality and quickly respond to issues.
+Sentry is an error tracking and performance monitoring platform that helps Broxiva maintain high application quality and quickly respond to issues.
 
 ## What's Included
 
@@ -74,7 +74,7 @@ This repository includes comprehensive Sentry integration with:
 ### 1. Create Sentry Account
 
 1. Go to [https://sentry.io/signup/](https://sentry.io/signup/)
-2. Create an organization: `citadelbuy`
+2. Create an organization: `broxiva`
 3. Create projects for each environment
 
 ### 2. Get DSN Values
@@ -150,7 +150,7 @@ npm run dev
 ## Architecture
 
 ```
-CitadelBuy Application
+Broxiva Application
 ├── Backend (NestJS)
 │   ├── Sentry Module (Global)
 │   ├── Sentry Service
@@ -178,10 +178,10 @@ CitadelBuy Application
 Releases help you identify which version introduced a bug.
 
 **Format**:
-- Backend: `citadelbuy-backend@<version>`
-- Frontend: `citadelbuy-web@<version>`
+- Backend: `broxiva-backend@<version>`
+- Frontend: `broxiva-web@<version>`
 
-**Example**: `citadelbuy-web@1.2.3`
+**Example**: `broxiva-web@1.2.3`
 
 ### 2. Source Maps
 
@@ -237,9 +237,9 @@ Session replay records user sessions so you can see exactly what happened before
 **Don't**: Use one project for dev, staging, and production
 
 **Do**: Create separate projects:
-- `citadelbuy-backend-prod`
-- `citadelbuy-backend-staging`
-- `citadelbuy-backend-dev`
+- `broxiva-backend-prod`
+- `broxiva-backend-staging`
+- `broxiva-backend-dev`
 
 **Why**: Better organization, different alert rules, quota management
 
@@ -371,8 +371,8 @@ Common issues and solutions are documented in:
 
 1. Check the documentation above
 2. Review Sentry's official documentation
-3. Check the CitadelBuy internal wiki
-4. Contact the DevOps team: devops@citadelbuy.com
+3. Check the Broxiva internal wiki
+4. Contact the DevOps team: devops@broxiva.com
 5. Open a support ticket with Sentry (paid plans)
 
 ## Additional Resources
@@ -386,10 +386,10 @@ Common issues and solutions are documented in:
 
 ## License
 
-This Sentry integration is part of the CitadelBuy platform.
+This Sentry integration is part of the Broxiva platform.
 
 ---
 
 **Last Updated**: 2024-12-04
 **Version**: 1.0.0
-**Maintained By**: CitadelBuy DevOps Team
+**Maintained By**: Broxiva DevOps Team

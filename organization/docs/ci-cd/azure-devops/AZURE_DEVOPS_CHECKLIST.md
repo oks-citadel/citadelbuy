@@ -1,6 +1,6 @@
 # Azure DevOps Pipeline Setup Checklist
 
-Use this checklist to set up and verify Azure DevOps pipelines for CitadelBuy/Broxiva.
+Use this checklist to set up and verify Azure DevOps pipelines for Broxiva/Broxiva.
 
 ---
 
@@ -33,7 +33,7 @@ Use this checklist to set up and verify Azure DevOps pipelines for CitadelBuy/Br
 
 - [ ] Code is pushed to Azure DevOps
   ```bash
-  cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy
+  cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva
   git remote -v
   # Should show Azure DevOps origin
   ```
@@ -52,7 +52,7 @@ Use this checklist to set up and verify Azure DevOps pipelines for CitadelBuy/Br
 
 #### Azure Resource Manager Connection
 
-- [ ] Navigate to https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_settings/adminservices
+- [ ] Navigate to https://dev.azure.com/broxivacloudmanagement/Broxiva/_settings/adminservices
 - [ ] Click "New service connection"
 - [ ] Select "Azure Resource Manager"
 - [ ] Authentication: "Service principal (automatic)"
@@ -80,8 +80,8 @@ Use this checklist to set up and verify Azure DevOps pipelines for CitadelBuy/Br
 - [ ] List service connections
   ```bash
   az devops service-endpoint list \
-    --organization "https://dev.azure.com/citadelcloudmanagement" \
-    --project "CitadelBuy" \
+    --organization "https://dev.azure.com/broxivacloudmanagement" \
+    --project "Broxiva" \
     -o table
   ```
 
@@ -119,10 +119,10 @@ Use this checklist to set up and verify Azure DevOps pipelines for CitadelBuy/Br
 
 ### 4. Create Pipeline
 
-- [ ] Open https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_build
+- [ ] Open https://dev.azure.com/broxivacloudmanagement/Broxiva/_build
 - [ ] Click "New Pipeline" or edit existing
 - [ ] Source: "Azure Repos Git"
-- [ ] Repository: "CitadelBuy"
+- [ ] Repository: "Broxiva"
 - [ ] Configuration: "Existing Azure Pipelines YAML file"
 - [ ] Branch: "main"
 - [ ] Path: `/azure-pipelines-working.yml`
@@ -276,8 +276,8 @@ az acr check-health --name broxivaprodacr
 1. List service connections
    ```bash
    az devops service-endpoint list \
-     --organization "https://dev.azure.com/citadelcloudmanagement" \
-     --project "CitadelBuy" \
+     --organization "https://dev.azure.com/broxivacloudmanagement" \
+     --project "Broxiva" \
      --query "[].name" -o table
    ```
 2. Update `azure-pipelines-working.yml` with correct names
@@ -324,7 +324,7 @@ Once basic pipeline is working:
 
 - [ ] Add pipeline badge to README
   ```markdown
-  [![Build Status](https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_apis/build/status/CitadelBuy-Main-CI-CD)](https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_build/latest?definitionId=1)
+  [![Build Status](https://dev.azure.com/broxivacloudmanagement/Broxiva/_apis/build/status/Broxiva-Main-CI-CD)](https://dev.azure.com/broxivacloudmanagement/Broxiva/_build/latest?definitionId=1)
   ```
 
 - [ ] Configure retention policies
@@ -392,7 +392,7 @@ If pipeline causes issues:
 ### Cost Optimization
 
 - [ ] Monitor pipeline usage
-  - https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_settings/pipelines
+  - https://dev.azure.com/broxivacloudmanagement/Broxiva/_settings/pipelines
 
 - [ ] Optimize build times
   - Use Docker layer caching
@@ -418,7 +418,7 @@ If pipeline causes issues:
 
 - Azure DevOps Admin: [Your email]
 - Azure Subscription Owner: [Owner email]
-- Pipeline Support: https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_wiki
+- Pipeline Support: https://dev.azure.com/broxivacloudmanagement/Broxiva/_wiki
 
 ---
 

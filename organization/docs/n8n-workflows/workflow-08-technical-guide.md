@@ -1197,9 +1197,9 @@ describe('Pricing Workflow Integration', () => {
 NODE_ENV=production
 
 # Database
-POSTGRES_HOST=postgres.citadelbuy.internal
+POSTGRES_HOST=postgres.broxiva.internal
 POSTGRES_PORT=5432
-POSTGRES_DB=citadelbuy
+POSTGRES_DB=broxiva
 POSTGRES_USER=n8n_pricing
 POSTGRES_PASSWORD=<secret>
 
@@ -1263,7 +1263,7 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: citadelbuy
+      POSTGRES_DB: broxiva
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:

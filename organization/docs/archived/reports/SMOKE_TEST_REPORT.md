@@ -1,8 +1,8 @@
-# CitadelBuy - Smoke Test Design & Verification Procedures
+# Broxiva - Smoke Test Design & Verification Procedures
 
 **Agent F: Runtime Verification & Smoke Test Agent**
 **Date:** 2025-12-11
-**Location:** C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization
+**Location:** C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization
 
 ---
 
@@ -86,7 +86,7 @@
 #!/bin/bash
 
 ###############################################################################
-# CitadelBuy API Health Check Script
+# Broxiva API Health Check Script
 #
 # Purpose: Verify all critical API endpoints are responding correctly
 # Usage: ./scripts/health-check.sh [API_URL]
@@ -111,7 +111,7 @@ TIMEOUT=10
 FAILURES=0
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}CitadelBuy API Health Check${NC}"
+echo -e "${BLUE}Broxiva API Health Check${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo -e "API URL: ${API_URL}"
 echo -e "Timeout: ${TIMEOUT}s"
@@ -355,9 +355,9 @@ jobs:
       - name: Set environment URL
         run: |
           case "${{ inputs.environment || 'staging' }}" in
-            dev) echo "API_URL=https://api-dev.citadelbuy.com" >> $GITHUB_ENV ;;
-            staging) echo "API_URL=https://api-staging.citadelbuy.com" >> $GITHUB_ENV ;;
-            production) echo "API_URL=https://api.citadelbuy.com" >> $GITHUB_ENV ;;
+            dev) echo "API_URL=https://api-dev.broxiva.com" >> $GITHUB_ENV ;;
+            staging) echo "API_URL=https://api-staging.broxiva.com" >> $GITHUB_ENV ;;
+            production) echo "API_URL=https://api.broxiva.com" >> $GITHUB_ENV ;;
           esac
 
       - name: Run health check script
@@ -502,13 +502,13 @@ jobs:
 
 ```
 ========================================
-CitadelBuy Deployment Verification
+Broxiva Deployment Verification
 ========================================
 Environment: staging
 Timestamp: 2025-12-11 10:30:00 UTC
 
-API URL: https://api-staging.citadelbuy.com
-Web URL: https://staging.citadelbuy.com
+API URL: https://api-staging.broxiva.com
+Web URL: https://staging.broxiva.com
 
 [1/6] Service Availability
 -----------------------------------
@@ -548,8 +548,8 @@ Checking web response time... ✓ Fast (876ms)
 Verification Summary
 ========================================
 Environment: staging
-API URL: https://api-staging.citadelbuy.com
-Web URL: https://staging.citadelbuy.com
+API URL: https://api-staging.broxiva.com
+Web URL: https://staging.broxiva.com
 
 ✓ Deployment verified successfully!
 All systems operational.
@@ -661,8 +661,8 @@ jobs:
 2. **Environment-Specific Configurations**
    ```bash
    # .env.staging
-   ELASTICSEARCH_NODE=https://staging-es.citadelbuy.com
-   REDIS_URL=redis://staging-redis.citadelbuy.com:6379
+   ELASTICSEARCH_NODE=https://staging-es.broxiva.com
+   REDIS_URL=redis://staging-redis.broxiva.com:6379
    ```
 
 3. **Monitoring Integration**

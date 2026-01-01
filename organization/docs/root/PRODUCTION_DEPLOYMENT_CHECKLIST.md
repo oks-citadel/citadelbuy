@@ -1,6 +1,6 @@
 # Production Deployment Security Checklist
 
-**Project**: CitadelBuy E-Commerce Platform
+**Project**: Broxiva E-Commerce Platform
 **Version**: 2.1.0
 **Date**: _______________
 **Deployed By**: _______________
@@ -238,26 +238,26 @@ curl -u elastic:${ELASTICSEARCH_PASSWORD} http://localhost:9200
 ### Test Redis Authentication
 ```bash
 # Should require password
-docker exec citadelbuy-redis-prod redis-cli ping
+docker exec broxiva-redis-prod redis-cli ping
 # Should work with password
-docker exec citadelbuy-redis-prod redis-cli -a "$REDIS_PASSWORD" ping
+docker exec broxiva-redis-prod redis-cli -a "$REDIS_PASSWORD" ping
 ```
 
 ### Test Database Connections
 ```bash
 # PostgreSQL
-docker exec citadelbuy-postgres-prod psql -U citadelbuy -d citadelbuy_prod -c "SELECT version();"
+docker exec broxiva-postgres-prod psql -U broxiva -d broxiva_prod -c "SELECT version();"
 
 # MongoDB
-docker exec citadelbuy-mongodb-prod mongosh -u citadelbuy -p "$MONGO_PASSWORD" --eval "db.version()"
+docker exec broxiva-mongodb-prod mongosh -u broxiva -p "$MONGO_PASSWORD" --eval "db.version()"
 ```
 
 ### Verify Non-Root Users
 ```bash
 # Check all containers are not running as root
-docker exec citadelbuy-postgres-prod whoami  # Should be: postgres
-docker exec citadelbuy-redis-prod whoami     # Should be: redis
-docker exec citadelbuy-nginx-prod whoami     # Should be: nginx
+docker exec broxiva-postgres-prod whoami  # Should be: postgres
+docker exec broxiva-redis-prod whoami     # Should be: redis
+docker exec broxiva-nginx-prod whoami     # Should be: nginx
 ```
 
 ### Check Port Bindings
@@ -301,7 +301,7 @@ docker-compose down
 docker-compose -f docker-compose.production-backup.yml up -d
 
 # 3. Restore database if needed
-docker exec citadelbuy-postgres-prod psql -U citadelbuy -d citadelbuy_prod < backup.sql
+docker exec broxiva-postgres-prod psql -U broxiva -d broxiva_prod < backup.sql
 
 # 4. Verify rollback
 ./scripts/verify-deployment.sh

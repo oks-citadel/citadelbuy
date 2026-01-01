@@ -1,6 +1,6 @@
 # Database Migration Quick Reference
 
-Quick reference guide for common migration tasks in CitadelBuy.
+Quick reference guide for common migration tasks in Broxiva.
 
 ## 🚀 Quick Start
 
@@ -83,25 +83,25 @@ npx prisma format
 ### Create Backup
 ```bash
 # Standard backup
-pg_dump -h localhost -p 5432 -U citadelbuy citadelbuy_dev > backup.sql
+pg_dump -h localhost -p 5432 -U broxiva broxiva_dev > backup.sql
 
 # Compressed backup
-pg_dump -h localhost -p 5432 -U citadelbuy citadelbuy_dev | gzip > backup.sql.gz
+pg_dump -h localhost -p 5432 -U broxiva broxiva_dev | gzip > backup.sql.gz
 
 # Custom format (faster restore)
-pg_dump -h localhost -p 5432 -U citadelbuy -Fc citadelbuy_dev > backup.dump
+pg_dump -h localhost -p 5432 -U broxiva -Fc broxiva_dev > backup.dump
 ```
 
 ### Restore Backup
 ```bash
 # From SQL file
-psql -h localhost -p 5432 -U citadelbuy citadelbuy_dev < backup.sql
+psql -h localhost -p 5432 -U broxiva broxiva_dev < backup.sql
 
 # From compressed file
-gunzip -c backup.sql.gz | psql -h localhost -U citadelbuy citadelbuy_dev
+gunzip -c backup.sql.gz | psql -h localhost -U broxiva broxiva_dev
 
 # From custom format
-pg_restore -h localhost -p 5432 -U citadelbuy -d citadelbuy_dev backup.dump
+pg_restore -h localhost -p 5432 -U broxiva -d broxiva_dev backup.dump
 ```
 
 ## 🔍 Troubleshooting
@@ -303,7 +303,7 @@ REINDEX INDEX idx_name;
 pm2 stop all
 
 # 2. Restore backup
-pg_restore -d citadelbuy_prod backup.dump
+pg_restore -d broxiva_prod backup.dump
 
 # 3. Verify
 npx prisma migrate status

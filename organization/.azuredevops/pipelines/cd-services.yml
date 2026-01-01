@@ -1,5 +1,5 @@
 # ==========================================
-# CitadelBuy - Python Services Continuous Deployment
+# Broxiva - Python Services Continuous Deployment
 # Deploys all Python microservices to AKS
 # Services: ai-agents, inventory, media, notification, personalization
 # ==========================================
@@ -18,10 +18,10 @@ trigger:
 pr: none
 
 variables:
-  - group: citadelbuy-common
-  - group: citadelbuy-acr
+  - group: broxiva-common
+  - group: broxiva-acr
   - name: containerRegistry
-    value: 'citadelbuyprod.azurecr.io'
+    value: 'broxivaprod.azurecr.io'
   - name: tag
     value: '$(Build.BuildNumber)'
   - name: pythonVersion
@@ -47,15 +47,15 @@ stages:
             displayName: 'Login to ACR'
             inputs:
               command: login
-              containerRegistry: 'citadelbuy-acr-connection'
+              containerRegistry: 'broxiva-acr-connection'
 
           - task: Docker@2
             displayName: 'Build & Push AI Agents'
             inputs:
               command: buildAndPush
-              repository: 'citadelbuy-ai-agents'
+              repository: 'broxiva-ai-agents'
               dockerfile: '$(Build.SourcesDirectory)/apps/services/ai-agents/Dockerfile'
-              containerRegistry: 'citadelbuy-acr-connection'
+              containerRegistry: 'broxiva-acr-connection'
               tags: |
                 $(tag)
 
@@ -72,15 +72,15 @@ stages:
             displayName: 'Login to ACR'
             inputs:
               command: login
-              containerRegistry: 'citadelbuy-acr-connection'
+              containerRegistry: 'broxiva-acr-connection'
 
           - task: Docker@2
             displayName: 'Build & Push Inventory'
             inputs:
               command: buildAndPush
-              repository: 'citadelbuy-inventory'
+              repository: 'broxiva-inventory'
               dockerfile: '$(Build.SourcesDirectory)/apps/services/inventory/Dockerfile'
-              containerRegistry: 'citadelbuy-acr-connection'
+              containerRegistry: 'broxiva-acr-connection'
               tags: |
                 $(tag)
 
@@ -97,15 +97,15 @@ stages:
             displayName: 'Login to ACR'
             inputs:
               command: login
-              containerRegistry: 'citadelbuy-acr-connection'
+              containerRegistry: 'broxiva-acr-connection'
 
           - task: Docker@2
             displayName: 'Build & Push Media'
             inputs:
               command: buildAndPush
-              repository: 'citadelbuy-media'
+              repository: 'broxiva-media'
               dockerfile: '$(Build.SourcesDirectory)/apps/services/media/Dockerfile'
-              containerRegistry: 'citadelbuy-acr-connection'
+              containerRegistry: 'broxiva-acr-connection'
               tags: |
                 $(tag)
 
@@ -122,15 +122,15 @@ stages:
             displayName: 'Login to ACR'
             inputs:
               command: login
-              containerRegistry: 'citadelbuy-acr-connection'
+              containerRegistry: 'broxiva-acr-connection'
 
           - task: Docker@2
             displayName: 'Build & Push Notification'
             inputs:
               command: buildAndPush
-              repository: 'citadelbuy-notification'
+              repository: 'broxiva-notification'
               dockerfile: '$(Build.SourcesDirectory)/apps/services/notification/Dockerfile'
-              containerRegistry: 'citadelbuy-acr-connection'
+              containerRegistry: 'broxiva-acr-connection'
               tags: |
                 $(tag)
 
@@ -147,15 +147,15 @@ stages:
             displayName: 'Login to ACR'
             inputs:
               command: login
-              containerRegistry: 'citadelbuy-acr-connection'
+              containerRegistry: 'broxiva-acr-connection'
 
           - task: Docker@2
             displayName: 'Build & Push Personalization'
             inputs:
               command: buildAndPush
-              repository: 'citadelbuy-personalization'
+              repository: 'broxiva-personalization'
               dockerfile: '$(Build.SourcesDirectory)/apps/services/personalization/Dockerfile'
-              containerRegistry: 'citadelbuy-acr-connection'
+              containerRegistry: 'broxiva-acr-connection'
               tags: |
                 $(tag)
 
@@ -167,15 +167,15 @@ stages:
     dependsOn: BuildServices
     condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/develop'), eq(variables['Build.SourceBranch'], 'refs/heads/main')))
     variables:
-      - group: citadelbuy-dev
+      - group: broxiva-dev
       - name: namespace
-        value: 'citadelbuy-dev'
+        value: 'broxiva-dev'
     jobs:
       - deployment: DeployServicesToDev
         displayName: 'Deploy All Services to Dev'
         pool:
           vmImage: 'ubuntu-latest'
-        environment: 'citadelbuy-dev'
+        environment: 'broxiva-dev'
         strategy:
           runOnce:
             deploy:
@@ -187,60 +187,60 @@ stages:
                   displayName: 'Deploy AI Agents'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-dev'
+                    kubernetesServiceConnection: 'broxiva-aks-dev'
                     namespace: '$(namespace)'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/ai-agents/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/ai-agents/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-ai-agents:$(tag)'
+                    containers: '$(containerRegistry)/broxiva-ai-agents:$(tag)'
 
                 # Deploy Inventory
                 - task: KubernetesManifest@0
                   displayName: 'Deploy Inventory'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-dev'
+                    kubernetesServiceConnection: 'broxiva-aks-dev'
                     namespace: '$(namespace)'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/inventory/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/inventory/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-inventory:$(tag)'
+                    containers: '$(containerRegistry)/broxiva-inventory:$(tag)'
 
                 # Deploy Media
                 - task: KubernetesManifest@0
                   displayName: 'Deploy Media'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-dev'
+                    kubernetesServiceConnection: 'broxiva-aks-dev'
                     namespace: '$(namespace)'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/media/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/media/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-media:$(tag)'
+                    containers: '$(containerRegistry)/broxiva-media:$(tag)'
 
                 # Deploy Notification
                 - task: KubernetesManifest@0
                   displayName: 'Deploy Notification'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-dev'
+                    kubernetesServiceConnection: 'broxiva-aks-dev'
                     namespace: '$(namespace)'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/notification/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/notification/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-notification:$(tag)'
+                    containers: '$(containerRegistry)/broxiva-notification:$(tag)'
 
                 # Deploy Personalization
                 - task: KubernetesManifest@0
                   displayName: 'Deploy Personalization'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-dev'
+                    kubernetesServiceConnection: 'broxiva-aks-dev'
                     namespace: '$(namespace)'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/personalization/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/personalization/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-personalization:$(tag)'
+                    containers: '$(containerRegistry)/broxiva-personalization:$(tag)'
 
       - job: SmokeTestDev
         displayName: 'Smoke Test Services - Dev'
@@ -252,14 +252,14 @@ stages:
               echo "Testing Python services on Dev..."
 
               # Test AI Agents
-              curl -f https://ai-agents-dev.citadelbuy.com/health || echo "AI Agents health check failed"
+              curl -f https://ai-agents-dev.broxiva.com/health || echo "AI Agents health check failed"
 
               # Test other services
               services=(
-                "inventory-dev.citadelbuy.com"
-                "media-dev.citadelbuy.com"
-                "notification-dev.citadelbuy.com"
-                "personalization-dev.citadelbuy.com"
+                "inventory-dev.broxiva.com"
+                "media-dev.broxiva.com"
+                "notification-dev.broxiva.com"
+                "personalization-dev.broxiva.com"
               )
 
               for service in "${services[@]}"; do
@@ -280,15 +280,15 @@ stages:
     dependsOn: DeployDev
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
     variables:
-      - group: citadelbuy-staging
+      - group: broxiva-staging
       - name: namespace
-        value: 'citadelbuy-staging'
+        value: 'broxiva-staging'
     jobs:
       - deployment: DeployServicesToStaging
         displayName: 'Deploy All Services to Staging'
         pool:
           vmImage: 'ubuntu-latest'
-        environment: 'citadelbuy-staging'
+        environment: 'broxiva-staging'
         strategy:
           runOnce:
             deploy:
@@ -299,56 +299,56 @@ stages:
                   displayName: 'Deploy AI Agents'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-staging'
+                    kubernetesServiceConnection: 'broxiva-aks-staging'
                     namespace: '$(namespace)'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/ai-agents/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/ai-agents/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-ai-agents:$(tag)'
+                    containers: '$(containerRegistry)/broxiva-ai-agents:$(tag)'
 
                 - task: KubernetesManifest@0
                   displayName: 'Deploy Inventory'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-staging'
+                    kubernetesServiceConnection: 'broxiva-aks-staging'
                     namespace: '$(namespace)'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/inventory/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/inventory/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-inventory:$(tag)'
+                    containers: '$(containerRegistry)/broxiva-inventory:$(tag)'
 
                 - task: KubernetesManifest@0
                   displayName: 'Deploy Media'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-staging'
+                    kubernetesServiceConnection: 'broxiva-aks-staging'
                     namespace: '$(namespace)'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/media/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/media/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-media:$(tag)'
+                    containers: '$(containerRegistry)/broxiva-media:$(tag)'
 
                 - task: KubernetesManifest@0
                   displayName: 'Deploy Notification'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-staging'
+                    kubernetesServiceConnection: 'broxiva-aks-staging'
                     namespace: '$(namespace)'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/notification/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/notification/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-notification:$(tag)'
+                    containers: '$(containerRegistry)/broxiva-notification:$(tag)'
 
                 - task: KubernetesManifest@0
                   displayName: 'Deploy Personalization'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-staging'
+                    kubernetesServiceConnection: 'broxiva-aks-staging'
                     namespace: '$(namespace)'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/personalization/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/personalization/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-personalization:$(tag)'
+                    containers: '$(containerRegistry)/broxiva-personalization:$(tag)'
 
   # ==========================================
   # Stage 4: Deploy to Production
@@ -358,15 +358,15 @@ stages:
     dependsOn: DeployStaging
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
     variables:
-      - group: citadelbuy-production
+      - group: broxiva-production
       - name: namespace
-        value: 'citadelbuy-prod'
+        value: 'broxiva-prod'
     jobs:
       - deployment: DeployServicesToProd
         displayName: 'Deploy All Services to Production'
         pool:
           vmImage: 'ubuntu-latest'
-        environment: 'citadelbuy-production'
+        environment: 'broxiva-production'
         strategy:
           runOnce:
             deploy:
@@ -377,66 +377,66 @@ stages:
                   displayName: 'Deploy AI Agents'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-production'
+                    kubernetesServiceConnection: 'broxiva-aks-production'
                     namespace: '$(namespace)'
                     strategy: 'canary'
                     percentage: '25'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/ai-agents/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/ai-agents/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-ai-agents:$(tag)'
+                    containers: '$(containerRegistry)/broxiva-ai-agents:$(tag)'
 
                 - task: KubernetesManifest@0
                   displayName: 'Deploy Inventory'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-production'
+                    kubernetesServiceConnection: 'broxiva-aks-production'
                     namespace: '$(namespace)'
                     strategy: 'canary'
                     percentage: '25'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/inventory/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/inventory/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-inventory:$(tag)'
+                    containers: '$(containerRegistry)/broxiva-inventory:$(tag)'
 
                 - task: KubernetesManifest@0
                   displayName: 'Deploy Media'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-production'
+                    kubernetesServiceConnection: 'broxiva-aks-production'
                     namespace: '$(namespace)'
                     strategy: 'canary'
                     percentage: '25'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/media/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/media/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-media:$(tag)'
+                    containers: '$(containerRegistry)/broxiva-media:$(tag)'
 
                 - task: KubernetesManifest@0
                   displayName: 'Deploy Notification'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-production'
+                    kubernetesServiceConnection: 'broxiva-aks-production'
                     namespace: '$(namespace)'
                     strategy: 'canary'
                     percentage: '25'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/notification/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/notification/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-notification:$(tag)'
+                    containers: '$(containerRegistry)/broxiva-notification:$(tag)'
 
                 - task: KubernetesManifest@0
                   displayName: 'Deploy Personalization'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-production'
+                    kubernetesServiceConnection: 'broxiva-aks-production'
                     namespace: '$(namespace)'
                     strategy: 'canary'
                     percentage: '25'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/personalization/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/personalization/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-personalization:$(tag)'
+                    containers: '$(containerRegistry)/broxiva-personalization:$(tag)'
 
       - job: SmokeTestProduction
         displayName: 'Smoke Test - Production'
@@ -448,11 +448,11 @@ stages:
               echo "Running production smoke tests for services..."
 
               services=(
-                "ai-agents.citadelbuy.com"
-                "inventory.citadelbuy.com"
-                "media.citadelbuy.com"
-                "notification.citadelbuy.com"
-                "personalization.citadelbuy.com"
+                "ai-agents.broxiva.com"
+                "inventory.broxiva.com"
+                "media.broxiva.com"
+                "notification.broxiva.com"
+                "personalization.broxiva.com"
               )
 
               for service in "${services[@]}"; do
@@ -478,6 +478,6 @@ stages:
             displayName: 'Promote All Services'
             inputs:
               action: 'promote'
-              kubernetesServiceConnection: 'citadelbuy-aks-production'
+              kubernetesServiceConnection: 'broxiva-aks-production'
               namespace: '$(namespace)'
               strategy: 'canary'

@@ -5,22 +5,22 @@
 ---
 
 ## Title
-How [Company Name] [Achieved Specific Result] Using CitadelBuy
+How [Company Name] [Achieved Specific Result] Using Broxiva
 
 **Example Titles**:
 - How ABC Retail Reduced Sourcing Costs by 28% with African Suppliers
-- From $200K to $2M: Nigerian Exporter's Growth Story on CitadelBuy
-- UK Fashion Brand Sources Sustainable Textiles from Ghana via CitadelBuy
+- From $200K to $2M: Nigerian Exporter's Growth Story on Broxiva
+- UK Fashion Brand Sources Sustainable Textiles from Ghana via Broxiva
 
 ---
 
 ## Executive Summary (100 words)
 
 **Template**:
-[Company Name], a [industry] company based in [location], was facing [primary challenge]. By partnering with CitadelBuy, they [solution implemented] and achieved [specific results: X% cost reduction, Y% revenue growth, Z days faster delivery, etc.]. Within [timeframe], [Company Name] [additional achievement].
+[Company Name], a [industry] company based in [location], was facing [primary challenge]. By partnering with Broxiva, they [solution implemented] and achieved [specific results: X% cost reduction, Y% revenue growth, Z days faster delivery, etc.]. Within [timeframe], [Company Name] [additional achievement].
 
 **Example**:
-XYZ Retail, a mid-size home goods retailer based in Atlanta, Georgia, was struggling with rising sourcing costs and over-reliance on Asian suppliers. By partnering with CitadelBuy, they diversified to African suppliers and achieved 28% cost savings on textile products. Within 6 months, XYZ Retail onboarded 12 verified Nigerian and Kenyan suppliers, reducing average delivery times by 15 days.
+XYZ Retail, a mid-size home goods retailer based in Atlanta, Georgia, was struggling with rising sourcing costs and over-reliance on Asian suppliers. By partnering with Broxiva, they diversified to African suppliers and achieved 28% cost savings on textile products. Within 6 months, XYZ Retail onboarded 12 verified Nigerian and Kenyan suppliers, reducing average delivery times by 15 days.
 
 ---
 
@@ -45,7 +45,7 @@ XYZ Retail is a family-owned home goods retailer operating 45 stores across the 
 
 ### Primary Pain Points
 
-**Before CitadelBuy, [Company Name] was experiencing:**
+**Before Broxiva, [Company Name] was experiencing:**
 
 1. **[Pain Point 1 - Title]**
    - [Detailed description of the problem]
@@ -62,7 +62,7 @@ XYZ Retail is a family-owned home goods retailer operating 45 stores across the 
 
 **Example**:
 
-**Before CitadelBuy, XYZ Retail was experiencing:**
+**Before Broxiva, XYZ Retail was experiencing:**
 
 1. **Rising Sourcing Costs**
    - Asian suppliers had increased prices by 22% over 3 years due to labor cost inflation and shipping rate increases.
@@ -81,7 +81,7 @@ XYZ Retail is a family-owned home goods retailer operating 45 stores across the 
 
 ### Why Existing Solutions Weren't Working
 
-[Describe what they tried before CitadelBuy and why it failed]
+[Describe what they tried before Broxiva and why it failed]
 
 **Example**:
 XYZ Retail had tried traditional sourcing methods including attending trade shows in China and working with import brokers, but found:
@@ -95,11 +95,11 @@ XYZ Retail had tried traditional sourcing methods including attending trade show
 
 ### Discovery & Evaluation
 
-**How [Company Name] Found CitadelBuy:**
+**How [Company Name] Found Broxiva:**
 [Describe how they discovered the platform - Google search, referral, trade show, sales outreach, etc.]
 
 **Example**:
-Sarah Johnson discovered CitadelBuy through a LinkedIn article about African sourcing alternatives. Intrigued by the verified supplier model and integrated trade finance, she requested a demo in March 2025.
+Sarah Johnson discovered Broxiva through a LinkedIn article about African sourcing alternatives. Intrigued by the verified supplier model and integrated trade finance, she requested a demo in March 2025.
 
 ### Implementation Process
 
@@ -124,14 +124,14 @@ Sarah Johnson discovered CitadelBuy through a LinkedIn article about African sou
 
 **Phase 1: Pilot Program (March-May 2025)**
 - Identified 3 product categories for testing: cotton bedding, decorative pillows, curtains
-- CitadelBuy matched XYZ with 8 pre-vetted Nigerian and Kenyan suppliers
+- Broxiva matched XYZ with 8 pre-vetted Nigerian and Kenyan suppliers
 - Ordered samples from 5 suppliers, quality-tested in-house
 - Selected 3 suppliers for initial production orders (total $45K)
 
 **Phase 2: Scale-Up (June-August 2025)**
 - Expanded to 12 African suppliers across Nigeria, Kenya, South Africa
 - Placed $180K in orders across 8 product lines
-- Onboarded procurement team to CitadelBuy platform
+- Onboarded procurement team to Broxiva platform
 - Utilized BNPL feature for 60-day payment terms on 3 large orders
 
 **Phase 3: Full Integration (September 2025)**
@@ -142,7 +142,7 @@ Sarah Johnson discovered CitadelBuy through a LinkedIn article about African sou
 
 ### Key Features Used
 
-**CitadelBuy Features That Made the Difference:**
+**Broxiva Features That Made the Difference:**
 
 - **[Feature 1]:** [How they used it and why it mattered]
 - **[Feature 2]:** [Usage and impact]
@@ -163,7 +163,7 @@ Sarah Johnson discovered CitadelBuy through a LinkedIn article about African sou
 
 **Key Metrics** ([Timeframe]):
 
-| Metric | Before CitadelBuy | After CitadelBuy | Improvement |
+| Metric | Before Broxiva | After Broxiva | Improvement |
 |--------|------------------|-----------------|-------------|
 | **Average Sourcing Cost** | [Value] | [Value] | [%] decrease |
 | **Lead Time** | [Days] | [Days] | [Days/% ] reduction |
@@ -173,7 +173,7 @@ Sarah Johnson discovered CitadelBuy through a LinkedIn article about African sou
 
 **Example**:
 
-| Metric | Before CitadelBuy | After CitadelBuy | Improvement |
+| Metric | Before Broxiva | After Broxiva | Improvement |
 |--------|------------------|-----------------|-------------|
 | **Average Sourcing Cost (per unit)** | $12.50 | $9.00 | 28% decrease |
 | **Lead Time** | 48 days | 33 days | 15 days faster |
@@ -205,7 +205,7 @@ Sarah Johnson discovered CitadelBuy through a LinkedIn article about African sou
 
 **Example**:
 
-> "CitadelBuy didn't just save us money - it transformed how we think about sourcing. We went from reactive to strategic, and our suppliers in Nigeria and Kenya feel like true partners."
+> "Broxiva didn't just save us money - it transformed how we think about sourcing. We went from reactive to strategic, and our suppliers in Nigeria and Kenya feel like true partners."
 >
 > **— Sarah Johnson, VP of Procurement, XYZ Retail**
 
@@ -217,7 +217,7 @@ Sarah Johnson discovered CitadelBuy through a LinkedIn article about African sou
 
 ## Looking Ahead
 
-### Future Plans with CitadelBuy
+### Future Plans with Broxiva
 
 **[Company Name]'s Next Steps:**
 - [Future expansion plan 1]
@@ -235,22 +235,22 @@ Sarah Johnson discovered CitadelBuy through a LinkedIn article about African sou
 ### Advice for Other Companies
 
 **[Stakeholder Name]'s Recommendations:**
-"[Quote with advice for companies considering CitadelBuy or African sourcing]"
+"[Quote with advice for companies considering Broxiva or African sourcing]"
 
 **Example**:
 
 **Sarah's Recommendations:**
-"Start with a pilot. Don't try to move everything at once. We tested 3 product categories, learned what worked, then scaled. Also, visit your top suppliers when you can - we went to Nigeria in month 6 and it strengthened our relationships tremendously. CitadelBuy's platform is excellent, but the human connection still matters in B2B."
+"Start with a pilot. Don't try to move everything at once. We tested 3 product categories, learned what worked, then scaled. Also, visit your top suppliers when you can - we went to Nigeria in month 6 and it strengthened our relationships tremendously. Broxiva's platform is excellent, but the human connection still matters in B2B."
 
 ---
 
 ## Call-to-Action
 
-### See How CitadelBuy Can Help Your Business
+### See How Broxiva Can Help Your Business
 
 **[Similar companies can achieve similar results]**
 
-If you're a [industry/role] company looking to [achieve similar outcome], CitadelBuy can help.
+If you're a [industry/role] company looking to [achieve similar outcome], Broxiva can help.
 
 **Next Steps:**
 - [Request a Demo]({{demoUrl}}) - See the platform in action
@@ -259,12 +259,12 @@ If you're a [industry/role] company looking to [achieve similar outcome], Citade
 
 **Example**:
 
-If you're a retail or distribution company looking to reduce sourcing costs, diversify your supply chain, or explore African suppliers, CitadelBuy can help.
+If you're a retail or distribution company looking to reduce sourcing costs, diversify your supply chain, or explore African suppliers, Broxiva can help.
 
 **Next Steps:**
-- [Request a Demo](https://citadelbuy.com/demo) - See how we match buyers with verified suppliers
-- [Download Free Guide](https://citadelbuy.com/guides/sourcing-from-africa) - "The Ultimate Guide to Sourcing from Africa"
-- [Contact Sales](https://citadelbuy.com/contact) - Speak with a sourcing expert about your needs
+- [Request a Demo](https://broxiva.com/demo) - See how we match buyers with verified suppliers
+- [Download Free Guide](https://broxiva.com/guides/sourcing-from-africa) - "The Ultimate Guide to Sourcing from Africa"
+- [Contact Sales](https://broxiva.com/contact) - Speak with a sourcing expert about your needs
 
 ---
 
@@ -282,7 +282,7 @@ If you're a retail or distribution company looking to reduce sourcing costs, div
 - [Keyword 1]
 - [Keyword 2]
 - [Keyword 3]
-- [Company industry + CitadelBuy]
+- [Company industry + Broxiva]
 - [Geographic region + sourcing]
 
 **Example**:

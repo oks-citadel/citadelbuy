@@ -12,7 +12,7 @@
 
 ## Context
 
-CitadelBuy operates across 6 global regions with users expecting to:
+Broxiva operates across 6 global regions with users expecting to:
 1. **View prices in local currency**: Nigerians see NGN, Americans see USD, Europeans see EUR
 2. **Pay in preferred currency**: Support 30+ currencies
 3. **Accurate exchange rates**: Real-time or near-real-time rates

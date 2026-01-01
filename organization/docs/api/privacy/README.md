@@ -1,6 +1,6 @@
 # Privacy Module - GDPR/CCPA Compliance
 
-This module implements comprehensive privacy and data protection features for CitadelBuy, ensuring compliance with GDPR (General Data Protection Regulation) and CCPA (California Consumer Privacy Act).
+This module implements comprehensive privacy and data protection features for Broxiva, ensuring compliance with GDPR (General Data Protection Regulation) and CCPA (California Consumer Privacy Act).
 
 ## Features
 
@@ -51,7 +51,7 @@ Apply the privacy schema to your database:
 npx prisma migrate dev --name add_privacy_consent
 
 # Or run the SQL migration directly
-psql -U your_user -d citadelbuy < prisma/migrations/add_privacy_consent/migration.sql
+psql -U your_user -d broxiva < prisma/migrations/add_privacy_consent/migration.sql
 ```
 
 This creates the following tables:
@@ -474,12 +474,12 @@ export function PrivacyDashboard() {
 
 - [GDPR Official Text](https://gdpr-info.eu/)
 - [CCPA Official Text](https://oag.ca.gov/privacy/ccpa)
-- [CitadelBuy Privacy Compliance Docs](../../../docs/PRIVACY_COMPLIANCE.md)
+- [Broxiva Privacy Compliance Docs](../../../docs/PRIVACY_COMPLIANCE.md)
 - [Privacy Policy Template](../../../docs/templates/PRIVACY_POLICY_TEMPLATE.md)
 
 ## Support
 
 For questions or issues:
 - Internal: Contact the platform team
-- External: privacy@citadelbuy.com
-- DPO: dpo@citadelbuy.com (if appointed)
+- External: privacy@broxiva.com
+- DPO: dpo@broxiva.com (if appointed)

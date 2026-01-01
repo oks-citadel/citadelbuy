@@ -1,4 +1,4 @@
-# CitadelBuy Feedback & Review Collection - Visual Workflow Diagram
+# Broxiva Feedback & Review Collection - Visual Workflow Diagram
 
 ## Complete Workflow Architecture
 
@@ -19,13 +19,13 @@
                 ▼
     ┌─────────────────────────┐
     │  Get Order Details      │  ──► GET /v1/orders/{order_id}
-    │  CitadelBuy API         │
+    │  Broxiva API         │
     └───────────┬─────────────┘
                 │
                 ▼
     ┌─────────────────────────┐
     │  Get Customer Details   │  ──► GET /v1/users/{user_id}
-    │  CitadelBuy API         │
+    │  Broxiva API         │
     └───────────┬─────────────┘
                 │
                 ▼
@@ -59,7 +59,7 @@
                 ▼
     ┌─────────────────────────┐
     │  Log Review Request     │  ──► POST /v1/reviews/requests
-    │  CitadelBuy API         │      (status: sent, reminder_at: +3d)
+    │  Broxiva API         │      (status: sent, reminder_at: +3d)
     └───────────┬─────────────┘
                 │
                 ▼
@@ -71,7 +71,7 @@
                 ▼
     ┌─────────────────────────┐
     │  Check Review Status    │  ──► GET /v1/reviews/requests/{token}/status
-    │  CitadelBuy API         │
+    │  Broxiva API         │
     └───────────┬─────────────┘
                 │
                 ▼
@@ -113,7 +113,7 @@
                 ▼                                 ▼                 │  (OpenAI GPT-4)  │
     ┌─────────────────────────┐       ┌─────────────────────────┐   └────────┬─────────┘
     │  Send Thank You Email   │       │  Alert Support Team     │            │
-    │  (SendGrid)             │       │  support@citadelbuy.com │            ▼
+    │  (SendGrid)             │       │  support@broxiva.com │            ▼
     │                         │       └───────────┬─────────────┘   ┌──────────────────┐
     │  • "Amazing review!"    │                   │                 │  Merge Sentiment │
     │  • Discount code        │                   ▼                 │  Data with       │
@@ -124,7 +124,7 @@
     ┌─────────────────────────┐                   │                ┌──────────────────┐
     │  Send Referral          │                   ▼                │  Save Review     │
     │  Program Invitation     │       ┌─────────────────────────┐  │  with Sentiment  │
-    │  (CitadelBuy API)       │       │  Slack Alert            │  │  (CitadelBuy API)│
+    │  (Broxiva API)       │       │  Slack Alert            │  │  (Broxiva API)│
     │                         │       │  #customer-support      │  └────────┬─────────┘
     │  • Get referral link    │       │                         │           │
     │  • $10 credit for both  │       │  🚨 Negative Review!    │           ▼
@@ -159,7 +159,7 @@
                 ▼
     ┌─────────────────────────┐
     │  Save NPS Response      │  ──► POST /v1/nps/responses
-    │  (CitadelBuy API)       │
+    │  (Broxiva API)       │
     └───────────┬─────────────┘
                 │
                 ▼
@@ -231,7 +231,7 @@ Discount       Discount                   • Zendesk Ticket
 ═══════════════════════════════════════════════════════════════════════════
 
 1. Shipment Delivered (Trigger)
-   POST https://n8n.citadelbuy.com/webhook/shipment-delivered
+   POST https://n8n.broxiva.com/webhook/shipment-delivered
    ┌─────────────────────────────────────────┐
    │ {                                       │
    │   "order_id": "ORD-123456",            │
@@ -243,7 +243,7 @@ Discount       Discount                   • Zendesk Ticket
    └─────────────────────────────────────────┘
 
 2. Review Submitted (Process)
-   POST https://n8n.citadelbuy.com/webhook/review-submitted
+   POST https://n8n.broxiva.com/webhook/review-submitted
    ┌─────────────────────────────────────────┐
    │ {                                       │
    │   "review_id": "REV-001",              │
@@ -256,7 +256,7 @@ Discount       Discount                   • Zendesk Ticket
    └─────────────────────────────────────────┘
 
 3. NPS Response (Track)
-   POST https://n8n.citadelbuy.com/webhook/nps-response
+   POST https://n8n.broxiva.com/webhook/nps-response
    ┌─────────────────────────────────────────┐
    │ {                                       │
    │   "customer_id": "USR-789",            │
@@ -309,7 +309,7 @@ Discount       Discount                   • Zendesk Ticket
 └──────────────┘
 
 ┌──────────────┐
-│  CitadelBuy  │  • Order/customer data
+│  Broxiva  │  • Order/customer data
 │  API         │  • Review storage
 │              │  • NPS responses
 │              │  • Referral management
@@ -324,8 +324,8 @@ Discount       Discount                   • Zendesk Ticket
 
 Input Data Sources:
   ├─ ShipStation (delivery confirmations)
-  ├─ CitadelBuy Review Form (customer feedback)
-  └─ CitadelBuy NPS Form (satisfaction scores)
+  ├─ Broxiva Review Form (customer feedback)
+  └─ Broxiva NPS Form (satisfaction scores)
 
 Processing Steps:
   ├─ Wait nodes (5 days, 3 days)
@@ -337,7 +337,7 @@ Output Destinations:
   ├─ Customer emails (SendGrid, Klaviyo)
   ├─ Support team (Email, Slack, Zendesk)
   ├─ Analytics (Mixpanel)
-  └─ Database (CitadelBuy API)
+  └─ Database (Broxiva API)
 
 
 ═══════════════════════════════════════════════════════════════════════════

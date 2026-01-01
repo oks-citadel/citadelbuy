@@ -320,7 +320,7 @@ For each secret to rotate:
   git push origin main
   ```
 - [ ] **Monitor GitHub Actions:**
-  - Go to: https://github.com/<org>/citadelbuy/actions
+  - Go to: https://github.com/<org>/broxiva/actions
   - Watch "Broxiva Production Pipeline"
 - [ ] **Verify pipeline stages:**
   - [ ] Setup - Complete

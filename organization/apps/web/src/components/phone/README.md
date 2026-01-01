@@ -1,6 +1,6 @@
 # Phone Verification Components
 
-This directory contains the UI components for phone number verification in the CitadelBuy web application.
+This directory contains the UI components for phone number verification in the Broxiva web application.
 
 ## Components
 
@@ -189,7 +189,7 @@ All components use:
 - Tailwind CSS for styling
 - shadcn/ui components (Card, Button, Input, Badge, Label)
 - Lucide React icons
-- Consistent color scheme with the CitadelBuy design system
+- Consistent color scheme with the Broxiva design system
 
 ## Toast Notifications
 

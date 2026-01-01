@@ -62,8 +62,8 @@ export const SUBSCRIPTION_PRODUCTS = [
   {
     id: 'premium_monthly',
     name: 'Premium Monthly',
-    appleProductId: 'com.citadelbuy.premium.monthly',
-    googleProductId: 'citadelbuy_premium_monthly',
+    appleProductId: 'com.broxiva.premium.monthly',
+    googleProductId: 'broxiva_premium_monthly',
     type: 'subscription',
     interval: 'month',
   },

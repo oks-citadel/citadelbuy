@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides actionable debugging workflows for common issues detected by Sentry in the CitadelBuy platform. It includes step-by-step investigation procedures, common patterns, and resolution strategies.
+This guide provides actionable debugging workflows for common issues detected by Sentry in the Broxiva platform. It includes step-by-step investigation procedures, common patterns, and resolution strategies.
 
 ## Table of Contents
 
@@ -78,7 +78,7 @@ Questions to Answer:
 transaction:"POST /api/checkout" is:unresolved
 
 # Errors from same release
-release:"citadelbuy-backend@2.0.0" is:unresolved
+release:"broxiva-backend@2.0.0" is:unresolved
 
 # Recent errors (last hour)
 firstSeen:-1h is:unresolved
@@ -270,7 +270,7 @@ user.count:>=10 is:unresolved
    redis-cli INFO stats
 
    # Check application logs
-   kubectl logs -n production deployment/citadelbuy-backend --tail=100
+   kubectl logs -n production deployment/broxiva-backend --tail=100
 
    # Check resource usage
    kubectl top pods -n production
@@ -381,9 +381,9 @@ user.count:>=10 is:unresolved
    # If missing, re-upload
    npm run build
    sentry-cli sourcemaps upload \
-     --org citadelbuy \
-     --project citadelbuy-web-prod \
-     --release citadelbuy-web@2.0.0 \
+     --org broxiva \
+     --project broxiva-web-prod \
+     --release broxiva-web@2.0.0 \
      .next/static/chunks
    ```
 
@@ -474,7 +474,7 @@ user.count:>=10 is:unresolved
    npm install -g lighthouse
 
    # Run audit
-   lighthouse https://citadelbuy.com/products/123 \
+   lighthouse https://broxiva.com/products/123 \
      --output=html \
      --output-path=./lighthouse-report.html
 
@@ -590,7 +590,7 @@ user.count:>=10 is:unresolved
 4. **Profile Database Queries**
    ```sql
    -- Enable query logging (temporarily)
-   ALTER DATABASE citadelbuy SET log_statement = 'all';
+   ALTER DATABASE broxiva SET log_statement = 'all';
 
    -- Check slow queries
    SELECT query, mean_exec_time, calls
@@ -693,7 +693,7 @@ user.count:>=10 is:unresolved
    ```sql
    -- View recent deadlocks
    SELECT * FROM pg_stat_database_conflicts
-   WHERE datname = 'citadelbuy_prod';
+   WHERE datname = 'broxiva_prod';
 
    -- Check locks
    SELECT

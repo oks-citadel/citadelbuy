@@ -1,6 +1,6 @@
-# CitadelBuy Database Migrations
+# Broxiva Database Migrations
 
-Complete database migration management system for CitadelBuy.
+Complete database migration management system for Broxiva.
 
 ## 📚 Documentation
 
@@ -280,8 +280,8 @@ Every migration includes:
 3. Search team documentation
 
 ### Support Channels
-- Slack: #citadelbuy-database
-- Email: database-team@citadelbuy.com
+- Slack: #broxiva-database
+- Email: database-team@broxiva.com
 - On-Call: PagerDuty escalation
 
 ### External Resources
@@ -389,7 +389,7 @@ warning:
 
 ## 📜 License
 
-This migration system is part of CitadelBuy and follows the project's license.
+This migration system is part of Broxiva and follows the project's license.
 
 ---
 
@@ -423,5 +423,5 @@ This migration system is part of CitadelBuy and follows the project's license.
 
 **Version**: 1.0
 **Last Updated**: December 4, 2024
-**Maintained By**: CitadelBuy Database Team
+**Maintained By**: Broxiva Database Team
 **Status**: Ready for Use ✅

@@ -1,8 +1,8 @@
-# GDPR/CCPA Implementation Guide - CitadelBuy
+# GDPR/CCPA Implementation Guide - Broxiva
 
 ## Overview
 
-This guide provides step-by-step instructions for completing the GDPR/CCPA compliance implementation for CitadelBuy. The core backend functionality has been implemented, but some integration and frontend work remains.
+This guide provides step-by-step instructions for completing the GDPR/CCPA compliance implementation for Broxiva. The core backend functionality has been implemented, but some integration and frontend work remains.
 
 ## What Has Been Implemented
 
@@ -78,7 +78,7 @@ npx prisma generate
 cd apps/api
 
 # Run the migration SQL
-psql -U your_user -d citadelbuy < prisma/migrations/add_privacy_consent/migration.sql
+psql -U your_user -d broxiva < prisma/migrations/add_privacy_consent/migration.sql
 
 # Update Prisma schema and regenerate client
 npx prisma generate
@@ -567,7 +567,7 @@ Set up monitoring for:
 - [CNIL Guidance](https://www.cnil.fr/en)
 
 ### Contact
-- Privacy Questions: privacy@citadelbuy.com
+- Privacy Questions: privacy@broxiva.com
 - Technical Issues: Platform team
 - Legal Review: Legal team
 

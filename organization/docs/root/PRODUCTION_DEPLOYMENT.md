@@ -1,8 +1,8 @@
-# CitadelBuy Production Deployment Guide
+# Broxiva Production Deployment Guide
 
 ## Overview
 
-This guide covers deploying the CitadelBuy platform to production using Docker containers. The platform uses multi-stage Docker builds for minimal image sizes and enhanced security.
+This guide covers deploying the Broxiva platform to production using Docker containers. The platform uses multi-stage Docker builds for minimal image sizes and enhanced security.
 
 ## Files Created
 
@@ -84,7 +84,7 @@ docker-compose --version
 
 ```bash
 # Navigate to organization directory
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization
 
 # Create production environment file
 cp apps/api/.env.example .env.production
@@ -109,19 +109,19 @@ NODE_ENV=production
 VERSION=1.0.0
 
 # Database
-POSTGRES_USER=citadelbuy
+POSTGRES_USER=broxiva
 POSTGRES_PASSWORD=<generated-secret>
-POSTGRES_DB=citadelbuy_prod
+POSTGRES_DB=broxiva_prod
 
 # Redis
 REDIS_PASSWORD=<generated-secret>
 
 # MongoDB
-MONGO_USER=citadelbuy
+MONGO_USER=broxiva
 MONGO_PASSWORD=<generated-secret>
 
 # RabbitMQ
-RABBITMQ_USER=citadelbuy
+RABBITMQ_USER=broxiva
 RABBITMQ_PASSWORD=<generated-secret>
 
 # Elasticsearch
@@ -136,9 +136,9 @@ JWT_REFRESH_EXPIRES_IN=7d
 # Email (use your SMTP provider)
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
-EMAIL_USER=noreply@citadelbuy.com
+EMAIL_USER=noreply@broxiva.com
 EMAIL_PASSWORD=<your-email-password>
-EMAIL_FROM=CitadelBuy <noreply@citadelbuy.com>
+EMAIL_FROM=Broxiva <noreply@broxiva.com>
 
 # Stripe
 STRIPE_SECRET_KEY=sk_live_xxx
@@ -154,7 +154,7 @@ PAYPAL_MODE=production
 AWS_ACCESS_KEY_ID=xxx
 AWS_SECRET_ACCESS_KEY=xxx
 AWS_REGION=us-east-1
-AWS_S3_BUCKET=citadelbuy-prod
+AWS_S3_BUCKET=broxiva-prod
 
 # Algolia
 ALGOLIA_APP_ID=xxx
@@ -175,10 +175,10 @@ GITHUB_CLIENT_SECRET=xxx
 NEXT_PUBLIC_GITHUB_CLIENT_ID=xxx
 
 # URLs
-NEXT_PUBLIC_API_URL=https://api.citadelbuy.com
-NEXT_PUBLIC_WS_URL=wss://api.citadelbuy.com
-NEXT_PUBLIC_APP_URL=https://citadelbuy.com
-NEXT_PUBLIC_CDN_URL=https://cdn.citadelbuy.com
+NEXT_PUBLIC_API_URL=https://api.broxiva.com
+NEXT_PUBLIC_WS_URL=wss://api.broxiva.com
+NEXT_PUBLIC_APP_URL=https://broxiva.com
+NEXT_PUBLIC_CDN_URL=https://cdn.broxiva.com
 
 # Monitoring
 SENTRY_DSN=https://xxx@sentry.io/xxx
@@ -188,10 +188,10 @@ NEXT_PUBLIC_GA_TRACKING_ID=G-XXXXXXXXXX
 # Grafana
 GRAFANA_ADMIN_USER=admin
 GRAFANA_ADMIN_PASSWORD=<generated-secret>
-GRAFANA_ROOT_URL=https://monitoring.citadelbuy.com
+GRAFANA_ROOT_URL=https://monitoring.broxiva.com
 
 # CORS
-CORS_ORIGIN=https://citadelbuy.com,https://www.citadelbuy.com
+CORS_ORIGIN=https://broxiva.com,https://www.broxiva.com
 
 # Feature Flags
 NEXT_PUBLIC_ENABLE_AI_FEATURES=true
@@ -248,7 +248,7 @@ docker-compose -f docker-compose.production.yml logs -f
 ```bash
 # Wait for PostgreSQL to be ready
 docker-compose -f docker-compose.production.yml exec postgres \
-  pg_isready -U citadelbuy
+  pg_isready -U broxiva
 
 # Run Prisma migrations
 docker-compose -f docker-compose.production.yml exec api \
@@ -332,12 +332,12 @@ docker-compose -f docker-compose.production.yml logs -f --tail=100 api
 ```bash
 # Create backup
 docker-compose -f docker-compose.production.yml exec postgres \
-  pg_dump -U citadelbuy citadelbuy_prod > backup-$(date +%Y%m%d-%H%M%S).sql
+  pg_dump -U broxiva broxiva_prod > backup-$(date +%Y%m%d-%H%M%S).sql
 
 # Restore backup
 cat backup-20250106-120000.sql | \
   docker-compose -f docker-compose.production.yml exec -T postgres \
-  psql -U citadelbuy citadelbuy_prod
+  psql -U broxiva broxiva_prod
 ```
 
 ### MongoDB Backup
@@ -345,11 +345,11 @@ cat backup-20250106-120000.sql | \
 ```bash
 # Create backup
 docker-compose -f docker-compose.production.yml exec mongodb \
-  mongodump --out /backup --username citadelbuy --password <password>
+  mongodump --out /backup --username broxiva --password <password>
 
 # Restore backup
 docker-compose -f docker-compose.production.yml exec mongodb \
-  mongorestore /backup --username citadelbuy --password <password>
+  mongorestore /backup --username broxiva --password <password>
 ```
 
 ### Redis Backup
@@ -360,7 +360,7 @@ docker-compose -f docker-compose.production.yml exec redis \
   redis-cli BGSAVE
 
 # Copy RDB file
-docker cp citadelbuy-redis-prod:/data/dump.rdb ./redis-backup.rdb
+docker cp broxiva-redis-prod:/data/dump.rdb ./redis-backup.rdb
 ```
 
 ### Volume Backup
@@ -368,15 +368,15 @@ docker cp citadelbuy-redis-prod:/data/dump.rdb ./redis-backup.rdb
 ```bash
 # Backup PostgreSQL volume
 docker run --rm \
-  -v citadelbuy_postgres-data:/data \
+  -v broxiva_postgres-data:/data \
   -v $(pwd):/backup \
   alpine tar czf /backup/postgres-$(date +%Y%m%d).tar.gz /data
 
 # Backup all volumes
 docker run --rm \
-  -v citadelbuy_mongodb-data:/mongodb \
-  -v citadelbuy_redis-data:/redis \
-  -v citadelbuy_elasticsearch-data:/elasticsearch \
+  -v broxiva_mongodb-data:/mongodb \
+  -v broxiva_redis-data:/redis \
+  -v broxiva_elasticsearch-data:/elasticsearch \
   -v $(pwd):/backup \
   alpine tar czf /backup/volumes-$(date +%Y%m%d).tar.gz /mongodb /redis /elasticsearch
 ```
@@ -391,9 +391,9 @@ docker run --rm \
 
 ```bash
 # Using Let's Encrypt with Certbot
-certbot certonly --standalone -d citadelbuy.com -d www.citadelbuy.com
-cp /etc/letsencrypt/live/citadelbuy.com/fullchain.pem infrastructure/nginx/ssl/
-cp /etc/letsencrypt/live/citadelbuy.com/privkey.pem infrastructure/nginx/ssl/
+certbot certonly --standalone -d broxiva.com -d www.broxiva.com
+cp /etc/letsencrypt/live/broxiva.com/fullchain.pem infrastructure/nginx/ssl/
+cp /etc/letsencrypt/live/broxiva.com/privkey.pem infrastructure/nginx/ssl/
 ```
 
 ### Security Checklist
@@ -448,7 +448,7 @@ docker-compose -f docker-compose.production.yml up -d --build api
 ```bash
 # Check PostgreSQL is running
 docker-compose -f docker-compose.production.yml exec postgres \
-  pg_isready -U citadelbuy
+  pg_isready -U broxiva
 
 # Test connection from API
 docker-compose -f docker-compose.production.yml exec api \
@@ -632,4 +632,4 @@ For issues or questions:
 
 ## License
 
-Copyright (c) 2025 CitadelBuy. All rights reserved.
+Copyright (c) 2025 Broxiva. All rights reserved.

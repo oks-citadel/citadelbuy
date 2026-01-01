@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Users module provides comprehensive user management, profile management, address management, and user preferences functionality for the CitadelBuy e-commerce platform.
+The Users module provides comprehensive user management, profile management, address management, and user preferences functionality for the Broxiva e-commerce platform.
 
 ## Features
 
@@ -404,4 +404,4 @@ The module uses NestJS standard exceptions:
 For issues or questions:
 - Review the scan report: `USERS_PROFILES_SCAN_REPORT.md`
 - Check API documentation: `/api/docs` (Swagger)
-- Contact: dev@citadelbuy.com
+- Contact: dev@broxiva.com

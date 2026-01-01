@@ -1,4 +1,4 @@
-# Production Environment Variables - CitadelBuy
+# Production Environment Variables - Broxiva
 
 ## Table of Contents
 - [Overview](#overview)
@@ -11,7 +11,7 @@
 
 ## Overview
 
-This document provides a comprehensive guide to all environment variables required for deploying CitadelBuy to production. The application includes automatic validation that will prevent startup if critical security requirements are not met.
+This document provides a comprehensive guide to all environment variables required for deploying Broxiva to production. The application includes automatic validation that will prevent startup if critical security requirements are not met.
 
 **IMPORTANT:** The application will refuse to start in production if:
 - CORS_ORIGIN is not set or configured improperly
@@ -67,7 +67,7 @@ These variables are **REQUIRED** for production and have strict validation rules
 - **Description:** PostgreSQL connection string
 - **Format:** `postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public`
 - **Validation:** Must start with `postgresql://` or `postgres://`
-- **Example:** `postgresql://citadelbuy:SecureP@ssw0rd@db.example.com:5432/citadelbuy_prod?schema=public`
+- **Example:** `postgresql://broxiva:SecureP@ssw0rd@db.example.com:5432/broxiva_prod?schema=public`
 - **Security:** Use strong database passwords (generate with `openssl rand -base64 32`)
 - **Recommendation:** Use SSL mode in production: add `?sslmode=require` to connection string
 
@@ -86,13 +86,13 @@ These variables are **REQUIRED** for production and have strict validation rules
   - Required in production (application will not start without it)
   - All origins must use HTTPS (http://localhost:3000 allowed for testing)
 - **Format:** `https://domain1.com,https://domain2.com`
-- **Example:** `https://citadelbuy.com,https://www.citadelbuy.com,https://admin.citadelbuy.com`
+- **Example:** `https://broxiva.com,https://www.broxiva.com,https://admin.broxiva.com`
 - **Security:** NEVER use wildcards (*) in production
 
 #### `FRONTEND_URL` (REQUIRED)
 - **Description:** Primary frontend application URL for emails and redirects
 - **Validation:** Must be HTTPS in production
-- **Example:** `https://citadelbuy.com`
+- **Example:** `https://broxiva.com`
 
 ## Required Production Variables
 
@@ -130,7 +130,7 @@ These variables are **REQUIRED** for production and have strict validation rules
 
 #### `EMAIL_FROM` (REQUIRED)
 - **Description:** Default sender email address
-- **Example:** `noreply@citadelbuy.com`
+- **Example:** `noreply@broxiva.com`
 - **Validation:** Must be a valid email format
 
 ## Optional Production Variables
@@ -143,7 +143,7 @@ These variables are **REQUIRED** for production and have strict validation rules
 STRIPE_ENABLED=true
 STRIPE_SECRET_KEY=sk_live_...  # MUST use live key in production
 STRIPE_WEBHOOK_SECRET=whsec_...
-APPLE_MERCHANT_ID=merchant.com.citadelbuy
+APPLE_MERCHANT_ID=merchant.com.broxiva
 GOOGLE_MERCHANT_ID=BCR2DN4TXXXXXXXX
 ```
 
@@ -188,17 +188,17 @@ STORAGE_PROVIDER=S3
 AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
 AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
 AWS_REGION=us-east-1
-AWS_S3_BUCKET=citadelbuy-production-uploads
-STORAGE_BUCKET=citadelbuy-kyc-documents
+AWS_S3_BUCKET=broxiva-production-uploads
+STORAGE_BUCKET=broxiva-kyc-documents
 ```
 
 #### Azure Blob Storage (Alternative)
 
 ```bash
 STORAGE_PROVIDER=AZURE
-AZURE_STORAGE_ACCOUNT_NAME=citadelbuyproduction
+AZURE_STORAGE_ACCOUNT_NAME=broxivaproduction
 AZURE_STORAGE_ACCOUNT_KEY=your_account_key_from_azure_portal
-AZURE_STORAGE_CONTAINER=citadelbuy-documents
+AZURE_STORAGE_CONTAINER=broxiva-documents
 ```
 
 ### Search Providers
@@ -210,7 +210,7 @@ SEARCH_PROVIDER=elasticsearch
 ELASTICSEARCH_NODE=https://elasticsearch.example.com:9200
 ELASTICSEARCH_USERNAME=elastic
 ELASTICSEARCH_PASSWORD=SecureP@ssw0rd
-ELASTICSEARCH_INDEX_PREFIX=citadelbuy_prod
+ELASTICSEARCH_INDEX_PREFIX=broxiva_prod
 ELASTICSEARCH_BULK_SIZE=1000
 ELASTICSEARCH_REQUEST_TIMEOUT=30000
 ```
@@ -221,7 +221,7 @@ ELASTICSEARCH_REQUEST_TIMEOUT=30000
 SEARCH_PROVIDER=algolia
 ALGOLIA_APP_ID=YOUR_APP_ID
 ALGOLIA_API_KEY=your_admin_api_key
-ALGOLIA_INDEX_NAME=citadelbuy_prod_products
+ALGOLIA_INDEX_NAME=broxiva_prod_products
 ```
 
 ### AI Services
@@ -235,7 +235,7 @@ OPENAI_API_KEY=sk-proj-...
 #### Google Cloud Vision
 
 ```bash
-GOOGLE_CLOUD_PROJECT_ID=citadelbuy-production
+GOOGLE_CLOUD_PROJECT_ID=broxiva-production
 GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
 ```
 
@@ -258,7 +258,7 @@ FACEBOOK_APP_SECRET=your_app_secret
 #### Apple Sign In
 
 ```bash
-APPLE_CLIENT_ID=com.citadelbuy.app
+APPLE_CLIENT_ID=com.broxiva.app
 ```
 
 #### GitHub OAuth
@@ -386,7 +386,7 @@ grep -r "CHANGE_ME\|your-jwt-secret\|your_stripe\|your-secure-db-password" .env
 **Solution:** Set the CORS_ORIGIN environment variable with comma-separated HTTPS origins:
 
 ```bash
-CORS_ORIGIN=https://citadelbuy.com,https://www.citadelbuy.com
+CORS_ORIGIN=https://broxiva.com,https://www.broxiva.com
 ```
 
 #### Error: "JWT_SECRET must be at least 64 characters long"
@@ -441,11 +441,11 @@ Replace each placeholder with actual production values.
 
 ```bash
 # Wrong
-CORS_ORIGIN=http://citadelbuy.com  # HTTP not allowed in production
-CORS_ORIGIN=https://citadelbuy.com/  # Trailing slash causes mismatch
+CORS_ORIGIN=http://broxiva.com  # HTTP not allowed in production
+CORS_ORIGIN=https://broxiva.com/  # Trailing slash causes mismatch
 
 # Correct
-CORS_ORIGIN=https://citadelbuy.com
+CORS_ORIGIN=https://broxiva.com
 ```
 
 ### Database Connection Errors
@@ -519,9 +519,9 @@ DATABASE_URL=postgresql://user:password@host:5432/database?sslmode=require
 
 For additional help with environment configuration:
 
-- **Documentation:** [https://docs.citadelbuy.com](https://docs.citadelbuy.com)
-- **Support:** support@citadelbuy.com
-- **Security Issues:** security@citadelbuy.com
+- **Documentation:** [https://docs.broxiva.com](https://docs.broxiva.com)
+- **Support:** support@broxiva.com
+- **Security Issues:** security@broxiva.com
 
 ---
 

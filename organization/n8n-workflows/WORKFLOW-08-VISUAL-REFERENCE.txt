@@ -1,6 +1,6 @@
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                                                                               ║
-║           CITADELBUY DYNAMIC PRICING & COMPETITOR MONITORING                  ║
+║           BROXIVA DYNAMIC PRICING & COMPETITOR MONITORING                  ║
 ║                        Workflow 8 - Visual Reference                          ║
 ║                                                                               ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
@@ -576,10 +576,10 @@
     n8n import:workflow --input=workflow-08-dynamic-pricing.json
 
     # Setup database
-    psql -U citadelbuy_user -d citadelbuy < workflow-08-database-setup.sql
+    psql -U broxiva_user -d broxiva < workflow-08-database-setup.sql
 
     # Enable tracking for products
-    psql -U citadelbuy_user -d citadelbuy << EOF
+    psql -U broxiva_user -d broxiva << EOF
     UPDATE products
     SET competitor_tracking_enabled = true,
         min_price = cost_price * 1.1,

@@ -1,6 +1,6 @@
 # Quick Start: Dependency Management
 
-Quick reference guide for managing dependencies in CitadelBuy.
+Quick reference guide for managing dependencies in Broxiva.
 
 ## Daily Commands
 

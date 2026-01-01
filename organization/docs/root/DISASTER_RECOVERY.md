@@ -1,4 +1,4 @@
-# CitadelBuy Disaster Recovery Plan
+# Broxiva Disaster Recovery Plan
 
 **Version:** 1.0.0
 **Last Updated:** December 4, 2025
@@ -23,7 +23,7 @@
 
 ## Overview
 
-This Disaster Recovery (DR) plan provides comprehensive procedures for recovering CitadelBuy services from catastrophic failures. The plan ensures minimal data loss and rapid service restoration.
+This Disaster Recovery (DR) plan provides comprehensive procedures for recovering Broxiva services from catastrophic failures. The plan ensures minimal data loss and rapid service restoration.
 
 ### Scope
 
@@ -37,7 +37,7 @@ This plan covers:
 
 ### Recovery Strategy
 
-CitadelBuy uses a multi-region active-passive disaster recovery strategy with:
+Broxiva uses a multi-region active-passive disaster recovery strategy with:
 - **Primary Region**: East US (Production)
 - **Secondary Region**: West US (DR Site)
 - **Backup Storage**: Geo-redundant storage (GRS)
@@ -168,9 +168,9 @@ set -e
 
 BACKUP_DIR="/backups/postgres/full"
 DATE=$(date +%Y%m%d_%H%M%S)
-DB_HOST="citadelbuy-prod.postgres.database.azure.com"
-DB_NAME="citadelbuy"
-DB_USER="citadelbuy_admin"
+DB_HOST="broxiva-prod.postgres.database.azure.com"
+DB_NAME="broxiva"
+DB_USER="broxiva_admin"
 BACKUP_FILE="${BACKUP_DIR}/${DB_NAME}_full_${DATE}.dump"
 LOG_FILE="${BACKUP_DIR}/backup_${DATE}.log"
 
@@ -198,7 +198,7 @@ if [ $? -eq 0 ]; then
 
     # Upload to Azure Blob Storage
     az storage blob upload \
-      --account-name citadelbuybak \
+      --account-name broxivabak \
       --container-name database-backups \
       --name "full/$(basename $BACKUP_FILE)" \
       --file "$BACKUP_FILE" \
@@ -206,10 +206,10 @@ if [ $? -eq 0 ]; then
 
     # Upload to secondary region
     az storage blob copy start \
-      --account-name citadelbuybakwest \
+      --account-name broxivabakwest \
       --destination-container database-backups \
       --destination-blob "full/$(basename $BACKUP_FILE)" \
-      --source-uri "$(az storage blob url --account-name citadelbuybak --container-name database-backups --name full/$(basename $BACKUP_FILE) --output tsv)"
+      --source-uri "$(az storage blob url --account-name broxivabak --container-name database-backups --name full/$(basename $BACKUP_FILE) --output tsv)"
 
     # Send success notification
     curl -X POST "${SLACK_WEBHOOK}" \
@@ -271,7 +271,7 @@ tar -czf "${BACKUP_PATH}.tar.gz" -C "$BACKUP_DIR" "base_${DATE}"
 
 # Upload to cloud
 az storage blob upload \
-  --account-name citadelbuybak \
+  --account-name broxivabak \
   --container-name database-backups \
   --name "incremental/$(basename ${BACKUP_PATH}.tar.gz)" \
   --file "${BACKUP_PATH}.tar.gz"
@@ -298,7 +298,7 @@ echo "[$(date)] Incremental backup completed"
 WAL_PATH=$1
 WAL_FILE=$2
 ARCHIVE_DIR="/backups/postgres/wal"
-S3_BUCKET="citadelbuy-backups-wal"
+S3_BUCKET="broxiva-backups-wal"
 
 mkdir -p "$ARCHIVE_DIR"
 
@@ -344,7 +344,7 @@ wal_keep_size = 1GB
 
 BACKUP_DIR="/backups/kubernetes"
 DATE=$(date +%Y%m%d_%H%M%S)
-NAMESPACE="citadelbuy-prod"
+NAMESPACE="broxiva-prod"
 
 mkdir -p "$BACKUP_DIR"
 
@@ -353,7 +353,7 @@ kubectl get all --namespace=$NAMESPACE -o yaml > "${BACKUP_DIR}/all-resources_${
 
 # Export secrets (encrypted)
 kubectl get secrets --namespace=$NAMESPACE -o yaml | \
-  gpg --encrypt --recipient devops@citadelbuy.com > "${BACKUP_DIR}/secrets_${DATE}.yaml.gpg"
+  gpg --encrypt --recipient devops@broxiva.com > "${BACKUP_DIR}/secrets_${DATE}.yaml.gpg"
 
 # Export configmaps
 kubectl get configmaps --namespace=$NAMESPACE -o yaml > "${BACKUP_DIR}/configmaps_${DATE}.yaml"
@@ -369,7 +369,7 @@ tar -czf "${BACKUP_DIR}/k8s-backup_${DATE}.tar.gz" "${BACKUP_DIR}"/*_${DATE}.yam
 
 # Upload to storage
 az storage blob upload \
-  --account-name citadelbuybak \
+  --account-name broxivabak \
   --container-name kubernetes-backups \
   --name "$(basename ${BACKUP_DIR}/k8s-backup_${DATE}.tar.gz)" \
   --file "${BACKUP_DIR}/k8s-backup_${DATE}.tar.gz"
@@ -388,8 +388,8 @@ find "$BACKUP_DIR" -name "*.tar.gz" -mtime +30 -delete
 # Backup S3/Blob storage
 # Location: /scripts/backup-storage.sh
 
-SOURCE_BUCKET="citadelbuy-prod-assets"
-DEST_BUCKET="citadelbuy-backup-assets"
+SOURCE_BUCKET="broxiva-prod-assets"
+DEST_BUCKET="broxiva-backup-assets"
 DATE=$(date +%Y%m%d)
 
 # Sync to backup bucket
@@ -418,7 +418,7 @@ echo "Storage backup completed: ${DEST_BUCKET}/${DATE}/"
 
 BACKUP_DIR="/backups/redis"
 DATE=$(date +%Y%m%d_%H%M%S)
-REDIS_HOST="citadelbuy-prod.redis.cache.windows.net"
+REDIS_HOST="broxiva-prod.redis.cache.windows.net"
 
 mkdir -p "$BACKUP_DIR"
 
@@ -435,7 +435,7 @@ redis-cli -h "$REDIS_HOST" -p 6380 --tls -a "$REDIS_PASSWORD" --rdb "${BACKUP_DI
 
 # Upload to storage
 az storage blob upload \
-  --account-name citadelbuybak \
+  --account-name broxivabak \
   --container-name redis-backups \
   --name "redis_${DATE}.rdb" \
   --file "${BACKUP_DIR}/redis_${DATE}.rdb"
@@ -491,14 +491,14 @@ set -e
 
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <backup-file>"
-    echo "Example: $0 citadelbuy_full_20251204_020000.dump"
+    echo "Example: $0 broxiva_full_20251204_020000.dump"
     exit 1
 fi
 
 BACKUP_FILE=$1
-DB_HOST="citadelbuy-prod.postgres.database.azure.com"
-DB_NAME="citadelbuy"
-DB_USER="citadelbuy_admin"
+DB_HOST="broxiva-prod.postgres.database.azure.com"
+DB_NAME="broxiva"
+DB_USER="broxiva_admin"
 
 echo "WARNING: This will replace the current database!"
 echo "Backup file: $BACKUP_FILE"
@@ -511,8 +511,8 @@ fi
 
 # Stop application to prevent writes
 echo "Stopping application services..."
-kubectl scale deployment/citadelbuy-api -n citadelbuy-prod --replicas=0
-kubectl scale deployment/citadelbuy-worker -n citadelbuy-prod --replicas=0
+kubectl scale deployment/broxiva-api -n broxiva-prod --replicas=0
+kubectl scale deployment/broxiva-worker -n broxiva-prod --replicas=0
 
 # Wait for pods to terminate
 sleep 30
@@ -521,7 +521,7 @@ sleep 30
 if [ ! -f "$BACKUP_FILE" ]; then
     echo "Downloading backup from Azure..."
     az storage blob download \
-      --account-name citadelbuybak \
+      --account-name broxivabak \
       --container-name database-backups \
       --name "full/$BACKUP_FILE" \
       --file "/tmp/$BACKUP_FILE"
@@ -557,12 +557,12 @@ EOF
 
 # Restart application
 echo "Restarting application services..."
-kubectl scale deployment/citadelbuy-api -n citadelbuy-prod --replicas=3
-kubectl scale deployment/citadelbuy-worker -n citadelbuy-prod --replicas=2
+kubectl scale deployment/broxiva-api -n broxiva-prod --replicas=3
+kubectl scale deployment/broxiva-worker -n broxiva-prod --replicas=2
 
 # Verify application
 sleep 60
-curl -f https://api.citadelbuy.com/api/health
+curl -f https://api.broxiva.com/api/health
 
 echo "Database restore completed successfully!"
 echo "Old database backed up as: ${DB_NAME}_old"
@@ -611,7 +611,7 @@ tar -xzf "/backups/postgres/incremental/${BASE_BACKUP}.tar.gz" -C "$PGDATA"
 # Download WAL files
 echo "Downloading WAL files..."
 mkdir -p "$PGDATA/pg_wal"
-aws s3 sync "s3://citadelbuy-backups-wal/" "$PGDATA/pg_wal/"
+aws s3 sync "s3://broxiva-backups-wal/" "$PGDATA/pg_wal/"
 
 # Create recovery configuration
 cat > "$PGDATA/recovery.conf" <<EOF
@@ -654,12 +654,12 @@ fi
 
 BACKUP_DATE=$1
 BACKUP_FILE="k8s-backup_${BACKUP_DATE}.tar.gz"
-NAMESPACE="citadelbuy-prod"
+NAMESPACE="broxiva-prod"
 
 # Download backup
 echo "Downloading Kubernetes backup..."
 az storage blob download \
-  --account-name citadelbuybak \
+  --account-name broxivabak \
   --container-name kubernetes-backups \
   --name "$BACKUP_FILE" \
   --file "/tmp/$BACKUP_FILE"
@@ -712,8 +712,8 @@ fi
 # 1. Verify West US infrastructure
 echo "Step 1: Verifying West US infrastructure..."
 az aks get-credentials \
-  --resource-group citadelbuy-dr-rg \
-  --name citadelbuy-dr-aks \
+  --resource-group broxiva-dr-rg \
+  --name broxiva-dr-aks \
   --overwrite-existing
 
 kubectl cluster-info
@@ -721,7 +721,7 @@ kubectl cluster-info
 # 2. Restore latest database backup
 echo "Step 2: Restoring database in West US..."
 LATEST_BACKUP=$(az storage blob list \
-  --account-name citadelbuybakwest \
+  --account-name broxivabakwest \
   --container-name database-backups \
   --prefix full/ \
   --query "reverse(sort_by([].{name:name, time:properties.lastModified}, &time))[0].name" \
@@ -732,24 +732,24 @@ echo "Latest backup: $LATEST_BACKUP"
 
 # 3. Deploy applications
 echo "Step 3: Deploying applications in West US..."
-kubectl apply -f /infrastructure/kubernetes/dr/ -n citadelbuy-prod
+kubectl apply -f /infrastructure/kubernetes/dr/ -n broxiva-prod
 
 # Wait for deployments
-kubectl rollout status deployment/citadelbuy-api -n citadelbuy-prod --timeout=600s
-kubectl rollout status deployment/citadelbuy-web -n citadelbuy-prod --timeout=600s
+kubectl rollout status deployment/broxiva-api -n broxiva-prod --timeout=600s
+kubectl rollout status deployment/broxiva-web -n broxiva-prod --timeout=600s
 
 # 4. Update DNS
 echo "Step 4: Updating DNS to West US..."
 az network dns record-set cname set-record \
-  --resource-group citadelbuy-dns-rg \
-  --zone-name citadelbuy.com \
+  --resource-group broxiva-dns-rg \
+  --zone-name broxiva.com \
   --record-set-name @ \
-  --cname citadelbuy-dr.westus.cloudapp.azure.com
+  --cname broxiva-dr.westus.cloudapp.azure.com
 
 # 5. Verify services
 echo "Step 5: Verifying services..."
 sleep 60
-curl -f https://api.citadelbuy.com/api/health
+curl -f https://api.broxiva.com/api/health
 
 # 6. Send notifications
 echo "Step 6: Sending notifications..."
@@ -799,7 +799,7 @@ fi
 # 2. Verify WAL archiving
 echo "" >> "$REPORT_FILE"
 echo "2. WAL Archive Verification" >> "$REPORT_FILE"
-WAL_COUNT=$(aws s3 ls s3://citadelbuy-backups-wal/ | wc -l)
+WAL_COUNT=$(aws s3 ls s3://broxiva-backups-wal/ | wc -l)
 echo "  WAL files in archive: $WAL_COUNT" >> "$REPORT_FILE"
 
 if [ $WAL_COUNT -gt 100 ]; then
@@ -813,13 +813,13 @@ echo "" >> "$REPORT_FILE"
 echo "3. Cloud Backup Replication" >> "$REPORT_FILE"
 
 PRIMARY_COUNT=$(az storage blob list \
-  --account-name citadelbuybak \
+  --account-name broxivabak \
   --container-name database-backups \
   --query "length([?properties.lastModified >= '$(date -d '7 days ago' -I)'])" \
   --output tsv)
 
 SECONDARY_COUNT=$(az storage blob list \
-  --account-name citadelbuybakwest \
+  --account-name broxivabakwest \
   --container-name database-backups \
   --query "length([?properties.lastModified >= '$(date -d '7 days ago' -I)'])" \
   --output tsv)
@@ -850,7 +850,7 @@ fi
 
 # Send report
 cat "$REPORT_FILE"
-cat "$REPORT_FILE" | mail -s "Backup Verification Report" devops@citadelbuy.com
+cat "$REPORT_FILE" | mail -s "Backup Verification Report" devops@broxiva.com
 
 # Alert on failures
 if grep -q "✗" "$REPORT_FILE"; then
@@ -935,9 +935,9 @@ fi
 ### Internal Team
 
 - **Emergency Hotline**: +1-XXX-XXX-XXXX
-- **DevOps Team**: devops@citadelbuy.com
-- **Security Team**: security@citadelbuy.com
-- **Executive Team**: exec@citadelbuy.com
+- **DevOps Team**: devops@broxiva.com
+- **Security Team**: security@broxiva.com
+- **Executive Team**: exec@broxiva.com
 
 ### External Vendors
 
@@ -950,9 +950,9 @@ fi
 
 ### Communication Channels
 
-- **Status Page**: status.citadelbuy.com
+- **Status Page**: status.broxiva.com
 - **Slack**: #disaster-recovery
-- **Email**: dr-team@citadelbuy.com
+- **Email**: dr-team@broxiva.com
 - **Emergency Phone**: PagerDuty
 
 ---

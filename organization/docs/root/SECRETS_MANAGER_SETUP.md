@@ -1,6 +1,6 @@
-# CitadelBuy Secrets Manager Setup Guide
+# Broxiva Secrets Manager Setup Guide
 
-This comprehensive guide covers the setup and configuration of secrets management for the CitadelBuy platform using three different providers: AWS Secrets Manager, Azure Key Vault, and HashiCorp Vault.
+This comprehensive guide covers the setup and configuration of secrets management for the Broxiva platform using three different providers: AWS Secrets Manager, Azure Key Vault, and HashiCorp Vault.
 
 ## Table of Contents
 
@@ -18,7 +18,7 @@ This comprehensive guide covers the setup and configuration of secrets managemen
 
 ## Overview
 
-CitadelBuy requires secure management of sensitive configuration data including:
+Broxiva requires secure management of sensitive configuration data including:
 
 - Database credentials (PostgreSQL)
 - Cache credentials (Redis)
@@ -104,7 +104,7 @@ Create a `terraform.tfvars` file:
 
 ```hcl
 environment     = "production"
-project_name    = "citadelbuy"
+project_name    = "broxiva"
 aws_region      = "us-east-1"
 enable_rotation = true
 rotation_days   = 30
@@ -132,19 +132,19 @@ Some secrets must be set manually after infrastructure creation:
 ```bash
 # Set Stripe keys
 aws secretsmanager put-secret-value \
-  --secret-id citadelbuy/production/stripe/keys \
+  --secret-id broxiva/production/stripe/keys \
   --secret-string '{"secret_key":"sk_live_xxxxx","publishable_key":"pk_live_xxxxx","webhook_secret":"whsec_xxxxx"}' \
   --region us-east-1
 
 # Set OpenAI key
 aws secretsmanager put-secret-value \
-  --secret-id citadelbuy/production/openai/key \
+  --secret-id broxiva/production/openai/key \
   --secret-string '{"api_key":"sk-xxxxx","model":"gpt-4"}' \
   --region us-east-1
 
 # Set OAuth credentials
 aws secretsmanager put-secret-value \
-  --secret-id citadelbuy/production/oauth/google \
+  --secret-id broxiva/production/oauth/google \
   --secret-string '{"client_id":"xxxxx.apps.googleusercontent.com","client_secret":"xxxxx"}' \
   --region us-east-1
 ```
@@ -187,12 +187,12 @@ zip -r rotate-secrets.zip index.py
 ```bash
 # Check secret exists
 aws secretsmanager describe-secret \
-  --secret-id citadelbuy/production/postgres/credentials \
+  --secret-id broxiva/production/postgres/credentials \
   --region us-east-1
 
 # Get secret value
 aws secretsmanager get-secret-value \
-  --secret-id citadelbuy/production/postgres/credentials \
+  --secret-id broxiva/production/postgres/credentials \
   --region us-east-1
 ```
 
@@ -221,9 +221,9 @@ Create a `terraform.tfvars` file:
 
 ```hcl
 environment              = "production"
-project_name             = "citadelbuy"
+project_name             = "broxiva"
 location                 = "eastus"
-resource_group_name      = "citadelbuy-rg"
+resource_group_name      = "broxiva-rg"
 enable_rbac              = true
 soft_delete_retention_days = 7
 ```
@@ -250,12 +250,12 @@ Update the Key Vault network rules to allow access from your IPs:
 ```bash
 # Add your IP address
 az keyvault network-rule add \
-  --name citadelbuy-production-kv \
+  --name broxiva-production-kv \
   --ip-address <your-ip-address>
 
 # Add AKS subnet
 az keyvault network-rule add \
-  --name citadelbuy-production-kv \
+  --name broxiva-production-kv \
   --subnet /subscriptions/<sub-id>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/<subnet>
 ```
 
@@ -264,19 +264,19 @@ az keyvault network-rule add \
 ```bash
 # Set Stripe keys
 az keyvault secret set \
-  --vault-name citadelbuy-production-kv \
+  --vault-name broxiva-production-kv \
   --name stripe-secret-key \
   --value "sk_live_xxxxx"
 
 # Set OpenAI key
 az keyvault secret set \
-  --vault-name citadelbuy-production-kv \
+  --vault-name broxiva-production-kv \
   --name openai-api-key \
   --value "sk-xxxxx"
 
 # Set OAuth credentials
 az keyvault secret set \
-  --vault-name citadelbuy-production-kv \
+  --vault-name broxiva-production-kv \
   --name google-client-id \
   --value "xxxxx.apps.googleusercontent.com"
 ```
@@ -307,7 +307,7 @@ chmod +x scripts/azure-secrets-sync.sh
 az role assignment create \
   --assignee <service-principal-id> \
   --role "Key Vault Secrets User" \
-  --scope /subscriptions/<sub-id>/resourceGroups/citadelbuy-rg-production/providers/Microsoft.KeyVault/vaults/citadelbuy-production-kv
+  --scope /subscriptions/<sub-id>/resourceGroups/broxiva-rg-production/providers/Microsoft.KeyVault/vaults/broxiva-production-kv
 ```
 
 ## HashiCorp Vault Setup
@@ -346,7 +346,7 @@ version: '3.8'
 services:
   vault:
     image: vault:1.15
-    container_name: citadelbuy-vault
+    container_name: broxiva-vault
     ports:
       - "8200:8200"
     volumes:
@@ -364,7 +364,7 @@ services:
 
   vault-ui:
     image: djenriquez/vault-ui:latest
-    container_name: citadelbuy-vault-ui
+    container_name: broxiva-vault-ui
     ports:
       - "8000:8000"
     environment:
@@ -396,7 +396,7 @@ vault operator unseal <unseal-key-3>
 # Login with root token
 vault login <root-token>
 
-# Initialize CitadelBuy configuration
+# Initialize Broxiva configuration
 ./scripts/vault-secrets-sync.sh init
 ```
 
@@ -412,11 +412,11 @@ vault write auth/kubernetes/config \
   kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
   token_reviewer_jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token
 
-# Create a role for CitadelBuy
-vault write auth/kubernetes/role/citadelbuy \
-  bound_service_account_names=citadelbuy-api \
-  bound_service_account_namespaces=citadelbuy \
-  policies=citadelbuy \
+# Create a role for Broxiva
+vault write auth/kubernetes/role/broxiva \
+  bound_service_account_names=broxiva-api \
+  bound_service_account_namespaces=broxiva \
+  policies=broxiva \
   ttl=1h
 ```
 
@@ -424,7 +424,7 @@ vault write auth/kubernetes/role/citadelbuy \
 
 ```bash
 # Export Vault address and token
-export VAULT_ADDR='https://vault.citadelbuy.internal:8200'
+export VAULT_ADDR='https://vault.broxiva.internal:8200'
 export VAULT_TOKEN='<your-token>'
 
 # Push secrets
@@ -444,23 +444,23 @@ export VAULT_TOKEN='<your-token>'
 vault secrets enable database
 
 # Configure PostgreSQL connection
-vault write database/config/citadelbuy-postgres \
+vault write database/config/broxiva-postgres \
   plugin_name=postgresql-database-plugin \
-  allowed_roles="citadelbuy-api" \
-  connection_url="postgresql://{{username}}:{{password}}@postgres:5432/citadelbuy?sslmode=disable" \
+  allowed_roles="broxiva-api" \
+  connection_url="postgresql://{{username}}:{{password}}@postgres:5432/broxiva?sslmode=disable" \
   username="vault_admin" \
   password="vault_admin_password"
 
 # Create a role
-vault write database/roles/citadelbuy-api \
-  db_name=citadelbuy-postgres \
+vault write database/roles/broxiva-api \
+  db_name=broxiva-postgres \
   creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; \
     GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO \"{{name}}\";" \
   default_ttl="1h" \
   max_ttl="24h"
 
 # Get dynamic credentials
-vault read database/creds/citadelbuy-api
+vault read database/creds/broxiva-api
 ```
 
 ## Kubernetes Integration
@@ -495,7 +495,7 @@ apiVersion: external-secrets.io/v1beta1
 kind: SecretStore
 metadata:
   name: aws-secretsmanager
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   provider:
     aws:
@@ -514,12 +514,12 @@ apiVersion: external-secrets.io/v1beta1
 kind: SecretStore
 metadata:
   name: azure-keyvault
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   provider:
     azurekv:
       authType: WorkloadIdentity
-      vaultUrl: "https://citadelbuy-production-kv.vault.azure.net"
+      vaultUrl: "https://broxiva-production-kv.vault.azure.net"
       serviceAccountRef:
         name: external-secrets-sa
 ```
@@ -531,19 +531,19 @@ apiVersion: external-secrets.io/v1beta1
 kind: SecretStore
 metadata:
   name: vault
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   provider:
     vault:
-      server: "https://vault.citadelbuy.internal:8200"
+      server: "https://vault.broxiva.internal:8200"
       path: "secret"
       version: "v2"
       auth:
         kubernetes:
           mountPath: "kubernetes"
-          role: "citadelbuy"
+          role: "broxiva"
           serviceAccountRef:
-            name: citadelbuy-api
+            name: broxiva-api
 ```
 
 #### Step 3: Create ExternalSecret Resources
@@ -552,24 +552,24 @@ spec:
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
-  name: citadelbuy-database
-  namespace: citadelbuy
+  name: broxiva-database
+  namespace: broxiva
 spec:
   refreshInterval: 1h
   secretStoreRef:
     name: aws-secretsmanager  # or azure-keyvault, or vault
     kind: SecretStore
   target:
-    name: citadelbuy-database-secret
+    name: broxiva-database-secret
     creationPolicy: Owner
   data:
     - secretKey: DATABASE_URL
       remoteRef:
-        key: citadelbuy/production/postgres/credentials
+        key: broxiva/production/postgres/credentials
         property: url
     - secretKey: POSTGRES_PASSWORD
       remoteRef:
-        key: citadelbuy/production/postgres/credentials
+        key: broxiva/production/postgres/credentials
         property: password
 ```
 
@@ -579,20 +579,20 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: citadelbuy-api
+  name: broxiva-api
 spec:
   template:
     spec:
       containers:
         - name: api
-          image: citadelbuy/api:latest
+          image: broxiva/api:latest
           envFrom:
             - secretRef:
-                name: citadelbuy-database-secret
+                name: broxiva-database-secret
             - secretRef:
-                name: citadelbuy-redis-secret
+                name: broxiva-redis-secret
             - secretRef:
-                name: citadelbuy-jwt-secret
+                name: broxiva-jwt-secret
 ```
 
 ## Secret Rotation
@@ -604,8 +604,8 @@ AWS Secrets Manager supports automatic rotation using Lambda functions:
 ```bash
 # Enable rotation for a secret
 aws secretsmanager rotate-secret \
-  --secret-id citadelbuy/production/postgres/credentials \
-  --rotation-lambda-arn arn:aws:lambda:us-east-1:123456789012:function:citadelbuy-production-rotate-secrets \
+  --secret-id broxiva/production/postgres/credentials \
+  --rotation-lambda-arn arn:aws:lambda:us-east-1:123456789012:function:broxiva-production-rotate-secrets \
   --rotation-rules AutomaticallyAfterDays=30
 ```
 
@@ -624,10 +624,10 @@ Vault supports automatic rotation for dynamic secrets:
 
 ```bash
 # Dynamic database credentials automatically rotate
-vault read database/creds/citadelbuy-api
+vault read database/creds/broxiva-api
 
 # For static secrets, use:
-vault write -f database/rotate-root/citadelbuy-postgres
+vault write -f database/rotate-root/broxiva-postgres
 ```
 
 ### Manual Rotation Best Practices
@@ -648,10 +648,10 @@ NEW_SECRET=$(openssl rand -base64 32)
 ./scripts/aws-secrets-sync.sh rotate production jwt
 
 # 3. Update application to use new secret
-kubectl rollout restart deployment/citadelbuy-api
+kubectl rollout restart deployment/broxiva-api
 
 # 4. Verify application health
-kubectl rollout status deployment/citadelbuy-api
+kubectl rollout status deployment/broxiva-api
 
 # 5. Remove old secret version (after confirmation)
 # Only do this after ensuring the new secret works
@@ -673,7 +673,7 @@ kubectl rollout status deployment/citadelbuy-api
         "secretsmanager:GetSecretValue",
         "secretsmanager:DescribeSecret"
       ],
-      "Resource": "arn:aws:secretsmanager:*:*:secret:citadelbuy/production/*"
+      "Resource": "arn:aws:secretsmanager:*:*:secret:broxiva/production/*"
     }
   ]
 }
@@ -701,7 +701,7 @@ aws cloudtrail lookup-events \
 ```bash
 # Query audit logs
 az monitor activity-log list \
-  --resource-group citadelbuy-rg-production \
+  --resource-group broxiva-rg-production \
   --namespace Microsoft.KeyVault/vaults
 ```
 
@@ -742,7 +742,7 @@ tail -f /vault/logs/audit.log | jq
 - **API Calls**: $0.05 per 10,000 API calls
 - **Rotation Lambda**: Standard Lambda pricing
 
-**Example Cost for CitadelBuy:**
+**Example Cost for Broxiva:**
 - 15 secrets: $6/month
 - 1M API calls: $5/month
 - **Total**: ~$11/month
@@ -752,7 +752,7 @@ tail -f /vault/logs/audit.log | jq
 - **Standard Tier**: $0.03 per 10,000 operations
 - **Premium Tier** (HSM): $1.00 per key + operations
 
-**Example Cost for CitadelBuy:**
+**Example Cost for Broxiva:**
 - 1M operations: $3/month
 - **Total**: ~$3/month
 
@@ -762,7 +762,7 @@ tail -f /vault/logs/audit.log | jq
 - **Enterprise**: Contact HashiCorp for pricing
 - **Infrastructure Costs**: ~$50-200/month for HA setup (3 nodes)
 
-**Example Cost for CitadelBuy (OSS):**
+**Example Cost for Broxiva (OSS):**
 - 3 t3.small instances: ~$50/month
 - Load balancer: ~$20/month
 - **Total**: ~$70/month (+ operational overhead)
@@ -785,9 +785,9 @@ Use a consistent naming pattern:
 {project}/{environment}/{category}/{name}
 
 Examples:
-- citadelbuy/production/database/postgres
-- citadelbuy/staging/stripe/keys
-- citadelbuy/dev/jwt/tokens
+- broxiva/production/database/postgres
+- broxiva/staging/stripe/keys
+- broxiva/dev/jwt/tokens
 ```
 
 ### Environment Separation
@@ -795,9 +795,9 @@ Examples:
 Always maintain separate secrets for each environment:
 
 ```
-citadelbuy/dev/*
-citadelbuy/staging/*
-citadelbuy/production/*
+broxiva/dev/*
+broxiva/staging/*
+broxiva/production/*
 ```
 
 ### Secret Structure
@@ -870,7 +870,7 @@ aws kms describe-key --key-id <key-id>
 
 ```bash
 # Check Lambda logs
-aws logs tail /aws/lambda/citadelbuy-production-rotate-secrets --follow
+aws logs tail /aws/lambda/broxiva-production-rotate-secrets --follow
 
 # Manually trigger rotation
 aws secretsmanager rotate-secret --secret-id <secret-name>
@@ -882,20 +882,20 @@ aws secretsmanager rotate-secret --secret-id <secret-name>
 
 ```bash
 # Check your permissions
-az keyvault secret list --vault-name citadelbuy-production-kv
+az keyvault secret list --vault-name broxiva-production-kv
 
 # Check network rules
-az keyvault network-rule list --vault-name citadelbuy-production-kv
+az keyvault network-rule list --vault-name broxiva-production-kv
 
 # Add your IP if needed
-az keyvault network-rule add --name citadelbuy-production-kv --ip-address $(curl -s ifconfig.me)
+az keyvault network-rule add --name broxiva-production-kv --ip-address $(curl -s ifconfig.me)
 ```
 
 **Issue: Key Vault not found**
 
 ```bash
 # Check if Key Vault exists
-az keyvault show --name citadelbuy-production-kv
+az keyvault show --name broxiva-production-kv
 
 # Check if soft-deleted
 az keyvault list-deleted
@@ -922,7 +922,7 @@ vault operator unseal <key-3>
 vault token lookup
 
 # Check policy
-vault policy read citadelbuy
+vault policy read broxiva
 
 # Login again
 vault login <token>
@@ -935,10 +935,10 @@ vault login <token>
 docker ps | grep vault
 
 # Check network connectivity
-curl -k https://vault.citadelbuy.internal:8200/v1/sys/health
+curl -k https://vault.broxiva.internal:8200/v1/sys/health
 
 # Check certificate
-openssl s_client -connect vault.citadelbuy.internal:8200
+openssl s_client -connect vault.broxiva.internal:8200
 ```
 
 ### External Secrets Operator
@@ -947,10 +947,10 @@ openssl s_client -connect vault.citadelbuy.internal:8200
 
 ```bash
 # Check ExternalSecret status
-kubectl describe externalsecret citadelbuy-database -n citadelbuy
+kubectl describe externalsecret broxiva-database -n broxiva
 
 # Check SecretStore status
-kubectl describe secretstore aws-secretsmanager -n citadelbuy
+kubectl describe secretstore aws-secretsmanager -n broxiva
 
 # Check operator logs
 kubectl logs -n external-secrets -l app.kubernetes.io/name=external-secrets
@@ -960,10 +960,10 @@ kubectl logs -n external-secrets -l app.kubernetes.io/name=external-secrets
 
 ```bash
 # Check service account
-kubectl get serviceaccount external-secrets-sa -n citadelbuy
+kubectl get serviceaccount external-secrets-sa -n broxiva
 
 # For AWS: Check IRSA annotations
-kubectl describe serviceaccount external-secrets-sa -n citadelbuy
+kubectl describe serviceaccount external-secrets-sa -n broxiva
 
 # For Azure: Check workload identity
 kubectl describe pod -n external-secrets -l app.kubernetes.io/name=external-secrets
@@ -984,4 +984,4 @@ For questions or issues:
 1. Check this documentation first
 2. Review the troubleshooting section
 3. Check the respective provider's documentation
-4. Contact the platform team: platform@citadelbuy.com
+4. Contact the platform team: platform@broxiva.com

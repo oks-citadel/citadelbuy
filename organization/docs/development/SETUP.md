@@ -14,8 +14,8 @@
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/oks-citadel/citadelbuy.git
-cd citadelbuy/organization
+git clone https://github.com/oks-broxiva/broxiva.git
+cd broxiva/organization
 ```
 
 ### 2. Install Dependencies
@@ -41,7 +41,7 @@ Configure the environment variables:
 
 ```env
 # Database
-DATABASE_URL=postgresql://citadelbuy:citadelbuy123@localhost:5432/citadelbuy_dev
+DATABASE_URL=postgresql://broxiva:broxiva123@localhost:5432/broxiva_dev
 
 # Redis
 REDIS_URL=redis://localhost:6379
@@ -220,10 +220,10 @@ The AI SDK (`packages/ai-sdk`) provides TypeScript clients for all AI services:
 
 ```bash
 # Build AI SDK
-pnpm --filter @citadelbuy/ai-sdk build
+pnpm --filter @broxiva/ai-sdk build
 
 # Run tests
-pnpm --filter @citadelbuy/ai-sdk test
+pnpm --filter @broxiva/ai-sdk test
 ```
 
 ## Troubleshooting
@@ -264,6 +264,6 @@ pnpm install
 ## Getting Help
 
 - Check the [FAQ](./FAQ.md)
-- Search existing [GitHub Issues](https://github.com/oks-citadel/citadelbuy/issues)
+- Search existing [GitHub Issues](https://github.com/oks-broxiva/broxiva/issues)
 - Join our Discord server
-- Email: dev@citadelbuy.com
+- Email: dev@broxiva.com

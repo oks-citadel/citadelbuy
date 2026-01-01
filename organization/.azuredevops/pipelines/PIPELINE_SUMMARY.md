@@ -1,8 +1,8 @@
-# CitadelBuy Azure Pipelines - Summary
+# Broxiva Azure Pipelines - Summary
 
 ## Overview
 
-Comprehensive Azure DevOps pipeline suite for the CitadelBuy e-commerce platform, supporting multi-environment CI/CD with infrastructure as code.
+Comprehensive Azure DevOps pipeline suite for the Broxiva e-commerce platform, supporting multi-environment CI/CD with infrastructure as code.
 
 ## Files Created
 
@@ -119,9 +119,9 @@ Developer → Feature Branch → Pull Request
 
 | Environment | Trigger | Approval | URL |
 |------------|---------|----------|-----|
-| Dev | Automatic on push to develop | None | dev.citadelbuy.com |
-| Staging | Automatic after dev | 1 approver | staging.citadelbuy.com |
-| Production | Automatic after staging | 2 approvers | citadelbuy.com |
+| Dev | Automatic on push to develop | None | dev.broxiva.com |
+| Staging | Automatic after dev | 1 approver | staging.broxiva.com |
+| Production | Automatic after staging | 2 approvers | broxiva.com |
 
 ### Key Features
 
@@ -203,32 +203,32 @@ Developer → Feature Branch → Pull Request
 
 ### Required Variable Groups
 
-1. **citadelbuy-common**
+1. **broxiva-common**
    - Shared configuration across all pipelines
    - Node versions, Docker settings
 
-2. **citadelbuy-acr**
+2. **broxiva-acr**
    - Container registry configuration
    - ACR credentials
 
-3. **citadelbuy-dev**
+3. **broxiva-dev**
    - Development environment settings
    - Non-production URLs and keys
 
-4. **citadelbuy-staging**
+4. **broxiva-staging**
    - Staging environment settings
    - Pre-production configuration
 
-5. **citadelbuy-production**
+5. **broxiva-production**
    - Production environment settings
    - Production URLs and secrets (Key Vault linked)
 
-6. **citadelbuy-terraform**
+6. **broxiva-terraform**
    - Infrastructure configuration
    - Terraform backend settings
    - Azure credentials
 
-7. **citadelbuy-ci-variables**
+7. **broxiva-ci-variables**
    - CI-specific settings
    - Test configuration
 
@@ -243,23 +243,23 @@ Developer → Feature Branch → Pull Request
 
 ## Service Connections Required
 
-1. **citadelbuy-azure-connection**
+1. **broxiva-azure-connection**
    - Type: Azure Resource Manager
    - Purpose: Azure resource management
 
-2. **citadelbuy-acr-connection**
+2. **broxiva-acr-connection**
    - Type: Docker Registry
    - Purpose: Container image push/pull
 
-3. **citadelbuy-aks-dev**
+3. **broxiva-aks-dev**
    - Type: Kubernetes
    - Purpose: Dev cluster deployment
 
-4. **citadelbuy-aks-staging**
+4. **broxiva-aks-staging**
    - Type: Kubernetes
    - Purpose: Staging cluster deployment
 
-5. **citadelbuy-aks-production**
+5. **broxiva-aks-production**
    - Type: Kubernetes
    - Purpose: Production cluster deployment
 
@@ -267,15 +267,15 @@ Developer → Feature Branch → Pull Request
 
 ### Standard Environments
 
-- citadelbuy-dev
-- citadelbuy-staging
-- citadelbuy-production
+- broxiva-dev
+- broxiva-staging
+- broxiva-production
 
 ### Infrastructure Environments
 
-- citadelbuy-dev-infra
-- citadelbuy-staging-infra
-- citadelbuy-production-infra
+- broxiva-dev-infra
+- broxiva-staging-infra
+- broxiva-production-infra
 
 ### Approval Configuration
 
@@ -425,5 +425,5 @@ This comprehensive pipeline suite provides:
 **Created**: 2025-12-06
 **Version**: 1.0.0
 **Platform**: Azure DevOps
-**Organization**: citadelcloudmanagement
-**Project**: CitadelBuy
+**Organization**: broxivacloudmanagement
+**Project**: Broxiva

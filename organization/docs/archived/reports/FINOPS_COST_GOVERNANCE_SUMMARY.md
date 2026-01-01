@@ -201,7 +201,7 @@ Complete cost governance framework has been implemented for Broxiva's Azure infr
 ## File Structure
 
 ```
-CitadelBuy/organization/
+Broxiva/organization/
 ├── infrastructure/
 │   ├── azure/
 │   │   ├── policies/
@@ -232,7 +232,7 @@ CitadelBuy/organization/
 
 ```bash
 # 1. Navigate to cost management directory
-cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/azure/cost-management
+cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/azure/cost-management
 
 # 2. Run master deployment script
 ./deploy-cost-governance.sh \

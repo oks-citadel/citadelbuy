@@ -5,7 +5,7 @@
 
 ## Overview
 
-This document summarizes the implementation of phone number support for the User model in the CitadelBuy platform. The implementation includes database schema changes, API endpoints, SMS service integration, and comprehensive documentation.
+This document summarizes the implementation of phone number support for the User model in the Broxiva platform. The implementation includes database schema changes, API endpoints, SMS service integration, and comprehensive documentation.
 
 ## Changes Made
 

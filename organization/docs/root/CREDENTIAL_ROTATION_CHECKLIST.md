@@ -2,7 +2,7 @@
 
 ## CRITICAL: Immediate Action Required
 
-If sensitive credentials have been exposed (committed to git, leaked, or compromised), you MUST rotate ALL credentials immediately. This checklist provides step-by-step instructions for rotating every credential used in the CitadelBuy platform.
+If sensitive credentials have been exposed (committed to git, leaked, or compromised), you MUST rotate ALL credentials immediately. This checklist provides step-by-step instructions for rotating every credential used in the Broxiva platform.
 
 ## Timeline
 
@@ -67,7 +67,7 @@ Before rotating any credentials:
    psql -U postgres -h localhost
 
    # In psql, change password:
-   ALTER USER citadelbuy WITH PASSWORD 'NEW_PASSWORD_HERE';
+   ALTER USER broxiva WITH PASSWORD 'NEW_PASSWORD_HERE';
    \q
    ```
 
@@ -75,7 +75,7 @@ Before rotating any credentials:
    ```bash
    # Update in .env
    POSTGRES_PASSWORD=NEW_PASSWORD_HERE
-   DATABASE_URL=postgresql://citadelbuy:NEW_PASSWORD_HERE@localhost:5432/citadelbuy_dev?schema=public
+   DATABASE_URL=postgresql://broxiva:NEW_PASSWORD_HERE@localhost:5432/broxiva_dev?schema=public
    ```
 
 4. **Restart application:**
@@ -88,7 +88,7 @@ Before rotating any credentials:
    pm2 restart all
 
    # If using systemd
-   systemctl restart citadelbuy-api
+   systemctl restart broxiva-api
    ```
 
 5. **Verify connection:**
@@ -864,7 +864,7 @@ Before rotating any credentials:
 2. **Create new API key:**
    - Navigate to: API Keys
    - Click "Create new secret key"
-   - Name: "CitadelBuy Production - Rotated 2025-12-04"
+   - Name: "Broxiva Production - Rotated 2025-12-04"
    - Copy key immediately
 
 3. **Revoke old key:**
@@ -1294,12 +1294,12 @@ After rotation, store credentials securely:
 ```bash
 # Store secret
 aws secretsmanager create-secret \
-  --name citadelbuy/production/database \
+  --name broxiva/production/database \
   --secret-string '{"username":"user","password":"pass"}'
 
 # Retrieve in application
 const secret = await secretsManager
-  .getSecretValue({ SecretId: 'citadelbuy/production/database' })
+  .getSecretValue({ SecretId: 'broxiva/production/database' })
   .promise();
 ```
 
@@ -1379,5 +1379,5 @@ docker-compose logs -f api
 pm2 logs api
 
 # System logs
-journalctl -u citadelbuy-api -f
+journalctl -u broxiva-api -f
 ```

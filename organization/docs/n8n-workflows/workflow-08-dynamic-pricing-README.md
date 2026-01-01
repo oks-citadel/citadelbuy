@@ -1,4 +1,4 @@
-# CitadelBuy Dynamic Pricing & Competitor Monitoring Workflow
+# Broxiva Dynamic Pricing & Competitor Monitoring Workflow
 
 ## Overview
 
@@ -388,8 +388,8 @@ view: pricing_metrics {
 # Add to n8n environment or .env file
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_DB=citadelbuy
-POSTGRES_USER=citadelbuy_user
+POSTGRES_DB=broxiva
+POSTGRES_USER=broxiva_user
 POSTGRES_PASSWORD=your_password
 
 RAINFOREST_API_KEY=your_key
@@ -404,7 +404,7 @@ LOOKER_CLIENT_SECRET=your_secret
 
 ### Credentials Setup in n8n
 
-1. **PostgreSQL** → "CitadelBuy PostgreSQL"
+1. **PostgreSQL** → "Broxiva PostgreSQL"
 2. **Rainforest API** → "Rainforest API (Amazon)"
 3. **Walmart API** → "Walmart API"
 4. **ScraperAPI** → "ScraperAPI"
@@ -651,7 +651,7 @@ Consider implementing Redis cache for:
 - ScraperAPI: https://www.scraperapi.com/documentation/
 
 ### Workflow Support
-- **Issues:** Create ticket in CitadelBuy JIRA
+- **Issues:** Create ticket in Broxiva JIRA
 - **Questions:** #pricing-tech Slack channel
 - **Updates:** Check workflow version notes
 
@@ -695,4 +695,4 @@ Consider implementing Redis cache for:
 
 ## License
 
-Copyright 2025 CitadelBuy. Internal use only.
+Copyright 2025 Broxiva. Internal use only.

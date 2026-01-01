@@ -1,6 +1,6 @@
-# CitadelBuy Infrastructure
+# Broxiva Infrastructure
 
-This directory contains infrastructure-as-code configurations for the CitadelBuy platform.
+This directory contains infrastructure-as-code configurations for the Broxiva platform.
 
 ## Directory Structure
 
@@ -13,8 +13,8 @@ infrastructure/
 ├── vault/                        # HashiCorp Vault configurations
 │   ├── config.hcl                # Vault server configuration
 │   └── policies/                 # Vault access policies
-│       ├── citadelbuy.hcl        # Application policy
-│       └── citadelbuy-admin.hcl  # Admin policy
+│       ├── broxiva.hcl        # Application policy
+│       └── broxiva-admin.hcl  # Admin policy
 ├── kubernetes/                   # Kubernetes configurations
 │   └── base/
 │       ├── external-secrets.yaml          # Basic External Secrets config
@@ -25,7 +25,7 @@ infrastructure/
 
 ## Secrets Management
 
-CitadelBuy supports three secrets management solutions:
+Broxiva supports three secrets management solutions:
 
 1. **AWS Secrets Manager** - Best for AWS-native deployments
 2. **Azure Key Vault** - Best for Azure-native deployments
@@ -141,9 +141,9 @@ The infrastructure supports three environments:
 - **production** - Production environment
 
 Secrets are isolated per environment using path prefixes:
-- AWS: `citadelbuy/{environment}/...`
+- AWS: `broxiva/{environment}/...`
 - Azure: Key Vault names include environment
-- Vault: `secret/citadelbuy/{environment}/...`
+- Vault: `secret/broxiva/{environment}/...`
 
 ## Security Best Practices
 
@@ -181,7 +181,7 @@ Terraform state should be stored remotely:
 ```hcl
 terraform {
   backend "s3" {
-    bucket = "citadelbuy-terraform-state"
+    bucket = "broxiva-terraform-state"
     key    = "secrets-manager/terraform.tfstate"
     region = "us-east-1"
   }
@@ -192,8 +192,8 @@ terraform {
 ```hcl
 terraform {
   backend "azurerm" {
-    resource_group_name  = "citadelbuy-terraform-state"
-    storage_account_name = "citadelbuytfstate"
+    resource_group_name  = "broxiva-terraform-state"
+    storage_account_name = "broxivatfstate"
     container_name       = "tfstate"
     key                  = "keyvault.terraform.tfstate"
   }
@@ -208,10 +208,10 @@ Monitor External Secrets sync status:
 
 ```bash
 # Check ExternalSecret status
-kubectl get externalsecrets -n citadelbuy
+kubectl get externalsecrets -n broxiva
 
 # View detailed status
-kubectl describe externalsecret citadelbuy-database -n citadelbuy
+kubectl describe externalsecret broxiva-database -n broxiva
 
 # Check operator logs
 kubectl logs -n external-secrets-system \
@@ -233,10 +233,10 @@ If using Prometheus, the following metrics are available:
 **ExternalSecret not syncing:**
 ```bash
 # Check SecretStore
-kubectl describe secretstore aws-secretsmanager -n citadelbuy
+kubectl describe secretstore aws-secretsmanager -n broxiva
 
 # Check service account annotations
-kubectl describe sa external-secrets-sa -n citadelbuy
+kubectl describe sa external-secrets-sa -n broxiva
 
 # View operator logs
 kubectl logs -n external-secrets-system \
@@ -251,7 +251,7 @@ For AWS:
 aws sts get-caller-identity
 
 # Check IAM role trust policy
-aws iam get-role --role-name citadelbuy-production-external-secrets
+aws iam get-role --role-name broxiva-production-external-secrets
 ```
 
 For Azure:
@@ -260,7 +260,7 @@ For Azure:
 az account show
 
 # Check Key Vault access
-az keyvault secret list --vault-name citadelbuy-production-kv
+az keyvault secret list --vault-name broxiva-production-kv
 ```
 
 For Vault:
@@ -313,4 +313,4 @@ When adding new secrets:
 
 ## License
 
-Proprietary - CitadelBuy Platform
+Proprietary - Broxiva Platform

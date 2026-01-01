@@ -1,6 +1,6 @@
-# CitadelBuy Azure Pipelines Documentation
+# Broxiva Azure Pipelines Documentation
 
-This directory contains all Azure DevOps pipeline configurations for the CitadelBuy platform.
+This directory contains all Azure DevOps pipeline configurations for the Broxiva platform.
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ This directory contains all Azure DevOps pipeline configurations for the Citadel
 
 ## Overview
 
-CitadelBuy uses Azure Pipelines for continuous integration and deployment across multiple environments (dev, staging, production). The pipeline architecture follows best practices with:
+Broxiva uses Azure Pipelines for continuous integration and deployment across multiple environments (dev, staging, production). The pipeline architecture follows best practices with:
 
 - **Automated CI/CD**: Continuous integration on pull requests and continuous deployment on merge
 - **Multi-environment deployment**: Dev → Staging → Production progression
@@ -157,8 +157,8 @@ CitadelBuy uses Azure Pipelines for continuous integration and deployment across
 
 Before setting up the pipelines, ensure you have:
 
-1. **Azure DevOps Organization**: `citadelcloudmanagement`
-2. **Azure DevOps Project**: `CitadelBuy`
+1. **Azure DevOps Organization**: `broxivacloudmanagement`
+2. **Azure DevOps Project**: `Broxiva`
 3. **Azure Subscription**: Active subscription with sufficient credits
 4. **Azure Resources**:
    - Azure Kubernetes Service (AKS) clusters for dev, staging, production
@@ -173,7 +173,7 @@ Before setting up the pipelines, ensure you have:
 
 ### Step 1: Import Repository
 
-1. Navigate to https://dev.azure.com/citadelcloudmanagement/CitadelBuy
+1. Navigate to https://dev.azure.com/broxivacloudmanagement/Broxiva
 2. Go to **Repos** → **Files**
 3. If repository doesn't exist:
    - Click **Initialize** or **Import repository**
@@ -188,7 +188,7 @@ Before setting up the pipelines, ensure you have:
 3. Select **Azure Resource Manager**
 4. Choose **Service principal (automatic)**
 5. Configure:
-   - **Connection name**: `citadelbuy-azure-connection`
+   - **Connection name**: `broxiva-azure-connection`
    - **Scope level**: Subscription
    - **Subscription**: Select your Azure subscription
    - **Resource group**: Leave empty for subscription-level access
@@ -200,7 +200,7 @@ Before setting up the pipelines, ensure you have:
 2. Select **Docker Registry**
 3. Choose **Azure Container Registry**
 4. Configure:
-   - **Connection name**: `citadelbuy-acr-connection`
+   - **Connection name**: `broxiva-acr-connection`
    - **Azure subscription**: Select subscription
    - **Azure container registry**: Select your ACR
 5. Click **Save**
@@ -212,24 +212,24 @@ Create three separate connections for each environment:
 **Development:**
 1. New service connection → **Kubernetes**
 2. Configure:
-   - **Connection name**: `citadelbuy-aks-dev`
+   - **Connection name**: `broxiva-aks-dev`
    - **Server URL**: Your dev AKS API server URL
    - **Authentication**: Service Account or Azure Subscription
 3. Click **Save**
 
 **Staging:**
-- **Connection name**: `citadelbuy-aks-staging`
+- **Connection name**: `broxiva-aks-staging`
 - Follow same process as dev
 
 **Production:**
-- **Connection name**: `citadelbuy-aks-production`
+- **Connection name**: `broxiva-aks-production`
 - Follow same process as dev
 
 ### Step 3: Create Variable Groups
 
 Go to **Pipelines** → **Library** → **+ Variable group**
 
-#### Common Variables: `citadelbuy-common`
+#### Common Variables: `broxiva-common`
 
 ```yaml
 Variables:
@@ -239,24 +239,24 @@ Variables:
   - TERRAFORM_VERSION: 1.6.0
 ```
 
-#### ACR Variables: `citadelbuy-acr`
+#### ACR Variables: `broxiva-acr`
 
 ```yaml
 Variables:
-  - ACR_NAME: citadelbuyprod
-  - ACR_LOGIN_SERVER: citadelbuyprod.azurecr.io
+  - ACR_NAME: broxivaprod
+  - ACR_LOGIN_SERVER: broxivaprod.azurecr.io
 ```
 
-#### Development Variables: `citadelbuy-dev`
+#### Development Variables: `broxiva-dev`
 
 ```yaml
 Variables:
   - ENVIRONMENT: dev
-  - API_URL: https://api-dev.citadelbuy.com
-  - WEB_URL: https://dev.citadelbuy.com
+  - API_URL: https://api-dev.broxiva.com
+  - WEB_URL: https://dev.broxiva.com
   - DATABASE_URL: [Link to Azure Key Vault secret]
-  - NEXT_PUBLIC_API_URL: https://api-dev.citadelbuy.com
-  - NEXT_PUBLIC_WS_URL: wss://api-dev.citadelbuy.com
+  - NEXT_PUBLIC_API_URL: https://api-dev.broxiva.com
+  - NEXT_PUBLIC_WS_URL: wss://api-dev.broxiva.com
   - STRIPE_PUBLISHABLE_KEY: [Link to Key Vault]
   - SENTRY_DSN: [Link to Key Vault]
 ```
@@ -267,42 +267,42 @@ Variables:
 3. Select your Key Vault
 4. Add secrets
 
-#### Staging Variables: `citadelbuy-staging`
+#### Staging Variables: `broxiva-staging`
 
 ```yaml
 Variables:
   - ENVIRONMENT: staging
-  - API_URL: https://api-staging.citadelbuy.com
-  - WEB_URL: https://staging.citadelbuy.com
+  - API_URL: https://api-staging.broxiva.com
+  - WEB_URL: https://staging.broxiva.com
   - DATABASE_URL: [Link to Azure Key Vault]
-  - NEXT_PUBLIC_API_URL: https://api-staging.citadelbuy.com
-  - NEXT_PUBLIC_WS_URL: wss://api-staging.citadelbuy.com
+  - NEXT_PUBLIC_API_URL: https://api-staging.broxiva.com
+  - NEXT_PUBLIC_WS_URL: wss://api-staging.broxiva.com
   - STRIPE_PUBLISHABLE_KEY: [Link to Key Vault]
   - SENTRY_DSN: [Link to Key Vault]
 ```
 
-#### Production Variables: `citadelbuy-production`
+#### Production Variables: `broxiva-production`
 
 ```yaml
 Variables:
   - ENVIRONMENT: production
-  - API_URL: https://api.citadelbuy.com
-  - WEB_URL: https://citadelbuy.com
+  - API_URL: https://api.broxiva.com
+  - WEB_URL: https://broxiva.com
   - DATABASE_URL: [Link to Azure Key Vault]
-  - NEXT_PUBLIC_API_URL: https://api.citadelbuy.com
-  - NEXT_PUBLIC_WS_URL: wss://api.citadelbuy.com
+  - NEXT_PUBLIC_API_URL: https://api.broxiva.com
+  - NEXT_PUBLIC_WS_URL: wss://api.broxiva.com
   - STRIPE_PUBLISHABLE_KEY: [Link to Key Vault]
   - STRIPE_SECRET_KEY: [Link to Key Vault]
   - SENTRY_DSN: [Link to Key Vault]
   - SENTRY_AUTH_TOKEN: [Link to Key Vault]
 ```
 
-#### Terraform Variables: `citadelbuy-terraform`
+#### Terraform Variables: `broxiva-terraform`
 
 ```yaml
 Variables:
-  - TF_BACKEND_RG: citadelbuy-terraform-state
-  - TF_BACKEND_SA: citadelbuytfstate
+  - TF_BACKEND_RG: broxiva-terraform-state
+  - TF_BACKEND_SA: broxivatfstate
   - TF_BACKEND_CONTAINER: tfstate
   - ARM_SUBSCRIPTION_ID: [Your Azure subscription ID]
   - ARM_TENANT_ID: [Your Azure tenant ID]
@@ -310,7 +310,7 @@ Variables:
   - ARM_CLIENT_SECRET: [Link to Key Vault]
 ```
 
-#### CI Variables: `citadelbuy-ci-variables`
+#### CI Variables: `broxiva-ci-variables`
 
 ```yaml
 Variables:
@@ -325,20 +325,20 @@ Go to **Pipelines** → **Environments** → **New environment**
 
 #### Development Environment
 
-1. **Name**: `citadelbuy-dev`
+1. **Name**: `broxiva-dev`
 2. **Resource**: Kubernetes
 3. **Kubernetes resource**:
-   - Service connection: `citadelbuy-aks-dev`
-   - Namespace: `citadelbuy-dev`
+   - Service connection: `broxiva-aks-dev`
+   - Namespace: `broxiva-dev`
 4. **Approvals**: None (automatic deployment)
 
 #### Staging Environment
 
-1. **Name**: `citadelbuy-staging`
+1. **Name**: `broxiva-staging`
 2. **Resource**: Kubernetes
 3. **Kubernetes resource**:
-   - Service connection: `citadelbuy-aks-staging`
-   - Namespace: `citadelbuy-staging`
+   - Service connection: `broxiva-aks-staging`
+   - Namespace: `broxiva-staging`
 4. **Approvals**:
    - Add approval: Select team members
    - Required approvers: 1
@@ -346,11 +346,11 @@ Go to **Pipelines** → **Environments** → **New environment**
 
 #### Production Environment
 
-1. **Name**: `citadelbuy-production`
+1. **Name**: `broxiva-production`
 2. **Resource**: Kubernetes
 3. **Kubernetes resource**:
-   - Service connection: `citadelbuy-aks-production`
-   - Namespace: `citadelbuy-prod`
+   - Service connection: `broxiva-aks-production`
+   - Namespace: `broxiva-prod`
 4. **Approvals**:
    - Required approvers: 2 (minimum)
    - Timeout: 7 days
@@ -359,9 +359,9 @@ Go to **Pipelines** → **Environments** → **New environment**
 #### Infrastructure Environments
 
 Create separate environments for infrastructure:
-- `citadelbuy-dev-infra`
-- `citadelbuy-staging-infra`
-- `citadelbuy-production-infra` (with strict approvals)
+- `broxiva-dev-infra`
+- `broxiva-staging-infra`
+- `broxiva-production-infra` (with strict approvals)
 
 ### Step 5: Create Pipelines
 
@@ -482,11 +482,11 @@ If a deployment fails or causes issues:
 **Option 1: Automatic Rollback (Kubernetes)**
 ```bash
 # Connect to AKS
-az aks get-credentials --resource-group citadelbuy-prod --name citadelbuy-aks-prod
+az aks get-credentials --resource-group broxiva-prod --name broxiva-aks-prod
 
 # Rollback deployment
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-prod
-kubectl rollout undo deployment/citadelbuy-web -n citadelbuy-prod
+kubectl rollout undo deployment/broxiva-api -n broxiva-prod
+kubectl rollout undo deployment/broxiva-web -n broxiva-prod
 ```
 
 **Option 2: Redeploy Previous Version**
@@ -536,10 +536,10 @@ pool:
 
 ```bash
 # Verify image exists
-az acr repository show-tags --name citadelbuyprod --repository citadelbuy-api
+az acr repository show-tags --name broxivaprod --repository broxiva-api
 
 # Grant AKS pull access
-az aks update -n citadelbuy-aks-prod -g citadelbuy-prod --attach-acr citadelbuyprod
+az aks update -n broxiva-aks-prod -g broxiva-prod --attach-acr broxivaprod
 ```
 
 #### 3. Environment Variables Not Loading
@@ -572,7 +572,7 @@ az aks update -n citadelbuy-aks-prod -g citadelbuy-prod --attach-acr citadelbuyp
 ```bash
 # Force unlock (use with caution)
 az storage blob lease break \
-  --account-name citadelbuytfstate \
+  --account-name broxivatfstate \
   --container-name tfstate \
   --blob-name prod.tfstate
 ```
@@ -647,4 +647,4 @@ For issues or questions:
 
 **Last Updated**: 2025-12-06
 **Version**: 1.0.0
-**Maintained by**: CitadelBuy DevOps Team
+**Maintained by**: Broxiva DevOps Team

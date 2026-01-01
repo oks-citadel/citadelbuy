@@ -1,6 +1,6 @@
-# CitadelBuy Staging Deployment Guide
+# Broxiva Staging Deployment Guide
 
-Complete guide for deploying CitadelBuy to the staging environment, including prerequisites, deployment procedures, smoke testing, and troubleshooting.
+Complete guide for deploying Broxiva to the staging environment, including prerequisites, deployment procedures, smoke testing, and troubleshooting.
 
 ## Table of Contents
 
@@ -27,7 +27,7 @@ The staging environment is a production-like environment used for:
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                      Ingress Controller                      │
-│           (staging.citadelbuy.com / staging-api...)         │
+│           (staging.broxiva.com / staging-api...)         │
 └─────────────────────────────────────────────────────────────┘
                               │
                 ┌─────────────┴─────────────┐
@@ -80,13 +80,13 @@ jq --version
 
 2. **Container Registry Access**
    - GitHub Container Registry (ghcr.io) authentication
-   - Push permissions for citadelplatforms organization
+   - Push permissions for broxivaplatforms organization
 
 3. **DNS Configuration**
    - Access to DNS management
    - Ability to create/update A records for:
-     - `staging.citadelbuy.com`
-     - `staging-api.citadelbuy.com`
+     - `staging.broxiva.com`
+     - `staging-api.broxiva.com`
 
 4. **Secrets Management**
    - Access to secrets manager (AWS Secrets Manager, HashiCorp Vault, etc.)
@@ -136,9 +136,9 @@ Or create secrets manually:
 kubectl apply -f infrastructure/kubernetes/staging/namespace.yaml
 
 # Create secrets
-kubectl create secret generic citadelbuy-secrets \
-  --namespace=citadelbuy-staging \
-  --from-literal=DATABASE_URL="postgresql://citadelbuy:SECURE_PASSWORD@postgres:5432/citadelbuy_staging" \
+kubectl create secret generic broxiva-secrets \
+  --namespace=broxiva-staging \
+  --from-literal=DATABASE_URL="postgresql://broxiva:SECURE_PASSWORD@postgres:5432/broxiva_staging" \
   --from-literal=POSTGRES_PASSWORD="SECURE_PASSWORD" \
   --from-literal=JWT_SECRET="YOUR_JWT_SECRET_64_CHARS" \
   --from-literal=JWT_REFRESH_SECRET="YOUR_JWT_REFRESH_SECRET_64_CHARS" \
@@ -158,7 +158,7 @@ kubectl create secret docker-registry ghcr-secret \
   --docker-username=USERNAME \
   --docker-password=$GITHUB_TOKEN \
   --docker-email=EMAIL \
-  --namespace=citadelbuy-staging
+  --namespace=broxiva-staging
 ```
 
 ### 4. Set Environment Variables
@@ -166,10 +166,10 @@ kubectl create secret docker-registry ghcr-secret \
 ```bash
 # Export required variables
 export REGISTRY="ghcr.io"
-export IMAGE_NAME="citadelplatforms/citadelbuy"
-export K8S_NAMESPACE="citadelbuy-staging"
-export STAGING_API_URL="https://staging-api.citadelbuy.com"
-export STAGING_WEB_URL="https://staging.citadelbuy.com"
+export IMAGE_NAME="broxivaplatforms/broxiva"
+export K8S_NAMESPACE="broxiva-staging"
+export STAGING_API_URL="https://staging-api.broxiva.com"
+export STAGING_WEB_URL="https://staging.broxiva.com"
 ```
 
 ## Deployment Process
@@ -180,7 +180,7 @@ Use the deployment script for automated deployment:
 
 ```bash
 # Navigate to project root
-cd /path/to/citadelbuy
+cd /path/to/broxiva
 
 # Make script executable
 chmod +x scripts/deploy-staging.sh
@@ -207,16 +207,16 @@ For manual control or troubleshooting:
 
 ```bash
 # Build API image
-docker build -t ghcr.io/citadelplatforms/citadelbuy-api:staging-$(git rev-parse --short HEAD) \
+docker build -t ghcr.io/broxivaplatforms/broxiva-api:staging-$(git rev-parse --short HEAD) \
   -f apps/api/Dockerfile \
   --build-arg NODE_ENV=staging \
   apps/api
 
 # Build Web image
-docker build -t ghcr.io/citadelplatforms/citadelbuy-web:staging-$(git rev-parse --short HEAD) \
+docker build -t ghcr.io/broxivaplatforms/broxiva-web:staging-$(git rev-parse --short HEAD) \
   -f apps/web/Dockerfile \
   --build-arg NODE_ENV=staging \
-  --build-arg NEXT_PUBLIC_API_URL=https://staging-api.citadelbuy.com \
+  --build-arg NEXT_PUBLIC_API_URL=https://staging-api.broxiva.com \
   apps/web
 ```
 
@@ -224,10 +224,10 @@ docker build -t ghcr.io/citadelplatforms/citadelbuy-web:staging-$(git rev-parse 
 
 ```bash
 # Push API image
-docker push ghcr.io/citadelplatforms/citadelbuy-api:staging-$(git rev-parse --short HEAD)
+docker push ghcr.io/broxivaplatforms/broxiva-api:staging-$(git rev-parse --short HEAD)
 
 # Push Web image
-docker push ghcr.io/citadelplatforms/citadelbuy-web:staging-$(git rev-parse --short HEAD)
+docker push ghcr.io/broxivaplatforms/broxiva-web:staging-$(git rev-parse --short HEAD)
 ```
 
 #### Step 3: Deploy to Kubernetes
@@ -251,54 +251,54 @@ kubectl apply -f infrastructure/kubernetes/staging/hpa.yaml
 
 ```bash
 # Update API deployment
-kubectl set image deployment/citadelbuy-api \
-  api=ghcr.io/citadelplatforms/citadelbuy-api:staging-$(git rev-parse --short HEAD) \
-  -n citadelbuy-staging
+kubectl set image deployment/broxiva-api \
+  api=ghcr.io/broxivaplatforms/broxiva-api:staging-$(git rev-parse --short HEAD) \
+  -n broxiva-staging
 
 # Update Web deployment
-kubectl set image deployment/citadelbuy-web \
-  web=ghcr.io/citadelplatforms/citadelbuy-web:staging-$(git rev-parse --short HEAD) \
-  -n citadelbuy-staging
+kubectl set image deployment/broxiva-web \
+  web=ghcr.io/broxivaplatforms/broxiva-web:staging-$(git rev-parse --short HEAD) \
+  -n broxiva-staging
 ```
 
 #### Step 5: Monitor Rollout
 
 ```bash
 # Watch API rollout
-kubectl rollout status deployment/citadelbuy-api -n citadelbuy-staging
+kubectl rollout status deployment/broxiva-api -n broxiva-staging
 
 # Watch Web rollout
-kubectl rollout status deployment/citadelbuy-web -n citadelbuy-staging
+kubectl rollout status deployment/broxiva-web -n broxiva-staging
 
 # Check pod status
-kubectl get pods -n citadelbuy-staging -w
+kubectl get pods -n broxiva-staging -w
 ```
 
 #### Step 6: Run Database Migrations
 
 ```bash
 # Get API pod name
-API_POD=$(kubectl get pods -n citadelbuy-staging -l app=citadelbuy-api -o jsonpath='{.items[0].metadata.name}')
+API_POD=$(kubectl get pods -n broxiva-staging -l app=broxiva-api -o jsonpath='{.items[0].metadata.name}')
 
 # Run migrations
-kubectl exec -n citadelbuy-staging $API_POD -- npx prisma migrate deploy
+kubectl exec -n broxiva-staging $API_POD -- npx prisma migrate deploy
 
 # Verify migrations
-kubectl exec -n citadelbuy-staging $API_POD -- npx prisma migrate status
+kubectl exec -n broxiva-staging $API_POD -- npx prisma migrate status
 ```
 
 #### Step 7: Verify Deployment
 
 ```bash
 # Check all resources
-kubectl get all -n citadelbuy-staging
+kubectl get all -n broxiva-staging
 
 # Check ingress
-kubectl get ingress -n citadelbuy-staging
+kubectl get ingress -n broxiva-staging
 
 # Check logs
-kubectl logs -n citadelbuy-staging deployment/citadelbuy-api --tail=50
-kubectl logs -n citadelbuy-staging deployment/citadelbuy-web --tail=50
+kubectl logs -n broxiva-staging deployment/broxiva-api --tail=50
+kubectl logs -n broxiva-staging deployment/broxiva-web --tail=50
 ```
 
 ## Smoke Tests
@@ -309,7 +309,7 @@ After deployment, run smoke tests to verify functionality:
 
 ```bash
 # Run all smoke tests
-./scripts/smoke-tests.sh citadelbuy-staging
+./scripts/smoke-tests.sh broxiva-staging
 
 # View test results
 cat logs/smoke-tests-report-*.txt
@@ -332,10 +332,10 @@ Smoke tests verify:
 ### Test Results
 
 ```
-CitadelBuy Smoke Test Report
+Broxiva Smoke Test Report
 =============================
 Timestamp: 2025-12-04 10:30:00
-Namespace: citadelbuy-staging
+Namespace: broxiva-staging
 
 Test Results:
   Total:   15
@@ -354,16 +354,16 @@ Test key endpoints manually:
 
 ```bash
 # API health check
-curl -f https://staging-api.citadelbuy.com/api/health
+curl -f https://staging-api.broxiva.com/api/health
 
 # API readiness
-curl -f https://staging-api.citadelbuy.com/api/health/ready
+curl -f https://staging-api.broxiva.com/api/health/ready
 
 # Product listing
-curl -f https://staging-api.citadelbuy.com/api/products?page=1&limit=10
+curl -f https://staging-api.broxiva.com/api/products?page=1&limit=10
 
 # Web homepage
-curl -f https://staging.citadelbuy.com
+curl -f https://staging.broxiva.com
 ```
 
 ## Troubleshooting
@@ -379,10 +379,10 @@ curl -f https://staging.citadelbuy.com
 
 ```bash
 # Check pod status
-kubectl describe pod <POD_NAME> -n citadelbuy-staging
+kubectl describe pod <POD_NAME> -n broxiva-staging
 
 # Check events
-kubectl get events -n citadelbuy-staging --sort-by='.lastTimestamp'
+kubectl get events -n broxiva-staging --sort-by='.lastTimestamp'
 
 # Common fixes:
 # - Verify image exists in registry
@@ -401,17 +401,17 @@ kubectl get events -n citadelbuy-staging --sort-by='.lastTimestamp'
 
 ```bash
 # Check PostgreSQL pod
-kubectl get pods -n citadelbuy-staging -l app=postgres
+kubectl get pods -n broxiva-staging -l app=postgres
 
 # Check PostgreSQL logs
-kubectl logs -n citadelbuy-staging statefulset/postgres
+kubectl logs -n broxiva-staging statefulset/postgres
 
 # Test database connection
-kubectl exec -n citadelbuy-staging $API_POD -- \
+kubectl exec -n broxiva-staging $API_POD -- \
   npx prisma db execute --stdin <<< "SELECT 1;"
 
 # Verify DATABASE_URL secret
-kubectl get secret citadelbuy-secrets -n citadelbuy-staging -o json | \
+kubectl get secret broxiva-secrets -n broxiva-staging -o json | \
   jq -r '.data.DATABASE_URL' | base64 -d
 ```
 
@@ -425,16 +425,16 @@ kubectl get secret citadelbuy-secrets -n citadelbuy-staging -o json | \
 
 ```bash
 # Check ingress status
-kubectl get ingress -n citadelbuy-staging
+kubectl get ingress -n broxiva-staging
 
 # Describe ingress
-kubectl describe ingress citadelbuy-api-ingress -n citadelbuy-staging
+kubectl describe ingress broxiva-api-ingress -n broxiva-staging
 
 # Check ingress controller logs
 kubectl logs -n ingress-nginx deployment/ingress-nginx-controller
 
 # Verify DNS resolution
-nslookup staging-api.citadelbuy.com
+nslookup staging-api.broxiva.com
 ```
 
 #### 4. Smoke Tests Failing
@@ -447,16 +447,16 @@ nslookup staging-api.citadelbuy.com
 
 ```bash
 # Check API logs
-kubectl logs -n citadelbuy-staging deployment/citadelbuy-api --tail=100
+kubectl logs -n broxiva-staging deployment/broxiva-api --tail=100
 
 # Test specific endpoint
-curl -v https://staging-api.citadelbuy.com/api/health
+curl -v https://staging-api.broxiva.com/api/health
 
 # Check service endpoints
-kubectl get endpoints -n citadelbuy-staging
+kubectl get endpoints -n broxiva-staging
 
 # Verify environment variables
-kubectl exec -n citadelbuy-staging $API_POD -- env | grep -E 'DATABASE|REDIS|JWT'
+kubectl exec -n broxiva-staging $API_POD -- env | grep -E 'DATABASE|REDIS|JWT'
 ```
 
 #### 5. Out of Memory (OOM) Errors
@@ -469,32 +469,32 @@ kubectl exec -n citadelbuy-staging $API_POD -- env | grep -E 'DATABASE|REDIS|JWT
 
 ```bash
 # Check resource usage
-kubectl top pods -n citadelbuy-staging
+kubectl top pods -n broxiva-staging
 
 # Increase memory limits in deployment
-kubectl edit deployment citadelbuy-api -n citadelbuy-staging
+kubectl edit deployment broxiva-api -n broxiva-staging
 
 # Check for memory leaks in logs
-kubectl logs -n citadelbuy-staging $API_POD --previous
+kubectl logs -n broxiva-staging $API_POD --previous
 ```
 
 ### Debug Commands
 
 ```bash
 # Get all resources
-kubectl get all -n citadelbuy-staging
+kubectl get all -n broxiva-staging
 
 # Describe deployment
-kubectl describe deployment citadelbuy-api -n citadelbuy-staging
+kubectl describe deployment broxiva-api -n broxiva-staging
 
 # Get logs with timestamps
-kubectl logs -n citadelbuy-staging deployment/citadelbuy-api --timestamps=true --tail=100
+kubectl logs -n broxiva-staging deployment/broxiva-api --timestamps=true --tail=100
 
 # Execute commands in pod
-kubectl exec -it -n citadelbuy-staging $API_POD -- /bin/sh
+kubectl exec -it -n broxiva-staging $API_POD -- /bin/sh
 
 # Port forward for local testing
-kubectl port-forward -n citadelbuy-staging svc/citadelbuy-api 4000:4000
+kubectl port-forward -n broxiva-staging svc/broxiva-api 4000:4000
 ```
 
 ## Rollback Procedures
@@ -505,25 +505,25 @@ If deployment issues are detected, rollback immediately:
 
 ```bash
 # Rollback API deployment
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-staging
+kubectl rollout undo deployment/broxiva-api -n broxiva-staging
 
 # Rollback Web deployment
-kubectl rollout undo deployment/citadelbuy-web -n citadelbuy-staging
+kubectl rollout undo deployment/broxiva-web -n broxiva-staging
 
 # Check rollback status
-kubectl rollout status deployment/citadelbuy-api -n citadelbuy-staging
+kubectl rollout status deployment/broxiva-api -n broxiva-staging
 ```
 
 ### Rollback to Specific Revision
 
 ```bash
 # View deployment history
-kubectl rollout history deployment/citadelbuy-api -n citadelbuy-staging
+kubectl rollout history deployment/broxiva-api -n broxiva-staging
 
 # Rollback to specific revision
-kubectl rollout undo deployment/citadelbuy-api \
+kubectl rollout undo deployment/broxiva-api \
   --to-revision=3 \
-  -n citadelbuy-staging
+  -n broxiva-staging
 ```
 
 ### Database Rollback
@@ -532,13 +532,13 @@ If database migrations need to be rolled back:
 
 ```bash
 # Get API pod
-API_POD=$(kubectl get pods -n citadelbuy-staging -l app=citadelbuy-api -o jsonpath='{.items[0].metadata.name}')
+API_POD=$(kubectl get pods -n broxiva-staging -l app=broxiva-api -o jsonpath='{.items[0].metadata.name}')
 
 # View migration history
-kubectl exec -n citadelbuy-staging $API_POD -- npx prisma migrate status
+kubectl exec -n broxiva-staging $API_POD -- npx prisma migrate status
 
 # Manual rollback (requires SQL knowledge)
-kubectl exec -it -n citadelbuy-staging $API_POD -- \
+kubectl exec -it -n broxiva-staging $API_POD -- \
   psql $DATABASE_URL -c "DELETE FROM _prisma_migrations WHERE migration_name = 'MIGRATION_TO_ROLLBACK';"
 ```
 
@@ -548,7 +548,7 @@ To completely restore previous state:
 
 ```bash
 # Delete all resources
-kubectl delete namespace citadelbuy-staging
+kubectl delete namespace broxiva-staging
 
 # Restore from backup
 kubectl apply -f backup/staging-$(date -d yesterday +%Y%m%d)/
@@ -598,7 +598,7 @@ kubectl apply -f backup/staging-$(date -d yesterday +%Y%m%d)/
 
 Before deployment:
 ```
-Team, deploying CitadelBuy to staging at 10:00 AM EST.
+Team, deploying Broxiva to staging at 10:00 AM EST.
 Expected duration: 30 minutes.
 Commit: abc123def
 Changes: [list major changes]
@@ -609,7 +609,7 @@ After deployment:
 Staging deployment completed successfully.
 All smoke tests passed.
 Ready for UAT.
-Staging URL: https://staging.citadelbuy.com
+Staging URL: https://staging.broxiva.com
 ```
 
 ### Monitoring
@@ -642,7 +642,7 @@ gh workflow run staging-deployment.yml
 curl -X POST \
   -H "Accept: application/vnd.github.v3+json" \
   -H "Authorization: token $GITHUB_TOKEN" \
-  https://api.github.com/repos/citadelplatforms/citadelbuy/actions/workflows/staging-deployment.yml/dispatches \
+  https://api.github.com/repos/broxivaplatforms/broxiva/actions/workflows/staging-deployment.yml/dispatches \
   -d '{"ref":"main"}'
 ```
 
@@ -650,10 +650,10 @@ curl -X POST \
 
 For deployment issues or questions:
 
-- **DevOps Team:** devops@citadelbuy.com
+- **DevOps Team:** devops@broxiva.com
 - **Slack Channel:** #staging-deployments
 - **On-Call:** +1-XXX-XXX-XXXX
-- **Documentation:** https://docs.citadelbuy.com/staging
+- **Documentation:** https://docs.broxiva.com/staging
 
 ## Additional Resources
 
@@ -661,4 +661,4 @@ For deployment issues or questions:
 - [Docker Documentation](https://docs.docker.com/)
 - [NestJS Deployment Guide](https://docs.nestjs.com/deployment)
 - [Next.js Deployment Guide](https://nextjs.org/docs/deployment)
-- [CitadelBuy Production Deployment Guide](./PRODUCTION_DEPLOYMENT_CHECKLIST.md)
+- [Broxiva Production Deployment Guide](./PRODUCTION_DEPLOYMENT_CHECKLIST.md)

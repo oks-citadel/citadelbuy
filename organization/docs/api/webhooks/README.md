@@ -2,7 +2,7 @@
 
 ## Overview
 
-The CitadelBuy Webhook System provides a robust, scalable solution for sending real-time notifications to external systems when specific events occur in the platform.
+The Broxiva Webhook System provides a robust, scalable solution for sending real-time notifications to external systems when specific events occur in the platform.
 
 ## Features
 
@@ -48,7 +48,7 @@ POST /webhooks
 Authorization: Bearer <token>
 
 {
-  "url": "https://example.com/webhooks/citadelbuy",
+  "url": "https://example.com/webhooks/broxiva",
   "description": "Order notifications",
   "events": ["order.created", "order.updated"],
   "isActive": true
@@ -59,7 +59,7 @@ Authorization: Bearer <token>
 ```json
 {
   "id": "webhook_123",
-  "url": "https://example.com/webhooks/citadelbuy",
+  "url": "https://example.com/webhooks/broxiva",
   "secret": "whsec_abc123...", // Only shown on creation
   "events": ["order.created", "order.updated"],
   "isActive": true,
@@ -200,7 +200,7 @@ All webhooks are delivered as HTTP POST requests with JSON payload:
 
 ```
 Content-Type: application/json
-User-Agent: CitadelBuy-Webhook/1.0
+User-Agent: Broxiva-Webhook/1.0
 X-Webhook-Signature: t=1701612000,v1=abc123...
 X-Webhook-Event-Type: order.created
 X-Webhook-Event-ID: evt_order_created_1234567890_abc
@@ -549,7 +549,7 @@ POST /webhooks/deliveries/retry
 2. **Signature Verification**: All webhooks include HMAC-SHA256 signatures
 3. **HTTPS Only**: Only HTTPS endpoints should be used in production
 4. **Rate Limiting**: Consider implementing rate limiting on webhook endpoints
-5. **IP Whitelisting**: Consider whitelisting CitadelBuy IP addresses
+5. **IP Whitelisting**: Consider whitelisting Broxiva IP addresses
 
 ## Performance
 
@@ -580,4 +580,4 @@ For issues or questions about the webhook system:
 
 ## License
 
-Copyright (c) 2025 CitadelBuy. All rights reserved.
+Copyright (c) 2025 Broxiva. All rights reserved.

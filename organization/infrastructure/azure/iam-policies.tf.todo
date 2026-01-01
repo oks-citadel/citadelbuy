@@ -1,4 +1,4 @@
-# CitadelBuy IAM Policies for Per-App-Per-Environment Vault Access
+# Broxiva IAM Policies for Per-App-Per-Environment Vault Access
 # Implements principle of least privilege for all applications
 
 # Variables specific to IAM
@@ -83,7 +83,7 @@ resource "azurerm_federated_identity_credential" "api" {
   parent_id           = azurerm_user_assigned_identity.api.id
   audience            = ["api://AzureADTokenExchange"]
   issuer              = data.azurerm_kubernetes_cluster.main.oidc_issuer_url
-  subject             = "system:serviceaccount:citadelbuy-api:api-service-account"
+  subject             = "system:serviceaccount:broxiva-api:api-service-account"
 }
 
 resource "azurerm_federated_identity_credential" "web" {
@@ -92,7 +92,7 @@ resource "azurerm_federated_identity_credential" "web" {
   parent_id           = azurerm_user_assigned_identity.web.id
   audience            = ["api://AzureADTokenExchange"]
   issuer              = data.azurerm_kubernetes_cluster.main.oidc_issuer_url
-  subject             = "system:serviceaccount:citadelbuy-web:web-service-account"
+  subject             = "system:serviceaccount:broxiva-web:web-service-account"
 }
 
 resource "azurerm_federated_identity_credential" "mobile" {
@@ -101,7 +101,7 @@ resource "azurerm_federated_identity_credential" "mobile" {
   parent_id           = azurerm_user_assigned_identity.mobile.id
   audience            = ["api://AzureADTokenExchange"]
   issuer              = data.azurerm_kubernetes_cluster.main.oidc_issuer_url
-  subject             = "system:serviceaccount:citadelbuy-mobile:mobile-service-account"
+  subject             = "system:serviceaccount:broxiva-mobile:mobile-service-account"
 }
 
 resource "azurerm_federated_identity_credential" "services" {
@@ -110,7 +110,7 @@ resource "azurerm_federated_identity_credential" "services" {
   parent_id           = azurerm_user_assigned_identity.services.id
   audience            = ["api://AzureADTokenExchange"]
   issuer              = data.azurerm_kubernetes_cluster.main.oidc_issuer_url
-  subject             = "system:serviceaccount:citadelbuy-services:services-service-account"
+  subject             = "system:serviceaccount:broxiva-services:services-service-account"
 }
 
 # ============================================================

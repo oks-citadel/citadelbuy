@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# CitadelBuy Fraud Detection Workflow Test Script
+# Broxiva Fraud Detection Workflow Test Script
 # Tests all risk levels with sample data
 
-WEBHOOK_URL="${N8N_WEBHOOK_URL:-https://n8n.citadelbuy.com/webhook/fraud-detection}"
+WEBHOOK_URL="${N8N_WEBHOOK_URL:-https://n8n.broxiva.com/webhook/fraud-detection}"
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 echo "========================================"
-echo "CitadelBuy Fraud Detection Test Suite"
+echo "Broxiva Fraud Detection Test Suite"
 echo "========================================"
 echo "Webhook URL: $WEBHOOK_URL"
 echo "Timestamp: $TIMESTAMP"

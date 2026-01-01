@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers implementing and testing Right-to-Left (RTL) language support for Arabic and other RTL languages on the CitadelBuy platform.
+This guide covers implementing and testing Right-to-Left (RTL) language support for Arabic and other RTL languages on the Broxiva platform.
 
 ## RTL Languages Supported
 
@@ -349,7 +349,7 @@ html[dir="rtl"] .phone {
 ### URLs
 
 ```html
-<span class="url">https://citadelbuy.com</span>
+<span class="url">https://broxiva.com</span>
 ```
 
 ```css
@@ -540,4 +540,4 @@ Ensure RTL doesn't break accessibility:
 For RTL-related issues:
 - Slack: #rtl-support
 - GitHub Issues: Tag with `rtl` label
-- Documentation: https://docs.citadelbuy.com/i18n/rtl
+- Documentation: https://docs.broxiva.com/i18n/rtl

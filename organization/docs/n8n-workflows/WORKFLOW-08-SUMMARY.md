@@ -246,7 +246,7 @@ Generate Daily Summary
 
 1. **Import Database Schema:**
    ```bash
-   psql -U citadelbuy_user -d citadelbuy < workflow-08-database-setup.sql
+   psql -U broxiva_user -d broxiva < workflow-08-database-setup.sql
    ```
 
 2. **Configure API Credentials:**
@@ -261,7 +261,7 @@ Generate Daily Summary
    ```
 
 4. **Configure Credentials in n8n:**
-   - PostgreSQL → "CitadelBuy PostgreSQL"
+   - PostgreSQL → "Broxiva PostgreSQL"
    - Rainforest API → "Rainforest API (Amazon)"
    - Walmart API → "Walmart API"
    - ScraperAPI → "ScraperAPI"
@@ -521,7 +521,7 @@ npm test test/workflow-integration.test.js
 ### Contacts
 - **Pricing Team:** #pricing-team (Slack)
 - **Technical Support:** #pricing-tech (Slack)
-- **Urgent Issues:** pricing-oncall@citadelbuy.com
+- **Urgent Issues:** pricing-oncall@broxiva.com
 
 ### Resources
 - [n8n Documentation](https://docs.n8n.io/)
@@ -531,7 +531,7 @@ npm test test/workflow-integration.test.js
 
 ## License
 
-Copyright 2025 CitadelBuy. Internal use only.
+Copyright 2025 Broxiva. Internal use only.
 
 ---
 
@@ -551,10 +551,10 @@ Copyright 2025 CitadelBuy. Internal use only.
 n8n import:workflow --input=workflow-08-dynamic-pricing.json
 
 # Setup database
-psql -U citadelbuy_user -d citadelbuy < workflow-08-database-setup.sql
+psql -U broxiva_user -d broxiva < workflow-08-database-setup.sql
 
 # Enable tracking
-psql -U citadelbuy_user -d citadelbuy -c "
+psql -U broxiva_user -d broxiva -c "
 UPDATE products
 SET competitor_tracking_enabled = true,
     min_price = cost_price * 1.1,
@@ -564,7 +564,7 @@ WHERE status = 'active' AND stock_quantity > 0;
 "
 
 # Check execution
-psql -U citadelbuy_user -d citadelbuy -c "
+psql -U broxiva_user -d broxiva -c "
 SELECT * FROM pricing_analysis_summary
 WHERE report_date = CURRENT_DATE;
 "
@@ -575,8 +575,8 @@ WHERE report_date = CURRENT_DATE;
 ```bash
 # Required
 POSTGRES_HOST=localhost
-POSTGRES_DB=citadelbuy
-POSTGRES_USER=citadelbuy_user
+POSTGRES_DB=broxiva
+POSTGRES_USER=broxiva_user
 POSTGRES_PASSWORD=<secret>
 
 RAINFOREST_API_KEY=<secret>
@@ -588,9 +588,9 @@ MIXPANEL_PROJECT_TOKEN=<secret>
 ```
 
 ### Key URLs
-- **Admin Dashboard:** https://admin.citadelbuy.com/pricing/approvals
-- **Looker Dashboard:** https://looker.citadelbuy.com/dashboards/pricing
-- **Mixpanel:** https://mixpanel.com/project/citadelbuy
+- **Admin Dashboard:** https://admin.broxiva.com/pricing/approvals
+- **Looker Dashboard:** https://looker.broxiva.com/dashboards/pricing
+- **Mixpanel:** https://mixpanel.com/project/broxiva
 
 ---
 

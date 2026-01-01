@@ -246,7 +246,20 @@
       "Bash(aws codebuild:*)",
       "Bash(GIT_AUTHOR_NAME=\"Kenny Ogunmola\" GIT_AUTHOR_EMAIL=\"kogun@broxiva.com\" GIT_COMMITTER_NAME=\"Kenny Ogunmola\" GIT_COMMITTER_EMAIL=\"kogun@broxiva.com\" git commit -m \"$\\(cat <<''EOF''\nfix: Specify explicit TypeScript types in tsconfig\n\nFixed Docker build failure by explicitly listing required type definitions\ninstead of auto-discovery which was including problematic @types/bull.\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(pnpm remove:*)",
-      "Bash(GIT_AUTHOR_NAME=\"Kenny Ogunmola\" GIT_AUTHOR_EMAIL=\"kogun@broxiva.com\" GIT_COMMITTER_NAME=\"Kenny Ogunmola\" GIT_COMMITTER_EMAIL=\"kogun@broxiva.com\" git commit -m \"$\\(cat <<''EOF''\nfix: Remove deprecated @types/bull and simplify tsconfig\n\n- Removed @types/bull \\(deprecated, bull ships with its own types\\)\n- Simplified tsconfig.json by removing explicit typeRoots/types arrays\n- TypeScript will auto-discover types from node_modules/@types\n- skipLibCheck prevents issues with third-party type definitions\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(GIT_AUTHOR_NAME=\"Kenny Ogunmola\" GIT_AUTHOR_EMAIL=\"kogun@broxiva.com\" GIT_COMMITTER_NAME=\"Kenny Ogunmola\" GIT_COMMITTER_EMAIL=\"kogun@broxiva.com\" git commit -m \"$\\(cat <<''EOF''\nfix: Remove deprecated @types/bull and simplify tsconfig\n\n- Removed @types/bull \\(deprecated, bull ships with its own types\\)\n- Simplified tsconfig.json by removing explicit typeRoots/types arrays\n- TypeScript will auto-discover types from node_modules/@types\n- skipLibCheck prevents issues with third-party type definitions\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(aws elb describe-load-balancers:*)",
+      "Bash(aws elbv2 describe-listeners:*)",
+      "Bash(aws eks update-kubeconfig:*)",
+      "Bash(kubectl get:*)",
+      "Bash(aws acm list-certificates:*)",
+      "Bash(aws acm request-certificate:*)",
+      "Bash(aws acm describe-certificate:*)",
+      "Bash(aws elbv2 describe-target-health:*)",
+      "Bash(openssl s_client:*)",
+      "Bash(openssl x509:*)",
+      "Bash(for file in \"./apps/api/.env\" \"./apps/api/.env.example.backup\" \"./apps/api/IMPLEMENTATION_COMPLETE.txt\" \"./apps/mobile/.env\" \"./apps/web/.env.local\" \"./apps/web/ENDPOINTS_USED.txt\" \"./apps/web/src/components/layout/footer-new.txt\" \"./n8n-workflows/FRAUD-WORKFLOW-DIAGRAM.txt\" \"./n8n-workflows/requirements.txt\" \"./n8n-workflows/WORKFLOW-05-DELIVERY-SUMMARY.txt\" \"./n8n-workflows/WORKFLOW-08-VISUAL-REFERENCE.txt\")",
+      "Bash(do if [ -f \"$file\" ])",
+      "Bash(then sed -i 's/CitadelBuy/Broxiva/g; s/citadelbuy/broxiva/g; s/CITADELBUY/BROXIVA/g; s/Citadel/Broxiva/g; s/citadel/broxiva/g; s/CITADEL/BROXIVA/g' \"$file\")"
     ],
     "deny": [],
     "ask": []

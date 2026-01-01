@@ -4,7 +4,7 @@
 
 set -e
 
-NAMESPACE="citadelbuy-production"
+NAMESPACE="broxiva-production"
 PRODUCTION_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "============================================"
@@ -223,7 +223,7 @@ if [ $ERRORS -eq 0 ]; then
     echo "   kubectl kustomize $PRODUCTION_DIR | less"
     echo ""
     echo "2. Ensure secrets are created:"
-    echo "   kubectl get secret citadelbuy-secrets -n $NAMESPACE"
+    echo "   kubectl get secret broxiva-secrets -n $NAMESPACE"
     echo ""
     echo "3. Deploy to production:"
     echo "   kubectl apply -k $PRODUCTION_DIR"

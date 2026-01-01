@@ -43,8 +43,8 @@ All production Kubernetes manifests have been successfully created:
    - Security and compliance settings
 
 5. **ingress.yaml** (8.9KB)
-   - API ingress (api.citadelbuy.com)
-   - Web ingress (citadelbuy.com, www.citadelbuy.com)
+   - API ingress (api.broxiva.com)
+   - Web ingress (broxiva.com, www.broxiva.com)
    - WWW to non-WWW redirect
    - TLS with Let's Encrypt production
    - ModSecurity WAF enabled
@@ -61,7 +61,7 @@ All production Kubernetes manifests have been successfully created:
 
 ### Namespace & Orchestration
 7. **namespace.yaml** (1.3KB)
-   - citadelbuy-production namespace
+   - broxiva-production namespace
    - ResourceQuota (50 CPU, 100Gi memory)
    - LimitRange for containers and pods
 
@@ -171,38 +171,38 @@ kubectl kustomize organization/infrastructure/kubernetes/production/
 kubectl apply -k organization/infrastructure/kubernetes/production/
 
 # Watch deployment
-kubectl get pods -n citadelbuy-production -w
+kubectl get pods -n broxiva-production -w
 
 # Check status
-kubectl get all -n citadelbuy-production
-kubectl get hpa -n citadelbuy-production
-kubectl get pdb -n citadelbuy-production
-kubectl get ingress -n citadelbuy-production
+kubectl get all -n broxiva-production
+kubectl get hpa -n broxiva-production
+kubectl get pdb -n broxiva-production
+kubectl get ingress -n broxiva-production
 ```
 
 ## Verification
 
 ```bash
 # Health checks
-curl https://api.citadelbuy.com/api/health
-curl https://citadelbuy.com/api/health
+curl https://api.broxiva.com/api/health
+curl https://broxiva.com/api/health
 
 # Metrics
-curl https://api.citadelbuy.com/metrics
+curl https://api.broxiva.com/metrics
 
 # Logs
-kubectl logs -n citadelbuy-production -l app=citadelbuy-api --tail=100
-kubectl logs -n citadelbuy-production -l app=citadelbuy-web --tail=100
+kubectl logs -n broxiva-production -l app=broxiva-api --tail=100
+kubectl logs -n broxiva-production -l app=broxiva-web --tail=100
 ```
 
 ## Rollback
 
 ```bash
 # Rollback API
-kubectl rollout undo deployment citadelbuy-api -n citadelbuy-production
+kubectl rollout undo deployment broxiva-api -n broxiva-production
 
 # Rollback Web
-kubectl rollout undo deployment citadelbuy-web -n citadelbuy-production
+kubectl rollout undo deployment broxiva-web -n broxiva-production
 ```
 
 ---

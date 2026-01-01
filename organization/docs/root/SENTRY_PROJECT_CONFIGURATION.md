@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides step-by-step instructions for configuring Sentry projects for CitadelBuy's multi-environment e-commerce platform. It covers project setup, environment separation, release tracking, and source map configuration.
+This guide provides step-by-step instructions for configuring Sentry projects for Broxiva's multi-environment e-commerce platform. It covers project setup, environment separation, release tracking, and source map configuration.
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@ This guide provides step-by-step instructions for configuring Sentry projects fo
 ### Organization Hierarchy
 
 ```
-CitadelBuy Organization
+Broxiva Organization
 ├── Teams
 │   ├── Platform Team
 │   ├── Frontend Team
@@ -33,19 +33,19 @@ CitadelBuy Organization
 │
 └── Projects
     ├── Backend
-    │   ├── citadelbuy-backend-prod
-    │   ├── citadelbuy-backend-staging
-    │   └── citadelbuy-backend-dev
+    │   ├── broxiva-backend-prod
+    │   ├── broxiva-backend-staging
+    │   └── broxiva-backend-dev
     │
     ├── Frontend
-    │   ├── citadelbuy-web-prod
-    │   ├── citadelbuy-web-staging
-    │   └── citadelbuy-web-dev
+    │   ├── broxiva-web-prod
+    │   ├── broxiva-web-staging
+    │   └── broxiva-web-dev
     │
     └── Mobile
-        ├── citadelbuy-mobile-prod
-        ├── citadelbuy-mobile-staging
-        └── citadelbuy-mobile-dev
+        ├── broxiva-mobile-prod
+        ├── broxiva-mobile-staging
+        └── broxiva-mobile-dev
 ```
 
 ### Creating Projects
@@ -53,7 +53,7 @@ CitadelBuy Organization
 #### 1. Create Backend Projects
 
 **Project Settings:**
-- **Name:** `citadelbuy-backend-prod`
+- **Name:** `broxiva-backend-prod`
 - **Platform:** Node.js
 - **Team:** Platform Team
 - **Default Environment:** production
@@ -61,7 +61,7 @@ CitadelBuy Organization
 **Steps:**
 1. Navigate to **Settings** → **Projects** → **Create Project**
 2. Select **Node.js** as platform
-3. Enter project name: `citadelbuy-backend-prod`
+3. Enter project name: `broxiva-backend-prod`
 4. Assign to **Platform Team**
 5. Copy the DSN for configuration
 6. Repeat for staging and dev environments
@@ -69,7 +69,7 @@ CitadelBuy Organization
 #### 2. Create Frontend Projects
 
 **Project Settings:**
-- **Name:** `citadelbuy-web-prod`
+- **Name:** `broxiva-web-prod`
 - **Platform:** Next.js
 - **Team:** Frontend Team
 - **Default Environment:** production
@@ -77,7 +77,7 @@ CitadelBuy Organization
 **Steps:**
 1. Navigate to **Settings** → **Projects** → **Create Project**
 2. Select **Next.js** as platform
-3. Enter project name: `citadelbuy-web-prod`
+3. Enter project name: `broxiva-web-prod`
 4. Assign to **Frontend Team**
 5. Copy the DSN for configuration
 6. Repeat for staging and dev environments
@@ -85,7 +85,7 @@ CitadelBuy Organization
 #### 3. Create Mobile Projects
 
 **Project Settings:**
-- **Name:** `citadelbuy-mobile-prod`
+- **Name:** `broxiva-mobile-prod`
 - **Platform:** React Native
 - **Team:** Mobile Team
 - **Default Environment:** production
@@ -93,7 +93,7 @@ CitadelBuy Organization
 **Steps:**
 1. Navigate to **Settings** → **Projects** → **Create Project**
 2. Select **React Native** as platform
-3. Enter project name: `citadelbuy-mobile-prod`
+3. Enter project name: `broxiva-mobile-prod`
 4. Assign to **Mobile Team**
 5. Copy the DSN for configuration
 6. Repeat for staging and dev environments
@@ -162,7 +162,7 @@ SENTRY_DSN=https://[key]@[org].ingest.sentry.io/[project-id]
 SENTRY_ENVIRONMENT=production
 SENTRY_TRACES_SAMPLE_RATE=0.1  # 10% in production
 SENTRY_PROFILES_SAMPLE_RATE=0.1  # 10% in production
-SENTRY_RELEASE=citadelbuy-backend@2.0.0
+SENTRY_RELEASE=broxiva-backend@2.0.0
 ```
 
 ### 3. Initialize Sentry
@@ -179,7 +179,7 @@ apps/api/src/common/monitoring/sentry.module.ts
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   environment: process.env.SENTRY_ENVIRONMENT || 'development',
-  release: `citadelbuy-backend@${process.env.npm_package_version}`,
+  release: `broxiva-backend@${process.env.npm_package_version}`,
 
   // Performance Monitoring
   tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || '0.1'),
@@ -300,12 +300,12 @@ Add to `apps/web/.env.local`:
 # Sentry Configuration
 NEXT_PUBLIC_SENTRY_DSN=https://[key]@[org].ingest.sentry.io/[project-id]
 SENTRY_AUTH_TOKEN=your_sentry_auth_token
-SENTRY_ORG=citadelbuy
-SENTRY_PROJECT=citadelbuy-web-prod
+SENTRY_ORG=broxiva
+SENTRY_PROJECT=broxiva-web-prod
 
 # Source Maps
 SENTRY_UPLOAD_SOURCE_MAPS=true
-SENTRY_RELEASE=citadelbuy-web@2.0.0
+SENTRY_RELEASE=broxiva-web@2.0.0
 ```
 
 ### 3. Sentry Configuration Files
@@ -337,7 +337,7 @@ if (SENTRY_DSN) {
         blockAllMedia: true,
       }),
       new Sentry.BrowserTracing({
-        tracePropagationTargets: ['localhost', /^\//, /^https:\/\/citadelbuy\.com/],
+        tracePropagationTargets: ['localhost', /^\//, /^https:\/\/broxiva\.com/],
       }),
     ],
 
@@ -472,8 +472,8 @@ export default {
     [
       '@sentry/react-native/expo',
       {
-        organization: 'citadelbuy',
-        project: 'citadelbuy-mobile-prod',
+        organization: 'broxiva',
+        project: 'broxiva-mobile-prod',
       },
     ],
   ],
@@ -499,12 +499,12 @@ Sentry.init({
   enableNativeNagger: false,
 
   // Release tracking
-  release: `citadelbuy-mobile@${Constants.expoConfig?.version}`,
+  release: `broxiva-mobile@${Constants.expoConfig?.version}`,
   dist: Constants.expoConfig?.revisionId,
 
   integrations: [
     new Sentry.ReactNativeTracing({
-      tracingOrigins: ['localhost', 'citadelbuy.com', /^\//],
+      tracingOrigins: ['localhost', 'broxiva.com', /^\//],
       routingInstrumentation: Sentry.routingInstrumentation,
     }),
   ],
@@ -542,11 +542,11 @@ jobs:
         uses: getsentry/action-release@v1
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: citadelbuy
-          SENTRY_PROJECT: citadelbuy-backend-prod
+          SENTRY_ORG: broxiva
+          SENTRY_PROJECT: broxiva-backend-prod
         with:
           environment: production
-          version: citadelbuy-backend@${{ steps.version.outputs.version }}
+          version: broxiva-backend@${{ steps.version.outputs.version }}
 
       - name: Deploy application
         run: |
@@ -556,11 +556,11 @@ jobs:
         uses: getsentry/action-release@v1
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: citadelbuy
-          SENTRY_PROJECT: citadelbuy-backend-prod
+          SENTRY_ORG: broxiva
+          SENTRY_PROJECT: broxiva-backend-prod
         with:
           environment: production
-          version: citadelbuy-backend@${{ steps.version.outputs.version }}
+          version: broxiva-backend@${{ steps.version.outputs.version }}
           finalize: true
 ```
 
@@ -574,16 +574,16 @@ npm install -g @sentry/cli
 sentry-cli login
 
 # Create release
-sentry-cli releases new citadelbuy-backend@2.0.0
+sentry-cli releases new broxiva-backend@2.0.0
 
 # Associate commits
-sentry-cli releases set-commits citadelbuy-backend@2.0.0 --auto
+sentry-cli releases set-commits broxiva-backend@2.0.0 --auto
 
 # Deploy to environment
-sentry-cli releases deploys citadelbuy-backend@2.0.0 new -e production
+sentry-cli releases deploys broxiva-backend@2.0.0 new -e production
 
 # Finalize release
-sentry-cli releases finalize citadelbuy-backend@2.0.0
+sentry-cli releases finalize broxiva-backend@2.0.0
 ```
 
 ### Frontend Release Tracking
@@ -622,7 +622,7 @@ Source maps are automatically uploaded during build when using `@sentry/nextjs`.
 ls .next/static/chunks/*.map
 
 # Verify in Sentry
-# Navigate to: Settings → Projects → citadelbuy-web-prod → Source Maps
+# Navigate to: Settings → Projects → broxiva-web-prod → Source Maps
 ```
 
 #### 2. Manual Upload
@@ -632,9 +632,9 @@ If automatic upload fails:
 ```bash
 # Upload source maps manually
 sentry-cli sourcemaps upload \
-  --org citadelbuy \
-  --project citadelbuy-web-prod \
-  --release citadelbuy-web@2.0.0 \
+  --org broxiva \
+  --project broxiva-web-prod \
+  --release broxiva-web@2.0.0 \
   .next/static/chunks
 ```
 
@@ -672,9 +672,9 @@ Backend source maps are not typically required for Node.js applications, but can
 **Upload source maps:**
 ```bash
 sentry-cli sourcemaps upload \
-  --org citadelbuy \
-  --project citadelbuy-backend-prod \
-  --release citadelbuy-backend@2.0.0 \
+  --org broxiva \
+  --project broxiva-backend-prod \
+  --release broxiva-backend@2.0.0 \
   dist
 ```
 
@@ -837,7 +837,7 @@ For enterprise plans with SSO:
 
 | Setting | Recommended Value | Notes |
 |---------|------------------|-------|
-| Name | `citadelbuy-[component]-[env]` | Consistent naming |
+| Name | `broxiva-[component]-[env]` | Consistent naming |
 | Platform | Node.js / Next.js / React Native | Based on project |
 | Default Environment | production / staging / development | Per project |
 | Resolve in Next Release | Enabled | Auto-resolve fixed issues |
@@ -915,7 +915,7 @@ Loading chunk [0-9]+ failed
 
 ```bash
 # Backend test
-curl -X POST https://api.citadelbuy.com/test/sentry-error
+curl -X POST https://api.broxiva.com/test/sentry-error
 
 # Frontend test
 # Open browser console and run:

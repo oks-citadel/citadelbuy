@@ -1,5 +1,5 @@
 -- ============================================================================
--- CitadelBuy Performance Indexes Migration
+-- Broxiva Performance Indexes Migration
 -- Created: December 2025
 -- Purpose: Add database indexes for frequently queried columns and optimize query performance
 -- ============================================================================
@@ -437,7 +437,7 @@ CREATE INDEX IF NOT EXISTS "idx_orders_list_covering"
 -- COMMENTS & DOCUMENTATION
 -- ============================================================================
 
--- This migration adds comprehensive performance indexes for CitadelBuy platform
+-- This migration adds comprehensive performance indexes for Broxiva platform
 --
 -- Index Strategy:
 -- 1. Single-column indexes for frequent filters (status, dates, foreign keys)
@@ -460,5 +460,5 @@ CREATE INDEX IF NOT EXISTS "idx_orders_list_covering"
 -- - Slightly increased write overhead (inserts/updates)
 -- - Increased storage requirements (estimated 10-15% of table size)
 --
--- Author: CitadelBuy Platform Team
+-- Author: Broxiva Platform Team
 -- Date: December 2025

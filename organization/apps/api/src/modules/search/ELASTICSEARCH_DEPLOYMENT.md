@@ -42,14 +42,14 @@ services:
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
-      - citadelbuy
+      - broxiva
 
 volumes:
   elasticsearch_data:
     driver: local
 
 networks:
-  citadelbuy:
+  broxiva:
     driver: bridge
 ```
 
@@ -69,8 +69,8 @@ sudo systemctl enable elasticsearch
 
 #### elasticsearch.yml (Production Settings)
 ```yaml
-cluster.name: citadelbuy-cluster
-node.name: citadelbuy-node-1
+cluster.name: broxiva-cluster
+node.name: broxiva-node-1
 
 # Network
 network.host: 0.0.0.0
@@ -116,7 +116,7 @@ ELASTICSEARCH_USERNAME=elastic
 ELASTICSEARCH_PASSWORD=your_secure_password
 ELASTICSEARCH_REQUEST_TIMEOUT=30000
 ELASTICSEARCH_BULK_SIZE=1000
-ELASTICSEARCH_INDEX_PREFIX=citadelbuy
+ELASTICSEARCH_INDEX_PREFIX=broxiva
 
 # Search Provider
 SEARCH_PROVIDER=elasticsearch
@@ -129,11 +129,11 @@ DISABLE_SEARCH_AUTO_SYNC=false
 ```bash
 # Elasticsearch Connection (Cluster)
 ELASTICSEARCH_NODE=https://es-cluster.example.com:9200
-ELASTICSEARCH_USERNAME=citadelbuy_search_user
+ELASTICSEARCH_USERNAME=broxiva_search_user
 ELASTICSEARCH_PASSWORD=${ES_PASSWORD}  # Use secrets manager
 ELASTICSEARCH_REQUEST_TIMEOUT=60000
 ELASTICSEARCH_BULK_SIZE=2000
-ELASTICSEARCH_INDEX_PREFIX=citadelbuy-prod
+ELASTICSEARCH_INDEX_PREFIX=broxiva-prod
 
 # Search Provider
 SEARCH_PROVIDER=elasticsearch
@@ -152,8 +152,8 @@ curl http://localhost:9200
 Expected response:
 ```json
 {
-  "name" : "citadelbuy-node-1",
-  "cluster_name" : "citadelbuy-cluster",
+  "name" : "broxiva-node-1",
+  "cluster_name" : "broxiva-cluster",
   "version" : {
     "number" : "8.11.0"
   }
@@ -212,23 +212,23 @@ curl http://localhost:3000/admin/search/health \
 #### Multi-Node Configuration
 ```yaml
 # Node 1 (Master + Data)
-cluster.name: citadelbuy-prod
-node.name: citadelbuy-prod-1
+cluster.name: broxiva-prod
+node.name: broxiva-prod-1
 node.roles: [ master, data ]
 network.host: 10.0.1.10
 discovery.seed_hosts: ["10.0.1.10", "10.0.1.11", "10.0.1.12"]
-cluster.initial_master_nodes: ["citadelbuy-prod-1"]
+cluster.initial_master_nodes: ["broxiva-prod-1"]
 
 # Node 2 (Data)
-cluster.name: citadelbuy-prod
-node.name: citadelbuy-prod-2
+cluster.name: broxiva-prod
+node.name: broxiva-prod-2
 node.roles: [ data ]
 network.host: 10.0.1.11
 discovery.seed_hosts: ["10.0.1.10", "10.0.1.11", "10.0.1.12"]
 
 # Node 3 (Data)
-cluster.name: citadelbuy-prod
-node.name: citadelbuy-prod-3
+cluster.name: broxiva-prod
+node.name: broxiva-prod-3
 node.roles: [ data ]
 network.host: 10.0.1.12
 discovery.seed_hosts: ["10.0.1.10", "10.0.1.11", "10.0.1.12"]
@@ -242,22 +242,22 @@ discovery.seed_hosts: ["10.0.1.10", "10.0.1.11", "10.0.1.12"]
 /usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto
 
 # Create application user
-curl -X POST "localhost:9200/_security/user/citadelbuy_search_user" \
+curl -X POST "localhost:9200/_security/user/broxiva_search_user" \
   -H "Content-Type: application/json" \
   -u elastic:${ELASTIC_PASSWORD} \
   -d '{
     "password": "secure_password_here",
-    "roles": ["citadelbuy_search_role"],
-    "full_name": "CitadelBuy Search User"
+    "roles": ["broxiva_search_role"],
+    "full_name": "Broxiva Search User"
   }'
 
 # Create role
-curl -X POST "localhost:9200/_security/role/citadelbuy_search_role" \
+curl -X POST "localhost:9200/_security/role/broxiva_search_role" \
   -H "Content-Type: application/json" \
   -u elastic:${ELASTIC_PASSWORD} \
   -d '{
     "indices": [{
-      "names": ["citadelbuy-prod-*"],
+      "names": ["broxiva-prod-*"],
       "privileges": ["all"]
     }]
   }'
@@ -276,7 +276,7 @@ xpack.security.transport.ssl.keystore.path: certs/transport.p12
 
 #### Create ILM Policy
 ```bash
-curl -X PUT "localhost:9200/_ilm/policy/citadelbuy-products-policy" \
+curl -X PUT "localhost:9200/_ilm/policy/broxiva-products-policy" \
   -H "Content-Type: application/json" \
   -d '{
     "policy": {
@@ -350,7 +350,7 @@ curl -X PUT "localhost:9200/_watcher/watch/index-health-check" \
     "actions": {
       "email_admin": {
         "email": {
-          "to": "admin@citadelbuy.com",
+          "to": "admin@broxiva.com",
           "subject": "Elasticsearch Cluster Health Warning",
           "body": "Cluster status is {{ctx.payload.status}}"
         }
@@ -364,7 +364,7 @@ curl -X PUT "localhost:9200/_watcher/watch/index-health-check" \
 #### Configure Snapshot Repository
 ```bash
 # Create snapshot repository
-curl -X PUT "localhost:9200/_snapshot/citadelbuy_backup" \
+curl -X PUT "localhost:9200/_snapshot/broxiva_backup" \
   -H "Content-Type: application/json" \
   -d '{
     "type": "fs",
@@ -375,33 +375,33 @@ curl -X PUT "localhost:9200/_snapshot/citadelbuy_backup" \
   }'
 
 # Create snapshot
-curl -X PUT "localhost:9200/_snapshot/citadelbuy_backup/snapshot_1?wait_for_completion=true"
+curl -X PUT "localhost:9200/_snapshot/broxiva_backup/snapshot_1?wait_for_completion=true"
 
 # Schedule daily snapshots (using cron)
-0 2 * * * curl -X PUT "localhost:9200/_snapshot/citadelbuy_backup/snapshot_$(date +\%Y\%m\%d)?wait_for_completion=true"
+0 2 * * * curl -X PUT "localhost:9200/_snapshot/broxiva_backup/snapshot_$(date +\%Y\%m\%d)?wait_for_completion=true"
 ```
 
 #### Restore from Snapshot
 ```bash
 # Close index
-curl -X POST "localhost:9200/citadelbuy-prod-products/_close"
+curl -X POST "localhost:9200/broxiva-prod-products/_close"
 
 # Restore snapshot
-curl -X POST "localhost:9200/_snapshot/citadelbuy_backup/snapshot_20240101/_restore" \
+curl -X POST "localhost:9200/_snapshot/broxiva_backup/snapshot_20240101/_restore" \
   -H "Content-Type: application/json" \
   -d '{
-    "indices": "citadelbuy-prod-products"
+    "indices": "broxiva-prod-products"
   }'
 
 # Open index
-curl -X POST "localhost:9200/citadelbuy-prod-products/_open"
+curl -X POST "localhost:9200/broxiva-prod-products/_open"
 ```
 
 ## Performance Tuning
 
 ### 1. Index Settings
 ```bash
-curl -X PUT "localhost:9200/citadelbuy-prod-products/_settings" \
+curl -X PUT "localhost:9200/broxiva-prod-products/_settings" \
   -H "Content-Type: application/json" \
   -d '{
     "index": {
@@ -476,7 +476,7 @@ ELASTICSEARCH_BULK_SIZE=500
 #### 2. Slow Queries
 ```bash
 # Enable slow log
-curl -X PUT "localhost:9200/citadelbuy-prod-products/_settings" \
+curl -X PUT "localhost:9200/broxiva-prod-products/_settings" \
   -H "Content-Type: application/json" \
   -d '{
     "index.search.slowlog.threshold.query.warn": "10s",
@@ -484,7 +484,7 @@ curl -X PUT "localhost:9200/citadelbuy-prod-products/_settings" \
   }'
 
 # Check slow logs
-tail -f /var/log/elasticsearch/citadelbuy-cluster_index_search_slowlog.log
+tail -f /var/log/elasticsearch/broxiva-cluster_index_search_slowlog.log
 ```
 
 #### 3. Index Corruption
@@ -545,6 +545,6 @@ curl -v http://elasticsearch:9200
 ## Contact
 
 For production issues:
-- On-call: search-oncall@citadelbuy.com
+- On-call: search-oncall@broxiva.com
 - Slack: #search-alerts
 - PagerDuty: search-team

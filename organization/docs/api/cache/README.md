@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains the complete Redis caching implementation for CitadelBuy. The caching system provides high-performance data caching with automatic invalidation, cache warming, and comprehensive monitoring.
+This directory contains the complete Redis caching implementation for Broxiva. The caching system provides high-performance data caching with automatic invalidation, cache warming, and comprehensive monitoring.
 
 ## Architecture
 

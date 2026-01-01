@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Inventory Management Service handles real-time inventory tracking, stock level management, warehouse operations, and automated reordering for the CitadelBuy platform. It provides accurate inventory counts across multiple warehouses and prevents overselling.
+The Inventory Management Service handles real-time inventory tracking, stock level management, warehouse operations, and automated reordering for the Broxiva platform. It provides accurate inventory counts across multiple warehouses and prevents overselling.
 
 ## Key Features
 
@@ -38,7 +38,7 @@ LOG_LEVEL=INFO
 PORT=8007
 
 # Database (PostgreSQL)
-DATABASE_URL=postgresql://user:password@localhost:5432/citadelbuy
+DATABASE_URL=postgresql://user:password@localhost:5432/broxiva
 
 # Redis Cache
 REDIS_URL=redis://localhost:6379/8
@@ -103,8 +103,8 @@ uvicorn main:app --reload --port 8007
 ## Docker Usage
 
 ```bash
-docker build -t citadelbuy/inventory:latest .
-docker run -p 8007:8007 --env-file .env citadelbuy/inventory:latest
+docker build -t broxiva/inventory:latest .
+docker run -p 8007:8007 --env-file .env broxiva/inventory:latest
 ```
 
 ## Testing
@@ -122,4 +122,4 @@ pytest tests/ --cov=src --cov-report=html
 ## Support
 
 - Internal Slack: #inventory-support
-- Email: ops@citadelbuy.com
+- Email: ops@broxiva.com

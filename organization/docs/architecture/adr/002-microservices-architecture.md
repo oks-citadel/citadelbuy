@@ -12,7 +12,7 @@
 
 ## Context
 
-The CitadelBuy platform initially started as a modular monolith (NestJS application with modules). As we scale to support:
+The Broxiva platform initially started as a modular monolith (NestJS application with modules). As we scale to support:
 
 1. **Global Operations**: 6 regions, 1M+ concurrent users
 2. **300+ AI Capabilities**: Across 38 categories

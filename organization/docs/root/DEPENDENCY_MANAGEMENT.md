@@ -1,6 +1,6 @@
 # Dependency Management Guide
 
-This guide covers best practices for managing dependencies in the CitadelBuy platform, including checking for vulnerabilities, updating packages safely, and handling security updates.
+This guide covers best practices for managing dependencies in the Broxiva platform, including checking for vulnerabilities, updating packages safely, and handling security updates.
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@ This guide covers best practices for managing dependencies in the CitadelBuy pla
 
 ## Overview
 
-CitadelBuy uses [pnpm](https://pnpm.io/) as the package manager for its monorepo structure. The platform consists of multiple workspaces:
+Broxiva uses [pnpm](https://pnpm.io/) as the package manager for its monorepo structure. The platform consists of multiple workspaces:
 
 - **Root workspace**: Build tools, CI/CD tools, and shared development dependencies
 - **apps/api**: NestJS backend API
@@ -373,7 +373,7 @@ For internal packages, use workspace protocol:
 ```json
 {
   "dependencies": {
-    "@citadelbuy/shared": "workspace:*"
+    "@broxiva/shared": "workspace:*"
   }
 }
 ```

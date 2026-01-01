@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Fraud Detection Service is an AI-powered microservice that provides real-time fraud detection and prevention for the CitadelBuy platform. It combines machine learning models with rule-based engines to identify fraudulent transactions, suspicious device activity, and risky supplier behavior.
+The Fraud Detection Service is an AI-powered microservice that provides real-time fraud detection and prevention for the Broxiva platform. It combines machine learning models with rule-based engines to identify fraudulent transactions, suspicious device activity, and risky supplier behavior.
 
 ## Key Features
 
@@ -38,7 +38,7 @@ LOG_LEVEL=INFO
 PORT=8003
 
 # Database (PostgreSQL)
-DATABASE_URL=postgresql://user:password@localhost:5432/citadelbuy
+DATABASE_URL=postgresql://user:password@localhost:5432/broxiva
 
 # Redis Cache
 REDIS_URL=redis://localhost:6379/1
@@ -64,7 +64,7 @@ ENABLE_RULE_ENGINE=true
 
 # Monitoring
 ENABLE_FRAUD_ALERTS=true
-ALERT_WEBHOOK_URL=https://alerts.citadelbuy.com/fraud
+ALERT_WEBHOOK_URL=https://alerts.broxiva.com/fraud
 ```
 
 ## API Endpoints
@@ -174,10 +174,10 @@ isort src/
 
 ```bash
 # Build the Docker image
-docker build -t citadelbuy/fraud-detection:latest .
+docker build -t broxiva/fraud-detection:latest .
 
 # Build with custom tag
-docker build -t citadelbuy/fraud-detection:v2.0.0 .
+docker build -t broxiva/fraud-detection:v2.0.0 .
 ```
 
 ### Run Container
@@ -189,7 +189,7 @@ docker run -d \
   -p 8003:8003 \
   --env-file .env \
   -v $(pwd)/models:/app/models \
-  citadelbuy/fraud-detection:latest
+  broxiva/fraud-detection:latest
 
 # Run with Docker Compose
 docker-compose up fraud-detection
@@ -210,7 +210,7 @@ services:
     ports:
       - "8003:8003"
     environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/citadelbuy
+      - DATABASE_URL=postgresql://postgres:password@db:5432/broxiva
       - REDIS_URL=redis://redis:6379/1
       - MODEL_PATH=/app/models
     depends_on:
@@ -458,10 +458,10 @@ See [Contributing Guide](../../../CONTRIBUTING.md) for development guidelines.
 
 ## License
 
-Proprietary - CitadelBuy Platform
+Proprietary - Broxiva Platform
 
 ## Support
 
 For issues and questions:
 - Internal Slack: #fraud-detection-support
-- Email: security@citadelbuy.com
+- Email: security@broxiva.com

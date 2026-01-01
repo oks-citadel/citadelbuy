@@ -1,11 +1,11 @@
 # ==========================================
-# CitadelBuy - Coordinated Release Pipeline
+# Broxiva - Coordinated Release Pipeline
 # Orchestrates deployment of all components
 # Includes rollback capabilities and approval gates
 # ==========================================
 #
 # NOTE: Production deployments require approval.
-# Configure approvals in Azure DevOps: Project Settings > Environments > citadelbuy-production
+# Configure approvals in Azure DevOps: Project Settings > Environments > broxiva-production
 
 trigger: none  # Manual trigger only
 
@@ -50,10 +50,10 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  - group: citadelbuy-common
-  - group: citadelbuy-${{ parameters.deployEnvironment }}
+  - group: broxiva-common
+  - group: broxiva-${{ parameters.deployEnvironment }}
   - name: containerRegistry
-    value: 'citadelbuyprod.azurecr.io'
+    value: 'broxivaprod.azurecr.io'
   - name: releaseVersion
     ${{ if eq(parameters.version, 'auto') }}:
       value: '$(Build.BuildNumber)'
@@ -75,7 +75,7 @@ stages:
 
           - script: |
               echo "================================================"
-              echo "CitadelBuy Release Pipeline"
+              echo "Broxiva Release Pipeline"
               echo "================================================"
               echo "Release Version: $(releaseVersion)"
               echo "Target Environment: ${{ parameters.deployEnvironment }}"
@@ -91,11 +91,11 @@ stages:
               echo "Checking current environment health..."
 
               if [ "${{ parameters.deployEnvironment }}" = "production" ]; then
-                base_url="https://citadelbuy.com"
+                base_url="https://broxiva.com"
               elif [ "${{ parameters.deployEnvironment }}" = "staging" ]; then
-                base_url="https://staging.citadelbuy.com"
+                base_url="https://staging.broxiva.com"
               else
-                base_url="https://dev.citadelbuy.com"
+                base_url="https://dev.broxiva.com"
               fi
 
               # Check API health
@@ -116,7 +116,7 @@ stages:
           - task: AzureCLI@2
             displayName: 'Check for Active Incidents'
             inputs:
-              azureSubscription: 'citadelbuy-azure-connection'
+              azureSubscription: 'broxiva-azure-connection'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
@@ -129,7 +129,7 @@ stages:
             - task: AzureCLI@2
               displayName: 'Create Production Backup'
               inputs:
-                azureSubscription: 'citadelbuy-azure-connection'
+                azureSubscription: 'broxiva-azure-connection'
                 scriptType: 'bash'
                 scriptLocation: 'inlineScript'
                 inlineScript: |
@@ -150,7 +150,7 @@ stages:
         displayName: 'Run Database Migrations'
         pool:
           vmImage: 'ubuntu-latest'
-        environment: citadelbuy-${{ parameters.deployEnvironment }}
+        environment: broxiva-${{ parameters.deployEnvironment }}
         strategy:
           runOnce:
             deploy:
@@ -161,10 +161,10 @@ stages:
                   displayName: 'Run Prisma Migrations'
                   inputs:
                     connectionType: 'Kubernetes Service Connection'
-                    kubernetesServiceEndpoint: 'citadelbuy-aks-${{ parameters.deployEnvironment }}'
-                    namespace: 'citadelbuy-${{ parameters.deployEnvironment }}'
+                    kubernetesServiceEndpoint: 'broxiva-aks-${{ parameters.deployEnvironment }}'
+                    namespace: 'broxiva-${{ parameters.deployEnvironment }}'
                     command: 'exec'
-                    arguments: 'deployment/citadelbuy-api -- npx prisma migrate deploy'
+                    arguments: 'deployment/broxiva-api -- npx prisma migrate deploy'
 
                 - script: |
                     echo "Database migrations completed successfully"
@@ -189,7 +189,7 @@ stages:
         displayName: 'Deploy NestJS API'
         pool:
           vmImage: 'ubuntu-latest'
-        environment: citadelbuy-${{ parameters.deployEnvironment }}
+        environment: broxiva-${{ parameters.deployEnvironment }}
         strategy:
           runOnce:
             deploy:
@@ -200,24 +200,24 @@ stages:
                   displayName: 'Deploy API to AKS'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-${{ parameters.deployEnvironment }}'
-                    namespace: 'citadelbuy-${{ parameters.deployEnvironment }}'
+                    kubernetesServiceConnection: 'broxiva-aks-${{ parameters.deployEnvironment }}'
+                    namespace: 'broxiva-${{ parameters.deployEnvironment }}'
                     ${{ if eq(parameters.deployEnvironment, 'production') }}:
                       strategy: 'canary'
                       percentage: '25'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/api/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/api/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-api:$(releaseVersion)'
+                    containers: '$(containerRegistry)/broxiva-api:$(releaseVersion)'
 
                 - task: Kubernetes@1
                   displayName: 'Wait for API Rollout'
                   inputs:
                     connectionType: 'Kubernetes Service Connection'
-                    kubernetesServiceEndpoint: 'citadelbuy-aks-${{ parameters.deployEnvironment }}'
-                    namespace: 'citadelbuy-${{ parameters.deployEnvironment }}'
+                    kubernetesServiceEndpoint: 'broxiva-aks-${{ parameters.deployEnvironment }}'
+                    namespace: 'broxiva-${{ parameters.deployEnvironment }}'
                     command: 'rollout'
-                    arguments: 'status deployment/citadelbuy-api --timeout=5m'
+                    arguments: 'status deployment/broxiva-api --timeout=5m'
 
       - job: TestAPI
         displayName: 'Test API Deployment'
@@ -225,11 +225,11 @@ stages:
         steps:
           - script: |
               if [ "${{ parameters.deployEnvironment }}" = "production" ]; then
-                api_url="https://api.citadelbuy.com"
+                api_url="https://api.broxiva.com"
               elif [ "${{ parameters.deployEnvironment }}" = "staging" ]; then
-                api_url="https://api-staging.citadelbuy.com"
+                api_url="https://api-staging.broxiva.com"
               else
-                api_url="https://api-dev.citadelbuy.com"
+                api_url="https://api-dev.broxiva.com"
               fi
 
               echo "Testing API at: $api_url"
@@ -279,7 +279,7 @@ stages:
         displayName: 'Deploy Next.js Web'
         pool:
           vmImage: 'ubuntu-latest'
-        environment: citadelbuy-${{ parameters.deployEnvironment }}
+        environment: broxiva-${{ parameters.deployEnvironment }}
         strategy:
           runOnce:
             deploy:
@@ -290,8 +290,8 @@ stages:
                   displayName: 'Deploy Web to AKS'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-${{ parameters.deployEnvironment }}'
-                    namespace: 'citadelbuy-${{ parameters.deployEnvironment }}'
+                    kubernetesServiceConnection: 'broxiva-aks-${{ parameters.deployEnvironment }}'
+                    namespace: 'broxiva-${{ parameters.deployEnvironment }}'
                     ${{ if eq(parameters.deployEnvironment, 'production') }}:
                       strategy: 'canary'
                       percentage: '25'
@@ -299,16 +299,16 @@ stages:
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/web/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/web/service.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/web/ingress.yaml
-                    containers: '$(containerRegistry)/citadelbuy-web:$(releaseVersion)'
+                    containers: '$(containerRegistry)/broxiva-web:$(releaseVersion)'
 
                 - task: Kubernetes@1
                   displayName: 'Wait for Web Rollout'
                   inputs:
                     connectionType: 'Kubernetes Service Connection'
-                    kubernetesServiceEndpoint: 'citadelbuy-aks-${{ parameters.deployEnvironment }}'
-                    namespace: 'citadelbuy-${{ parameters.deployEnvironment }}'
+                    kubernetesServiceEndpoint: 'broxiva-aks-${{ parameters.deployEnvironment }}'
+                    namespace: 'broxiva-${{ parameters.deployEnvironment }}'
                     command: 'rollout'
-                    arguments: 'status deployment/citadelbuy-web --timeout=5m'
+                    arguments: 'status deployment/broxiva-web --timeout=5m'
 
       - job: TestWeb
         displayName: 'Test Web Deployment'
@@ -316,11 +316,11 @@ stages:
         steps:
           - script: |
               if [ "${{ parameters.deployEnvironment }}" = "production" ]; then
-                web_url="https://citadelbuy.com"
+                web_url="https://broxiva.com"
               elif [ "${{ parameters.deployEnvironment }}" = "staging" ]; then
-                web_url="https://staging.citadelbuy.com"
+                web_url="https://staging.broxiva.com"
               else
-                web_url="https://dev.citadelbuy.com"
+                web_url="https://dev.broxiva.com"
               fi
 
               echo "Testing Web at: $web_url"
@@ -366,7 +366,7 @@ stages:
         displayName: 'Deploy All Python Services'
         pool:
           vmImage: 'ubuntu-latest'
-        environment: citadelbuy-${{ parameters.deployEnvironment }}
+        environment: broxiva-${{ parameters.deployEnvironment }}
         strategy:
           runOnce:
             deploy:
@@ -378,34 +378,34 @@ stages:
                   displayName: 'Deploy AI Agents Service'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-${{ parameters.deployEnvironment }}'
-                    namespace: 'citadelbuy-${{ parameters.deployEnvironment }}'
+                    kubernetesServiceConnection: 'broxiva-aks-${{ parameters.deployEnvironment }}'
+                    namespace: 'broxiva-${{ parameters.deployEnvironment }}'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/ai-agents/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/ai-agents/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-ai-agents:$(releaseVersion)'
+                    containers: '$(containerRegistry)/broxiva-ai-agents:$(releaseVersion)'
 
                 - task: KubernetesManifest@0
                   displayName: 'Deploy Inventory Service'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-${{ parameters.deployEnvironment }}'
-                    namespace: 'citadelbuy-${{ parameters.deployEnvironment }}'
+                    kubernetesServiceConnection: 'broxiva-aks-${{ parameters.deployEnvironment }}'
+                    namespace: 'broxiva-${{ parameters.deployEnvironment }}'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/inventory/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/inventory/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-inventory:$(releaseVersion)'
+                    containers: '$(containerRegistry)/broxiva-inventory:$(releaseVersion)'
 
                 - task: KubernetesManifest@0
                   displayName: 'Deploy Media Service'
                   inputs:
                     action: 'deploy'
-                    kubernetesServiceConnection: 'citadelbuy-aks-${{ parameters.deployEnvironment }}'
-                    namespace: 'citadelbuy-${{ parameters.deployEnvironment }}'
+                    kubernetesServiceConnection: 'broxiva-aks-${{ parameters.deployEnvironment }}'
+                    namespace: 'broxiva-${{ parameters.deployEnvironment }}'
                     manifests: |
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/media/deployment.yaml
                       $(Build.SourcesDirectory)/infrastructure/kubernetes/apps/services/media/service.yaml
-                    containers: '$(containerRegistry)/citadelbuy-media:$(releaseVersion)'
+                    containers: '$(containerRegistry)/broxiva-media:$(releaseVersion)'
 
   # ==========================================
   # Stage 6: Promote Canary (Production Only)
@@ -423,7 +423,7 @@ stages:
           displayName: 'Promote All Services'
           pool:
             vmImage: 'ubuntu-latest'
-          environment: 'citadelbuy-production'
+          environment: 'broxiva-production'
           strategy:
             runOnce:
               deploy:
@@ -435,8 +435,8 @@ stages:
                       displayName: 'Promote API to 100%'
                       inputs:
                         action: 'promote'
-                        kubernetesServiceConnection: 'citadelbuy-aks-production'
-                        namespace: 'citadelbuy-prod'
+                        kubernetesServiceConnection: 'broxiva-aks-production'
+                        namespace: 'broxiva-prod'
                         strategy: 'canary'
                         manifests: '$(Build.SourcesDirectory)/infrastructure/kubernetes/apps/api/deployment.yaml'
 
@@ -445,8 +445,8 @@ stages:
                       displayName: 'Promote Web to 100%'
                       inputs:
                         action: 'promote'
-                        kubernetesServiceConnection: 'citadelbuy-aks-production'
-                        namespace: 'citadelbuy-prod'
+                        kubernetesServiceConnection: 'broxiva-aks-production'
+                        namespace: 'broxiva-prod'
                         strategy: 'canary'
                         manifests: '$(Build.SourcesDirectory)/infrastructure/kubernetes/apps/web/deployment.yaml'
 
@@ -471,11 +471,11 @@ stages:
               echo "================================================"
 
               if [ "${{ parameters.deployEnvironment }}" = "production" ]; then
-                base_url="https://citadelbuy.com"
+                base_url="https://broxiva.com"
               elif [ "${{ parameters.deployEnvironment }}" = "staging" ]; then
-                base_url="https://staging.citadelbuy.com"
+                base_url="https://staging.broxiva.com"
               else
-                base_url="https://dev.citadelbuy.com"
+                base_url="https://dev.broxiva.com"
               fi
 
               # Full system health check

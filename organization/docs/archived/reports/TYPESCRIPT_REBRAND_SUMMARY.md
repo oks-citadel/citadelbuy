@@ -1,101 +1,101 @@
-# TypeScript Rebrand Summary: CitadelBuy → Broxiva
+# TypeScript Rebrand Summary: Broxiva → Broxiva
 
 ## Overview
-This document summarizes the TypeScript source code rebrand from CitadelBuy to Broxiva across the entire codebase.
+This document summarizes the TypeScript source code rebrand from Broxiva to Broxiva across the entire codebase.
 
 ## Files Successfully Updated
 
 ### 1. Packages (Core Libraries)
 
 #### `packages/ai-sdk/src/index.ts`
-- ✅ Updated header comment: "CitadelBuy AI SDK" → "Broxiva AI SDK"
-- ✅ Renamed class: `CitadelBuyAI` → `BroxivaAI`
-- ✅ Updated default export: `export default CitadelBuyAI` → `export default BroxivaAI`
+- ✅ Updated header comment: "Broxiva AI SDK" → "Broxiva AI SDK"
+- ✅ Renamed class: `BroxivaAI` → `BroxivaAI`
+- ✅ Updated default export: `export default BroxivaAI` → `export default BroxivaAI`
 
 #### `packages/types/src/index.ts`
-- ✅ Updated header comment: "CitadelBuy Shared Types" → "Broxiva Shared Types"
+- ✅ Updated header comment: "Broxiva Shared Types" → "Broxiva Shared Types"
 
 #### `packages/types/src/category.types.ts`
-- ✅ Updated header comment: "CitadelBuy Category Types" → "Broxiva Category Types"
+- ✅ Updated header comment: "Broxiva Category Types" → "Broxiva Category Types"
 
 #### `packages/ui/src/types.ts`
-- ✅ Updated header comment: "Shared UI Types for CitadelBuy UI Components" → "Shared UI Types for Broxiva UI Components"
+- ✅ Updated header comment: "Shared UI Types for Broxiva UI Components" → "Shared UI Types for Broxiva UI Components"
 
 ### 2. Web Application (Frontend)
 
 #### `apps/web/src/lib/api-client.ts`
 - ✅ Updated storage keys:
-  - `ACCESS_TOKEN_KEY = 'citadelbuy_access_token'` → `'broxiva_access_token'`
-  - `REFRESH_TOKEN_KEY = 'citadelbuy_refresh_token'` → `'broxiva_refresh_token'`
+  - `ACCESS_TOKEN_KEY = 'broxiva_access_token'` → `'broxiva_access_token'`
+  - `REFRESH_TOKEN_KEY = 'broxiva_refresh_token'` → `'broxiva_refresh_token'`
 
 #### `apps/web/src/hooks/use-analytics.ts`
-- ✅ Updated session key: `'citadelbuy_session_id'` → `'broxiva_session_id'`
+- ✅ Updated session key: `'broxiva_session_id'` → `'broxiva_session_id'`
 
 #### `apps/web/src/lib/i18n/config.ts`
-- ✅ Updated language storage key: `'citadelbuy_language'` → `'broxiva_language'`
-- ✅ Updated cookie name: `'CITADELBUY_LANG'` → `'BROXIVA_LANG'`
+- ✅ Updated language storage key: `'broxiva_language'` → `'broxiva_language'`
+- ✅ Updated cookie name: `'BROXIVA_LANG'` → `'BROXIVA_LANG'`
 
 #### `apps/web/src/app/layout.tsx`
 - ✅ Updated page metadata:
-  - Title: "CitadelBuy - AI-Powered E-Commerce Platform" → "Broxiva - AI-Powered E-Commerce Platform"
-  - Template: "%s | CitadelBuy" → "%s | Broxiva"
+  - Title: "Broxiva - AI-Powered E-Commerce Platform" → "Broxiva - AI-Powered E-Commerce Platform"
+  - Template: "%s | Broxiva" → "%s | Broxiva"
   - Description: Updated all references
-  - Authors, creator, publisher: "CitadelBuy" → "Broxiva"
-  - Metadata base URL: "https://citadelbuy.com" → "https://broxiva.com"
+  - Authors, creator, publisher: "Broxiva" → "Broxiva"
+  - Metadata base URL: "https://broxiva.com" → "https://broxiva.com"
 - ✅ Updated OpenGraph metadata:
   - Site name, URL, alt text updated
 - ✅ Updated Twitter metadata:
-  - Creator handle: "@citadelbuy" → "@broxiva"
+  - Creator handle: "@broxiva" → "@broxiva"
 
 #### `apps/web/src/app/auth/register/page.tsx`
-- ✅ Updated badge text: "Join CitadelBuy" → "Join Broxiva"
-- ✅ Updated testimonial: "CitadelBuy's AI recommendations" → "Broxiva's AI recommendations"
+- ✅ Updated badge text: "Join Broxiva" → "Join Broxiva"
+- ✅ Updated testimonial: "Broxiva's AI recommendations" → "Broxiva's AI recommendations"
 
 #### `apps/web/src/app/auth/forgot-password/page.tsx`
-- ✅ Updated brand name in header: "CitadelBuy" → "Broxiva"
+- ✅ Updated brand name in header: "Broxiva" → "Broxiva"
 
 #### `apps/web/src/app/help/page.tsx`
-- ✅ Updated support email: "support@citadelbuy.com" → "support@broxiva.com"
+- ✅ Updated support email: "support@broxiva.com" → "support@broxiva.com"
 
 ### 3. API (Backend)
 
 #### `apps/api/src/modules/auth/auth.service.ts`
-- ✅ Updated Apple authentication audience: `'com.citadelbuy.app'` → `'com.broxiva.app'`
-- ✅ Updated MFA issuer: `'CitadelBuy'` → `'Broxiva'`
+- ✅ Updated Apple authentication audience: `'com.broxiva.app'` → `'com.broxiva.app'`
+- ✅ Updated MFA issuer: `'Broxiva'` → `'Broxiva'`
 
 #### `apps/api/src/modules/email/email.service.ts`
-- ✅ Updated default sender email: `'noreply@citadelbuy.com'` → `'noreply@broxiva.com'`
-- ✅ Updated welcome email subject: "Welcome to CitadelBuy" → "Welcome to Broxiva"
-- ✅ Updated password reset subject: "Reset Your CitadelBuy Password" → "Reset Your Broxiva Password"
-- ✅ Updated support email: `'support@citadelbuy.com'` → `'support@broxiva.com'`
-- ✅ Updated frontend URLs: `'https://citadelbuy.com'` → `'https://broxiva.com'`
+- ✅ Updated default sender email: `'noreply@broxiva.com'` → `'noreply@broxiva.com'`
+- ✅ Updated welcome email subject: "Welcome to Broxiva" → "Welcome to Broxiva"
+- ✅ Updated password reset subject: "Reset Your Broxiva Password" → "Reset Your Broxiva Password"
+- ✅ Updated support email: `'support@broxiva.com'` → `'support@broxiva.com'`
+- ✅ Updated frontend URLs: `'https://broxiva.com'` → `'https://broxiva.com'`
 
 ## Patterns Updated
 
 ### 1. Class Names
-- `CitadelBuyAI` → `BroxivaAI`
+- `BroxivaAI` → `BroxivaAI`
 
 ### 2. Storage Keys & Constants
-- `citadelbuy_*` → `broxiva_*`
-- `CITADELBUY_*` → `BROXIVA_*`
+- `broxiva_*` → `broxiva_*`
+- `BROXIVA_*` → `BROXIVA_*`
 
 ### 3. Email Addresses
-- `*@citadelbuy.com` → `*@broxiva.com`
+- `*@broxiva.com` → `*@broxiva.com`
 
 ### 4. URLs & Domains
-- `citadelbuy.com` → `broxiva.com`
-- `com.citadelbuy.*` → `com.broxiva.*`
+- `broxiva.com` → `broxiva.com`
+- `com.broxiva.*` → `com.broxiva.*`
 
 ### 5. Social Media Handles
-- `@citadelbuy` → `@broxiva`
+- `@broxiva` → `@broxiva`
 
 ### 6. User-Facing Text
-- "CitadelBuy" → "Broxiva"
-- "CitadelBuy's" → "Broxiva's"
+- "Broxiva" → "Broxiva"
+- "Broxiva's" → "Broxiva's"
 
 ## Remaining Files (Auto-Update Script Provided)
 
-The following TypeScript files still contain "citadelbuy" references and can be batch updated using the provided Python script (`rebrand-typescript.py`):
+The following TypeScript files still contain "broxiva" references and can be batch updated using the provided Python script (`rebrand-typescript.py`):
 
 ### Apps/Web/Src (Additional Files)
 - `app/account/loyalty/page.tsx` - Referral URLs
@@ -142,7 +142,7 @@ The following TypeScript files still contain "citadelbuy" references and can be 
 A Python script has been provided to automatically update all remaining files:
 
 ```bash
-cd CitadelBuy/organization
+cd Broxiva/organization
 python rebrand-typescript.py
 ```
 
@@ -158,10 +158,10 @@ If you prefer to update files manually, search for these patterns:
 
 ```bash
 # Find all remaining references
-grep -r "citadelbuy" apps/web/src apps/api/src apps/mobile/src packages/*/src tests --include="*.ts" --include="*.tsx"
+grep -r "broxiva" apps/web/src apps/api/src apps/mobile/src packages/*/src tests --include="*.ts" --include="*.tsx"
 
 # Find class name references
-grep -r "CitadelBuyAI" apps/web/src apps/api/src apps/mobile/src packages/*/src tests --include="*.ts" --include="*.tsx"
+grep -r "BroxivaAI" apps/web/src apps/api/src apps/mobile/src packages/*/src tests --include="*.ts" --include="*.tsx"
 ```
 
 ## Important Notes
@@ -171,7 +171,7 @@ The `BroxivaAI` class rename will require updating imports in any files that use
 
 **Before:**
 ```typescript
-import { CitadelBuyAI } from '@/packages/ai-sdk';
+import { BroxivaAI } from '@/packages/ai-sdk';
 ```
 
 **After:**
@@ -204,7 +204,7 @@ The following may also need updates (not covered in this TypeScript rebrand):
 
 After running the batch update script, verify:
 
-- [ ] All `CitadelBuyAI` references updated to `BroxivaAI`
+- [ ] All `BroxivaAI` references updated to `BroxivaAI`
 - [ ] All storage keys use `broxiva_` prefix
 - [ ] All email addresses use `@broxiva.com`
 - [ ] All URLs use `broxiva.com`
@@ -233,7 +233,7 @@ After running the batch update script, verify:
 
 The batch update script is located at:
 ```
-CitadelBuy/organization/rebrand-typescript.py
+Broxiva/organization/rebrand-typescript.py
 ```
 
 ## Support

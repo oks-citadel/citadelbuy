@@ -1,4 +1,4 @@
-# CitadelBuy Staging Deployment Checklist
+# Broxiva Staging Deployment Checklist
 
 Use this checklist to ensure successful staging deployments.
 
@@ -190,8 +190,8 @@ Status: SUCCESS
 All smoke tests passed: 15/15
 
 URLs:
-- Web: https://staging.citadelbuy.com
-- API: https://staging-api.citadelbuy.com
+- Web: https://staging.broxiva.com
+- API: https://staging-api.broxiva.com
 
 Ready for UAT and testing.
 ```
@@ -209,8 +209,8 @@ Ready for UAT and testing.
 ### Rollback Steps
 - [ ] Stop automated deployment (if running)
 - [ ] Notify team of rollback decision
-- [ ] Execute: `kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-staging`
-- [ ] Execute: `kubectl rollout undo deployment/citadelbuy-web -n citadelbuy-staging`
+- [ ] Execute: `kubectl rollout undo deployment/broxiva-api -n broxiva-staging`
+- [ ] Execute: `kubectl rollout undo deployment/broxiva-web -n broxiva-staging`
 - [ ] Verify old version deployed
 - [ ] Run smoke tests on rolled back version
 - [ ] Verify stability
@@ -270,7 +270,7 @@ Deployment should be rolled back if:
 ### On-Call Rotation
 - **Primary**: [NAME] - [PHONE]
 - **Secondary**: [NAME] - [PHONE]
-- **DevOps Lead**: devops@citadelbuy.com
+- **DevOps Lead**: devops@broxiva.com
 
 ### Escalation Path
 1. On-call engineer
@@ -281,7 +281,7 @@ Deployment should be rolled back if:
 ### Communication Channels
 - **Slack**: #staging-deployments
 - **Urgent**: #incidents
-- **Email**: devops@citadelbuy.com
+- **Email**: devops@broxiva.com
 
 ## Additional Resources
 

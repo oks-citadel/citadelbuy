@@ -2,7 +2,7 @@
 
 ## Policy Statement
 
-CitadelBuy maintains a zero-tolerance policy for transactions involving sanctioned individuals, entities, or countries. All vendors, buyers, and transactions are screened against global sanctions lists to ensure compliance with international law and prevent illegal activities.
+Broxiva maintains a zero-tolerance policy for transactions involving sanctioned individuals, entities, or countries. All vendors, buyers, and transactions are screened against global sanctions lists to ensure compliance with international law and prevent illegal activities.
 
 ## Scope
 
@@ -387,9 +387,9 @@ Every transaction screened before completion:
 ## Contact
 
 **Sanctions Compliance Team:**
-- Email: sanctions@citadelbuy.com
+- Email: sanctions@broxiva.com
 - Phone: +1-XXX-XXX-XXXX (24/7 hotline)
-- Emergency: compliance-emergency@citadelbuy.com
+- Emergency: compliance-emergency@broxiva.com
 
 **External Counsel:**
 - [Law Firm Name]

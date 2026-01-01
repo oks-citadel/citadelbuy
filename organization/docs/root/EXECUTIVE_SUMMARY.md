@@ -1,4 +1,4 @@
-# CitadelBuy E-Commerce Platform
+# Broxiva E-Commerce Platform
 ## Business Executive Summary & Platform Operational Structure
 
 **Document Version:** 1.0
@@ -27,9 +27,9 @@
 
 ## 1. Executive Overview
 
-### What is CitadelBuy?
+### What is Broxiva?
 
-CitadelBuy is a **next-generation AI-powered multi-vendor e-commerce platform** designed for enterprise-scale online retail operations. The platform enables businesses to operate sophisticated marketplaces with integrated AI capabilities, comprehensive vendor management, and global payment processing.
+Broxiva is a **next-generation AI-powered multi-vendor e-commerce platform** designed for enterprise-scale online retail operations. The platform enables businesses to operate sophisticated marketplaces with integrated AI capabilities, comprehensive vendor management, and global payment processing.
 
 ### Key Differentiators
 
@@ -651,8 +651,8 @@ POST-DEPLOYMENT
 | Environment | Purpose | URL Pattern |
 |-------------|---------|-------------|
 | **Development** | Local development | localhost:3000/4000 |
-| **Staging** | Pre-production testing | staging.citadelbuy.com |
-| **Production** | Live environment | citadelbuy.com |
+| **Staging** | Pre-production testing | staging.broxiva.com |
+| **Production** | Live environment | broxiva.com |
 
 ### 11.3 Release Strategy
 
@@ -708,9 +708,9 @@ POST-DEPLOYMENT
 ### Test Accounts
 | Role | Email | Password |
 |------|-------|----------|
-| Customer | customer@citadelbuy.com | password123 |
-| Admin | admin@citadelbuy.com | password123 |
-| Vendor | vendor1@citadelbuy.com | password123 |
+| Customer | customer@broxiva.com | password123 |
+| Admin | admin@broxiva.com | password123 |
+| Vendor | vendor1@broxiva.com | password123 |
 
 ### Key Commands
 ```bash
@@ -756,4 +756,4 @@ docker compose logs -f
 
 ---
 
-*This document provides a comprehensive overview of the CitadelBuy platform. For detailed technical documentation, please refer to the specific guides listed in Appendix B.*
+*This document provides a comprehensive overview of the Broxiva platform. For detailed technical documentation, please refer to the specific guides listed in Appendix B.*

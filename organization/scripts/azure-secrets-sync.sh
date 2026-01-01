@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# CitadelBuy Azure Key Vault Sync Script
+# Broxiva Azure Key Vault Sync Script
 # This script synchronizes secrets between local .env files and Azure Key Vault
 # Usage: ./azure-secrets-sync.sh [push|pull|list|backup] [environment]
 
@@ -14,7 +14,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-PROJECT_NAME="${PROJECT_NAME:-citadelbuy}"
+PROJECT_NAME="${PROJECT_NAME:-broxiva}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 ENV_FILE="${ROOT_DIR}/apps/api/.env"
@@ -258,7 +258,7 @@ pull_secrets() {
 
     print_info "Pulling secrets from Azure Key Vault: $vault_name"
 
-    local env_content="# CitadelBuy Environment Variables\n"
+    local env_content="# Broxiva Environment Variables\n"
     env_content+="# Generated from Azure Key Vault on $(date)\n"
     env_content+="# Environment: $env\n\n"
 
@@ -473,7 +473,7 @@ show_audit_logs() {
 
 show_usage() {
     cat << EOF
-CitadelBuy Azure Key Vault Sync Script
+Broxiva Azure Key Vault Sync Script
 
 Usage: $0 [command] [environment] [options]
 
@@ -490,7 +490,7 @@ Environments:
     production  Production environment
 
 Options:
-    -p, --project   Project name (default: citadelbuy)
+    -p, --project   Project name (default: broxiva)
     -h, --help      Show this help message
 
 Examples:

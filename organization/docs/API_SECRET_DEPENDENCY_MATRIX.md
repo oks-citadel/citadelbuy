@@ -1,7 +1,7 @@
 # API/Service to Secret Dependency Matrix
 
 **Generated:** 2025-12-12
-**Platform:** CitadelBuy Global E-Commerce
+**Platform:** Broxiva Global E-Commerce
 
 ## Overview
 

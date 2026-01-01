@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================
-# CitadelBuy Database Migration Script
+# Broxiva Database Migration Script
 # ============================================
 # This script safely runs database migrations with backup and validation
 #
@@ -305,7 +305,7 @@ run_migration() {
     local env=$1
 
     log "======================================"
-    log "CitadelBuy Database Migration"
+    log "Broxiva Database Migration"
     log "======================================"
     log "Environment: ${env}"
     log "Timestamp: ${TIMESTAMP}"

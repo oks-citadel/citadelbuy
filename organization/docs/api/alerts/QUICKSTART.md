@@ -14,7 +14,7 @@ SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
 PAGERDUTY_API_KEY=your_routing_key_here
 
 # Email Fallback
-ALERT_EMAIL_RECIPIENTS=ops@citadelbuy.com,engineering@citadelbuy.com
+ALERT_EMAIL_RECIPIENTS=ops@broxiva.com,engineering@broxiva.com
 ```
 
 ### Step 2: Get Your Slack Webhook (1 minute)
@@ -22,7 +22,7 @@ ALERT_EMAIL_RECIPIENTS=ops@citadelbuy.com,engineering@citadelbuy.com
 1. Go to https://api.slack.com/messaging/webhooks
 2. Click "Create your Slack app"
 3. Choose "From scratch"
-4. Name it "CitadelBuy Alerts"
+4. Name it "Broxiva Alerts"
 5. Choose your workspace
 6. Add "Incoming Webhooks" feature
 7. Create webhook for #alerts channel

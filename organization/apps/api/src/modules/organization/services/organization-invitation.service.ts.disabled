@@ -249,7 +249,7 @@ export class OrganizationInvitationService {
 
       await this.emailService.sendEmail({
         to: invitation.email,
-        subject: `Reminder: You've been invited to join ${invitation.organization.name} on CitadelBuy`,
+        subject: `Reminder: You've been invited to join ${invitation.organization.name} on Broxiva`,
         template: 'organization-invitation',
         context: {
           organizationName: invitation.organization.name,

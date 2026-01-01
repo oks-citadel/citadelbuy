@@ -1,4 +1,4 @@
-CITADELBUY FRONTEND - API ENDPOINTS INTEGRATION
+BROXIVA FRONTEND - API ENDPOINTS INTEGRATION
 ================================================
 
 FILE: src/app/admin/support/page.tsx

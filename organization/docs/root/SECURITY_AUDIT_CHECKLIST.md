@@ -1,6 +1,6 @@
 # Security Audit Checklist
 
-Comprehensive security audit checklist for CitadelBuy e-commerce platform deployments.
+Comprehensive security audit checklist for Broxiva e-commerce platform deployments.
 
 ## Table of Contents
 
@@ -270,7 +270,7 @@ Essential security headers for API endpoints.
 
 Test with:
 ```bash
-curl -I https://api.citadelbuy.com/health
+curl -I https://api.broxiva.com/health
 ```
 
 - [ ] **Strict-Transport-Security (HSTS)**
@@ -323,7 +323,7 @@ curl -I https://api.citadelbuy.com/health
 
 - [ ] **CORS properly configured**
   ```
-  Access-Control-Allow-Origin: https://citadelbuy.com
+  Access-Control-Allow-Origin: https://broxiva.com
   Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
   Access-Control-Allow-Headers: Content-Type, Authorization
   Access-Control-Allow-Credentials: true
@@ -407,7 +407,7 @@ SHOW password_encryption;
 -- Should be 'scram-sha-256'
 
 -- Check connection limit
-SELECT rolname, rolconnlimit FROM pg_roles WHERE rolname = 'citadelbuy_user';
+SELECT rolname, rolconnlimit FROM pg_roles WHERE rolname = 'broxiva_user';
 -- Should have reasonable limit
 
 -- Check user privileges
@@ -567,13 +567,13 @@ Security checks for hosting infrastructure.
 
 ```bash
 # Test SSL configuration
-ssllabs-scan --quiet citadelbuy.com
+ssllabs-scan --quiet broxiva.com
 
 # Check certificate
-openssl s_client -connect citadelbuy.com:443 -servername citadelbuy.com
+openssl s_client -connect broxiva.com:443 -servername broxiva.com
 
 # Verify TLS version
-nmap --script ssl-enum-ciphers -p 443 citadelbuy.com
+nmap --script ssl-enum-ciphers -p 443 broxiva.com
 ```
 
 **Checklist:**
@@ -741,7 +741,7 @@ Automated tools to assist with security audits:
 #!/bin/bash
 # security-check.sh
 
-echo "CitadelBuy Security Quick Check"
+echo "Broxiva Security Quick Check"
 echo "================================"
 
 # Check for secrets in code
@@ -791,7 +791,7 @@ echo "Run full security audit for comprehensive results."
 Usage:
 ```bash
 chmod +x security-check.sh
-./security-check.sh citadelbuy.com
+./security-check.sh broxiva.com
 ```
 
 ---

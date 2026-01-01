@@ -1,4 +1,4 @@
-# CitadelBuy Operations Manual
+# Broxiva Operations Manual
 
 **Version**: 1.0.0
 **Last Updated**: 2025-12-06
@@ -109,7 +109,7 @@ rate(container_fs_writes_bytes_total[5m])
 **Service Down**
 ```yaml
 - alert: ServiceDown
-  expr: up{job="citadelbuy-api"} == 0
+  expr: up{job="broxiva-api"} == 0
   for: 1m
   labels:
     severity: critical
@@ -172,7 +172,7 @@ rate(container_fs_writes_bytes_total[5m])
 
 #### Main Dashboard
 
-**URL**: `https://grafana.citadelbuy.com/d/main-dashboard`
+**URL**: `https://grafana.broxiva.com/d/main-dashboard`
 
 **Panels**:
 1. **Overall Health**
@@ -199,7 +199,7 @@ rate(container_fs_writes_bytes_total[5m])
 
 #### Database Dashboard
 
-**URL**: `https://grafana.citadelbuy.com/d/database-dashboard`
+**URL**: `https://grafana.broxiva.com/d/database-dashboard`
 
 **Panels**:
 1. Active connections
@@ -223,38 +223,38 @@ See [INCIDENT_RESPONSE.md](./root/INCIDENT_RESPONSE.md) for complete incident re
 
 ```bash
 # 1. Check pod status
-kubectl get pods -n citadelbuy -l app=citadelbuy-api
+kubectl get pods -n broxiva -l app=broxiva-api
 
 # 2. Check pod logs
-kubectl logs -n citadelbuy -l app=citadelbuy-api --tail=100
+kubectl logs -n broxiva -l app=broxiva-api --tail=100
 
 # 3. Check recent deployments
-kubectl rollout history deployment/citadelbuy-api -n citadelbuy
+kubectl rollout history deployment/broxiva-api -n broxiva
 
 # 4. Quick rollback if needed
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy
+kubectl rollout undo deployment/broxiva-api -n broxiva
 
 # 5. Scale up if resource issue
-kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=10
+kubectl scale deployment/broxiva-api -n broxiva --replicas=10
 ```
 
 #### Database Issues (P1)
 
 ```bash
 # 1. Check database status
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+kubectl exec -it deployment/broxiva-api -n broxiva -- \
   npx prisma db execute --stdin <<< "SELECT 1;"
 
 # 2. Check active connections
 kubectl run psql --rm -it --restart=Never --image=postgres:16 \
   --env="PGPASSWORD=${DB_PASSWORD}" -- \
-  psql -h postgres -U citadelbuy -d citadelbuy_production \
+  psql -h postgres -U broxiva -d broxiva_production \
   -c "SELECT count(*) FROM pg_stat_activity;"
 
 # 3. Kill long-running queries
 kubectl run psql --rm -it --restart=Never --image=postgres:16 \
   --env="PGPASSWORD=${DB_PASSWORD}" -- \
-  psql -h postgres -U citadelbuy -d citadelbuy_production \
+  psql -h postgres -U broxiva -d broxiva_production \
   -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity
       WHERE state = 'active' AND query_start < NOW() - INTERVAL '5 minutes';"
 ```
@@ -263,17 +263,17 @@ kubectl run psql --rm -it --restart=Never --image=postgres:16 \
 
 ```bash
 # 1. Scale up immediately
-kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=15
+kubectl scale deployment/broxiva-api -n broxiva --replicas=15
 
 # 2. Check HPA status
-kubectl get hpa -n citadelbuy
+kubectl get hpa -n broxiva
 
 # 3. Increase HPA max if needed
-kubectl patch hpa citadelbuy-api -n citadelbuy \
+kubectl patch hpa broxiva-api -n broxiva \
   -p '{"spec":{"maxReplicas":20}}'
 
 # 4. Monitor scaling
-watch kubectl get pods -n citadelbuy
+watch kubectl get pods -n broxiva
 ```
 
 ---
@@ -288,13 +288,13 @@ watch kubectl get pods -n citadelbuy
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: citadelbuy-api
-  namespace: citadelbuy
+  name: broxiva-api
+  namespace: broxiva
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: citadelbuy-api
+    name: broxiva-api
   minReplicas: 3
   maxReplicas: 10
   metrics:
@@ -330,20 +330,20 @@ spec:
 **Scale Up**
 ```bash
 # During high traffic periods
-kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=15
+kubectl scale deployment/broxiva-api -n broxiva --replicas=15
 
 # Or update HPA
-kubectl patch hpa citadelbuy-api -n citadelbuy \
+kubectl patch hpa broxiva-api -n broxiva \
   -p '{"spec":{"minReplicas":5,"maxReplicas":20}}'
 ```
 
 **Scale Down**
 ```bash
 # During low traffic periods
-kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=2
+kubectl scale deployment/broxiva-api -n broxiva --replicas=2
 
 # Or update HPA
-kubectl patch hpa citadelbuy-api -n citadelbuy \
+kubectl patch hpa broxiva-api -n broxiva \
   -p '{"spec":{"minReplicas":2,"maxReplicas":10}}'
 ```
 
@@ -355,13 +355,13 @@ kubectl patch hpa citadelbuy-api -n citadelbuy \
 ```bash
 # 1. Create read replica (Azure PostgreSQL)
 az postgres flexible-server replica create \
-  --resource-group citadelbuy-prod-rg \
-  --name citadelbuy-db-replica-01 \
-  --source-server citadelbuy-db-primary
+  --resource-group broxiva-prod-rg \
+  --name broxiva-db-replica-01 \
+  --source-server broxiva-db-primary
 
 # 2. Update application config
-kubectl set env deployment/citadelbuy-api -n citadelbuy \
-  DATABASE_READ_REPLICA_URL=postgresql://replica01.postgres.database.azure.com/citadelbuy
+kubectl set env deployment/broxiva-api -n broxiva \
+  DATABASE_READ_REPLICA_URL=postgresql://replica01.postgres.database.azure.com/broxiva
 
 # 3. Verify replication lag
 # Should be < 5 seconds
@@ -372,7 +372,7 @@ kubectl set env deployment/citadelbuy-api -n citadelbuy \
 **PgBouncer Configuration**:
 ```ini
 [databases]
-citadelbuy = host=postgres port=5432 dbname=citadelbuy_production
+broxiva = host=postgres port=5432 dbname=broxiva_production
 
 [pgbouncer]
 pool_mode = transaction
@@ -395,11 +395,11 @@ server_idle_timeout = 600
 kubectl apply -f infrastructure/kubernetes/redis-cluster.yaml
 
 # 2. Verify cluster status
-kubectl exec -it redis-cluster-0 -n citadelbuy -- \
+kubectl exec -it redis-cluster-0 -n broxiva -- \
   redis-cli --cluster check redis-cluster-0.redis-cluster:6379
 
 # 3. Update application config
-kubectl set env deployment/citadelbuy-api -n citadelbuy \
+kubectl set env deployment/broxiva-api -n broxiva \
   REDIS_CLUSTER=true \
   REDIS_NODES=redis-cluster-0:6379,redis-cluster-1:6379,redis-cluster-2:6379
 ```
@@ -417,8 +417,8 @@ See [DATABASE_BACKUP_STRATEGY.md](./root/DATABASE_BACKUP_STRATEGY.md) for comple
 ```bash
 # Check latest backup
 az postgres flexible-server backup list \
-  --resource-group citadelbuy-prod-rg \
-  --server-name citadelbuy-db-primary \
+  --resource-group broxiva-prod-rg \
+  --server-name broxiva-db-primary \
   --query "[0]"
 
 # Verify backup size and status
@@ -429,21 +429,21 @@ az postgres flexible-server backup list \
 ```bash
 # 1. Create test server from backup
 az postgres flexible-server restore \
-  --resource-group citadelbuy-test-rg \
-  --name citadelbuy-db-restore-test \
-  --source-server citadelbuy-db-primary \
+  --resource-group broxiva-test-rg \
+  --name broxiva-db-restore-test \
+  --source-server broxiva-db-primary \
   --restore-time "2025-12-06T10:00:00Z"
 
 # 2. Verify data integrity
-psql -h citadelbuy-db-restore-test.postgres.database.azure.com \
-  -U citadelbuy -d citadelbuy_production \
+psql -h broxiva-db-restore-test.postgres.database.azure.com \
+  -U broxiva -d broxiva_production \
   -c "SELECT COUNT(*) FROM \"User\";" \
   -c "SELECT COUNT(*) FROM \"Order\";"
 
 # 3. Delete test server
 az postgres flexible-server delete \
-  --resource-group citadelbuy-test-rg \
-  --name citadelbuy-db-restore-test
+  --resource-group broxiva-test-rg \
+  --name broxiva-db-restore-test
 ```
 
 ### Disaster Recovery
@@ -459,16 +459,16 @@ az postgres flexible-server delete \
    ```bash
    # Point-in-time restore
    az postgres flexible-server restore \
-     --resource-group citadelbuy-dr-rg \
-     --name citadelbuy-db-dr \
-     --source-server citadelbuy-db-primary \
+     --resource-group broxiva-dr-rg \
+     --name broxiva-db-dr \
+     --source-server broxiva-db-primary \
      --restore-time "$(date -u -d '5 minutes ago' '+%Y-%m-%dT%H:%M:%SZ')"
    ```
 
 2. **Deploy Application**
    ```bash
    # Deploy to DR cluster
-   kubectl config use-context citadelbuy-dr-cluster
+   kubectl config use-context broxiva-dr-cluster
    kubectl apply -f infrastructure/kubernetes/production/
    ```
 
@@ -476,8 +476,8 @@ az postgres flexible-server delete \
    ```bash
    # Point DNS to DR environment
    az network dns record-set a update \
-     --resource-group citadelbuy-dns-rg \
-     --zone-name citadelbuy.com \
+     --resource-group broxiva-dns-rg \
+     --zone-name broxiva.com \
      --name api \
      --set aRecords[0].ipv4Address=<DR-IP>
    ```
@@ -485,7 +485,7 @@ az postgres flexible-server delete \
 4. **Verify Services**
    ```bash
    # Run smoke tests
-   curl https://api.citadelbuy.com/api/health
+   curl https://api.broxiva.com/api/health
    ```
 
 ---
@@ -520,7 +520,7 @@ Primary Region (East US)          Secondary Region (West Europe)
 
 ```bash
 # 1. Stop new traffic to primary
-kubectl annotate service citadelbuy-api -n citadelbuy \
+kubectl annotate service broxiva-api -n broxiva \
   maintenance=true
 
 # 2. Wait for active requests to complete
@@ -528,22 +528,22 @@ sleep 60
 
 # 3. Promote secondary database to primary
 az postgres flexible-server replica promote \
-  --resource-group citadelbuy-prod-rg \
-  --name citadelbuy-db-west-europe
+  --resource-group broxiva-prod-rg \
+  --name broxiva-db-west-europe
 
 # 4. Update DNS to secondary region
 az network traffic-manager endpoint update \
-  --resource-group citadelbuy-dns-rg \
-  --profile-name citadelbuy-global \
+  --resource-group broxiva-dns-rg \
+  --profile-name broxiva-global \
   --name primary-endpoint \
   --type azureEndpoints \
   --target-resource-id <secondary-lb-id>
 
 # 5. Verify traffic routing
-dig api.citadelbuy.com
+dig api.broxiva.com
 
 # 6. Monitor secondary region
-watch kubectl get pods -n citadelbuy
+watch kubectl get pods -n broxiva
 ```
 
 #### Emergency Failover
@@ -553,19 +553,19 @@ watch kubectl get pods -n citadelbuy
 ```bash
 # 1. Immediate DNS update
 az network traffic-manager endpoint update \
-  --resource-group citadelbuy-dns-rg \
-  --profile-name citadelbuy-global \
+  --resource-group broxiva-dns-rg \
+  --profile-name broxiva-global \
   --name primary-endpoint \
   --endpoint-status Disabled
 
 # 2. Force database promotion
 az postgres flexible-server replica promote \
-  --resource-group citadelbuy-prod-rg \
-  --name citadelbuy-db-west-europe \
+  --resource-group broxiva-prod-rg \
+  --name broxiva-db-west-europe \
   --force
 
 # 3. Scale up secondary region
-kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=10
+kubectl scale deployment/broxiva-api -n broxiva --replicas=10
 
 # 4. Notify team
 # Post in #incidents channel
@@ -578,13 +578,13 @@ kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=10
 ```bash
 # 1. Verify primary region health
 kubectl get nodes
-kubectl get pods -n citadelbuy
+kubectl get pods -n broxiva
 
 # 2. Create new replica from current primary
 az postgres flexible-server replica create \
-  --resource-group citadelbuy-prod-rg \
-  --name citadelbuy-db-east-us \
-  --source-server citadelbuy-db-west-europe
+  --resource-group broxiva-prod-rg \
+  --name broxiva-db-east-us \
+  --source-server broxiva-db-west-europe
 
 # 3. Wait for replication to catch up
 # Monitor lag
@@ -725,7 +725,7 @@ ON "Product" (categoryId, price, createdAt DESC);
 **Failed Login Attempts**
 ```bash
 # Check failed logins
-kubectl logs -n citadelbuy -l app=citadelbuy-api | \
+kubectl logs -n broxiva -l app=broxiva-api | \
   grep "authentication failed" | \
   jq -r '.userId, .ip, .timestamp' | \
   sort | uniq -c | sort -rn
@@ -734,11 +734,11 @@ kubectl logs -n citadelbuy -l app=citadelbuy-api | \
 **Suspicious Activity**
 ```bash
 # Check for SQL injection attempts
-kubectl logs -n citadelbuy -l app=citadelbuy-api | \
+kubectl logs -n broxiva -l app=broxiva-api | \
   grep -i "select.*from\|union.*select\|drop.*table"
 
 # Check for XSS attempts
-kubectl logs -n citadelbuy -l app=citadelbuy-api | \
+kubectl logs -n broxiva -l app=broxiva-api | \
   grep -i "<script\|javascript:\|onerror="
 ```
 
@@ -754,7 +754,7 @@ kubectl logs -n citadelbuy -l app=citadelbuy-api | \
    pnpm audit
 
    # Check Docker images
-   docker scan citadelplatforms/citadelbuy-ecommerce:backend-latest
+   docker scan broxivaplatforms/broxiva-ecommerce:backend-latest
    ```
 
 2. **Test Updates in Staging**
@@ -785,24 +785,24 @@ kubectl logs -n citadelbuy -l app=citadelbuy-api | \
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: citadelbuy-tls
-  namespace: citadelbuy
+  name: broxiva-tls
+  namespace: broxiva
 spec:
-  secretName: citadelbuy-tls
+  secretName: broxiva-tls
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
   dnsNames:
-  - citadelbuy.com
-  - www.citadelbuy.com
-  - api.citadelbuy.com
+  - broxiva.com
+  - www.broxiva.com
+  - api.broxiva.com
 ```
 
 **Manual verification**:
 ```bash
 # Check certificate expiry
-echo | openssl s_client -servername api.citadelbuy.com \
-  -connect api.citadelbuy.com:443 2>/dev/null | \
+echo | openssl s_client -servername api.broxiva.com \
+  -connect api.broxiva.com:443 2>/dev/null | \
   openssl x509 -noout -dates
 ```
 
@@ -860,9 +860,9 @@ echo | openssl s_client -servername api.citadelbuy.com \
 | Level | Role | Contact | Availability |
 |-------|------|---------|--------------|
 | L1 | On-Call Engineer | PagerDuty | 24/7 |
-| L2 | Platform Lead | platform-lead@citadelbuy.com | Business hours + on-call |
-| L3 | Engineering Manager | eng-manager@citadelbuy.com | Business hours |
-| L4 | CTO | cto@citadelbuy.com | Emergency only |
+| L2 | Platform Lead | platform-lead@broxiva.com | Business hours + on-call |
+| L3 | Engineering Manager | eng-manager@broxiva.com | Business hours |
+| L4 | CTO | cto@broxiva.com | Emergency only |
 
 ### External Vendors
 

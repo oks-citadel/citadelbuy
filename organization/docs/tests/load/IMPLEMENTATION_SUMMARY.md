@@ -2,7 +2,7 @@
 
 ## Overview
 
-Complete k6 load testing infrastructure has been implemented for CitadelBuy, providing comprehensive performance validation and capacity planning capabilities.
+Complete k6 load testing infrastructure has been implemented for Broxiva, providing comprehensive performance validation and capacity planning capabilities.
 
 ## What Was Implemented
 
@@ -306,11 +306,11 @@ k6 run --out influxdb=http://localhost:8086/k6db tests/load/scenarios/checkout.j
 ## Test Data Requirements
 
 Ensure test environment has:
-- Test users: loadtest1@citadelbuy.test - loadtest5@citadelbuy.test (password: Test@1234)
+- Test users: loadtest1@broxiva.test - loadtest5@broxiva.test (password: Test@1234)
 - Test products: IDs 1-30
 - Test categories: electronics, computers, smartphones, etc.
 - Test coupons: LOAD10
-- Admin user: admin@citadelbuy.test (password: Admin@1234)
+- Admin user: admin@broxiva.test (password: Admin@1234)
 
 ## Performance Optimization Tips
 
@@ -350,7 +350,7 @@ Common issues and solutions documented in the comprehensive guide:
 
 ## Conclusion
 
-CitadelBuy now has a comprehensive load testing infrastructure that enables:
+Broxiva now has a comprehensive load testing infrastructure that enables:
 - Regular performance validation
 - Capacity planning and scaling decisions
 - Performance regression prevention

@@ -1,5 +1,5 @@
 # Infrastructure Versioning Audit Report
-## CitadelBuy Global E-Commerce Platform
+## Broxiva Global E-Commerce Platform
 
 **Audit Date:** December 5, 2025
 **Compliance Framework:** PCI-DSS 4.0, SOC 2 Type II

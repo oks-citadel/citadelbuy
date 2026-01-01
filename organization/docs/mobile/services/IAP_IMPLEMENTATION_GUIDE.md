@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers the complete implementation of In-App Purchases (IAP) for CitadelBuy mobile app using `expo-in-app-purchases`. The implementation supports both iOS (StoreKit) and Android (Google Play Billing) with unified API.
+This guide covers the complete implementation of In-App Purchases (IAP) for Broxiva mobile app using `expo-in-app-purchases`. The implementation supports both iOS (StoreKit) and Android (Google Play Billing) with unified API.
 
 ## Architecture
 
@@ -89,7 +89,7 @@ import { SUBSCRIPTION_PRODUCTS } from './config/iap-products';
 
 // Get the subscription plan
 const premiumPlan = SUBSCRIPTION_PRODUCTS.find(
-  p => p.id === 'citadel_premium_monthly'
+  p => p.id === 'broxiva_premium_monthly'
 );
 
 // Purchase using native IAP
@@ -186,8 +186,8 @@ export const SUBSCRIPTION_PRODUCTS: IAPSubscriptionProduct[] = [
     id: 'my_new_plan',
     name: 'My New Plan',
     description: 'Description of the plan',
-    appleProductId: 'com.citadelbuy.subscription.myplan.monthly',
-    googleProductId: 'citadelbuy_myplan_monthly',
+    appleProductId: 'com.broxiva.subscription.myplan.monthly',
+    googleProductId: 'broxiva_myplan_monthly',
     type: 'subscription',
     interval: 'month',
     trialPeriod: {
@@ -201,12 +201,12 @@ export const SUBSCRIPTION_PRODUCTS: IAPSubscriptionProduct[] = [
 ### Product ID Naming Convention
 
 **Apple (iOS):**
-- Format: `com.citadelbuy.[type].[name].[interval]`
-- Example: `com.citadelbuy.subscription.premium.yearly`
+- Format: `com.broxiva.[type].[name].[interval]`
+- Example: `com.broxiva.subscription.premium.yearly`
 
 **Google (Android):**
-- Format: `citadelbuy_[name]_[interval]`
-- Example: `citadelbuy_premium_yearly`
+- Format: `broxiva_[name]_[interval]`
+- Example: `broxiva_premium_yearly`
 
 ## Platform Setup
 

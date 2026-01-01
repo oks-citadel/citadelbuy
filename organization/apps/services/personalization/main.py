@@ -67,9 +67,9 @@ ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '').split(',') if os.getenv('ALLO
     "http://localhost:3000",
     "http://localhost:8000",
     "http://localhost:8080",
-    "https://citadelbuy.com",
-    "https://admin.citadelbuy.com",
-    "https://api.citadelbuy.com",
+    "https://broxiva.com",
+    "https://admin.broxiva.com",
+    "https://api.broxiva.com",
 ]
 
 # In-memory storage (replace with database in production)
@@ -136,7 +136,7 @@ async def lifespan(app: FastAPI):
 
 # Initialize FastAPI app with lifespan
 app = FastAPI(
-    title="CitadelBuy Personalization Service",
+    title="Broxiva Personalization Service",
     description="User preferences, recommendations, and personalization service",
     version="1.0.0",
     docs_url="/docs",
@@ -707,7 +707,7 @@ async def get_user_profile(user_id: str = Path(..., description="User ID")):
 async def root():
     """Root endpoint with service information"""
     return {
-        "service": "CitadelBuy Personalization Service",
+        "service": "Broxiva Personalization Service",
         "version": "1.0.0",
         "description": "User preferences, recommendations, and personalization service",
         "endpoints": {
@@ -846,7 +846,7 @@ def _personalize_homepage(user_id: str, prefs: Dict) -> Dict:
 
     return {
         "hero_banner": {
-            "title": f"Welcome back!" if prefs else "Welcome to CitadelBuy!",
+            "title": f"Welcome back!" if prefs else "Welcome to Broxiva!",
             "subtitle": f"Check out our latest {categories[0] if categories else 'products'}",
             "cta": "Shop Now"
         },

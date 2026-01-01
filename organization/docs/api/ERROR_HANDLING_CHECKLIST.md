@@ -1,6 +1,6 @@
 # Error Handling Implementation Checklist
 
-Track your progress implementing comprehensive error handling in CitadelBuy.
+Track your progress implementing comprehensive error handling in Broxiva.
 
 ## Phase 1: Foundation (✅ COMPLETE)
 

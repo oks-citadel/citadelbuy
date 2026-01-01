@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ################################################################################
-# CitadelBuy Database Migration Script
+# Broxiva Database Migration Script
 #
 # Purpose: Safely apply pending database migrations with automatic backup,
 #          verification, and rollback capabilities
@@ -15,7 +15,7 @@
 #   --auto-approve     Skip confirmation prompts
 #   --environment ENV  Specify environment (dev, staging, production)
 #
-# Author: CitadelBuy Platform Team
+# Author: Broxiva Platform Team
 # Version: 1.0.0
 ################################################################################
 
@@ -216,7 +216,7 @@ create_backup() {
 
     print_header "Creating Database Backup"
 
-    BACKUP_FILE="$BACKUP_DIR/citadelbuy_pre_migration_${TIMESTAMP}.sql"
+    BACKUP_FILE="$BACKUP_DIR/broxiva_pre_migration_${TIMESTAMP}.sql"
 
     print_info "Backing up database to: $BACKUP_FILE"
 
@@ -445,7 +445,7 @@ generate_report() {
     local report_file="$LOG_DIR/migration_report_${TIMESTAMP}.txt"
 
     {
-        echo "CitadelBuy Database Migration Report"
+        echo "Broxiva Database Migration Report"
         echo "===================================="
         echo ""
         echo "Timestamp: $(date)"
@@ -547,7 +547,7 @@ EOF
 }
 
 main() {
-    print_header "CitadelBuy Database Migration Script"
+    print_header "Broxiva Database Migration Script"
 
     print_info "Environment: $ENVIRONMENT"
     print_info "Dry Run: $DRY_RUN"

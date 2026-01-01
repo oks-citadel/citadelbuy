@@ -1,12 +1,12 @@
 # Global E-Commerce Homepage UX Blueprint
 
-## CitadelBuy - High-Converting Multi-Currency, Multi-Language Homepage Design
+## Broxiva - High-Converting Multi-Currency, Multi-Language Homepage Design
 
 ---
 
 ## Executive Summary
 
-This blueprint defines the comprehensive UX architecture for CitadelBuy's global e-commerce homepage, optimized for:
+This blueprint defines the comprehensive UX architecture for Broxiva's global e-commerce homepage, optimized for:
 - **Multi-currency support** (150+ currencies with real-time rates)
 - **Multi-language support** (16+ languages including RTL)
 - **Mobile-first responsive design**
@@ -312,7 +312,7 @@ This blueprint defines the comprehensive UX architecture for CitadelBuy's global
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ Connect: [Facebook] [Instagram] [Twitter] [LinkedIn] [YouTube] [TikTok]     │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ © 2024 CitadelBuy. All rights reserved.    🌍 [Country] | 💱 [Currency] | 🌐 [Language]
+│ © 2024 Broxiva. All rights reserved.    🌍 [Country] | 💱 [Currency] | 🌐 [Language]
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -620,4 +620,4 @@ gtag('event', 'purchase', {
 
 ---
 
-*This document serves as the comprehensive UX blueprint for CitadelBuy's global e-commerce homepage. All implementations should reference this document for consistency and alignment with business goals.*
+*This document serves as the comprehensive UX blueprint for Broxiva's global e-commerce homepage. All implementations should reference this document for consistency and alignment with business goals.*

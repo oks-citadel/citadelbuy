@@ -1,4 +1,4 @@
-# CitadelBuy - Pipeline Templates Implementation Guide
+# Broxiva - Pipeline Templates Implementation Guide
 
 ## Overview
 
@@ -202,12 +202,12 @@ parameters:
 - Push to ACR
 
 **Microservices:**
-- citadelbuy-api
-- citadelbuy-web
-- citadelbuy-worker
-- citadelbuy-notification
-- citadelbuy-payment
-- citadelbuy-inventory
+- broxiva-api
+- broxiva-web
+- broxiva-worker
+- broxiva-notification
+- broxiva-payment
+- broxiva-inventory
 
 **Key Tasks:**
 - Login to ACR

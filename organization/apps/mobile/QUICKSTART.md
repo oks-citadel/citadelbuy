@@ -1,4 +1,4 @@
-# EAS Quick Start Guide - CitadelBuy
+# EAS Quick Start Guide - Broxiva
 
 Get up and running with EAS builds in under 30 minutes.
 
@@ -99,7 +99,7 @@ Wait for the build to complete. You'll get a QR code to download the app.
 - Scan the QR code with your phone
 - Install the app
 - Launch and verify it works
-- Test deep linking: `citadelbuy://`
+- Test deep linking: `broxiva://`
 
 ## That's It!
 
@@ -139,7 +139,7 @@ eas update --branch preview --message "Your message"
 - Make sure your device is registered: `eas device:create`
 
 ### Deep linking doesn't work
-- For development, custom scheme (`citadelbuy://`) should work
+- For development, custom scheme (`broxiva://`) should work
 - Universal/App links require domain setup (see full guide)
 
 ## Get Help

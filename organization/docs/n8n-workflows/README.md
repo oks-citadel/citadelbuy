@@ -1,6 +1,6 @@
-# CitadelBuy n8n Automation Workflows
+# Broxiva n8n Automation Workflows
 
-Complete automation suite for CitadelBuy e-commerce platform using n8n workflow automation.
+Complete automation suite for Broxiva e-commerce platform using n8n workflow automation.
 
 ## 📦 Available Workflows
 
@@ -153,7 +153,7 @@ npm run signature
 | Service | Used By | Purpose |
 |---------|---------|---------|
 | **n8n** | All | Workflow automation platform |
-| **CitadelBuy API** | All | E-commerce backend |
+| **Broxiva API** | All | E-commerce backend |
 | **Slack** | 01, 03, 04, 10 | Notifications & alerts |
 | **SendGrid** | 01, 04 | Email delivery |
 | **Notion** | 01 | Task management |
@@ -284,9 +284,9 @@ openssl rand -base64 32
 
 Required for all workflows:
 ```bash
-CITADELBUY_WEBHOOK_SECRET=<32-char-secret>
-CITADELBUY_API_URL=https://api.citadelbuy.com/v1
-CITADELBUY_API_TOKEN=<your-token>
+BROXIVA_WEBHOOK_SECRET=<32-char-secret>
+BROXIVA_API_URL=https://api.broxiva.com/v1
+BROXIVA_API_TOKEN=<your-token>
 ```
 
 Workflow-specific:
@@ -298,7 +298,7 @@ SENDGRID_ORDER_CONFIRMATION_TEMPLATE_ID=d-<template-id>
 # Workflow 02
 OPENAI_API_KEY=sk-<your-key>
 PINECONE_API_KEY=<your-key>
-PINECONE_INDEX_NAME=citadelbuy-products
+PINECONE_INDEX_NAME=broxiva-products
 
 # Workflow 03
 SHIPSTATION_API_KEY=<your-key>
@@ -345,7 +345,7 @@ Configure Slack alerts for:
 #### Webhook Not Triggering
 ```bash
 # Check webhook is active
-curl http://localhost:5678/webhook-test/citadelbuy-order-webhook
+curl http://localhost:5678/webhook-test/broxiva-order-webhook
 
 # Verify signature
 node generate-signature.js test-payloads.json
@@ -492,13 +492,13 @@ All new workflows must include:
 
 ### Documentation
 - [n8n Documentation](https://docs.n8n.io)
-- [CitadelBuy API Docs](https://api.citadelbuy.com/docs)
+- [Broxiva API Docs](https://api.broxiva.com/docs)
 - [Workflow Best Practices](https://docs.n8n.io/workflows/best-practices/)
 
 ### Support
-- **Engineering Team**: engineering@citadelbuy.com
-- **DevOps Support**: devops@citadelbuy.com
-- **Documentation**: [Internal Wiki](https://wiki.citadelbuy.com)
+- **Engineering Team**: engineering@broxiva.com
+- **DevOps Support**: devops@broxiva.com
+- **Documentation**: [Internal Wiki](https://wiki.broxiva.com)
 
 ### External Links
 - [n8n Community](https://community.n8n.io)
@@ -509,7 +509,7 @@ All new workflows must include:
 
 ## 📝 License
 
-Copyright (c) 2024 CitadelBuy. All rights reserved.
+Copyright (c) 2024 Broxiva. All rights reserved.
 
 **Internal use only. Do not distribute.**
 
@@ -538,4 +538,4 @@ Copyright (c) 2024 CitadelBuy. All rights reserved.
 
 **Last Updated**: 2024-12-03
 **Version**: 1.0.0
-**Maintained by**: CitadelBuy Engineering Team
+**Maintained by**: Broxiva Engineering Team

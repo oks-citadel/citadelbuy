@@ -1,4 +1,4 @@
-# Certification Standards for CitadelBuy Vendors
+# Certification Standards for Broxiva Vendors
 
 ## Security & Compliance Certifications
 
@@ -69,7 +69,7 @@
 ### PCI DSS (Payment Card Industry Data Security Standard)
 **Description:** Security standard for organizations handling credit card data.
 
-**Required For:** Vendors processing card payments directly (not via CitadelBuy)
+**Required For:** Vendors processing card payments directly (not via Broxiva)
 
 **Levels:**
 - **Level 1:** >6M transactions/year - Full external audit
@@ -310,7 +310,7 @@ Upload certification documents to vendor portal:
 - Issuing body contact
 
 ### Step 2: Verification
-CitadelBuy verifies with issuing body:
+Broxiva verifies with issuing body:
 - Certificate authenticity
 - Current validity
 - Scope matches business
@@ -404,9 +404,9 @@ CitadelBuy verifies with issuing body:
 - Platform-negotiated discounts
 
 ### Support
-**Email:** certifications@citadelbuy.com
+**Email:** certifications@broxiva.com
 **Phone:** [Regional contact]
-**Knowledge Base:** https://docs.citadelbuy.com/certifications
+**Knowledge Base:** https://docs.broxiva.com/certifications
 
 ---
 

@@ -1,7 +1,7 @@
 # Azure DevOps Pipeline Cleanup Audit Report
 
 **Date:** 2025-12-14
-**Project:** CitadelBuy / Broxiva
+**Project:** Broxiva / Broxiva
 **Purpose:** Audit of Azure DevOps pipeline files for cleanup/archival since project now uses GitHub Actions exclusively
 
 ---
@@ -210,7 +210,7 @@ The following documentation files contain references to Azure DevOps but are inf
 - `AZURE-DEPLOYMENT-MASTER-REPORT.md` - Azure deployment report
 - `CICD_MIGRATION_GUIDE.md` - Migration guide from Azure DevOps to GitHub Actions
 - `CICD_MIGRATION_SUMMARY.md` - Migration summary
-- `CITADELBUY_REFERENCES_SUMMARY.md` - References summary
+- `BROXIVA_REFERENCES_SUMMARY.md` - References summary
 - `DOCKER_BUILD_GUIDE.md` - Build guide mentions Azure
 - `DOCKER_BUILD_SUMMARY.md` - Build summary
 - `MIGRATION_STATUS_FINAL.md` - Final migration status
@@ -270,7 +270,7 @@ The following files contain historical/informational content and should be RETAI
 - `AZURE-DEPLOYMENT-MASTER-REPORT.md` - Historical deployment report
 - `CICD_MIGRATION_GUIDE.md` - Valuable migration reference
 - `CICD_MIGRATION_SUMMARY.md` - Migration documentation
-- `CITADELBUY_REFERENCES_SUMMARY.md` - References documentation
+- `BROXIVA_REFERENCES_SUMMARY.md` - References documentation
 - `MIGRATION_STATUS_FINAL.md` - Final migration status
 - `docs/root/AZURE_BOARDS_USER_STORIES.md` - Product requirements
 - All other documentation in `docs/root/` - Historical context
@@ -354,8 +354,8 @@ The cleanup can proceed safely. All functionality has been migrated to GitHub Ac
 
 - **Audit Date:** 2025-12-14
 - **Auditor:** Claude (Automated Audit)
-- **Repository:** CitadelBuy/Broxiva Organization
-- **Working Directory:** `C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization`
+- **Repository:** Broxiva/Broxiva Organization
+- **Working Directory:** `C:\Users\Dell\OneDrive\Documents\Broxivabuy\Broxiva\organization`
 - **Migration Status:** Complete (GitHub Actions Active)
 - **Azure DevOps Status:** Obsolete/Ready for Cleanup
 

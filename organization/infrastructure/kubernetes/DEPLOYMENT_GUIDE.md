@@ -1,6 +1,6 @@
-# CitadelBuy Kubernetes Deployment Guide
+# Broxiva Kubernetes Deployment Guide
 
-Complete guide for deploying CitadelBuy e-commerce platform to Kubernetes clusters.
+Complete guide for deploying Broxiva e-commerce platform to Kubernetes clusters.
 
 ## Table of Contents
 
@@ -58,7 +58,7 @@ sudo mv /tmp/eksctl /usr/local/bin
 
 # Create cluster (example)
 eksctl create cluster \
-  --name citadelbuy-production \
+  --name broxiva-production \
   --version 1.28 \
   --region us-east-1 \
   --nodegroup-name standard-workers \
@@ -73,7 +73,7 @@ eksctl create cluster \
 
 ```bash
 # Create cluster (example)
-gcloud container clusters create citadelbuy-production \
+gcloud container clusters create broxiva-production \
   --zone us-central1-a \
   --num-nodes 5 \
   --machine-type n2-standard-4 \
@@ -89,8 +89,8 @@ gcloud container clusters create citadelbuy-production \
 ```bash
 # Create cluster (example)
 az aks create \
-  --resource-group citadelbuy-rg \
-  --name citadelbuy-production \
+  --resource-group broxiva-rg \
+  --name broxiva-production \
   --node-count 5 \
   --node-vm-size Standard_D4s_v3 \
   --enable-cluster-autoscaler \
@@ -205,15 +205,15 @@ organization/infrastructure/kubernetes/
 
 ```bash
 # Option 1: Create secrets from file
-kubectl create secret generic citadelbuy-secrets \
-  --namespace=citadelbuy-staging \
+kubectl create secret generic broxiva-secrets \
+  --namespace=broxiva-staging \
   --from-env-file=.env.staging \
   --dry-run=client -o yaml | kubectl apply -f -
 
 # Option 2: Create secrets manually
-kubectl create secret generic citadelbuy-secrets \
-  --namespace=citadelbuy-staging \
-  --from-literal=DATABASE_URL='postgresql://user:pass@postgres:5432/citadelbuy_staging' \
+kubectl create secret generic broxiva-secrets \
+  --namespace=broxiva-staging \
+  --from-literal=DATABASE_URL='postgresql://user:pass@postgres:5432/broxiva_staging' \
   --from-literal=JWT_SECRET='your-jwt-secret-min-32-chars' \
   --from-literal=STRIPE_SECRET_KEY='sk_test_...' \
   --from-literal=SENDGRID_API_KEY='SG....'
@@ -246,8 +246,8 @@ kubectl apply -f postgres-deployment.yaml
 kubectl apply -f redis-deployment.yaml
 
 # Wait for databases to be ready
-kubectl wait --for=condition=ready pod -l app=postgres -n citadelbuy-staging --timeout=300s
-kubectl wait --for=condition=ready pod -l app=redis -n citadelbuy-staging --timeout=300s
+kubectl wait --for=condition=ready pod -l app=postgres -n broxiva-staging --timeout=300s
+kubectl wait --for=condition=ready pod -l app=redis -n broxiva-staging --timeout=300s
 
 # Deploy application
 kubectl apply -f api-deployment.yaml
@@ -264,21 +264,21 @@ kubectl apply -f hpa.yaml
 
 ```bash
 # Check pod status
-kubectl get pods -n citadelbuy-staging
+kubectl get pods -n broxiva-staging
 
 # Check services
-kubectl get svc -n citadelbuy-staging
+kubectl get svc -n broxiva-staging
 
 # Check ingress
-kubectl get ingress -n citadelbuy-staging
+kubectl get ingress -n broxiva-staging
 
 # View logs
-kubectl logs -f deployment/citadelbuy-api -n citadelbuy-staging
-kubectl logs -f deployment/citadelbuy-web -n citadelbuy-staging
+kubectl logs -f deployment/broxiva-api -n broxiva-staging
+kubectl logs -f deployment/broxiva-web -n broxiva-staging
 
 # Port forward for local testing
-kubectl port-forward svc/citadelbuy-api 4000:4000 -n citadelbuy-staging
-kubectl port-forward svc/citadelbuy-web 3000:3000 -n citadelbuy-staging
+kubectl port-forward svc/broxiva-api 4000:4000 -n broxiva-staging
+kubectl port-forward svc/broxiva-web 3000:3000 -n broxiva-staging
 ```
 
 ## Production Deployment
@@ -299,11 +299,11 @@ kubectl port-forward svc/citadelbuy-web 3000:3000 -n citadelbuy-staging
 ```bash
 # Create AWS Secrets Manager secrets
 aws secretsmanager create-secret \
-  --name citadelbuy/production/database \
+  --name broxiva/production/database \
   --secret-string '{"password":"SECURE_PASSWORD"}'
 
 aws secretsmanager create-secret \
-  --name citadelbuy/production/jwt \
+  --name broxiva/production/jwt \
   --secret-string '{"secret":"SECURE_JWT_SECRET","refresh_secret":"SECURE_REFRESH_SECRET"}'
 
 # Apply External Secrets configuration
@@ -351,24 +351,24 @@ kubectl apply -f api-deployment-canary.yaml
 
 # Monitor canary metrics for 15-30 minutes
 # If successful, proceed with full rollout
-kubectl set image deployment/citadelbuy-api \
-  api=ghcr.io/citadelplatforms/citadelbuy-api:production-latest \
-  -n citadelbuy-production
+kubectl set image deployment/broxiva-api \
+  api=ghcr.io/broxivaplatforms/broxiva-api:production-latest \
+  -n broxiva-production
 
 # Monitor rollout
-kubectl rollout status deployment/citadelbuy-api -n citadelbuy-production
+kubectl rollout status deployment/broxiva-api -n broxiva-production
 ```
 
 ### Step 4: DNS Configuration
 
 ```bash
 # Get LoadBalancer IP/hostname
-kubectl get ingress -n citadelbuy-production
+kubectl get ingress -n broxiva-production
 
 # Configure DNS A/CNAME records:
-# - api.citadelbuy.com -> LoadBalancer IP
-# - citadelbuy.com -> LoadBalancer IP
-# - www.citadelbuy.com -> LoadBalancer IP
+# - api.broxiva.com -> LoadBalancer IP
+# - broxiva.com -> LoadBalancer IP
+# - www.broxiva.com -> LoadBalancer IP
 ```
 
 ## Post-Deployment Verification
@@ -377,19 +377,19 @@ kubectl get ingress -n citadelbuy-production
 
 ```bash
 # Check all pods are running
-kubectl get pods -n citadelbuy-production -o wide
+kubectl get pods -n broxiva-production -o wide
 
 # Check pod health
-kubectl describe pod <pod-name> -n citadelbuy-production
+kubectl describe pod <pod-name> -n broxiva-production
 
 # Test API health endpoint
-curl https://api.citadelbuy.com/api/health
+curl https://api.broxiva.com/api/health
 
 # Test web application
-curl https://citadelbuy.com/api/health
+curl https://broxiva.com/api/health
 
 # Check database connectivity
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy-production -- \
+kubectl exec -it deployment/broxiva-api -n broxiva-production -- \
   node -e "require('./dist/utils/db').testConnection()"
 ```
 
@@ -400,7 +400,7 @@ kubectl exec -it deployment/citadelbuy-api -n citadelbuy-production -- \
 k6 run --vus 100 --duration 5m load-test.js
 
 # Monitor metrics during load test
-kubectl top pods -n citadelbuy-production
+kubectl top pods -n broxiva-production
 kubectl top nodes
 ```
 
@@ -440,7 +440,7 @@ kubectl port-forward svc/prometheus-grafana 3000:80 -n monitoring
 
 ```bash
 # View current alerts
-kubectl get prometheusrules -n citadelbuy-production
+kubectl get prometheusrules -n broxiva-production
 
 # Configure alert destinations (Slack, PagerDuty, etc.)
 kubectl edit alertmanagerconfigs -n monitoring
@@ -454,7 +454,7 @@ kubectl edit alertmanagerconfigs -n monitoring
 
 ```bash
 # Check pod status
-kubectl describe pod <pod-name> -n citadelbuy-production
+kubectl describe pod <pod-name> -n broxiva-production
 
 # Common causes:
 # - ImagePullBackOff: Check image name and registry credentials
@@ -466,26 +466,26 @@ kubectl describe pod <pod-name> -n citadelbuy-production
 
 ```bash
 # Test database connectivity
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy-production -- \
+kubectl exec -it deployment/broxiva-api -n broxiva-production -- \
   psql $DATABASE_URL -c "SELECT version();"
 
 # Check network policies
-kubectl get networkpolicies -n citadelbuy-production
+kubectl get networkpolicies -n broxiva-production
 ```
 
 #### High Memory Usage
 
 ```bash
 # Identify memory-hungry pods
-kubectl top pods -n citadelbuy-production --sort-by=memory
+kubectl top pods -n broxiva-production --sort-by=memory
 
 # Check for memory leaks in application
-kubectl exec -it <pod-name> -n citadelbuy-production -- node --inspect
+kubectl exec -it <pod-name> -n broxiva-production -- node --inspect
 
 # Adjust resource limits if needed
-kubectl set resources deployment/citadelbuy-api \
+kubectl set resources deployment/broxiva-api \
   --limits=memory=2Gi \
-  -n citadelbuy-production
+  -n broxiva-production
 ```
 
 ### Emergency Procedures
@@ -494,23 +494,23 @@ kubectl set resources deployment/citadelbuy-api \
 
 ```bash
 # View rollout history
-kubectl rollout history deployment/citadelbuy-api -n citadelbuy-production
+kubectl rollout history deployment/broxiva-api -n broxiva-production
 
 # Rollback to previous version
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-production
+kubectl rollout undo deployment/broxiva-api -n broxiva-production
 
 # Rollback to specific revision
-kubectl rollout undo deployment/citadelbuy-api --to-revision=3 -n citadelbuy-production
+kubectl rollout undo deployment/broxiva-api --to-revision=3 -n broxiva-production
 ```
 
 #### Scale Pods Manually
 
 ```bash
 # Scale up for high traffic
-kubectl scale deployment/citadelbuy-api --replicas=10 -n citadelbuy-production
+kubectl scale deployment/broxiva-api --replicas=10 -n broxiva-production
 
 # Scale down for maintenance
-kubectl scale deployment/citadelbuy-api --replicas=3 -n citadelbuy-production
+kubectl scale deployment/broxiva-api --replicas=3 -n broxiva-production
 ```
 
 ## Security Considerations
@@ -531,13 +531,13 @@ kubectl scale deployment/citadelbuy-api --replicas=3 -n citadelbuy-production
 
 ```bash
 # Scan images for vulnerabilities
-trivy image ghcr.io/citadelplatforms/citadelbuy-api:latest
+trivy image ghcr.io/broxivaplatforms/broxiva-api:latest
 
 # Audit Kubernetes resources
-kubectl-score audit deployment/citadelbuy-api -n citadelbuy-production
+kubectl-score audit deployment/broxiva-api -n broxiva-production
 
 # Review RBAC permissions
-kubectl auth can-i --list --as=system:serviceaccount:citadelbuy-production:citadelbuy-api
+kubectl auth can-i --list --as=system:serviceaccount:broxiva-production:broxiva-api
 ```
 
 ## Disaster Recovery
@@ -546,11 +546,11 @@ kubectl auth can-i --list --as=system:serviceaccount:citadelbuy-production:citad
 
 ```bash
 # Backup PostgreSQL
-kubectl exec -it postgres-0 -n citadelbuy-production -- \
-  pg_dump -U citadelbuy citadelbuy_production > backup-$(date +%Y%m%d).sql
+kubectl exec -it postgres-0 -n broxiva-production -- \
+  pg_dump -U broxiva broxiva_production > backup-$(date +%Y%m%d).sql
 
 # Backup Kubernetes resources
-kubectl get all,configmap,secret,pvc -n citadelbuy-production -o yaml > k8s-backup-$(date +%Y%m%d).yaml
+kubectl get all,configmap,secret,pvc -n broxiva-production -o yaml > k8s-backup-$(date +%Y%m%d).yaml
 
 # Create volume snapshots
 kubectl apply -f - <<EOF
@@ -558,7 +558,7 @@ apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshot
 metadata:
   name: postgres-backup-$(date +%Y%m%d)
-  namespace: citadelbuy-production
+  namespace: broxiva-production
 spec:
   volumeSnapshotClassName: csi-aws-vsc
   source:
@@ -570,8 +570,8 @@ EOF
 
 ```bash
 # Restore database from backup
-kubectl exec -it postgres-0 -n citadelbuy-production -- \
-  psql -U citadelbuy citadelbuy_production < backup-20240101.sql
+kubectl exec -it postgres-0 -n broxiva-production -- \
+  psql -U broxiva broxiva_production < backup-20240101.sql
 
 # Restore from volume snapshot
 kubectl apply -f restore-from-snapshot.yaml
@@ -590,26 +590,26 @@ kubectl apply -f restore-from-snapshot.yaml
 
 ```bash
 # Enable maintenance mode
-kubectl set env deployment/citadelbuy-web MAINTENANCE_MODE=true -n citadelbuy-production
+kubectl set env deployment/broxiva-web MAINTENANCE_MODE=true -n broxiva-production
 
 # Perform updates
 kubectl apply -f updated-deployment.yaml
 
 # Disable maintenance mode
-kubectl set env deployment/citadelbuy-web MAINTENANCE_MODE=false -n citadelbuy-production
+kubectl set env deployment/broxiva-web MAINTENANCE_MODE=false -n broxiva-production
 ```
 
 ## Additional Resources
 
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
 - [Helm Documentation](https://helm.sh/docs/)
-- [CitadelBuy Architecture Documentation](../../../docs/architecture/)
+- [Broxiva Architecture Documentation](../../../docs/architecture/)
 - [Runbooks](../../../docs/runbooks/)
 - [Incident Response Plan](../../../docs/incident-response.md)
 
 ## Support
 
 For deployment assistance, contact:
-- DevOps Team: devops@citadelbuy.com
+- DevOps Team: devops@broxiva.com
 - On-call: Use PagerDuty escalation
-- Documentation: https://docs.citadelbuy.com
+- Documentation: https://docs.broxiva.com

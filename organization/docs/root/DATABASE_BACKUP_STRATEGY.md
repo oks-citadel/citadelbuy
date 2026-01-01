@@ -1,4 +1,4 @@
-# CitadelBuy Database Backup Strategy
+# Broxiva Database Backup Strategy
 
 ## Table of Contents
 
@@ -17,7 +17,7 @@
 
 ## Overview
 
-This document outlines the comprehensive database backup and recovery strategy for CitadelBuy's PostgreSQL database infrastructure. The strategy is designed to:
+This document outlines the comprehensive database backup and recovery strategy for Broxiva's PostgreSQL database infrastructure. The strategy is designed to:
 
 - **Minimize data loss** through automated, frequent backups
 - **Enable rapid recovery** from various failure scenarios
@@ -48,7 +48,7 @@ Full logical backups capture the entire database schema and data.
 
 BACKUP_DIR="/backups/full"
 DATE=$(date +%Y%m%d_%H%M%S)
-DB_NAME="citadelbuy"
+DB_NAME="broxiva"
 BACKUP_FILE="$BACKUP_DIR/${DB_NAME}_full_${DATE}.sql.gz"
 
 # Create backup directory if it doesn't exist
@@ -68,7 +68,7 @@ pg_restore --list "$BACKUP_FILE" > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     echo "✓ Backup completed successfully: $BACKUP_FILE"
     # Upload to cloud storage
-    aws s3 cp "$BACKUP_FILE" "s3://citadelbuy-backups/full/" --storage-class STANDARD_IA
+    aws s3 cp "$BACKUP_FILE" "s3://broxiva-backups/full/" --storage-class STANDARD_IA
 else
     echo "✗ Backup verification failed!"
     exit 1
@@ -106,7 +106,7 @@ pg_basebackup -h localhost -U postgres \
 
 # Compress and upload
 tar -czf "${BACKUP_PATH}.tar.gz" -C "$BACKUP_DIR" "base_${DATE}"
-aws s3 cp "${BACKUP_PATH}.tar.gz" "s3://citadelbuy-backups/base/"
+aws s3 cp "${BACKUP_PATH}.tar.gz" "s3://broxiva-backups/base/"
 
 # Clean up local files older than 3 days
 find "$BACKUP_DIR" -type f -mtime +3 -delete
@@ -143,7 +143,7 @@ checkpoint_completion_target = 0.9
 WAL_PATH=$1
 WAL_FILE=$2
 ARCHIVE_DIR="/backups/wal"
-S3_BUCKET="s3://citadelbuy-backups/wal"
+S3_BUCKET="s3://broxiva-backups/wal"
 
 # Create archive directory
 mkdir -p "$ARCHIVE_DIR"
@@ -178,14 +178,14 @@ BACKUP_DIR="/backups/tables"
 DATE=$(date +%Y%m%d_%H%M%S)
 
 for TABLE in "${TABLES[@]}"; do
-    pg_dump -h localhost -U postgres -d citadelbuy \
+    pg_dump -h localhost -U postgres -d broxiva \
       --table=$TABLE \
       --format=custom \
       --compress=9 \
       --file="$BACKUP_DIR/${TABLE}_${DATE}.dump"
 
     aws s3 cp "$BACKUP_DIR/${TABLE}_${DATE}.dump" \
-      "s3://citadelbuy-backups/tables/$TABLE/"
+      "s3://broxiva-backups/tables/$TABLE/"
 done
 ```
 
@@ -275,7 +275,7 @@ recovery_target_action = 'promote'
 
 WAL_FILE=$1
 TARGET_PATH=$2
-S3_BUCKET="s3://citadelbuy-backups/wal"
+S3_BUCKET="s3://broxiva-backups/wal"
 LOCAL_ARCHIVE="/backups/wal"
 
 # Try local archive first
@@ -438,15 +438,15 @@ psql -c "SELECT * FROM pg_stat_database_conflicts;"
 docker-compose stop api
 
 # 3. Create backup of corrupted database
-pg_dump citadelbuy > /tmp/corrupted_$(date +%Y%m%d).sql
+pg_dump broxiva > /tmp/corrupted_$(date +%Y%m%d).sql
 
 # 4. Restore from latest full backup
-dropdb citadelbuy
-createdb citadelbuy
-pg_restore -d citadelbuy /backups/full/citadelbuy_full_latest.sql.gz
+dropdb broxiva
+createdb broxiva
+pg_restore -d broxiva /backups/full/broxiva_full_latest.sql.gz
 
 # 5. Verify integrity
-psql -d citadelbuy -c "SELECT COUNT(*) FROM orders;"
+psql -d broxiva -c "SELECT COUNT(*) FROM orders;"
 
 # 6. Restart application
 docker-compose start api
@@ -467,7 +467,7 @@ sudo apt-get update
 sudo apt-get install postgresql-14
 
 # 3. Download latest base backup from S3
-aws s3 cp s3://citadelbuy-backups/base/latest.tar.gz /tmp/
+aws s3 cp s3://broxiva-backups/base/latest.tar.gz /tmp/
 
 # 4. Extract backup
 sudo systemctl stop postgresql
@@ -476,7 +476,7 @@ sudo tar -xzf /tmp/latest.tar.gz -C /var/lib/postgresql/14/
 
 # 5. Configure recovery
 cat > /var/lib/postgresql/14/main/recovery.conf <<EOF
-restore_command = 'aws s3 cp s3://citadelbuy-backups/wal/%f %p'
+restore_command = 'aws s3 cp s3://broxiva-backups/wal/%f %p'
 recovery_target_timeline = 'latest'
 EOF
 
@@ -507,7 +507,7 @@ psql -c "SELECT txid_current();"
 pg_dump -t deleted_table --data-only > /tmp/recovered_data.sql
 
 # 4. Import into production (if PITR was on separate server)
-psql citadelbuy < /tmp/recovered_data.sql
+psql broxiva < /tmp/recovered_data.sql
 
 # 5. Verify recovery
 psql -c "SELECT COUNT(*) FROM deleted_table WHERE id IN (...);"
@@ -530,8 +530,8 @@ sudo clamscan -r /var/lib/postgresql/
 # 3. Provision clean server in isolated network
 
 # 4. Restore from backup (assume backups are encrypted and stored securely)
-aws s3 cp s3://citadelbuy-backups/full/pre-attack-backup.sql.gz /tmp/
-pg_restore -d citadelbuy /tmp/pre-attack-backup.sql.gz
+aws s3 cp s3://broxiva-backups/full/pre-attack-backup.sql.gz /tmp/
+pg_restore -d broxiva /tmp/pre-attack-backup.sql.gz
 
 # 5. Security audit and patching
 # - Update all passwords
@@ -555,7 +555,7 @@ pg_restore -d citadelbuy /tmp/pre-attack-backup.sql.gz
 
 BACKUP_DIR="/backups/full"
 LATEST_BACKUP=$(ls -t $BACKUP_DIR/*.sql.gz | head -1)
-TEST_DB="citadelbuy_verify"
+TEST_DB="broxiva_verify"
 VERIFICATION_LOG="/var/log/postgresql/backup_verification.log"
 
 echo "$(date): Starting backup verification for $LATEST_BACKUP" >> $VERIFICATION_LOG
@@ -632,19 +632,19 @@ echo "$(date): Verification completed successfully" >> $VERIFICATION_LOG
 ```bash
 # Enable automated backups
 aws rds modify-db-instance \
-  --db-instance-identifier citadelbuy-prod \
+  --db-instance-identifier broxiva-prod \
   --backup-retention-period 7 \
   --preferred-backup-window "02:00-03:00" \
   --apply-immediately
 
 # Create manual snapshot
 aws rds create-db-snapshot \
-  --db-instance-identifier citadelbuy-prod \
-  --db-snapshot-identifier citadelbuy-manual-$(date +%Y%m%d)
+  --db-instance-identifier broxiva-prod \
+  --db-snapshot-identifier broxiva-manual-$(date +%Y%m%d)
 
 # Enable PITR
 aws rds modify-db-instance \
-  --db-instance-identifier citadelbuy-prod \
+  --db-instance-identifier broxiva-prod \
   --backup-retention-period 7 \
   --apply-immediately
 ```
@@ -653,8 +653,8 @@ aws rds modify-db-instance \
 ```bash
 # Restore to specific time
 aws rds restore-db-instance-to-point-in-time \
-  --source-db-instance-identifier citadelbuy-prod \
-  --target-db-instance-identifier citadelbuy-pitr-restore \
+  --source-db-instance-identifier broxiva-prod \
+  --target-db-instance-identifier broxiva-pitr-restore \
   --restore-time "2025-12-03T14:30:00Z"
 ```
 
@@ -662,8 +662,8 @@ aws rds restore-db-instance-to-point-in-time \
 ```bash
 # Copy snapshot to another region
 aws rds copy-db-snapshot \
-  --source-db-snapshot-identifier arn:aws:rds:us-east-1:123456789012:snapshot:citadelbuy-snapshot \
-  --target-db-snapshot-identifier citadelbuy-dr-snapshot \
+  --source-db-snapshot-identifier arn:aws:rds:us-east-1:123456789012:snapshot:broxiva-snapshot \
+  --target-db-snapshot-identifier broxiva-dr-snapshot \
   --region us-west-2
 ```
 
@@ -673,25 +673,25 @@ aws rds copy-db-snapshot \
 ```bash
 # Configure backup retention
 az postgres server update \
-  --resource-group citadelbuy-rg \
-  --name citadelbuy-prod \
+  --resource-group broxiva-rg \
+  --name broxiva-prod \
   --backup-retention 7 \
   --geo-redundant-backup Enabled
 
 # Create manual backup
 az postgres server backup create \
-  --resource-group citadelbuy-rg \
-  --server-name citadelbuy-prod \
-  --backup-name citadelbuy-manual-$(date +%Y%m%d)
+  --resource-group broxiva-rg \
+  --server-name broxiva-prod \
+  --backup-name broxiva-manual-$(date +%Y%m%d)
 ```
 
 **Point-in-Time Restore**:
 ```bash
 # Restore to point in time
 az postgres server restore \
-  --resource-group citadelbuy-rg \
-  --name citadelbuy-pitr-restore \
-  --source-server citadelbuy-prod \
+  --resource-group broxiva-rg \
+  --name broxiva-pitr-restore \
+  --source-server broxiva-prod \
   --restore-point-in-time "2025-12-03T14:30:00Z"
 ```
 
@@ -699,9 +699,9 @@ az postgres server restore \
 ```bash
 # Create read replica in different region
 az postgres server replica create \
-  --resource-group citadelbuy-rg \
-  --name citadelbuy-replica-westus \
-  --source-server citadelbuy-prod \
+  --resource-group broxiva-rg \
+  --name broxiva-replica-westus \
+  --source-server broxiva-prod \
   --location westus
 ```
 
@@ -710,33 +710,33 @@ az postgres server replica create \
 **Automated Backups**:
 ```bash
 # Enable automated backups
-gcloud sql instances patch citadelbuy-prod \
+gcloud sql instances patch broxiva-prod \
   --backup-start-time=02:00 \
   --retained-backups-count=7 \
   --enable-point-in-time-recovery
 
 # Create on-demand backup
 gcloud sql backups create \
-  --instance=citadelbuy-prod \
+  --instance=broxiva-prod \
   --description="Manual backup $(date +%Y%m%d)"
 ```
 
 **Point-in-Time Recovery**:
 ```bash
 # Clone instance to specific time
-gcloud sql instances clone citadelbuy-prod citadelbuy-pitr-restore \
+gcloud sql instances clone broxiva-prod broxiva-pitr-restore \
   --point-in-time '2025-12-03T14:30:00.000Z'
 ```
 
 **Cross-Region Backup**:
 ```bash
 # Export to Cloud Storage
-gcloud sql export sql citadelbuy-prod gs://citadelbuy-backups/export-$(date +%Y%m%d).sql \
-  --database=citadelbuy
+gcloud sql export sql broxiva-prod gs://broxiva-backups/export-$(date +%Y%m%d).sql \
+  --database=broxiva
 
 # Import in different region
-gcloud sql import sql citadelbuy-dr-instance gs://citadelbuy-backups/export-20251203.sql \
-  --database=citadelbuy
+gcloud sql import sql broxiva-dr-instance gs://broxiva-backups/export-20251203.sql \
+  --database=broxiva
 ```
 
 ---
@@ -822,7 +822,7 @@ curl -X POST -H 'Content-type: application/json' \
 # Send email alert
 
 MESSAGE=$1
-TO="devops@citadelbuy.com"
+TO="devops@broxiva.com"
 SUBJECT="[CRITICAL] Database Backup Alert"
 
 echo "$MESSAGE" | mail -s "$SUBJECT" "$TO"
@@ -848,21 +848,21 @@ sudo mount /dev/mapper/pgdata /var/lib/postgresql
 #!/bin/bash
 # Encrypted backup with GPG
 
-GPG_RECIPIENT="backup@citadelbuy.com"
-BACKUP_FILE="citadelbuy_$(date +%Y%m%d).sql"
+GPG_RECIPIENT="backup@broxiva.com"
+BACKUP_FILE="broxiva_$(date +%Y%m%d).sql"
 
 # Create encrypted backup
-pg_dump citadelbuy | gzip | gpg --encrypt --recipient $GPG_RECIPIENT > "$BACKUP_FILE.gpg"
+pg_dump broxiva | gzip | gpg --encrypt --recipient $GPG_RECIPIENT > "$BACKUP_FILE.gpg"
 
 # Upload to S3
-aws s3 cp "$BACKUP_FILE.gpg" s3://citadelbuy-backups/encrypted/
+aws s3 cp "$BACKUP_FILE.gpg" s3://broxiva-backups/encrypted/
 ```
 
 **S3 Encryption**:
 ```bash
 # Enable S3 bucket encryption
 aws s3api put-bucket-encryption \
-  --bucket citadelbuy-backups \
+  --bucket broxiva-backups \
   --server-side-encryption-configuration '{
     "Rules": [{
       "ApplyServerSideEncryptionByDefault": {
@@ -886,7 +886,7 @@ aws s3api put-bucket-encryption \
         "s3:PutObject",
         "s3:PutObjectAcl"
       ],
-      "Resource": "arn:aws:s3:::citadelbuy-backups/*"
+      "Resource": "arn:aws:s3:::broxiva-backups/*"
     },
     {
       "Sid": "BackupRead",
@@ -896,8 +896,8 @@ aws s3api put-bucket-encryption \
         "s3:ListBucket"
       ],
       "Resource": [
-        "arn:aws:s3:::citadelbuy-backups",
-        "arn:aws:s3:::citadelbuy-backups/*"
+        "arn:aws:s3:::broxiva-backups",
+        "arn:aws:s3:::broxiva-backups/*"
       ]
     }
   ]
@@ -934,7 +934,7 @@ log_backup_event() {
 }
 
 # Example usage
-log_backup_event "FULL_BACKUP" "SUCCESS" "citadelbuy_full_20251203.sql.gz"
+log_backup_event "FULL_BACKUP" "SUCCESS" "broxiva_full_20251203.sql.gz"
 ```
 
 ---
@@ -956,8 +956,8 @@ log_backup_event "FULL_BACKUP" "SUCCESS" "citadelbuy_full_20251203.sql.gz"
 
 ### Contact Information
 
-**Primary DBA**: dba@citadelbuy.com
-**DevOps On-Call**: oncall@citadelbuy.com
+**Primary DBA**: dba@broxiva.com
+**DevOps On-Call**: oncall@broxiva.com
 **Emergency Hotline**: +1-XXX-XXX-XXXX
 
 ### References

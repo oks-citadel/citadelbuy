@@ -1,6 +1,6 @@
 # Automation Module
 
-A comprehensive workflow engine and automation rules system for the CitadelBuy platform.
+A comprehensive workflow engine and automation rules system for the Broxiva platform.
 
 ## Features
 

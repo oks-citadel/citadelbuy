@@ -1,4 +1,4 @@
-# CitadelBuy Deployment Runbook
+# Broxiva Deployment Runbook
 
 **Version:** 1.0.0
 **Last Updated:** 2025-12-03
@@ -98,16 +98,16 @@
 ```bash
 # 1. Verify current cluster status
 kubectl get nodes
-kubectl get pods -n citadelbuy
+kubectl get pods -n broxiva
 kubectl top nodes
 
 # 2. Check application health
-curl https://api.citadelbuy.com/api/health
-curl https://api.citadelbuy.com/api/health/ready
+curl https://api.broxiva.com/api/health
+curl https://api.broxiva.com/api/health/ready
 
 # 3. Create deployment snapshot
-kubectl get deployment citadelbuy-api -n citadelbuy -o yaml > deployment-backup-$(date +%Y%m%d-%H%M%S).yaml
-kubectl get deployment citadelbuy-web -n citadelbuy -o yaml > web-deployment-backup-$(date +%Y%m%d-%H%M%S).yaml
+kubectl get deployment broxiva-api -n broxiva -o yaml > deployment-backup-$(date +%Y%m%d-%H%M%S).yaml
+kubectl get deployment broxiva-web -n broxiva -o yaml > web-deployment-backup-$(date +%Y%m%d-%H%M%S).yaml
 ```
 
 #### Step 2: Database Migration (if applicable)
@@ -118,23 +118,23 @@ See [Database Migration Procedures](#database-migration-procedures)
 
 ```bash
 # Navigate to project root
-cd /path/to/citadelbuy
+cd /path/to/broxiva
 
 # Build API image
 cd organization/apps/api
-docker build -t citadelplatforms/citadelbuy-ecommerce:backend-v${VERSION} .
-docker tag citadelplatforms/citadelbuy-ecommerce:backend-v${VERSION} citadelplatforms/citadelbuy-ecommerce:backend-latest
+docker build -t broxivaplatforms/broxiva-ecommerce:backend-v${VERSION} .
+docker tag broxivaplatforms/broxiva-ecommerce:backend-v${VERSION} broxivaplatforms/broxiva-ecommerce:backend-latest
 
 # Build Web image
 cd ../web
-docker build -t citadelplatforms/citadelbuy-ecommerce:frontend-v${VERSION} .
-docker tag citadelplatforms/citadelbuy-ecommerce:frontend-v${VERSION} citadelplatforms/citadelbuy-ecommerce:frontend-latest
+docker build -t broxivaplatforms/broxiva-ecommerce:frontend-v${VERSION} .
+docker tag broxivaplatforms/broxiva-ecommerce:frontend-v${VERSION} broxivaplatforms/broxiva-ecommerce:frontend-latest
 
 # Push to registry
-docker push citadelplatforms/citadelbuy-ecommerce:backend-v${VERSION}
-docker push citadelplatforms/citadelbuy-ecommerce:backend-latest
-docker push citadelplatforms/citadelbuy-ecommerce:frontend-v${VERSION}
-docker push citadelplatforms/citadelbuy-ecommerce:frontend-latest
+docker push broxivaplatforms/broxiva-ecommerce:backend-v${VERSION}
+docker push broxivaplatforms/broxiva-ecommerce:backend-latest
+docker push broxivaplatforms/broxiva-ecommerce:frontend-v${VERSION}
+docker push broxivaplatforms/broxiva-ecommerce:frontend-latest
 ```
 
 #### Step 4: Update Kubernetes Configurations
@@ -154,38 +154,38 @@ sleep 10
 
 ```bash
 # Deploy API
-kubectl set image deployment/citadelbuy-api \
-  api=citadelplatforms/citadelbuy-ecommerce:backend-v${VERSION} \
-  -n citadelbuy
+kubectl set image deployment/broxiva-api \
+  api=broxivaplatforms/broxiva-ecommerce:backend-v${VERSION} \
+  -n broxiva
 
 # Watch rollout status
-kubectl rollout status deployment/citadelbuy-api -n citadelbuy
+kubectl rollout status deployment/broxiva-api -n broxiva
 
 # Deploy Web frontend
-kubectl set image deployment/citadelbuy-web \
-  web=citadelplatforms/citadelbuy-ecommerce:frontend-v${VERSION} \
-  -n citadelbuy
+kubectl set image deployment/broxiva-web \
+  web=broxivaplatforms/broxiva-ecommerce:frontend-v${VERSION} \
+  -n broxiva
 
-kubectl rollout status deployment/citadelbuy-web -n citadelbuy
+kubectl rollout status deployment/broxiva-web -n broxiva
 ```
 
 #### Step 6: Verify Deployment
 
 ```bash
 # Check pod status
-kubectl get pods -n citadelbuy -l app=citadelbuy-api
-kubectl get pods -n citadelbuy -l app=citadelbuy-web
+kubectl get pods -n broxiva -l app=broxiva-api
+kubectl get pods -n broxiva -l app=broxiva-web
 
 # Check logs for errors
-kubectl logs -n citadelbuy -l app=citadelbuy-api --tail=100
-kubectl logs -n citadelbuy -l app=citadelbuy-web --tail=100
+kubectl logs -n broxiva -l app=broxiva-api --tail=100
+kubectl logs -n broxiva -l app=broxiva-web --tail=100
 
 # Verify health endpoints
 kubectl run curl-test --image=curlimages/curl:latest --rm -it --restart=Never -- \
-  curl http://citadelbuy-api.citadelbuy.svc.cluster.local/api/health
+  curl http://broxiva-api.broxiva.svc.cluster.local/api/health
 
 # Check HPA status
-kubectl get hpa -n citadelbuy
+kubectl get hpa -n broxiva
 ```
 
 #### Step 7: Post-Deployment Verification
@@ -211,7 +211,7 @@ See [Post-Deployment Verification](#post-deployment-verification)
 
 ```bash
 # 1. Connect to API pod
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- /bin/sh
+kubectl exec -it deployment/broxiva-api -n broxiva -- /bin/sh
 
 # 2. Run migration
 cd /app
@@ -245,13 +245,13 @@ EOF
 kubectl run psql-client --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres.citadelbuy.svc.cluster.local -U citadelbuy -d citadelbuy_production -f /tmp/migration.sql
+  -- psql -h postgres.broxiva.svc.cluster.local -U broxiva -d broxiva_production -f /tmp/migration.sql
 
 # 3. Verify migration
 kubectl run psql-client --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres.citadelbuy.svc.cluster.local -U citadelbuy -d citadelbuy_production \
+  -- psql -h postgres.broxiva.svc.cluster.local -U broxiva -d broxiva_production \
   -c "\d+ Order" -c "\d+ Product"
 ```
 
@@ -308,14 +308,14 @@ ALTER TABLE "Product" ALTER COLUMN new_price_cents SET NOT NULL;
 
 ```bash
 # Using Prisma
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- /bin/sh
+kubectl exec -it deployment/broxiva-api -n broxiva -- /bin/sh
 npx prisma migrate resolve --rolled-back ${MIGRATION_NAME}
 
 # Manual rollback
 kubectl run psql-client --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres.citadelbuy.svc.cluster.local -U citadelbuy -d citadelbuy_production \
+  -- psql -h postgres.broxiva.svc.cluster.local -U broxiva -d broxiva_production \
   -f /tmp/rollback-migration.sql
 ```
 
@@ -337,54 +337,54 @@ Immediately rollback if:
 
 ```bash
 # 1. Rollback to previous deployment
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy
-kubectl rollout undo deployment/citadelbuy-web -n citadelbuy
+kubectl rollout undo deployment/broxiva-api -n broxiva
+kubectl rollout undo deployment/broxiva-web -n broxiva
 
 # 2. Verify rollback status
-kubectl rollout status deployment/citadelbuy-api -n citadelbuy
-kubectl rollout status deployment/citadelbuy-web -n citadelbuy
+kubectl rollout status deployment/broxiva-api -n broxiva
+kubectl rollout status deployment/broxiva-web -n broxiva
 
 # 3. Check pods are healthy
-kubectl get pods -n citadelbuy
-kubectl logs -n citadelbuy -l app=citadelbuy-api --tail=50
+kubectl get pods -n broxiva
+kubectl logs -n broxiva -l app=broxiva-api --tail=50
 ```
 
 ### Rollback to Specific Version
 
 ```bash
 # 1. List revision history
-kubectl rollout history deployment/citadelbuy-api -n citadelbuy
+kubectl rollout history deployment/broxiva-api -n broxiva
 
 # 2. Rollback to specific revision
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy --to-revision=5
+kubectl rollout undo deployment/broxiva-api -n broxiva --to-revision=5
 
 # 3. Verify
-kubectl rollout status deployment/citadelbuy-api -n citadelbuy
+kubectl rollout status deployment/broxiva-api -n broxiva
 ```
 
 ### Database Rollback
 
 ```bash
 # 1. Stop application traffic to database
-kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=0
+kubectl scale deployment/broxiva-api -n broxiva --replicas=0
 
 # 2. Restore from backup (see DATABASE_BACKUP_STRATEGY.md)
 # Point-in-time recovery example:
-pg_restore -h postgres.citadelbuy.svc.cluster.local \
-  -U citadelbuy -d citadelbuy_production \
-  -c /backups/citadelbuy-backup-YYYYMMDD-HHMMSS.dump
+pg_restore -h postgres.broxiva.svc.cluster.local \
+  -U broxiva -d broxiva_production \
+  -c /backups/broxiva-backup-YYYYMMDD-HHMMSS.dump
 
 # 3. Verify database integrity
 kubectl run psql-client --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres.citadelbuy.svc.cluster.local -U citadelbuy -d citadelbuy_production \
+  -- psql -h postgres.broxiva.svc.cluster.local -U broxiva -d broxiva_production \
   -c "SELECT COUNT(*) FROM \"User\";" \
   -c "SELECT COUNT(*) FROM \"Product\";" \
   -c "SELECT COUNT(*) FROM \"Order\";"
 
 # 4. Restart application
-kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=3
+kubectl scale deployment/broxiva-api -n broxiva --replicas=3
 ```
 
 ### Post-Rollback Actions
@@ -417,30 +417,30 @@ pnpm test:integration:smoke
 
 ```bash
 # Health check endpoint
-curl -f https://api.citadelbuy.com/api/health || echo "FAIL: Health check"
-curl -f https://api.citadelbuy.com/api/health/ready || echo "FAIL: Readiness check"
+curl -f https://api.broxiva.com/api/health || echo "FAIL: Health check"
+curl -f https://api.broxiva.com/api/health/ready || echo "FAIL: Readiness check"
 
 # Detailed health
-curl https://api.citadelbuy.com/api/health/detailed | jq '.'
+curl https://api.broxiva.com/api/health/detailed | jq '.'
 ```
 
 #### 2. Authentication Flow
 
 ```bash
 # Test user registration
-curl -X POST https://api.citadelbuy.com/api/auth/register \
+curl -X POST https://api.broxiva.com/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "smoketest+${RANDOM}@citadelbuy.com",
+    "email": "smoketest+${RANDOM}@broxiva.com",
     "password": "Test1234!",
     "name": "Smoke Test User"
   }'
 
 # Test login
-curl -X POST https://api.citadelbuy.com/api/auth/login \
+curl -X POST https://api.broxiva.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "test@citadelbuy.com",
+    "email": "test@broxiva.com",
     "password": "Test1234!"
   }'
 ```
@@ -449,35 +449,35 @@ curl -X POST https://api.citadelbuy.com/api/auth/login \
 
 ```bash
 # List products
-curl https://api.citadelbuy.com/api/products?limit=10
+curl https://api.broxiva.com/api/products?limit=10
 
 # Get product details
-curl https://api.citadelbuy.com/api/products/1
+curl https://api.broxiva.com/api/products/1
 
 # Search products
-curl https://api.citadelbuy.com/api/search?q=laptop
+curl https://api.broxiva.com/api/search?q=laptop
 
 # Get categories
-curl https://api.citadelbuy.com/api/categories
+curl https://api.broxiva.com/api/categories
 ```
 
 #### 4. Cart & Checkout (Authenticated)
 
 ```bash
 # Get JWT token first
-TOKEN=$(curl -X POST https://api.citadelbuy.com/api/auth/login \
+TOKEN=$(curl -X POST https://api.broxiva.com/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@citadelbuy.com","password":"Test1234!"}' \
+  -d '{"email":"test@broxiva.com","password":"Test1234!"}' \
   | jq -r '.token')
 
 # Add item to cart
-curl -X POST https://api.citadelbuy.com/api/cart/items \
+curl -X POST https://api.broxiva.com/api/cart/items \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"productId": "1", "quantity": 1}'
 
 # View cart
-curl https://api.citadelbuy.com/api/cart \
+curl https://api.broxiva.com/api/cart \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
@@ -485,7 +485,7 @@ curl https://api.citadelbuy.com/api/cart \
 
 ```bash
 # Create test checkout session
-curl -X POST https://api.citadelbuy.com/api/checkout/create-session \
+curl -X POST https://api.broxiva.com/api/checkout/create-session \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -498,7 +498,7 @@ curl -X POST https://api.citadelbuy.com/api/checkout/create-session \
 
 ```bash
 # Check database response time
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- /bin/sh -c \
+kubectl exec -it deployment/broxiva-api -n broxiva -- /bin/sh -c \
   "time npx prisma db execute --stdin <<< 'SELECT COUNT(*) FROM \"User\";'"
 ```
 
@@ -508,7 +508,7 @@ kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- /bin/sh -c \
 # Test Redis connectivity
 kubectl run redis-test --rm -it --restart=Never \
   --image=redis:7-alpine \
-  -- redis-cli -h redis.citadelbuy.svc.cluster.local PING
+  -- redis-cli -h redis.broxiva.svc.cluster.local PING
 ```
 
 #### 8. Frontend Tests
@@ -530,19 +530,19 @@ kubectl run redis-test --rm -it --restart=Never \
 
 ```bash
 # 1. Check all pods are running
-kubectl get pods -n citadelbuy
+kubectl get pods -n broxiva
 
 # 2. Check for pod restarts
-kubectl get pods -n citadelbuy -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.containerStatuses[0].restartCount}{"\n"}{end}'
+kubectl get pods -n broxiva -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.containerStatuses[0].restartCount}{"\n"}{end}'
 
 # 3. Monitor error logs
-kubectl logs -n citadelbuy -l app=citadelbuy-api --tail=200 | grep -i error
+kubectl logs -n broxiva -l app=broxiva-api --tail=200 | grep -i error
 
 # 4. Check metrics
-curl https://api.citadelbuy.com/metrics | grep -E "(http_requests_total|http_request_duration)"
+curl https://api.broxiva.com/metrics | grep -E "(http_requests_total|http_request_duration)"
 
 # 5. Verify HPA scaling
-kubectl get hpa -n citadelbuy
+kubectl get hpa -n broxiva
 ```
 
 ### Short-term Verification (15-60 minutes)
@@ -612,26 +612,26 @@ cat > green-deployment.yaml << EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: citadelbuy-api-green
-  namespace: citadelbuy
+  name: broxiva-api-green
+  namespace: broxiva
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     environment: green
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
       environment: green
   template:
     metadata:
       labels:
-        app: citadelbuy-api
+        app: broxiva-api
         environment: green
     spec:
       containers:
       - name: api
-        image: citadelplatforms/citadelbuy-ecommerce:backend-v${NEW_VERSION}
+        image: broxivaplatforms/broxiva-ecommerce:backend-v${NEW_VERSION}
         # ... rest of container spec
 EOF
 
@@ -643,13 +643,13 @@ kubectl apply -f green-deployment.yaml
 ```bash
 # Wait for green pods to be ready
 kubectl wait --for=condition=ready pod \
-  -l app=citadelbuy-api,environment=green \
-  -n citadelbuy \
+  -l app=broxiva-api,environment=green \
+  -n broxiva \
   --timeout=300s
 
 # Test green environment internally
-kubectl port-forward -n citadelbuy \
-  deployment/citadelbuy-api-green 8080:3000 &
+kubectl port-forward -n broxiva \
+  deployment/broxiva-api-green 8080:3000 &
 
 curl http://localhost:8080/api/health
 # Run smoke tests against localhost:8080
@@ -659,11 +659,11 @@ curl http://localhost:8080/api/health
 
 ```bash
 # Update service to point to green
-kubectl patch service citadelbuy-api -n citadelbuy -p \
+kubectl patch service broxiva-api -n broxiva -p \
   '{"spec":{"selector":{"environment":"green"}}}'
 
 # Verify traffic switch
-kubectl get service citadelbuy-api -n citadelbuy -o yaml
+kubectl get service broxiva-api -n broxiva -o yaml
 ```
 
 #### Step 4: Monitor Green Environment
@@ -673,7 +673,7 @@ kubectl get service citadelbuy-api -n citadelbuy -o yaml
 # Monitor error rates, response times, throughput
 
 # If issues detected, rollback immediately:
-kubectl patch service citadelbuy-api -n citadelbuy -p \
+kubectl patch service broxiva-api -n broxiva -p \
   '{"spec":{"selector":{"environment":"blue"}}}'
 ```
 
@@ -681,10 +681,10 @@ kubectl patch service citadelbuy-api -n citadelbuy -p \
 
 ```bash
 # After confirming green is stable (24-48 hours):
-kubectl delete deployment citadelbuy-api-blue -n citadelbuy
+kubectl delete deployment broxiva-api-blue -n broxiva
 
 # Update labels for next deployment
-kubectl patch deployment citadelbuy-api-green -n citadelbuy \
+kubectl patch deployment broxiva-api-green -n broxiva \
   --type merge -p '{"metadata":{"labels":{"environment":"blue"}}}'
 ```
 
@@ -721,27 +721,27 @@ cat > canary-deployment.yaml << EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: citadelbuy-api-canary
-  namespace: citadelbuy
+  name: broxiva-api-canary
+  namespace: broxiva
   labels:
-    app: citadelbuy-api
+    app: broxiva-api
     track: canary
 spec:
   replicas: 1  # 10% of 10 stable replicas
   selector:
     matchLabels:
-      app: citadelbuy-api
+      app: broxiva-api
       track: canary
   template:
     metadata:
       labels:
-        app: citadelbuy-api
+        app: broxiva-api
         track: canary
         version: v${NEW_VERSION}
     spec:
       containers:
       - name: api
-        image: citadelplatforms/citadelbuy-ecommerce:backend-v${NEW_VERSION}
+        image: broxivaplatforms/broxiva-ecommerce:backend-v${NEW_VERSION}
         # ... rest of container spec
 EOF
 
@@ -751,11 +751,11 @@ kubectl apply -f canary-deployment.yaml
 #### Step 2: Configure Traffic Split
 
 ```bash
-# Service already selects all pods with app=citadelbuy-api
+# Service already selects all pods with app=broxiva-api
 # Traffic is automatically split based on pod count
 
 # Verify split
-kubectl get pods -n citadelbuy -l app=citadelbuy-api \
+kubectl get pods -n broxiva -l app=broxiva-api \
   -o custom-columns=NAME:.metadata.name,TRACK:.metadata.labels.track
 ```
 
@@ -763,14 +763,14 @@ kubectl get pods -n citadelbuy -l app=citadelbuy-api \
 
 ```bash
 # Monitor canary-specific metrics
-kubectl logs -n citadelbuy -l track=canary --tail=100 -f
+kubectl logs -n broxiva -l track=canary --tail=100 -f
 
 # Compare error rates
 # Stable error rate:
-kubectl logs -n citadelbuy -l track=stable | grep -c ERROR
+kubectl logs -n broxiva -l track=stable | grep -c ERROR
 
 # Canary error rate:
-kubectl logs -n citadelbuy -l track=canary | grep -c ERROR
+kubectl logs -n broxiva -l track=canary | grep -c ERROR
 ```
 
 Use Grafana to create comparison dashboard:
@@ -782,18 +782,18 @@ Use Grafana to create comparison dashboard:
 
 ```bash
 # If canary healthy after 1 hour, increase to 25%
-kubectl scale deployment citadelbuy-api-canary -n citadelbuy --replicas=3
+kubectl scale deployment broxiva-api-canary -n broxiva --replicas=3
 
 # If still healthy after 2 hours, increase to 50%
-kubectl scale deployment citadelbuy-api-canary -n citadelbuy --replicas=5
+kubectl scale deployment broxiva-api-canary -n broxiva --replicas=5
 
 # If still healthy after 4 hours, complete rollout
-kubectl set image deployment/citadelbuy-api-stable \
-  api=citadelplatforms/citadelbuy-ecommerce:backend-v${NEW_VERSION} \
-  -n citadelbuy
+kubectl set image deployment/broxiva-api-stable \
+  api=broxivaplatforms/broxiva-ecommerce:backend-v${NEW_VERSION} \
+  -n broxiva
 
 # Delete canary
-kubectl delete deployment citadelbuy-api-canary -n citadelbuy
+kubectl delete deployment broxiva-api-canary -n broxiva
 ```
 
 #### Step 5: Automated Canary Analysis
@@ -814,10 +814,10 @@ abs(
 
 ```bash
 # Immediately scale canary to 0
-kubectl scale deployment citadelbuy-api-canary -n citadelbuy --replicas=0
+kubectl scale deployment broxiva-api-canary -n broxiva --replicas=0
 
 # Or delete entirely
-kubectl delete deployment citadelbuy-api-canary -n citadelbuy
+kubectl delete deployment broxiva-api-canary -n broxiva
 ```
 
 ---
@@ -828,24 +828,24 @@ kubectl delete deployment citadelbuy-api-canary -n citadelbuy
 
 ```bash
 # IMMEDIATE ROLLBACK - Use when production is down
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy
-kubectl rollout undo deployment/citadelbuy-web -n citadelbuy
+kubectl rollout undo deployment/broxiva-api -n broxiva
+kubectl rollout undo deployment/broxiva-web -n broxiva
 
 # Scale down if necessary
-kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=0
+kubectl scale deployment/broxiva-api -n broxiva --replicas=0
 ```
 
 ### Circuit Breaker Activation
 
 ```bash
 # Disable specific endpoints via ConfigMap
-kubectl create configmap circuit-breaker -n citadelbuy \
+kubectl create configmap circuit-breaker -n broxiva \
   --from-literal=DISABLE_CHECKOUT=true \
   --from-literal=DISABLE_PAYMENTS=true \
   --dry-run=client -o yaml | kubectl apply -f -
 
 # Restart pods to pick up config
-kubectl rollout restart deployment/citadelbuy-api -n citadelbuy
+kubectl rollout restart deployment/broxiva-api -n broxiva
 ```
 
 ### Database Emergency Procedures
@@ -855,22 +855,22 @@ kubectl rollout restart deployment/citadelbuy-api -n citadelbuy
 kubectl run psql-client --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres.citadelbuy.svc.cluster.local -U citadelbuy -d citadelbuy_production \
+  -- psql -h postgres.broxiva.svc.cluster.local -U broxiva -d broxiva_production \
   -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'active' AND query_start < NOW() - INTERVAL '5 minutes';"
 
 # Enable read-only mode
 kubectl run psql-client --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres.citadelbuy.svc.cluster.local -U citadelbuy -d citadelbuy_production \
-  -c "ALTER DATABASE citadelbuy_production SET default_transaction_read_only = on;"
+  -- psql -h postgres.broxiva.svc.cluster.local -U broxiva -d broxiva_production \
+  -c "ALTER DATABASE broxiva_production SET default_transaction_read_only = on;"
 ```
 
 ### Contact Information
 
 - **On-Call Engineer:** Check PagerDuty rotation
-- **Platform Lead:** platform-lead@citadelbuy.com
-- **CTO:** cto@citadelbuy.com
+- **Platform Lead:** platform-lead@broxiva.com
+- **CTO:** cto@broxiva.com
 - **Emergency Hotline:** +1-XXX-XXX-XXXX
 
 ---
@@ -922,23 +922,23 @@ kubectl run psql-client --rm -it --restart=Never \
 
 ```bash
 # Quick health check
-kubectl get pods -n citadelbuy && \
-curl -f https://api.citadelbuy.com/api/health
+kubectl get pods -n broxiva && \
+curl -f https://api.broxiva.com/api/health
 
 # View recent logs
-kubectl logs -n citadelbuy -l app=citadelbuy-api --tail=100 --timestamps
+kubectl logs -n broxiva -l app=broxiva-api --tail=100 --timestamps
 
 # Check resource usage
-kubectl top pods -n citadelbuy
+kubectl top pods -n broxiva
 
 # Describe problematic pod
-kubectl describe pod <pod-name> -n citadelbuy
+kubectl describe pod <pod-name> -n broxiva
 
 # Execute command in pod
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- /bin/sh
+kubectl exec -it deployment/broxiva-api -n broxiva -- /bin/sh
 
 # Port forward for local testing
-kubectl port-forward -n citadelbuy deployment/citadelbuy-api 4000:3000
+kubectl port-forward -n broxiva deployment/broxiva-api 4000:3000
 ```
 
 ---

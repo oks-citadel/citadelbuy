@@ -1,10 +1,10 @@
-# CitadelBuy Mobile - EAS Build Configuration
+# Broxiva Mobile - EAS Build Configuration
 
 Complete EAS (Expo Application Services) build configuration for iOS and Android.
 
 ## What's Been Created
 
-This EAS configuration includes everything you need to build, deploy, and distribute the CitadelBuy mobile app:
+This EAS configuration includes everything you need to build, deploy, and distribute the Broxiva mobile app:
 
 ### Core Files
 - **eas.json** - EAS build profiles and configuration
@@ -278,7 +278,7 @@ Both provide an interactive menu with options for:
 ### Deep Linking Issues
 1. Verify domain files are accessible
 2. Check bundle ID and package name match
-3. Test custom scheme: `citadelbuy://`
+3. Test custom scheme: `broxiva://`
 
 ### Push Notifications Not Working
 1. Verify Firebase setup (Android)
@@ -361,7 +361,7 @@ See EAS documentation for complete CI/CD examples.
 
 ## License
 
-This configuration is part of the CitadelBuy project.
+This configuration is part of the Broxiva project.
 
 ## Questions?
 
@@ -383,7 +383,7 @@ This configuration is part of the CitadelBuy project.
 
 ```
 ┌─────────────────────────────────────────────────┐
-│         CitadelBuy EAS Quick Reference          │
+│         Broxiva EAS Quick Reference          │
 ├─────────────────────────────────────────────────┤
 │ Setup                                           │
 │   eas login                                     │

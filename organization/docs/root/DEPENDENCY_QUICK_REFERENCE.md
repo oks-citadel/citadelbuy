@@ -161,8 +161,8 @@ pnpm -r <command>
 pnpm --filter <workspace> <command>
 
 # Examples:
-pnpm --filter @citadelbuy/web dev
-pnpm --filter @citadelbuy/api test
+pnpm --filter @broxiva/web dev
+pnpm --filter @broxiva/api test
 ```
 
 ---

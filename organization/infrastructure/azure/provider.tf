@@ -1,4 +1,4 @@
-# CitadelBuy Azure Provider Configuration
+# Broxiva Azure Provider Configuration
 terraform {
   required_version = ">= 1.5.0"
 
@@ -39,5 +39,5 @@ variable "environment" {
 variable "project_name" {
   description = "Project name"
   type        = string
-  default     = "citadelbuy"
+  default     = "broxiva"
 }

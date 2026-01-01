@@ -1,4 +1,4 @@
-# CitadelBuy Platform Overview
+# Broxiva Platform Overview
 
 ## One-Page Executive Summary
 
@@ -19,7 +19,7 @@
 
 ---
 
-## What is CitadelBuy?
+## What is Broxiva?
 
 An **enterprise-grade, AI-powered multi-vendor marketplace platform** that enables businesses to launch and scale online retail operations with built-in intelligence, global payments, and B2B capabilities.
 
@@ -131,9 +131,9 @@ docker compose up -d && pnpm dev
 
 | Role | Email | Password |
 |------|-------|----------|
-| Customer | customer@citadelbuy.com | password123 |
-| Admin | admin@citadelbuy.com | password123 |
-| Vendor | vendor1@citadelbuy.com | password123 |
+| Customer | customer@broxiva.com | password123 |
+| Admin | admin@broxiva.com | password123 |
+| Vendor | vendor1@broxiva.com | password123 |
 
 ---
 

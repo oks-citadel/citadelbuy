@@ -1,6 +1,6 @@
 # Load Testing and Security Testing Setup Guide
 
-This guide provides quick start instructions for the load testing and security testing infrastructure added to CitadelBuy.
+This guide provides quick start instructions for the load testing and security testing infrastructure added to Broxiva.
 
 ## Overview
 
@@ -396,7 +396,7 @@ For questions or issues:
 1. Check the documentation in `/docs` and `/tests/load`
 2. Review GitHub Actions workflow logs
 3. Contact the DevOps team
-4. For security concerns: security@citadelbuy.com
+4. For security concerns: security@broxiva.com
 
 ---
 

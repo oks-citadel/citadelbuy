@@ -1,6 +1,6 @@
 # Test Helpers Documentation
 
-This directory contains comprehensive test utilities, fixtures, and mocks for CitadelBuy API testing.
+This directory contains comprehensive test utilities, fixtures, and mocks for Broxiva API testing.
 
 ## Table of Contents
 

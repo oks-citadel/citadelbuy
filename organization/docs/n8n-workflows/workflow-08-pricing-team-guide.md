@@ -84,7 +84,7 @@ Competitor Pricing:
 
 ### 1. Access Admin Dashboard
 
-Navigate to: `https://admin.citadelbuy.com/pricing/approvals`
+Navigate to: `https://admin.broxiva.com/pricing/approvals`
 
 ### 2. Recommendation Types
 
@@ -222,7 +222,7 @@ ORDER BY pr.priority DESC, pr.created_at DESC;
 
 ### Looker Dashboard
 
-**URL:** `https://looker.citadelbuy.com/dashboards/pricing`
+**URL:** `https://looker.broxiva.com/dashboards/pricing`
 
 **Key Metrics:**
 - **Price Position Index:** % of products competitively priced
@@ -249,7 +249,7 @@ ORDER BY pr.priority DESC, pr.created_at DESC;
 
 ### Mixpanel Analytics
 
-**URL:** `https://mixpanel.com/project/citadelbuy`
+**URL:** `https://mixpanel.com/project/broxiva`
 
 **Events Tracked:**
 - `Daily Pricing Analysis` - Daily workflow execution
@@ -441,26 +441,26 @@ ORDER BY pr.priority DESC, pr.created_at DESC;
 - **Data Analyst:** @emily.rodriguez
 
 ### Emergency Contacts
-- **Off-hours Urgent Issues:** pricing-oncall@citadelbuy.com
-- **Workflow Failures:** n8n-support@citadelbuy.com
-- **Dashboard Issues:** analytics-team@citadelbuy.com
+- **Off-hours Urgent Issues:** pricing-oncall@broxiva.com
+- **Workflow Failures:** n8n-support@broxiva.com
+- **Dashboard Issues:** analytics-team@broxiva.com
 
 ## Resources
 
 ### Documentation
 - [Full Workflow README](./workflow-08-dynamic-pricing-README.md)
 - [Database Schema](./workflow-08-database-setup.sql)
-- [Admin Dashboard Guide](https://docs.citadelbuy.com/pricing/dashboard)
+- [Admin Dashboard Guide](https://docs.broxiva.com/pricing/dashboard)
 
 ### Training
-- [Pricing Strategy 101](https://learn.citadelbuy.com/pricing-basics)
-- [Competitive Analysis](https://learn.citadelbuy.com/competitor-analysis)
-- [Dashboard Workshop](https://learn.citadelbuy.com/looker-pricing)
+- [Pricing Strategy 101](https://learn.broxiva.com/pricing-basics)
+- [Competitive Analysis](https://learn.broxiva.com/competitor-analysis)
+- [Dashboard Workshop](https://learn.broxiva.com/looker-pricing)
 
 ### Tools
-- [Price Calculator](https://tools.citadelbuy.com/margin-calculator)
-- [Competitor Research](https://tools.citadelbuy.com/competitor-lookup)
-- [Historical Trends](https://looker.citadelbuy.com/pricing-trends)
+- [Price Calculator](https://tools.broxiva.com/margin-calculator)
+- [Competitor Research](https://tools.broxiva.com/competitor-lookup)
+- [Historical Trends](https://looker.broxiva.com/pricing-trends)
 
 ---
 

@@ -188,7 +188,7 @@ Write-Host ""
 
 # Step 6: Apply RBAC configuration
 Write-Host "[6/8] Applying RBAC configuration..." -ForegroundColor Yellow
-kubectl apply -f "C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/production/rbac-broxiva-prod.yaml"
+kubectl apply -f "C:/Users/Dell/OneDrive/Documents/Broxiva/organization/infrastructure/kubernetes/production/rbac-broxiva-prod.yaml"
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "RBAC configuration applied" -ForegroundColor Green

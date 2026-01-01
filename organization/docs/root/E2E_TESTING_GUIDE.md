@@ -1,8 +1,8 @@
-# E2E Testing Guide for CitadelBuy
+# E2E Testing Guide for Broxiva
 
 ## Overview
 
-This guide provides comprehensive information about the End-to-End (E2E) testing infrastructure for the CitadelBuy platform.
+This guide provides comprehensive information about the End-to-End (E2E) testing infrastructure for the Broxiva platform.
 
 ## Test Structure
 
@@ -243,7 +243,7 @@ Key settings:
 
 ```env
 # Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/citadelbuy_test
+DATABASE_URL=postgresql://user:pass@localhost:5432/broxiva_test
 
 # JWT
 JWT_SECRET=test-jwt-secret-key
@@ -259,7 +259,7 @@ ELASTICSEARCH_NODE=http://localhost:9200
 # Email (test mode)
 EMAIL_HOST=smtp.mailtrap.io
 EMAIL_PORT=587
-EMAIL_FROM=test@citadelbuy.com
+EMAIL_FROM=test@broxiva.com
 
 # Rate Limiting (disabled in tests)
 THROTTLE_LIMIT=1000000

@@ -1,8 +1,8 @@
-# CitadelBuy Database Migration Execution Guide
+# Broxiva Database Migration Execution Guide
 
 ## Overview
 
-This guide provides comprehensive instructions for executing database migrations for the CitadelBuy platform. There are currently **7 pending migrations** that need to be applied to update the database schema.
+This guide provides comprehensive instructions for executing database migrations for the Broxiva platform. There are currently **7 pending migrations** that need to be applied to update the database schema.
 
 ## Table of Contents
 
@@ -44,7 +44,7 @@ This guide provides comprehensive instructions for executing database migrations
 
 - [ ] **Check Current Migration Status**
   ```bash
-  cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api
+  cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api
   npx prisma migrate status
   ```
 
@@ -75,9 +75,9 @@ This guide provides comprehensive instructions for executing database migrations
   ls -lh backup_*.sql
 
   # Test restore to temporary database (recommended)
-  createdb citadelbuy_test
-  psql citadelbuy_test < backup_20251204_120000.sql
-  dropdb citadelbuy_test
+  createdb broxiva_test
+  psql broxiva_test < backup_20251204_120000.sql
+  dropdb broxiva_test
   ```
 
 - [ ] **Store Backup in Safe Location**
@@ -104,7 +104,7 @@ This guide provides comprehensive instructions for executing database migrations
 - [ ] **Stop Background Jobs**
   ```bash
   # Stop job processors
-  systemctl stop citadelbuy-worker
+  systemctl stop broxiva-worker
   # Or
   kubectl scale deployment worker --replicas=0
   ```
@@ -129,7 +129,7 @@ This guide provides comprehensive instructions for executing database migrations
 **Execution:**
 
 ```bash
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api
 
 # Dry run (check what will be applied)
 npx prisma migrate status
@@ -649,8 +649,8 @@ SELECT * FROM "_prisma_migrations" ORDER BY finished_at DESC;
 
 - [ ] **Restart Application Services**
   ```bash
-  systemctl restart citadelbuy-api
-  systemctl restart citadelbuy-worker
+  systemctl restart broxiva-api
+  systemctl restart broxiva-worker
   # Or for Kubernetes
   kubectl rollout restart deployment api
   kubectl rollout restart deployment worker
@@ -732,7 +732,7 @@ LIMIT 10;
 **Use Case:** Single migration failed or caused issues
 
 ```bash
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api
 
 # Check migration history
 npx prisma migrate status
@@ -755,22 +755,22 @@ npx prisma migrate resolve --rolled-back 20251117022438_add_password_reset_table
 
 ```bash
 # 1. Stop application
-systemctl stop citadelbuy-api citadelbuy-worker
+systemctl stop broxiva-api broxiva-worker
 
 # 2. Drop current database (DESTRUCTIVE!)
-dropdb citadelbuy_production
+dropdb broxiva_production
 
 # 3. Recreate database
-createdb citadelbuy_production
+createdb broxiva_production
 
 # 4. Restore from backup
-psql citadelbuy_production < backup_20251204_120000.sql
+psql broxiva_production < backup_20251204_120000.sql
 
 # 5. Verify restore
-psql citadelbuy_production -c "SELECT count(*) FROM users;"
+psql broxiva_production -c "SELECT count(*) FROM users;"
 
 # 6. Restart application
-systemctl start citadelbuy-api citadelbuy-worker
+systemctl start broxiva-api broxiva-worker
 ```
 
 ### Option 3: Point-in-Time Recovery (If Using PostgreSQL WAL)
@@ -844,7 +844,7 @@ ALTER TABLE "users" DROP COLUMN IF EXISTS "processingRestricted";
 psql $DATABASE_URL -c "SET statement_timeout = '600s';"
 
 # Or set globally
-ALTER DATABASE citadelbuy_production SET statement_timeout = '600s';
+ALTER DATABASE broxiva_production SET statement_timeout = '600s';
 ```
 
 ### Issue 2: Lock Contention
@@ -975,7 +975,7 @@ SELECT tablename FROM pg_tables WHERE schemaname = 'public';
 
 ### Escalation Path
 
-1. Alert team in Slack channel: #citadelbuy-incidents
+1. Alert team in Slack channel: #broxiva-incidents
 2. Page on-call DBA if no response in 15 minutes
 3. Escalate to Engineering Manager if unresolved in 30 minutes
 
@@ -1004,4 +1004,4 @@ SELECT tablename FROM pg_tables WHERE schemaname = 'public';
 
 **Document Version:** 1.0
 **Last Updated:** December 4, 2025
-**Author:** CitadelBuy Platform Team
+**Author:** Broxiva Platform Team

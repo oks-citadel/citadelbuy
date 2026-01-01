@@ -252,7 +252,7 @@ Content-Type: application/json
 
 {
   "fromAddress": {
-    "name": "CitadelBuy Warehouse",
+    "name": "Broxiva Warehouse",
     "street1": "123 Main St",
     "city": "Los Angeles",
     "state": "CA",
@@ -390,7 +390,7 @@ Content-Type: application/json
 {
   "carrier": "UPS",
   "pickupAddress": {
-    "name": "CitadelBuy Warehouse",
+    "name": "Broxiva Warehouse",
     "street1": "123 Main St",
     "city": "Los Angeles",
     "state": "CA",

@@ -1,6 +1,6 @@
 # Workflow 05: Implementation Checklist
 
-## CitadelBuy Customer Feedback & Review Collection - Go-Live Checklist
+## Broxiva Customer Feedback & Review Collection - Go-Live Checklist
 
 **Workflow**: Workflow 05 - Feedback & Reviews
 **Target Go-Live**: [DATE]
@@ -29,7 +29,7 @@
 ## Infrastructure Setup (Week -1)
 
 ### n8n Configuration
-- [ ] Verify n8n instance is running (https://n8n.citadelbuy.com)
+- [ ] Verify n8n instance is running (https://n8n.broxiva.com)
 - [ ] Import workflow-05-feedback-reviews.json
 - [ ] Verify workflow appears in n8n dashboard
 - [ ] Check workflow has no errors on import
@@ -40,41 +40,41 @@
 #### Required Credentials (MUST HAVE)
 - [ ] **SendGrid API Key**
   - [ ] Create API key with Mail Send permissions
-  - [ ] Add to n8n as `sendgrid-citadelbuy`
+  - [ ] Add to n8n as `sendgrid-broxiva`
   - [ ] Test with sample email send
-  - [ ] Verify sender email (reviews@citadelbuy.com) is verified
+  - [ ] Verify sender email (reviews@broxiva.com) is verified
 
-- [ ] **CitadelBuy API Key**
-  - [ ] Generate API key in CitadelBuy admin
-  - [ ] Add to n8n as `citadelbuy-api-key` (HTTP Header Auth)
+- [ ] **Broxiva API Key**
+  - [ ] Generate API key in Broxiva admin
+  - [ ] Add to n8n as `broxiva-api-key` (HTTP Header Auth)
   - [ ] Test GET /v1/orders endpoint
   - [ ] Test GET /v1/users endpoint
 
 - [ ] **OpenAI API Key**
   - [ ] Create API key at platform.openai.com
   - [ ] Verify GPT-4 access (or use GPT-3.5-turbo)
-  - [ ] Add to n8n as `openai-citadelbuy`
+  - [ ] Add to n8n as `openai-broxiva`
   - [ ] Test with sample sentiment analysis
 
 #### Optional Credentials (RECOMMENDED)
 - [ ] **Klaviyo API Key**
   - [ ] Get Private API Key from Klaviyo
-  - [ ] Add to n8n as `klaviyo-citadelbuy`
+  - [ ] Add to n8n as `klaviyo-broxiva`
   - [ ] Test event tracking
 
 - [ ] **Zendesk API Token**
   - [ ] Generate API token in Zendesk
-  - [ ] Add to n8n as `zendesk-citadelbuy`
+  - [ ] Add to n8n as `zendesk-broxiva`
   - [ ] Test ticket creation
 
 - [ ] **Slack Webhook**
   - [ ] Create incoming webhook for #customer-support
-  - [ ] Add to n8n as `slack-citadelbuy`
+  - [ ] Add to n8n as `slack-broxiva`
   - [ ] Test message posting
 
 - [ ] **Mixpanel Project Token**
   - [ ] Get project token from Mixpanel
-  - [ ] Add to n8n as `mixpanel-citadelbuy`
+  - [ ] Add to n8n as `mixpanel-broxiva`
   - [ ] Test event tracking
 
 ---
@@ -83,8 +83,8 @@
 
 ### Template 1: Review Request
 - [ ] Create template in SendGrid
-- [ ] Set Template ID: `d-citadelbuy-review-request-v2`
-- [ ] Add subject line: "How was your CitadelBuy experience?"
+- [ ] Set Template ID: `d-broxiva-review-request-v2`
+- [ ] Add subject line: "How was your Broxiva experience?"
 - [ ] Copy HTML from README-workflow-05.md (Template 1)
 - [ ] Add dynamic fields:
   - [ ] `{{customer_name}}`
@@ -103,7 +103,7 @@
 
 ### Template 2: Thank You Email
 - [ ] Create template in SendGrid
-- [ ] Set Template ID: `d-citadelbuy-review-thank-you`
+- [ ] Set Template ID: `d-broxiva-review-thank-you`
 - [ ] Add subject line: "Thank you for your amazing review!"
 - [ ] Copy HTML from README-workflow-05.md (Template 2)
 - [ ] Add dynamic fields:
@@ -117,8 +117,8 @@
 
 ### Template 3: NPS Survey
 - [ ] Create template in SendGrid
-- [ ] Set Template ID: `d-citadelbuy-nps-survey`
-- [ ] Add subject line: "How likely are you to recommend CitadelBuy?"
+- [ ] Set Template ID: `d-broxiva-nps-survey`
+- [ ] Add subject line: "How likely are you to recommend Broxiva?"
 - [ ] Copy HTML from README-workflow-05.md (Template 3)
 - [ ] Add dynamic fields:
   - [ ] `{{customer_name}}`
@@ -130,7 +130,7 @@
 
 ---
 
-## CitadelBuy API Updates
+## Broxiva API Updates
 
 ### Required API Endpoints
 
@@ -254,8 +254,8 @@
 - [ ] Go to Account → Settings → API Settings
 - [ ] Click "Add Custom Store"
 - [ ] Enter details:
-  - [ ] Store Name: CitadelBuy Reviews
-  - [ ] Webhook URL: `https://n8n.citadelbuy.com/webhook/shipment-delivered`
+  - [ ] Store Name: Broxiva Reviews
+  - [ ] Webhook URL: `https://n8n.broxiva.com/webhook/shipment-delivered`
   - [ ] Events: Select `shipment_notify` (delivery confirmation)
 - [ ] Save configuration
 - [ ] Test with sample shipment
@@ -265,15 +265,15 @@
 ## Frontend Updates
 
 ### Review Submission Form
-- [ ] Create/update review submission form at citadelbuy.com/review/[token]
+- [ ] Create/update review submission form at broxiva.com/review/[token]
 - [ ] Form should collect:
   - [ ] Rating (1-5 stars)
   - [ ] Review text (optional)
   - [ ] Product-specific ratings (optional)
-- [ ] On submit, call CitadelBuy API POST /v1/reviews
+- [ ] On submit, call Broxiva API POST /v1/reviews
 - [ ] After API call, trigger n8n webhook:
   ```javascript
-  await axios.post('https://n8n.citadelbuy.com/webhook/review-submitted', {
+  await axios.post('https://n8n.broxiva.com/webhook/review-submitted', {
     review_id: review.id,
     order_id: review.order_id,
     customer_id: review.customer_id,
@@ -288,13 +288,13 @@
 - [ ] Test form submission
 
 ### NPS Survey Page
-- [ ] Create NPS survey page at citadelbuy.com/nps-survey/[token]
+- [ ] Create NPS survey page at broxiva.com/nps-survey/[token]
 - [ ] Display 0-10 scale with buttons
 - [ ] Optional feedback textarea
-- [ ] On submit, call CitadelBuy API POST /v1/nps/responses
+- [ ] On submit, call Broxiva API POST /v1/nps/responses
 - [ ] After API call, trigger n8n webhook:
   ```javascript
-  await axios.post('https://n8n.citadelbuy.com/webhook/nps-response', {
+  await axios.post('https://n8n.broxiva.com/webhook/nps-response', {
     customer_id: decoded.customer_id,
     customer_email: decoded.customer_email,
     order_id: decoded.order_id,
@@ -421,7 +421,7 @@
 - [ ] n8n workflow execution failure
 - [ ] SendGrid API failure
 - [ ] OpenAI API failure
-- [ ] CitadelBuy API failure
+- [ ] Broxiva API failure
 
 #### Warning Alerts (Slack #customer-support)
 - [ ] Negative review received (≤2 stars)

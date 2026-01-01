@@ -102,7 +102,7 @@ put_secret() {
 }
 
 init_vault() {
-    print_info "Initializing Vault for CitadelBuy..."
+    print_info "Initializing Vault for Broxiva..."
 
     # Enable KV v2 secrets engine
     if ! vault secrets list | grep -q "secret/"; then
@@ -116,14 +116,14 @@ init_vault() {
     # Create policies
     print_info "Creating Vault policies..."
 
-    if [[ -f "${ROOT_DIR}/infrastructure/vault/policies/citadelbuy.hcl" ]]; then
-        vault policy write citadelbuy "${ROOT_DIR}/infrastructure/vault/policies/citadelbuy.hcl"
-        print_success "Created citadelbuy policy"
+    if [[ -f "${ROOT_DIR}/infrastructure/vault/policies/broxiva.hcl" ]]; then
+        vault policy write broxiva "${ROOT_DIR}/infrastructure/vault/policies/broxiva.hcl"
+        print_success "Created broxiva policy"
     fi
 
-    if [[ -f "${ROOT_DIR}/infrastructure/vault/policies/citadelbuy-admin.hcl" ]]; then
-        vault policy write citadelbuy-admin "${ROOT_DIR}/infrastructure/vault/policies/citadelbuy-admin.hcl"
-        print_success "Created citadelbuy-admin policy"
+    if [[ -f "${ROOT_DIR}/infrastructure/vault/policies/broxiva-admin.hcl" ]]; then
+        vault policy write broxiva-admin "${ROOT_DIR}/infrastructure/vault/policies/broxiva-admin.hcl"
+        print_success "Created broxiva-admin policy"
     fi
 
     # Enable Kubernetes auth if available
@@ -168,11 +168,11 @@ push_secrets() {
         local secret_path=$(get_secret_path "$env" "database/postgres")
         put_secret "$secret_path" \
             url="$DATABASE_URL" \
-            username="${POSTGRES_USER:-citadelbuy_admin}" \
+            username="${POSTGRES_USER:-broxiva_admin}" \
             password="${POSTGRES_PASSWORD:-}" \
             host="${POSTGRES_HOST:-localhost}" \
             port="${POSTGRES_PORT:-5432}" \
-            database="${POSTGRES_DB:-citadelbuy}"
+            database="${POSTGRES_DB:-broxiva}"
     fi
 
     # Redis credentials
@@ -211,7 +211,7 @@ push_secrets() {
             access_key_id="$AWS_ACCESS_KEY_ID" \
             secret_access_key="$AWS_SECRET_ACCESS_KEY" \
             region="${AWS_REGION:-us-east-1}" \
-            email_from="${EMAIL_FROM:-noreply@citadelbuy.com}"
+            email_from="${EMAIL_FROM:-noreply@broxiva.com}"
     fi
 
     # OpenAI API key
@@ -263,7 +263,7 @@ pull_secrets() {
 
     print_info "Pulling secrets from Vault for environment: $env"
 
-    local env_content="# CitadelBuy Environment Variables\n"
+    local env_content="# Broxiva Environment Variables\n"
     env_content+="# Generated from HashiCorp Vault on $(date)\n"
     env_content+="# Environment: $env\n\n"
 
@@ -427,7 +427,7 @@ backup_secrets() {
 
 show_usage() {
     cat << EOF
-CitadelBuy HashiCorp Vault Sync Script
+Broxiva HashiCorp Vault Sync Script
 
 Usage: $0 [command] [environment] [options]
 
@@ -460,10 +460,10 @@ Prerequisites:
     - jq installed for JSON processing
 
 Environment Variables:
-    VAULT_ADDR      Vault server address (default: https://vault.citadelbuy.internal:8200)
+    VAULT_ADDR      Vault server address (default: https://vault.broxiva.internal:8200)
     VAULT_TOKEN     Vault authentication token
     VAULT_NAMESPACE Vault namespace (for Vault Enterprise)
-    PROJECT_NAME    Project name prefix for secrets (default: citadelbuy)
+    PROJECT_NAME    Project name prefix for secrets (default: broxiva)
 
 EOF
 }

@@ -1,6 +1,6 @@
 # Payment Gateway Documentation Index
 
-This index provides quick access to all payment-related documentation for CitadelBuy.
+This index provides quick access to all payment-related documentation for Broxiva.
 
 ## Quick Links
 
@@ -150,9 +150,9 @@ PAYPAL_WEBHOOK_ID=...                      # Webhook verification ID
 ### Optional (Digital Wallets)
 
 ```bash
-APPLE_MERCHANT_ID=merchant.com.citadelbuy  # Apple Pay merchant ID
+APPLE_MERCHANT_ID=merchant.com.broxiva  # Apple Pay merchant ID
 GOOGLE_MERCHANT_ID=...                     # Google Pay merchant ID
-APP_NAME=CitadelBuy                        # App name for payment sheets
+APP_NAME=Broxiva                        # App name for payment sheets
 ```
 
 ## Quick Commands
@@ -366,7 +366,7 @@ See: [Privacy Compliance](PRIVACY_COMPLIANCE.md)
 
 ## Summary
 
-This documentation suite provides everything needed to implement, configure, test, and maintain payment processing for CitadelBuy:
+This documentation suite provides everything needed to implement, configure, test, and maintain payment processing for Broxiva:
 
 ✅ **Quick Setup** - 5-minute guide for developers
 ✅ **Complete Setup** - Production-ready configuration
@@ -383,5 +383,5 @@ This documentation suite provides everything needed to implement, configure, tes
 
 **Last Updated**: December 2024
 **Version**: 1.0
-**Maintained by**: CitadelBuy Development Team
+**Maintained by**: Broxiva Development Team
 **Questions?**: See [Troubleshooting](#troubleshooting) section above

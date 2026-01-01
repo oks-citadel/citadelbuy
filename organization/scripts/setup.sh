@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# CitadelBuy Platform Setup Script
+# Broxiva Platform Setup Script
 # This script sets up the development environment
 
 set -e
 
-echo "🚀 CitadelBuy Platform Setup"
+echo "🚀 Broxiva Platform Setup"
 echo "================================"
 
 # Colors for output

@@ -2,21 +2,21 @@
 
 ## Overview
 
-Quick reference for common Sentry operations and troubleshooting for CitadelBuy operations team.
+Quick reference for common Sentry operations and troubleshooting for Broxiva operations team.
 
 ---
 
 ## Quick Links
 
 ### Sentry Dashboards
-- **Production Backend:** https://sentry.io/organizations/citadelbuy/projects/citadelbuy-backend-prod/
-- **Production Frontend:** https://sentry.io/organizations/citadelbuy/projects/citadelbuy-web-prod/
-- **Production Mobile:** https://sentry.io/organizations/citadelbuy/projects/citadelbuy-mobile-prod/
+- **Production Backend:** https://sentry.io/organizations/broxiva/projects/broxiva-backend-prod/
+- **Production Frontend:** https://sentry.io/organizations/broxiva/projects/broxiva-web-prod/
+- **Production Mobile:** https://sentry.io/organizations/broxiva/projects/broxiva-mobile-prod/
 
 ### Internal Resources
-- **Status Page:** https://status.citadelbuy.com
-- **Runbooks:** https://docs.citadelbuy.com/runbooks
-- **On-Call Schedule:** https://citadelbuy.pagerduty.com/schedules
+- **Status Page:** https://status.broxiva.com
+- **Runbooks:** https://docs.broxiva.com/runbooks
+- **On-Call Schedule:** https://broxiva.pagerduty.com/schedules
 
 ---
 
@@ -59,7 +59,7 @@ is:unresolved transaction.duration:>2s
 
 ### Compare Releases
 ```
-release:citadelbuy-backend@2.0.0 vs release:citadelbuy-backend@1.9.0
+release:broxiva-backend@2.0.0 vs release:broxiva-backend@1.9.0
 ```
 
 ---
@@ -72,16 +72,16 @@ SENTRY_DSN=https://[key]@[org].ingest.sentry.io/[project-id]
 SENTRY_ENVIRONMENT=production|staging|development
 SENTRY_TRACES_SAMPLE_RATE=0.1
 SENTRY_PROFILES_SAMPLE_RATE=0.1
-SENTRY_RELEASE=citadelbuy-backend@2.0.0
+SENTRY_RELEASE=broxiva-backend@2.0.0
 ```
 
 ### Frontend
 ```bash
 NEXT_PUBLIC_SENTRY_DSN=https://[key]@[org].ingest.sentry.io/[project-id]
 SENTRY_AUTH_TOKEN=your_sentry_auth_token
-SENTRY_ORG=citadelbuy
-SENTRY_PROJECT=citadelbuy-web-prod
-SENTRY_RELEASE=citadelbuy-web@2.0.0
+SENTRY_ORG=broxiva
+SENTRY_PROJECT=broxiva-web-prod
+SENTRY_RELEASE=broxiva-web@2.0.0
 ```
 
 ---
@@ -130,10 +130,10 @@ SENTRY_RELEASE=citadelbuy-web@2.0.0
 **Quick Check:**
 ```bash
 # Check application health
-curl https://api.citadelbuy.com/health
+curl https://api.broxiva.com/health
 
 # Check recent deployments
-kubectl rollout history deployment/citadelbuy-backend -n production
+kubectl rollout history deployment/broxiva-backend -n production
 
 # Check resource usage
 kubectl top pods -n production
@@ -142,10 +142,10 @@ kubectl top pods -n production
 **Quick Fix:**
 ```bash
 # Rollback if needed
-kubectl rollout undo deployment/citadelbuy-backend -n production
+kubectl rollout undo deployment/broxiva-backend -n production
 
 # Scale up if resource issue
-kubectl scale deployment/citadelbuy-backend --replicas=5 -n production
+kubectl scale deployment/broxiva-backend --replicas=5 -n production
 ```
 
 ### Issue: Database Connection Errors
@@ -162,7 +162,7 @@ redis-cli INFO stats | grep connected_clients
 **Quick Fix:**
 ```bash
 # Restart problematic pods
-kubectl rollout restart deployment/citadelbuy-backend -n production
+kubectl rollout restart deployment/broxiva-backend -n production
 
 # Increase connection pool (if capacity exists)
 # Update DATABASE_URL with ?connection_limit=20
@@ -219,23 +219,23 @@ kubectl delete pod [pod-name] -n production
 ## Escalation Contacts
 
 ### Level 1: On-Call Engineers
-- **Platform:** platform-oncall@citadelbuy.com
-- **Frontend:** frontend-oncall@citadelbuy.com
-- **Mobile:** mobile-oncall@citadelbuy.com
-- **Payments:** payments-oncall@citadelbuy.com
+- **Platform:** platform-oncall@broxiva.com
+- **Frontend:** frontend-oncall@broxiva.com
+- **Mobile:** mobile-oncall@broxiva.com
+- **Payments:** payments-oncall@broxiva.com
 
 ### Level 2: Team Leads
-- **Platform Lead:** platform-lead@citadelbuy.com
-- **Frontend Lead:** frontend-lead@citadelbuy.com
-- **Mobile Lead:** mobile-lead@citadelbuy.com
+- **Platform Lead:** platform-lead@broxiva.com
+- **Frontend Lead:** frontend-lead@broxiva.com
+- **Mobile Lead:** mobile-lead@broxiva.com
 
 ### Level 3: Management
-- **Engineering Manager:** engineering-manager@citadelbuy.com
-- **VP Engineering:** vp-engineering@citadelbuy.com
+- **Engineering Manager:** engineering-manager@broxiva.com
+- **VP Engineering:** vp-engineering@broxiva.com
 
 ### Critical Incidents
-- **All Hands:** engineering-all@citadelbuy.com
-- **Executive Team:** executives@citadelbuy.com
+- **All Hands:** engineering-all@broxiva.com
+- **Executive Team:** executives@broxiva.com
 
 ---
 
@@ -266,17 +266,17 @@ sentry-cli login
 sentry-cli projects list
 
 # Create release
-sentry-cli releases new citadelbuy-backend@2.0.0
+sentry-cli releases new broxiva-backend@2.0.0
 
 # Upload source maps
 sentry-cli sourcemaps upload \
-  --org citadelbuy \
-  --project citadelbuy-web-prod \
-  --release citadelbuy-web@2.0.0 \
+  --org broxiva \
+  --project broxiva-web-prod \
+  --release broxiva-web@2.0.0 \
   .next/static/chunks
 
 # Finalize release
-sentry-cli releases finalize citadelbuy-backend@2.0.0
+sentry-cli releases finalize broxiva-backend@2.0.0
 
 # List releases
 sentry-cli releases list
@@ -289,7 +289,7 @@ sentry-cli releases list
 kubectl get pods -n production
 
 # Check logs
-kubectl logs -f deployment/citadelbuy-backend -n production --tail=100
+kubectl logs -f deployment/broxiva-backend -n production --tail=100
 
 # Describe pod
 kubectl describe pod [pod-name] -n production
@@ -298,7 +298,7 @@ kubectl describe pod [pod-name] -n production
 kubectl get events -n production --sort-by='.lastTimestamp'
 
 # Port forward
-kubectl port-forward service/citadelbuy-backend 4000:4000 -n production
+kubectl port-forward service/broxiva-backend 4000:4000 -n production
 
 # Execute command in pod
 kubectl exec -it [pod-name] -n production -- /bin/sh
@@ -357,18 +357,18 @@ FLUSHDB
 ## Monitoring URLs
 
 ### Internal Dashboards
-- **Application Dashboard:** https://grafana.citadelbuy.com/d/app-overview
-- **Infrastructure Dashboard:** https://grafana.citadelbuy.com/d/infra-overview
-- **Database Dashboard:** https://grafana.citadelbuy.com/d/database-metrics
+- **Application Dashboard:** https://grafana.broxiva.com/d/app-overview
+- **Infrastructure Dashboard:** https://grafana.broxiva.com/d/infra-overview
+- **Database Dashboard:** https://grafana.broxiva.com/d/database-metrics
 
 ### External Services
-- **Sentry:** https://sentry.io/organizations/citadelbuy/
-- **PagerDuty:** https://citadelbuy.pagerduty.com/
+- **Sentry:** https://sentry.io/organizations/broxiva/
+- **PagerDuty:** https://broxiva.pagerduty.com/
 - **Stripe:** https://dashboard.stripe.com/
 - **AWS Console:** https://console.aws.amazon.com/
 
 ### Status Pages
-- **CitadelBuy Status:** https://status.citadelbuy.com
+- **Broxiva Status:** https://status.broxiva.com
 - **Sentry Status:** https://status.sentry.io
 - **Stripe Status:** https://status.stripe.com
 - **AWS Status:** https://status.aws.amazon.com
@@ -507,7 +507,7 @@ FLUSHDB
    - Page security team
    - Isolate affected systems
    - Preserve logs and evidence
-   - Notify security@citadelbuy.com
+   - Notify security@broxiva.com
 
 2. **Follow security incident response plan**
    - See: docs/SECURITY_INCIDENT_RESPONSE.md

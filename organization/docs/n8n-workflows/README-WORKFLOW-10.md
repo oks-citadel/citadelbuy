@@ -7,7 +7,7 @@
 
 ## Overview
 
-Complete n8n workflow for real-time fraud detection and prevention in the CitadelBuy e-commerce platform. Uses a multi-factor risk scoring algorithm with 12 fraud indicators and Stripe Radar integration to automatically route orders based on fraud risk level.
+Complete n8n workflow for real-time fraud detection and prevention in the Broxiva e-commerce platform. Uses a multi-factor risk scoring algorithm with 12 fraud indicators and Stripe Radar integration to automatically route orders based on fraud risk level.
 
 ## Features
 
@@ -29,7 +29,7 @@ Workflows → Import from File → workflow-10-fraud-detection.json
 ```
 
 ### 2. Configure Credentials
-- CitadelBuy API (Header Auth)
+- Broxiva API (Header Auth)
 - Stripe (OAuth2 or API Key)
 - Slack (OAuth2 Bot Token)
 - Zendesk (API Token)
@@ -111,7 +111,7 @@ Risk Router (Switch)
 
 ## Integrations
 
-- **CitadelBuy API** - Customer history, orders, payments
+- **Broxiva API** - Customer history, orders, payments
 - **Stripe Radar** - ML-based fraud detection
 - **IP Geolocation** - IP-API.com (free tier)
 - **Slack** - Alerts to #fraud-review and #fraud-alerts
@@ -151,7 +151,7 @@ Risk Router (Switch)
 ### Prerequisites
 - n8n version 1.0.0+
 - Node.js 18+
-- API access to CitadelBuy, Stripe, Slack, Zendesk
+- API access to Broxiva, Stripe, Slack, Zendesk
 - IP geolocation API access (IP-API free tier works)
 
 ### Step-by-Step
@@ -163,7 +163,7 @@ Risk Router (Switch)
    ```
 
 2. **Configure Credentials**
-   - CitadelBuy API: Header Auth with Bearer token
+   - Broxiva API: Header Auth with Bearer token
    - Stripe: OAuth2 or API Key
    - Slack: OAuth2 Bot Token (scopes: chat:write, chat:write.public)
    - Zendesk: API Token
@@ -313,14 +313,14 @@ See `FRAUD-DETECTION-README.md` for complete troubleshooting guide.
 ## Support
 
 ### Contact
-- **Fraud Team:** fraud@citadelbuy.com
-- **Technical Support:** devops@citadelbuy.com
+- **Fraud Team:** fraud@broxiva.com
+- **Technical Support:** devops@broxiva.com
 - **Slack:** #fraud-alerts, #fraud-review
 
 ### Resources
 - [n8n Documentation](https://docs.n8n.io/)
 - [Stripe Radar Guide](https://stripe.com/docs/radar)
-- [CitadelBuy API Docs](https://api.citadelbuy.com/docs)
+- [Broxiva API Docs](https://api.broxiva.com/docs)
 
 ## Version History
 
@@ -334,12 +334,12 @@ See `FRAUD-DETECTION-README.md` for complete troubleshooting guide.
 
 ## License
 
-Proprietary - CitadelBuy Internal Use Only
+Proprietary - Broxiva Internal Use Only
 
 ## Authors
 
-- **Development Team:** CitadelBuy Engineering
-- **Security Team:** CitadelBuy Security & Fraud Prevention
+- **Development Team:** Broxiva Engineering
+- **Security Team:** Broxiva Security & Fraud Prevention
 - **Maintained By:** Security Team
 
 ---

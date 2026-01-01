@@ -2,7 +2,7 @@
 
 ## Overview
 
-The test helper infrastructure for CitadelBuy API has been successfully restored and significantly enhanced. This provides a comprehensive, reusable testing framework that covers all common testing scenarios.
+The test helper infrastructure for Broxiva API has been successfully restored and significantly enhanced. This provides a comprehensive, reusable testing framework that covers all common testing scenarios.
 
 ## Files Created/Enhanced
 
@@ -219,7 +219,7 @@ npm run test:e2e
 
 ## File Locations
 
-All files are located in: `C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api/test/helpers/`
+All files are located in: `C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api/test/helpers/`
 
 ```
 test/helpers/

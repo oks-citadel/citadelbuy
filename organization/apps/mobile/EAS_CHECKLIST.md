@@ -1,4 +1,4 @@
-# EAS Setup Checklist for CitadelBuy
+# EAS Setup Checklist for Broxiva
 
 Use this checklist to ensure you've completed all necessary steps for EAS setup.
 
@@ -44,8 +44,8 @@ Use this checklist to ensure you've completed all necessary steps for EAS setup.
 
 ### Universal Links
 - [ ] Create `apple-app-site-association` file
-- [ ] Upload to `https://citadelbuy.com/.well-known/apple-app-site-association`
-- [ ] Upload to `https://www.citadelbuy.com/.well-known/apple-app-site-association`
+- [ ] Upload to `https://broxiva.com/.well-known/apple-app-site-association`
+- [ ] Upload to `https://www.broxiva.com/.well-known/apple-app-site-association`
 - [ ] Verify file is accessible (no authentication required)
 - [ ] Verify Content-Type is `application/json` or `application/pkcs7-mime`
 - [ ] Update file with correct Team ID and Bundle ID
@@ -76,7 +76,7 @@ Use this checklist to ensure you've completed all necessary steps for EAS setup.
 ### App Links
 - [ ] Add SHA-256 fingerprint to Firebase project
 - [ ] Create `assetlinks.json` file
-- [ ] Upload to `https://citadelbuy.com/.well-known/assetlinks.json`
+- [ ] Upload to `https://broxiva.com/.well-known/assetlinks.json`
 - [ ] Verify file is accessible
 - [ ] Verify Content-Type is `application/json`
 
@@ -93,8 +93,8 @@ Use this checklist to ensure you've completed all necessary steps for EAS setup.
 ## Domain Configuration
 
 ### SSL Certificates
-- [ ] Ensure SSL certificates are valid for citadelbuy.com
-- [ ] Ensure SSL certificates are valid for www.citadelbuy.com
+- [ ] Ensure SSL certificates are valid for broxiva.com
+- [ ] Ensure SSL certificates are valid for www.broxiva.com
 
 ### Well-Known Files
 - [ ] `apple-app-site-association` returns 200 OK
@@ -109,13 +109,13 @@ Use this checklist to ensure you've completed all necessary steps for EAS setup.
 - [ ] Build completes successfully
 - [ ] Download and install on test device
 - [ ] App launches without crashes
-- [ ] Deep linking works with `citadelbuy://`
+- [ ] Deep linking works with `broxiva://`
 
 - [ ] Run `npm run build:dev:android`
 - [ ] Build completes successfully
 - [ ] Download and install on test device
 - [ ] App launches without crashes
-- [ ] Deep linking works with `citadelbuy://`
+- [ ] Deep linking works with `broxiva://`
 
 ### Preview Build
 - [ ] Run `npm run build:preview:ios`
@@ -141,9 +141,9 @@ Use this checklist to ensure you've completed all necessary steps for EAS setup.
 
 ## Deep Link Testing
 
-- [ ] Test custom scheme: `citadelbuy://product/123`
-- [ ] Test universal link: `https://citadelbuy.com/product/123` (iOS)
-- [ ] Test app link: `https://citadelbuy.com/product/123` (Android)
+- [ ] Test custom scheme: `broxiva://product/123`
+- [ ] Test universal link: `https://broxiva.com/product/123` (iOS)
+- [ ] Test app link: `https://broxiva.com/product/123` (Android)
 - [ ] Deep links open app when installed
 - [ ] Deep links fallback to website when app not installed
 

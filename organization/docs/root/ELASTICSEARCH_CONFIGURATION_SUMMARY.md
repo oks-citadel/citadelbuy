@@ -2,7 +2,7 @@
 
 ## Overview
 
-Elasticsearch has been fully configured for production deployment in the CitadelBuy e-commerce platform with enterprise-grade security, performance optimization, and comprehensive documentation.
+Elasticsearch has been fully configured for production deployment in the Broxiva e-commerce platform with enterprise-grade security, performance optimization, and comprehensive documentation.
 
 ---
 
@@ -202,7 +202,7 @@ NODE_ENV=production npm run cli search:index
 ELASTICSEARCH_NODE=http://localhost:9200
 ELASTICSEARCH_USERNAME=elastic
 ELASTICSEARCH_PASSWORD=your_secure_password
-ELASTICSEARCH_INDEX_PREFIX=citadelbuy
+ELASTICSEARCH_INDEX_PREFIX=broxiva
 ```
 
 ### Optional (Production)
@@ -220,7 +220,7 @@ ELASTICSEARCH_SSL_VERIFY=true
 ## Index Structure
 
 ### Products Index
-- **Name:** `citadelbuy-{env}-products`
+- **Name:** `broxiva-{env}-products`
 - **Shards:** 3
 - **Replicas:** 2
 - **Documents:** Product catalog
@@ -228,7 +228,7 @@ ELASTICSEARCH_SSL_VERIFY=true
 - **Size:** ~50GB per 100K products
 
 ### Orders Index
-- **Name:** `citadelbuy-{env}-orders`
+- **Name:** `broxiva-{env}-orders`
 - **Shards:** 2
 - **Replicas:** 1
 - **Documents:** Order history
@@ -236,7 +236,7 @@ ELASTICSEARCH_SSL_VERIFY=true
 - **Size:** ~20GB per 100K orders
 
 ### Search Analytics Index
-- **Name:** `citadelbuy-{env}-search-analytics`
+- **Name:** `broxiva-{env}-search-analytics`
 - **Shards:** 1
 - **Replicas:** 1
 - **Documents:** Search queries and behavior

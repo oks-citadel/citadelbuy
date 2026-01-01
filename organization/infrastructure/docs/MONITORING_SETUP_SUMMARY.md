@@ -19,10 +19,10 @@ This document summarizes the complete observability infrastructure setup for Bro
 - Prometheus alert rules defined in `prometheus-alerts.yaml`
 
 **Files Reviewed**:
-- `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/monitoring/prometheus-deployment.yaml`
-- `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/monitoring/grafana-deployment.yaml`
-- `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/monitoring/azure-monitor-integration.yaml`
-- `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/production/servicemonitor.yaml`
+- `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/monitoring/prometheus-deployment.yaml`
+- `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/monitoring/grafana-deployment.yaml`
+- `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/monitoring/azure-monitor-integration.yaml`
+- `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/production/servicemonitor.yaml`
 
 ---
 
@@ -58,7 +58,7 @@ This document summarizes the complete observability infrastructure setup for Bro
 - Pod, namespace, and node labels automatically added
 - Metric filtering to reduce cardinality
 
-**Location**: `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/monitoring/servicemonitor-broxiva.yaml`
+**Location**: `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/monitoring/servicemonitor-broxiva.yaml`
 
 ---
 
@@ -104,7 +104,7 @@ This document summarizes the complete observability infrastructure setup for Bro
 2. Navigate to Dashboards → Import
 3. Upload JSON from `grafana-dashboards.json`
 
-**Location**: `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/monitoring/grafana-dashboards.json`
+**Location**: `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/monitoring/grafana-dashboards.json`
 
 ---
 
@@ -150,7 +150,7 @@ stringData:
   sendgrid-api-key: "YOUR_SENDGRID_API_KEY"
 ```
 
-**Location**: `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/monitoring/alertmanager-deployment.yaml`
+**Location**: `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/monitoring/alertmanager-deployment.yaml`
 
 ---
 
@@ -211,7 +211,7 @@ az deployment group create \
     logAnalyticsWorkspaceId=<workspace-id>
 ```
 
-**Location**: `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/azure/monitoring/alert-rules-enhanced.bicep`
+**Location**: `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/azure/monitoring/alert-rules-enhanced.bicep`
 
 ---
 
@@ -269,8 +269,8 @@ cd infrastructure\scripts
 ```
 
 **Locations**:
-- `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/scripts/deploy-monitoring.sh`
-- `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/scripts/deploy-monitoring.ps1`
+- `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/scripts/deploy-monitoring.sh`
+- `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/scripts/deploy-monitoring.ps1`
 
 ---
 
@@ -339,7 +339,7 @@ cd infrastructure\scripts
 - Prometheus query examples
 - Support contacts
 
-**Location**: `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/docs/MONITORING_GUIDE.md`
+**Location**: `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/docs/MONITORING_GUIDE.md`
 
 ---
 

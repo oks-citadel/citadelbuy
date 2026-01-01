@@ -68,7 +68,7 @@ ports: - '127.0.0.1:5432:5432'
 ### ✅ All Services Run as Non-Root
 ```bash
 # Check user
-docker exec citadelbuy-postgres-prod whoami
+docker exec broxiva-postgres-prod whoami
 # Output: postgres (not root)
 ```
 
@@ -162,13 +162,13 @@ docker-compose ps
 ### Access Database
 ```bash
 # PostgreSQL
-docker exec -it citadelbuy-postgres-prod psql -U citadelbuy -d citadelbuy_prod
+docker exec -it broxiva-postgres-prod psql -U broxiva -d broxiva_prod
 
 # Redis
-docker exec -it citadelbuy-redis-prod redis-cli -a "$REDIS_PASSWORD"
+docker exec -it broxiva-redis-prod redis-cli -a "$REDIS_PASSWORD"
 
 # MongoDB
-docker exec -it citadelbuy-mongodb-prod mongosh -u citadelbuy -p "$MONGO_PASSWORD"
+docker exec -it broxiva-mongodb-prod mongosh -u broxiva -p "$MONGO_PASSWORD"
 ```
 
 ---
@@ -226,10 +226,10 @@ const redis = new Redis({
 docker ps | grep postgres
 
 # Check logs
-docker logs citadelbuy-postgres-prod
+docker logs broxiva-postgres-prod
 
 # Verify network
-docker network inspect citadelbuy-network
+docker network inspect broxiva-network
 ```
 
 ### "Authentication Failed" Errors
@@ -239,17 +239,17 @@ docker network inspect citadelbuy-network
 echo $REDIS_PASSWORD
 
 # Test connection
-docker exec citadelbuy-redis-prod redis-cli -a "$REDIS_PASSWORD" ping
+docker exec broxiva-redis-prod redis-cli -a "$REDIS_PASSWORD" ping
 
 # Check backend environment
-docker exec citadelbuy-backend-prod env | grep REDIS_PASSWORD
+docker exec broxiva-backend-prod env | grep REDIS_PASSWORD
 ```
 
 ### "Permission Denied" Errors
 
 ```bash
 # Check container user
-docker exec citadelbuy-postgres-prod whoami
+docker exec broxiva-postgres-prod whoami
 
 # Fix volume permissions
 docker run --rm -v postgres-data:/data alpine chown -R 999:999 /data

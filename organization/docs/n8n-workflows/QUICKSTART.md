@@ -1,11 +1,11 @@
-# CitadelBuy n8n Workflow - Quick Start Guide
+# Broxiva n8n Workflow - Quick Start Guide
 
 ## 5-Minute Setup
 
 ### Prerequisites
 - n8n instance running (Docker or self-hosted)
 - Node.js 16+ installed
-- CitadelBuy API access token
+- Broxiva API access token
 - Slack workspace access
 - SendGrid API key
 - Notion workspace
@@ -40,7 +40,7 @@ Access n8n at: http://localhost:5678
 
 Create these credentials in n8n:
 
-**CitadelBuy API**
+**Broxiva API**
 ```
 Type: Header Auth
 Name: Authorization
@@ -72,10 +72,10 @@ Value: Bearer YOUR_NOTION_TOKEN
 
 Create `.env` file:
 ```bash
-CITADELBUY_WEBHOOK_SECRET=$(openssl rand -hex 32)
+BROXIVA_WEBHOOK_SECRET=$(openssl rand -hex 32)
 SENDGRID_ORDER_CONFIRMATION_TEMPLATE_ID=d-your-template-id
 NOTION_FULFILLMENT_DB_ID=your-database-id
-N8N_WEBHOOK_URL=http://localhost:5678/webhook/citadelbuy-order-webhook
+N8N_WEBHOOK_URL=http://localhost:5678/webhook/broxiva-order-webhook
 ```
 
 Load variables:
@@ -101,9 +101,9 @@ node test-workflow.js
 **Manual test:**
 ```bash
 # Copy signature from generate-signature.js output
-curl -X POST 'http://localhost:5678/webhook/citadelbuy-order-webhook' \
+curl -X POST 'http://localhost:5678/webhook/broxiva-order-webhook' \
   -H 'Content-Type: application/json' \
-  -H 'X-CitadelBuy-Signature: YOUR_GENERATED_SIGNATURE' \
+  -H 'X-Broxiva-Signature: YOUR_GENERATED_SIGNATURE' \
   -d @test-payloads.json
 ```
 
@@ -113,18 +113,18 @@ curl -X POST 'http://localhost:5678/webhook/citadelbuy-order-webhook' \
 2. Click toggle at top right to **Activate**
 3. Status should show as **Active** (green)
 
-### Step 7: Configure CitadelBuy Backend
+### Step 7: Configure Broxiva Backend
 
 Add webhook configuration to your backend:
 
-**In CitadelBuy API configuration:**
+**In Broxiva API configuration:**
 ```javascript
 // config/webhooks.js
 module.exports = {
   endpoints: {
     orderCreated: process.env.N8N_WEBHOOK_URL,
   },
-  secret: process.env.CITADELBUY_WEBHOOK_SECRET,
+  secret: process.env.BROXIVA_WEBHOOK_SECRET,
   events: ['order.created']
 };
 ```
@@ -146,7 +146,7 @@ await webhookService.trigger('order.created', {
 
 ### Step 8: Verify Integration
 
-1. Create a test order in CitadelBuy
+1. Create a test order in Broxiva
 2. Check n8n **Executions** tab for new execution
 3. Verify Slack notification received
 4. Check SendGrid for sent email
@@ -157,13 +157,13 @@ await webhookService.trigger('order.created', {
 ### Webhook not triggering
 ```bash
 # Test webhook manually
-curl -X POST http://localhost:5678/webhook-test/citadelbuy-order-webhook
+curl -X POST http://localhost:5678/webhook-test/broxiva-order-webhook
 ```
 
 ### HMAC signature fails
 ```bash
 # Verify secret matches on both sides
-echo $CITADELBUY_WEBHOOK_SECRET
+echo $BROXIVA_WEBHOOK_SECRET
 
 # Test signature generation
 node generate-signature.js test-payloads.json
@@ -230,13 +230,13 @@ node test-workflow.js --no-concurrency
 
 ### Webhook URL Format
 ```
-http://localhost:5678/webhook/citadelbuy-order-webhook
+http://localhost:5678/webhook/broxiva-order-webhook
 ```
 
 ### Required Headers
 ```
 Content-Type: application/json
-X-CitadelBuy-Signature: HMAC-SHA256-SIGNATURE
+X-Broxiva-Signature: HMAC-SHA256-SIGNATURE
 ```
 
 ### Signature Calculation
@@ -264,7 +264,7 @@ const signature = crypto
 ✅ Slack notifications appear in channels
 ✅ Emails sent via SendGrid
 ✅ Notion tasks created automatically
-✅ Audit logs recorded in CitadelBuy
+✅ Audit logs recorded in Broxiva
 ✅ Order status updated correctly
 
 ---

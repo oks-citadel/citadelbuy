@@ -1,4 +1,4 @@
-# Docker Security Guide for CitadelBuy
+# Docker Security Guide for Broxiva
 
 ## Table of Contents
 
@@ -20,7 +20,7 @@
 
 ## Overview
 
-This guide provides comprehensive security recommendations for deploying CitadelBuy using Docker and Docker Compose. It covers both development and production environments, with specific focus on:
+This guide provides comprehensive security recommendations for deploying Broxiva using Docker and Docker Compose. It covers both development and production environments, with specific focus on:
 
 - Secure credential management
 - Network isolation
@@ -83,12 +83,12 @@ All sensitive data MUST be provided via environment variables. Never hardcode cr
 
 ```bash
 # PostgreSQL
-POSTGRES_USER=citadelbuy
+POSTGRES_USER=broxiva
 POSTGRES_PASSWORD=<generate-with: openssl rand -base64 32>
-POSTGRES_DB=citadelbuy_prod
+POSTGRES_DB=broxiva_prod
 
 # MongoDB
-MONGO_USER=citadelbuy
+MONGO_USER=broxiva
 MONGO_PASSWORD=<generate-with: openssl rand -base64 32>
 
 # Redis
@@ -113,7 +113,7 @@ ENCRYPTION_KEY=<generate-with: openssl rand -hex 32>
 
 ```bash
 # RabbitMQ
-RABBITMQ_USER=citadelbuy
+RABBITMQ_USER=broxiva
 RABBITMQ_PASSWORD=<generate-with: openssl rand -base64 32>
 ```
 
@@ -148,12 +148,12 @@ cp .env.docker.example .env
 
 1. **AWS Secrets Manager**
    ```bash
-   aws secretsmanager get-secret-value --secret-id citadelbuy/prod/postgres
+   aws secretsmanager get-secret-value --secret-id broxiva/prod/postgres
    ```
 
 2. **HashiCorp Vault**
    ```bash
-   vault kv get secret/citadelbuy/prod/database
+   vault kv get secret/broxiva/prod/database
    ```
 
 3. **Docker Secrets** (Swarm mode)
@@ -166,7 +166,7 @@ cp .env.docker.example .env
    apiVersion: v1
    kind: Secret
    metadata:
-     name: citadelbuy-secrets
+     name: broxiva-secrets
    type: Opaque
    data:
      postgres-password: <base64-encoded-password>
@@ -182,7 +182,7 @@ The Docker Compose configurations use multiple networks to isolate services:
 
 ```yaml
 networks:
-  citadelbuy-network:    # Application services
+  broxiva-network:    # Application services
   monitoring-network:     # Monitoring services
 ```
 
@@ -293,13 +293,13 @@ Scan images for vulnerabilities:
 
 ```bash
 # Trivy
-trivy image citadelplatforms/citadelbuy-ecommerce:backend-latest
+trivy image broxivaplatforms/broxiva-ecommerce:backend-latest
 
 # Snyk
-snyk container test citadelplatforms/citadelbuy-ecommerce:backend-latest
+snyk container test broxivaplatforms/broxiva-ecommerce:backend-latest
 
 # Docker Scout
-docker scout cves citadelplatforms/citadelbuy-ecommerce:backend-latest
+docker scout cves broxivaplatforms/broxiva-ecommerce:backend-latest
 ```
 
 ### Image Best Practices
@@ -369,10 +369,10 @@ Create application-specific users:
 ```javascript
 // init.js
 db.createUser({
-  user: "citadelbuy_app",
+  user: "broxiva_app",
   pwd: "secure-password",
   roles: [
-    { role: "readWrite", db: "citadelbuy" }
+    { role: "readWrite", db: "broxiva" }
   ]
 });
 ```
@@ -445,12 +445,12 @@ Use `.env` files (excluded from git):
 ```bash
 # Store secret
 aws secretsmanager create-secret \
-  --name citadelbuy/prod/postgres-password \
+  --name broxiva/prod/postgres-password \
   --secret-string "your-secure-password"
 
 # Retrieve secret in application
 aws secretsmanager get-secret-value \
-  --secret-id citadelbuy/prod/postgres-password \
+  --secret-id broxiva/prod/postgres-password \
   --query SecretString \
   --output text
 ```
@@ -459,11 +459,11 @@ aws secretsmanager get-secret-value \
 
 ```bash
 # Store secret
-vault kv put secret/citadelbuy/prod/database \
+vault kv put secret/broxiva/prod/database \
   password="your-secure-password"
 
 # Retrieve secret
-vault kv get -field=password secret/citadelbuy/prod/database
+vault kv get -field=password secret/broxiva/prod/database
 ```
 
 #### Docker Secrets (Swarm)
@@ -488,11 +488,11 @@ Implement regular secret rotation:
 NEW_PASSWORD=$(openssl rand -base64 32)
 
 # Update database
-ALTER USER citadelbuy WITH PASSWORD 'new-password';
+ALTER USER broxiva WITH PASSWORD 'new-password';
 
 # Update secrets manager
 aws secretsmanager update-secret \
-  --secret-id citadelbuy/prod/postgres-password \
+  --secret-id broxiva/prod/postgres-password \
   --secret-string "$NEW_PASSWORD"
 
 # Restart services
@@ -615,12 +615,12 @@ Encrypt backups:
 
 ```bash
 # PostgreSQL backup with encryption
-docker exec citadelbuy-postgres pg_dump -U citadelbuy citadelbuy_prod | \
+docker exec broxiva-postgres pg_dump -U broxiva broxiva_prod | \
   openssl enc -aes-256-cbc -salt -out backup.sql.enc
 
 # Restore from encrypted backup
 openssl enc -aes-256-cbc -d -in backup.sql.enc | \
-  docker exec -i citadelbuy-postgres psql -U citadelbuy citadelbuy_prod
+  docker exec -i broxiva-postgres psql -U broxiva broxiva_prod
 ```
 
 ### Volume Cleanup
@@ -635,7 +635,7 @@ docker volume ls
 docker volume prune
 
 # Remove specific volume
-docker volume rm citadelbuy_postgres-data
+docker volume rm broxiva_postgres-data
 ```
 
 ---
@@ -804,7 +804,7 @@ For production, consider:
    # Daily backup script
    #!/bin/bash
    DATE=$(date +%Y%m%d)
-   docker exec citadelbuy-postgres pg_dump -U citadelbuy citadelbuy_prod | \
+   docker exec broxiva-postgres pg_dump -U broxiva broxiva_prod | \
      gzip > backups/postgres-$DATE.sql.gz
    ```
 
@@ -882,10 +882,10 @@ docker run --rm -v postgres-data:/data alpine chown -R 999:999 /data
 docker ps | grep postgres
 
 # Check logs
-docker logs citadelbuy-postgres
+docker logs broxiva-postgres
 
 # Verify network connectivity
-docker exec citadelbuy-backend ping postgres
+docker exec broxiva-backend ping postgres
 ```
 
 #### 3. Redis AUTH Failed
@@ -895,10 +895,10 @@ docker exec citadelbuy-backend ping postgres
 **Solution**:
 ```bash
 # Verify password is set
-docker exec citadelbuy-redis redis-cli -a "$REDIS_PASSWORD" ping
+docker exec broxiva-redis redis-cli -a "$REDIS_PASSWORD" ping
 
 # Check environment variable
-docker exec citadelbuy-backend env | grep REDIS_PASSWORD
+docker exec broxiva-backend env | grep REDIS_PASSWORD
 ```
 
 #### 4. SSL Certificate Errors
@@ -914,7 +914,7 @@ openssl x509 -in nginx/ssl/server.crt -text -noout
 curl -vvI https://yourdomain.com
 
 # Check NGINX configuration
-docker exec citadelbuy-nginx nginx -t
+docker exec broxiva-nginx nginx -t
 ```
 
 ### Security Incident Response
@@ -923,12 +923,12 @@ If you suspect a security breach:
 
 1. **Isolate**: Disconnect affected containers
    ```bash
-   docker network disconnect citadelbuy-network affected-container
+   docker network disconnect broxiva-network affected-container
    ```
 
 2. **Investigate**: Check logs for suspicious activity
    ```bash
-   docker logs --since 24h citadelbuy-backend | grep -i "error\|unauthorized"
+   docker logs --since 24h broxiva-backend | grep -i "error\|unauthorized"
    ```
 
 3. **Rotate Secrets**: Change all passwords and keys
@@ -981,11 +981,11 @@ docker run --rm -it --net host --pid host --cap-add audit_control \
   docker/docker-bench-security
 
 # Scan image for vulnerabilities
-trivy image citadelplatforms/citadelbuy-ecommerce:latest
+trivy image broxivaplatforms/broxiva-ecommerce:latest
 
 # Check for secrets in image
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-  trufflesecurity/trufflehog:latest docker --image citadelplatforms/citadelbuy-ecommerce:latest
+  trufflesecurity/trufflehog:latest docker --image broxivaplatforms/broxiva-ecommerce:latest
 ```
 
 ---
@@ -994,7 +994,7 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 
 For security issues or questions:
 
-- **Email**: security@citadelbuy.com
+- **Email**: security@broxiva.com
 - **Security Issues**: Please report via private disclosure
 - **Documentation**: See `/docs` directory
 - **Community**: GitHub Discussions
@@ -1003,4 +1003,4 @@ For security issues or questions:
 
 **Last Updated**: 2024-12-03
 **Version**: 2.1.0
-**Maintained By**: CitadelBuy Security Team
+**Maintained By**: Broxiva Security Team

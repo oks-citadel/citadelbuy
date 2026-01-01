@@ -63,7 +63,7 @@ EXPO_PUBLIC_API_URL=http://localhost:4000/api
 # EXPO_PUBLIC_SENTRY_DSN=your-sentry-dsn-here
 
 # For production deployment, update these values:
-# EXPO_PUBLIC_API_URL=https://api.citadelbuy.com/api
+# EXPO_PUBLIC_API_URL=https://api.broxiva.com/api
 # EXPO_PUBLIC_SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
 ```
 

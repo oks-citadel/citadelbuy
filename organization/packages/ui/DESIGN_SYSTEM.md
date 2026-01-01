@@ -286,7 +286,7 @@ easing: {
 ### In TypeScript/JavaScript
 
 ```typescript
-import { broxivaDesignTokens } from '@citadelbuy/ui/styles';
+import { broxivaDesignTokens } from '@broxiva/ui/styles';
 
 // Use tokens
 const primaryColor = broxivaDesignTokens.colors.primary[800];
@@ -298,7 +298,7 @@ const shadow = broxivaDesignTokens.shadows.primary;
 
 ```css
 /* Import the theme */
-@import '@citadelbuy/ui/styles/broxiva-theme.css';
+@import '@broxiva/ui/styles/broxiva-theme.css';
 
 /* Use CSS custom properties */
 .button {

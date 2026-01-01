@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Dynamic Pricing Service provides AI-powered pricing optimization and demand-based pricing for the CitadelBuy platform. It uses machine learning models to optimize prices based on demand, competition, inventory levels, and market conditions to maximize revenue and profit margins.
+The Dynamic Pricing Service provides AI-powered pricing optimization and demand-based pricing for the Broxiva platform. It uses machine learning models to optimize prices based on demand, competition, inventory levels, and market conditions to maximize revenue and profit margins.
 
 ## Key Features
 
@@ -35,7 +35,7 @@ LOG_LEVEL=INFO
 PORT=8006
 
 # Database (PostgreSQL)
-DATABASE_URL=postgresql://user:password@localhost:5432/citadelbuy
+DATABASE_URL=postgresql://user:password@localhost:5432/broxiva
 
 # Redis Cache
 REDIS_URL=redis://localhost:6379/6
@@ -193,10 +193,10 @@ python tests/optimization/test_price_optimizer.py
 
 ```bash
 # Build the Docker image
-docker build -t citadelbuy/pricing:latest .
+docker build -t broxiva/pricing:latest .
 
 # Build with specific version
-docker build -t citadelbuy/pricing:v2.0.0 .
+docker build -t broxiva/pricing:v2.0.0 .
 ```
 
 ### Run Container
@@ -208,7 +208,7 @@ docker run -d \
   -p 8006:8006 \
   --env-file .env \
   -v $(pwd)/models:/app/models \
-  citadelbuy/pricing:latest
+  broxiva/pricing:latest
 
 # Run with Docker Compose
 docker-compose up pricing
@@ -229,7 +229,7 @@ services:
     ports:
       - "8006:8006"
     environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/citadelbuy
+      - DATABASE_URL=postgresql://postgres:password@db:5432/broxiva
       - REDIS_URL=redis://redis:6379/6
       - MODEL_PATH=/app/models
     depends_on:
@@ -604,10 +604,10 @@ See [Contributing Guide](../../../CONTRIBUTING.md) for development guidelines.
 
 ## License
 
-Proprietary - CitadelBuy Platform
+Proprietary - Broxiva Platform
 
 ## Support
 
 For issues and questions:
 - Internal Slack: #pricing-support
-- Email: pricing@citadelbuy.com
+- Email: pricing@broxiva.com

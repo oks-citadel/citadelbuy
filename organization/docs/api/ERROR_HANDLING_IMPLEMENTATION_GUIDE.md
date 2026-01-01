@@ -1,6 +1,6 @@
 # Comprehensive Error Handling Implementation Guide
 
-This guide documents the error handling improvements made to critical paths in CitadelBuy API.
+This guide documents the error handling improvements made to critical paths in Broxiva API.
 
 ## Overview
 
@@ -427,7 +427,7 @@ async sendEmail(options: EmailOptions, retryCount: number = 0, maxRetries: numbe
     }
 
     const mailOptions = {
-      from: this.configService.get('EMAIL_FROM') || 'noreply@citadelbuy.com',
+      from: this.configService.get('EMAIL_FROM') || 'noreply@broxiva.com',
       to: options.to,
       subject: options.subject,
       html,

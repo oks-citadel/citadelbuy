@@ -1,6 +1,6 @@
 # SSL Certificates Directory
 
-This directory contains SSL/TLS certificates for the CitadelBuy platform.
+This directory contains SSL/TLS certificates for the Broxiva platform.
 
 ## Important Security Notice
 
@@ -22,7 +22,7 @@ Generate self-signed certificates for local development:
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -keyout privkey.pem \
   -out fullchain.pem \
-  -subj "/C=US/ST=State/L=City/O=CitadelBuy/CN=localhost"
+  -subj "/C=US/ST=State/L=City/O=Broxiva/CN=localhost"
 ```
 
 ### For Production (Let's Encrypt)
@@ -96,7 +96,7 @@ If rotating certificates manually:
 1. Generate or obtain new certificates
 2. Update this directory with new files
 3. Reload nginx: `kubectl rollout restart deployment/nginx`
-4. Verify: `curl -vI https://citadelbuy.com`
+4. Verify: `curl -vI https://broxiva.com`
 
 ## Security Best Practices
 
@@ -129,7 +129,7 @@ If rotating certificates manually:
 nginx -t
 
 # View nginx error logs
-kubectl logs deployment/nginx -n citadelbuy
+kubectl logs deployment/nginx -n broxiva
 
 # Verify certificate paths in nginx.conf
 grep ssl_certificate /etc/nginx/nginx.conf
@@ -146,7 +146,7 @@ Ensure all resources load over HTTPS:
 
 ```bash
 # Test certificate chain
-openssl s_client -connect citadelbuy.com:443 -showcerts
+openssl s_client -connect broxiva.com:443 -showcerts
 
 # Verify against CA bundle
 openssl verify -CAfile chain.pem fullchain.pem

@@ -1,11 +1,11 @@
-# CitadelBuy Pipelines - Quick Start Guide
+# Broxiva Pipelines - Quick Start Guide
 
-This guide will help you set up and run the Azure Pipelines for CitadelBuy in under 30 minutes.
+This guide will help you set up and run the Azure Pipelines for Broxiva in under 30 minutes.
 
 ## Prerequisites Checklist
 
-- [ ] Azure DevOps Organization: `citadelcloudmanagement`
-- [ ] Azure DevOps Project: `CitadelBuy`
+- [ ] Azure DevOps Organization: `broxivacloudmanagement`
+- [ ] Azure DevOps Project: `Broxiva`
 - [ ] Azure Subscription with active credits
 - [ ] Project Administrator access in Azure DevOps
 - [ ] Contributor/Owner access on Azure subscription
@@ -16,20 +16,20 @@ This guide will help you set up and run the Azure Pipelines for CitadelBuy in un
 
 Go to **Project Settings** → **Service connections** and create:
 
-1. **Azure Connection** (`citadelbuy-azure-connection`)
+1. **Azure Connection** (`broxiva-azure-connection`)
    - Type: Azure Resource Manager
    - Authentication: Service Principal (automatic)
    - Scope: Subscription
 
-2. **ACR Connection** (`citadelbuy-acr-connection`)
+2. **ACR Connection** (`broxiva-acr-connection`)
    - Type: Docker Registry
    - Registry type: Azure Container Registry
-   - Select your ACR: `citadelbuyprod.azurecr.io`
+   - Select your ACR: `broxivaprod.azurecr.io`
 
 3. **AKS Connections** (3 connections)
-   - `citadelbuy-aks-dev`
-   - `citadelbuy-aks-staging`
-   - `citadelbuy-aks-production`
+   - `broxiva-aks-dev`
+   - `broxiva-aks-staging`
+   - `broxiva-aks-production`
    - Type: Kubernetes
    - Authentication: Azure Subscription or Service Account
 
@@ -40,39 +40,39 @@ Go to **Pipelines** → **Library** → **+ Variable group**
 Create these groups (copy from template):
 
 ```yaml
-# citadelbuy-common
+# broxiva-common
 DOCKER_BUILDKIT: 1
 NODE_ENV: production
 PNPM_VERSION: 10.23.0
 
-# citadelbuy-acr
-ACR_NAME: citadelbuyprod
-ACR_LOGIN_SERVER: citadelbuyprod.azurecr.io
+# broxiva-acr
+ACR_NAME: broxivaprod
+ACR_LOGIN_SERVER: broxivaprod.azurecr.io
 
-# citadelbuy-dev
+# broxiva-dev
 ENVIRONMENT: dev
-API_URL: https://api-dev.citadelbuy.com
-WEB_URL: https://dev.citadelbuy.com
-NEXT_PUBLIC_API_URL: https://api-dev.citadelbuy.com
+API_URL: https://api-dev.broxiva.com
+WEB_URL: https://dev.broxiva.com
+NEXT_PUBLIC_API_URL: https://api-dev.broxiva.com
 
-# citadelbuy-staging
+# broxiva-staging
 ENVIRONMENT: staging
-API_URL: https://api-staging.citadelbuy.com
-WEB_URL: https://staging.citadelbuy.com
-NEXT_PUBLIC_API_URL: https://api-staging.citadelbuy.com
+API_URL: https://api-staging.broxiva.com
+WEB_URL: https://staging.broxiva.com
+NEXT_PUBLIC_API_URL: https://api-staging.broxiva.com
 
-# citadelbuy-production
+# broxiva-production
 ENVIRONMENT: production
-API_URL: https://api.citadelbuy.com
-WEB_URL: https://citadelbuy.com
-NEXT_PUBLIC_API_URL: https://api.citadelbuy.com
+API_URL: https://api.broxiva.com
+WEB_URL: https://broxiva.com
+NEXT_PUBLIC_API_URL: https://api.broxiva.com
 
-# citadelbuy-terraform
-TF_BACKEND_RG: citadelbuy-terraform-state
-TF_BACKEND_SA: citadelbuytfstate
+# broxiva-terraform
+TF_BACKEND_RG: broxiva-terraform-state
+TF_BACKEND_SA: broxivatfstate
 TF_BACKEND_CONTAINER: tfstate
 
-# citadelbuy-ci-variables
+# broxiva-ci-variables
 NODE_VERSION: 20.x
 PYTHON_VERSION: 3.11
 ```
@@ -91,12 +91,12 @@ Create these environments:
 
 | Environment | Approvals | Resource |
 |------------|-----------|----------|
-| citadelbuy-dev | None | Kubernetes (namespace: citadelbuy-dev) |
-| citadelbuy-staging | 1 approver | Kubernetes (namespace: citadelbuy-staging) |
-| citadelbuy-production | 2 approvers | Kubernetes (namespace: citadelbuy-prod) |
-| citadelbuy-dev-infra | None | None |
-| citadelbuy-staging-infra | 1 approver | None |
-| citadelbuy-production-infra | 2 approvers | None |
+| broxiva-dev | None | Kubernetes (namespace: broxiva-dev) |
+| broxiva-staging | 1 approver | Kubernetes (namespace: broxiva-staging) |
+| broxiva-production | 2 approvers | Kubernetes (namespace: broxiva-prod) |
+| broxiva-dev-infra | None | None |
+| broxiva-staging-infra | 1 approver | None |
+| broxiva-production-infra | 2 approvers | None |
 
 ### 4. Create Pipelines (5 min)
 
@@ -184,7 +184,7 @@ az extension add --name azure-devops
 az devops login
 
 # Set default organization and project
-az devops configure --defaults organization=https://dev.azure.com/citadelcloudmanagement project=CitadelBuy
+az devops configure --defaults organization=https://dev.azure.com/broxivacloudmanagement project=Broxiva
 
 # List recent pipeline runs
 az pipelines runs list --top 5
@@ -197,16 +197,16 @@ az pipelines runs show --id [RUN_ID]
 
 ```bash
 # Check if images exist in ACR
-az acr repository list --name citadelbuyprod --output table
+az acr repository list --name broxivaprod --output table
 
 # Check AKS pods
-kubectl get pods -n citadelbuy-prod
+kubectl get pods -n broxiva-prod
 
 # View pod logs
-kubectl logs -f deployment/citadelbuy-api -n citadelbuy-prod
+kubectl logs -f deployment/broxiva-api -n broxiva-prod
 
 # Rollback deployment
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-prod
+kubectl rollout undo deployment/broxiva-api -n broxiva-prod
 ```
 
 ### Manual Deployment
@@ -215,11 +215,11 @@ kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-prod
 # If pipeline fails, you can manually deploy:
 
 # Build and push image
-docker build -t citadelbuyprod.azurecr.io/citadelbuy-api:v2.1.0 -f apps/api/Dockerfile.production .
-docker push citadelbuyprod.azurecr.io/citadelbuy-api:v2.1.0
+docker build -t broxivaprod.azurecr.io/broxiva-api:v2.1.0 -f apps/api/Dockerfile.production .
+docker push broxivaprod.azurecr.io/broxiva-api:v2.1.0
 
 # Update Kubernetes deployment
-kubectl set image deployment/citadelbuy-api api=citadelbuyprod.azurecr.io/citadelbuy-api:v2.1.0 -n citadelbuy-prod
+kubectl set image deployment/broxiva-api api=broxivaprod.azurecr.io/broxiva-api:v2.1.0 -n broxiva-prod
 ```
 
 ## Deployment Checklist
@@ -249,7 +249,7 @@ Before deploying to production:
 1. **Immediate**: Check error logs in pipeline
 2. **If critical**: Rollback to previous version
    ```bash
-   kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-prod
+   kubectl rollout undo deployment/broxiva-api -n broxiva-prod
    ```
 3. **If non-critical**: Fix issue and redeploy
 4. **Notify**: Alert team in Slack/Teams
@@ -265,11 +265,11 @@ Before deploying to production:
 
 ## Key URLs
 
-- **Azure DevOps**: https://dev.azure.com/citadelcloudmanagement/CitadelBuy
-- **Pipelines**: https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_build
-- **Releases**: https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_release
-- **Environments**: https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_environments
-- **Service Connections**: https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_settings/adminservices
+- **Azure DevOps**: https://dev.azure.com/broxivacloudmanagement/Broxiva
+- **Pipelines**: https://dev.azure.com/broxivacloudmanagement/Broxiva/_build
+- **Releases**: https://dev.azure.com/broxivacloudmanagement/Broxiva/_release
+- **Environments**: https://dev.azure.com/broxivacloudmanagement/Broxiva/_environments
+- **Service Connections**: https://dev.azure.com/broxivacloudmanagement/Broxiva/_settings/adminservices
 
 ## Pipeline Architecture Diagram
 
@@ -331,9 +331,9 @@ Before deploying to production:
 
 | Environment | API URL | Web URL | WS URL |
 |------------|---------|---------|--------|
-| Dev | api-dev.citadelbuy.com | dev.citadelbuy.com | wss://api-dev.citadelbuy.com |
-| Staging | api-staging.citadelbuy.com | staging.citadelbuy.com | wss://api-staging.citadelbuy.com |
-| Production | api.citadelbuy.com | citadelbuy.com | wss://api.citadelbuy.com |
+| Dev | api-dev.broxiva.com | dev.broxiva.com | wss://api-dev.broxiva.com |
+| Staging | api-staging.broxiva.com | staging.broxiva.com | wss://api-staging.broxiva.com |
+| Production | api.broxiva.com | broxiva.com | wss://api.broxiva.com |
 
 ### Docker Image Tags
 

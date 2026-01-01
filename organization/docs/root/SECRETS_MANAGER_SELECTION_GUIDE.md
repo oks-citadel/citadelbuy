@@ -1,6 +1,6 @@
-# CitadelBuy Secrets Manager Selection Guide
+# Broxiva Secrets Manager Selection Guide
 
-This guide helps you choose the right secrets management solution for your CitadelBuy deployment.
+This guide helps you choose the right secrets management solution for your Broxiva deployment.
 
 ## Quick Decision Tree
 
@@ -45,7 +45,7 @@ Are you running on AWS?
 - Less flexible than Vault
 
 #### Cost Analysis
-**Monthly cost for CitadelBuy (15 secrets, 1M API calls):**
+**Monthly cost for Broxiva (15 secrets, 1M API calls):**
 - Secrets storage: 15 × $0.40 = $6.00
 - API calls: (1,000,000 / 10,000) × $0.05 = $5.00
 - Lambda rotation: ~$0.50
@@ -85,7 +85,7 @@ Are you running on AWS?
 - Network configuration can be complex
 
 #### Cost Analysis
-**Monthly cost for CitadelBuy (15 secrets, 1M operations):**
+**Monthly cost for Broxiva (15 secrets, 1M operations):**
 - Standard tier operations: (1,000,000 / 10,000) × $0.03 = $3.00
 - Premium tier (with HSM): Add $1.00/key = ~$15.00
 - **Total: $3-18/month** (depending on tier)
@@ -128,7 +128,7 @@ Are you running on AWS?
 - More expensive in terms of infrastructure
 
 #### Cost Analysis
-**Monthly cost for CitadelBuy (OSS, HA setup):**
+**Monthly cost for Broxiva (OSS, HA setup):**
 - 3 × t3.small instances: 3 × $15 = $45.00
 - Load balancer: $20.00
 - Storage: $5.00
@@ -446,9 +446,9 @@ Calculate your score for each option:
 
 ## Final Recommendations
 
-### For CitadelBuy Specifically
+### For Broxiva Specifically
 
-Based on CitadelBuy's architecture and requirements:
+Based on Broxiva's architecture and requirements:
 
 #### Development Environment
 **Recommended:** Local Vault in dev mode or AWS/Azure (if already using cloud)
@@ -544,7 +544,7 @@ The right secrets management solution depends on your specific requirements:
 - **Small team, simple needs?** → Cloud-native option (AWS/Azure)
 - **Large enterprise, complex needs?** → HashiCorp Vault Enterprise
 
-For most CitadelBuy deployments, we recommend starting with your cloud provider's native solution (AWS Secrets Manager or Azure Key Vault) and migrating to HashiCorp Vault only if multi-cloud support becomes a requirement.
+For most Broxiva deployments, we recommend starting with your cloud provider's native solution (AWS Secrets Manager or Azure Key Vault) and migrating to HashiCorp Vault only if multi-cloud support becomes a requirement.
 
 Remember: The best secrets manager is the one that:
 1. Meets your security requirements

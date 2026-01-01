@@ -12,7 +12,7 @@
 
 ## Context
 
-CitadelBuy needs a primary database that can support:
+Broxiva needs a primary database that can support:
 
 1. **Scale Requirements**:
    - 1M+ concurrent users globally

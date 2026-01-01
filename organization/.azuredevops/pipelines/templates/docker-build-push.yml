@@ -10,10 +10,10 @@ parameters:
     type: string
   - name: containerRegistry
     type: string
-    default: 'citadelbuyprod.azurecr.io'
+    default: 'broxivaprod.azurecr.io'
   - name: acrConnection
     type: string
-    default: 'citadelbuy-acr-connection'
+    default: 'broxiva-acr-connection'
   - name: buildArgs
     type: string
     default: ''

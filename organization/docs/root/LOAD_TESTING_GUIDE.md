@@ -1,4 +1,4 @@
-# CitadelBuy Load Testing Guide
+# Broxiva Load Testing Guide
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@
 
 ## Overview
 
-CitadelBuy uses [k6](https://k6.io/) for load testing and performance validation. This guide provides comprehensive instructions for running, analyzing, and maintaining load tests for the platform.
+Broxiva uses [k6](https://k6.io/) for load testing and performance validation. This guide provides comprehensive instructions for running, analyzing, and maintaining load tests for the platform.
 
 ### Why Load Testing?
 
@@ -125,17 +125,17 @@ BASE_URL=http://localhost:3000
 API_URL=http://localhost:4000
 
 # Staging
-# BASE_URL=https://staging.citadelbuy.com
-# API_URL=https://api-staging.citadelbuy.com
+# BASE_URL=https://staging.broxiva.com
+# API_URL=https://api-staging.broxiva.com
 
 # Production (use with caution!)
-# BASE_URL=https://citadelbuy.com
-# API_URL=https://api.citadelbuy.com
+# BASE_URL=https://broxiva.com
+# API_URL=https://api.broxiva.com
 ```
 
 ## Test Scenarios
 
-CitadelBuy includes eight comprehensive load test scenarios:
+Broxiva includes eight comprehensive load test scenarios:
 
 ### 1. Authentication Tests (`auth.js`)
 
@@ -396,8 +396,8 @@ k6 run tests/load/scenarios/auth.js
 #### Staging Environment
 
 ```bash
-export BASE_URL=https://staging.citadelbuy.com
-export API_URL=https://api-staging.citadelbuy.com
+export BASE_URL=https://staging.broxiva.com
+export API_URL=https://api-staging.broxiva.com
 k6 run tests/load/scenarios/checkout.js
 ```
 
@@ -405,8 +405,8 @@ k6 run tests/load/scenarios/checkout.js
 
 ```bash
 # Only run during maintenance windows or with approval
-export BASE_URL=https://citadelbuy.com
-export API_URL=https://api.citadelbuy.com
+export BASE_URL=https://broxiva.com
+export API_URL=https://api.broxiva.com
 k6 run --vus 5 --duration 1m tests/load/scenarios/auth.js
 ```
 

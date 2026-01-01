@@ -41,7 +41,7 @@ This guide provides instructions for building Docker images for the Broxiva e-co
 
 ```powershell
 # Navigate to the project directory
-cd C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization
+cd C:\Users\Dell\OneDrive\Documents\Broxivabuy\Broxiva\organization
 
 # Run the build script
 .\build-broxiva-images.ps1
@@ -51,7 +51,7 @@ cd C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization
 
 ```bash
 # Navigate to the project directory
-cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization
+cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization
 
 # Make script executable
 chmod +x build-broxiva-images.sh
@@ -79,7 +79,7 @@ docker-compose -f docker-compose.production.yml build api
 #### Build Web Application
 
 ```bash
-cd C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization
+cd C:\Users\Dell\OneDrive\Documents\Broxivabuy\Broxiva\organization
 
 docker build -f apps/web/Dockerfile.production \
   -t broxiva-web:latest \

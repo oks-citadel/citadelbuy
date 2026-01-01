@@ -1,6 +1,6 @@
-# CitadelBuy Documentation Index
+# Broxiva Documentation Index
 
-Welcome to the CitadelBuy platform documentation. This directory contains comprehensive guides for operating, deploying, and maintaining the CitadelBuy e-commerce platform.
+Welcome to the Broxiva platform documentation. This directory contains comprehensive guides for operating, deploying, and maintaining the Broxiva e-commerce platform.
 
 ## Documentation Overview
 
@@ -268,8 +268,8 @@ Quick reference for monitoring essentials.
 - **Slack - #incidents:** Active incident response
 - **Slack - #devops:** Infrastructure and operations
 - **Slack - #alerts:** Automated monitoring alerts
-- **Email - platform-team@citadelbuy.com:** Platform team
-- **Email - security@citadelbuy.com:** Security issues
+- **Email - platform-team@broxiva.com:** Platform team
+- **Email - security@broxiva.com:** Security issues
 
 ## Contributing
 
@@ -298,7 +298,7 @@ If you find errors, have suggestions, or need clarification:
 1. **Urgent issues:** Post in #incidents or #devops
 2. **General feedback:** Post in #engineering
 3. **Documentation requests:** Create ticket in project tracker
-4. **Security concerns:** Email security@citadelbuy.com
+4. **Security concerns:** Email security@broxiva.com
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This checklist ensures proper implementation and verification of the database performance optimizations and backup strategies for CitadelBuy.
+This checklist ensures proper implementation and verification of the database performance optimizations and backup strategies for Broxiva.
 
 ---
 
@@ -28,20 +28,20 @@ This checklist ensures proper implementation and verification of the database pe
 
 - [ ] Full database backup
   ```bash
-  pg_dump citadelbuy > citadelbuy_backup_$(date +%Y%m%d).sql
+  pg_dump broxiva > broxiva_backup_$(date +%Y%m%d).sql
   ```
 - [ ] Verify backup integrity
   ```bash
-  pg_restore --list citadelbuy_backup_*.sql
+  pg_restore --list broxiva_backup_*.sql
   ```
 - [ ] Upload backup to cloud storage
   ```bash
-  aws s3 cp citadelbuy_backup_*.sql s3://citadelbuy-backups/pre-migration/
+  aws s3 cp broxiva_backup_*.sql s3://broxiva-backups/pre-migration/
   ```
 - [ ] Document current performance metrics
   ```sql
   SELECT COUNT(*) FROM pg_indexes;
-  SELECT pg_size_pretty(pg_database_size('citadelbuy'));
+  SELECT pg_size_pretty(pg_database_size('broxiva'));
   ```
 
 ---
@@ -142,7 +142,7 @@ This checklist ensures proper implementation and verification of the database pe
 - [ ] Verify WAL files in archive location
   ```bash
   ls -lh /backups/wal/
-  aws s3 ls s3://citadelbuy-backups/wal/
+  aws s3 ls s3://broxiva-backups/wal/
   ```
 
 ### 2.2 Automated Backup Scripts
@@ -196,7 +196,7 @@ This checklist ensures proper implementation and verification of the database pe
 **AWS S3:**
 - [ ] Create S3 bucket
   ```bash
-  aws s3 mb s3://citadelbuy-backups
+  aws s3 mb s3://broxiva-backups
   ```
 - [ ] Configure lifecycle policies
 - [ ] Enable versioning
@@ -223,8 +223,8 @@ This checklist ensures proper implementation and verification of the database pe
   ```
 - [ ] Test restore on separate server
   ```bash
-  createdb citadelbuy_test
-  pg_restore -d citadelbuy_test /backups/full/latest.sql.gz
+  createdb broxiva_test
+  pg_restore -d broxiva_test /backups/full/latest.sql.gz
   ```
 - [ ] Verify data integrity
   ```sql
@@ -234,7 +234,7 @@ This checklist ensures proper implementation and verification of the database pe
   ```
 - [ ] Drop test database
   ```bash
-  dropdb citadelbuy_test
+  dropdb broxiva_test
   ```
 
 ---
@@ -281,7 +281,7 @@ This checklist ensures proper implementation and verification of the database pe
   ```
 - [ ] Test connection
   ```bash
-  psql -h localhost -p 6432 -U citadelbuy_app citadelbuy
+  psql -h localhost -p 6432 -U broxiva_app broxiva
   ```
 - [ ] Check pools
   ```sql
@@ -292,7 +292,7 @@ This checklist ensures proper implementation and verification of the database pe
 
 - [ ] Update DATABASE_URL in `.env`
   ```
-  DATABASE_URL="postgresql://user:pass@localhost:6432/citadelbuy?pgbouncer=true"
+  DATABASE_URL="postgresql://user:pass@localhost:6432/broxiva?pgbouncer=true"
   ```
 - [ ] Update Prisma configuration
 - [ ] Restart application

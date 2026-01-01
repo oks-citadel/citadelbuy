@@ -1,6 +1,6 @@
 # Error Reporting Setup Guide
 
-Complete setup guide for error boundaries and Sentry monitoring in CitadelBuy.
+Complete setup guide for error boundaries and Sentry monitoring in Broxiva.
 
 ## Prerequisites
 
@@ -40,8 +40,8 @@ cd ios && pod install && cd ..
 1. Log in to Sentry (https://sentry.io)
 2. Create or select your organization
 3. Create two projects:
-   - `citadelbuy-web` for web application
-   - `citadelbuy-mobile` for mobile application
+   - `broxiva-web` for web application
+   - `broxiva-mobile` for mobile application
 4. Get the DSN from Project Settings > Client Keys (DSN)
 5. Generate an auth token from User Settings > Auth Tokens
 
@@ -55,7 +55,7 @@ Create `apps/web/.env.local`:
 # Sentry Configuration
 NEXT_PUBLIC_SENTRY_DSN=https://your-public-key@o123456.ingest.sentry.io/123456
 SENTRY_ORG=your-organization-slug
-SENTRY_PROJECT=citadelbuy-web
+SENTRY_PROJECT=broxiva-web
 SENTRY_AUTH_TOKEN=your-sentry-auth-token
 SENTRY_ENVIRONMENT=development
 ```
@@ -68,7 +68,7 @@ Create `apps/mobile/.env`:
 # Sentry Configuration
 EXPO_PUBLIC_SENTRY_DSN=https://your-public-key@o123456.ingest.sentry.io/789012
 SENTRY_ORG=your-organization-slug
-SENTRY_PROJECT=citadelbuy-mobile
+SENTRY_PROJECT=broxiva-mobile
 SENTRY_AUTH_TOKEN=your-sentry-auth-token
 ```
 
@@ -81,7 +81,7 @@ Create `apps/web/sentry.properties`:
 ```properties
 defaults.url=https://sentry.io/
 defaults.org=your-organization-slug
-defaults.project=citadelbuy-web
+defaults.project=broxiva-web
 auth.token=your-sentry-auth-token
 ```
 
@@ -92,7 +92,7 @@ Create `apps/mobile/sentry.properties`:
 ```properties
 defaults.url=https://sentry.io/
 defaults.org=your-organization-slug
-defaults.project=citadelbuy-mobile
+defaults.project=broxiva-mobile
 auth.token=your-sentry-auth-token
 ```
 
@@ -227,14 +227,14 @@ For manual upload:
 cd apps/web
 npx sentry-cli sourcemaps upload \
   --org=your-org \
-  --project=citadelbuy-web \
+  --project=broxiva-web \
   .next/static/chunks
 
 # Mobile
 cd apps/mobile
 npx sentry-cli sourcemaps upload \
   --org=your-org \
-  --project=citadelbuy-mobile \
+  --project=broxiva-mobile \
   .expo/
 ```
 
@@ -249,7 +249,7 @@ Set these environment variables in your deployment platform:
 ```
 NEXT_PUBLIC_SENTRY_DSN=https://...
 SENTRY_ORG=your-org
-SENTRY_PROJECT=citadelbuy-web
+SENTRY_PROJECT=broxiva-web
 SENTRY_AUTH_TOKEN=your-token
 SENTRY_ENVIRONMENT=production
 ```
@@ -265,7 +265,7 @@ Add to `eas.json`:
       "env": {
         "EXPO_PUBLIC_SENTRY_DSN": "https://...",
         "SENTRY_ORG": "your-org",
-        "SENTRY_PROJECT": "citadelbuy-mobile",
+        "SENTRY_PROJECT": "broxiva-mobile",
         "SENTRY_AUTH_TOKEN": "your-token"
       }
     }
@@ -309,7 +309,7 @@ Update `app.json`:
           "file": "sentry-expo/upload-sourcemaps",
           "config": {
             "organization": "your-org",
-            "project": "citadelbuy-mobile",
+            "project": "broxiva-mobile",
             "authToken": "your-token"
           }
         }
@@ -405,7 +405,7 @@ jobs:
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: your-org
-          SENTRY_PROJECT: citadelbuy-web
+          SENTRY_PROJECT: broxiva-web
         with:
           environment: production
           version: ${{ github.sha }}
@@ -499,7 +499,7 @@ Sentry pricing is based on events (errors + transactions). To optimize:
 - **Quick Reference**: `/docs/ERROR_BOUNDARIES_QUICK_REFERENCE.md`
 - **Sentry Docs**: https://docs.sentry.io
 - **Sentry Discord**: https://discord.gg/sentry
-- **Internal Support**: devops@citadelbuy.com
+- **Internal Support**: devops@broxiva.com
 
 ## Next Steps
 

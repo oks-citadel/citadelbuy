@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document tracks the translation status and coverage for all supported languages on the CitadelBuy platform.
+This document tracks the translation status and coverage for all supported languages on the Broxiva platform.
 
 Last Updated: 2025-12-06
 
@@ -249,12 +249,12 @@ Last Updated: 2025-12-06
 ## Contact
 
 **i18n Team**
-- Email: i18n@citadelbuy.com
+- Email: i18n@broxiva.com
 - Slack: #i18n-team
-- GitHub: @citadelbuy/i18n
+- GitHub: @broxiva/i18n
 
 **Translation Managers**
-- European Languages: maria@citadelbuy.com
-- Middle East: ahmed@citadelbuy.com
-- Asian Languages: li@citadelbuy.com
-- African Languages: kwame@citadelbuy.com
+- European Languages: maria@broxiva.com
+- Middle East: ahmed@broxiva.com
+- Asian Languages: li@broxiva.com
+- African Languages: kwame@broxiva.com

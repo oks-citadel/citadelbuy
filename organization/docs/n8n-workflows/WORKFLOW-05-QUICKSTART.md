@@ -1,4 +1,4 @@
-# CitadelBuy Feedback & Review Collection - Quick Start Guide
+# Broxiva Feedback & Review Collection - Quick Start Guide
 
 ## 5-Minute Setup
 
@@ -12,22 +12,22 @@
 #### SendGrid API Key
 ```
 Credentials → Add → SendGrid API
-Name: sendgrid-citadelbuy
+Name: sendgrid-broxiva
 API Key: [Your SendGrid API key]
 ```
 
-#### CitadelBuy API Key
+#### Broxiva API Key
 ```
 Credentials → Add → HTTP Header Auth
-Name: citadelbuy-api-key
+Name: broxiva-api-key
 Header Name: X-API-Key
-Header Value: [Your CitadelBuy API key]
+Header Value: [Your Broxiva API key]
 ```
 
 #### OpenAI API Key
 ```
 Credentials → Add → OpenAI API
-Name: openai-citadelbuy
+Name: openai-broxiva
 API Key: [Your OpenAI API key]
 ```
 
@@ -36,15 +36,15 @@ API Key: [Your OpenAI API key]
 
 ### 4. Get Webhook URLs
 Copy these three webhook URLs:
-1. **Shipment Delivered**: `https://n8n.citadelbuy.com/webhook/shipment-delivered`
-2. **Review Submitted**: `https://n8n.citadelbuy.com/webhook/review-submitted`
-3. **NPS Response**: `https://n8n.citadelbuy.com/webhook/nps-response`
+1. **Shipment Delivered**: `https://n8n.broxiva.com/webhook/shipment-delivered`
+2. **Review Submitted**: `https://n8n.broxiva.com/webhook/review-submitted`
+3. **NPS Response**: `https://n8n.broxiva.com/webhook/nps-response`
 
 ### 5. Test with Sample Payload
 
 ```bash
 # Test shipment delivered
-curl -X POST https://n8n.citadelbuy.com/webhook/shipment-delivered \
+curl -X POST https://n8n.broxiva.com/webhook/shipment-delivered \
   -H "Content-Type: application/json" \
   -d '{
     "order_id": "ORD-TEST-001",
@@ -115,7 +115,7 @@ Trigger Score Aggregation
 
 - [ ] Import workflow to n8n
 - [ ] Configure SendGrid credentials
-- [ ] Configure CitadelBuy API credentials
+- [ ] Configure Broxiva API credentials
 - [ ] Configure OpenAI credentials
 - [ ] Configure Klaviyo credentials (optional for reminders)
 - [ ] Configure Zendesk credentials (optional for tickets)
@@ -125,7 +125,7 @@ Trigger Score Aggregation
 - [ ] Activate workflow
 - [ ] Test with sample payloads
 - [ ] Configure ShipStation webhook
-- [ ] Update CitadelBuy review submission handler
+- [ ] Update Broxiva review submission handler
 - [ ] Create NPS survey landing page
 - [ ] Set up Mixpanel dashboards
 
@@ -205,7 +205,7 @@ Trigger Score Aggregation
 
 ## Required API Endpoints
 
-Your CitadelBuy API must support:
+Your Broxiva API must support:
 
 ```
 GET  /v1/orders/{order_id}
@@ -233,12 +233,12 @@ POST /v1/analytics/aggregate-scores
 - **NPS Score**: Net Promoter Score
 - **Time to Review**: Days from delivery to review
 - **Sentiment Score**: AI-calculated sentiment
-- **Platform Distribution**: Reviews across CitadelBuy/Google/Trustpilot
+- **Platform Distribution**: Reviews across Broxiva/Google/Trustpilot
 
 ## Support
 
 - **Documentation**: README-workflow-05.md
-- **Email**: dev@citadelbuy.com
+- **Email**: dev@broxiva.com
 - **Slack**: #platform-engineering
 
 ---

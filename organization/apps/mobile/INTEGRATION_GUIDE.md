@@ -235,8 +235,8 @@ Add permissions for camera and photo library:
 ```json
 {
   "expo": {
-    "name": "CitadelBuy",
-    "slug": "citadelbuy-mobile",
+    "name": "Broxiva",
+    "slug": "broxiva-mobile",
     "plugins": [
       [
         "expo-image-picker",

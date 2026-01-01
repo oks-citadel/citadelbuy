@@ -12,7 +12,7 @@
 
 ## Context
 
-CitadelBuy is expanding from a regional platform to a global B2B marketplace supporting cross-border trade between Africa, United States, Europe, Asia-Pacific, Latin America, and the Middle East. To support this expansion, we need to make architectural decisions about:
+Broxiva is expanding from a regional platform to a global B2B marketplace supporting cross-border trade between Africa, United States, Europe, Asia-Pacific, Latin America, and the Middle East. To support this expansion, we need to make architectural decisions about:
 
 1. **Latency Requirements**: Users in each region expect < 200ms API response times
 2. **Data Residency**: Compliance with GDPR (Europe), CCPA (US), Nigerian Data Protection Regulation (Africa), and other regional privacy laws

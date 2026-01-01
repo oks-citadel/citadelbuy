@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Recommendation Service is CitadelBuy's AI-powered product recommendation engine that delivers personalized shopping experiences. It uses collaborative filtering, content-based filtering, and hybrid approaches to suggest relevant products, increase engagement, and boost conversions.
+The Recommendation Service is Broxiva's AI-powered product recommendation engine that delivers personalized shopping experiences. It uses collaborative filtering, content-based filtering, and hybrid approaches to suggest relevant products, increase engagement, and boost conversions.
 
 ## Key Features
 
@@ -38,7 +38,7 @@ LOG_LEVEL=INFO
 PORT=8001
 
 # Database (PostgreSQL)
-DATABASE_URL=postgresql://user:password@localhost:5432/citadelbuy
+DATABASE_URL=postgresql://user:password@localhost:5432/broxiva
 
 # Redis Cache
 REDIS_URL=redis://localhost:6379/2
@@ -181,10 +181,10 @@ isort src/
 
 ```bash
 # Build the Docker image
-docker build -t citadelbuy/recommendation:latest .
+docker build -t broxiva/recommendation:latest .
 
 # Build with specific version
-docker build -t citadelbuy/recommendation:v2.0.0 .
+docker build -t broxiva/recommendation:v2.0.0 .
 ```
 
 ### Run Container
@@ -196,7 +196,7 @@ docker run -d \
   -p 8001:8001 \
   --env-file .env \
   -v $(pwd)/models:/app/models \
-  citadelbuy/recommendation:latest
+  broxiva/recommendation:latest
 
 # Run with Docker Compose
 docker-compose up recommendation
@@ -217,7 +217,7 @@ services:
     ports:
       - "8001:8001"
     environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/citadelbuy
+      - DATABASE_URL=postgresql://postgres:password@db:5432/broxiva
       - REDIS_URL=redis://redis:6379/2
       - MODEL_PATH=/app/models
     depends_on:
@@ -520,10 +520,10 @@ See [Contributing Guide](../../../CONTRIBUTING.md) for development guidelines.
 
 ## License
 
-Proprietary - CitadelBuy Platform
+Proprietary - Broxiva Platform
 
 ## Support
 
 For issues and questions:
 - Internal Slack: #recommendation-support
-- Email: dev@citadelbuy.com
+- Email: dev@broxiva.com

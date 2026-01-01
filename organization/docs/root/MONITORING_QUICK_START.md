@@ -1,6 +1,6 @@
 # Monitoring Quick Start Guide
 
-Fast setup guide for CitadelBuy monitoring and error tracking.
+Fast setup guide for Broxiva monitoring and error tracking.
 
 ## 🚀 Quick Setup (5 minutes)
 
@@ -9,8 +9,8 @@ Fast setup guide for CitadelBuy monitoring and error tracking.
 1. Go to [https://sentry.io](https://sentry.io)
 2. Create account (free tier available)
 3. Create projects:
-   - `citadelbuy-backend-production`
-   - `citadelbuy-web-production`
+   - `broxiva-backend-production`
+   - `broxiva-web-production`
 4. Copy the DSN from each project settings
 
 ### 2. Configure Backend
@@ -190,7 +190,7 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'citadelbuy-api'
+  - job_name: 'broxiva-api'
     static_configs:
       - targets: ['host.docker.internal:4000']
     metrics_path: '/api/metrics'
@@ -238,7 +238,7 @@ For detailed setup and advanced features:
 ## 🆘 Need Help?
 
 - **Slack**: `#monitoring` channel
-- **Email**: devops@citadelbuy.com
+- **Email**: devops@broxiva.com
 - **Docs**: `/docs/MONITORING_SETUP.md`
 
 ---

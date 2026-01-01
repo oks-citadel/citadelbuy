@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# CitadelBuy EAS Build Scripts
+# Broxiva EAS Build Scripts
 # Common commands for building and deploying the mobile app
 
 # Colors for output
@@ -10,7 +10,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}CitadelBuy EAS Build Scripts${NC}"
+echo -e "${BLUE}Broxiva EAS Build Scripts${NC}"
 echo ""
 
 # Function to display menu

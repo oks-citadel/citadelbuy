@@ -1,4 +1,4 @@
-# CitadelBuy Customer Feedback & Review Collection Workflow
+# Broxiva Customer Feedback & Review Collection Workflow
 
 ## Overview
 
@@ -10,7 +10,7 @@
 
 ### Core Functionality
 - **Automated Review Requests**: Triggered 5 days after delivery confirmation
-- **Multi-Platform Reviews**: Links to CitadelBuy, Google Business, and Trustpilot
+- **Multi-Platform Reviews**: Links to Broxiva, Google Business, and Trustpilot
 - **1-Click Star Ratings**: Quick rating URLs (1-5 stars) for easy feedback
 - **Smart Follow-ups**:
   - No response after 3 days → Gentle reminder via Klaviyo
@@ -23,19 +23,19 @@
 ### Workflow Triggers
 
 1. **Shipment Delivered Webhook**
-   - URL: `https://n8n.citadelbuy.com/webhook/shipment-delivered`
+   - URL: `https://n8n.broxiva.com/webhook/shipment-delivered`
    - Method: POST
-   - Source: ShipStation or CitadelBuy API
+   - Source: ShipStation or Broxiva API
 
 2. **Review Submitted Webhook**
-   - URL: `https://n8n.citadelbuy.com/webhook/review-submitted`
+   - URL: `https://n8n.broxiva.com/webhook/review-submitted`
    - Method: POST
-   - Source: CitadelBuy Review System
+   - Source: Broxiva Review System
 
 3. **NPS Response Webhook**
-   - URL: `https://n8n.citadelbuy.com/webhook/nps-response`
+   - URL: `https://n8n.broxiva.com/webhook/nps-response`
    - Method: POST
-   - Source: CitadelBuy NPS Survey Form
+   - Source: Broxiva NPS Survey Form
 
 ## Setup Instructions
 
@@ -43,7 +43,7 @@
 
 1. **n8n Instance**
    - Version: 1.0.0 or higher
-   - Running on: `https://n8n.citadelbuy.com`
+   - Running on: `https://n8n.broxiva.com`
 
 2. **Required Integrations**
    - SendGrid account with API key
@@ -52,7 +52,7 @@
    - Zendesk account with API credentials
    - Mixpanel project token
    - Slack workspace with webhook URL
-   - CitadelBuy API access
+   - Broxiva API access
 
 ### Step 1: Import Workflow
 
@@ -79,21 +79,21 @@ Or import via n8n UI:
 1. Go to SendGrid → Settings → API Keys
 2. Create new API key with "Mail Send" permissions
 3. In n8n: Credentials → Add Credential → SendGrid API
-4. Name: `sendgrid-citadelbuy`
+4. Name: `sendgrid-broxiva`
 5. Paste API key
 
 #### OpenAI API Key
 1. Visit https://platform.openai.com/api-keys
 2. Create new API key
 3. In n8n: Credentials → Add Credential → OpenAI API
-4. Name: `openai-citadelbuy`
+4. Name: `openai-broxiva`
 5. Paste API key
 
 #### Klaviyo API Key
 1. Klaviyo → Account → Settings → API Keys
 2. Create Private API Key
 3. In n8n: Credentials → Add Credential → Klaviyo API
-4. Name: `klaviyo-citadelbuy`
+4. Name: `klaviyo-broxiva`
 5. Enter API key
 
 #### Zendesk API Credentials
@@ -101,17 +101,17 @@ Or import via n8n UI:
 2. Enable Token Access
 3. Create new API token
 4. In n8n: Credentials → Add Credential → Zendesk API
-5. Name: `zendesk-citadelbuy`
+5. Name: `zendesk-broxiva`
 6. Enter:
-   - Subdomain: `citadelbuy`
-   - Email: `api@citadelbuy.com`
+   - Subdomain: `broxiva`
+   - Email: `api@broxiva.com`
    - API Token: [your token]
 
 #### Mixpanel Project Token
 1. Mixpanel → Settings → Project Settings
 2. Copy Project Token
 3. In n8n: Credentials → Add Credential → HTTP Header Auth
-4. Name: `mixpanel-citadelbuy`
+4. Name: `mixpanel-broxiva`
 5. Header Name: `Authorization`
 6. Header Value: `Basic [base64 of project_token:]`
 
@@ -121,14 +121,14 @@ Or import via n8n UI:
 3. Select #customer-support channel
 4. Copy Webhook URL
 5. In n8n: Credentials → Add Credential → Slack API
-6. Name: `slack-citadelbuy`
+6. Name: `slack-broxiva`
 7. Paste webhook URL
 
-#### CitadelBuy API Key
-1. CitadelBuy Admin → Settings → API Keys
+#### Broxiva API Key
+1. Broxiva Admin → Settings → API Keys
 2. Generate new API key
 3. In n8n: Credentials → Add Credential → HTTP Header Auth
-4. Name: `citadelbuy-api-key`
+4. Name: `broxiva-api-key`
 5. Header Name: `X-API-Key`
 6. Header Value: [your API key]
 
@@ -136,7 +136,7 @@ Or import via n8n UI:
 
 Create the following templates in SendGrid:
 
-#### Template 1: Review Request (d-citadelbuy-review-request-v2)
+#### Template 1: Review Request (d-broxiva-review-request-v2)
 
 ```html
 <!DOCTYPE html>
@@ -187,7 +187,7 @@ Create the following templates in SendGrid:
 
         <div class="review-links">
             <p><strong>Or leave a detailed review on:</strong></p>
-            <a href="{{review_url}}">CitadelBuy</a>
+            <a href="{{review_url}}">Broxiva</a>
             <a href="{{google_review_url}}">Google</a>
             <a href="{{trustpilot_url}}">Trustpilot</a>
         </div>
@@ -196,14 +196,14 @@ Create the following templates in SendGrid:
     </div>
 
     <div class="footer">
-        <p>Thank you for choosing CitadelBuy!</p>
-        <p>Questions? Contact us at support@citadelbuy.com</p>
+        <p>Thank you for choosing Broxiva!</p>
+        <p>Questions? Contact us at support@broxiva.com</p>
     </div>
 </body>
 </html>
 ```
 
-#### Template 2: Thank You for Review (d-citadelbuy-review-thank-you)
+#### Template 2: Thank You for Review (d-broxiva-review-thank-you)
 
 ```html
 <!DOCTYPE html>
@@ -235,20 +235,20 @@ Create the following templates in SendGrid:
         </div>
 
         <div class="referral">
-            <h3>Love CitadelBuy? Refer a Friend!</h3>
-            <p>Share CitadelBuy with friends and you'll both get $10 off your next order.</p>
+            <h3>Love Broxiva? Refer a Friend!</h3>
+            <p>Share Broxiva with friends and you'll both get $10 off your next order.</p>
             <p><a href="{{referral_url}}" style="color: #0c5460; font-weight: bold;">Get Your Referral Link →</a></p>
         </div>
 
         <p>We can't wait to serve you again!</p>
 
-        <p>Best regards,<br>The CitadelBuy Team</p>
+        <p>Best regards,<br>The Broxiva Team</p>
     </div>
 </body>
 </html>
 ```
 
-#### Template 3: NPS Survey (d-citadelbuy-nps-survey)
+#### Template 3: NPS Survey (d-broxiva-nps-survey)
 
 ```html
 <!DOCTYPE html>
@@ -273,7 +273,7 @@ Create the following templates in SendGrid:
 
         <p>Thank you for your recent order #{{order_number}} totaling ${{order_total}}.</p>
 
-        <p><strong>How likely are you to recommend CitadelBuy to a friend or colleague?</strong></p>
+        <p><strong>How likely are you to recommend Broxiva to a friend or colleague?</strong></p>
 
         <p style="text-align: center;">
             <small>Not likely</small>
@@ -326,7 +326,7 @@ Your feedback helps us improve and helps other shoppers make informed decisions.
 
 Thanks for being an amazing customer!
 
-- The CitadelBuy Team
+- The Broxiva Team
 ```
 
 ### Step 5: Activate Workflow
@@ -337,7 +337,7 @@ Thanks for being an amazing customer!
 
 ```bash
 # Test webhook endpoints
-curl -X POST https://n8n.citadelbuy.com/webhook/shipment-delivered \
+curl -X POST https://n8n.broxiva.com/webhook/shipment-delivered \
   -H "Content-Type: application/json" \
   -d '{"order_id": "test-123", "status": "delivered"}'
 ```
@@ -346,14 +346,14 @@ curl -X POST https://n8n.citadelbuy.com/webhook/shipment-delivered \
 
 1. ShipStation → Account → Settings → API Settings
 2. Add Custom Store:
-   - Store Name: CitadelBuy Reviews
-   - Webhook URL: `https://n8n.citadelbuy.com/webhook/shipment-delivered`
+   - Store Name: Broxiva Reviews
+   - Webhook URL: `https://n8n.broxiva.com/webhook/shipment-delivered`
    - Events: `shipment_notify` (delivery confirmation)
 3. Save configuration
 
-### Step 7: Update CitadelBuy Review System
+### Step 7: Update Broxiva Review System
 
-Add webhook calls to your CitadelBuy review submission handler:
+Add webhook calls to your Broxiva review submission handler:
 
 ```javascript
 // In your review submission endpoint
@@ -362,7 +362,7 @@ async function submitReview(reviewData) {
   const review = await db.reviews.create(reviewData);
 
   // Trigger n8n workflow
-  await axios.post('https://n8n.citadelbuy.com/webhook/review-submitted', {
+  await axios.post('https://n8n.broxiva.com/webhook/review-submitted', {
     review_id: review.id,
     order_id: review.order_id,
     customer_id: review.customer_id,
@@ -380,7 +380,7 @@ async function submitReview(reviewData) {
 
 ### Step 8: Configure NPS Survey Page
 
-Create a landing page at `https://citadelbuy.com/nps-survey/[token]`:
+Create a landing page at `https://broxiva.com/nps-survey/[token]`:
 
 ```javascript
 // NPS Survey submission handler
@@ -389,7 +389,7 @@ async function submitNPSResponse(token, score, feedback) {
   const decoded = decodeToken(token);
 
   // Trigger n8n workflow
-  await axios.post('https://n8n.citadelbuy.com/webhook/nps-response', {
+  await axios.post('https://n8n.broxiva.com/webhook/nps-response', {
     customer_id: decoded.customer_id,
     customer_email: decoded.customer_email,
     order_id: decoded.order_id,
@@ -439,7 +439,7 @@ The workflow includes automatic error handling:
 ### Test Shipment Delivered Webhook
 
 ```bash
-curl -X POST https://n8n.citadelbuy.com/webhook/shipment-delivered \
+curl -X POST https://n8n.broxiva.com/webhook/shipment-delivered \
   -H "Content-Type: application/json" \
   -d '{
     "order_id": "ORD-123456",
@@ -453,7 +453,7 @@ curl -X POST https://n8n.citadelbuy.com/webhook/shipment-delivered \
 ### Test Review Submission
 
 ```bash
-curl -X POST https://n8n.citadelbuy.com/webhook/review-submitted \
+curl -X POST https://n8n.broxiva.com/webhook/review-submitted \
   -H "Content-Type: application/json" \
   -d '{
     "review_id": "REV-001",
@@ -470,7 +470,7 @@ curl -X POST https://n8n.citadelbuy.com/webhook/review-submitted \
 ### Test NPS Response
 
 ```bash
-curl -X POST https://n8n.citadelbuy.com/webhook/nps-response \
+curl -X POST https://n8n.broxiva.com/webhook/nps-response \
   -H "Content-Type: application/json" \
   -d '{
     "customer_id": "USR-789",
@@ -559,7 +559,7 @@ Enable debug logging:
 
 ## API Endpoints Required
 
-Ensure these CitadelBuy API endpoints exist:
+Ensure these Broxiva API endpoints exist:
 
 ### Orders
 - `GET /v1/orders/{order_id}` - Get order details
@@ -676,7 +676,7 @@ Ensure these CitadelBuy API endpoints exist:
 
 ## License
 
-This workflow is proprietary to CitadelBuy. Unauthorized use or distribution is prohibited.
+This workflow is proprietary to Broxiva. Unauthorized use or distribution is prohibited.
 
 ## Version History
 
@@ -689,11 +689,11 @@ This workflow is proprietary to CitadelBuy. Unauthorized use or distribution is 
 ## Contact
 
 For questions or support, contact:
-- **Email**: dev@citadelbuy.com
+- **Email**: dev@broxiva.com
 - **Slack**: #platform-engineering
-- **GitHub**: https://github.com/citadelbuy/platform
+- **GitHub**: https://github.com/broxiva/platform
 
 ---
 
 **Last Updated**: 2025-12-03
-**Maintained By**: CitadelBuy Platform Team
+**Maintained By**: Broxiva Platform Team

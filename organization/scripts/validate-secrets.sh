@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ################################################################################
-# CitadelBuy Secrets Validation Script
+# Broxiva Secrets Validation Script
 ################################################################################
 # Validates that all secrets meet security requirements and are production-ready
 #
@@ -39,7 +39,7 @@ WARNING_CHECKS=0
 
 print_header() {
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║${NC}  ${BLUE}CitadelBuy Secrets Validation${NC}                                  ${CYAN}║${NC}"
+    echo -e "${CYAN}║${NC}  ${BLUE}Broxiva Secrets Validation${NC}                                  ${CYAN}║${NC}"
     echo -e "${CYAN}╚════════════════════════════════════════════════════════════════════╝${NC}"
     echo ""
 }

@@ -1,7 +1,7 @@
 # PHASE 1: CI/CD Pipeline Forensics Report
 
 **Generated:** 2025-12-13
-**Repository:** CitadelBuy Organization
+**Repository:** Broxiva Organization
 **Analyzed Workflows:** 18 workflow files
 
 ---

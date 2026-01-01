@@ -96,7 +96,7 @@ Contains 100+ non-sensitive configuration values:
 ### Automation Scripts
 
 #### 1. setup-production-secrets.sh (Bash)
-- **Location**: `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/production/setup-production-secrets.sh`
+- **Location**: `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/production/setup-production-secrets.sh`
 - **Purpose**: Automated production setup for Linux/Mac/WSL
 - **Features**:
   - Namespace verification
@@ -109,12 +109,12 @@ Contains 100+ non-sensitive configuration values:
   - Backup file generation
 
 #### 2. setup-production-secrets.ps1 (PowerShell)
-- **Location**: `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/production/setup-production-secrets.ps1`
+- **Location**: `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/production/setup-production-secrets.ps1`
 - **Purpose**: Automated production setup for Windows
 - **Features**: Same as Bash script, optimized for PowerShell
 
 #### 3. Manual Setup Guide
-- **Location**: `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/production/PRODUCTION-SETUP.md`
+- **Location**: `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/production/PRODUCTION-SETUP.md`
 - **Purpose**: Step-by-step manual instructions
 - **Sections**:
   - Prerequisites checklist
@@ -152,7 +152,7 @@ Contains 100+ non-sensitive configuration values:
 
 1. **Run Setup Script**
    ```bash
-   cd C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/production
+   cd C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/production
 
    # Option 1: PowerShell (Windows)
    .\setup-production-secrets.ps1
@@ -330,7 +330,7 @@ Based on namespace configuration:
 - **Setup Guide**: PRODUCTION-SETUP.md
 - **Secret Rotation**: SECRET-ROTATION-GUIDE.md
 - **Status Report**: DEPLOYMENT-STATUS.md (this file)
-- **Main Repo**: CitadelBuy/organization/infrastructure/
+- **Main Repo**: Broxiva/organization/infrastructure/
 
 ### Support Contacts
 

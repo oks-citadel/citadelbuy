@@ -2,7 +2,7 @@
 
 ## 📦 Package Contents
 
-This complete package includes everything you need to deploy and run the CitadelBuy Order Processing & Fulfillment automation workflow.
+This complete package includes everything you need to deploy and run the Broxiva Order Processing & Fulfillment automation workflow.
 
 ### Core Files
 
@@ -162,7 +162,7 @@ Automates the complete order processing pipeline from webhook receipt to fulfill
 | Service | Purpose | Setup Time |
 |---------|---------|------------|
 | **n8n** | Workflow automation | 5 min |
-| **CitadelBuy API** | E-commerce backend | Pre-configured |
+| **Broxiva API** | E-commerce backend | Pre-configured |
 | **Slack** | Notifications | 10 min |
 | **SendGrid** | Email delivery | 15 min |
 | **Notion** | Task management | 10 min |
@@ -171,8 +171,8 @@ Automates the complete order processing pipeline from webhook receipt to fulfill
 
 **Critical** (Required for basic operation):
 ```bash
-CITADELBUY_WEBHOOK_SECRET=<32-char-secret>
-CITADELBUY_API_TOKEN=<your-token>
+BROXIVA_WEBHOOK_SECRET=<32-char-secret>
+BROXIVA_API_TOKEN=<your-token>
 N8N_WEBHOOK_URL=<your-webhook-url>
 ```
 
@@ -186,7 +186,7 @@ SLACK_CHANNEL_INTERNATIONAL=<channel-id>
 
 ### Credentials Setup
 
-1. **CitadelBuy API**
+1. **Broxiva API**
    - Type: Header Auth
    - Header: Authorization
    - Value: Bearer {token}
@@ -246,9 +246,9 @@ node generate-signature.js test-payloads.json
 # 2. Copy signature from output
 
 # 3. Send test webhook
-curl -X POST 'http://localhost:5678/webhook/citadelbuy-order-webhook' \
+curl -X POST 'http://localhost:5678/webhook/broxiva-order-webhook' \
   -H 'Content-Type: application/json' \
-  -H 'X-CitadelBuy-Signature: <SIGNATURE>' \
+  -H 'X-Broxiva-Signature: <SIGNATURE>' \
   -d @test-payloads.json
 ```
 
@@ -415,13 +415,13 @@ IF error → #alerts
 **Solutions**:
 ```bash
 # Verify secret matches
-echo $CITADELBUY_WEBHOOK_SECRET
+echo $BROXIVA_WEBHOOK_SECRET
 
 # Test signature generation
 node generate-signature.js test-payloads.json
 
 # Check header name
-# Should be: X-CitadelBuy-Signature
+# Should be: X-Broxiva-Signature
 ```
 
 ### Issue 2: Workflow Not Triggering
@@ -461,7 +461,7 @@ node generate-signature.js test-payloads.json
 - **Full Docs**: README-workflow-01.md
 - **Quick Start**: QUICKSTART.md
 - **Visual Guide**: WORKFLOW-01-DIAGRAM.md
-- **API Docs**: https://api.citadelbuy.com/docs
+- **API Docs**: https://api.broxiva.com/docs
 
 ### Testing
 - **Test Suite**: `npm test`
@@ -474,8 +474,8 @@ node generate-signature.js test-payloads.json
 - **Webhook Security**: https://docs.github.com/webhooks
 
 ### Contact
-- **Engineering**: engineering@citadelbuy.com
-- **DevOps**: devops@citadelbuy.com
+- **Engineering**: engineering@broxiva.com
+- **DevOps**: devops@broxiva.com
 - **Emergency**: Escalation path documented
 
 ---
@@ -497,9 +497,9 @@ This package contains everything needed for a production-ready order processing 
 **Package Version**: 1.0.0
 **Last Updated**: 2024-12-03
 **Compatibility**: n8n 1.0+, Node.js 16+
-**License**: Proprietary - CitadelBuy Internal Use Only
+**License**: Proprietary - Broxiva Internal Use Only
 
-**Developed by**: CitadelBuy Engineering Team
+**Developed by**: Broxiva Engineering Team
 **Quality Assurance**: Tested with 1000+ orders
 **Production Status**: Battle-tested and verified
 
@@ -509,13 +509,13 @@ This package contains everything needed for a production-ready order processing 
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│           CITADELBUY WORKFLOW 01 - QUICK REFERENCE          │
+│           BROXIVA WORKFLOW 01 - QUICK REFERENCE          │
 ├─────────────────────────────────────────────────────────────┤
 │ WEBHOOK URL:                                                │
-│   http://localhost:5678/webhook/citadelbuy-order-webhook   │
+│   http://localhost:5678/webhook/broxiva-order-webhook   │
 │                                                             │
 │ SIGNATURE HEADER:                                           │
-│   X-CitadelBuy-Signature                                    │
+│   X-Broxiva-Signature                                    │
 │                                                             │
 │ GENERATE SIGNATURE:                                         │
 │   node generate-signature.js test-payloads.json            │
@@ -535,7 +535,7 @@ This package contains everything needed for a production-ready order processing 
 │ EXPECTED RESPONSE:                                          │
 │   200 OK with { "success": true, "order_id": "..." }       │
 ├─────────────────────────────────────────────────────────────┤
-│ SUPPORT: engineering@citadelbuy.com                         │
+│ SUPPORT: engineering@broxiva.com                         │
 └─────────────────────────────────────────────────────────────┘
 ```
 

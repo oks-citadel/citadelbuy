@@ -1,7 +1,7 @@
 # Order Tracking Module
 
 ## Overview
-The Order Tracking module provides comprehensive order and shipment tracking functionality for the CitadelBuy platform. It supports both authenticated user tracking and guest tracking, with real-time integration with shipping carriers.
+The Order Tracking module provides comprehensive order and shipment tracking functionality for the Broxiva platform. It supports both authenticated user tracking and guest tracking, with real-time integration with shipping carriers.
 
 ## Schema Alignment
 This module has been updated to match the current Prisma schema with the following key fields:

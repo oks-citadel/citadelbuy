@@ -21,7 +21,7 @@ This document provides step-by-step instructions for setting up the production K
 Run the automated setup script:
 
 ```bash
-cd C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/production
+cd C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/production
 chmod +x setup-production-secrets.sh
 ./setup-production-secrets.sh
 ```
@@ -172,7 +172,7 @@ kubectl create configmap broxiva-config \
 ### Step 6: Apply RBAC Configuration
 
 ```bash
-kubectl apply -f C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/production/rbac.yaml
+kubectl apply -f C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/production/rbac.yaml
 ```
 
 Note: The RBAC file references `broxiva-production` namespace. You may need to update it to `broxiva-prod`.
@@ -254,7 +254,7 @@ az keyvault secret set --vault-name broxiva-prod-kv --name redis-password --valu
 If using External Secrets Operator to sync from Azure Key Vault:
 
 ```bash
-kubectl apply -f C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/production/external-secrets-broxiva.yaml
+kubectl apply -f C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/production/external-secrets-broxiva.yaml
 ```
 
 ### 4. Set Up Monitoring
@@ -262,7 +262,7 @@ kubectl apply -f C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organiza
 Apply monitoring configurations:
 
 ```bash
-kubectl apply -f C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/production/servicemonitor.yaml
+kubectl apply -f C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/production/servicemonitor.yaml
 ```
 
 ## Security Best Practices

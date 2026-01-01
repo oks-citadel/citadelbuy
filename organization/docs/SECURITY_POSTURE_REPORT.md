@@ -39,7 +39,7 @@ This comprehensive security assessment evaluates the Broxiva e-commerce platform
 ### 1.1 Network Security (Rating: 10/10)
 
 #### Network Policies Implementation
-**Location:** `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/production/network-policies.yaml`
+**Location:** `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/production/network-policies.yaml`
 
 **Status:** EXCELLENT - Zero-trust network model fully implemented
 
@@ -122,7 +122,7 @@ Prometheus Scraping:
 ### 1.2 RBAC & Access Control (Rating: 10/10)
 
 #### Service Accounts Architecture
-**Location:** `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/production/rbac.yaml`
+**Location:** `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/production/rbac.yaml`
 
 **Status:** EXCELLENT - Least privilege strictly enforced
 
@@ -221,7 +221,7 @@ Permissions:
 ### 1.3 Pod Security Standards (Rating: 10/10)
 
 #### Pod Security Admission
-**Location:** `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/base/pod-security.yaml`
+**Location:** `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/base/pod-security.yaml`
 
 **Status:** EXCELLENT - Restricted profile enforced
 
@@ -361,7 +361,7 @@ hard:
 ### 1.4 Secrets Management (Rating: 7/10)
 
 #### External Secrets Operator Configuration
-**Location:** `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/production/external-secrets-broxiva.yaml`
+**Location:** `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/production/external-secrets-broxiva.yaml`
 
 **Status:** CONFIGURED BUT NOT DEPLOYED
 
@@ -541,7 +541,7 @@ imagePullPolicy: Always
 ### 1.6 Workload Configuration Review
 
 #### API Deployment Analysis
-**Location:** `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/production/api-deployment.yaml`
+**Location:** `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/kubernetes/production/api-deployment.yaml`
 
 **Deployment Configuration:**
 
@@ -622,7 +622,7 @@ serviceAccountName: broxiva-api
 ### 2.1 Azure Key Vault Architecture (Rating: 9/10)
 
 #### Specialized Vault Design
-**Location:** `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/azure/key-vault-production-specialized.tf`
+**Location:** `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/azure/key-vault-production-specialized.tf`
 
 **Status:** DESIGNED - Ready for deployment
 

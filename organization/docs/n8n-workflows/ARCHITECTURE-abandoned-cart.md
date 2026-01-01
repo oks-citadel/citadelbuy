@@ -92,7 +92,7 @@ This document provides a detailed technical architecture of the n8n abandoned ca
 │                                                                  │
 │  ┌─────────────────────────────────────────────────────┐        │
 │  │  Get Related Products (Algolia)                     │        │
-│  │  POST /1/indexes/citadelbuy_products/query          │        │
+│  │  POST /1/indexes/broxiva_products/query          │        │
 │  │  • Filter by category                               │        │
 │  │  • Exclude cart items                               │        │
 │  │  • Return top 4 results                             │        │
@@ -173,7 +173,7 @@ Config: {
 
 **Request:**
 ```http
-GET https://api.citadelbuy.com/v1/carts/abandoned
+GET https://api.broxiva.com/v1/carts/abandoned
 Authorization: Bearer {API_KEY}
 Content-Type: application/json
 ```
@@ -420,7 +420,7 @@ return {
 ### 12. Get Related Products (Algolia)
 **Type:** HTTP Request
 **Method:** POST
-**Endpoint:** `/1/indexes/citadelbuy_products/query`
+**Endpoint:** `/1/indexes/broxiva_products/query`
 
 **Request Body:**
 ```json
@@ -755,7 +755,7 @@ Calculate Recovery Stage → Skip carts not ready for email
 
 | Service | Limit | Current Usage | Headroom |
 |---------|-------|---------------|----------|
-| CitadelBuy | 1000/min | ~200/min | 80% |
+| Broxiva | 1000/min | ~200/min | 80% |
 | Klaviyo | 300/min | ~100/min | 67% |
 | Algolia | 10,000/min | ~100/min | 99% |
 | Zendesk | 700/min | ~100/min | 86% |
@@ -765,7 +765,7 @@ Calculate Recovery Stage → Skip carts not ready for email
 
 ## Integration Patterns
 
-### CitadelBuy API
+### Broxiva API
 **Pattern:** REST API with Bearer token
 **Auth:** `Authorization: Bearer {token}`
 **Endpoints Used:**
@@ -946,4 +946,4 @@ git push origin main --tags
 
 **Document Version:** 1.0.0
 **Last Updated:** 2024-01-15
-**Maintained By:** CitadelBuy DevOps Team
+**Maintained By:** Broxiva DevOps Team

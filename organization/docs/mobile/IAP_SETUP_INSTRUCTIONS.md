@@ -84,11 +84,11 @@ Edit `src/config/iap-products.ts` to match your actual product IDs from App Stor
 ```typescript
 export const SUBSCRIPTION_PRODUCTS: IAPSubscriptionProduct[] = [
   {
-    id: 'citadel_premium_monthly',
-    name: 'CitadelBuy Premium - Monthly',
+    id: 'broxiva_premium_monthly',
+    name: 'Broxiva Premium - Monthly',
     description: 'Monthly subscription',
-    appleProductId: 'com.citadelbuy.subscription.premium.monthly', // From App Store Connect
-    googleProductId: 'citadelbuy_premium_monthly', // From Google Play Console
+    appleProductId: 'com.broxiva.subscription.premium.monthly', // From App Store Connect
+    googleProductId: 'broxiva_premium_monthly', // From Google Play Console
     type: 'subscription',
     interval: 'month',
   },

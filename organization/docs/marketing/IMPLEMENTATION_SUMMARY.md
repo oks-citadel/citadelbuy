@@ -1,8 +1,8 @@
-# CitadelBuy Marketing & Growth Engine - Implementation Summary
+# Broxiva Marketing & Growth Engine - Implementation Summary
 
 ## Executive Overview
 
-This document provides a comprehensive overview of the complete global marketing, advertising, and growth engine strategy created for CitadelBuy, the premier global B2B enterprise marketplace connecting African exporters with international buyers.
+This document provides a comprehensive overview of the complete global marketing, advertising, and growth engine strategy created for Broxiva, the premier global B2B enterprise marketplace connecting African exporters with international buyers.
 
 **Created:** December 2025
 **Status:** Ready for Implementation
@@ -12,7 +12,7 @@ This document provides a comprehensive overview of the complete global marketing
 
 ## What Has Been Created
 
-### 1. Strategic Documentation (C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/docs/marketing/)
+### 1. Strategic Documentation (C:/Users/citad/OneDrive/Documents/broxiva-master/organization/docs/marketing/)
 
 #### GLOBAL_GTM_STRATEGY.md
 **Comprehensive Go-to-Market Plan** covering:
@@ -70,7 +70,7 @@ This document provides a comprehensive overview of the complete global marketing
 
 ---
 
-### 2. Web Content Templates (C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/web/src/content/)
+### 2. Web Content Templates (C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/web/src/content/)
 
 #### Landing Pages (landing-pages/)
 
@@ -139,7 +139,7 @@ This document provides a comprehensive overview of the complete global marketing
 
 ---
 
-### 3. Backend Marketing Module (C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api/src/modules/marketing/templates/)
+### 3. Backend Marketing Module (C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api/src/modules/marketing/templates/)
 
 #### campaign-templates.json
 **Pre-built Campaign Configurations** for 6 automated campaigns:
@@ -291,7 +291,7 @@ This document provides a comprehensive overview of the complete global marketing
 ## File Structure Overview
 
 ```
-citadelbuy-master/organization/
+broxiva-master/organization/
 │
 ├── docs/marketing/
 │   ├── GLOBAL_GTM_STRATEGY.md (19,000 words)
@@ -568,20 +568,20 @@ citadelbuy-master/organization/
 
 ## Conclusion
 
-This comprehensive marketing and growth engine strategy provides CitadelBuy with all the strategic frameworks, tactical playbooks, content templates, and campaign configurations needed to achieve:
+This comprehensive marketing and growth engine strategy provides Broxiva with all the strategic frameworks, tactical playbooks, content templates, and campaign configurations needed to achieve:
 
 - **$12M ARR in Year 1**
 - **$40M ARR in Year 2**
 - **$100M ARR in Year 3**
 
-With a focus on enterprise B2B marketing, cross-border trade positioning, and multi-language content, this strategy is designed to make CitadelBuy the global leader in Africa-world B2B trade.
+With a focus on enterprise B2B marketing, cross-border trade positioning, and multi-language content, this strategy is designed to make Broxiva the global leader in Africa-world B2B trade.
 
 **Ready to Execute:** All documentation, templates, and configurations are complete and ready for immediate implementation.
 
 ---
 
 **Questions or Need Clarification?**
-Contact: Chief Marketing Officer | marketing@citadelbuy.com
+Contact: Chief Marketing Officer | marketing@broxiva.com
 
 **Document Version:** 1.0
 **Last Updated:** December 2025

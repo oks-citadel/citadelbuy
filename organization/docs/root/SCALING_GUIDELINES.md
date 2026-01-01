@@ -1,4 +1,4 @@
-# CitadelBuy Scaling Guidelines
+# Broxiva Scaling Guidelines
 
 **Version:** 1.0.0
 **Last Updated:** 2025-12-03
@@ -22,7 +22,7 @@
 
 ### Scaling Philosophy
 
-CitadelBuy is designed for horizontal scalability across all tiers:
+Broxiva is designed for horizontal scalability across all tiers:
 - **Stateless Services:** API, Web frontend, Workers
 - **Stateful Services:** PostgreSQL, Redis, Elasticsearch
 - **Storage:** S3-compatible object storage (MinIO/AWS S3)
@@ -62,13 +62,13 @@ Scale when:
 
 ```bash
 # Scale up to 10 replicas
-kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=10
+kubectl scale deployment/broxiva-api -n broxiva --replicas=10
 
 # Verify scaling
-kubectl get pods -n citadelbuy -l app=citadelbuy-api
+kubectl get pods -n broxiva -l app=broxiva-api
 
 # Monitor resource usage
-kubectl top pods -n citadelbuy -l app=citadelbuy-api
+kubectl top pods -n broxiva -l app=broxiva-api
 
 # Check if scaling helped
 # Monitor Grafana dashboard for 5-10 minutes
@@ -84,16 +84,16 @@ kubectl top pods -n citadelbuy -l app=citadelbuy-api
    # PostgreSQL default max_connections = 100 (need to increase)
 
    # Update database connection pool size per pod
-   kubectl set env deployment/citadelbuy-api \
+   kubectl set env deployment/broxiva-api \
      DATABASE_POOL_SIZE=15 \
-     -n citadelbuy
+     -n broxiva
    ```
 
 2. **Redis Connection Pool:**
    ```bash
    # Ensure Redis can handle connections
    # Default: 10000 max clients
-   kubectl exec -it deployment/redis -n citadelbuy -- \
+   kubectl exec -it deployment/redis -n broxiva -- \
      redis-cli CONFIG GET maxclients
    ```
 
@@ -120,10 +120,10 @@ kubectl top pods -n citadelbuy -l app=citadelbuy-api
 
 ```bash
 # Scale web frontend
-kubectl scale deployment/citadelbuy-web -n citadelbuy --replicas=8
+kubectl scale deployment/broxiva-web -n broxiva --replicas=8
 
 # Verify
-kubectl get pods -n citadelbuy -l app=citadelbuy-web
+kubectl get pods -n broxiva -l app=broxiva-web
 ```
 
 **Optimization Before Scaling:**
@@ -162,10 +162,10 @@ kubectl get pods -n citadelbuy -l app=citadelbuy-web
 
 ```bash
 # Scale worker pods
-kubectl scale deployment/citadelbuy-worker -n citadelbuy --replicas=5
+kubectl scale deployment/broxiva-worker -n broxiva --replicas=5
 
 # Check queue status
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+kubectl exec -it deployment/broxiva-api -n broxiva -- \
   npm run queue:status
 ```
 
@@ -176,12 +176,12 @@ kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: citadelbuy-worker-hpa
+  name: broxiva-worker-hpa
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: citadelbuy-worker
+    name: broxiva-worker
   minReplicas: 2
   maxReplicas: 10
   metrics:
@@ -210,16 +210,16 @@ Scale vertically when:
 
 ```bash
 # Current resources
-kubectl get deployment citadelbuy-api -n citadelbuy \
+kubectl get deployment broxiva-api -n broxiva \
   -o jsonpath='{.spec.template.spec.containers[0].resources}'
 
 # Increase CPU and memory
-kubectl set resources deployment/citadelbuy-api -n citadelbuy \
+kubectl set resources deployment/broxiva-api -n broxiva \
   --limits=cpu=2,memory=2Gi \
   --requests=cpu=1,memory=1Gi
 
 # Monitor impact
-kubectl top pods -n citadelbuy -l app=citadelbuy-api
+kubectl top pods -n broxiva -l app=broxiva-api
 ```
 
 ### Resource Sizing Matrix
@@ -256,7 +256,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres-replica
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   serviceName: postgres-replica
   replicas: 2
@@ -363,7 +363,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: pgbouncer
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   replicas: 2
   selector:
@@ -379,7 +379,7 @@ spec:
         image: edoburu/pgbouncer:latest
         env:
         - name: DATABASE_URL
-          value: "postgres://citadelbuy:password@postgres:5432/citadelbuy_production"
+          value: "postgres://broxiva:password@postgres:5432/broxiva_production"
         - name: POOL_MODE
           value: "transaction"
         - name: MAX_CLIENT_CONN
@@ -394,9 +394,9 @@ spec:
 
 ```bash
 # Update DATABASE_URL to point to PgBouncer
-kubectl set env deployment/citadelbuy-api \
-  DATABASE_URL="postgresql://citadelbuy:password@pgbouncer:5432/citadelbuy_production" \
-  -n citadelbuy
+kubectl set env deployment/broxiva-api \
+  DATABASE_URL="postgresql://broxiva:password@pgbouncer:5432/broxiva_production" \
+  -n broxiva
 ```
 
 ### Database Partitioning
@@ -451,25 +451,25 @@ $$ LANGUAGE plpgsql;
 
 ```bash
 # Stop application
-kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=0
+kubectl scale deployment/broxiva-api -n broxiva --replicas=0
 
 # Backup database
-kubectl exec -it postgres-0 -n citadelbuy -- \
-  pg_dump -U citadelbuy citadelbuy_production > backup.sql
+kubectl exec -it postgres-0 -n broxiva -- \
+  pg_dump -U broxiva broxiva_production > backup.sql
 
 # Update PostgreSQL StatefulSet resources
-kubectl set resources statefulset/postgres -n citadelbuy \
+kubectl set resources statefulset/postgres -n broxiva \
   --limits=cpu=4,memory=8Gi \
   --requests=cpu=2,memory=4Gi
 
 # Restart database
-kubectl rollout restart statefulset/postgres -n citadelbuy
+kubectl rollout restart statefulset/postgres -n broxiva
 
 # Wait for database to be ready
-kubectl wait --for=condition=ready pod/postgres-0 -n citadelbuy --timeout=300s
+kubectl wait --for=condition=ready pod/postgres-0 -n broxiva --timeout=300s
 
 # Restore application
-kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=3
+kubectl scale deployment/broxiva-api -n broxiva --replicas=3
 ```
 
 ---
@@ -493,7 +493,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis-cluster
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   serviceName: redis-cluster
   replicas: 6
@@ -543,13 +543,13 @@ spec:
 
 ```bash
 # Create cluster
-kubectl exec -it redis-cluster-0 -n citadelbuy -- \
+kubectl exec -it redis-cluster-0 -n broxiva -- \
   redis-cli --cluster create \
-  $(kubectl get pods -n citadelbuy -l app=redis -o jsonpath='{range.items[*]}{.status.podIP}:6379 ') \
+  $(kubectl get pods -n broxiva -l app=redis -o jsonpath='{range.items[*]}{.status.podIP}:6379 ') \
   --cluster-replicas 1
 
 # Verify cluster status
-kubectl exec -it redis-cluster-0 -n citadelbuy -- \
+kubectl exec -it redis-cluster-0 -n broxiva -- \
   redis-cli cluster info
 ```
 
@@ -557,15 +557,15 @@ kubectl exec -it redis-cluster-0 -n citadelbuy -- \
 
 ```bash
 # Configure memory policies
-kubectl exec -it deployment/redis -n citadelbuy -- \
+kubectl exec -it deployment/redis -n broxiva -- \
   redis-cli CONFIG SET maxmemory-policy allkeys-lru
 
 # Set maximum memory
-kubectl exec -it deployment/redis -n citadelbuy -- \
+kubectl exec -it deployment/redis -n broxiva -- \
   redis-cli CONFIG SET maxmemory 2gb
 
 # Enable compression (if using Redis 7+)
-kubectl exec -it deployment/redis -n citadelbuy -- \
+kubectl exec -it deployment/redis -n broxiva -- \
   redis-cli CONFIG SET lazyfree-lazy-eviction yes
 ```
 
@@ -620,7 +620,7 @@ export class RedisService {
 
 ```bash
 # Pre-populate cache with frequently accessed data
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+kubectl exec -it deployment/broxiva-api -n broxiva -- \
   npm run cache:warm
 
 # Script example: apps/api/scripts/warm-cache.ts
@@ -665,8 +665,8 @@ warmCache();
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: citadelbuy-ingress
-  namespace: citadelbuy
+  name: broxiva-ingress
+  namespace: broxiva
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/rate-limit: "100"
@@ -680,28 +680,28 @@ metadata:
 spec:
   tls:
   - hosts:
-    - citadelbuy.com
-    - api.citadelbuy.com
-    secretName: citadelbuy-tls
+    - broxiva.com
+    - api.broxiva.com
+    secretName: broxiva-tls
   rules:
-  - host: citadelbuy.com
+  - host: broxiva.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: citadelbuy-web
+            name: broxiva-web
             port:
               number: 80
-  - host: api.citadelbuy.com
+  - host: api.broxiva.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: citadelbuy-api
+            name: broxiva-api
             port:
               number: 80
 ```
@@ -719,12 +719,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: citadelbuy-api
+  name: broxiva-api
   annotations:
     service.kubernetes.io/topology-aware-hints: "auto"
 spec:
   selector:
-    app: citadelbuy-api
+    app: broxiva-api
   sessionAffinity: ClientIP
   sessionAffinityConfig:
     clientIP:
@@ -737,7 +737,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: citadelbuy-api
+  name: broxiva-api
 spec:
   sessionAffinity: ClientIP
 ```
@@ -749,7 +749,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: citadelbuy-api
+  name: broxiva-api
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/api/health"
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "10"
@@ -770,13 +770,13 @@ metadata:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: citadelbuy-api-hpa
-  namespace: citadelbuy
+  name: broxiva-api-hpa
+  namespace: broxiva
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: citadelbuy-api
+    name: broxiva-api
   minReplicas: 3
   maxReplicas: 10
   metrics:
@@ -817,13 +817,13 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: citadelbuy-api-custom-hpa
-  namespace: citadelbuy
+  name: broxiva-api-custom-hpa
+  namespace: broxiva
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: citadelbuy-api
+    name: broxiva-api
   minReplicas: 3
   maxReplicas: 20
   metrics:
@@ -851,13 +851,13 @@ spec:
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: citadelbuy-api-vpa
-  namespace: citadelbuy
+  name: broxiva-api-vpa
+  namespace: broxiva
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: citadelbuy-api
+    name: broxiva-api
   updatePolicy:
     updateMode: "Auto"
   resourcePolicy:
@@ -950,7 +950,7 @@ Total: 13GB minimum, provision 16GB
 
 ```bash
 # Analyze actual resource usage over 30 days
-kubectl top pods -n citadelbuy --containers | \
+kubectl top pods -n broxiva --containers | \
   awk '{sum+=$3} END {print "Avg CPU: " sum/NR "m"}'
 
 # Adjust based on actual usage
@@ -1025,7 +1025,7 @@ export const options = {
 };
 
 export default function () {
-  const res = http.get('https://api.citadelbuy.com/api/products');
+  const res = http.get('https://api.broxiva.com/api/products');
   check(res, {
     'status is 200': (r) => r.status === 200,
     'response time < 500ms': (r) => r.timings.duration < 500,
@@ -1054,21 +1054,21 @@ k6 run load-test.js
 
 ```bash
 # Profile API endpoints
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+kubectl exec -it deployment/broxiva-api -n broxiva -- \
   npm run profile
 
 # Analyze slow queries
 kubectl run psql-client --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres -U citadelbuy -d citadelbuy_production \
+  -- psql -h postgres -U broxiva -d broxiva_production \
   -c "SELECT query, calls, mean_exec_time, max_exec_time
       FROM pg_stat_statements
       ORDER BY mean_exec_time DESC
       LIMIT 20;"
 
 # Check Redis slowlog
-kubectl exec -it deployment/redis -n citadelbuy -- \
+kubectl exec -it deployment/redis -n broxiva -- \
   redis-cli SLOWLOG GET 10
 ```
 
@@ -1100,10 +1100,10 @@ Start
 
 ```bash
 # Check HPA status
-kubectl get hpa -n citadelbuy
+kubectl get hpa -n broxiva
 
 # View pod resource usage
-kubectl top pods -n citadelbuy
+kubectl top pods -n broxiva
 
 # View node resource usage
 kubectl top nodes

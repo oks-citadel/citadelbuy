@@ -1,7 +1,7 @@
 # Order Tracking API Implementation Summary
 
 ## Overview
-Complete implementation of order tracking functionality for CitadelBuy e-commerce platform with both guest and authenticated user support.
+Complete implementation of order tracking functionality for Broxiva e-commerce platform with both guest and authenticated user support.
 
 ## Files Created/Modified
 
@@ -164,8 +164,8 @@ When a tracking number exists, the service:
 
 ## Order Number Format
 
-CitadelBuy uses the format: `CB-YYYY-XXXXXXXX`
-- CB = CitadelBuy prefix
+Broxiva uses the format: `CB-YYYY-XXXXXXXX`
+- CB = Broxiva prefix
 - YYYY = Current year
 - XXXXXXXX = Last 8 characters of order UUID (uppercase)
 

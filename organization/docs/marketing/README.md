@@ -1,8 +1,8 @@
-# CitadelBuy Marketing & Growth Engine Documentation
+# Broxiva Marketing & Growth Engine Documentation
 
 ## Overview
 
-This directory contains the complete global marketing, advertising, and growth engine strategy for CitadelBuy - the premier B2B enterprise marketplace connecting African exporters with international buyers.
+This directory contains the complete global marketing, advertising, and growth engine strategy for Broxiva - the premier B2B enterprise marketplace connecting African exporters with international buyers.
 
 **Created:** December 2025
 **Status:** Production Ready
@@ -99,7 +99,7 @@ This directory contains the complete global marketing, advertising, and growth e
 
 ### 2. Web Content & Templates
 
-**Location:** `C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/web/src/content/`
+**Location:** `C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/web/src/content/`
 
 #### Landing Pages
 
@@ -152,7 +152,7 @@ This directory contains the complete global marketing, advertising, and growth e
 
 ### 3. Marketing Automation & Campaigns
 
-**Location:** `C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api/src/modules/marketing/templates/`
+**Location:** `C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api/src/modules/marketing/templates/`
 
 #### Campaign Templates
 

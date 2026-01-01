@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Personalization Service provides user-specific experiences across the CitadelBuy platform. It manages user preferences, behavior tracking, personalized content, and adaptive UI to create tailored shopping experiences for each customer.
+The Personalization Service provides user-specific experiences across the Broxiva platform. It manages user preferences, behavior tracking, personalized content, and adaptive UI to create tailored shopping experiences for each customer.
 
 ## Key Features
 
@@ -38,7 +38,7 @@ LOG_LEVEL=INFO
 PORT=8011
 
 # Database (PostgreSQL)
-DATABASE_URL=postgresql://user:password@localhost:5432/citadelbuy
+DATABASE_URL=postgresql://user:password@localhost:5432/broxiva
 
 # Redis Cache
 REDIS_URL=redis://localhost:6379/10
@@ -117,8 +117,8 @@ uvicorn main:app --reload --port 8011
 ## Docker Usage
 
 ```bash
-docker build -t citadelbuy/personalization:latest .
-docker run -p 8011:8011 --env-file .env citadelbuy/personalization:latest
+docker build -t broxiva/personalization:latest .
+docker run -p 8011:8011 --env-file .env broxiva/personalization:latest
 ```
 
 ## Usage Examples
@@ -222,4 +222,4 @@ pytest tests/ --cov=src --cov-report=html
 ## Support
 
 - Internal Slack: #personalization-support
-- Email: personalization@citadelbuy.com
+- Email: personalization@broxiva.com

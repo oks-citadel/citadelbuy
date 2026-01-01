@@ -1,6 +1,6 @@
 # Load Testing with k6
 
-This directory contains load testing scenarios for the CitadelBuy e-commerce platform using [k6](https://k6.io/), a modern load testing tool.
+This directory contains load testing scenarios for the Broxiva e-commerce platform using [k6](https://k6.io/), a modern load testing tool.
 
 ## Overview
 
@@ -86,7 +86,7 @@ k6 run tests/load/scenarios/checkout.js
 
 **With environment variables:**
 ```bash
-BASE_URL=https://staging.citadelbuy.com API_URL=https://api.staging.citadelbuy.com k6 run tests/load/scenarios/checkout.js
+BASE_URL=https://staging.broxiva.com API_URL=https://api.staging.broxiva.com k6 run tests/load/scenarios/checkout.js
 ```
 
 **Key metrics:**
@@ -222,7 +222,7 @@ k6 cloud tests/load/scenarios/api-stress.js
 Before running load tests, ensure your test environment has:
 
 1. **Test Users** - Pre-seeded test users defined in `k6-config.js`:
-   - `loadtest1@citadelbuy.test` - `loadtest5@citadelbuy.test`
+   - `loadtest1@broxiva.test` - `loadtest5@broxiva.test`
    - All with password: `Test@1234`
 
 2. **Test Products** - Sample products with IDs 1-30

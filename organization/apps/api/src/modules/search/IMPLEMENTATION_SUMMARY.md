@@ -2,7 +2,7 @@
 
 ## Overview
 
-Complete Elasticsearch search integration has been implemented for the CitadelBuy platform, providing advanced full-text search capabilities, intelligent ranking, autocomplete, and faceted search across products, categories, and vendors.
+Complete Elasticsearch search integration has been implemented for the Broxiva platform, providing advanced full-text search capabilities, intelligent ranking, autocomplete, and faceted search across products, categories, and vendors.
 
 ## Files Created/Modified
 
@@ -306,7 +306,7 @@ ELASTICSEARCH_USERNAME=elastic
 ELASTICSEARCH_PASSWORD=changeme
 ELASTICSEARCH_REQUEST_TIMEOUT=30000
 ELASTICSEARCH_BULK_SIZE=1000
-ELASTICSEARCH_INDEX_PREFIX=citadelbuy
+ELASTICSEARCH_INDEX_PREFIX=broxiva
 
 # Search Provider
 SEARCH_PROVIDER=elasticsearch  # or 'auto' for auto-detection
@@ -548,7 +548,7 @@ await searchIndexingService.indexProductsByIds(['prod-1', 'prod-2']);
 
 ## Conclusion
 
-The Elasticsearch search integration provides a robust, scalable, and feature-rich search solution for the CitadelBuy platform. With automatic indexing, intelligent ranking, faceted search, and comprehensive admin tools, it delivers an excellent search experience for users while maintaining data consistency and performance.
+The Elasticsearch search integration provides a robust, scalable, and feature-rich search solution for the Broxiva platform. With automatic indexing, intelligent ranking, faceted search, and comprehensive admin tools, it delivers an excellent search experience for users while maintaining data consistency and performance.
 
 ## Support
 

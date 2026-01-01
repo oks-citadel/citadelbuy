@@ -1,10 +1,10 @@
-# AI Agents Service - CitadelBuy Global B2B Enterprise Marketplace
+# AI Agents Service - Broxiva Global B2B Enterprise Marketplace
 
 Enterprise-grade AI agents service providing 12 intelligent agents for global marketplace operations.
 
 ## Overview
 
-The AI Agents Service is a sophisticated multi-agent system designed to handle complex enterprise operations across the CitadelBuy platform. It leverages OpenAI GPT-4 and Anthropic Claude for advanced reasoning, combined with custom business logic for specialized tasks.
+The AI Agents Service is a sophisticated multi-agent system designed to handle complex enterprise operations across the Broxiva platform. It leverages OpenAI GPT-4 and Anthropic Claude for advanced reasoning, combined with custom business logic for specialized tasks.
 
 ## Architecture
 
@@ -390,7 +390,7 @@ The service will be available at `http://localhost:8020`
 
 1. **Build image:**
 ```bash
-docker build -t citadelbuy-ai-agents:latest .
+docker build -t broxiva-ai-agents:latest .
 ```
 
 2. **Run container:**
@@ -400,7 +400,7 @@ docker run -d \
   -e OPENAI_API_KEY=your_key \
   -e REDIS_HOST=redis \
   --name ai-agents \
-  citadelbuy-ai-agents:latest
+  broxiva-ai-agents:latest
 ```
 
 ### Docker Compose
@@ -429,7 +429,7 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: citadelbuy
+      POSTGRES_DB: broxiva
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
 ```
@@ -652,7 +652,7 @@ See `k8s/` directory for deployment manifests.
 
 ## License
 
-Proprietary - CitadelBuy Enterprise
+Proprietary - Broxiva Enterprise
 
 ## Changelog
 

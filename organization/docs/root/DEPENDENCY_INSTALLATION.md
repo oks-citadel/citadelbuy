@@ -1,6 +1,6 @@
 # Dependency Installation Guide
 
-Complete guide for installing and managing dependencies in the CitadelBuy platform.
+Complete guide for installing and managing dependencies in the Broxiva platform.
 
 ## Table of Contents
 
@@ -77,7 +77,7 @@ For experienced developers who want to get started immediately:
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd citadelbuy-master/organization
+cd broxiva-master/organization
 
 # Install all dependencies
 pnpm install
@@ -100,7 +100,7 @@ pnpm dev
 
 ```bash
 git clone <repository-url>
-cd citadelbuy-master/organization
+cd broxiva-master/organization
 ```
 
 ### 2. Verify Prerequisites
@@ -190,8 +190,8 @@ Internal workspace packages are referenced using `workspace:*` protocol:
 ```json
 {
   "dependencies": {
-    "@citadelbuy/types": "workspace:*",
-    "@citadelbuy/utils": "workspace:*"
+    "@broxiva/types": "workspace:*",
+    "@broxiva/utils": "workspace:*"
   }
 }
 ```

@@ -1,11 +1,11 @@
-# CitadelBuy Platform - Architecture Verification Report
+# Broxiva Platform - Architecture Verification Report
 
 **Generated:** December 18, 2025
 **Status:** In Progress
 
 ## Executive Summary
 
-This document verifies the alignment of the CitadelBuy platform architecture with operational requirements (NetOps, SecOps, AppOps, DevOps) and multi-region deployment strategy.
+This document verifies the alignment of the Broxiva platform architecture with operational requirements (NetOps, SecOps, AppOps, DevOps) and multi-region deployment strategy.
 
 ---
 

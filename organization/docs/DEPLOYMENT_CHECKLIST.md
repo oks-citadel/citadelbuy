@@ -1,6 +1,6 @@
-# CitadelBuy Platform - Deployment Checklist
+# Broxiva Platform - Deployment Checklist
 
-This comprehensive checklist guides you through deploying the CitadelBuy platform infrastructure and applications to Azure with Kubernetes (AKS).
+This comprehensive checklist guides you through deploying the Broxiva platform infrastructure and applications to Azure with Kubernetes (AKS).
 
 ## Table of Contents
 
@@ -76,7 +76,7 @@ This comprehensive checklist guides you through deploying the CitadelBuy platfor
 
 - [ ] Clone repository and navigate to infrastructure directory
   ```bash
-  cd C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization
+  cd C:\Users\Dell\OneDrive\Documents\Broxivabuy\Broxiva\organization
   ```
 
 - [ ] Install dependencies
@@ -100,15 +100,15 @@ Before deploying any environment, set up Terraform remote state:
 - [ ] Create resource group for Terraform state
   ```bash
   az group create \
-    --name citadelbuy-tfstate-rg \
+    --name broxiva-tfstate-rg \
     --location eastus
   ```
 
 - [ ] Create storage account for state
   ```bash
   az storage account create \
-    --name citadelbuytfstate \
-    --resource-group citadelbuy-tfstate-rg \
+    --name broxivatfstate \
+    --resource-group broxiva-tfstate-rg \
     --location eastus \
     --sku Standard_LRS \
     --kind StorageV2
@@ -118,7 +118,7 @@ Before deploying any environment, set up Terraform remote state:
   ```bash
   az storage container create \
     --name tfstate \
-    --account-name citadelbuytfstate
+    --account-name broxivatfstate
   ```
 
 ### 2.2 Deploy Core Infrastructure (Per Environment)
@@ -167,7 +167,7 @@ cd infrastructure/terraform/environments/dev  # or staging, prod
 
 - [ ] Verify VNet created:
   ```bash
-  az network vnet list --resource-group citadelbuy-dev-rg
+  az network vnet list --resource-group broxiva-dev-rg
   ```
 
 #### Step 4: Deploy Database Module
@@ -179,8 +179,8 @@ cd infrastructure/terraform/environments/dev  # or staging, prod
 
 - [ ] Verify databases are running:
   ```bash
-  az postgres flexible-server list --resource-group citadelbuy-dev-rg
-  az redis list --resource-group citadelbuy-dev-rg
+  az postgres flexible-server list --resource-group broxiva-dev-rg
+  az redis list --resource-group broxiva-dev-rg
   ```
 
 - [ ] Note down database endpoints from output:
@@ -197,14 +197,14 @@ cd infrastructure/terraform/environments/dev  # or staging, prod
 
 - [ ] This takes 10-15 minutes. Verify cluster is ready:
   ```bash
-  az aks list --resource-group citadelbuy-dev-rg
+  az aks list --resource-group broxiva-dev-rg
   ```
 
 - [ ] Get cluster credentials
   ```bash
   az aks get-credentials \
-    --resource-group citadelbuy-dev-rg \
-    --name citadelbuy-dev-aks \
+    --resource-group broxiva-dev-rg \
+    --name broxiva-dev-aks \
     --overwrite-existing
   ```
 
@@ -223,7 +223,7 @@ cd infrastructure/terraform/environments/dev  # or staging, prod
 
 - [ ] Verify storage accounts:
   ```bash
-  az storage account list --resource-group citadelbuy-dev-rg
+  az storage account list --resource-group broxiva-dev-rg
   ```
 
 #### Step 7: Deploy Monitoring Module
@@ -235,7 +235,7 @@ cd infrastructure/terraform/environments/dev  # or staging, prod
 
 - [ ] Verify Log Analytics workspace:
   ```bash
-  az monitor log-analytics workspace list --resource-group citadelbuy-dev-rg
+  az monitor log-analytics workspace list --resource-group broxiva-dev-rg
   ```
 
 #### Step 8: Full Apply (Ensure Everything)
@@ -273,28 +273,28 @@ cd ../../azure
 
 - [ ] Verify all vaults created:
   ```bash
-  az keyvault list --resource-group citadelbuy-rg-keyvaults-dev
+  az keyvault list --resource-group broxiva-rg-keyvaults-dev
   ```
 
 Expected vaults:
-- `citadelbuy-dev-shared-kv` (shared secrets)
-- `citadelbuy-dev-api-kv` (API-specific)
-- `citadelbuy-dev-web-kv` (Web-specific)
-- `citadelbuy-dev-mobile-kv` (Mobile-specific)
-- `citadelbuy-dev-services-kv` (Services-specific)
+- `broxiva-dev-shared-kv` (shared secrets)
+- `broxiva-dev-api-kv` (API-specific)
+- `broxiva-dev-web-kv` (Web-specific)
+- `broxiva-dev-mobile-kv` (Mobile-specific)
+- `broxiva-dev-services-kv` (Services-specific)
 
 ### 2.4 Deploy IAM Policies and Managed Identities
 
 - [ ] Deploy managed identities
   ```bash
   terraform apply -var="environment=dev" \
-    -var="aks_cluster_name=citadelbuy-dev-aks" \
-    -var="aks_resource_group=citadelbuy-dev-rg"
+    -var="aks_cluster_name=broxiva-dev-aks" \
+    -var="aks_resource_group=broxiva-dev-rg"
   ```
 
 - [ ] Verify identities created:
   ```bash
-  az identity list --resource-group citadelbuy-dev-rg
+  az identity list --resource-group broxiva-dev-rg
   ```
 
 - [ ] Note down client IDs for later use:
@@ -335,10 +335,10 @@ Expected vaults:
 
 - [ ] Create application namespaces
   ```bash
-  kubectl create namespace citadelbuy-api
-  kubectl create namespace citadelbuy-web
-  kubectl create namespace citadelbuy-mobile
-  kubectl create namespace citadelbuy-services
+  kubectl create namespace broxiva-api
+  kubectl create namespace broxiva-web
+  kubectl create namespace broxiva-mobile
+  kubectl create namespace broxiva-services
   ```
 
 - [ ] Verify namespaces
@@ -356,11 +356,11 @@ The platform uses a per-app-per-environment Key Vault structure:
 
 | Vault Name | Purpose | Apps with Access |
 |------------|---------|------------------|
-| `citadelbuy-{env}-shared-kv` | Cross-app secrets (DB, Redis) | API, Services |
-| `citadelbuy-{env}-api-kv` | API-specific secrets | API only |
-| `citadelbuy-{env}-web-kv` | Web-specific secrets | Web only |
-| `citadelbuy-{env}-mobile-kv` | Mobile-specific secrets | Mobile only |
-| `citadelbuy-{env}-services-kv` | Microservices secrets | Services only |
+| `broxiva-{env}-shared-kv` | Cross-app secrets (DB, Redis) | API, Services |
+| `broxiva-{env}-api-kv` | API-specific secrets | API only |
+| `broxiva-{env}-web-kv` | Web-specific secrets | Web only |
+| `broxiva-{env}-mobile-kv` | Mobile-specific secrets | Mobile only |
+| `broxiva-{env}-services-kv` | Microservices secrets | Services only |
 
 ### 3.2 Shared Vault Secrets (Auto-Generated)
 
@@ -389,7 +389,7 @@ Replace placeholder values with real credentials:
 - [ ] **stripe-secret-key** (production: `sk_live_...`, dev: `sk_test_...`)
   ```bash
   az keyvault secret set \
-    --vault-name citadelbuy-dev-api-kv \
+    --vault-name broxiva-dev-api-kv \
     --name stripe-secret-key \
     --value "sk_test_YOUR_STRIPE_SECRET_KEY"
   ```
@@ -397,7 +397,7 @@ Replace placeholder values with real credentials:
 - [ ] **stripe-webhook-secret** (format: `whsec_...`)
   ```bash
   az keyvault secret set \
-    --vault-name citadelbuy-dev-api-kv \
+    --vault-name broxiva-dev-api-kv \
     --name stripe-webhook-secret \
     --value "whsec_YOUR_WEBHOOK_SECRET"
   ```
@@ -407,7 +407,7 @@ Replace placeholder values with real credentials:
 - [ ] **sendgrid-api-key** (format: `SG.xxx`)
   ```bash
   az keyvault secret set \
-    --vault-name citadelbuy-dev-api-kv \
+    --vault-name broxiva-dev-api-kv \
     --name sendgrid-api-key \
     --value "SG.YOUR_SENDGRID_API_KEY"
   ```
@@ -417,7 +417,7 @@ Replace placeholder values with real credentials:
 - [ ] **openai-api-key** (format: `sk-proj-xxx`)
   ```bash
   az keyvault secret set \
-    --vault-name citadelbuy-dev-api-kv \
+    --vault-name broxiva-dev-api-kv \
     --name openai-api-key \
     --value "sk-proj-YOUR_OPENAI_KEY"
   ```
@@ -433,7 +433,7 @@ Replace placeholder values with real credentials:
 - [ ] **sentry-dsn** (format: `https://xxx@sentry.io/xxx`)
   ```bash
   az keyvault secret set \
-    --vault-name citadelbuy-dev-web-kv \
+    --vault-name broxiva-dev-web-kv \
     --name sentry-dsn \
     --value "https://YOUR_KEY@sentry.io/YOUR_PROJECT"
   ```
@@ -445,7 +445,7 @@ All mobile secrets require manual configuration:
 - [ ] **apple-shared-secret** (from App Store Connect)
   ```bash
   az keyvault secret set \
-    --vault-name citadelbuy-dev-mobile-kv \
+    --vault-name broxiva-dev-mobile-kv \
     --name apple-shared-secret \
     --value "YOUR_APPLE_SHARED_SECRET"
   ```
@@ -453,7 +453,7 @@ All mobile secrets require manual configuration:
 - [ ] **google-play-service-account-key** (JSON from Google Play Console)
   ```bash
   az keyvault secret set \
-    --vault-name citadelbuy-dev-mobile-kv \
+    --vault-name broxiva-dev-mobile-kv \
     --name google-play-service-account-key \
     --file ./google-play-service-account.json
   ```
@@ -461,7 +461,7 @@ All mobile secrets require manual configuration:
 - [ ] **firebase-service-account** (JSON from Firebase Console)
   ```bash
   az keyvault secret set \
-    --vault-name citadelbuy-dev-mobile-kv \
+    --vault-name broxiva-dev-mobile-kv \
     --name firebase-service-account \
     --file ./firebase-service-account.json
   ```
@@ -487,22 +487,22 @@ Use the validation script:
 - [ ] Create Azure Container Registry (if not exists)
   ```bash
   az acr create \
-    --resource-group citadelbuy-dev-rg \
-    --name citadelbuyacr \
+    --resource-group broxiva-dev-rg \
+    --name broxivaacr \
     --sku Standard
   ```
 
 - [ ] Login to ACR
   ```bash
-  az acr login --name citadelbuyacr
+  az acr login --name broxivaacr
   ```
 
 - [ ] Attach ACR to AKS
   ```bash
   az aks update \
-    --resource-group citadelbuy-dev-rg \
-    --name citadelbuy-dev-aks \
-    --attach-acr citadelbuyacr
+    --resource-group broxiva-dev-rg \
+    --name broxiva-dev-aks \
+    --attach-acr broxivaacr
   ```
 
 ### 4.2 Build and Push Docker Images
@@ -516,12 +516,12 @@ Use the validation script:
 
 - [ ] Build Docker image
   ```bash
-  docker build -t citadelbuyacr.azurecr.io/citadelbuy-api:latest .
+  docker build -t broxivaacr.azurecr.io/broxiva-api:latest .
   ```
 
 - [ ] Push to ACR
   ```bash
-  docker push citadelbuyacr.azurecr.io/citadelbuy-api:latest
+  docker push broxivaacr.azurecr.io/broxiva-api:latest
   ```
 
 #### Build Web Image
@@ -533,12 +533,12 @@ Use the validation script:
 
 - [ ] Build Docker image
   ```bash
-  docker build -t citadelbuyacr.azurecr.io/citadelbuy-web:latest .
+  docker build -t broxivaacr.azurecr.io/broxiva-web:latest .
   ```
 
 - [ ] Push to ACR
   ```bash
-  docker push citadelbuyacr.azurecr.io/citadelbuy-web:latest
+  docker push broxivaacr.azurecr.io/broxiva-web:latest
   ```
 
 #### Build Mobile Backend (if applicable)
@@ -546,8 +546,8 @@ Use the validation script:
 - [ ] Build and push mobile backend image
   ```bash
   # Adjust path based on mobile backend location
-  docker build -t citadelbuyacr.azurecr.io/citadelbuy-mobile:latest .
-  docker push citadelbuyacr.azurecr.io/citadelbuy-mobile:latest
+  docker build -t broxivaacr.azurecr.io/broxiva-mobile:latest .
+  docker push broxivaacr.azurecr.io/broxiva-mobile:latest
   ```
 
 ### 4.3 Database Migration
@@ -557,7 +557,7 @@ Use the validation script:
 - [ ] Set database connection from Key Vault
   ```bash
   export DATABASE_URL=$(az keyvault secret show \
-    --vault-name citadelbuy-dev-shared-kv \
+    --vault-name broxiva-dev-shared-kv \
     --name postgres-url \
     --query value -o tsv)
   ```
@@ -590,18 +590,18 @@ This configures Kubernetes to pull secrets from Azure Key Vault.
 - [ ] Get managed identity client IDs
   ```bash
   API_CLIENT_ID=$(az identity show \
-    --name citadelbuy-dev-api-identity \
-    --resource-group citadelbuy-dev-rg \
+    --name broxiva-dev-api-identity \
+    --resource-group broxiva-dev-rg \
     --query clientId -o tsv)
 
   WEB_CLIENT_ID=$(az identity show \
-    --name citadelbuy-dev-web-identity \
-    --resource-group citadelbuy-dev-rg \
+    --name broxiva-dev-web-identity \
+    --resource-group broxiva-dev-rg \
     --query clientId -o tsv)
 
   MOBILE_CLIENT_ID=$(az identity show \
-    --name citadelbuy-dev-mobile-identity \
-    --resource-group citadelbuy-dev-rg \
+    --name broxiva-dev-mobile-identity \
+    --resource-group broxiva-dev-rg \
     --query clientId -o tsv)
   ```
 
@@ -627,15 +627,15 @@ This configures Kubernetes to pull secrets from Azure Key Vault.
 
 - [ ] Verify ExternalSecrets are syncing
   ```bash
-  kubectl get externalsecret -n citadelbuy-api
-  kubectl get externalsecret -n citadelbuy-web
-  kubectl get externalsecret -n citadelbuy-mobile
+  kubectl get externalsecret -n broxiva-api
+  kubectl get externalsecret -n broxiva-web
+  kubectl get externalsecret -n broxiva-mobile
   ```
 
 - [ ] Check that Kubernetes secrets were created
   ```bash
-  kubectl get secrets -n citadelbuy-api
-  kubectl get secrets -n citadelbuy-web
+  kubectl get secrets -n broxiva-api
+  kubectl get secrets -n broxiva-web
   ```
 
 ### 4.5 Deploy API Application
@@ -647,17 +647,17 @@ This configures Kubernetes to pull secrets from Azure Key Vault.
 
 - [ ] Watch rollout status
   ```bash
-  kubectl rollout status deployment/citadelbuy-api -n citadelbuy-api
+  kubectl rollout status deployment/broxiva-api -n broxiva-api
   ```
 
 - [ ] Check pod status
   ```bash
-  kubectl get pods -n citadelbuy-api
+  kubectl get pods -n broxiva-api
   ```
 
 - [ ] Check pod logs for errors
   ```bash
-  kubectl logs -n citadelbuy-api -l app=citadelbuy-api --tail=50
+  kubectl logs -n broxiva-api -l app=broxiva-api --tail=50
   ```
 
 ### 4.6 Deploy Web Application
@@ -669,12 +669,12 @@ This configures Kubernetes to pull secrets from Azure Key Vault.
 
 - [ ] Watch rollout status
   ```bash
-  kubectl rollout status deployment/citadelbuy-web -n citadelbuy-web
+  kubectl rollout status deployment/broxiva-web -n broxiva-web
   ```
 
 - [ ] Check pod status
   ```bash
-  kubectl get pods -n citadelbuy-web
+  kubectl get pods -n broxiva-web
   ```
 
 ### 4.7 Deploy Mobile Backend (if applicable)
@@ -686,7 +686,7 @@ This configures Kubernetes to pull secrets from Azure Key Vault.
 
 - [ ] Verify deployment
   ```bash
-  kubectl get pods -n citadelbuy-mobile
+  kubectl get pods -n broxiva-mobile
   ```
 
 ### 4.8 Expose Services
@@ -698,7 +698,7 @@ This configures Kubernetes to pull secrets from Azure Key Vault.
 
 - [ ] Get external IP
   ```bash
-  kubectl get svc -n citadelbuy-api
+  kubectl get svc -n broxiva-api
   kubectl get ingress -A
   ```
 
@@ -712,21 +712,21 @@ This configures Kubernetes to pull secrets from Azure Key Vault.
 
 - [ ] Exec into API pod and check environment
   ```bash
-  kubectl exec -it -n citadelbuy-api \
-    $(kubectl get pod -n citadelbuy-api -l app=citadelbuy-api -o jsonpath='{.items[0].metadata.name}') \
+  kubectl exec -it -n broxiva-api \
+    $(kubectl get pod -n broxiva-api -l app=broxiva-api -o jsonpath='{.items[0].metadata.name}') \
     -- env | grep -E 'DATABASE_URL|REDIS_URL|JWT_SECRET'
   ```
 
 - [ ] Verify secrets are NOT showing PLACEHOLDER values
   ```bash
-  kubectl get secret database-secrets -n citadelbuy-api -o jsonpath='{.data.DATABASE_URL}' | base64 -d
+  kubectl get secret database-secrets -n broxiva-api -o jsonpath='{.data.DATABASE_URL}' | base64 -d
   ```
 
 ### 5.2 API Health Checks
 
 - [ ] Check API health endpoint
   ```bash
-  kubectl port-forward -n citadelbuy-api svc/citadelbuy-api 4000:80
+  kubectl port-forward -n broxiva-api svc/broxiva-api 4000:80
   ```
 
 - [ ] In another terminal, test health:
@@ -748,8 +748,8 @@ Expected response:
 
 - [ ] Test database from API pod
   ```bash
-  kubectl exec -it -n citadelbuy-api \
-    $(kubectl get pod -n citadelbuy-api -l app=citadelbuy-api -o jsonpath='{.items[0].metadata.name}') \
+  kubectl exec -it -n broxiva-api \
+    $(kubectl get pod -n broxiva-api -l app=broxiva-api -o jsonpath='{.items[0].metadata.name}') \
     -- sh -c 'echo "SELECT 1;" | psql $DATABASE_URL'
   ```
 
@@ -785,7 +785,7 @@ Expected response:
 
 - [ ] Port-forward web service
   ```bash
-  kubectl port-forward -n citadelbuy-web svc/citadelbuy-web 3000:80
+  kubectl port-forward -n broxiva-web svc/broxiva-web 3000:80
   ```
 
 - [ ] Open browser to http://localhost:3000
@@ -796,26 +796,26 @@ Expected response:
 
 - [ ] Check pod resource usage
   ```bash
-  kubectl top pods -n citadelbuy-api
-  kubectl top pods -n citadelbuy-web
+  kubectl top pods -n broxiva-api
+  kubectl top pods -n broxiva-web
   ```
 
 - [ ] View recent logs
   ```bash
-  kubectl logs -n citadelbuy-api -l app=citadelbuy-api --tail=100
+  kubectl logs -n broxiva-api -l app=broxiva-api --tail=100
   ```
 
 - [ ] Check for error logs
   ```bash
-  kubectl logs -n citadelbuy-api -l app=citadelbuy-api | grep -i error
+  kubectl logs -n broxiva-api -l app=broxiva-api | grep -i error
   ```
 
 ### 5.6 External Secrets Sync Status
 
 - [ ] Check ExternalSecret status
   ```bash
-  kubectl describe externalsecret api-database-secrets -n citadelbuy-api
-  kubectl describe externalsecret api-auth-secrets -n citadelbuy-api
+  kubectl describe externalsecret api-database-secrets -n broxiva-api
+  kubectl describe externalsecret api-auth-secrets -n broxiva-api
   ```
 
 - [ ] Look for sync errors:
@@ -833,17 +833,17 @@ If a deployment is failing:
 
 - [ ] Rollback to previous revision
   ```bash
-  kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-api
+  kubectl rollout undo deployment/broxiva-api -n broxiva-api
   ```
 
 - [ ] Check rollout history
   ```bash
-  kubectl rollout history deployment/citadelbuy-api -n citadelbuy-api
+  kubectl rollout history deployment/broxiva-api -n broxiva-api
   ```
 
 - [ ] Rollback to specific revision
   ```bash
-  kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-api --to-revision=2
+  kubectl rollout undo deployment/broxiva-api -n broxiva-api --to-revision=2
   ```
 
 ### 6.2 Rollback Terraform Changes
@@ -910,28 +910,28 @@ If secrets were accidentally overwritten:
 - [ ] Check Key Vault audit logs
   ```bash
   az monitor activity-log list \
-    --resource-group citadelbuy-rg-keyvaults-dev \
+    --resource-group broxiva-rg-keyvaults-dev \
     --offset 7d
   ```
 
 - [ ] Restore from soft-delete (if within retention period)
   ```bash
   az keyvault secret recover \
-    --vault-name citadelbuy-dev-api-kv \
+    --vault-name broxiva-dev-api-kv \
     --name stripe-secret-key
   ```
 
 - [ ] Check secret versions
   ```bash
   az keyvault secret list-versions \
-    --vault-name citadelbuy-dev-api-kv \
+    --vault-name broxiva-dev-api-kv \
     --name stripe-secret-key
   ```
 
 - [ ] Restore specific version
   ```bash
   az keyvault secret set-attributes \
-    --vault-name citadelbuy-dev-api-kv \
+    --vault-name broxiva-dev-api-kv \
     --name stripe-secret-key \
     --version <version-id> \
     --enabled true
@@ -953,23 +953,23 @@ If secrets were accidentally overwritten:
 
 - [ ] Check ExternalSecret status
   ```bash
-  kubectl describe externalsecret api-database-secrets -n citadelbuy-api
+  kubectl describe externalsecret api-database-secrets -n broxiva-api
   ```
 
 - [ ] Verify SecretStore configuration
   ```bash
-  kubectl describe secretstore citadelbuy-api-vault -n citadelbuy-api
+  kubectl describe secretstore broxiva-api-vault -n broxiva-api
   ```
 
 - [ ] Check workload identity is configured
   ```bash
-  kubectl get serviceaccount api-service-account -n citadelbuy-api -o yaml
+  kubectl get serviceaccount api-service-account -n broxiva-api -o yaml
   ```
 
 - [ ] Verify identity has Key Vault access
   ```bash
   az role assignment list \
-    --scope /subscriptions/YOUR_SUB/resourceGroups/citadelbuy-rg-keyvaults-dev/providers/Microsoft.KeyVault/vaults/citadelbuy-dev-api-kv
+    --scope /subscriptions/YOUR_SUB/resourceGroups/broxiva-rg-keyvaults-dev/providers/Microsoft.KeyVault/vaults/broxiva-dev-api-kv
   ```
 
 #### Issue: Database Connection Failed
@@ -982,15 +982,15 @@ If secrets were accidentally overwritten:
 - [ ] Verify PostgreSQL is running
   ```bash
   az postgres flexible-server show \
-    --resource-group citadelbuy-dev-rg \
-    --name citadelbuy-dev-postgres
+    --resource-group broxiva-dev-rg \
+    --name broxiva-dev-postgres
   ```
 
 - [ ] Check firewall rules allow AKS
   ```bash
   az postgres flexible-server firewall-rule list \
-    --resource-group citadelbuy-dev-rg \
-    --name citadelbuy-dev-postgres
+    --resource-group broxiva-dev-rg \
+    --name broxiva-dev-postgres
   ```
 
 - [ ] Test connection from AKS pod
@@ -1010,23 +1010,23 @@ If secrets were accidentally overwritten:
 - [ ] Verify ACR is attached to AKS
   ```bash
   az aks show \
-    --resource-group citadelbuy-dev-rg \
-    --name citadelbuy-dev-aks \
+    --resource-group broxiva-dev-rg \
+    --name broxiva-dev-aks \
     --query servicePrincipalProfile.clientId -o tsv
   ```
 
 - [ ] Check image exists in ACR
   ```bash
-  az acr repository list --name citadelbuyacr
-  az acr repository show-tags --name citadelbuyacr --repository citadelbuy-api
+  az acr repository list --name broxivaacr
+  az acr repository show-tags --name broxivaacr --repository broxiva-api
   ```
 
 - [ ] Re-attach ACR
   ```bash
   az aks update \
-    --resource-group citadelbuy-dev-rg \
-    --name citadelbuy-dev-aks \
-    --attach-acr citadelbuyacr
+    --resource-group broxiva-dev-rg \
+    --name broxiva-dev-aks \
+    --attach-acr broxivaacr
   ```
 
 #### Issue: Pod Out of Memory (OOMKilled)
@@ -1039,7 +1039,7 @@ If secrets were accidentally overwritten:
 
 - [ ] Check resource limits
   ```bash
-  kubectl describe pod <pod-name> -n citadelbuy-api
+  kubectl describe pod <pod-name> -n broxiva-api
   ```
 
 - [ ] Increase memory limits in deployment YAML
@@ -1058,27 +1058,27 @@ If secrets were accidentally overwritten:
 
 - [ ] Get all resources in namespace
   ```bash
-  kubectl get all -n citadelbuy-api
+  kubectl get all -n broxiva-api
   ```
 
 - [ ] Describe pod for events
   ```bash
-  kubectl describe pod <pod-name> -n citadelbuy-api
+  kubectl describe pod <pod-name> -n broxiva-api
   ```
 
 - [ ] View pod logs (follow)
   ```bash
-  kubectl logs -f <pod-name> -n citadelbuy-api
+  kubectl logs -f <pod-name> -n broxiva-api
   ```
 
 - [ ] Exec into running pod
   ```bash
-  kubectl exec -it <pod-name> -n citadelbuy-api -- /bin/sh
+  kubectl exec -it <pod-name> -n broxiva-api -- /bin/sh
   ```
 
 - [ ] Check events in namespace
   ```bash
-  kubectl get events -n citadelbuy-api --sort-by='.lastTimestamp'
+  kubectl get events -n broxiva-api --sort-by='.lastTimestamp'
   ```
 
 ### 7.3 Support Resources
@@ -1131,4 +1131,4 @@ Your deployment is successful when:
 **Version:** 1.0
 **Last Updated:** 2025-12-12
 **Owner:** DevOps Team
-**Contact:** devops@citadelbuy.com
+**Contact:** devops@broxiva.com

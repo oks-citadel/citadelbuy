@@ -112,11 +112,11 @@ push_secrets() {
     if [[ -n "$DATABASE_URL" ]]; then
         local postgres_secret=$(jq -n \
             --arg url "$DATABASE_URL" \
-            --arg user "${POSTGRES_USER:-citadelbuy_admin}" \
+            --arg user "${POSTGRES_USER:-broxiva_admin}" \
             --arg pass "${POSTGRES_PASSWORD:-}" \
             --arg host "${POSTGRES_HOST:-localhost}" \
             --arg port "${POSTGRES_PORT:-5432}" \
-            --arg db "${POSTGRES_DB:-citadelbuy}" \
+            --arg db "${POSTGRES_DB:-broxiva}" \
             '{username: $user, password: $pass, host: $host, port: ($port|tonumber), database: $db, url: $url}')
 
         put_secret "$PROJECT_NAME/$env/postgres/credentials" "$postgres_secret"
@@ -163,7 +163,7 @@ push_secrets() {
             --arg access "$AWS_ACCESS_KEY_ID" \
             --arg secret "$AWS_SECRET_ACCESS_KEY" \
             --arg region "${AWS_REGION:-us-east-1}" \
-            --arg from "${EMAIL_FROM:-noreply@citadelbuy.com}" \
+            --arg from "${EMAIL_FROM:-noreply@broxiva.com}" \
             '{access_key_id: $access, secret_access_key: $secret, region: $region, from_email: $from}')
 
         put_secret "$PROJECT_NAME/$env/ses/credentials" "$ses_secret"
@@ -228,7 +228,7 @@ pull_secrets() {
 
     print_info "Pulling secrets from AWS Secrets Manager for environment: $env"
 
-    local env_content="# CitadelBuy Environment Variables\n"
+    local env_content="# Broxiva Environment Variables\n"
     env_content+="# Generated from AWS Secrets Manager on $(date)\n"
     env_content+="# Environment: $env\n\n"
 
@@ -400,7 +400,7 @@ backup_secrets() {
 
 show_usage() {
     cat << EOF
-CitadelBuy AWS Secrets Manager Sync Script
+Broxiva AWS Secrets Manager Sync Script
 
 Usage: $0 [command] [environment] [options]
 
@@ -418,7 +418,7 @@ Environments:
 
 Options:
     -r, --region    AWS region (default: us-east-1)
-    -p, --project   Project name (default: citadelbuy)
+    -p, --project   Project name (default: broxiva)
     -h, --help      Show this help message
 
 Examples:

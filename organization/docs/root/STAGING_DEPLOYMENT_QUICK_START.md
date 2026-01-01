@@ -1,4 +1,4 @@
-# CitadelBuy Staging Deployment - Quick Start Guide
+# Broxiva Staging Deployment - Quick Start Guide
 
 **Date:** 2025-12-05
 **Status:** ✅ READY FOR DEPLOYMENT
@@ -21,7 +21,7 @@
 
 ```bash
 # 1. Go to project root
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization
 
 # 2. Create .env file (CRITICAL!)
 cp .env.example .env
@@ -42,23 +42,23 @@ curl http://localhost:4000/api/health
 
 ```bash
 # 1. Go to project root
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization
 
 # 2. Run automated deployment
 ./scripts/deploy-staging.sh
 
 # 3. Monitor progress
-kubectl get pods -n citadelbuy-staging -w
+kubectl get pods -n broxiva-staging -w
 
 # 4. Verify deployment
-kubectl get all -n citadelbuy-staging
+kubectl get all -n broxiva-staging
 ```
 
 ### Option C: Local Development (No Docker)
 
 ```bash
 # 1. Go to project root
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization
 
 # 2. Install dependencies
 pnpm install
@@ -155,7 +155,7 @@ docker-compose exec api npx prisma migrate deploy
 docker-compose exec api npm run db:seed
 
 # Access database shell
-docker-compose exec postgres psql -U citadelbuy -d citadelbuy_dev
+docker-compose exec postgres psql -U broxiva -d broxiva_dev
 
 # Check migration status
 docker-compose exec api npx prisma migrate status
@@ -199,19 +199,19 @@ pnpm lint
 ./scripts/deploy-staging.sh
 
 # Check pods
-kubectl get pods -n citadelbuy-staging
+kubectl get pods -n broxiva-staging
 
 # Check services
-kubectl get svc -n citadelbuy-staging
+kubectl get svc -n broxiva-staging
 
 # View logs
-kubectl logs -f deployment/citadelbuy-api -n citadelbuy-staging
+kubectl logs -f deployment/broxiva-api -n broxiva-staging
 
 # Run migrations
-kubectl exec deployment/citadelbuy-api -n citadelbuy-staging -- npx prisma migrate deploy
+kubectl exec deployment/broxiva-api -n broxiva-staging -- npx prisma migrate deploy
 
 # Rollback
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-staging
+kubectl rollout undo deployment/broxiva-api -n broxiva-staging
 ```
 
 ---
@@ -223,7 +223,7 @@ kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-staging
 curl http://localhost:4000/api/health
 
 # PostgreSQL
-docker-compose exec postgres pg_isready -U citadelbuy
+docker-compose exec postgres pg_isready -U broxiva
 
 # Redis
 docker-compose exec redis redis-cli ping
@@ -273,7 +273,7 @@ docker-compose up -d <service-name>
 docker-compose exec api npx prisma migrate reset
 
 # Check connection
-docker-compose exec postgres pg_isready -U citadelbuy
+docker-compose exec postgres pg_isready -U broxiva
 
 # View database logs
 docker-compose logs postgres
@@ -302,8 +302,8 @@ docker-compose up -d
 2. **API Documentation:** http://localhost:4000/api/docs
 3. **Grafana:** http://localhost:3001 (admin / password from .env)
 4. **Prometheus:** http://localhost:9090
-5. **RabbitMQ:** http://localhost:15672 (citadelbuy / password from .env)
-6. **MinIO:** http://localhost:9001 (citadelbuy_admin / password from .env)
+5. **RabbitMQ:** http://localhost:15672 (broxiva / password from .env)
+6. **MinIO:** http://localhost:9001 (broxiva_admin / password from .env)
 
 ---
 
@@ -339,13 +339,13 @@ docker-compose down
 
 ```bash
 # Rollback API
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-staging
+kubectl rollout undo deployment/broxiva-api -n broxiva-staging
 
 # Rollback Web
-kubectl rollout undo deployment/citadelbuy-web -n citadelbuy-staging
+kubectl rollout undo deployment/broxiva-web -n broxiva-staging
 
 # Verify rollback
-kubectl rollout status deployment/citadelbuy-api -n citadelbuy-staging
+kubectl rollout status deployment/broxiva-api -n broxiva-staging
 ```
 
 ---

@@ -71,13 +71,13 @@ ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '').split(',') if os.getenv('ALLO
     "http://localhost:3000",
     "http://localhost:8000",
     "http://localhost:8080",
-    "https://citadelbuy.com",
-    "https://admin.citadelbuy.com",
-    "https://api.citadelbuy.com",
+    "https://broxiva.com",
+    "https://admin.broxiva.com",
+    "https://api.broxiva.com",
 ]
 
 # CDN Configuration
-CDN_BASE_URL = os.getenv('CDN_BASE_URL', 'https://cdn.citadelbuy.com')
+CDN_BASE_URL = os.getenv('CDN_BASE_URL', 'https://cdn.broxiva.com')
 STORAGE_PATH = os.getenv('STORAGE_PATH', '/app/data/media')
 
 # In-memory storage for media metadata (replace with database in production)
@@ -101,7 +101,7 @@ async def lifespan(app: FastAPI):
 
 # Initialize FastAPI app with lifespan
 app = FastAPI(
-    title="CitadelBuy Media Service",
+    title="Broxiva Media Service",
     description="Media processing, image upload, and CDN URL generation service",
     version="1.0.0",
     docs_url="/docs",
@@ -764,7 +764,7 @@ async def analyze_image(file: UploadFile = File(..., description="Image file to 
 async def root():
     """Root endpoint with service information"""
     return {
-        "service": "CitadelBuy Media Service",
+        "service": "Broxiva Media Service",
         "version": "1.0.0",
         "description": "Media processing, image upload, and CDN URL generation service",
         "endpoints": {

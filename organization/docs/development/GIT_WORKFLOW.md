@@ -1,6 +1,6 @@
 # Git Workflow Guide
 
-This document outlines the Git workflow, branching strategy, and conventions for the CitadelBuy project.
+This document outlines the Git workflow, branching strategy, and conventions for the Broxiva project.
 
 ## Table of Contents
 

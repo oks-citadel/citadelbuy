@@ -1,4 +1,4 @@
-# CitadelBuy Monitoring and Alerting Guide
+# Broxiva Monitoring and Alerting Guide
 
 **Version:** 1.0.0
 **Last Updated:** December 4, 2025
@@ -23,7 +23,7 @@
 
 ## Overview
 
-This document outlines the comprehensive monitoring and alerting strategy for CitadelBuy's production environment. Our monitoring philosophy follows the principles of:
+This document outlines the comprehensive monitoring and alerting strategy for Broxiva's production environment. Our monitoring philosophy follows the principles of:
 
 - **Observability**: Understand system behavior through metrics, logs, and traces
 - **Proactive Detection**: Identify issues before they impact users
@@ -86,13 +86,13 @@ This document outlines the comprehensive monitoring and alerting strategy for Ci
 
 | Component | Purpose | Access URL |
 |-----------|---------|------------|
-| **Prometheus** | Metrics collection | https://prometheus.citadelbuy.com |
-| **Grafana** | Visualization & dashboards | https://grafana.citadelbuy.com |
+| **Prometheus** | Metrics collection | https://prometheus.broxiva.com |
+| **Grafana** | Visualization & dashboards | https://grafana.broxiva.com |
 | **Alert Manager** | Alert routing | Internal |
-| **Sentry** | Error tracking | https://sentry.io/citadelbuy |
-| **Kibana** | Log exploration | https://kibana.citadelbuy.com |
+| **Sentry** | Error tracking | https://sentry.io/broxiva |
+| **Kibana** | Log exploration | https://kibana.broxiva.com |
 | **Azure Monitor** | Cloud resource monitoring | portal.azure.com |
-| **PagerDuty** | On-call management | https://citadelbuy.pagerduty.com |
+| **PagerDuty** | On-call management | https://broxiva.pagerduty.com |
 
 ---
 
@@ -302,7 +302,7 @@ groups:
     rules:
       # Critical: API Down
       - alert: APIDown
-        expr: up{job="citadelbuy-api"} == 0
+        expr: up{job="broxiva-api"} == 0
         for: 2m
         labels:
           severity: critical
@@ -310,7 +310,7 @@ groups:
         annotations:
           summary: "API service is down"
           description: "API service {{ $labels.instance }} has been down for 2 minutes"
-          runbook: "https://docs.citadelbuy.com/runbooks/api-down"
+          runbook: "https://docs.broxiva.com/runbooks/api-down"
 
       # Critical: High Error Rate
       - alert: HighErrorRate
@@ -327,7 +327,7 @@ groups:
         annotations:
           summary: "High 5xx error rate"
           description: "Error rate is {{ $value | humanizePercentage }} over last 5 minutes"
-          runbook: "https://docs.citadelbuy.com/runbooks/high-error-rate"
+          runbook: "https://docs.broxiva.com/runbooks/high-error-rate"
 
       # High Priority: Slow Response Time
       - alert: SlowResponseTime
@@ -342,7 +342,7 @@ groups:
         annotations:
           summary: "Slow API response time"
           description: "P95 response time for {{ $labels.route }} is {{ $value | humanizeDuration }}"
-          runbook: "https://docs.citadelbuy.com/runbooks/slow-response"
+          runbook: "https://docs.broxiva.com/runbooks/slow-response"
 
       # High Priority: High Request Rate
       - alert: HighRequestRate
@@ -355,7 +355,7 @@ groups:
         annotations:
           summary: "Unusually high request rate"
           description: "Request rate is {{ $value }} req/sec (possible DDoS)"
-          runbook: "https://docs.citadelbuy.com/runbooks/high-traffic"
+          runbook: "https://docs.broxiva.com/runbooks/high-traffic"
 ```
 
 ```yaml
@@ -374,7 +374,7 @@ groups:
         annotations:
           summary: "PostgreSQL database is down"
           description: "Database {{ $labels.instance }} has been down for 1 minute"
-          runbook: "https://docs.citadelbuy.com/runbooks/database-down"
+          runbook: "https://docs.broxiva.com/runbooks/database-down"
 
       # Critical: High Connection Usage
       - alert: DatabaseConnectionsHigh
@@ -391,7 +391,7 @@ groups:
         annotations:
           summary: "Database connection pool nearly exhausted"
           description: "{{ $value | humanizePercentage }} of connections in use"
-          runbook: "https://docs.citadelbuy.com/runbooks/db-connections"
+          runbook: "https://docs.broxiva.com/runbooks/db-connections"
 
       # High Priority: Slow Queries
       - alert: SlowQueries
@@ -404,7 +404,7 @@ groups:
         annotations:
           summary: "High rate of slow queries"
           description: "{{ $value }} slow queries per second"
-          runbook: "https://docs.citadelbuy.com/runbooks/slow-queries"
+          runbook: "https://docs.broxiva.com/runbooks/slow-queries"
 
       # High Priority: Replication Lag
       - alert: ReplicationLag
@@ -416,7 +416,7 @@ groups:
         annotations:
           summary: "Database replication lag is high"
           description: "Replication lag is {{ $value | humanizeDuration }}"
-          runbook: "https://docs.citadelbuy.com/runbooks/replication-lag"
+          runbook: "https://docs.broxiva.com/runbooks/replication-lag"
 ```
 
 ```yaml
@@ -436,7 +436,7 @@ groups:
         annotations:
           summary: "Pod {{ $labels.pod }} is crash looping"
           description: "Pod has restarted {{ $value }} times in last 15 minutes"
-          runbook: "https://docs.citadelbuy.com/runbooks/pod-crash"
+          runbook: "https://docs.broxiva.com/runbooks/pod-crash"
 
       # Critical: Node Not Ready
       - alert: NodeNotReady
@@ -448,7 +448,7 @@ groups:
         annotations:
           summary: "Kubernetes node {{ $labels.node }} is not ready"
           description: "Node has been not ready for 5 minutes"
-          runbook: "https://docs.citadelbuy.com/runbooks/node-not-ready"
+          runbook: "https://docs.broxiva.com/runbooks/node-not-ready"
 
       # High Priority: High CPU Usage
       - alert: HighCPUUsage
@@ -465,7 +465,7 @@ groups:
         annotations:
           summary: "Pod {{ $labels.pod }} has high CPU usage"
           description: "CPU usage is {{ $value | humanizePercentage }}"
-          runbook: "https://docs.citadelbuy.com/runbooks/high-cpu"
+          runbook: "https://docs.broxiva.com/runbooks/high-cpu"
 
       # High Priority: High Memory Usage
       - alert: HighMemoryUsage
@@ -482,7 +482,7 @@ groups:
         annotations:
           summary: "Pod {{ $labels.pod }} has high memory usage"
           description: "Memory usage is {{ $value | humanizePercentage }}"
-          runbook: "https://docs.citadelbuy.com/runbooks/high-memory"
+          runbook: "https://docs.broxiva.com/runbooks/high-memory"
 ```
 
 ### Alert Manager Configuration
@@ -556,13 +556,13 @@ receivers:
 
   - name: 'email-team'
     email_configs:
-      - to: 'devops@citadelbuy.com'
-        from: 'alerts@citadelbuy.com'
+      - to: 'devops@broxiva.com'
+        from: 'alerts@broxiva.com'
         smarthost: 'smtp.sendgrid.net:587'
         auth_username: 'apikey'
         auth_password: ${SENDGRID_API_KEY}
         headers:
-          Subject: '[CitadelBuy Alert] {{ .GroupLabels.alertname }}'
+          Subject: '[Broxiva Alert] {{ .GroupLabels.alertname }}'
 
 inhibit_rules:
   # Inhibit warning if critical is firing
@@ -593,13 +593,13 @@ inhibit_rules:
 ```json
 {
   "dashboard": {
-    "title": "CitadelBuy Main Overview",
+    "title": "Broxiva Main Overview",
     "panels": [
       {
         "title": "Service Health",
         "targets": [
           {
-            "expr": "up{job=\"citadelbuy-api\"}",
+            "expr": "up{job=\"broxiva-api\"}",
             "legendFormat": "API"
           },
           {
@@ -761,10 +761,10 @@ See [INCIDENT_RESPONSE.md](./INCIDENT_RESPONSE.md) for detailed procedures.
 
 <match kubernetes.**>
   @type elasticsearch
-  host elasticsearch.citadelbuy.svc.cluster.local
+  host elasticsearch.broxiva.svc.cluster.local
   port 9200
   logstash_format true
-  logstash_prefix citadelbuy
+  logstash_prefix broxiva
   <buffer>
     @type file
     path /var/log/fluentd-buffers/kubernetes.system.buffer
@@ -796,7 +796,7 @@ See [INCIDENT_RESPONSE.md](./INCIDENT_RESPONSE.md) for detailed procedures.
 
 ```bash
 # Uptime checks every 1 minute
-*/1 * * * * curl -f https://api.citadelbuy.com/api/health || echo "Health check failed"
+*/1 * * * * curl -f https://api.broxiva.com/api/health || echo "Health check failed"
 
 # Critical user flows every 5 minutes
 */5 * * * * /scripts/synthetic-tests.sh

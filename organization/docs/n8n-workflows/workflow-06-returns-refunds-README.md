@@ -1,14 +1,14 @@
-# CitadelBuy Returns & Refunds Automation - Workflow 6
+# Broxiva Returns & Refunds Automation - Workflow 6
 
 ## Overview
 
-This n8n workflow automates the complete returns and refunds process for CitadelBuy, from initial request validation through refund processing and post-return surveys.
+This n8n workflow automates the complete returns and refunds process for Broxiva, from initial request validation through refund processing and post-return surveys.
 
 ## Workflow Architecture
 
 ### Trigger 1: Return Request (`return.requested`)
 
-**Webhook Endpoint:** `/citadelbuy-returns`
+**Webhook Endpoint:** `/broxiva-returns`
 
 **Process Flow:**
 1. Parse and validate return request
@@ -20,7 +20,7 @@ This n8n workflow automates the complete returns and refunds process for Citadel
 
 ### Trigger 2: Return Received (`return.received`)
 
-**Webhook Endpoint:** `/citadelbuy-return-received`
+**Webhook Endpoint:** `/broxiva-return-received`
 
 **Process Flow:**
 1. Fetch complete return details
@@ -221,8 +221,8 @@ POST /v1/inventory/adjust
 **Return Address (Ship To):**
 ```json
 {
-  "name": "CitadelBuy Returns",
-  "company": "CitadelBuy Inc",
+  "name": "Broxiva Returns",
+  "company": "Broxiva Inc",
   "street1": "500 Returns Pkwy",
   "city": "Commerce",
   "state": "CA",
@@ -263,7 +263,7 @@ POST /v1/inventory/adjust
 
 ## API Endpoints Used
 
-### CitadelBuy API
+### Broxiva API
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
@@ -294,18 +294,18 @@ SHIPSTATION_API_SECRET=your_api_secret
 STRIPE_SECRET_KEY=sk_live_...
 
 # Zendesk
-ZENDESK_SUBDOMAIN=citadelbuy
-ZENDESK_EMAIL=admin@citadelbuy.com
+ZENDESK_SUBDOMAIN=broxiva
+ZENDESK_EMAIL=admin@broxiva.com
 ZENDESK_API_TOKEN=your_token
 
-# CitadelBuy API
-CITADELBUY_API_KEY=your_api_key
-CITADELBUY_API_URL=https://api.citadelbuy.com/v1
+# Broxiva API
+BROXIVA_API_KEY=your_api_key
+BROXIVA_API_URL=https://api.broxiva.com/v1
 ```
 
 ### n8n Credentials Required
 
-1. **citadelBuyApi** - HTTP Header Auth
+1. **broxivaBuyApi** - HTTP Header Auth
 2. **shipStationApi** - Basic Auth
 3. **stripeApi** - Header Auth (Bearer)
 4. **zendeskApi** - Basic Auth
@@ -315,7 +315,7 @@ CITADELBUY_API_URL=https://api.citadelbuy.com/v1
 ### Test Scenario 1: Auto-Approval
 
 ```bash
-curl -X POST https://n8n.citadelbuy.com/webhook/citadelbuy-returns \
+curl -X POST https://n8n.broxiva.com/webhook/broxiva-returns \
   -H "Content-Type: application/json" \
   -d '{
     "event": "return.requested",
@@ -345,7 +345,7 @@ curl -X POST https://n8n.citadelbuy.com/webhook/citadelbuy-returns \
 ### Test Scenario 2: Manual Review (High Value)
 
 ```bash
-curl -X POST https://n8n.citadelbuy.com/webhook/citadelbuy-returns \
+curl -X POST https://n8n.broxiva.com/webhook/broxiva-returns \
   -H "Content-Type: application/json" \
   -d '{
     "event": "return.requested",
@@ -375,7 +375,7 @@ curl -X POST https://n8n.citadelbuy.com/webhook/citadelbuy-returns \
 ### Test Scenario 3: Return Received
 
 ```bash
-curl -X POST https://n8n.citadelbuy.com/webhook/citadelbuy-return-received \
+curl -X POST https://n8n.broxiva.com/webhook/broxiva-return-received \
   -H "Content-Type: application/json" \
   -d '{
     "return_id": "RET-TEST-001",
@@ -458,8 +458,8 @@ Monitor these node outputs:
 
 ## Support Contacts
 
-- **Returns Portal:** https://citadelbuy.com/returns
-- **Support Email:** returns@citadelbuy.com
+- **Returns Portal:** https://broxiva.com/returns
+- **Support Email:** returns@broxiva.com
 - **Support Phone:** 888-555-0100
 - **Hours:** Mon-Fri 9AM-6PM PST
 
@@ -475,7 +475,7 @@ Monitor these node outputs:
 
 ## Related Documentation
 
-- [CitadelBuy Returns Policy](https://citadelbuy.com/returns-policy)
+- [Broxiva Returns Policy](https://broxiva.com/returns-policy)
 - [ShipStation API Documentation](https://www.shipstation.com/docs/api/)
 - [Stripe Refunds API](https://stripe.com/docs/api/refunds)
 - [Zendesk API Documentation](https://developer.zendesk.com/api-reference/)

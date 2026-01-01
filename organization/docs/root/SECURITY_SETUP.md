@@ -1,4 +1,4 @@
-# CitadelBuy Security Setup Guide
+# Broxiva Security Setup Guide
 
 ## Table of Contents
 1. [Critical Security Overview](#critical-security-overview)
@@ -130,7 +130,7 @@ Create a file `generate-secrets.sh`:
 #!/bin/bash
 
 echo "==================================="
-echo "CitadelBuy Secret Generator"
+echo "Broxiva Secret Generator"
 echo "==================================="
 echo ""
 echo "JWT_SECRET=$(openssl rand -base64 64)"
@@ -221,7 +221,7 @@ wget https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.24.0/ku
 Create sealed secret:
 ```bash
 # Create secret file
-kubectl create secret generic citadelbuy-secrets \
+kubectl create secret generic broxiva-secrets \
   --from-literal=jwt-secret=$(openssl rand -base64 64) \
   --from-literal=database-password=$(openssl rand -base64 32) \
   --dry-run=client -o yaml > secret.yaml
@@ -257,19 +257,19 @@ spec:
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
-  name: citadelbuy-secrets
+  name: broxiva-secrets
 spec:
   secretStoreRef:
     name: aws-secrets-manager
   target:
-    name: citadelbuy-secrets
+    name: broxiva-secrets
   data:
   - secretKey: jwt-secret
     remoteRef:
-      key: citadelbuy/jwt-secret
+      key: broxiva/jwt-secret
   - secretKey: database-password
     remoteRef:
-      key: citadelbuy/database-password
+      key: broxiva/database-password
 ```
 
 ---
@@ -318,7 +318,7 @@ spec:
   CORS_ORIGINS=*
 
   # ✅ Production (specific domains)
-  CORS_ORIGINS=https://citadelbuy.com,https://admin.citadelbuy.com
+  CORS_ORIGINS=https://broxiva.com,https://admin.broxiva.com
   ```
 
 - [ ] **TLS/SSL certificates are valid**
@@ -368,19 +368,19 @@ To rotate JWT secrets without downtime:
 
 ```bash
 # 1. Create new user with new password
-psql -c "CREATE USER citadelbuy_new WITH PASSWORD 'new-password';"
-psql -c "GRANT ALL PRIVILEGES ON DATABASE citadelbuy TO citadelbuy_new;"
+psql -c "CREATE USER broxiva_new WITH PASSWORD 'new-password';"
+psql -c "GRANT ALL PRIVILEGES ON DATABASE broxiva TO broxiva_new;"
 
 # 2. Update application to use new credentials
-kubectl set env deployment/api DATABASE_URL=postgresql://citadelbuy_new:new-password@...
+kubectl set env deployment/api DATABASE_URL=postgresql://broxiva_new:new-password@...
 
 # 3. Wait for deployment to stabilize
 
 # 4. Remove old user
-psql -c "DROP USER citadelbuy;"
+psql -c "DROP USER broxiva;"
 
 # 5. Rename new user to standard name
-psql -c "ALTER USER citadelbuy_new RENAME TO citadelbuy;"
+psql -c "ALTER USER broxiva_new RENAME TO broxiva;"
 ```
 
 ### Automated Rotation with AWS Secrets Manager
@@ -388,7 +388,7 @@ psql -c "ALTER USER citadelbuy_new RENAME TO citadelbuy;"
 ```bash
 # Enable automatic rotation
 aws secretsmanager rotate-secret \
-  --secret-id citadelbuy/database-password \
+  --secret-id broxiva/database-password \
   --rotation-lambda-arn arn:aws:lambda:region:account:function:rotation-function \
   --rotation-rules AutomaticallyAfterDays=90
 ```
@@ -445,6 +445,6 @@ psql -c "SELECT * FROM pg_stat_activity;"
 
 ## Support
 
-For security concerns, contact: security@citadelbuy.com
+For security concerns, contact: security@broxiva.com
 
 **DO NOT** post security issues in public repositories or forums.

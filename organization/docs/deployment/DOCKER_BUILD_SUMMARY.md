@@ -99,19 +99,19 @@ Located in:
 
 **Windows PowerShell:**
 ```powershell
-cd C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization
+cd C:\Users\Dell\OneDrive\Documents\Broxivabuy\Broxiva\organization
 .\build-broxiva-images.ps1
 ```
 
 **Windows CMD:**
 ```cmd
-cd C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization
+cd C:\Users\Dell\OneDrive\Documents\Broxivabuy\Broxiva\organization
 build-broxiva-images.bat
 ```
 
 **Git Bash / Linux / macOS:**
 ```bash
-cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization
+cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization
 chmod +x build-broxiva-images.sh
 ./build-broxiva-images.sh
 ```
@@ -370,7 +370,7 @@ The Broxiva platform Docker build system is now ready for use. All necessary scr
 
 ```powershell
 # Windows PowerShell
-cd C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization
+cd C:\Users\Dell\OneDrive\Documents\Broxivabuy\Broxiva\organization
 .\build-broxiva-images.ps1
 ```
 
@@ -378,7 +378,7 @@ This will build all images and provide clear instructions for next steps.
 
 ---
 
-**Project Location**: `C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization`
+**Project Location**: `C:\Users\Dell\OneDrive\Documents\Broxivabuy\Broxiva\organization`
 **Total Images**: 15 (2 main + 13 microservices)
 **Total Size**: ~5-8 GB
 **Build Time**: 30-60 minutes (first build), 10-20 minutes (cached)

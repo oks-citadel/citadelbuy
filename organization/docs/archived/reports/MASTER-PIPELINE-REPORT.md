@@ -1,7 +1,7 @@
 # Master CI/CD Pipeline Report
 
 **Generated:** 2025-12-13
-**Repository:** CitadelBuy Organization
+**Repository:** Broxiva Organization
 **Platform:** Azure (ACR, AKS, Key Vault) + GitHub Actions
 
 ---

@@ -1,8 +1,8 @@
-# CitadelBuy AI Features
+# Broxiva AI Features
 
 ## Overview
 
-CitadelBuy integrates 300+ AI-powered capabilities across 38 categories to deliver intelligent e-commerce experiences.
+Broxiva integrates 300+ AI-powered capabilities across 38 categories to deliver intelligent e-commerce experiences.
 
 ## AI Services Architecture
 
@@ -119,9 +119,9 @@ CitadelBuy integrates 300+ AI-powered capabilities across 38 categories to deliv
 ### Using the AI SDK
 
 ```typescript
-import { CitadelBuyAI } from '@citadelbuy/ai-sdk';
+import { BroxivaAI } from '@broxiva/ai-sdk';
 
-const ai = new CitadelBuyAI({
+const ai = new BroxivaAI({
   baseUrl: process.env.AI_SERVICE_URL,
   apiKey: process.env.AI_API_KEY,
 });
@@ -152,7 +152,7 @@ const fraudScore = await ai.fraud.analyzeTransaction({
 ### React Hooks
 
 ```typescript
-import { useRecommendations, useSearch } from '@citadelbuy/ai-sdk/react';
+import { useRecommendations, useSearch } from '@broxiva/ai-sdk/react';
 
 function ProductRecommendations({ userId }) {
   const { data, isLoading } = useRecommendations({

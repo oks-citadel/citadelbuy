@@ -1,4 +1,4 @@
-# CitadelBuy Technical Architecture & Implementation Guide
+# Broxiva Technical Architecture & Implementation Guide
 ## Production-Ready Azure Cloud Platform
 
 ---
@@ -168,7 +168,7 @@ az account set --subscription "YOUR-SUBSCRIPTION-ID"
 ### Project Structure
 
 ```
-citadelbuy/
+broxiva/
 ├── infrastructure/
 │   └── terraform/
 │       ├── modules/
@@ -239,8 +239,8 @@ terraform {
   }
 
   backend "azurerm" {
-    resource_group_name  = "citadelbuy-tfstate-rg"
-    storage_account_name = "citadelbuytfstate"
+    resource_group_name  = "broxiva-tfstate-rg"
+    storage_account_name = "broxivatfstate"
     container_name       = "tfstate-production"
     key                  = "terraform.tfstate"
   }
@@ -270,12 +270,12 @@ provider "azuread" {
 **`infrastructure/terraform/environments/production/main.tf`**
 ```hcl
 locals {
-  project_name = "citadelbuy"
+  project_name = "broxiva"
   environment  = "production"
   location     = "eastus"
   
   common_tags = {
-    Project     = "CitadelBuy"
+    Project     = "Broxiva"
     Environment = local.environment
     ManagedBy   = "Terraform"
     Owner       = "Platform Team"
@@ -398,7 +398,7 @@ module "sql_database" {
   resource_group_name = azurerm_resource_group.main.name
   location           = azurerm_resource_group.main.location
   
-  administrator_login = "citadeladmin"
+  administrator_login = "broxivaadmin"
   
   databases = {
     orders = {
@@ -762,8 +762,8 @@ cd infrastructure/terraform/environments/production
 
 # Initialize Terraform
 terraform init \
-  -backend-config="resource_group_name=citadelbuy-tfstate-rg" \
-  -backend-config="storage_account_name=citadelbuytfstate" \
+  -backend-config="resource_group_name=broxiva-tfstate-rg" \
+  -backend-config="storage_account_name=broxivatfstate" \
   -backend-config="container_name=tfstate-production"
 
 # Plan infrastructure

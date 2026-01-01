@@ -1,6 +1,6 @@
-# CitadelBuy Azure Deployment Master Report
+# Broxiva Azure Deployment Master Report
 
-**Platform:** CitadelBuy Global E-Commerce Platform
+**Platform:** Broxiva Global E-Commerce Platform
 **Target Cloud:** Microsoft Azure
 **Deployment Date:** December 2024
 **Status:** PRODUCTION READY
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The CitadelBuy e-commerce platform has been configured for full production deployment on Azure. All infrastructure is managed via Terraform, Docker images are built and pushed to Azure Container Registry (ACR), and cost optimization workflows automatically shut down non-production environments.
+The Broxiva e-commerce platform has been configured for full production deployment on Azure. All infrastructure is managed via Terraform, Docker images are built and pushed to Azure Container Registry (ACR), and cost optimization workflows automatically shut down non-production environments.
 
 ### Key Achievements
 
@@ -83,11 +83,11 @@ All services have production-optimized Dockerfiles with:
 ### Environments
 | Environment | Resource Group | AKS Cluster | Status |
 |-------------|----------------|-------------|--------|
-| Development | citadelbuy-dev-rg | citadelbuy-dev-aks | Cost-optimized (auto-shutdown) |
-| Staging | citadelbuy-staging-rg | citadelbuy-staging-aks | Cost-optimized (auto-shutdown) |
-| Production | citadelbuy-prod-rg | citadelbuy-prod-aks | Always running |
-| Africa | citadelbuy-africa-rg | - | Regional deployment |
-| Asia | citadelbuy-asia-rg | - | Regional deployment |
+| Development | broxiva-dev-rg | broxiva-dev-aks | Cost-optimized (auto-shutdown) |
+| Staging | broxiva-staging-rg | broxiva-staging-aks | Cost-optimized (auto-shutdown) |
+| Production | broxiva-prod-rg | broxiva-prod-aks | Always running |
+| Africa | broxiva-africa-rg | - | Regional deployment |
+| Asia | broxiva-asia-rg | - | Regional deployment |
 
 ### Production Resources
 
@@ -115,15 +115,15 @@ All services have production-optimized Dockerfiles with:
 - **Private Endpoints:** All services
 
 #### Container Registry
-- **Name:** citadelbuyacr
+- **Name:** broxivaacr
 - **SKU:** Premium
 - **Geo-Replication:** westus2, westeurope (zone redundant)
 
 ### State Backend
 ```hcl
 backend "azurerm" {
-  resource_group_name  = "citadelbuy-tfstate-rg"
-  storage_account_name = "citadelbuytfstate"
+  resource_group_name  = "broxiva-tfstate-rg"
+  storage_account_name = "broxivatfstate"
   container_name       = "tfstate"
   key                  = "prod.terraform.tfstate"
 }
@@ -276,17 +276,17 @@ gh workflow run docker-build-and-push-acr.yml \
 
 After deployment, verify in Azure Portal:
 
-- [ ] Resource Groups exist (citadelbuy-prod-rg)
-- [ ] AKS cluster is running (citadelbuy-prod-aks)
-- [ ] ACR has images (citadelbuyacr.azurecr.io)
+- [ ] Resource Groups exist (broxiva-prod-rg)
+- [ ] AKS cluster is running (broxiva-prod-aks)
+- [ ] ACR has images (broxivaacr.azurecr.io)
 - [ ] PostgreSQL is accessible
 - [ ] Redis is operational
 - [ ] Key Vaults have secrets
 - [ ] Application Insights collecting data
 - [ ] Front Door / CDN configured
 - [ ] Health endpoints responding:
-  - [ ] https://api.citadelbuy.com/api/health
-  - [ ] https://citadelbuy.com
+  - [ ] https://api.broxiva.com/api/health
+  - [ ] https://broxiva.com
 
 ---
 
@@ -294,11 +294,11 @@ After deployment, verify in Azure Portal:
 
 | Service | URL |
 |---------|-----|
-| Web Storefront | https://citadelbuy.com |
-| API | https://api.citadelbuy.com |
-| Staging Web | https://staging.citadelbuy.com |
-| Staging API | https://staging-api.citadelbuy.com |
-| CDN | https://cdn.citadelbuy.com |
+| Web Storefront | https://broxiva.com |
+| API | https://api.broxiva.com |
+| Staging Web | https://staging.broxiva.com |
+| Staging API | https://staging-api.broxiva.com |
+| CDN | https://cdn.broxiva.com |
 
 ---
 

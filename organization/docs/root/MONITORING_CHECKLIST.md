@@ -1,15 +1,15 @@
 # Monitoring Setup Checklist
 
-Use this checklist to complete the monitoring setup for CitadelBuy.
+Use this checklist to complete the monitoring setup for Broxiva.
 
 ## ✅ Initial Setup
 
 ### Sentry Account Setup
 - [ ] Create Sentry account at https://sentry.io
-- [ ] Create project: `citadelbuy-backend-production`
-- [ ] Create project: `citadelbuy-backend-staging`
-- [ ] Create project: `citadelbuy-web-production`
-- [ ] Create project: `citadelbuy-web-staging`
+- [ ] Create project: `broxiva-backend-production`
+- [ ] Create project: `broxiva-backend-staging`
+- [ ] Create project: `broxiva-web-production`
+- [ ] Create project: `broxiva-web-staging`
 - [ ] Copy DSN from each project
 
 ### Backend Configuration
@@ -72,7 +72,7 @@ Use this checklist to complete the monitoring setup for CitadelBuy.
     prom/prometheus
   ```
 - [ ] Access: http://localhost:9090
-- [ ] Verify CitadelBuy API target is up
+- [ ] Verify Broxiva API target is up
 - [ ] Test query: `rate(http_requests_total[5m])`
 
 ### Grafana
@@ -242,4 +242,4 @@ Need help? Check:
 - [MONITORING_SETUP.md](./docs/MONITORING_SETUP.md)
 - [MONITORING_QUICK_START.md](./docs/MONITORING_QUICK_START.md)
 - Slack: #monitoring
-- Email: devops@citadelbuy.com
+- Email: devops@broxiva.com

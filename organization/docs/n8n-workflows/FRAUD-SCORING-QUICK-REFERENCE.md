@@ -364,19 +364,19 @@ POST /v1/audit/fraud-decisions
 
 ```bash
 # Low risk test
-curl -X POST https://n8n.citadelbuy.com/webhook/fraud-detection \
+curl -X POST https://n8n.broxiva.com/webhook/fraud-detection \
   -d '{"orderId":"TEST-001","customerId":"EXISTING","total":99.99}'
 
 # Medium risk test
-curl -X POST https://n8n.citadelbuy.com/webhook/fraud-detection \
+curl -X POST https://n8n.broxiva.com/webhook/fraud-detection \
   -d '{"orderId":"TEST-002","customerId":"NEW","total":599.99,"billingAddress":{"country":"US"},"shippingAddress":{"country":"CA"}}'
 
 # High risk test
-curl -X POST https://n8n.citadelbuy.com/webhook/fraud-detection \
+curl -X POST https://n8n.broxiva.com/webhook/fraud-detection \
   -d '{"orderId":"TEST-003","customerId":"NEW","total":1299.99,"shippingAddress":{"country":"NG"}}'
 
 # Critical risk test
-curl -X POST https://n8n.citadelbuy.com/webhook/fraud-detection \
+curl -X POST https://n8n.broxiva.com/webhook/fraud-detection \
   -d '{"orderId":"TEST-004","customerEmail":"test@tempmail.com","total":2499.99,"shippingAddress":{"country":"NG"}}'
 ```
 

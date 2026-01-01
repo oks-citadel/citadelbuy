@@ -1,13 +1,13 @@
-# CitadelBuy - Unified Pipeline Implementation Summary
+# Broxiva - Unified Pipeline Implementation Summary
 
 ## Executive Summary
 
-Successfully created the **Unified Master Pipeline** architecture for CitadelBuy's Azure DevOps CI/CD operations. This pipeline serves as the single entry point for all continuous integration and deployment workflows across development, staging, and production environments.
+Successfully created the **Unified Master Pipeline** architecture for Broxiva's Azure DevOps CI/CD operations. This pipeline serves as the single entry point for all continuous integration and deployment workflows across development, staging, and production environments.
 
 **Status:** ✅ Core Architecture Complete
 **Date:** December 10, 2025
-**Organization:** citadelcloudmanagement
-**Project:** CitadelBuy
+**Organization:** broxivacloudmanagement
+**Project:** Broxiva
 
 ---
 
@@ -50,8 +50,8 @@ Successfully created the **Unified Master Pipeline** architecture for CitadelBuy
 - Node.js: 20.x
 - PNPM: 10.23.0
 - Python: 3.11
-- ACR: citadelbuyacr.azurecr.io
-- Service Connection: CitadelBuyAzure
+- ACR: broxivaacr.azurecr.io
+- Service Connection: BroxivaAzure
 - Docker BuildKit: Enabled
 - Kubernetes: Latest kubectl, Helm 3.12.0
 
@@ -116,7 +116,7 @@ Successfully created the **Unified Master Pipeline** architecture for CitadelBuy
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     CITADELBUY UNIFIED PIPELINE                  │
+│                     BROXIVA UNIFIED PIPELINE                  │
 │                         (main.yml)                               │
 └─────────────────────────────────────────────────────────────────┘
                                  │
@@ -216,14 +216,14 @@ Successfully created the **Unified Master Pipeline** architecture for CitadelBuy
 ```
 Push → Validate → Test → SecurityScan → Build → DockerBuild → DeployDev
                                                                     ↓
-                                                         https://dev.citadelbuy.com
+                                                         https://dev.broxiva.com
 ```
 
 ### Develop Branch
 ```
 Push → Validate → Test → SecurityScan → Build → DockerBuild → DeployDev → DeployStaging → E2ETests
                                                                                 ↓
-                                                                 https://staging.citadelbuy.com
+                                                                 https://staging.broxiva.com
 ```
 
 ### Main Branch (Production)
@@ -232,7 +232,7 @@ Push → Validate → Test → SecurityScan → Build → DockerBuild → Deploy
                                                                      ↓ (Manual Approval)
                                                                Blue-Green Deployment
                                                                      ↓
-                                                            https://citadelbuy.com
+                                                            https://broxiva.com
 ```
 
 ### Pull Request
@@ -246,29 +246,29 @@ PR Created → Validate → Test → SecurityScan (No Deployments)
 
 ## Environment Configuration
 
-### Development (citadelbuy-dev-aks)
+### Development (broxiva-dev-aks)
 - **Auto-Deploy:** develop, feature/* branches
-- **Namespace:** citadelbuy-dev
-- **Resource Group:** citadelbuy-dev-rg
+- **Namespace:** broxiva-dev
+- **Resource Group:** broxiva-dev-rg
 - **Strategy:** Rolling update
 - **Approval:** None required
 - **Health Checks:** Enabled
 - **Migrations:** Automatic
 
-### Staging (citadelbuy-staging-aks)
+### Staging (broxiva-staging-aks)
 - **Auto-Deploy:** develop, release/* branches
-- **Namespace:** citadelbuy-staging
-- **Resource Group:** citadelbuy-staging-rg
+- **Namespace:** broxiva-staging
+- **Resource Group:** broxiva-staging-rg
 - **Strategy:** Rolling update
 - **Approval:** Optional
 - **Health Checks:** Enabled
 - **E2E Tests:** Optional/Automatic
 - **Migrations:** Automatic
 
-### Production (citadelbuy-prod-aks)
+### Production (broxiva-prod-aks)
 - **Auto-Deploy:** main, hotfix/* branches
-- **Namespace:** citadelbuy-prod
-- **Resource Group:** citadelbuy-prod-rg
+- **Namespace:** broxiva-prod
+- **Resource Group:** broxiva-prod-rg
 - **Strategy:** Blue-Green
 - **Approval:** Required (24h timeout)
 - **Health Checks:** Enabled
@@ -438,7 +438,7 @@ All templates are referenced but need to be implemented:
 - **Retention:** 30 days for build artifacts
 
 ### Azure Resources
-- **ACR:** citadelbuyacr.azurecr.io (Premium tier recommended)
+- **ACR:** broxivaacr.azurecr.io (Premium tier recommended)
 - **AKS Clusters:** 3 (dev, staging, production)
 - **Key Vault:** 1 per environment (3 total)
 - **Storage Account:** Terraform state storage
@@ -485,7 +485,7 @@ All templates are referenced but need to be implemented:
 
 ## Conclusion
 
-The Unified Pipeline Architecture for CitadelBuy has been successfully designed and documented. The core infrastructure (main.yml, documentation, guides) is complete and ready for template implementation.
+The Unified Pipeline Architecture for Broxiva has been successfully designed and documented. The core infrastructure (main.yml, documentation, guides) is complete and ready for template implementation.
 
 **Key Achievements:**
 - ✅ 464-line comprehensive main pipeline
@@ -549,8 +549,8 @@ The Unified Pipeline Architecture for CitadelBuy has been successfully designed 
 
 **Implementation Lead:** Unified Pipeline Architecture Agent
 **Created:** December 10, 2025
-**Organization:** citadelcloudmanagement
-**Project:** CitadelBuy
+**Organization:** broxivacloudmanagement
+**Project:** Broxiva
 
 **Support:**
 - Documentation: `.azuredevops/README.md`

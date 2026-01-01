@@ -1,10 +1,10 @@
 # Development Documentation
 
-Welcome to the CitadelBuy development documentation! This directory contains comprehensive guides for developers working on the CitadelBuy platform.
+Welcome to the Broxiva development documentation! This directory contains comprehensive guides for developers working on the Broxiva platform.
 
 ## Overview
 
-CitadelBuy is an AI-powered e-commerce platform built with modern technologies:
+Broxiva is an AI-powered e-commerce platform built with modern technologies:
 
 - **Backend**: NestJS, Prisma ORM, PostgreSQL
 - **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
@@ -370,15 +370,15 @@ Use these accounts for development:
 
 | Role | Email | Password |
 |------|-------|----------|
-| Customer | customer@citadelbuy.com | password123 |
-| Admin | admin@citadelbuy.com | password123 |
-| Vendor | vendor1@citadelbuy.com | password123 |
+| Customer | customer@broxiva.com | password123 |
+| Admin | admin@broxiva.com | password123 |
+| Vendor | vendor1@broxiva.com | password123 |
 
 ## Important Links
 
-- **Repository**: https://github.com/citadelbuy/citadelbuy
-- **Issue Tracker**: https://github.com/citadelbuy/citadelbuy/issues
-- **Discussions**: https://github.com/citadelbuy/citadelbuy/discussions
+- **Repository**: https://github.com/broxiva/broxiva
+- **Issue Tracker**: https://github.com/broxiva/broxiva/issues
+- **Discussions**: https://github.com/broxiva/broxiva/discussions
 - **CI/CD**: GitHub Actions
 - **Deployment**: Azure Portal
 
@@ -417,4 +417,4 @@ This project is proprietary. See LICENSE file for details.
 4. **Git Workflow**: Review [Git Workflow](./GIT_WORKFLOW.md)
 5. **Coding Standards**: Study [Coding Standards](./CODING_STANDARDS.md)
 
-Welcome to the CitadelBuy development team! 🚀
+Welcome to the Broxiva development team! 🚀

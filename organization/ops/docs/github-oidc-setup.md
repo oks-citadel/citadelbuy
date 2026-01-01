@@ -15,7 +15,7 @@ This document describes how to configure OpenID Connect (OIDC) federation betwee
 
 ```bash
 # Create the app registration
-az ad app create --display-name "CitadelBuy-GitHub-OIDC"
+az ad app create --display-name "Broxiva-GitHub-OIDC"
 
 # Note the appId from output - this is your AZURE_CLIENT_ID
 ```
@@ -43,7 +43,7 @@ az role assignment create \
 az role assignment create \
   --assignee $APP_ID \
   --role "AcrPush" \
-  --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/citadelbuy-acr-rg/providers/Microsoft.ContainerRegistry/registries/citadelbuyacr"
+  --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/broxiva-acr-rg/providers/Microsoft.ContainerRegistry/registries/broxivaacr"
 
 # Assign Azure Kubernetes Service Cluster User Role
 az role assignment create \
@@ -67,7 +67,7 @@ Create federated credentials for each GitHub environment and branch:
 ```bash
 APP_OBJECT_ID=$(az ad app show --id $APP_ID --query id -o tsv)
 GITHUB_ORG="<your-github-org>"
-GITHUB_REPO="CitadelBuy"
+GITHUB_REPO="Broxiva"
 
 # Main branch credential
 az ad app federated-credential create \
@@ -227,7 +227,7 @@ jobs:
     subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
 - name: Login to ACR
-  run: az acr login --name citadelbuyacr
+  run: az acr login --name broxivaacr
 ```
 
 ### AKS Credentials with OIDC
@@ -243,8 +243,8 @@ jobs:
 - name: Get AKS Credentials
   run: |
     az aks get-credentials \
-      --resource-group citadelbuy-prod-rg \
-      --name citadelbuy-prod-aks \
+      --resource-group broxiva-prod-rg \
+      --name broxiva-prod-aks \
       --overwrite-existing
 ```
 

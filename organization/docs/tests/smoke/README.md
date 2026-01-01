@@ -1,6 +1,6 @@
 # Smoke Test Suite
 
-Comprehensive smoke tests for CitadelBuy staging environment validation.
+Comprehensive smoke tests for Broxiva staging environment validation.
 
 ## Overview
 
@@ -63,8 +63,8 @@ The main configuration file defines:
 ### Environment Variables
 
 ```bash
-STAGING_API_URL=https://staging-api.citadelbuy.com
-STAGING_WEB_URL=https://staging.citadelbuy.com
+STAGING_API_URL=https://staging-api.broxiva.com
+STAGING_WEB_URL=https://staging.broxiva.com
 SMOKE_TEST_TIMEOUT=10
 SMOKE_TEST_RETRIES=3
 ```
@@ -78,7 +78,7 @@ SMOKE_TEST_RETRIES=3
 ./scripts/smoke-tests.sh
 
 # Run with specific namespace
-./scripts/smoke-tests.sh citadelbuy-staging
+./scripts/smoke-tests.sh broxiva-staging
 
 # Run with custom configuration
 SMOKE_CONFIG=./tests/smoke/custom-config.json ./scripts/smoke-tests.sh
@@ -88,22 +88,22 @@ SMOKE_CONFIG=./tests/smoke/custom-config.json ./scripts/smoke-tests.sh
 
 ```bash
 # Set environment variables
-export STAGING_API_URL="https://staging-api.citadelbuy.com"
-export K8S_NAMESPACE="citadelbuy-staging"
+export STAGING_API_URL="https://staging-api.broxiva.com"
+export K8S_NAMESPACE="broxiva-staging"
 
 # Run smoke tests
-./scripts/smoke-tests.sh citadelbuy-staging
+./scripts/smoke-tests.sh broxiva-staging
 ```
 
 ### Manual Testing
 
 ```bash
 # Test specific endpoint
-curl -f https://staging-api.citadelbuy.com/api/health
+curl -f https://staging-api.broxiva.com/api/health
 
 # Test with authentication
 curl -f -H "Authorization: Bearer $TOKEN" \
-  https://staging-api.citadelbuy.com/api/products
+  https://staging-api.broxiva.com/api/products
 ```
 
 ## Test Results
@@ -227,17 +227,17 @@ export SMOKE_TEST_TIMEOUT=30
 #### Connection Refused
 ```bash
 # Verify services are running
-kubectl get pods -n citadelbuy-staging
+kubectl get pods -n broxiva-staging
 
 # Check service endpoints
-kubectl get svc -n citadelbuy-staging
+kubectl get svc -n broxiva-staging
 ```
 
 #### Authentication Failures
 ```bash
 # Verify test credentials
 # Check auth service logs
-kubectl logs -n citadelbuy-staging deployment/citadelbuy-api -f
+kubectl logs -n broxiva-staging deployment/broxiva-api -f
 ```
 
 ### Debug Mode
@@ -258,8 +258,8 @@ export DEBUG=true
 - name: Run Smoke Tests
   run: |
     export STAGING_API_URL="${{ secrets.STAGING_API_URL }}"
-    export K8S_NAMESPACE="citadelbuy-staging"
-    ./scripts/smoke-tests.sh citadelbuy-staging
+    export K8S_NAMESPACE="broxiva-staging"
+    ./scripts/smoke-tests.sh broxiva-staging
 ```
 
 ### Jenkins
@@ -269,7 +269,7 @@ stage('Smoke Tests') {
     steps {
         sh '''
             export STAGING_API_URL="${STAGING_API_URL}"
-            ./scripts/smoke-tests.sh citadelbuy-staging
+            ./scripts/smoke-tests.sh broxiva-staging
         '''
     }
 }
@@ -282,7 +282,7 @@ smoke_tests:
   stage: test
   script:
     - export STAGING_API_URL="${STAGING_API_URL}"
-    - ./scripts/smoke-tests.sh citadelbuy-staging
+    - ./scripts/smoke-tests.sh broxiva-staging
 ```
 
 ## Continuous Monitoring
@@ -293,7 +293,7 @@ Run smoke tests on a schedule to detect issues early:
 
 ```bash
 # Add to crontab
-0 */6 * * * /path/to/citadelbuy/scripts/smoke-tests.sh citadelbuy-staging
+0 */6 * * * /path/to/broxiva/scripts/smoke-tests.sh broxiva-staging
 ```
 
 ### Alerting
@@ -314,7 +314,7 @@ Configure notifications in `smoke-config.json`:
 
 ## Contributing
 
-When adding new features to CitadelBuy, ensure corresponding smoke tests are added:
+When adding new features to Broxiva, ensure corresponding smoke tests are added:
 
 1. Identify critical functionality
 2. Write smoke tests

@@ -1,8 +1,8 @@
-# CitadelBuy Payment System Documentation
+# Broxiva Payment System Documentation
 
 ## Overview
 
-CitadelBuy implements a comprehensive, unified payment system that supports:
+Broxiva implements a comprehensive, unified payment system that supports:
 - **Multiple Payment Gateways**: Stripe, PayPal, Flutterwave, Paystack
 - **In-App Purchases**: Apple StoreKit, Google Play Billing
 - **Subscription Management**: Recurring billing with trial periods
@@ -81,19 +81,19 @@ PAYSTACK_SECRET_KEY=sk_test_...
 
 # ==================== Apple IAP ====================
 APPLE_SHARED_SECRET=...  # From App Store Connect
-APPLE_BUNDLE_ID=com.citadelbuy.app
+APPLE_BUNDLE_ID=com.broxiva.app
 # For StoreKit 2 API (iOS 15+)
 APPLE_ISSUER_ID=...
 APPLE_KEY_ID=...
 APPLE_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----
 
 # ==================== Google Play ====================
-GOOGLE_PACKAGE_NAME=com.citadelbuy.app
+GOOGLE_PACKAGE_NAME=com.broxiva.app
 GOOGLE_SERVICE_ACCOUNT_EMAIL=...@...iam.gserviceaccount.com
 GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----
 
 # ==================== App URLs ====================
-APP_URL=https://citadelbuy.com
+APP_URL=https://broxiva.com
 ```
 
 ## Provider Selection by Region
@@ -198,7 +198,7 @@ POST /api/payments/iap/validate
 {
   "platform": "ios",  // or "android"
   "receipt": "...",
-  "productId": "com.citadelbuy.subscription.premium"
+  "productId": "com.broxiva.subscription.premium"
 }
 
 // Sync purchase with account
@@ -206,7 +206,7 @@ POST /api/payments/iap/sync
 {
   "platform": "ios",
   "receipt": "...",
-  "productId": "com.citadelbuy.subscription.premium"
+  "productId": "com.broxiva.subscription.premium"
 }
 ```
 
@@ -273,30 +273,30 @@ Configure these webhook endpoints in each provider's dashboard:
 
 ```
 # Subscriptions
-com.citadelbuy.subscription.basic
-com.citadelbuy.subscription.premium
-com.citadelbuy.subscription.vip
+com.broxiva.subscription.basic
+com.broxiva.subscription.premium
+com.broxiva.subscription.vip
 
 # Consumables
-com.citadelbuy.coins.small (100 credits)
-com.citadelbuy.coins.medium (500 credits)
-com.citadelbuy.coins.large (1200 credits)
-com.citadelbuy.coins.xlarge (3000 credits)
+com.broxiva.coins.small (100 credits)
+com.broxiva.coins.medium (500 credits)
+com.broxiva.coins.large (1200 credits)
+com.broxiva.coins.xlarge (3000 credits)
 ```
 
 ### Android (Google Play)
 
 ```
 # Subscriptions
-citadelbuy_subscription_basic
-citadelbuy_subscription_premium
-citadelbuy_subscription_vip
+broxiva_subscription_basic
+broxiva_subscription_premium
+broxiva_subscription_vip
 
 # Consumables
-citadelbuy_coins_100
-citadelbuy_coins_500
-citadelbuy_coins_1200
-citadelbuy_coins_3000
+broxiva_coins_100
+broxiva_coins_500
+broxiva_coins_1200
+broxiva_coins_3000
 ```
 
 ## Mobile Integration

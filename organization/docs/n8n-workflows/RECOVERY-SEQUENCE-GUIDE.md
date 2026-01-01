@@ -160,7 +160,7 @@ Offer expires: [Tomorrow at this time]
 **Discount Implementation:**
 ```javascript
 // Auto-apply discount code
-checkout_url: `https://citadelbuy.com/checkout/${cart_id}?discount=COMEBACK10`
+checkout_url: `https://broxiva.com/checkout/${cart_id}?discount=COMEBACK10`
 
 // Or manual entry
 "Enter code COMEBACK10 at checkout"
@@ -476,7 +476,7 @@ hoursSinceUpdate >= 0  # Instead of >= 1, >= 24, etc.
 ### Monitor Execution
 ```bash
 # Check n8n execution logs
-n8n executions:list --workflow="CitadelBuy Abandoned Cart Recovery"
+n8n executions:list --workflow="Broxiva Abandoned Cart Recovery"
 
 # View specific execution
 n8n execution:get --id=EXECUTION_ID
@@ -498,16 +498,16 @@ curl -X POST https://mixpanel.com/api/2.0/segmentation \
 - **Full Documentation:** `README-abandoned-cart.md`
 - **Configuration:** `config-abandoned-cart.json`
 - **Workflow JSON:** `workflow-04-abandoned-cart.json`
-- **API Docs:** https://docs.citadelbuy.com/api
+- **API Docs:** https://docs.broxiva.com/api
 - **Klaviyo Templates:** https://www.klaviyo.com/templates
-- **Support:** devops@citadelbuy.com
+- **Support:** devops@broxiva.com
 
 ---
 
 ## Checklist Before Going Live
 
 - [ ] All environment variables configured
-- [ ] CitadelBuy API credentials valid
+- [ ] Broxiva API credentials valid
 - [ ] Klaviyo account connected
 - [ ] All 4 email templates created in Klaviyo
 - [ ] Algolia index populated with products
@@ -526,4 +526,4 @@ curl -X POST https://mixpanel.com/api/2.0/segmentation \
 
 **Last Updated:** 2024-01-15
 **Version:** 1.0.0
-**Maintained By:** CitadelBuy DevOps Team
+**Maintained By:** Broxiva DevOps Team

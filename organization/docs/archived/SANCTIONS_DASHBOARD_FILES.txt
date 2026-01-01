@@ -2,7 +2,7 @@
 SANCTIONS SCREENING DASHBOARD - FILE STRUCTURE
 ===============================================================================
 
-Location: /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/apps/web/src
+Location: /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/apps/web/src
 
 PAGES (App Router - Next.js 14)
 ================================

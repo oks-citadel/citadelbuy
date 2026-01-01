@@ -1,6 +1,6 @@
 # Developer Onboarding Checklist
 
-Welcome to CitadelBuy! This checklist will help you get up to speed with our development process.
+Welcome to Broxiva! This checklist will help you get up to speed with our development process.
 
 ## Week 1: Environment Setup & Familiarization
 

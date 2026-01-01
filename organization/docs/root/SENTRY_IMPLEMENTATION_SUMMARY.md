@@ -1,8 +1,8 @@
-# Sentry Implementation Summary for CitadelBuy
+# Sentry Implementation Summary for Broxiva
 
 ## Overview
 
-This document summarizes the complete Sentry error tracking and monitoring setup implemented for the CitadelBuy e-commerce platform.
+This document summarizes the complete Sentry error tracking and monitoring setup implemented for the Broxiva e-commerce platform.
 
 ## Implementation Date
 
@@ -214,7 +214,7 @@ NEXT_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE=1.0
 NEXT_PUBLIC_SENTRY_DEBUG=false
 SENTRY_AUTH_TOKEN=your_auth_token_here
 SENTRY_ORG=your-organization-slug
-SENTRY_PROJECT=citadelbuy-web
+SENTRY_PROJECT=broxiva-web
 ```
 
 ---
@@ -224,17 +224,17 @@ SENTRY_PROJECT=citadelbuy-web
 ### Recommended Setup
 
 ```
-Organization: CitadelBuy
+Organization: Broxiva
 │
 ├── Backend Projects
-│   ├── citadelbuy-backend-dev (Node.js)
-│   ├── citadelbuy-backend-staging (Node.js)
-│   └── citadelbuy-backend-prod (Node.js)
+│   ├── broxiva-backend-dev (Node.js)
+│   ├── broxiva-backend-staging (Node.js)
+│   └── broxiva-backend-prod (Node.js)
 │
 └── Frontend Projects
-    ├── citadelbuy-web-dev (Next.js)
-    ├── citadelbuy-web-staging (Next.js)
-    └── citadelbuy-web-prod (Next.js)
+    ├── broxiva-web-dev (Next.js)
+    ├── broxiva-web-staging (Next.js)
+    └── broxiva-web-prod (Next.js)
 ```
 
 ### Project Configuration
@@ -426,7 +426,7 @@ open http://localhost:3000/test-sentry
 
 ```bash
 # Create a test release
-cd /path/to/citadelbuy
+cd /path/to/broxiva
 ./scripts/create-sentry-release.sh -e development -p all -v test-1.0.0
 
 # Expected result:
@@ -486,8 +486,8 @@ Monthly:
 
 ### Development Environment
 
-- [ ] Create `citadelbuy-backend-dev` project in Sentry
-- [ ] Create `citadelbuy-web-dev` project in Sentry
+- [ ] Create `broxiva-backend-dev` project in Sentry
+- [ ] Create `broxiva-web-dev` project in Sentry
 - [ ] Set DSN values in `.env` files
 - [ ] Set sample rates to 100%
 - [ ] Enable debug mode
@@ -496,8 +496,8 @@ Monthly:
 
 ### Staging Environment
 
-- [ ] Create `citadelbuy-backend-staging` project
-- [ ] Create `citadelbuy-web-staging` project
+- [ ] Create `broxiva-backend-staging` project
+- [ ] Create `broxiva-web-staging` project
 - [ ] Set DSN values in deployment config
 - [ ] Set sample rates to 50%
 - [ ] Disable debug mode
@@ -507,8 +507,8 @@ Monthly:
 
 ### Production Environment
 
-- [ ] Create `citadelbuy-backend-prod` project
-- [ ] Create `citadelbuy-web-prod` project
+- [ ] Create `broxiva-backend-prod` project
+- [ ] Create `broxiva-web-prod` project
 - [ ] Set DSN values in secure secrets manager
 - [ ] Set sample rates to 10%
 - [ ] Disable debug mode
@@ -672,14 +672,14 @@ NEXT_PUBLIC_SENTRY_DEBUG=true
 
 1. Check internal documentation
 2. Review Sentry official docs
-3. Contact DevOps team: devops@citadelbuy.com
+3. Contact DevOps team: devops@broxiva.com
 4. Open Sentry support ticket (paid plans)
 
 ---
 
 ## Implementation Team
 
-**Implemented By**: CitadelBuy DevOps Team
+**Implemented By**: Broxiva DevOps Team
 **Date**: December 4, 2024
 **Version**: 1.0.0
 **Status**: ✅ Complete

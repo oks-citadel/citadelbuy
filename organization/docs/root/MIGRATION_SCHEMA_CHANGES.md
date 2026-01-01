@@ -1,4 +1,4 @@
-# CitadelBuy Database Schema Changes Documentation
+# Broxiva Database Schema Changes Documentation
 
 ## Overview
 
@@ -1388,7 +1388,7 @@ WHERE o."ownerId" IS NULL;
 INSERT INTO loyalty_programs (id, name, description, "isActive", "createdAt", "updatedAt")
 VALUES (
   gen_random_uuid(),
-  'CitadelBuy Rewards',
+  'Broxiva Rewards',
   'Earn points on every purchase and unlock exclusive benefits',
   true,
   NOW(),
@@ -1543,4 +1543,4 @@ Migration 7 (organization_module)
 
 **Document Version:** 1.0
 **Last Updated:** December 4, 2025
-**Author:** CitadelBuy Platform Team
+**Author:** Broxiva Platform Team

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers the production deployment, configuration, and management of Elasticsearch for the CitadelBuy e-commerce platform. Elasticsearch provides powerful full-text search, faceting, autocomplete, and analytics capabilities.
+This guide covers the production deployment, configuration, and management of Elasticsearch for the Broxiva e-commerce platform. Elasticsearch provides powerful full-text search, faceting, autocomplete, and analytics capabilities.
 
 ## Table of Contents
 
@@ -45,9 +45,9 @@ This guide covers the production deployment, configuration, and management of El
 ### Index Structure
 
 ```
-citadelbuy-production-products       # Product search
-citadelbuy-production-orders         # Order search
-citadelbuy-production-search-analytics # Search tracking
+broxiva-production-products       # Product search
+broxiva-production-orders         # Order search
+broxiva-production-search-analytics # Search tracking
 ```
 
 ---
@@ -104,7 +104,7 @@ cd infrastructure/docker
 cat > .env << EOF
 # Elasticsearch Cluster
 ELASTICSEARCH_PASSWORD=$(openssl rand -base64 32)
-CLUSTER_NAME=citadelbuy-production
+CLUSTER_NAME=broxiva-production
 NODE_NAME=es-node-01
 
 # Kibana
@@ -122,14 +122,14 @@ EOF
 docker-compose -f docker-compose.elasticsearch-prod.yml up -d
 
 # Wait for cluster to be healthy (2-3 minutes)
-docker logs -f citadelbuy-elasticsearch-01
+docker logs -f broxiva-elasticsearch-01
 ```
 
 #### Step 4: Setup Passwords
 
 ```bash
 # Auto-generate passwords for built-in users
-docker exec citadelbuy-elasticsearch-01 \
+docker exec broxiva-elasticsearch-01 \
   bin/elasticsearch-setup-passwords auto
 
 # Save all generated passwords securely!
@@ -143,7 +143,7 @@ curl -u elastic:YOUR_PASSWORD http://localhost:9200/_cluster/health?pretty
 
 # Expected output:
 {
-  "cluster_name" : "citadelbuy-production",
+  "cluster_name" : "broxiva-production",
   "status" : "green",
   "number_of_nodes" : 3,
   "number_of_data_nodes" : 3
@@ -196,23 +196,23 @@ xpack.security.http.ssl.certificate_authorities: /path/to/ca.crt
 
 ```bash
 # Create application user
-curl -u elastic:PASSWORD -X POST "localhost:9200/_security/user/citadelbuy_user" \
+curl -u elastic:PASSWORD -X POST "localhost:9200/_security/user/broxiva_user" \
   -H 'Content-Type: application/json' -d'
 {
   "password" : "STRONG_PASSWORD_HERE",
   "roles" : [ "superuser" ],
-  "full_name" : "CitadelBuy Application",
-  "email" : "admin@citadelbuy.com"
+  "full_name" : "Broxiva Application",
+  "email" : "admin@broxiva.com"
 }
 '
 
 # Create read-only user for monitoring
-curl -u elastic:PASSWORD -X POST "localhost:9200/_security/user/citadelbuy_readonly" \
+curl -u elastic:PASSWORD -X POST "localhost:9200/_security/user/broxiva_readonly" \
   -H 'Content-Type: application/json' -d'
 {
   "password" : "STRONG_PASSWORD_HERE",
   "roles" : [ "monitoring_user", "viewer" ],
-  "full_name" : "CitadelBuy ReadOnly"
+  "full_name" : "Broxiva ReadOnly"
 }
 '
 ```
@@ -221,13 +221,13 @@ curl -u elastic:PASSWORD -X POST "localhost:9200/_security/user/citadelbuy_reado
 
 ```bash
 # Create custom role for application
-curl -u elastic:PASSWORD -X POST "localhost:9200/_security/role/citadelbuy_app_role" \
+curl -u elastic:PASSWORD -X POST "localhost:9200/_security/role/broxiva_app_role" \
   -H 'Content-Type: application/json' -d'
 {
   "cluster": ["monitor", "manage_index_templates"],
   "indices": [
     {
-      "names": [ "citadelbuy-*" ],
+      "names": [ "broxiva-*" ],
       "privileges": [ "all" ]
     }
   ]
@@ -266,7 +266,7 @@ cd apps/api
 npm run setup:elasticsearch
 
 # Or manually create indices
-curl -u elastic:PASSWORD -X PUT "localhost:9200/citadelbuy-production-products" \
+curl -u elastic:PASSWORD -X PUT "localhost:9200/broxiva-production-products" \
   -H 'Content-Type: application/json' \
   -d @src/modules/search/config/products-index.json
 ```
@@ -276,10 +276,10 @@ curl -u elastic:PASSWORD -X PUT "localhost:9200/citadelbuy-production-products" 
 Create index templates for automatic configuration:
 
 ```bash
-curl -u elastic:PASSWORD -X PUT "localhost:9200/_index_template/citadelbuy-products-template" \
+curl -u elastic:PASSWORD -X PUT "localhost:9200/_index_template/broxiva-products-template" \
   -H 'Content-Type: application/json' -d'
 {
-  "index_patterns": ["citadelbuy-*-products"],
+  "index_patterns": ["broxiva-*-products"],
   "template": {
     "settings": {
       "number_of_shards": 3,
@@ -298,7 +298,7 @@ Configure automatic index lifecycle:
 
 ```bash
 # Create ILM policy
-curl -u elastic:PASSWORD -X PUT "localhost:9200/_ilm/policy/citadelbuy-products-policy" \
+curl -u elastic:PASSWORD -X PUT "localhost:9200/_ilm/policy/broxiva-products-policy" \
   -H 'Content-Type: application/json' -d'
 {
   "policy": {
@@ -346,17 +346,17 @@ When updating mappings:
 
 ```bash
 # Create new index with updated mappings
-curl -u elastic:PASSWORD -X PUT "localhost:9200/citadelbuy-production-products-v2"
+curl -u elastic:PASSWORD -X PUT "localhost:9200/broxiva-production-products-v2"
 
 # Reindex from old to new
 curl -u elastic:PASSWORD -X POST "localhost:9200/_reindex" \
   -H 'Content-Type: application/json' -d'
 {
   "source": {
-    "index": "citadelbuy-production-products"
+    "index": "broxiva-production-products"
   },
   "dest": {
-    "index": "citadelbuy-production-products-v2"
+    "index": "broxiva-production-products-v2"
   }
 }
 '
@@ -366,8 +366,8 @@ curl -u elastic:PASSWORD -X POST "localhost:9200/_aliases" \
   -H 'Content-Type: application/json' -d'
 {
   "actions": [
-    { "remove": { "index": "citadelbuy-production-products", "alias": "citadelbuy-products" }},
-    { "add": { "index": "citadelbuy-production-products-v2", "alias": "citadelbuy-products" }}
+    { "remove": { "index": "broxiva-production-products", "alias": "broxiva-products" }},
+    { "add": { "index": "broxiva-production-products-v2", "alias": "broxiva-products" }}
   ]
 }
 '
@@ -438,7 +438,7 @@ thread_pool.search.queue_size: 1000
 ### 5. Slow Query Logging
 
 ```bash
-curl -u elastic:PASSWORD -X PUT "localhost:9200/citadelbuy-*/_settings" \
+curl -u elastic:PASSWORD -X PUT "localhost:9200/broxiva-*/_settings" \
   -H 'Content-Type: application/json' -d'
 {
   "index.search.slowlog.threshold.query.warn": "10s",
@@ -458,13 +458,13 @@ curl -u elastic:PASSWORD -X PUT "localhost:9200/citadelbuy-*/_settings" \
 
 ```bash
 # Install S3 plugin
-docker exec citadelbuy-elasticsearch-01 \
+docker exec broxiva-elasticsearch-01 \
   bin/elasticsearch-plugin install repository-s3
 
 # Configure S3 credentials
-docker exec citadelbuy-elasticsearch-01 \
+docker exec broxiva-elasticsearch-01 \
   bin/elasticsearch-keystore add s3.client.default.access_key
-docker exec citadelbuy-elasticsearch-01 \
+docker exec broxiva-elasticsearch-01 \
   bin/elasticsearch-keystore add s3.client.default.secret_key
 
 # Restart nodes
@@ -476,7 +476,7 @@ curl -u elastic:PASSWORD -X PUT "localhost:9200/_snapshot/s3_backup" \
 {
   "type": "s3",
   "settings": {
-    "bucket": "citadelbuy-elasticsearch-backups",
+    "bucket": "broxiva-elasticsearch-backups",
     "region": "us-east-1",
     "base_path": "production",
     "compress": true
@@ -489,13 +489,13 @@ curl -u elastic:PASSWORD -X PUT "localhost:9200/_snapshot/s3_backup" \
 
 ```bash
 # Install Azure plugin
-docker exec citadelbuy-elasticsearch-01 \
+docker exec broxiva-elasticsearch-01 \
   bin/elasticsearch-plugin install repository-azure
 
 # Configure Azure credentials
-docker exec citadelbuy-elasticsearch-01 \
+docker exec broxiva-elasticsearch-01 \
   bin/elasticsearch-keystore add azure.client.default.account
-docker exec citadelbuy-elasticsearch-01 \
+docker exec broxiva-elasticsearch-01 \
   bin/elasticsearch-keystore add azure.client.default.key
 
 # Create repository
@@ -505,7 +505,7 @@ curl -u elastic:PASSWORD -X PUT "localhost:9200/_snapshot/azure_backup" \
   "type": "azure",
   "settings": {
     "container": "elasticsearch-backups",
-    "base_path": "citadelbuy-production",
+    "base_path": "broxiva-production",
     "compress": true
   }
 }
@@ -519,7 +519,7 @@ curl -u elastic:PASSWORD -X PUT "localhost:9200/_snapshot/azure_backup" \
 curl -u elastic:PASSWORD -X PUT "localhost:9200/_snapshot/s3_backup/snapshot_$(date +%Y%m%d_%H%M%S)" \
   -H 'Content-Type: application/json' -d'
 {
-  "indices": "citadelbuy-*",
+  "indices": "broxiva-*",
   "ignore_unavailable": true,
   "include_global_state": false
 }
@@ -541,7 +541,7 @@ curl -u elastic:PASSWORD -X PUT "localhost:9200/_slm/policy/daily-snapshots" \
   "name": "<daily-snapshot-{now/d}>",
   "repository": "s3_backup",
   "config": {
-    "indices": ["citadelbuy-*"],
+    "indices": ["broxiva-*"],
     "ignore_unavailable": false,
     "include_global_state": false
   },
@@ -564,7 +564,7 @@ curl -u elastic:PASSWORD "localhost:9200/_snapshot/s3_backup/_all?pretty"
 curl -u elastic:PASSWORD -X POST "localhost:9200/_snapshot/s3_backup/snapshot_20240101/_restore" \
   -H 'Content-Type: application/json' -d'
 {
-  "indices": "citadelbuy-production-products",
+  "indices": "broxiva-production-products",
   "ignore_unavailable": true,
   "include_global_state": false,
   "rename_pattern": "(.+)",
@@ -587,7 +587,7 @@ curl -u elastic:PASSWORD "localhost:9200/_cluster/health?pretty"
 curl -u elastic:PASSWORD "localhost:9200/_nodes/stats?pretty"
 
 # Index stats
-curl -u elastic:PASSWORD "localhost:9200/citadelbuy-*/_stats?pretty"
+curl -u elastic:PASSWORD "localhost:9200/broxiva-*/_stats?pretty"
 ```
 
 ### 2. Kibana Monitoring
@@ -639,7 +639,7 @@ curl -u elastic:PASSWORD -X PUT "localhost:9200/_watcher/watch/cluster_health_wa
   "actions": {
     "send_email": {
       "email": {
-        "to": "admin@citadelbuy.com",
+        "to": "admin@broxiva.com",
         "subject": "Elasticsearch Cluster Alert",
         "body": "Cluster status is {{ctx.payload.status}}"
       }
@@ -679,10 +679,10 @@ curl -u elastic:PASSWORD -X POST "localhost:9200/_cache/clear?request=true"
 
 ```bash
 # Check slow log
-docker exec citadelbuy-elasticsearch-01 cat /usr/share/elasticsearch/logs/citadelbuy-production_index_search_slowlog.json
+docker exec broxiva-elasticsearch-01 cat /usr/share/elasticsearch/logs/broxiva-production_index_search_slowlog.json
 
 # Analyze query
-curl -u elastic:PASSWORD -X GET "localhost:9200/citadelbuy-*/_search?explain=true"
+curl -u elastic:PASSWORD -X GET "localhost:9200/broxiva-*/_search?explain=true"
 ```
 
 #### 4. Index Corruption
@@ -728,7 +728,7 @@ curl -u elastic:PASSWORD -X POST "localhost:9200/problem-index/_open"
 #!/bin/bash
 HEALTH=$(curl -s -u elastic:$ES_PASSWORD localhost:9200/_cluster/health | jq -r '.status')
 if [ "$HEALTH" != "green" ]; then
-  echo "ALERT: Cluster health is $HEALTH" | mail -s "ES Alert" admin@citadelbuy.com
+  echo "ALERT: Cluster health is $HEALTH" | mail -s "ES Alert" admin@broxiva.com
 fi
 
 # Cleanup old indices script
@@ -776,6 +776,6 @@ curator_cli --host localhost --http_auth elastic:$ES_PASSWORD \
 ## Contact
 
 For issues or questions:
-- Email: devops@citadelbuy.com
+- Email: devops@broxiva.com
 - Slack: #elasticsearch-support
 - On-call: Refer to PagerDuty

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# CitadelBuy - Connectivity Verification Script
+# Broxiva - Connectivity Verification Script
 # Verifies all layers are properly connected and functioning
 
 set -e
@@ -23,7 +23,7 @@ ELASTICSEARCH_URL="${ELASTICSEARCH_URL:-http://localhost:9200}"
 
 echo ""
 echo "╔══════════════════════════════════════════════════════════════════╗"
-echo "║           CitadelBuy - Connectivity Verification                 ║"
+echo "║           Broxiva - Connectivity Verification                 ║"
 echo "╚══════════════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -62,10 +62,10 @@ if pg_isready -h $POSTGRES_HOST -p $POSTGRES_PORT > /dev/null 2>&1; then
     print_result "Connection" "PASS" "PostgreSQL is accepting connections"
 
     # Test database exists
-    if psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U citadelbuy -d citadelbuy_dev -c "SELECT 1" > /dev/null 2>&1; then
-        print_result "Database" "PASS" "citadelbuy_dev database exists and accessible"
+    if psql -h $POSTGRES_HOST -p $POSTGRES_PORT -U broxiva -d broxiva_dev -c "SELECT 1" > /dev/null 2>&1; then
+        print_result "Database" "PASS" "broxiva_dev database exists and accessible"
     else
-        print_result "Database" "FAIL" "Cannot access citadelbuy_dev database"
+        print_result "Database" "FAIL" "Cannot access broxiva_dev database"
     fi
 else
     print_result "Connection" "FAIL" "PostgreSQL is not responding"
@@ -139,7 +139,7 @@ fi
 echo -e "\n  Authentication:"
 AUTH_RESPONSE=$(curl -s -X POST "$API_URL/api/auth/login" \
     -H "Content-Type: application/json" \
-    -d '{"email":"customer@citadelbuy.com","password":"password123"}')
+    -d '{"email":"customer@broxiva.com","password":"password123"}')
 
 if echo $AUTH_RESPONSE | jq -e '.access_token' > /dev/null 2>&1; then
     print_result "Login" "PASS" "Authentication endpoint working"
@@ -287,7 +287,7 @@ if [ $FAILED -eq 0 ]; then
     echo "┌─────────────────────────────────────────────────────────────────┐"
     echo "│  CUSTOMER ACCOUNT 1:                                            │"
     echo "│  ─────────────────                                              │"
-    echo "│  Email:    customer@citadelbuy.com                              │"
+    echo "│  Email:    customer@broxiva.com                              │"
     echo "│  Password: password123                                          │"
     echo "│  Role:     CUSTOMER                                             │"
     echo "│  Features: Browse products, add to cart, checkout, view orders  │"
@@ -301,15 +301,15 @@ if [ $FAILED -eq 0 ]; then
     echo "├─────────────────────────────────────────────────────────────────┤"
     echo "│  ADMIN ACCOUNT:                                                 │"
     echo "│  ─────────────                                                  │"
-    echo "│  Email:    admin@citadelbuy.com                                 │"
+    echo "│  Email:    admin@broxiva.com                                 │"
     echo "│  Password: password123                                          │"
     echo "│  Role:     ADMIN                                                │"
     echo "│  Features: Full admin dashboard, user management, analytics     │"
     echo "├─────────────────────────────────────────────────────────────────┤"
     echo "│  VENDOR ACCOUNTS:                                               │"
     echo "│  ───────────────                                                │"
-    echo "│  Email:    vendor1@citadelbuy.com                               │"
-    echo "│  Email:    vendor2@citadelbuy.com                               │"
+    echo "│  Email:    vendor1@broxiva.com                               │"
+    echo "│  Email:    vendor2@broxiva.com                               │"
     echo "│  Password: password123                                          │"
     echo "│  Role:     VENDOR                                               │"
     echo "│  Features: Product management, order fulfillment, analytics     │"

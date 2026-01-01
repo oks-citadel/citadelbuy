@@ -58,7 +58,7 @@ Broxiva is deployed on Azure using a modern microservices architecture with Infr
 | `broxiva-tfstate-rg` | Terraform state storage | East US | Yes |
 | `broxiva-prod-rg-keyvaults-prod` | Key Vault isolation | East US | Yes |
 
-**Note:** Based on Terraform configuration, production uses `broxiva-prod-rg` format. The expected naming `citadelbuy-prod-rg` from pipelines indicates a transition from CitadelBuy to Broxiva branding.
+**Note:** Based on Terraform configuration, production uses `broxiva-prod-rg` format. The expected naming `broxiva-prod-rg` from pipelines indicates a transition from Broxiva to Broxiva branding.
 
 #### Compute Resources
 
@@ -682,8 +682,8 @@ infrastructure/terraform/environments/
 
 #### Project Names
 - **Current Brand:** Broxiva (infrastructure uses this)
-- **Legacy Brand:** CitadelBuy (pipelines still reference this)
-- **Transition:** In progress (Terraform uses Broxiva, CI/CD uses CitadelBuy)
+- **Legacy Brand:** Broxiva (pipelines still reference this)
+- **Transition:** In progress (Terraform uses Broxiva, CI/CD uses Broxiva)
 
 #### Environment Codes
 - `prod` - Production
@@ -733,17 +733,17 @@ infrastructure/terraform/environments/
 
 1. **Project Name Mismatch:**
    - Terraform: Uses "broxiva"
-   - Azure DevOps Pipelines: Uses "citadelbuy"
-   - **Impact:** Variable groups, service connections reference citadelbuy
+   - Azure DevOps Pipelines: Uses "broxiva"
+   - **Impact:** Variable groups, service connections reference broxiva
    - **Recommendation:** Complete migration to Broxiva or maintain both with aliases
 
 2. **Resource Group Naming:**
-   - Expected (from pipelines): `citadelbuy-prod-rg`
+   - Expected (from pipelines): `broxiva-prod-rg`
    - Actual (from Terraform): `broxiva-prod-rg`
    - **Resolution:** Update pipeline variables to match Terraform or vice versa
 
 3. **ACR Naming:**
-   - Expected (from pipelines): `citadelbuyacr.azurecr.io`
+   - Expected (from pipelines): `broxivaacr.azurecr.io`
    - Actual (from Terraform): `broxivaprodacr.azurecr.io`
    - **Resolution:** Update pipeline ACR variables
 
@@ -760,11 +760,11 @@ AKS_CLUSTER_NAME: 'broxiva-prod-aks'
 K8S_NAMESPACE: 'broxiva-prod'
 ```
 
-**Option 2: Maintain CitadelBuy (revert Terraform)**
+**Option 2: Maintain Broxiva (revert Terraform)**
 ```hcl
 # Update in infrastructure/terraform/environments/prod/main.tf
 locals {
-  project_name = "citadelbuy"
+  project_name = "broxiva"
 }
 ```
 
@@ -929,7 +929,7 @@ Key Vault Resource Group (broxiva-prod-rg-keyvaults-prod)
 - Deployed: In AKS cluster
 - Namespace: monitoring
 - Configuration: infrastructure/kubernetes/monitoring/prometheus-deployment.yaml
-- Alerts: infrastructure/docker/monitoring/prometheus/alerts/citadelbuy-alerts.yml
+- Alerts: infrastructure/docker/monitoring/prometheus/alerts/broxiva-alerts.yml
 
 **Grafana:**
 - Deployed: In AKS cluster
@@ -964,16 +964,16 @@ Key Vault Resource Group (broxiva-prod-rg-keyvaults-prod)
 
 ### Azure DevOps Organization
 
-**Organization:** citadelcloudmanagement
-**Project:** CitadelBuy
+**Organization:** broxivacloudmanagement
+**Project:** Broxiva
 **Pipeline:** .azuredevops/pipelines/main.yml
 
 ### Service Connections
 
 | Connection Name | Type | Purpose | Resources Accessed |
 |----------------|------|---------|---------------------|
-| CitadelBuyAzure | Azure Resource Manager | AKS, Resource Groups, Terraform | Subscription-wide access |
-| CitadelBuyACR | Container Registry | Docker image push/pull | citadelbuyacr.azurecr.io |
+| BroxivaAzure | Azure Resource Manager | AKS, Resource Groups, Terraform | Subscription-wide access |
+| BroxivaACR | Container Registry | Docker image push/pull | broxivaacr.azurecr.io |
 
 **Note:** Update to match Broxiva resource names.
 
@@ -981,9 +981,9 @@ Key Vault Resource Group (broxiva-prod-rg-keyvaults-prod)
 
 | Environment | AKS Cluster | Namespace | Approval |
 |------------|-------------|-----------|----------|
-| dev | citadelbuy-dev-aks | citadelbuy-dev | None |
-| staging | citadelbuy-staging-aks | citadelbuy-staging | Optional |
-| production | citadelbuy-prod-aks | citadelbuy-prod | Required |
+| dev | broxiva-dev-aks | broxiva-dev | None |
+| staging | broxiva-staging-aks | broxiva-staging | Optional |
+| production | broxiva-prod-aks | broxiva-prod | Required |
 
 **Update Required:** Cluster names should be `broxiva-{env}-aks` to match Terraform.
 
@@ -1145,7 +1145,7 @@ az network vnet subnet list --vnet-name broxiva-prod-vnet --resource-group broxi
 ### Immediate Actions Required
 
 1. **Name Consistency Resolution:**
-   - [ ] Decide on Broxiva vs CitadelBuy naming
+   - [ ] Decide on Broxiva vs Broxiva naming
    - [ ] Update Azure DevOps pipeline variables
    - [ ] Update service connection names
    - [ ] Verify ACR connection in pipelines

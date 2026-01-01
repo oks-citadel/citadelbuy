@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Alert Notification System provides production-ready alerting capabilities for CitadelBuy, enabling real-time notifications for critical system events through multiple channels.
+The Alert Notification System provides production-ready alerting capabilities for Broxiva, enabling real-time notifications for critical system events through multiple channels.
 
 ## Features
 
@@ -48,14 +48,14 @@ SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXX
 PAGERDUTY_API_KEY=your_pagerduty_routing_key_here
 
 # Email Alert Recipients (Comma-separated)
-ALERT_EMAIL_RECIPIENTS=ops@citadelbuy.com,engineering@citadelbuy.com
+ALERT_EMAIL_RECIPIENTS=ops@broxiva.com,engineering@broxiva.com
 
 # SMTP Settings (required if using email alerts)
 EMAIL_HOST=smtp.example.com
 EMAIL_PORT=587
-EMAIL_USER=alerts@citadelbuy.com
+EMAIL_USER=alerts@broxiva.com
 EMAIL_PASSWORD=your_smtp_password
-EMAIL_FROM=alerts@citadelbuy.com
+EMAIL_FROM=alerts@broxiva.com
 ```
 
 ### Slack Setup
@@ -424,4 +424,4 @@ For issues or questions:
 
 ## License
 
-Copyright (c) 2024 CitadelBuy. All rights reserved.
+Copyright (c) 2024 Broxiva. All rights reserved.

@@ -45,7 +45,7 @@ A complete, production-ready premium design system for the Broxiva e-commerce pl
 
 **Usage**:
 ```typescript
-import { broxivaDesignTokens } from '@citadelbuy/ui/styles';
+import { broxivaDesignTokens } from '@broxiva/ui/styles';
 const primaryColor = broxivaDesignTokens.colors.primary[800];
 ```
 
@@ -106,7 +106,7 @@ const primaryColor = broxivaDesignTokens.colors.primary[800];
 
 **Usage**:
 ```typescript
-import { tokens, broxivaDesignTokens } from '@citadelbuy/ui/styles';
+import { tokens, broxivaDesignTokens } from '@broxiva/ui/styles';
 ```
 
 ### 5. Tailwind Configuration
@@ -126,7 +126,7 @@ import { tokens, broxivaDesignTokens } from '@citadelbuy/ui/styles';
 **Usage**:
 ```javascript
 // tailwind.config.js
-const { broxivaTailwindConfig } = require('@citadelbuy/ui/styles/tailwind.config');
+const { broxivaTailwindConfig } = require('@broxiva/ui/styles/tailwind.config');
 module.exports = { ...broxivaTailwindConfig };
 ```
 
@@ -293,7 +293,7 @@ module.exports = { ...broxivaTailwindConfig };
 
 ### TypeScript Tokens
 ```typescript
-import { broxivaDesignTokens } from '@citadelbuy/ui/styles';
+import { broxivaDesignTokens } from '@broxiva/ui/styles';
 
 const theme = {
   primary: broxivaDesignTokens.colors.primary[800],
@@ -358,7 +358,7 @@ import '@/styles/broxiva-globals.css';
 ### Tailwind Integration
 ```javascript
 // tailwind.config.js
-const { broxivaTailwindConfig } = require('@citadelbuy/ui/styles/tailwind.config');
+const { broxivaTailwindConfig } = require('@broxiva/ui/styles/tailwind.config');
 module.exports = { ...broxivaTailwindConfig };
 ```
 

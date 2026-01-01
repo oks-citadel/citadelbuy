@@ -1,8 +1,8 @@
 ================================================================================
-   CITADELBUY STAGING DEPLOYMENT READINESS SUMMARY
+   BROXIVA STAGING DEPLOYMENT READINESS SUMMARY
 ================================================================================
 
-Project Location: C:\Users\citad\OneDrive\Documents\citadelbuy-master\organization
+Project Location: C:\Users\citad\OneDrive\Documents\broxiva-master\organization
 Date: 2025-12-05
 Status: READY FOR DEPLOYMENT
 
@@ -48,19 +48,19 @@ CONFIGURED SERVICES & PORTS
 
 Service              Container                    Host Port  Status
 -------------------- ---------------------------- ---------- --------
-Web (Next.js)        citadelbuy-web              3000       Ready
-API (NestJS)         citadelbuy-api              4000       Ready
-PostgreSQL           citadelbuy-postgres         5432       Ready
-Redis                citadelbuy-redis            6379       Ready
-Elasticsearch        citadelbuy-elasticsearch    9200,9300  Ready
-MinIO (S3)           citadelbuy-minio            9000,9001  Ready
-Nginx                citadelbuy-nginx            80,443     Ready
-RabbitMQ             citadelbuy-rabbitmq         5672,15672 Ready
-Prometheus           citadelbuy-prometheus       9090       Ready
-Grafana              citadelbuy-grafana          3001       Ready
+Web (Next.js)        broxiva-web              3000       Ready
+API (NestJS)         broxiva-api              4000       Ready
+PostgreSQL           broxiva-postgres         5432       Ready
+Redis                broxiva-redis            6379       Ready
+Elasticsearch        broxiva-elasticsearch    9200,9300  Ready
+MinIO (S3)           broxiva-minio            9000,9001  Ready
+Nginx                broxiva-nginx            80,443     Ready
+RabbitMQ             broxiva-rabbitmq         5672,15672 Ready
+Prometheus           broxiva-prometheus       9090       Ready
+Grafana              broxiva-grafana          3001       Ready
 
 Total Services: 11
-Networks: citadelbuy-network (bridge)
+Networks: broxiva-network (bridge)
 Volumes: 7 persistent volumes
 
 ================================================================================
@@ -97,7 +97,7 @@ QUICK START - DOCKER COMPOSE DEPLOYMENT
 ================================================================================
 
 Step 1: Navigate to project
-$ cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+$ cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization
 
 Step 2: Create and configure .env file
 $ cp .env.example .env
@@ -131,8 +131,8 @@ Application:
 Monitoring:
   Grafana            : http://localhost:3001 (admin / <password>)
   Prometheus         : http://localhost:9090
-  RabbitMQ Mgmt      : http://localhost:15672 (citadelbuy / <password>)
-  MinIO Console      : http://localhost:9001 (citadelbuy_admin / <password>)
+  RabbitMQ Mgmt      : http://localhost:15672 (broxiva / <password>)
+  MinIO Console      : http://localhost:9001 (broxiva_admin / <password>)
   Elasticsearch      : http://localhost:9200
 
 ================================================================================

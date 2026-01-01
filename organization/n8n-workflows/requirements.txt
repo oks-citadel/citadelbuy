@@ -1,4 +1,4 @@
-# Python dependencies for CitadelBuy n8n Workflows
+# Python dependencies for Broxiva n8n Workflows
 # Install with: pip install -r requirements.txt
 
 # Pinecone for vector database

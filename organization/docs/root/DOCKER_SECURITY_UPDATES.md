@@ -2,7 +2,7 @@
 
 ## Summary
 
-This document summarizes all Docker security improvements made to the CitadelBuy platform. These changes implement industry best practices for containerized application security, focusing on production deployment hardening while maintaining development-friendly configurations.
+This document summarizes all Docker security improvements made to the Broxiva platform. These changes implement industry best practices for containerized application security, focusing on production deployment hardening while maintaining development-friendly configurations.
 
 **Date**: December 3, 2024
 **Version**: 2.1.0
@@ -287,7 +287,7 @@ deploy:
    ```bash
    # AWS Secrets Manager example
    aws secretsmanager create-secret \
-     --name citadelbuy/prod/elasticsearch-password \
+     --name broxiva/prod/elasticsearch-password \
      --secret-string "$(openssl rand -base64 32)"
    ```
 
@@ -302,7 +302,7 @@ deploy:
    curl -u elastic:${ELASTICSEARCH_PASSWORD} http://localhost:9200
 
    # Test Redis authentication
-   docker exec citadelbuy-redis-prod redis-cli -a "$REDIS_PASSWORD" ping
+   docker exec broxiva-redis-prod redis-cli -a "$REDIS_PASSWORD" ping
    ```
 
 4. **Configure SSL/TLS**:
@@ -497,7 +497,7 @@ openssl rand -base64 64
 openssl rand -hex 32
 
 # Security scan
-trivy image citadelplatforms/citadelbuy-ecommerce:latest
+trivy image broxivaplatforms/broxiva-ecommerce:latest
 
 # Start production
 docker-compose -f infrastructure/docker/docker-compose.production-secure.yml up -d
@@ -524,6 +524,6 @@ These configurations follow:
 
 ---
 
-**Maintained By**: CitadelBuy Security Team
+**Maintained By**: Broxiva Security Team
 **Last Updated**: December 3, 2024
 **Version**: 2.1.0

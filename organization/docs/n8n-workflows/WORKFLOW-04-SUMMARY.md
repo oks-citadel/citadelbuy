@@ -1,8 +1,8 @@
-# CitadelBuy Abandoned Cart Recovery - Workflow 4 Summary
+# Broxiva Abandoned Cart Recovery - Workflow 4 Summary
 
 ## Deliverables Complete ✓
 
-All files have been created and are ready for use in your CitadelBuy abandoned cart recovery automation.
+All files have been created and are ready for use in your Broxiva abandoned cart recovery automation.
 
 ---
 
@@ -265,13 +265,13 @@ n8n UI → Settings → Import from file → workflow-04-abandoned-cart.json
 
 ### Step 2: Configure Credentials (3 min)
 Create in n8n:
-- CitadelBuy API Key (HTTP Header Auth)
+- Broxiva API Key (HTTP Header Auth)
 - Klaviyo API Key (HTTP Header Auth)
 - Zendesk API Token (HTTP Header Auth)
 
 ### Step 3: Set Environment Variables (2 min)
 ```bash
-CITADELBUY_API_KEY=your_key
+BROXIVA_API_KEY=your_key
 KLAVIYO_PUBLIC_API_KEY=pk_xxx
 KLAVIYO_PRIVATE_API_KEY=pk_xxx
 KLAVIYO_SUPPRESSION_LIST_ID=list_xxx
@@ -302,7 +302,7 @@ Use HTML templates from README-abandoned-cart.md:
 - **Node.js:** JavaScript runtime for custom logic
 
 ### Integrations
-- **CitadelBuy API:** Cart and order data
+- **Broxiva API:** Cart and order data
 - **Klaviyo:** Email marketing platform
 - **Algolia:** AI-powered product search
 - **Mixpanel:** Analytics and event tracking
@@ -394,9 +394,9 @@ if ($json.total_value > 500) {
 - **Index:** INDEX-abandoned-cart.md
 
 ### Contact
-- **Email:** devops@citadelbuy.com
+- **Email:** devops@broxiva.com
 - **Slack:** #n8n-workflows
-- **Documentation:** https://docs.citadelbuy.com/automation/abandoned-cart
+- **Documentation:** https://docs.broxiva.com/automation/abandoned-cart
 
 ### Version Control
 ```bash
@@ -418,7 +418,7 @@ git tag v1.0.0
 
 All files are located in:
 ```
-C:\Users\citad\OneDrive\Documents\citadelbuy-master\organization\n8n-workflows\
+C:\Users\citad\OneDrive\Documents\broxiva-master\organization\n8n-workflows\
 ```
 
 ### Files Created:
@@ -551,7 +551,7 @@ A: Yes, set `test_mode: true` in config and override recipient email
 
 ## Conclusion
 
-This complete abandoned cart recovery workflow provides CitadelBuy with:
+This complete abandoned cart recovery workflow provides Broxiva with:
 
 ✅ **Automated Revenue Recovery:** $65,000+ monthly with 45% recovery rate
 ✅ **Intelligent Personalization:** AI recommendations and dynamic content
@@ -566,7 +566,7 @@ All documentation and workflow files are complete and ready for deployment.
 **Created:** 2024-01-15
 **Version:** 1.0.0
 **Status:** ✅ Complete and Ready for Production
-**Maintained By:** CitadelBuy DevOps Team
+**Maintained By:** Broxiva DevOps Team
 
 ---
 

@@ -1,6 +1,6 @@
-# EAS Build Configuration Setup Guide for CitadelBuy
+# EAS Build Configuration Setup Guide for Broxiva
 
-This guide will help you set up and configure EAS (Expo Application Services) for building and deploying the CitadelBuy mobile app.
+This guide will help you set up and configure EAS (Expo Application Services) for building and deploying the Broxiva mobile app.
 
 ## Prerequisites
 
@@ -69,8 +69,8 @@ You'll need:
 
 1. Create an `apple-app-site-association` file on your domain:
    ```
-   https://citadelbuy.com/.well-known/apple-app-site-association
-   https://www.citadelbuy.com/.well-known/apple-app-site-association
+   https://broxiva.com/.well-known/apple-app-site-association
+   https://www.broxiva.com/.well-known/apple-app-site-association
    ```
 
 2. File content:
@@ -80,7 +80,7 @@ You'll need:
        "apps": [],
        "details": [
          {
-           "appID": "TEAM_ID.com.citadelbuy.app",
+           "appID": "TEAM_ID.com.broxiva.app",
            "paths": ["*"]
          }
        ]
@@ -144,7 +144,7 @@ eas credentials --platform android
 
 3. Create `assetlinks.json` on your domain:
    ```
-   https://citadelbuy.com/.well-known/assetlinks.json
+   https://broxiva.com/.well-known/assetlinks.json
    ```
 
 4. File content:
@@ -153,7 +153,7 @@ eas credentials --platform android
      "relation": ["delegate_permission/common.handle_all_urls"],
      "target": {
        "namespace": "android_app",
-       "package_name": "com.citadelbuy.app",
+       "package_name": "com.broxiva.app",
        "sha256_cert_fingerprints": [
          "YOUR_SHA256_FINGERPRINT_HERE"
        ]
@@ -271,14 +271,14 @@ Configure channels in `eas.json`:
 
 1. Verify domain files are accessible:
    ```bash
-   curl https://citadelbuy.com/.well-known/apple-app-site-association
-   curl https://citadelbuy.com/.well-known/assetlinks.json
+   curl https://broxiva.com/.well-known/apple-app-site-association
+   curl https://broxiva.com/.well-known/assetlinks.json
    ```
 
 2. Test deep link:
    ```bash
-   npx uri-scheme open citadelbuy://product/123 --ios
-   npx uri-scheme open citadelbuy://product/123 --android
+   npx uri-scheme open broxiva://product/123 --ios
+   npx uri-scheme open broxiva://product/123 --android
    ```
 
 ## Build Configuration Details

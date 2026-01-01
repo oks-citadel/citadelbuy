@@ -5,7 +5,7 @@ All web error handling fixes from QUICK_FIX_GUIDE.md have been successfully appl
 
 ## Files Updated
 
-### 1. C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/web/src/app/account/payment-methods/page.tsx
+### 1. C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/web/src/app/account/payment-methods/page.tsx
 
 **Changes Applied:**
 - ✓ RefreshCw icon already imported from lucide-react
@@ -24,7 +24,7 @@ All web error handling fixes from QUICK_FIX_GUIDE.md have been successfully appl
 - Clear visual feedback for all async operations
 - Error state UI with retry functionality
 
-### 2. C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/web/src/app/checkout/page.tsx
+### 2. C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/web/src/app/checkout/page.tsx
 
 **Changes Applied:**
 - ✓ Shipping rates error: Added toast notification with description
@@ -35,7 +35,7 @@ All web error handling fixes from QUICK_FIX_GUIDE.md have been successfully appl
 - Fraud check failures show warnings instead of silent failures
 - Maintains graceful degradation with default options
 
-### 3. C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/web/src/app/categories/page.tsx
+### 3. C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/web/src/app/categories/page.tsx
 
 **Changes Applied:**
 - ✓ Added AlertTriangle and RefreshCw to lucide-react imports

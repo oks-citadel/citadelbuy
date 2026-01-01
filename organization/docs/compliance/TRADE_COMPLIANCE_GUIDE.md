@@ -1,7 +1,7 @@
 # Cross-Border Trade Compliance Guide
 
 ## Overview
-This guide outlines compliance requirements for international trade on CitadelBuy's global B2B marketplace, covering export controls, import restrictions, customs regulations, and trade agreements.
+This guide outlines compliance requirements for international trade on Broxiva's global B2B marketplace, covering export controls, import restrictions, customs regulations, and trade agreements.
 
 ## Export Controls
 
@@ -29,7 +29,7 @@ This guide outlines compliance requirements for international trade on CitadelBu
 - Related technical data
 
 **Platform Policy:**
-- ITAR items PROHIBITED on CitadelBuy
+- ITAR items PROHIBITED on Broxiva
 - Sellers must certify no ITAR goods
 
 ### European Union
@@ -337,7 +337,7 @@ This guide outlines compliance requirements for international trade on CitadelBu
 4. Report to compliance team
 5. Document decision
 
-**Contact:** compliance@citadelbuy.com
+**Contact:** compliance@broxiva.com
 
 ## Penalties for Non-Compliance
 
@@ -361,7 +361,7 @@ This guide outlines compliance requirements for international trade on CitadelBu
 
 ### Suspicious Activity
 **Report to:**
-- compliance@citadelbuy.com
+- compliance@broxiva.com
 - Platform reporting tool
 - National authorities (if legally required)
 
@@ -386,10 +386,10 @@ This guide outlines compliance requirements for international trade on CitadelBu
 - Trade Agreement Specialist
 
 ### Support
-- **Email:** trade-compliance@citadelbuy.com
+- **Email:** trade-compliance@broxiva.com
 - **Phone:** [Regional numbers]
 - **Live Chat:** 24/7 compliance support
-- **Knowledge Base:** https://docs.citadelbuy.com/compliance
+- **Knowledge Base:** https://docs.broxiva.com/compliance
 
 ## Updates
 

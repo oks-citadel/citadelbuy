@@ -1,6 +1,6 @@
-# CitadelBuy Monitoring & Observability Setup
+# Broxiva Monitoring & Observability Setup
 
-Comprehensive guide for setting up error tracking, performance monitoring, and observability for the CitadelBuy platform.
+Comprehensive guide for setting up error tracking, performance monitoring, and observability for the Broxiva platform.
 
 ## Table of Contents
 
@@ -17,7 +17,7 @@ Comprehensive guide for setting up error tracking, performance monitoring, and o
 
 ## Overview
 
-CitadelBuy uses a multi-layered monitoring approach:
+Broxiva uses a multi-layered monitoring approach:
 
 1. **Error Tracking**: Sentry for real-time error tracking and crash reporting
 2. **Metrics**: Prometheus for business and system metrics
@@ -35,10 +35,10 @@ CitadelBuy uses a multi-layered monitoring approach:
 
 1. Sign up at [https://sentry.io](https://sentry.io)
 2. Create a new project for each environment:
-   - `citadelbuy-backend-production`
-   - `citadelbuy-backend-staging`
-   - `citadelbuy-web-production`
-   - `citadelbuy-web-staging`
+   - `broxiva-backend-production`
+   - `broxiva-backend-staging`
+   - `broxiva-web-production`
+   - `broxiva-web-staging`
 
 #### 2. Get Your DSN
 
@@ -219,7 +219,7 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: 'citadelbuy-api'
+  - job_name: 'broxiva-api'
     static_configs:
       - targets: ['localhost:4000']
     metrics_path: '/api/metrics'
@@ -360,7 +360,7 @@ this.metrics.trackUserRegistration('email');
 
 #### Import Pre-built Dashboards
 
-1. **CitadelBuy Overview**
+1. **Broxiva Overview**
    - Request rate and latency
    - Error rates
    - Active users
@@ -519,7 +519,7 @@ filter {
 output {
   elasticsearch {
     hosts => ["elasticsearch:9200"]
-    index => "citadelbuy-logs-%{+YYYY.MM.dd}"
+    index => "broxiva-logs-%{+YYYY.MM.dd}"
   }
 }
 ```
@@ -536,7 +536,7 @@ const logger = winston.createLogger({
     new winston.transports.Logstash({
       port: 5000,
       host: 'localhost',
-      node_name: 'citadelbuy-api',
+      node_name: 'broxiva-api',
     }),
   ],
 });
@@ -557,7 +557,7 @@ const client = new CloudWatchLogsClient({ region: 'us-east-1' });
 
 async function sendToCloudWatch(message: string, level: string) {
   await client.send(new PutLogEventsCommand({
-    logGroupName: '/citadelbuy/api',
+    logGroupName: '/broxiva/api',
     logStreamName: 'production',
     logEvents: [{
       message,
@@ -570,14 +570,14 @@ async function sendToCloudWatch(message: string, level: string) {
 **Infrastructure as Code (Terraform):**
 
 ```hcl
-resource "aws_cloudwatch_log_group" "citadelbuy_api" {
-  name              = "/citadelbuy/api"
+resource "aws_cloudwatch_log_group" "broxiva_api" {
+  name              = "/broxiva/api"
   retention_in_days = 30
 }
 
 resource "aws_cloudwatch_log_stream" "production" {
   name           = "production"
-  log_group_name = aws_cloudwatch_log_group.citadelbuy_api.name
+  log_group_name = aws_cloudwatch_log_group.broxiva_api.name
 }
 ```
 
@@ -618,7 +618,7 @@ Use structured JSON logging:
   "timestamp": "2025-12-03T10:30:00.000Z",
   "level": "info",
   "message": "Order created successfully",
-  "service": "citadelbuy-api",
+  "service": "broxiva-api",
   "environment": "production",
   "context": {
     "orderId": "order_123",
@@ -652,7 +652,7 @@ npm install newrelic
 ```javascript
 // newrelic.js
 exports.config = {
-  app_name: ['CitadelBuy API'],
+  app_name: ['Broxiva API'],
   license_key: 'your-license-key',
   distributed_tracing: {
     enabled: true,
@@ -686,7 +686,7 @@ npm install dd-trace
 import tracer from 'dd-trace';
 
 tracer.init({
-  service: 'citadelbuy-api',
+  service: 'broxiva-api',
   env: process.env.NODE_ENV,
   version: process.env.npm_package_version,
   logInjection: true,
@@ -744,7 +744,7 @@ Configure multiple channels for different severities:
 ```yaml
 # alerts.yml
 groups:
-  - name: citadelbuy
+  - name: broxiva
     interval: 30s
     rules:
       # High error rate
@@ -974,7 +974,7 @@ For monitoring-related questions or issues:
 - **Documentation**: `docs/MONITORING_SETUP.md`
 - **Team Channel**: `#monitoring` on Slack
 - **Runbooks**: `docs/runbooks/`
-- **Dashboards**: Grafana at `https://grafana.citadelbuy.com`
+- **Dashboards**: Grafana at `https://grafana.broxiva.com`
 
 ---
 

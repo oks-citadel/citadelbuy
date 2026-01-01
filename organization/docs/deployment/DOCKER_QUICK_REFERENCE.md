@@ -263,7 +263,7 @@ az acr repository show --name broxivaacr --repository broxiva-web
 
 ```bash
 # 1. Navigate to project
-cd C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization
+cd C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization
 
 # 2. Build all images
 ./build-broxiva-images.sh

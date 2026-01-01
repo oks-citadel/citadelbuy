@@ -1,4 +1,4 @@
-# CitadelBuy Development Setup Guide
+# Broxiva Development Setup Guide
 
 **Version**: 1.0.0
 **Last Updated**: 2025-12-06
@@ -66,8 +66,8 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/oks-citadel/citadelbuy.git
-cd citadelbuy/organization
+git clone https://github.com/oks-broxiva/broxiva.git
+cd broxiva/organization
 
 # Verify you're on the correct branch
 git checkout develop
@@ -106,12 +106,12 @@ Edit `.env`:
 NODE_ENV=development
 
 # Application
-APP_NAME=CitadelBuy
+APP_NAME=Broxiva
 APP_URL=http://localhost:3000
 API_URL=http://localhost:4000
 
 # Database
-DATABASE_URL=postgresql://citadelbuy:citadelbuy123@localhost:5432/citadelbuy_dev
+DATABASE_URL=postgresql://broxiva:broxiva123@localhost:5432/broxiva_dev
 DATABASE_POOL_MIN=2
 DATABASE_POOL_MAX=10
 
@@ -145,7 +145,7 @@ NODE_ENV=development
 API_PREFIX=api
 
 # Database
-DATABASE_URL=postgresql://citadelbuy:citadelbuy123@localhost:5432/citadelbuy_dev
+DATABASE_URL=postgresql://broxiva:broxiva123@localhost:5432/broxiva_dev
 
 # JWT Authentication
 JWT_SECRET=your-jwt-secret-change-this-in-production-must-be-at-least-32-characters
@@ -171,8 +171,8 @@ PAYPAL_MODE=sandbox
 
 # Email (SendGrid)
 SENDGRID_API_KEY=your_sendgrid_api_key
-FROM_EMAIL=noreply@citadelbuy.com
-FROM_NAME=CitadelBuy
+FROM_EMAIL=noreply@broxiva.com
+FROM_NAME=Broxiva
 
 # SMS (Twilio)
 TWILIO_ACCOUNT_SID=your_twilio_account_sid
@@ -183,7 +183,7 @@ TWILIO_PHONE_NUMBER=+1234567890
 AWS_ACCESS_KEY_ID=your_aws_access_key
 AWS_SECRET_ACCESS_KEY=your_aws_secret_key
 AWS_REGION=us-east-1
-AWS_S3_BUCKET=citadelbuy-dev
+AWS_S3_BUCKET=broxiva-dev
 
 # Storage (local for development)
 STORAGE_PROVIDER=local
@@ -235,7 +235,7 @@ Edit `apps/web/.env.local`:
 
 ```env
 # Application
-NEXT_PUBLIC_APP_NAME=CitadelBuy
+NEXT_PUBLIC_APP_NAME=Broxiva
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:4000/api
 
@@ -317,7 +317,7 @@ pnpm prisma:studio
 
 ```bash
 # Connect to PostgreSQL
-docker exec -it citadelbuy-postgres psql -U citadelbuy -d citadelbuy_dev
+docker exec -it broxiva-postgres psql -U broxiva -d broxiva_dev
 
 # Check tables
 \dt
@@ -488,15 +488,15 @@ pnpm build:admin
 ```bash
 # Build API Docker image
 cd apps/api
-docker build -t citadelbuy/api:latest -f Dockerfile.production .
+docker build -t broxiva/api:latest -f Dockerfile.production .
 
 # Build Web Docker image
 cd apps/web
-docker build -t citadelbuy/web:latest -f Dockerfile.production .
+docker build -t broxiva/web:latest -f Dockerfile.production .
 
 # Test Docker images locally
-docker run -p 4000:4000 --env-file .env.production citadelbuy/api:latest
-docker run -p 3000:3000 --env-file .env.production citadelbuy/web:latest
+docker run -p 4000:4000 --env-file .env.production broxiva/api:latest
+docker run -p 3000:3000 --env-file .env.production broxiva/web:latest
 ```
 
 ### Staging Deployment
@@ -546,7 +546,7 @@ docker compose up -d postgres
 docker compose logs postgres
 
 # Test connection
-docker exec -it citadelbuy-postgres psql -U citadelbuy -d citadelbuy_dev
+docker exec -it broxiva-postgres psql -U broxiva -d broxiva_dev
 
 # If still not working, reset database
 docker compose down -v
@@ -610,7 +610,7 @@ docker ps | grep redis
 docker compose up -d redis
 
 # Test Redis connection
-docker exec -it citadelbuy-redis redis-cli PING
+docker exec -it broxiva-redis redis-cli PING
 # Should return: PONG
 
 # Check Redis logs
@@ -631,12 +631,12 @@ docker compose logs redis
 docker system prune -a
 
 # Build with no cache
-docker build --no-cache -t citadelbuy/api:latest .
+docker build --no-cache -t broxiva/api:latest .
 ```
 
 ### Module Not Found Errors
 
-**Problem**: `Cannot find module '@citadelbuy/types'`
+**Problem**: `Cannot find module '@broxiva/types'`
 
 **Solutions**:
 
@@ -648,7 +648,7 @@ pnpm install
 pnpm build:packages
 
 # Or build specific package
-pnpm --filter @citadelbuy/types build
+pnpm --filter @broxiva/types build
 ```
 
 ### TypeScript Errors After Git Pull
@@ -809,8 +809,8 @@ After completing setup:
 ### Getting Help
 
 - **Documentation**: Check docs/ directory
-- **GitHub Issues**: https://github.com/oks-citadel/citadelbuy/issues
-- **Email**: dev@citadelbuy.com
+- **GitHub Issues**: https://github.com/oks-broxiva/broxiva/issues
+- **Email**: dev@broxiva.com
 - **Slack**: #engineering, #help
 
 ### Reporting Issues

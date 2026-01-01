@@ -123,10 +123,10 @@ For tables > 10GB, use `pg_repack`:
 
 ```bash
 # Install pg_repack extension
-psql -U citadelbuy -d citadelbuy_production -c "CREATE EXTENSION pg_repack;"
+psql -U broxiva -d broxiva_production -c "CREATE EXTENSION pg_repack;"
 
 # Repack table (rebuilds with minimal locking)
-pg_repack -U citadelbuy -d citadelbuy_production --table Product --no-order
+pg_repack -U broxiva -d broxiva_production --table Product --no-order
 ```
 
 ## Rollback Procedure
@@ -134,7 +134,7 @@ pg_repack -U citadelbuy -d citadelbuy_production --table Product --no-order
 ```sql
 -- If migration fails, restore from backup
 -- Point-in-time restore
-pg_restore -h postgres -U citadelbuy -d citadelbuy_production \
+pg_restore -h postgres -U broxiva -d broxiva_production \
   -c /backups/pre-migration-backup.dump
 ```
 

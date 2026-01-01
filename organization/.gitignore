@@ -1,5 +1,5 @@
 # ==============================================
-# CitadelBuy E-Commerce Platform - Git Ignore
+# Broxiva E-Commerce Platform - Git Ignore
 # ==============================================
 # Last Updated: 2025-11-18
 
@@ -370,7 +370,7 @@ artillery-results/
 # ==============================================
 # NOTES
 # ==============================================
-# This .gitignore is configured for the CitadelBuy platform
+# This .gitignore is configured for the Broxiva platform
 # Keep .env.example and .env.local.example files (they're templates)
 # Regularly review this file when adding new features
 # Use git check-ignore -v <file> to debug ignore rules

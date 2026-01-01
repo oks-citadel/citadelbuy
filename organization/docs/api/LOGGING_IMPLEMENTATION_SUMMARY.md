@@ -2,7 +2,7 @@
 
 ## Overview
 
-A comprehensive logging infrastructure has been created for the CitadelBuy API to replace console.log statements with structured, production-ready logging.
+A comprehensive logging infrastructure has been created for the Broxiva API to replace console.log statements with structured, production-ready logging.
 
 ## Files Created
 

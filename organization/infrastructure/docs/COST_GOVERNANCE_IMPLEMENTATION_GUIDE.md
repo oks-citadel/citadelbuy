@@ -82,7 +82,7 @@ az resource list --query "[].type" -o tsv | sort | uniq -c | sort -rn
 **Objective**: Implement governance policies
 
 ```bash
-cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/azure/policies
+cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/azure/policies
 
 # 1. Deploy mandatory tags policy
 az policy definition create \
@@ -208,7 +208,7 @@ az resource tag \
 **Objective**: Implement budget alerts
 
 ```bash
-cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/azure/cost-management
+cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/azure/cost-management
 
 # 1. Deploy all budgets
 az deployment sub create \
@@ -272,7 +272,7 @@ echo "Dashboard URL: https://portal.azure.com/#blade/Microsoft_Azure_Portal/Dash
 **Objective**: Automate cost reports
 
 ```bash
-cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/scripts
+cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/scripts
 
 # Make scripts executable
 chmod +x cost-report.sh
@@ -343,7 +343,7 @@ az role assignment create \
 **Objective**: Import auto-shutdown runbook
 
 ```bash
-cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/azure/automation
+cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/azure/automation
 
 # 1. Create runbook
 az automation runbook create \
@@ -415,7 +415,7 @@ az automation runbook start \
 **Objective**: Automate shutdown schedules
 
 ```bash
-cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/azure/automation
+cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/azure/automation
 
 # Deploy Logic Apps for scheduled execution
 az deployment group create \
@@ -462,7 +462,7 @@ UNTAGGED=$(az resource list --query "[?tags.env==null]" --output tsv | wc -l)
 echo "Untagged resources: $UNTAGGED"
 
 # 6. Test cost reporting
-cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/scripts
+cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/scripts
 ./cost-report.sh --period daily
 ```
 
@@ -509,7 +509,7 @@ cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastru
 ### Manual Shutdown Script
 
 ```bash
-cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/scripts
+cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/infrastructure/scripts
 
 # Shutdown development (dry run)
 ./shutdown-non-prod.sh --env development --dry-run

@@ -1,6 +1,6 @@
 # Payment Flow and Error Handling
 
-This document details the complete payment processing flow, state transitions, error handling, and recovery strategies for CitadelBuy.
+This document details the complete payment processing flow, state transitions, error handling, and recovery strategies for Broxiva.
 
 ## Table of Contents
 
@@ -18,7 +18,7 @@ This document details the complete payment processing flow, state transitions, e
 
 ## Payment Flow Overview
 
-CitadelBuy supports multiple payment flows to accommodate different customer preferences and scenarios.
+Broxiva supports multiple payment flows to accommodate different customer preferences and scenarios.
 
 ### Payment Methods Supported
 
@@ -1198,7 +1198,7 @@ await this.emailService.sendCartAbandonmentEmail({
   to: user.email,
   cartItems: cart.items,
   recoveryCode: 'COMPLETE10',
-  recoveryLink: `https://citadelbuy.com/checkout?cart=${cart.id}&code=COMPLETE10`
+  recoveryLink: `https://broxiva.com/checkout?cart=${cart.id}&code=COMPLETE10`
 });
 ```
 
@@ -1206,4 +1206,4 @@ await this.emailService.sendCartAbandonmentEmail({
 
 **Last Updated**: December 2024
 **Version**: 1.0
-**Maintained by**: CitadelBuy Development Team
+**Maintained by**: Broxiva Development Team

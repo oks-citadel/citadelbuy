@@ -1,6 +1,6 @@
 # Automation Module
 
-A comprehensive automation and workflow engine for CitadelBuy that provides rule-based automation and state machine workflow capabilities.
+A comprehensive automation and workflow engine for Broxiva that provides rule-based automation and state machine workflow capabilities.
 
 ## Features
 
@@ -452,4 +452,4 @@ When adding new action handlers:
 
 ## License
 
-Internal use only - CitadelBuy Platform
+Internal use only - Broxiva Platform

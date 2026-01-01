@@ -1,4 +1,4 @@
-# CitadelBuy UI Verification Checklist
+# Broxiva UI Verification Checklist
 
 **Web App URL:** http://localhost:3000
 **Total Pages:** 105

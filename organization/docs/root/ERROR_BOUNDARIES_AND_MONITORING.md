@@ -1,6 +1,6 @@
 # Error Boundaries and External Monitoring
 
-This document describes the error boundary implementation and external monitoring integration for CitadelBuy applications.
+This document describes the error boundary implementation and external monitoring integration for Broxiva applications.
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ This document describes the error boundary implementation and external monitorin
 
 ## Overview
 
-CitadelBuy implements comprehensive error handling and monitoring across web and mobile platforms using:
+Broxiva implements comprehensive error handling and monitoring across web and mobile platforms using:
 
 - **React Error Boundaries**: Catch and handle component errors gracefully
 - **Sentry Integration**: External monitoring and error tracking
@@ -393,7 +393,7 @@ Create a `.env.local` file (web) or `.env` file (mobile):
 # Web (Next.js)
 NEXT_PUBLIC_SENTRY_DSN=https://your-dsn@sentry.io/project-id
 SENTRY_ORG=your-org
-SENTRY_PROJECT=citadelbuy-web
+SENTRY_PROJECT=broxiva-web
 SENTRY_AUTH_TOKEN=your-auth-token
 
 # Mobile (React Native)
@@ -813,7 +813,7 @@ errorReporting.addBreadcrumb('batch', 'Processing 1000 items', 'info', {
 
    [defaults]
    org=your-org
-   project=citadelbuy-web
+   project=broxiva-web
    ```
 
 2. **Mobile**: Source maps are automatically uploaded during build

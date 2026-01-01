@@ -1,4 +1,4 @@
-# CitadelBuy Database Maintenance Guide
+# Broxiva Database Maintenance Guide
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@
 
 ## Overview
 
-This guide provides comprehensive database maintenance procedures for CitadelBuy's PostgreSQL database. Regular maintenance ensures optimal performance, prevents disk bloat, and maintains query efficiency.
+This guide provides comprehensive database maintenance procedures for Broxiva's PostgreSQL database. Regular maintenance ensures optimal performance, prevents disk bloat, and maintains query efficiency.
 
 ### Maintenance Objectives
 
@@ -186,7 +186,7 @@ LIMIT 20;
 **File**: `/usr/local/bin/vacuum_maintenance.sh`
 ```bash
 #!/bin/bash
-# Automated vacuum maintenance for CitadelBuy
+# Automated vacuum maintenance for Broxiva
 
 LOGFILE="/var/log/postgresql/vacuum_maintenance.log"
 THRESHOLD=20  # Bloat percentage threshold
@@ -196,7 +196,7 @@ log() {
 }
 
 # Check tables with high dead tuple percentage
-BLOATED_TABLES=$(psql -U postgres -d citadelbuy -t -c "
+BLOATED_TABLES=$(psql -U postgres -d broxiva -t -c "
 SELECT tablename
 FROM pg_stat_user_tables
 WHERE n_dead_tup > 1000
@@ -213,7 +213,7 @@ fi
 echo "$BLOATED_TABLES" | while read -r table; do
     if [ ! -z "$table" ]; then
         log "Vacuuming table: $table"
-        psql -U postgres -d citadelbuy -c "VACUUM ANALYZE $table;" 2>&1 | tee -a $LOGFILE
+        psql -U postgres -d broxiva -c "VACUUM ANALYZE $table;" 2>&1 | tee -a $LOGFILE
     fi
 done
 
@@ -289,7 +289,7 @@ REINDEX INDEX orders_user_id_idx;
 REINDEX TABLE orders;
 
 -- Reindex entire database (use during maintenance window)
-REINDEX DATABASE citadelbuy;
+REINDEX DATABASE broxiva;
 
 -- Concurrent reindex (doesn't lock table, PostgreSQL 12+)
 REINDEX INDEX CONCURRENTLY orders_user_id_idx;
@@ -316,7 +316,7 @@ log() {
 }
 
 # Get bloated indexes
-psql -U postgres -d citadelbuy -t -c "
+psql -U postgres -d broxiva -t -c "
 SELECT indexrelname
 FROM pg_stat_user_indexes pui
 JOIN pg_class c ON c.oid = pui.indexrelid
@@ -326,7 +326,7 @@ ORDER BY c.relpages DESC;
 " | while read -r index; do
     if [ ! -z "$index" ]; then
         log "Reindexing: $index"
-        psql -U postgres -d citadelbuy -c "REINDEX INDEX CONCURRENTLY $index;" 2>&1 | tee -a $LOGFILE
+        psql -U postgres -d broxiva -c "REINDEX INDEX CONCURRENTLY $index;" 2>&1 | tee -a $LOGFILE
     fi
 done
 
@@ -534,7 +534,7 @@ sudo yum install pgbouncer
 **PgBouncer Configuration** (`/etc/pgbouncer/pgbouncer.ini`):
 ```ini
 [databases]
-citadelbuy = host=localhost port=5432 dbname=citadelbuy
+broxiva = host=localhost port=5432 dbname=broxiva
 
 [pgbouncer]
 # Connection Limits
@@ -576,8 +576,8 @@ stats_users = stats_user
 
 **User Authentication** (`/etc/pgbouncer/userlist.txt`):
 ```
-"citadelbuy_app" "md5<hash>"
-"citadelbuy_readonly" "md5<hash>"
+"broxiva_app" "md5<hash>"
+"broxiva_readonly" "md5<hash>"
 ```
 
 **Generate password hash**:
@@ -628,7 +628,7 @@ datasource db {
 }
 
 // .env
-DATABASE_URL="postgresql://citadelbuy_app:password@localhost:6432/citadelbuy?pgbouncer=true&connect_timeout=10"
+DATABASE_URL="postgresql://broxiva_app:password@localhost:6432/broxiva?pgbouncer=true&connect_timeout=10"
 
 // Connection pool settings
 generator client {
@@ -649,9 +649,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       type: 'postgres',
       host: 'localhost',
       port: 6432,  // PgBouncer port
-      username: 'citadelbuy_app',
+      username: 'broxiva_app',
       password: process.env.DB_PASSWORD,
-      database: 'citadelbuy',
+      database: 'broxiva',
       // Connection pool settings
       extra: {
         max: 20,  // Maximum pool size
@@ -677,7 +677,7 @@ SELECT
     state,
     COUNT(*)
 FROM pg_stat_activity
-WHERE datname = 'citadelbuy'
+WHERE datname = 'broxiva'
 GROUP BY datname, usename, application_name, client_addr, state;
 
 -- Check connection limits
@@ -702,7 +702,7 @@ ORDER BY duration DESC;
 -- Kill idle connections
 SELECT pg_terminate_backend(pid)
 FROM pg_stat_activity
-WHERE datname = 'citadelbuy'
+WHERE datname = 'broxiva'
   AND state = 'idle'
   AND state_change < NOW() - INTERVAL '1 hour';
 ```
@@ -786,26 +786,26 @@ import { Pool } from 'pg';
 
 // Write pool (primary)
 export const writePool = new Pool({
-  host: 'primary.db.citadelbuy.com',
+  host: 'primary.db.broxiva.com',
   port: 5432,
-  database: 'citadelbuy',
-  user: 'citadelbuy_app',
+  database: 'broxiva',
+  user: 'broxiva_app',
   password: process.env.DB_PASSWORD,
   max: 20,
 });
 
 // Read pool (replicas with load balancing)
 const readHosts = [
-  'replica1.db.citadelbuy.com',
-  'replica2.db.citadelbuy.com',
-  'replica3.db.citadelbuy.com',
+  'replica1.db.broxiva.com',
+  'replica2.db.broxiva.com',
+  'replica3.db.broxiva.com',
 ];
 
 export const readPool = new Pool({
   host: readHosts[Math.floor(Math.random() * readHosts.length)],
   port: 5432,
-  database: 'citadelbuy',
-  user: 'citadelbuy_readonly',
+  database: 'broxiva',
+  user: 'broxiva_readonly',
   password: process.env.DB_READONLY_PASSWORD,
   max: 50,
 });
@@ -879,7 +879,7 @@ export class CacheService {
 
   constructor() {
     this.redis = new Redis({
-      host: 'redis.citadelbuy.com',
+      host: 'redis.broxiva.com',
       port: 6379,
       password: process.env.REDIS_PASSWORD,
       db: 0,

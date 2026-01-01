@@ -387,7 +387,7 @@ Add to `.env.local`:
 ```bash
 NEXT_PUBLIC_API_URL=http://localhost:3000
 # or for production:
-# NEXT_PUBLIC_API_URL=https://api.citadelbuy.com
+# NEXT_PUBLIC_API_URL=https://api.broxiva.com
 ```
 
 ### Step 5: Error Handling
@@ -447,7 +447,7 @@ Ensure your backend API allows requests from your frontend domain:
 ```typescript
 // Express.js example
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://admin.citadelbuy.com'],
+  origin: ['http://localhost:3000', 'https://admin.broxiva.com'],
   credentials: true,
 }));
 ```

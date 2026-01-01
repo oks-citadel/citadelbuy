@@ -1,8 +1,8 @@
-# CitadelBuy Enterprise Marketplace Workflows
+# Broxiva Enterprise Marketplace Workflows
 
 ## Executive Summary
 
-This document details the complete enterprise workflow diagrams for CitadelBuy's global B2B marketplace platform. It covers vendor onboarding, enterprise buyer journeys, cross-border procurement, RFQ to Purchase Order flows, and import/export documentation processes across all six operational regions (Africa, United States, Europe, Asia-Pacific, Latin America, Middle East).
+This document details the complete enterprise workflow diagrams for Broxiva's global B2B marketplace platform. It covers vendor onboarding, enterprise buyer journeys, cross-border procurement, RFQ to Purchase Order flows, and import/export documentation processes across all six operational regions (Africa, United States, Europe, Asia-Pacific, Latin America, Middle East).
 
 ## Table of Contents
 
@@ -519,7 +519,7 @@ BUYER (Africa - Nigeria)           →→→           SELLER (USA - California)
          │ • Incoterms: CIF Lagos                        │
          ▼                                                │
 ┌──────────────────────────────────────────────────────────────────────────┐
-│              CITADELBUY PLATFORM (Multi-Region)                          │
+│              BROXIVA PLATFORM (Multi-Region)                          │
 ├──────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  ┌─────────────────────────────────────────────────────────────┐        │
@@ -605,7 +605,7 @@ BUYER (Africa - Nigeria)           →→→           SELLER (USA - California)
 │           │ 1. LC Issuance                     │ 4. Payment              │
 │           ▼                                    │                         │
 │  ┌────────────────────────────────────────────────────────┐             │
-│  │        CitadelBuy Escrow Service                       │             │
+│  │        Broxiva Escrow Service                       │             │
 │  │  • Holds payment until shipment confirmation           │             │
 │  │  • Multi-currency handling                             │             │
 │  │  • Compliance verification                             │             │
@@ -662,7 +662,7 @@ BUYER (Africa - Nigeria)           →→→           SELLER (USA - California)
 ├──────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  ┌─────────────────────────────────────────────────────────┐            │
-│  │ CitadelBuy Customs Broker Integration                   │            │
+│  │ Broxiva Customs Broker Integration                   │            │
 │  ├─────────────────────────────────────────────────────────┤            │
 │  │ • Electronic Filing with Nigeria Customs                │            │
 │  │ • Automated Duty Payment                                │            │

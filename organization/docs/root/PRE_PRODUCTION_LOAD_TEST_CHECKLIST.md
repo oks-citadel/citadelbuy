@@ -2,7 +2,7 @@
 
 ## Overview
 
-This checklist ensures comprehensive load testing is performed before deploying CitadelBuy to production. Complete all items and document results before proceeding with deployment.
+This checklist ensures comprehensive load testing is performed before deploying Broxiva to production. Complete all items and document results before proceeding with deployment.
 
 **Release Version**: __________
 **Date**: __________
@@ -25,7 +25,7 @@ This checklist ensures comprehensive load testing is performed before deploying 
   - [ ] Search (Elasticsearch)
   - [ ] Message queue
 - [ ] Test data is seeded and ready
-  - [ ] Test users (loadtest1-5@citadelbuy.test)
+  - [ ] Test users (loadtest1-5@broxiva.test)
   - [ ] Test products (IDs 1-30)
   - [ ] Test categories
   - [ ] Test coupons (LOAD10)

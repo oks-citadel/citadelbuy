@@ -1,6 +1,6 @@
 # Stripe Payment Component
 
-A secure, PCI-compliant Stripe payment form component for the CitadelBuy e-commerce platform.
+A secure, PCI-compliant Stripe payment form component for the Broxiva e-commerce platform.
 
 ## Files Created
 

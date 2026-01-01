@@ -1,7 +1,7 @@
 # Sanctions Screening Dashboard - Implementation Summary
 
 ## Overview
-A comprehensive Sanctions Screening Dashboard has been built for the CitadelBuy admin panel, providing full compliance management capabilities including entity screening, filtering, pagination, and export functionality.
+A comprehensive Sanctions Screening Dashboard has been built for the Broxiva admin panel, providing full compliance management capabilities including entity screening, filtering, pagination, and export functionality.
 
 ## Files Created
 
@@ -109,7 +109,7 @@ Instructions for updating the admin navigation layout.
 - Client-side state management with React hooks
 
 ### UI Patterns
-All components follow the existing CitadelBuy admin panel patterns:
+All components follow the existing Broxiva admin panel patterns:
 - Consistent card-based layouts
 - Shadcn/ui component library
 - Tailwind CSS utility classes
@@ -204,7 +204,7 @@ To complete the integration, add the Compliance menu to the admin layout:
 
 All files are located in:
 ```
-/c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/apps/web/src/
+/c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/apps/web/src/
 ```
 
 ### Pages:

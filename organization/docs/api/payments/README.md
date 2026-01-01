@@ -2,7 +2,7 @@
 
 ## Overview
 
-CitadelBuy's payment webhook system provides robust, production-ready webhook handling for multiple payment providers. The system ensures exactly-once processing with idempotency guarantees, signature verification, and comprehensive error handling.
+Broxiva's payment webhook system provides robust, production-ready webhook handling for multiple payment providers. The system ensures exactly-once processing with idempotency guarantees, signature verification, and comprehensive error handling.
 
 ### Key Features
 
@@ -90,7 +90,7 @@ CitadelBuy's payment webhook system provides robust, production-ready webhook ha
 
 ### Base URL
 ```
-https://api.citadelbuy.com/webhooks/payments
+https://api.broxiva.com/webhooks/payments
 ```
 
 ### Provider-Specific Endpoints
@@ -806,7 +806,7 @@ REDIS_PORT=6379
 REDIS_PASSWORD=xxxxxxxxxxxxx
 
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/citadelbuy
+DATABASE_URL=postgresql://user:password@localhost:5432/broxiva
 ```
 
 ## API Reference
@@ -907,4 +907,4 @@ For webhook-related issues:
 
 **Last Updated**: December 4, 2025
 **Version**: 1.0.0
-**Maintained By**: CitadelBuy Engineering Team
+**Maintained By**: Broxiva Engineering Team

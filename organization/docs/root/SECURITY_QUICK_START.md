@@ -8,7 +8,7 @@
 ## 1. Run Security Check (Do This Now!)
 
 ```bash
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization
 
 # Run the security check script
 ./scripts/check-env-security.sh

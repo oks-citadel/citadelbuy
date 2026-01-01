@@ -1,14 +1,14 @@
-# CitadelBuy - Pipeline Quick Start Guide
+# Broxiva - Pipeline Quick Start Guide
 
 ## Getting Started in 5 Minutes
 
-This guide will help you understand and use the CitadelBuy Unified Pipeline quickly.
+This guide will help you understand and use the Broxiva Unified Pipeline quickly.
 
 ---
 
 ## What is the Unified Pipeline?
 
-The Unified Pipeline (`main.yml`) is the **single entry point** for all CI/CD operations in CitadelBuy. It automatically:
+The Unified Pipeline (`main.yml`) is the **single entry point** for all CI/CD operations in Broxiva. It automatically:
 
 - ✅ Validates code quality
 - ✅ Runs tests
@@ -60,8 +60,8 @@ git push origin main
 
 ### How to Run Pipeline Manually
 
-1. Go to Azure DevOps: https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_build
-2. Click "Pipelines" → "CitadelBuy-Unified-Pipeline"
+1. Go to Azure DevOps: https://dev.azure.com/broxivacloudmanagement/Broxiva/_build
+2. Click "Pipelines" → "Broxiva-Unified-Pipeline"
 3. Click "Run pipeline"
 4. Configure parameters (see below)
 5. Click "Run"
@@ -202,7 +202,7 @@ git push origin feature/add-payment-gateway
 # Pipeline runs: Validate → Test → SecurityScan → Build → DockerBuild → DeployDev
 
 # 4. Verify in dev environment
-# https://dev.citadelbuy.com
+# https://dev.broxiva.com
 
 # 5. Create PR to develop
 # PR triggers validation pipeline (no deployment)
@@ -215,7 +215,7 @@ git push origin develop
 # Pipeline runs: Full pipeline → DeployStaging → E2ETests
 
 # 7. Verify in staging
-# https://staging.citadelbuy.com
+# https://staging.broxiva.com
 
 # 8. When ready, merge to main for production
 git checkout main
@@ -227,7 +227,7 @@ git push origin main
 # 9. Approve production deployment in Azure DevOps UI
 
 # 10. Verify in production
-# https://citadelbuy.com
+# https://broxiva.com
 ```
 
 ### Hotfix Process
@@ -291,19 +291,19 @@ git push origin feature/add-redis-cache
 ### View Pipeline Status
 
 **Azure DevOps:**
-1. Navigate to: https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_build
+1. Navigate to: https://dev.azure.com/broxivacloudmanagement/Broxiva/_build
 2. Click on your pipeline run
 3. View stage-by-stage progress
 
 **Build Badge:**
 ```markdown
-[![Build Status](https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_apis/build/status/CitadelBuy-Unified-Pipeline)](https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_build/latest?definitionId=<pipeline-id>)
+[![Build Status](https://dev.azure.com/broxivacloudmanagement/Broxiva/_apis/build/status/Broxiva-Unified-Pipeline)](https://dev.azure.com/broxivacloudmanagement/Broxiva/_build/latest?definitionId=<pipeline-id>)
 ```
 
 ### Get Notifications
 
 **Slack:**
-- Join #citadelbuy-deployments channel
+- Join #broxiva-deployments channel
 - Notifications for all pipeline runs
 - @mention on failures affecting your code
 
@@ -370,8 +370,8 @@ git push origin feature/add-redis-cache
    - Health check failures
 3. Verify cluster access:
    ```bash
-   az aks get-credentials --resource-group citadelbuy-dev-rg --name citadelbuy-dev-aks
-   kubectl get pods -n citadelbuy-dev
+   az aks get-credentials --resource-group broxiva-dev-rg --name broxiva-dev-aks
+   kubectl get pods -n broxiva-dev
    ```
 
 ### Security Scan Blocking
@@ -422,7 +422,7 @@ git push origin feature/add-redis-cache
 
 ### Support Channels
 - **Slack:** #devops-support
-- **Email:** devops@citadelbuy.com
+- **Email:** devops@broxiva.com
 - **On-Call:** [Contact DevOps on-call engineer]
 
 ### Common Questions
@@ -449,7 +449,7 @@ A: The pipeline stops, and the previous version continues running. No automatic 
 1. **Read the full README:** [.azuredevops/README.md](README.md)
 2. **Review template specifications:** [.azuredevops/TEMPLATES_GUIDE.md](TEMPLATES_GUIDE.md)
 3. **Complete implementation checklist:** [.azuredevops/PIPELINE_CHECKLIST.md](PIPELINE_CHECKLIST.md)
-4. **Join Slack channels:** #citadelbuy-deployments, #devops-support
+4. **Join Slack channels:** #broxiva-deployments, #devops-support
 5. **Set up notifications:** Configure Azure DevOps and Slack preferences
 
 ---

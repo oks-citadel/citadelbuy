@@ -16,7 +16,7 @@ import '@/styles/broxiva-globals.css';
 ### 2. Use Design Tokens in TypeScript
 
 ```typescript
-import { broxivaDesignTokens } from '@citadelbuy/ui/styles';
+import { broxivaDesignTokens } from '@broxiva/ui/styles';
 
 // Access color tokens
 const primaryColor = broxivaDesignTokens.colors.primary[800]; // #6b21a8
@@ -51,7 +51,7 @@ const displayFont = broxivaDesignTokens.typography.fontFamily.display;
 Update your `tailwind.config.js`:
 
 ```javascript
-const { broxivaTailwindConfig } = require('@citadelbuy/ui/styles/tailwind.config');
+const { broxivaTailwindConfig } = require('@broxiva/ui/styles/tailwind.config');
 
 module.exports = {
   ...broxivaTailwindConfig,
@@ -507,7 +507,7 @@ getComputedStyle(document.documentElement).getPropertyValue('--brx-color-primary
 
 ### TypeScript Errors
 
-1. Ensure @citadelbuy/ui is in dependencies
+1. Ensure @broxiva/ui is in dependencies
 2. Check tsconfig paths
 3. Restart TypeScript server
 4. Clear .next cache

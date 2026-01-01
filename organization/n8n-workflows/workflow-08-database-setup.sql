@@ -1,4 +1,4 @@
--- CitadelBuy Dynamic Pricing & Competitor Monitoring
+-- Broxiva Dynamic Pricing & Competitor Monitoring
 -- Database Setup Script
 -- Version: 1.0.0
 -- Created: 2025-12-03

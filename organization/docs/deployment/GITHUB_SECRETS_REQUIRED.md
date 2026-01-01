@@ -412,7 +412,7 @@ az ad app federated-credential create \
   --parameters '{
     "name": "broxiva-github-main",
     "issuer": "https://token.actions.githubusercontent.com",
-    "subject": "repo:YOUR_GITHUB_ORG/CitadelBuy:ref:refs/heads/main",
+    "subject": "repo:YOUR_GITHUB_ORG/Broxiva:ref:refs/heads/main",
     "audiences": ["api://AzureADTokenExchange"]
   }'
 
@@ -422,7 +422,7 @@ az ad app federated-credential create \
   --parameters '{
     "name": "broxiva-github-pr",
     "issuer": "https://token.actions.githubusercontent.com",
-    "subject": "repo:YOUR_GITHUB_ORG/CitadelBuy:pull_request",
+    "subject": "repo:YOUR_GITHUB_ORG/Broxiva:pull_request",
     "audiences": ["api://AzureADTokenExchange"]
   }'
 
@@ -432,7 +432,7 @@ az ad app federated-credential create \
   --parameters '{
     "name": "broxiva-github-prod-env",
     "issuer": "https://token.actions.githubusercontent.com",
-    "subject": "repo:YOUR_GITHUB_ORG/CitadelBuy:environment:production",
+    "subject": "repo:YOUR_GITHUB_ORG/Broxiva:environment:production",
     "audiences": ["api://AzureADTokenExchange"]
   }'
 ```
@@ -484,7 +484,7 @@ Test the authentication by running the `broxiva-production.yml` workflow manuall
 
 ### Repository Secrets (Recommended)
 
-1. Go to your GitHub repository: `https://github.com/YOUR_ORG/CitadelBuy`
+1. Go to your GitHub repository: `https://github.com/YOUR_ORG/Broxiva`
 2. Click **Settings** → **Secrets and variables** → **Actions**
 3. Click **New repository secret**
 4. Enter the secret name (exactly as shown in this document)

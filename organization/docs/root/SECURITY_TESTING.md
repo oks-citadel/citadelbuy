@@ -1,6 +1,6 @@
 # Security Testing Guide
 
-Comprehensive security testing procedures for the CitadelBuy e-commerce platform.
+Comprehensive security testing procedures for the Broxiva e-commerce platform.
 
 ## Table of Contents
 
@@ -71,13 +71,13 @@ curl -X PUT http://localhost:4000/cart/items/1 \
 **Test Cases:**
 ```bash
 # Check TLS version
-openssl s_client -connect citadelbuy.com:443 -tls1_2
+openssl s_client -connect broxiva.com:443 -tls1_2
 
 # Verify secure headers
-curl -I https://citadelbuy.com | grep -i "strict-transport"
+curl -I https://broxiva.com | grep -i "strict-transport"
 
 # Check cookie flags
-curl -I https://citadelbuy.com/api/auth/login | grep -i "set-cookie"
+curl -I https://broxiva.com/api/auth/login | grep -i "set-cookie"
 # Should include: HttpOnly; Secure; SameSite=Strict
 ```
 
@@ -376,10 +376,10 @@ python sqlmap.py -u "http://localhost:4000/orders?id=1" \
 python sqlmap.py -u "http://localhost:4000/products?id=1" --dbs
 
 # Enumerate tables
-python sqlmap.py -u "http://localhost:4000/products?id=1" -D citadelbuy --tables
+python sqlmap.py -u "http://localhost:4000/products?id=1" -D broxiva --tables
 
 # Dump data
-python sqlmap.py -u "http://localhost:4000/products?id=1" -D citadelbuy -T users --dump
+python sqlmap.py -u "http://localhost:4000/products?id=1" -D broxiva -T users --dump
 ```
 
 ### Expected Results (Secure Application)
@@ -514,7 +514,7 @@ python xsstrike.py -u "http://localhost:4000" --crawl
 
 ### Understanding CSRF Tokens
 
-CitadelBuy should implement CSRF protection for state-changing operations.
+Broxiva should implement CSRF protection for state-changing operations.
 
 ### Manual Testing
 
@@ -621,7 +621,7 @@ Test password requirements:
 # Script to test brute force protection
 for i in {1..100}; do
   curl -X POST http://localhost:4000/auth/login \
-    -d '{"email": "admin@citadelbuy.com", "password": "wrong'$i'"}' \
+    -d '{"email": "admin@broxiva.com", "password": "wrong'$i'"}' \
     -w "\n%{http_code}\n"
   sleep 0.1
 done
@@ -876,7 +876,7 @@ brew install nikto          # macOS
 nikto -h http://localhost:4000
 
 # SSL scan
-nikto -h https://citadelbuy.com -ssl
+nikto -h https://broxiva.com -ssl
 
 # Save output
 nikto -h http://localhost:4000 -output report.html -Format html
@@ -915,13 +915,13 @@ pip install sslyze
 **Usage:**
 ```bash
 # SSL/TLS configuration scan
-sslyze citadelbuy.com
+sslyze broxiva.com
 
 # Check for specific vulnerabilities
-sslyze --heartbleed --robot citadelbuy.com
+sslyze --heartbleed --robot broxiva.com
 
 # Check certificate
-sslyze --certinfo citadelbuy.com
+sslyze --certinfo broxiva.com
 ```
 
 ### 7. Retire.js
@@ -980,7 +980,7 @@ snyk test
 snyk monitor
 
 # Test Docker image
-snyk container test citadelbuy:latest
+snyk container test broxiva:latest
 
 # Test infrastructure as code
 snyk iac test
@@ -1098,5 +1098,5 @@ Before deploying to production:
 ## Contact
 
 For security concerns or to report vulnerabilities:
-- Email: security@citadelbuy.com
+- Email: security@broxiva.com
 - Security response time: 24-48 hours for critical issues

@@ -1,6 +1,6 @@
 # Error Boundaries - Quick Reference
 
-Quick reference guide for using Error Boundaries and Error Reporting in CitadelBuy.
+Quick reference guide for using Error Boundaries and Error Reporting in Broxiva.
 
 ## Quick Start
 
@@ -171,7 +171,7 @@ errorReporting.showReportDialog(eventId?);
 ```env
 NEXT_PUBLIC_SENTRY_DSN=https://your-dsn@sentry.io/project-id
 SENTRY_ORG=your-org
-SENTRY_PROJECT=citadelbuy-web
+SENTRY_PROJECT=broxiva-web
 SENTRY_AUTH_TOKEN=your-auth-token
 ```
 
@@ -342,4 +342,4 @@ export default function MyFeature() {
 
 - Documentation: `docs/ERROR_BOUNDARIES_AND_MONITORING.md`
 - Sentry Dashboard: https://sentry.io
-- Team Contact: devops@citadelbuy.com
+- Team Contact: devops@broxiva.com

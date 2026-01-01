@@ -1,8 +1,8 @@
-# CitadelBuy Abandoned Cart Recovery Workflow
+# Broxiva Abandoned Cart Recovery Workflow
 
 ## Overview
 
-This n8n workflow implements a sophisticated multi-stage abandoned cart recovery system for CitadelBuy, integrating with Klaviyo for email marketing, Algolia for product recommendations, and Mixpanel for analytics tracking.
+This n8n workflow implements a sophisticated multi-stage abandoned cart recovery system for Broxiva, integrating with Klaviyo for email marketing, Algolia for product recommendations, and Mixpanel for analytics tracking.
 
 ## Workflow Architecture
 
@@ -104,9 +104,9 @@ The workflow automatically excludes carts from recovery emails when:
 ### Environment Variables Required
 
 ```bash
-# CitadelBuy API
-CITADELBUY_API_KEY=your_api_key_here
-CITADELBUY_API_BASE=https://api.citadelbuy.com/v1
+# Broxiva API
+BROXIVA_API_KEY=your_api_key_here
+BROXIVA_API_BASE=https://api.broxiva.com/v1
 
 # Klaviyo
 KLAVIYO_PUBLIC_API_KEY=pk_xxxxxx
@@ -118,8 +118,8 @@ ALGOLIA_APP_ID=your_app_id
 ALGOLIA_API_KEY=your_search_api_key
 
 # Zendesk
-ZENDESK_SUBDOMAIN=citadelbuy
-ZENDESK_EMAIL=support@citadelbuy.com
+ZENDESK_SUBDOMAIN=broxiva
+ZENDESK_EMAIL=support@broxiva.com
 ZENDESK_API_TOKEN=your_zendesk_token
 
 # Mixpanel
@@ -128,8 +128,8 @@ MIXPANEL_PROJECT_TOKEN=your_project_token
 
 ### Credentials Setup in n8n
 
-#### 1. CitadelBuy API Key (HTTP Header Auth)
-- **Credential Name:** CitadelBuy API Key
+#### 1. Broxiva API Key (HTTP Header Auth)
+- **Credential Name:** Broxiva API Key
 - **Header Name:** `Authorization`
 - **Header Value:** `Bearer YOUR_API_KEY`
 
@@ -427,7 +427,7 @@ mixpanel.query({
 
 ## API Endpoints Used
 
-### CitadelBuy API
+### Broxiva API
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
@@ -468,7 +468,7 @@ Use n8n's "Execute Node" feature to test each stage:
 
 ```bash
 # Create test cart via API
-curl -X POST https://api.citadelbuy.com/v1/carts/test \
+curl -X POST https://api.broxiva.com/v1/carts/test \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -d '{
     "customer_email": "test@example.com",
@@ -496,7 +496,7 @@ Create test data that triggers each exclusion:
 
 ```bash
 # Test recent order exclusion
-curl -X POST https://api.citadelbuy.com/v1/orders/test \
+curl -X POST https://api.broxiva.com/v1/orders/test \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -d '{"customer_id": "test_customer"}'
 
@@ -520,7 +520,7 @@ curl -X POST https://api.citadelbuy.com/v1/orders/test \
 
 #### 2. Stage Not Updating
 **Check:**
-- CitadelBuy API PATCH request succeeds
+- Broxiva API PATCH request succeeds
 - `cart_id` is correctly passed
 - API has write permissions
 
@@ -590,7 +590,7 @@ Execution Summary {
 - Use secure credential storage
 - Encrypt API keys in environment variables
 
-## Integration with CitadelBuy Backend
+## Integration with Broxiva Backend
 
 ### Cart Schema Requirements
 
@@ -675,10 +675,10 @@ app.patch('/carts/:id', async (req, res) => {
 ## Support
 
 For issues or questions:
-- **Email:** devops@citadelbuy.com
+- **Email:** devops@broxiva.com
 - **Slack:** #n8n-workflows
-- **Documentation:** https://docs.citadelbuy.com/automation/abandoned-cart
+- **Documentation:** https://docs.broxiva.com/automation/abandoned-cart
 
 ## License
 
-Internal use only - CitadelBuy E-commerce Platform
+Internal use only - Broxiva E-commerce Platform

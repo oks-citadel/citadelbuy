@@ -1,6 +1,6 @@
 # Kubernetes Deployment Manifests Review Report
 
-**Project:** CitadelBuy E-Commerce Platform
+**Project:** Broxiva E-Commerce Platform
 **Review Date:** December 6, 2024
 **Reviewer:** Infrastructure Team
 **Status:** ✅ Complete with Recommendations
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This report provides a comprehensive review of the Kubernetes deployment manifests for the CitadelBuy e-commerce platform across staging and production environments. The review covered deployment configurations, service definitions, ingress configurations, ConfigMaps, Secrets, RBAC, network policies, and resource limits.
+This report provides a comprehensive review of the Kubernetes deployment manifests for the Broxiva e-commerce platform across staging and production environments. The review covered deployment configurations, service definitions, ingress configurations, ConfigMaps, Secrets, RBAC, network policies, and resource limits.
 
 ### Overall Assessment: ✅ PRODUCTION READY
 
@@ -51,7 +51,7 @@ Production:
     Requests: CPU 500m, Memory 1Gi
     Limits: CPU 2000m, Memory 2Gi
   Health Checks: All three probes configured
-  Image: ghcr.io/citadelplatforms/citadelbuy-api:production-latest
+  Image: ghcr.io/broxivaplatforms/broxiva-api:production-latest
 
 Staging:
   Replicas: 2
@@ -59,7 +59,7 @@ Staging:
     Requests: CPU 250m, Memory 512Mi
     Limits: CPU 1000m, Memory 1Gi
   Health Checks: All three probes configured
-  Image: ghcr.io/citadelplatforms/citadelbuy-api:staging-latest
+  Image: ghcr.io/broxivaplatforms/broxiva-api:staging-latest
 ```
 
 #### Web Deployment
@@ -112,8 +112,8 @@ Staging:
 ### 2. Service Definitions ✅
 
 **Services Configured:**
-- `citadelbuy-api` (ClusterIP, port 4000)
-- `citadelbuy-web` (ClusterIP, port 3000)
+- `broxiva-api` (ClusterIP, port 4000)
+- `broxiva-web` (ClusterIP, port 3000)
 - Database and cache services in respective deployments
 
 **Strengths:**
@@ -143,8 +143,8 @@ Staging:
 - ✅ Network policies for ingress traffic
 
 **Domains:**
-- `staging-api.citadelbuy.com`
-- `staging.citadelbuy.com`
+- `staging-api.broxiva.com`
+- `staging.broxiva.com`
 
 #### Production Ingress
 **Features:**
@@ -158,10 +158,10 @@ Staging:
 - ✅ Multiple domain support
 
 **Domains:**
-- `api.citadelbuy.com` (primary)
-- `api-prod.citadelbuy.com` (backup)
-- `citadelbuy.com` (primary)
-- `www.citadelbuy.com` (redirects to primary)
+- `api.broxiva.com` (primary)
+- `api-prod.broxiva.com` (backup)
+- `broxiva.com` (primary)
+- `www.broxiva.com` (redirects to primary)
 
 **Security Annotations:**
 ```yaml
@@ -344,9 +344,9 @@ Order Processing Worker PDB: minAvailable: 3
 - `production/rbac.yaml`
 
 **Service Accounts Created:**
-- `citadelbuy-api` ✅
-- `citadelbuy-web` ✅
-- `citadelbuy-worker` ✅ (production)
+- `broxiva-api` ✅
+- `broxiva-web` ✅
+- `broxiva-worker` ✅ (production)
 - `postgres` ✅
 - `redis` ✅
 - `external-secrets` ✅
@@ -660,7 +660,7 @@ During the review, the following critical components were missing and have been 
 
 ## Conclusion
 
-The CitadelBuy Kubernetes infrastructure is **production-ready** with comprehensive configurations for security, high availability, and observability. All critical missing components have been created during this review.
+The Broxiva Kubernetes infrastructure is **production-ready** with comprehensive configurations for security, high availability, and observability. All critical missing components have been created during this review.
 
 ### Key Strengths
 1. Well-architected deployments with proper security controls

@@ -1,6 +1,6 @@
 # Build Verification Report
 
-**Project:** CitadelBuy Platform
+**Project:** Broxiva Platform
 **Date:** 2025-12-04
 **Analyzer:** Dependency Verification System
 
@@ -327,7 +327,7 @@ cd apps/api
 pnpm prisma generate
 ```
 
-### Issue: "Cannot find module '@citadelbuy/types'"
+### Issue: "Cannot find module '@broxiva/types'"
 
 **Cause:** Workspace packages not built
 **Solution:**

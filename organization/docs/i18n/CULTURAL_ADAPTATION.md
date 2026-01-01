@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers cultural and regional adaptations beyond simple translation, ensuring the CitadelBuy platform is culturally appropriate and relevant for different markets.
+This guide covers cultural and regional adaptations beyond simple translation, ensuring the Broxiva platform is culturally appropriate and relevant for different markets.
 
 ## Regional Customization Layers
 
@@ -482,6 +482,6 @@ Engage local experts for:
 ## Support
 
 For cultural adaptation questions:
-- Email: cultural-adaptation@citadelbuy.com
+- Email: cultural-adaptation@broxiva.com
 - Slack: #regional-markets
-- Documentation: https://docs.citadelbuy.com/i18n/cultural
+- Documentation: https://docs.broxiva.com/i18n/cultural

@@ -129,7 +129,7 @@ npm run build
 npm run start:prod
 
 # Or use PM2
-pm2 start dist/main.js --name citadelbuy-api
+pm2 start dist/main.js --name broxiva-api
 ```
 
 ## Testing
@@ -255,16 +255,16 @@ Key log patterns to search for:
 
 ```bash
 # Successful webhook processing
-grep "processed successfully" /var/log/citadelbuy/app.log
+grep "processed successfully" /var/log/broxiva/app.log
 
 # Duplicate webhooks caught
-grep "already processed" /var/log/citadelbuy/app.log
+grep "already processed" /var/log/broxiva/app.log
 
 # Failed webhooks
-grep "webhook processing error" /var/log/citadelbuy/app.log
+grep "webhook processing error" /var/log/broxiva/app.log
 
 # Signature verification failures
-grep "signature verification failed" /var/log/citadelbuy/app.log
+grep "signature verification failed" /var/log/broxiva/app.log
 ```
 
 ## Maintenance
@@ -278,10 +278,10 @@ Set up a cron job to clean up old webhook events:
 crontab -e
 
 # Run cleanup daily at 2 AM (keeps events for 30 days)
-0 2 * * * cd /path/to/citadelbuy/organization/apps/api && npm run cleanup:webhook-events
+0 2 * * * cd /path/to/broxiva/organization/apps/api && npm run cleanup:webhook-events
 
 # Or weekly (keeps events for 7 days)
-0 2 * * 0 cd /path/to/citadelbuy/organization/apps/api && npm run cleanup:webhook-events -- --days 7
+0 2 * * 0 cd /path/to/broxiva/organization/apps/api && npm run cleanup:webhook-events -- --days 7
 ```
 
 Create the cleanup script in `package.json`:
@@ -340,7 +340,7 @@ Monitor these metrics and adjust as needed:
 **Solutions:**
 1. Verify Redis TTL: `redis-cli TTL webhook:event:stripe:evt_123`
 2. Clear Redis cache: `redis-cli FLUSHDB` (use with caution!)
-3. Restart application: `pm2 restart citadelbuy-api`
+3. Restart application: `pm2 restart broxiva-api`
 
 ### Issue: Slow Webhook Processing
 
@@ -369,7 +369,7 @@ cd organization/apps/api
 npx prisma migrate rollback
 
 # 3. Restart application
-pm2 restart citadelbuy-api
+pm2 restart broxiva-api
 
 # 4. Clear Redis cache (optional)
 redis-cli FLUSHDB

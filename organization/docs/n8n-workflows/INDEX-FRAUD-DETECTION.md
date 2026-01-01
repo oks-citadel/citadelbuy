@@ -298,11 +298,11 @@ grep '"name":' workflow-10-fraud-detection.json | head -1
 
 ### Questions about implementation:
 - Read: `FRAUD-DETECTION-IMPLEMENTATION-CHECKLIST.md`
-- Contact: devops@citadelbuy.com
+- Contact: devops@broxiva.com
 
 ### Questions about risk scoring:
 - Read: `FRAUD-SCORING-QUICK-REFERENCE.md`
-- Contact: fraud@citadelbuy.com
+- Contact: fraud@broxiva.com
 
 ### Questions about configuration:
 - Read: `FRAUD-DETECTION-README.md`
@@ -310,7 +310,7 @@ grep '"name":' workflow-10-fraud-detection.json | head -1
 
 ### Technical issues:
 - Check: Troubleshooting section in `FRAUD-DETECTION-README.md`
-- Contact: devops@citadelbuy.com
+- Contact: devops@broxiva.com
 
 ## Version Information
 
@@ -318,7 +318,7 @@ grep '"name":' workflow-10-fraud-detection.json | head -1
 Workflow Version:     1.0.0
 Created:              2025-12-03
 n8n Compatibility:    1.0.0+
-Platform:             CitadelBuy E-commerce
+Platform:             Broxiva E-commerce
 Status:               Production Ready ✓
 ```
 
@@ -352,4 +352,4 @@ test-fraud-workflow.bat                         5.2 KB  ✓ Batch
 
 **Document Version:** 1.0.0
 **Last Updated:** 2025-12-03
-**Maintained By:** CitadelBuy Development Team
+**Maintained By:** Broxiva Development Team

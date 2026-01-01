@@ -24,11 +24,11 @@ steps:
 
       # Set base URL based on environment
       if [ "${{ parameters.environment }}" = "production" ]; then
-        base_url="https://citadelbuy.com"
+        base_url="https://broxiva.com"
       elif [ "${{ parameters.environment }}" = "staging" ]; then
-        base_url="https://staging.citadelbuy.com"
+        base_url="https://staging.broxiva.com"
       else
-        base_url="https://dev.citadelbuy.com"
+        base_url="https://dev.broxiva.com"
       fi
 
       echo "Base URL: $base_url"

@@ -3,7 +3,7 @@ BROXIVA PLATFORM - DOCKER BUILD INSTRUCTIONS
 ================================================================================
 
 PROJECT LOCATION:
-C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization
+C:\Users\Dell\OneDrive\Documents\Broxivabuy\Broxiva\organization
 
 TOTAL IMAGES TO BUILD: 15
 - 2 Main Applications (Web, API)
@@ -27,12 +27,12 @@ METHOD 1: AUTOMATED BUILD (RECOMMENDED)
 
 WINDOWS (PowerShell):
 ---------------------
-cd C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization
+cd C:\Users\Dell\OneDrive\Documents\Broxivabuy\Broxiva\organization
 .\build-broxiva-images.ps1
 
 GIT BASH / WSL:
 ---------------
-cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization
+cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization
 chmod +x build-broxiva-images.sh
 ./build-broxiva-images.sh
 
@@ -46,7 +46,7 @@ This will:
 METHOD 2: DOCKER COMPOSE BUILD
 ================================================================================
 
-cd C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization
+cd C:\Users\Dell\OneDrive\Documents\Broxivabuy\Broxiva\organization
 
 # Build all services
 docker-compose -f docker-compose.production.yml build
@@ -61,7 +61,7 @@ docker-compose -f docker-compose.production.yml build web api
 METHOD 3: MANUAL BUILD (Individual Images)
 ================================================================================
 
-BASE DIRECTORY: C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization
+BASE DIRECTORY: C:\Users\Dell\OneDrive\Documents\Broxivabuy\Broxiva\organization
 
 MAIN APPLICATIONS:
 ------------------
@@ -289,7 +289,7 @@ QUICK START COMMAND
 
 The easiest way to build all images:
 
-cd C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization
+cd C:\Users\Dell\OneDrive\Documents\Broxivabuy\Broxiva\organization
 .\build-broxiva-images.ps1
 
 ================================================================================

@@ -2,7 +2,7 @@
 
 ## Overview
 
-CitadelBuy includes automated production configuration validation that ensures your application is securely configured before it starts. This guide provides a quick reference for setting up production environment variables.
+Broxiva includes automated production configuration validation that ensures your application is securely configured before it starts. This guide provides a quick reference for setting up production environment variables.
 
 ## Quick Setup (5 Minutes)
 
@@ -32,8 +32,8 @@ NODE_ENV=production
 PORT=4000
 
 # CORS (REQUIRED in production - comma-separated HTTPS URLs)
-CORS_ORIGIN=https://citadelbuy.com,https://www.citadelbuy.com
-FRONTEND_URL=https://citadelbuy.com
+CORS_ORIGIN=https://broxiva.com,https://www.broxiva.com
+FRONTEND_URL=https://broxiva.com
 
 # Database (update with your values)
 DATABASE_URL=postgresql://user:password@host:5432/database?sslmode=require
@@ -48,7 +48,7 @@ EMAIL_HOST=smtp.sendgrid.net
 EMAIL_PORT=587
 EMAIL_USER=apikey
 EMAIL_PASSWORD=SG.your_sendgrid_api_key
-EMAIL_FROM=noreply@citadelbuy.com
+EMAIL_FROM=noreply@broxiva.com
 ```
 
 ### 4. Test Configuration
@@ -89,7 +89,7 @@ The application automatically validates:
 
 ```bash
 # Fix: Set CORS_ORIGIN with HTTPS URLs
-CORS_ORIGIN=https://citadelbuy.com,https://www.citadelbuy.com
+CORS_ORIGIN=https://broxiva.com,https://www.broxiva.com
 ```
 
 ### Error: "JWT_SECRET must be at least 64 characters long"
@@ -191,8 +191,8 @@ JWT_REFRESH_EXPIRES_IN=30d
 KYC_ENCRYPTION_KEY=your_generated_hex_key_here_exactly_64_characters
 
 # ==================== CORS ====================
-CORS_ORIGIN=https://citadelbuy.com,https://www.citadelbuy.com
-FRONTEND_URL=https://citadelbuy.com
+CORS_ORIGIN=https://broxiva.com,https://www.broxiva.com
+FRONTEND_URL=https://broxiva.com
 
 # ==================== DATABASE ====================
 DATABASE_URL=postgresql://user:password@host:5432/database?sslmode=require
@@ -203,7 +203,7 @@ EMAIL_HOST=smtp.sendgrid.net
 EMAIL_PORT=587
 EMAIL_USER=apikey
 EMAIL_PASSWORD=your_sendgrid_api_key
-EMAIL_FROM=noreply@citadelbuy.com
+EMAIL_FROM=noreply@broxiva.com
 
 # ==================== PAYMENTS ====================
 # Stripe (use live keys)
@@ -222,7 +222,7 @@ STORAGE_PROVIDER=S3
 AWS_ACCESS_KEY_ID=your_aws_access_key
 AWS_SECRET_ACCESS_KEY=your_aws_secret_key
 AWS_REGION=us-east-1
-AWS_S3_BUCKET=citadelbuy-production-uploads
+AWS_S3_BUCKET=broxiva-production-uploads
 
 # ==================== MONITORING ====================
 SENTRY_DSN=https://your_key@sentry.io/project_id
@@ -232,8 +232,8 @@ LOG_LEVEL=info
 ## Need Help?
 
 - **Full Documentation:** See `PRODUCTION_ENVIRONMENT_VARIABLES.md`
-- **Security Issues:** security@citadelbuy.com
-- **Support:** support@citadelbuy.com
+- **Security Issues:** security@broxiva.com
+- **Support:** support@broxiva.com
 
 ---
 

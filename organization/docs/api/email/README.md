@@ -1,6 +1,6 @@
-# CitadelBuy Email Templates Documentation
+# Broxiva Email Templates Documentation
 
-This directory contains all email templates used by the CitadelBuy platform. All templates are written in Handlebars (.hbs) format and follow a consistent design system.
+This directory contains all email templates used by the Broxiva platform. All templates are written in Handlebars (.hbs) format and follow a consistent design system.
 
 ## Design System
 
@@ -472,7 +472,7 @@ All templates share the following design elements:
    <head>
      <meta charset="UTF-8">
      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <title>Subject - CitadelBuy</title>
+     <title>Subject - Broxiva</title>
      <style>
        /* Inline styles for email client compatibility */
      </style>
@@ -565,7 +565,7 @@ Templates use these environment variables (configured in EmailService):
 - `FRONTEND_URL` - Base URL for frontend links
 - `SUPPORT_EMAIL` - Support email address
 - `EMAIL_FROM` - Sender email address
-- `COMPANY_NAME` - Company name (default: CitadelBuy)
+- `COMPANY_NAME` - Company name (default: Broxiva)
 
 ## Template Analytics
 
@@ -611,9 +611,9 @@ Track email performance using EmailService methods:
 For questions or issues with email templates:
 - Create an issue in the repository
 - Contact the development team
-- Email: dev@citadelbuy.com
+- Email: dev@broxiva.com
 
 ---
 
 **Last Updated**: December 2025
-**Maintainer**: CitadelBuy Development Team
+**Maintainer**: Broxiva Development Team

@@ -903,7 +903,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Error handler - log and send fallback response\nconst error = $input.first().json;\nconst originalData = $('Normalize Message Format').first().json;\n\nconsole.error('Workflow error:', error);\n\nconst fallbackMessage = `I apologize, but I'm experiencing technical difficulties. A support ticket has been created for you, and our team will reach out shortly. For immediate assistance, please contact us at support@broxiva.com or call 1-800-CITADEL.`;\n\nreturn {\n  json: {\n    ...originalData,\n    aiResponse: fallbackMessage,\n    error: true,\n    errorMessage: error.message\n  }\n};"
+        "jsCode": "// Error handler - log and send fallback response\nconst error = $input.first().json;\nconst originalData = $('Normalize Message Format').first().json;\n\nconsole.error('Workflow error:', error);\n\nconst fallbackMessage = `I apologize, but I'm experiencing technical difficulties. A support ticket has been created for you, and our team will reach out shortly. For immediate assistance, please contact us at support@broxiva.com or call 1-800-BROXIVA.`;\n\nreturn {\n  json: {\n    ...originalData,\n    aiResponse: fallbackMessage,\n    error: true,\n    errorMessage: error.message\n  }\n};"
       },
       "id": "e1f2a3b4-c5d6-4e5f-8a9b-0c1d2e3f4a5b",
       "name": "Error Handler",

@@ -17,7 +17,7 @@
 - [ ] SSL/TLS certificates are valid
 
 ### 3. API Access
-- [ ] CitadelBuy API credentials configured
+- [ ] Broxiva API credentials configured
 - [ ] Stripe API credentials configured
 - [ ] Slack workspace and bot token ready
 - [ ] Zendesk API token generated
@@ -45,8 +45,8 @@
 
 #### Configure Credentials
 
-##### CitadelBuy API
-- [ ] Create credential: "citadelBuyApi"
+##### Broxiva API
+- [ ] Create credential: "broxivaBuyApi"
 - [ ] Type: Header Auth
 - [ ] Header Name: `Authorization`
 - [ ] Header Value: `Bearer {API_KEY}`

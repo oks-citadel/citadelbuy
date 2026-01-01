@@ -464,7 +464,7 @@ All webhook events are automatically logged to the database for audit purposes. 
 ## Support
 
 For issues or questions:
-- Check logs in `/var/log/citadelbuy/webhooks/`
+- Check logs in `/var/log/broxiva/webhooks/`
 - Review [PAYMENT_STATE_MACHINE.md](../../docs/PAYMENT_STATE_MACHINE.md)
 - Contact DevOps team for infrastructure issues
 - Contact Payments team for provider-specific issues
@@ -473,4 +473,4 @@ For issues or questions:
 
 **Last Updated**: 2025-12-03
 **Version**: 1.0
-**Maintained By**: CitadelBuy Payments Team
+**Maintained By**: Broxiva Payments Team

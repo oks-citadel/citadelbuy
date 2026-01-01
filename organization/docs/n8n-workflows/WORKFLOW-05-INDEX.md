@@ -2,7 +2,7 @@
 
 ## Overview
 
-This workflow automates customer review collection, sentiment analysis, and feedback management for CitadelBuy's e-commerce platform. It includes intelligent follow-ups, NPS surveys, and multi-platform review collection.
+This workflow automates customer review collection, sentiment analysis, and feedback management for Broxiva's e-commerce platform. It includes intelligent follow-ups, NPS surveys, and multi-platform review collection.
 
 **Status**: ✅ Production Ready
 **Version**: 1.0.0
@@ -151,7 +151,7 @@ This workflow automates customer review collection, sentiment analysis, and feed
 ### Customer Experience
 - ✅ Automated review requests 5 days after delivery
 - ✅ 1-click star ratings (1-5 stars)
-- ✅ Multi-platform reviews (CitadelBuy, Google, Trustpilot)
+- ✅ Multi-platform reviews (Broxiva, Google, Trustpilot)
 - ✅ NPS surveys for high-value orders (> $200)
 - ✅ Gentle reminders after 3 days (no response)
 
@@ -186,7 +186,7 @@ This workflow automates customer review collection, sentiment analysis, and feed
 - **Mixpanel**: Analytics and tracking
 - **ShipStation**: Delivery confirmations
 
-### CitadelBuy API
+### Broxiva API
 - Order details retrieval
 - Customer information
 - Review storage
@@ -225,7 +225,7 @@ This workflow automates customer review collection, sentiment analysis, and feed
 - n8n instance (v1.0.0+)
 - SendGrid account with API key
 - OpenAI API key (GPT-4 or GPT-3.5)
-- CitadelBuy API access
+- Broxiva API access
 - HTTPS endpoints for webhooks
 
 ### Recommended Requirements
@@ -258,7 +258,7 @@ This workflow automates customer review collection, sentiment analysis, and feed
 ### Internal
 - **Team**: Platform Engineering
 - **Slack**: #platform-engineering, #customer-support
-- **Email**: dev@citadelbuy.com
+- **Email**: dev@broxiva.com
 
 ### External Documentation
 - [n8n Docs](https://docs.n8n.io)
@@ -316,13 +316,13 @@ This workflow automates customer review collection, sentiment analysis, and feed
 ### Need Help?
 1. Check: `README-workflow-05.md` (Troubleshooting section)
 2. Review: `test-payloads-workflow-05.json` (Error scenarios)
-3. Contact: dev@citadelbuy.com
+3. Contact: dev@broxiva.com
 
 ---
 
 ## 🔒 License
 
-**Copyright**: © 2025 CitadelBuy Inc.
+**Copyright**: © 2025 Broxiva Inc.
 **License**: Proprietary - Internal Use Only
 **Distribution**: Prohibited without authorization
 

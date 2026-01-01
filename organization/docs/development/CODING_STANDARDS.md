@@ -1,6 +1,6 @@
 # Coding Standards
 
-This document defines the coding standards and best practices for the CitadelBuy platform.
+This document defines the coding standards and best practices for the Broxiva platform.
 
 ## Table of Contents
 

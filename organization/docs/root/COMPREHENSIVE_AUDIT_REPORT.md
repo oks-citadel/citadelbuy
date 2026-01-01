@@ -1,16 +1,16 @@
-# CitadelBuy E-Commerce Platform
+# Broxiva E-Commerce Platform
 ## Comprehensive Full-Stack Audit Report
 
 **Report Date:** 2025-12-05
-**Source Location:** `C:\Users\citad\OneDrive\Documents\citadelbuy-master\organization`
-**Target Repository:** Azure DevOps - `https://dev.azure.com/citadelcloudmanagement/_git/CitadelBuy`
+**Source Location:** `C:\Users\citad\OneDrive\Documents\broxiva-master\organization`
+**Target Repository:** Azure DevOps - `https://dev.azure.com/broxivacloudmanagement/_git/Broxiva`
 **Report Version:** 1.0
 
 ---
 
 ## Executive Summary
 
-The CitadelBuy platform is an **enterprise-grade, production-ready e-commerce solution** featuring:
+The Broxiva platform is an **enterprise-grade, production-ready e-commerce solution** featuring:
 
 - **Full-Stack Monorepo Architecture** with NestJS backend, Next.js frontend, React Native mobile app
 - **12 AI/ML Microservices** for recommendations, fraud detection, search, chatbot, analytics, and pricing
@@ -76,7 +76,7 @@ The CitadelBuy platform is an **enterprise-grade, production-ready e-commerce so
 ### 1.2 Architecture Pattern
 
 ```
-citadelbuy-platform (Monorepo)
+broxiva-platform (Monorepo)
 ├── apps/
 │   ├── api/         (NestJS - 565 TypeScript files)
 │   ├── web/         (Next.js - 212 TypeScript files)
@@ -382,8 +382,8 @@ All cart operations (fetchCart, addItem, updateQuantity, removeItem, applyCoupon
 
 4. **Verify Health:**
    ```bash
-   curl https://api.citadelbuy.com/health
-   curl https://citadelbuy.com
+   curl https://api.broxiva.com/health
+   curl https://broxiva.com
    ```
 
 ### Post-Deployment
@@ -398,7 +398,7 @@ All cart operations (fetchCart, addItem, updateQuantity, removeItem, applyCoupon
 
 ## Conclusion
 
-The CitadelBuy platform is **production-ready** with comprehensive infrastructure, security, and deployment configurations. All critical issues have been identified and fixed. The platform demonstrates enterprise-grade architecture with:
+The Broxiva platform is **production-ready** with comprehensive infrastructure, security, and deployment configurations. All critical issues have been identified and fixed. The platform demonstrates enterprise-grade architecture with:
 
 - ✅ Scalable microservices architecture
 - ✅ Security-hardened deployments

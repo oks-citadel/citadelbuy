@@ -1,15 +1,15 @@
 # Azure DevOps Pipeline Analysis and Recommendations
 
 **Date:** December 14, 2024
-**Organization:** citadelcloudmanagement
-**Project:** CitadelBuy
+**Organization:** broxivacloudmanagement
+**Project:** Broxiva
 **Analyst:** Azure DevOps CI/CD Assessment
 
 ---
 
 ## Executive Summary
 
-The CitadelBuy project has Azure DevOps pipelines configured but they contain validation errors and are not currently functional. This report provides a comprehensive analysis of the current state and actionable recommendations.
+The Broxiva project has Azure DevOps pipelines configured but they contain validation errors and are not currently functional. This report provides a comprehensive analysis of the current state and actionable recommendations.
 
 ---
 
@@ -17,38 +17,38 @@ The CitadelBuy project has Azure DevOps pipelines configured but they contain va
 
 ### Existing Pipelines
 
-The following pipelines exist in the CitadelBuy Azure DevOps project:
+The following pipelines exist in the Broxiva Azure DevOps project:
 
 | Pipeline Name | Status | Purpose |
 |---------------|--------|---------|
-| CitadelBuy-Main-CI-CD | ⚠️ Validation Errors | Main CI/CD pipeline |
-| CitadelBuy-Pipeline-Health-Monitor | Unknown | Pipeline monitoring |
-| CitadelBuy-Deployment-Watcher | Unknown | Deployment monitoring |
-| CitadelBuy-Self-Healing | Unknown | Auto-remediation |
-| CitadelBuy-Cost-Optimization | Unknown | Cost monitoring |
-| CitadelBuy-Security-Scheduled | Unknown | Security scans |
+| Broxiva-Main-CI-CD | ⚠️ Validation Errors | Main CI/CD pipeline |
+| Broxiva-Pipeline-Health-Monitor | Unknown | Pipeline monitoring |
+| Broxiva-Deployment-Watcher | Unknown | Deployment monitoring |
+| Broxiva-Self-Healing | Unknown | Auto-remediation |
+| Broxiva-Cost-Optimization | Unknown | Cost monitoring |
+| Broxiva-Security-Scheduled | Unknown | Security scans |
 
 ### Pipeline Configuration Files Found
 
 Three Azure Pipeline YAML files were discovered in the repository:
 
 1. **Root Pipeline** (`azure-pipelines.yml`)
-   - Location: `/CitadelBuy/azure-pipelines.yml`
+   - Location: `/Broxiva/azure-pipelines.yml`
    - Size: 549 lines
    - Organization Path Reference: `organization`
-   - ACR: `citadelbuyacr.azurecr.io` ⚠️ (Incorrect)
+   - ACR: `broxivaacr.azurecr.io` ⚠️ (Incorrect)
 
 2. **Main Pipeline** (`.azuredevops/pipelines/main.yml`)
-   - Location: `/CitadelBuy/.azuredevops/pipelines/main.yml`
+   - Location: `/Broxiva/.azuredevops/pipelines/main.yml`
    - Size: 465 lines
    - Comprehensive multi-stage pipeline
    - Uses template references (templates not implemented)
-   - ACR: `citadelbuyacr.azurecr.io` ⚠️ (Incorrect)
+   - ACR: `broxivaacr.azurecr.io` ⚠️ (Incorrect)
 
 3. **Common Variables** (`.azuredevops/pipelines/variables/common.yml`)
-   - Location: `/CitadelBuy/.azuredevops/pipelines/variables/common.yml`
+   - Location: `/Broxiva/.azuredevops/pipelines/variables/common.yml`
    - Configuration for Node, Python, Docker, etc.
-   - ACR: `citadelbuyacr.azurecr.io` ⚠️ (Incorrect)
+   - ACR: `broxivaacr.azurecr.io` ⚠️ (Incorrect)
 
 ---
 
@@ -88,11 +88,11 @@ The main pipeline (`.azuredevops/pipelines/main.yml`) references multiple templa
 
 ### 2. Incorrect Azure Container Registry (ACR)
 
-**Problem:** All pipeline files reference `citadelbuyacr.azurecr.io`, but the actual ACR is `broxivaprodacr.azurecr.io`.
+**Problem:** All pipeline files reference `broxivaacr.azurecr.io`, but the actual ACR is `broxivaprodacr.azurecr.io`.
 
 **Evidence:**
 - Actual ACR (from infrastructure): `broxivaprodacr.azurecr.io`
-- Pipeline references: `citadelbuyacr.azurecr.io`
+- Pipeline references: `broxivaacr.azurecr.io`
 - GitHub Actions workflows: Use `broxivaprodacr.azurecr.io` (correct)
 - Kubernetes manifests: Use `broxivaprodacr.azurecr.io` (correct)
 
@@ -106,8 +106,8 @@ The pipelines reference the following service connections that may not exist or 
 |----------------|------|--------------|--------|
 | `AzureContainerRegistry` | ACR | Docker login | ⚠️ Unknown |
 | `Azure-ServiceConnection` | Azure RM | AKS/CLI operations | ⚠️ Unknown |
-| `CitadelBuyAzure` | Azure RM | Main service connection | ⚠️ Unknown |
-| `CitadelBuyACR` | ACR | ACR operations | ⚠️ Unknown |
+| `BroxivaAzure` | Azure RM | Main service connection | ⚠️ Unknown |
+| `BroxivaACR` | ACR | ACR operations | ⚠️ Unknown |
 | `BroxivaACR` | ACR | ACR operations | ⚠️ Unknown |
 
 **Impact:** Pipeline stages requiring Azure authentication will fail.
@@ -117,11 +117,11 @@ The pipelines reference the following service connections that may not exist or 
 Pipelines reference resources that may not exist:
 
 **AKS Clusters Referenced:**
-- `citadelbuy-dev-aks` (Resource Group: `citadelbuy-dev-rg`)
-- `citadelbuy-staging-aks` (Resource Group: `citadelbuy-staging-rg`)
-- `citadelbuy-prod-aks` (Resource Group: `citadelbuy-prod-rg`)
+- `broxiva-dev-aks` (Resource Group: `broxiva-dev-rg`)
+- `broxiva-staging-aks` (Resource Group: `broxiva-staging-rg`)
+- `broxiva-prod-aks` (Resource Group: `broxiva-prod-rg`)
 
-**Actual Resources:** Based on architecture docs, the actual resources use "broxiva" naming, not "citadelbuy".
+**Actual Resources:** Based on architecture docs, the actual resources use "broxiva" naming, not "broxiva".
 
 ### 5. Invalid Dockerfile Paths
 
@@ -253,7 +253,7 @@ I've created a new simplified pipeline: `azure-pipelines-working.yml`
 **To Use:**
 ```bash
 # Option A: Replace the existing pipeline file
-cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy
+cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva
 cp azure-pipelines-working.yml azure-pipelines.yml
 
 # Option B: Create a new pipeline in Azure DevOps pointing to azure-pipelines-working.yml
@@ -266,8 +266,8 @@ Create or verify service connections in Azure DevOps:
 ```bash
 # List existing service connections
 az devops service-endpoint list \
-  --organization "https://dev.azure.com/citadelcloudmanagement" \
-  --project "CitadelBuy" \
+  --organization "https://dev.azure.com/broxivacloudmanagement" \
+  --project "Broxiva" \
   -o table
 
 # If needed, create new service connection (requires interactive auth)
@@ -284,16 +284,16 @@ If you want to fix the existing pipelines instead:
 
 ```bash
 # Fix ACR references in all pipeline files
-cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy
+cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva
 
 # Update root pipeline
-sed -i 's/citadelbuyacr\.azurecr\.io/broxivaprodacr.azurecr.io/g' azure-pipelines.yml
+sed -i 's/broxivaacr\.azurecr\.io/broxivaprodacr.azurecr.io/g' azure-pipelines.yml
 
 # Update main pipeline
-sed -i 's/citadelbuyacr\.azurecr\.io/broxivaprodacr.azurecr.io/g' .azuredevops/pipelines/main.yml
+sed -i 's/broxivaacr\.azurecr\.io/broxivaprodacr.azurecr.io/g' .azuredevops/pipelines/main.yml
 
 # Update variables
-sed -i 's/citadelbuyacr\.azurecr\.io/broxivaprodacr.azurecr.io/g' .azuredevops/pipelines/variables/common.yml
+sed -i 's/broxivaacr\.azurecr\.io/broxivaprodacr.azurecr.io/g' .azuredevops/pipelines/variables/common.yml
 ```
 
 ### Medium-Term Actions (Priority 2)
@@ -349,8 +349,8 @@ Create environments for deployment approvals:
 ```bash
 # Create environments via Azure CLI
 az devops service-endpoint create \
-  --organization "https://dev.azure.com/citadelcloudmanagement" \
-  --project "CitadelBuy"
+  --organization "https://dev.azure.com/broxivacloudmanagement" \
+  --project "Broxiva"
 ```
 
 Or use Azure DevOps UI: Pipelines > Environments > New Environment
@@ -376,17 +376,17 @@ Or use Azure DevOps UI: Pipelines > Environments > New Environment
 
 #### 2. Consolidate Naming Conventions
 
-Fix the CitadelBuy vs Broxiva naming inconsistency:
+Fix the Broxiva vs Broxiva naming inconsistency:
 
 **Current Confusion:**
-- Azure DevOps Project: "CitadelBuy"
+- Azure DevOps Project: "Broxiva"
 - Actual infrastructure: "Broxiva" (broxivaprodacr, broxiva-prod-aks, etc.)
-- Pipelines reference: "CitadelBuy" resources that don't exist
+- Pipelines reference: "Broxiva" resources that don't exist
 
 **Options:**
 1. Rename Azure DevOps project to "Broxiva"
-2. Keep "CitadelBuy" as project name but fix resource references
-3. Rebuild infrastructure with "CitadelBuy" naming
+2. Keep "Broxiva" as project name but fix resource references
+3. Rebuild infrastructure with "Broxiva" naming
 
 **Recommended:** Option 2 - Keep project name, fix references
 
@@ -415,17 +415,17 @@ Add pipeline notifications:
 
 2. **Commit and Push:**
    ```bash
-   cd /c/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy
+   cd /c/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva
    git add azure-pipelines-working.yml
    git commit -m "Add working Azure DevOps pipeline"
    git push origin main
    ```
 
 3. **Create/Update Pipeline in Azure DevOps:**
-   - Go to https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_build
-   - Click "New Pipeline" or edit existing "CitadelBuy-Main-CI-CD"
+   - Go to https://dev.azure.com/broxivacloudmanagement/Broxiva/_build
+   - Click "New Pipeline" or edit existing "Broxiva-Main-CI-CD"
    - Select "Azure Repos Git"
-   - Select "CitadelBuy" repository
+   - Select "Broxiva" repository
    - Select "Existing Azure Pipelines YAML file"
    - Choose `/azure-pipelines-working.yml`
    - Save and run
@@ -435,9 +435,9 @@ Add pipeline notifications:
 ```bash
 # After creating service connections and fixing ACR references
 az pipelines run \
-  --name "CitadelBuy-Main-CI-CD" \
-  --organization "https://dev.azure.com/citadelcloudmanagement" \
-  --project "CitadelBuy" \
+  --name "Broxiva-Main-CI-CD" \
+  --organization "https://dev.azure.com/broxivacloudmanagement" \
+  --project "Broxiva" \
   --branch main
 ```
 
@@ -450,9 +450,9 @@ az pipelines run \
 ```bash
 # Test pipeline syntax (if Azure CLI supports it)
 az pipelines show \
-  --name "CitadelBuy-Main-CI-CD" \
-  --organization "https://dev.azure.com/citadelcloudmanagement" \
-  --project "CitadelBuy"
+  --name "Broxiva-Main-CI-CD" \
+  --organization "https://dev.azure.com/broxivacloudmanagement" \
+  --project "Broxiva"
 ```
 
 ### Phase 2: Test Build Without Push
@@ -544,8 +544,8 @@ ls -la organization/apps/web/Dockerfile.production
    # Get service connection details
    az devops service-endpoint show \
      --id <connection-id> \
-     --organization "https://dev.azure.com/citadelcloudmanagement" \
-     --project "CitadelBuy"
+     --organization "https://dev.azure.com/broxivacloudmanagement" \
+     --project "Broxiva"
    ```
 
 ---
@@ -575,9 +575,9 @@ ls -la organization/apps/web/Dockerfile.production
 
 ### Blocking Issues
 1. **Critical:** Missing template files for `.azuredevops/pipelines/main.yml`
-2. **Critical:** Incorrect ACR name (`citadelbuyacr` vs `broxivaprodacr`)
+2. **Critical:** Incorrect ACR name (`broxivaacr` vs `broxivaprodacr`)
 3. **Critical:** Service connections not verified
-4. **High:** Azure resource names mismatch (citadelbuy vs broxiva)
+4. **High:** Azure resource names mismatch (broxiva vs broxiva)
 
 ### Recommended Path Forward
 
@@ -619,7 +619,7 @@ However, given that GitHub Actions workflows are already functional and actively
 ## Contact and Support
 
 For issues or questions:
-- Azure DevOps: https://dev.azure.com/citadelcloudmanagement/CitadelBuy
+- Azure DevOps: https://dev.azure.com/broxivacloudmanagement/Broxiva
 - Pipeline Documentation: [Azure Pipelines Docs](https://docs.microsoft.com/azure/devops/pipelines)
 
 ---

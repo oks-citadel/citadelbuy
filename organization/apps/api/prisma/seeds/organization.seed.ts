@@ -159,7 +159,7 @@ export async function seedOrganizations() {
       industry: 'E-Commerce',
       website: 'https://broxiva.com',
       primaryEmail: 'contact@broxiva.com',
-      primaryPhone: '+1-800-CITADEL',
+      primaryPhone: '+1-800-BROXIVA',
       address: {
         street: '100 Commerce Drive',
         city: 'San Francisco',

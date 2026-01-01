@@ -1,7 +1,7 @@
 # Shipping Provider Integrations Implementation
 
 ## Overview
-This document outlines the comprehensive shipping provider integrations implemented for the CitadelBuy platform, including rate calculation, label generation, tracking, and pickup scheduling for FedEx, UPS, DHL, and USPS.
+This document outlines the comprehensive shipping provider integrations implemented for the Broxiva platform, including rate calculation, label generation, tracking, and pickup scheduling for FedEx, UPS, DHL, and USPS.
 
 ## Providers Implemented
 
@@ -124,7 +124,7 @@ POST /api/pickup/v1/pickups
       "typeCode": "TBD"
     }
   ],
-  "remark": "Pickup scheduled via CitadelBuy",
+  "remark": "Pickup scheduled via Broxiva",
   "accounts": [
     {
       "typeCode": "shipper",

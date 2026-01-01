@@ -1,6 +1,6 @@
 # Payment Gateway Setup Guide
 
-This guide provides comprehensive instructions for setting up payment gateways for CitadelBuy. All payment providers are configured via environment variables and require production API keys for live transactions.
+This guide provides comprehensive instructions for setting up payment gateways for Broxiva. All payment providers are configured via environment variables and require production API keys for live transactions.
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ This guide provides comprehensive instructions for setting up payment gateways f
 
 ## Overview
 
-CitadelBuy supports multiple payment methods to provide flexibility for customers:
+Broxiva supports multiple payment methods to provide flexibility for customers:
 
 - **Stripe**: Credit/debit cards, digital wallets (Apple Pay, Google Pay)
 - **PayPal**: PayPal account and credit/debit cards
@@ -49,7 +49,7 @@ Order Processing & Fulfillment
 
 ## Stripe Setup
 
-Stripe is the primary payment gateway for CitadelBuy, handling credit/debit cards and digital wallets.
+Stripe is the primary payment gateway for Broxiva, handling credit/debit cards and digital wallets.
 
 ### 1. Create a Stripe Account
 
@@ -158,7 +158,7 @@ PayPal provides an alternative payment method for customers who prefer PayPal ac
 1. Log in to the PayPal Developer Dashboard
 2. Go to **My Apps & Credentials**
 3. Click **Create App**
-4. Enter app name (e.g., "CitadelBuy Production")
+4. Enter app name (e.g., "Broxiva Production")
 5. Choose app type: **Merchant**
 
 ### 3. Obtain API Credentials
@@ -248,7 +248,7 @@ Stripe can automatically verify your domain:
 
 1. In Stripe Dashboard, go to **Settings** → **Payment methods** → **Apple Pay**
 2. Click **Add domain**
-3. Enter your domain (e.g., `citadelbuy.com`)
+3. Enter your domain (e.g., `broxiva.com`)
 4. Stripe will place a verification file at `/.well-known/apple-developer-merchantid-domain-association`
 5. Ensure your web server serves this file correctly
 
@@ -266,8 +266,8 @@ If automatic verification fails:
 1. Log in to [Apple Developer](https://developer.apple.com)
 2. Go to **Certificates, Identifiers & Profiles**
 3. Create a new **Merchant ID**:
-   - Description: CitadelBuy
-   - Identifier: `merchant.com.citadelbuy` (adjust for your domain)
+   - Description: Broxiva
+   - Identifier: `merchant.com.broxiva` (adjust for your domain)
 4. Enable Apple Pay for the Merchant ID
 
 ### 4. Set Environment Variables
@@ -276,8 +276,8 @@ Add to your `.env` file:
 
 ```bash
 # Apple Pay Configuration
-APPLE_MERCHANT_ID=merchant.com.citadelbuy
-APP_NAME=CitadelBuy
+APPLE_MERCHANT_ID=merchant.com.broxiva
+APP_NAME=Broxiva
 ```
 
 ### 5. Frontend Integration
@@ -331,7 +331,7 @@ Add to your `.env` file:
 ```bash
 # Google Pay Configuration (optional)
 GOOGLE_MERCHANT_ID=BCR2DN4T6XXXXXXX
-APP_NAME=CitadelBuy
+APP_NAME=Broxiva
 ```
 
 If not set, Google Pay will use Stripe's default integration.
@@ -668,4 +668,4 @@ Before accepting live payments, ensure all items are completed:
 
 **Last Updated**: December 2024
 **Version**: 1.0
-**Maintained by**: CitadelBuy Development Team
+**Maintained by**: Broxiva Development Team

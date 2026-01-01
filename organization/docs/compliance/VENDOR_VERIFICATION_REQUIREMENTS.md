@@ -2,7 +2,7 @@
 
 ## Overview
 
-CitadelBuy requires all vendors to complete region-specific verification processes to ensure marketplace trust, regulatory compliance, and customer protection across global markets.
+Broxiva requires all vendors to complete region-specific verification processes to ensure marketplace trust, regulatory compliance, and customer protection across global markets.
 
 ## Table of Contents
 
@@ -399,21 +399,21 @@ CitadelBuy requires all vendors to complete region-specific verification process
 ## Support & Resources
 
 **Verification Support:**
-- Email: verification@citadelbuy.com
+- Email: verification@broxiva.com
 - Phone: [Regional contact numbers]
 - Live Chat: Available 24/7
 
 **Documentation Resources:**
-- Verification Portal: https://vendors.citadelbuy.com/verify
+- Verification Portal: https://vendors.broxiva.com/verify
 - Document Templates: Available in portal
 - Compliance Guides: Region-specific guides in vendor dashboard
 
 **Regional Compliance Contacts:**
-- Africa: africa-compliance@citadelbuy.com
-- North America: na-compliance@citadelbuy.com
-- Europe: eu-compliance@citadelbuy.com
-- Middle East: me-compliance@citadelbuy.com
-- Asia-Pacific: apac-compliance@citadelbuy.com
+- Africa: africa-compliance@broxiva.com
+- North America: na-compliance@broxiva.com
+- Europe: eu-compliance@broxiva.com
+- Middle East: me-compliance@broxiva.com
+- Asia-Pacific: apac-compliance@broxiva.com
 
 ---
 

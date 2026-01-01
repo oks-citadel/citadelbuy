@@ -1,4 +1,4 @@
-# CitadelBuy Azure Pipelines - Complete Index
+# Broxiva Azure Pipelines - Complete Index
 
 ## Quick Navigation
 
@@ -239,7 +239,7 @@ steps:
   - template: templates/docker-build-push.yml
     parameters:
       dockerfilePath: '$(Build.SourcesDirectory)/apps/api/Dockerfile.production'
-      imageRepository: 'citadelbuy-api'
+      imageRepository: 'broxiva-api'
       tags:
         - '$(Build.BuildNumber)'
         - 'latest'
@@ -265,8 +265,8 @@ steps:
   - template: templates/deploy-to-aks.yml
     parameters:
       environment: 'production'
-      namespace: 'citadelbuy-prod'
-      aksConnection: 'citadelbuy-aks-production'
+      namespace: 'broxiva-prod'
+      aksConnection: 'broxiva-aks-production'
       useCanary: true
       canaryPercentage: 25
 ```
@@ -299,13 +299,13 @@ steps:
 
 | Group Name | Purpose | Environment |
 |-----------|---------|-------------|
-| citadelbuy-common | Shared settings | All |
-| citadelbuy-acr | Container registry | All |
-| citadelbuy-dev | Development config | Dev |
-| citadelbuy-staging | Staging config | Staging |
-| citadelbuy-production | Production config | Production |
-| citadelbuy-terraform | Infrastructure config | All |
-| citadelbuy-ci-variables | CI settings | CI only |
+| broxiva-common | Shared settings | All |
+| broxiva-acr | Container registry | All |
+| broxiva-dev | Development config | Dev |
+| broxiva-staging | Staging config | Staging |
+| broxiva-production | Production config | Production |
+| broxiva-terraform | Infrastructure config | All |
+| broxiva-ci-variables | CI settings | CI only |
 
 See [README.md - Variable Groups](./README.md#variable-groups-configuration) for details.
 
@@ -315,11 +315,11 @@ See [README.md - Variable Groups](./README.md#variable-groups-configuration) for
 
 | Connection Name | Type | Purpose |
 |----------------|------|---------|
-| citadelbuy-azure-connection | Azure RM | Azure resource management |
-| citadelbuy-acr-connection | Docker Registry | Container image push/pull |
-| citadelbuy-aks-dev | Kubernetes | Dev cluster deployment |
-| citadelbuy-aks-staging | Kubernetes | Staging cluster deployment |
-| citadelbuy-aks-production | Kubernetes | Production cluster deployment |
+| broxiva-azure-connection | Azure RM | Azure resource management |
+| broxiva-acr-connection | Docker Registry | Container image push/pull |
+| broxiva-aks-dev | Kubernetes | Dev cluster deployment |
+| broxiva-aks-staging | Kubernetes | Staging cluster deployment |
+| broxiva-aks-production | Kubernetes | Production cluster deployment |
 
 See [README.md - Service Connections](./README.md#service-connections) for setup.
 
@@ -329,9 +329,9 @@ See [README.md - Service Connections](./README.md#service-connections) for setup
 
 | Environment | Approvers | Namespace | URL |
 |------------|-----------|-----------|-----|
-| citadelbuy-dev | 0 (auto) | citadelbuy-dev | dev.citadelbuy.com |
-| citadelbuy-staging | 1 | citadelbuy-staging | staging.citadelbuy.com |
-| citadelbuy-production | 2 | citadelbuy-prod | citadelbuy.com |
+| broxiva-dev | 0 (auto) | broxiva-dev | dev.broxiva.com |
+| broxiva-staging | 1 | broxiva-staging | staging.broxiva.com |
+| broxiva-production | 2 | broxiva-prod | broxiva.com |
 
 See [README.md - Environments](./README.md#environments-setup) for configuration.
 
@@ -354,12 +354,12 @@ See [README.md - Environments](./README.md#environments-setup) for configuration
 
 | Resource | URL |
 |---------|-----|
-| Azure DevOps | https://dev.azure.com/citadelcloudmanagement/CitadelBuy |
-| Pipelines | https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_build |
-| Environments | https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_environments |
-| Dev Site | https://dev.citadelbuy.com |
-| Staging Site | https://staging.citadelbuy.com |
-| Production Site | https://citadelbuy.com |
+| Azure DevOps | https://dev.azure.com/broxivacloudmanagement/Broxiva |
+| Pipelines | https://dev.azure.com/broxivacloudmanagement/Broxiva/_build |
+| Environments | https://dev.azure.com/broxivacloudmanagement/Broxiva/_environments |
+| Dev Site | https://dev.broxiva.com |
+| Staging Site | https://staging.broxiva.com |
+| Production Site | https://broxiva.com |
 
 ### Support
 
@@ -418,7 +418,7 @@ For questions, issues, or suggestions:
 ---
 
 **Last Updated**: 2025-12-06
-**Maintained by**: CitadelBuy DevOps Team
-**Organization**: citadelcloudmanagement
-**Project**: CitadelBuy
+**Maintained by**: Broxiva DevOps Team
+**Organization**: broxivacloudmanagement
+**Project**: Broxiva
 **Platform**: Azure DevOps

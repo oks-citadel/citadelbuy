@@ -1,8 +1,8 @@
-# CitadelBuy Mobile App - Complete Screens Summary
+# Broxiva Mobile App - Complete Screens Summary
 
 ## Executive Summary
 
-This document provides a comprehensive overview of all implemented React Native mobile app screens for the CitadelBuy e-commerce platform. All screens are production-ready with proper error handling, loading states, and adherence to the design system.
+This document provides a comprehensive overview of all implemented React Native mobile app screens for the Broxiva e-commerce platform. All screens are production-ready with proper error handling, loading states, and adherence to the design system.
 
 ## Screen Inventory
 

@@ -1,4 +1,4 @@
-# CitadelBuy Production Deployment Guide
+# Broxiva Production Deployment Guide
 
 **Version:** 1.0.0
 **Last Updated:** December 4, 2025
@@ -26,7 +26,7 @@
 
 ## Overview
 
-This guide provides comprehensive instructions for deploying CitadelBuy to production environments. The deployment process uses Azure Kubernetes Service (AKS) with automated CI/CD pipelines through Azure DevOps.
+This guide provides comprehensive instructions for deploying Broxiva to production environments. The deployment process uses Azure Kubernetes Service (AKS) with automated CI/CD pipelines through Azure DevOps.
 
 ### Deployment Architecture
 
@@ -147,7 +147,7 @@ This guide provides comprehensive instructions for deploying CitadelBuy to produ
 - [ ] Log Analytics workspace configured
 - [ ] Application Insights configured
 - [ ] PagerDuty integration configured
-- [ ] Status page configured (status.citadelbuy.com)
+- [ ] Status page configured (status.broxiva.com)
 
 ### 7. Security Hardening
 
@@ -237,12 +237,12 @@ Create a secure `.env` file or use Azure Key Vault:
 NODE_ENV=production
 PORT=4000
 API_PREFIX=api
-FRONTEND_URL=https://citadelbuy.com
+FRONTEND_URL=https://broxiva.com
 
 # ========================================
 # Database Configuration
 # ========================================
-DATABASE_URL=postgresql://citadelbuy:${DB_PASSWORD}@citadelbuy-prod.postgres.database.azure.com:5432/citadelbuy?ssl=true&sslmode=require
+DATABASE_URL=postgresql://broxiva:${DB_PASSWORD}@broxiva-prod.postgres.database.azure.com:5432/broxiva?ssl=true&sslmode=require
 DATABASE_POOL_SIZE=20
 DATABASE_POOL_TIMEOUT=10
 DATABASE_SSL_ENABLED=true
@@ -250,7 +250,7 @@ DATABASE_SSL_ENABLED=true
 # ========================================
 # Redis Configuration
 # ========================================
-REDIS_HOST=citadelbuy-prod.redis.cache.windows.net
+REDIS_HOST=broxiva-prod.redis.cache.windows.net
 REDIS_PORT=6380
 REDIS_PASSWORD=${REDIS_PASSWORD}
 REDIS_TLS=true
@@ -267,8 +267,8 @@ JWT_REFRESH_EXPIRES_IN=7d
 # Email Configuration (SendGrid)
 # ========================================
 SENDGRID_API_KEY=${SENDGRID_API_KEY}
-EMAIL_FROM=noreply@citadelbuy.com
-EMAIL_FROM_NAME=CitadelBuy
+EMAIL_FROM=noreply@broxiva.com
+EMAIL_FROM_NAME=Broxiva
 
 # ========================================
 # SMS Configuration (Twilio)
@@ -305,21 +305,21 @@ PAYSTACK_SECRET_KEY=${PAYSTACK_SECRET_KEY}
 AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
 AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
 AWS_REGION=us-east-1
-AWS_S3_BUCKET=citadelbuy-prod-assets
-AWS_CLOUDFRONT_URL=https://cdn.citadelbuy.com
+AWS_S3_BUCKET=broxiva-prod-assets
+AWS_CLOUDFRONT_URL=https://cdn.broxiva.com
 
 # ========================================
 # Search Services
 # ========================================
 # Elasticsearch
-ELASTICSEARCH_NODE=https://citadelbuy-prod-es.azure.com:9200
+ELASTICSEARCH_NODE=https://broxiva-prod-es.azure.com:9200
 ELASTICSEARCH_USERNAME=elastic
 ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
 
 # Algolia (Alternative/Backup)
 ALGOLIA_APP_ID=${ALGOLIA_APP_ID}
 ALGOLIA_API_KEY=${ALGOLIA_API_KEY}
-ALGOLIA_INDEX_NAME=citadelbuy_products
+ALGOLIA_INDEX_NAME=broxiva_products
 
 # ========================================
 # OAuth Providers
@@ -327,12 +327,12 @@ ALGOLIA_INDEX_NAME=citadelbuy_products
 # Google
 GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
 GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-GOOGLE_CALLBACK_URL=https://citadelbuy.com/api/auth/google/callback
+GOOGLE_CALLBACK_URL=https://broxiva.com/api/auth/google/callback
 
 # Facebook
 FACEBOOK_APP_ID=${FACEBOOK_APP_ID}
 FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET}
-FACEBOOK_CALLBACK_URL=https://citadelbuy.com/api/auth/facebook/callback
+FACEBOOK_CALLBACK_URL=https://broxiva.com/api/auth/facebook/callback
 
 # Apple
 APPLE_CLIENT_ID=${APPLE_CLIENT_ID}
@@ -357,7 +357,7 @@ APPINSIGHTS_INSTRUMENTATIONKEY=${APPINSIGHTS_KEY}
 # ========================================
 # Security Configuration
 # ========================================
-CORS_ORIGIN=https://citadelbuy.com,https://www.citadelbuy.com
+CORS_ORIGIN=https://broxiva.com,https://www.broxiva.com
 RATE_LIMIT_MAX=100
 RATE_LIMIT_WINDOW=15
 HELMET_ENABLED=true
@@ -373,7 +373,7 @@ FEATURE_SOCIAL_LOGIN=true
 # ========================================
 # Background Jobs
 # ========================================
-QUEUE_REDIS_URL=redis://citadelbuy-prod.redis.cache.windows.net:6380
+QUEUE_REDIS_URL=redis://broxiva-prod.redis.cache.windows.net:6380
 QUEUE_CONCURRENCY=5
 ```
 
@@ -382,20 +382,20 @@ QUEUE_CONCURRENCY=5
 ```bash
 # Create Key Vault
 az keyvault create \
-  --name citadelbuy-prod-kv \
-  --resource-group citadelbuy-prod-rg \
+  --name broxiva-prod-kv \
+  --resource-group broxiva-prod-rg \
   --location eastus \
   --enable-rbac-authorization true
 
 # Store secrets
-az keyvault secret set --vault-name citadelbuy-prod-kv --name "DATABASE-PASSWORD" --value "${DB_PASSWORD}"
-az keyvault secret set --vault-name citadelbuy-prod-kv --name "REDIS-PASSWORD" --value "${REDIS_PASSWORD}"
-az keyvault secret set --vault-name citadelbuy-prod-kv --name "JWT-SECRET" --value "${JWT_SECRET}"
-az keyvault secret set --vault-name citadelbuy-prod-kv --name "STRIPE-SECRET-KEY" --value "${STRIPE_SECRET_KEY}"
+az keyvault secret set --vault-name broxiva-prod-kv --name "DATABASE-PASSWORD" --value "${DB_PASSWORD}"
+az keyvault secret set --vault-name broxiva-prod-kv --name "REDIS-PASSWORD" --value "${REDIS_PASSWORD}"
+az keyvault secret set --vault-name broxiva-prod-kv --name "JWT-SECRET" --value "${JWT_SECRET}"
+az keyvault secret set --vault-name broxiva-prod-kv --name "STRIPE-SECRET-KEY" --value "${STRIPE_SECRET_KEY}"
 
 # Grant AKS access to Key Vault
 az keyvault set-policy \
-  --name citadelbuy-prod-kv \
+  --name broxiva-prod-kv \
   --spn <AKS-SERVICE-PRINCIPAL-ID> \
   --secret-permissions get list
 ```
@@ -408,28 +408,28 @@ az keyvault set-policy \
 
 ```bash
 # Navigate to project root
-cd /path/to/citadelbuy/organization
+cd /path/to/broxiva/organization
 
 # Login to Azure Container Registry
-az acr login --name citadelbuyacr
+az acr login --name broxivaacr
 
 # Build and tag API image
-docker build -t citadelbuyacr.azurecr.io/citadelbuy-api:v${VERSION} \
-  -t citadelbuyacr.azurecr.io/citadelbuy-api:latest \
+docker build -t broxivaacr.azurecr.io/broxiva-api:v${VERSION} \
+  -t broxivaacr.azurecr.io/broxiva-api:latest \
   -f apps/api/Dockerfile \
   apps/api
 
 # Build and tag Web image
-docker build -t citadelbuyacr.azurecr.io/citadelbuy-web:v${VERSION} \
-  -t citadelbuyacr.azurecr.io/citadelbuy-web:latest \
+docker build -t broxivaacr.azurecr.io/broxiva-web:v${VERSION} \
+  -t broxivaacr.azurecr.io/broxiva-web:latest \
   -f apps/web/Dockerfile \
   apps/web
 
 # Push images
-docker push citadelbuyacr.azurecr.io/citadelbuy-api:v${VERSION}
-docker push citadelbuyacr.azurecr.io/citadelbuy-api:latest
-docker push citadelbuyacr.azurecr.io/citadelbuy-web:v${VERSION}
-docker push citadelbuyacr.azurecr.io/citadelbuy-web:latest
+docker push broxivaacr.azurecr.io/broxiva-api:v${VERSION}
+docker push broxivaacr.azurecr.io/broxiva-api:latest
+docker push broxivaacr.azurecr.io/broxiva-web:v${VERSION}
+docker push broxivaacr.azurecr.io/broxiva-web:latest
 ```
 
 ### Step 2: Configure Kubernetes
@@ -437,8 +437,8 @@ docker push citadelbuyacr.azurecr.io/citadelbuy-web:latest
 ```bash
 # Connect to AKS cluster
 az aks get-credentials \
-  --resource-group citadelbuy-prod-rg \
-  --name citadelbuy-prod-aks \
+  --resource-group broxiva-prod-rg \
+  --name broxiva-prod-aks \
   --overwrite-existing
 
 # Verify connection
@@ -450,36 +450,36 @@ kubectl get nodes
 
 ```bash
 # Create namespace
-kubectl create namespace citadelbuy-prod
+kubectl create namespace broxiva-prod
 
 # Create secrets from Azure Key Vault
-kubectl create secret generic citadelbuy-secrets \
+kubectl create secret generic broxiva-secrets \
   --from-literal=DATABASE_PASSWORD="${DB_PASSWORD}" \
   --from-literal=REDIS_PASSWORD="${REDIS_PASSWORD}" \
   --from-literal=JWT_SECRET="${JWT_SECRET}" \
   --from-literal=STRIPE_SECRET_KEY="${STRIPE_SECRET_KEY}" \
-  --namespace=citadelbuy-prod
+  --namespace=broxiva-prod
 ```
 
 ### Step 4: Deploy Infrastructure Services
 
 ```bash
 # Apply ConfigMaps
-kubectl apply -f infrastructure/kubernetes/base/configmap.yaml -n citadelbuy-prod
+kubectl apply -f infrastructure/kubernetes/base/configmap.yaml -n broxiva-prod
 
 # Deploy PostgreSQL (if self-hosted)
-kubectl apply -f infrastructure/kubernetes/base/postgres-deployment.yaml -n citadelbuy-prod
+kubectl apply -f infrastructure/kubernetes/base/postgres-deployment.yaml -n broxiva-prod
 
 # Deploy Redis (if self-hosted)
-kubectl apply -f infrastructure/kubernetes/base/redis-deployment.yaml -n citadelbuy-prod
+kubectl apply -f infrastructure/kubernetes/base/redis-deployment.yaml -n broxiva-prod
 
 # Deploy Elasticsearch
-kubectl apply -f infrastructure/kubernetes/base/elasticsearch-deployment.yaml -n citadelbuy-prod
+kubectl apply -f infrastructure/kubernetes/base/elasticsearch-deployment.yaml -n broxiva-prod
 
 # Wait for services to be ready
-kubectl wait --for=condition=ready pod -l app=postgres -n citadelbuy-prod --timeout=300s
-kubectl wait --for=condition=ready pod -l app=redis -n citadelbuy-prod --timeout=300s
-kubectl wait --for=condition=ready pod -l app=elasticsearch -n citadelbuy-prod --timeout=300s
+kubectl wait --for=condition=ready pod -l app=postgres -n broxiva-prod --timeout=300s
+kubectl wait --for=condition=ready pod -l app=redis -n broxiva-prod --timeout=300s
+kubectl wait --for=condition=ready pod -l app=elasticsearch -n broxiva-prod --timeout=300s
 ```
 
 ### Step 5: Run Database Migrations
@@ -490,52 +490,52 @@ cat <<EOF | kubectl apply -f -
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: citadelbuy-db-migration
-  namespace: citadelbuy-prod
+  name: broxiva-db-migration
+  namespace: broxiva-prod
 spec:
   template:
     spec:
       containers:
       - name: migration
-        image: citadelbuyacr.azurecr.io/citadelbuy-api:v${VERSION}
+        image: broxivaacr.azurecr.io/broxiva-api:v${VERSION}
         command: ["npx", "prisma", "migrate", "deploy"]
         env:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: citadelbuy-secrets
+              name: broxiva-secrets
               key: DATABASE_URL
       restartPolicy: OnFailure
   backoffLimit: 3
 EOF
 
 # Wait for migration to complete
-kubectl wait --for=condition=complete job/citadelbuy-db-migration -n citadelbuy-prod --timeout=600s
+kubectl wait --for=condition=complete job/broxiva-db-migration -n broxiva-prod --timeout=600s
 
 # Verify migration
-kubectl logs job/citadelbuy-db-migration -n citadelbuy-prod
+kubectl logs job/broxiva-db-migration -n broxiva-prod
 ```
 
 ### Step 6: Deploy Application Services
 
 ```bash
 # Deploy API
-kubectl apply -f infrastructure/kubernetes/production/api-deployment.yaml -n citadelbuy-prod
-kubectl apply -f infrastructure/kubernetes/production/api-service.yaml -n citadelbuy-prod
-kubectl apply -f infrastructure/kubernetes/production/api-hpa.yaml -n citadelbuy-prod
+kubectl apply -f infrastructure/kubernetes/production/api-deployment.yaml -n broxiva-prod
+kubectl apply -f infrastructure/kubernetes/production/api-service.yaml -n broxiva-prod
+kubectl apply -f infrastructure/kubernetes/production/api-hpa.yaml -n broxiva-prod
 
 # Deploy Web Frontend
-kubectl apply -f infrastructure/kubernetes/production/web-deployment.yaml -n citadelbuy-prod
-kubectl apply -f infrastructure/kubernetes/production/web-service.yaml -n citadelbuy-prod
-kubectl apply -f infrastructure/kubernetes/production/web-hpa.yaml -n citadelbuy-prod
+kubectl apply -f infrastructure/kubernetes/production/web-deployment.yaml -n broxiva-prod
+kubectl apply -f infrastructure/kubernetes/production/web-service.yaml -n broxiva-prod
+kubectl apply -f infrastructure/kubernetes/production/web-hpa.yaml -n broxiva-prod
 
 # Deploy Worker
-kubectl apply -f infrastructure/kubernetes/production/worker-deployment.yaml -n citadelbuy-prod
+kubectl apply -f infrastructure/kubernetes/production/worker-deployment.yaml -n broxiva-prod
 
 # Wait for rollouts
-kubectl rollout status deployment/citadelbuy-api -n citadelbuy-prod --timeout=600s
-kubectl rollout status deployment/citadelbuy-web -n citadelbuy-prod --timeout=600s
-kubectl rollout status deployment/citadelbuy-worker -n citadelbuy-prod --timeout=600s
+kubectl rollout status deployment/broxiva-api -n broxiva-prod --timeout=600s
+kubectl rollout status deployment/broxiva-web -n broxiva-prod --timeout=600s
+kubectl rollout status deployment/broxiva-worker -n broxiva-prod --timeout=600s
 ```
 
 ### Step 7: Configure Ingress
@@ -545,10 +545,10 @@ kubectl rollout status deployment/citadelbuy-worker -n citadelbuy-prod --timeout
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml
 
 # Apply Ingress rules
-kubectl apply -f infrastructure/kubernetes/production/ingress.yaml -n citadelbuy-prod
+kubectl apply -f infrastructure/kubernetes/production/ingress.yaml -n broxiva-prod
 
 # Verify Ingress
-kubectl get ingress -n citadelbuy-prod
+kubectl get ingress -n broxiva-prod
 ```
 
 ### Step 8: Configure SSL/TLS
@@ -566,7 +566,7 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: devops@citadelbuy.com
+    email: devops@broxiva.com
     privateKeySecretRef:
       name: letsencrypt-prod
     solvers:
@@ -611,7 +611,7 @@ git push origin main
 #### Manual Deployment via Azure DevOps
 
 1. Navigate to Azure DevOps
-2. Go to Pipelines > CitadelBuy-Production
+2. Go to Pipelines > Broxiva-Production
 3. Click "Run pipeline"
 4. Select branch: `main`
 5. Review deployment plan
@@ -621,13 +621,13 @@ git push origin main
 
 Configure these variable groups in Azure DevOps:
 
-**citadelbuy-common**:
+**broxiva-common**:
 - NODE_VERSION: "20.x"
 - PNPM_VERSION: "9.x"
-- AZURE_CONTAINER_REGISTRY: "citadelbuyacr.azurecr.io"
+- AZURE_CONTAINER_REGISTRY: "broxivaacr.azurecr.io"
 
-**citadelbuy-prod**:
-- API_URL: "https://api.citadelbuy.com"
+**broxiva-prod**:
+- API_URL: "https://api.broxiva.com"
 - DATABASE_URL: (from Key Vault)
 - REDIS_URL: (from Key Vault)
 - All other production secrets
@@ -642,10 +642,10 @@ The deployment pipeline includes automated health checks:
 
 ```bash
 # Health check endpoint
-curl -f https://api.citadelbuy.com/api/health
+curl -f https://api.broxiva.com/api/health
 
 # Detailed health check
-curl https://api.citadelbuy.com/api/health/detailed | jq '.'
+curl https://api.broxiva.com/api/health/detailed | jq '.'
 ```
 
 ### Manual Verification Checklist
@@ -654,26 +654,26 @@ curl https://api.citadelbuy.com/api/health/detailed | jq '.'
 
 ```bash
 # Check pod status
-kubectl get pods -n citadelbuy-prod
+kubectl get pods -n broxiva-prod
 
 # Check for errors in logs
-kubectl logs -n citadelbuy-prod -l app=citadelbuy-api --tail=100 | grep -i error
+kubectl logs -n broxiva-prod -l app=broxiva-api --tail=100 | grep -i error
 
 # Verify all pods are running
-kubectl get pods -n citadelbuy-prod | grep -E "(Running|Completed)"
+kubectl get pods -n broxiva-prod | grep -E "(Running|Completed)"
 
 # Check HPA status
-kubectl get hpa -n citadelbuy-prod
+kubectl get hpa -n broxiva-prod
 ```
 
 #### 2. Service Endpoints (5-10 minutes)
 
-- [ ] Homepage loads: https://citadelbuy.com
-- [ ] API health check: https://api.citadelbuy.com/api/health
-- [ ] Product listing: https://citadelbuy.com/products
-- [ ] Search functionality: https://citadelbuy.com/search
-- [ ] User authentication: https://citadelbuy.com/login
-- [ ] Admin panel: https://citadelbuy.com/admin
+- [ ] Homepage loads: https://broxiva.com
+- [ ] API health check: https://api.broxiva.com/api/health
+- [ ] Product listing: https://broxiva.com/products
+- [ ] Search functionality: https://broxiva.com/search
+- [ ] User authentication: https://broxiva.com/login
+- [ ] Admin panel: https://broxiva.com/admin
 
 #### 3. Critical User Flows (10-20 minutes)
 
@@ -690,11 +690,11 @@ kubectl get hpa -n citadelbuy-prod
 
 ```bash
 # Test database connection from API pod
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy-prod -- \
+kubectl exec -it deployment/broxiva-api -n broxiva-prod -- \
   npx prisma db execute --stdin <<< "SELECT COUNT(*) FROM \"User\";"
 
 # Verify read replica (if configured)
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy-prod -- \
+kubectl exec -it deployment/broxiva-api -n broxiva-prod -- \
   npx prisma db execute --stdin <<< "SELECT 1;"
 ```
 
@@ -712,7 +712,7 @@ kubectl exec -it deployment/citadelbuy-api -n citadelbuy-prod -- \
 
 ```bash
 # Check Grafana dashboards
-# Open: https://grafana.citadelbuy.com
+# Open: https://grafana.broxiva.com
 
 # Verify metrics:
 # - API response time P95 < 500ms
@@ -739,40 +739,40 @@ kubectl exec -it deployment/citadelbuy-api -n citadelbuy-prod -- \
 
 ```bash
 # Rollback API to previous version
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-prod
+kubectl rollout undo deployment/broxiva-api -n broxiva-prod
 
 # Rollback Web to previous version
-kubectl rollout undo deployment/citadelbuy-web -n citadelbuy-prod
+kubectl rollout undo deployment/broxiva-web -n broxiva-prod
 
 # Verify rollback
-kubectl rollout status deployment/citadelbuy-api -n citadelbuy-prod
-kubectl rollout status deployment/citadelbuy-web -n citadelbuy-prod
+kubectl rollout status deployment/broxiva-api -n broxiva-prod
+kubectl rollout status deployment/broxiva-web -n broxiva-prod
 ```
 
 ### Rollback to Specific Version
 
 ```bash
 # List deployment history
-kubectl rollout history deployment/citadelbuy-api -n citadelbuy-prod
+kubectl rollout history deployment/broxiva-api -n broxiva-prod
 
 # Rollback to specific revision
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-prod --to-revision=5
+kubectl rollout undo deployment/broxiva-api -n broxiva-prod --to-revision=5
 
 # Verify
-kubectl get pods -n citadelbuy-prod -l app=citadelbuy-api
+kubectl get pods -n broxiva-prod -l app=broxiva-api
 ```
 
 ### Database Rollback
 
 ```bash
 # Stop application traffic
-kubectl scale deployment/citadelbuy-api -n citadelbuy-prod --replicas=0
+kubectl scale deployment/broxiva-api -n broxiva-prod --replicas=0
 
 # Restore database from backup (see DISASTER_RECOVERY.md)
 # Point-in-time recovery to before deployment
 
 # Restart application
-kubectl scale deployment/citadelbuy-api -n citadelbuy-prod --replicas=3
+kubectl scale deployment/broxiva-api -n broxiva-prod --replicas=3
 ```
 
 ### When to Rollback
@@ -792,10 +792,10 @@ Immediately rollback if:
 
 ```bash
 # Apply Network Policies
-kubectl apply -f infrastructure/kubernetes/security/network-policies.yaml -n citadelbuy-prod
+kubectl apply -f infrastructure/kubernetes/security/network-policies.yaml -n broxiva-prod
 
 # Verify policies
-kubectl get networkpolicies -n citadelbuy-prod
+kubectl get networkpolicies -n broxiva-prod
 ```
 
 ### Pod Security
@@ -850,16 +850,16 @@ annotations:
 ```bash
 # Configure Azure CDN
 az cdn profile create \
-  --name citadelbuy-cdn \
-  --resource-group citadelbuy-prod-rg \
+  --name broxiva-cdn \
+  --resource-group broxiva-prod-rg \
   --sku Standard_Microsoft
 
 az cdn endpoint create \
-  --name citadelbuy \
-  --profile-name citadelbuy-cdn \
-  --resource-group citadelbuy-prod-rg \
-  --origin citadelbuy.com \
-  --origin-host-header citadelbuy.com
+  --name broxiva \
+  --profile-name broxiva-cdn \
+  --resource-group broxiva-prod-rg \
+  --origin broxiva.com \
+  --origin-host-header broxiva.com
 ```
 
 ### Caching Strategy
@@ -922,12 +922,12 @@ ANALYZE "User";
 
 | Role | Name | Phone | Email | Availability |
 |------|------|-------|-------|--------------|
-| **Primary On-Call** | Check PagerDuty | Via PagerDuty | oncall@citadelbuy.com | 24/7 |
-| **Platform Lead** | [Name] | +1-XXX-XXX-XXXX | platform-lead@citadelbuy.com | Business hours |
-| **Engineering Manager** | [Name] | +1-XXX-XXX-XXXX | eng-manager@citadelbuy.com | On-call |
-| **CTO** | [Name] | +1-XXX-XXX-XXXX | cto@citadelbuy.com | Escalation only |
-| **DevOps Team** | N/A | N/A | devops@citadelbuy.com | 24/7 |
-| **Security Team** | N/A | N/A | security@citadelbuy.com | 24/7 |
+| **Primary On-Call** | Check PagerDuty | Via PagerDuty | oncall@broxiva.com | 24/7 |
+| **Platform Lead** | [Name] | +1-XXX-XXX-XXXX | platform-lead@broxiva.com | Business hours |
+| **Engineering Manager** | [Name] | +1-XXX-XXX-XXXX | eng-manager@broxiva.com | On-call |
+| **CTO** | [Name] | +1-XXX-XXX-XXXX | cto@broxiva.com | Escalation only |
+| **DevOps Team** | N/A | N/A | devops@broxiva.com | 24/7 |
+| **Security Team** | N/A | N/A | security@broxiva.com | 24/7 |
 
 ### External Service Support
 
@@ -943,7 +943,7 @@ ANALYZE "User";
 - **#incidents** - Slack channel for active incidents
 - **#deployments** - Slack channel for deployment notifications
 - **#alerts** - Slack channel for automated alerts
-- **status.citadelbuy.com** - Public status page
+- **status.broxiva.com** - Public status page
 
 ---
 
@@ -953,22 +953,22 @@ ANALYZE "User";
 
 ```bash
 # Quick health check
-kubectl get pods -n citadelbuy-prod && curl -f https://api.citadelbuy.com/api/health
+kubectl get pods -n broxiva-prod && curl -f https://api.broxiva.com/api/health
 
 # View logs
-kubectl logs -n citadelbuy-prod -l app=citadelbuy-api --tail=100 --timestamps
+kubectl logs -n broxiva-prod -l app=broxiva-api --tail=100 --timestamps
 
 # Restart deployment
-kubectl rollout restart deployment/citadelbuy-api -n citadelbuy-prod
+kubectl rollout restart deployment/broxiva-api -n broxiva-prod
 
 # Scale deployment
-kubectl scale deployment/citadelbuy-api -n citadelbuy-prod --replicas=5
+kubectl scale deployment/broxiva-api -n broxiva-prod --replicas=5
 
 # Port forward for debugging
-kubectl port-forward -n citadelbuy-prod deployment/citadelbuy-api 4000:4000
+kubectl port-forward -n broxiva-prod deployment/broxiva-api 4000:4000
 
 # Execute command in pod
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy-prod -- /bin/sh
+kubectl exec -it deployment/broxiva-api -n broxiva-prod -- /bin/sh
 ```
 
 ### Related Documentation

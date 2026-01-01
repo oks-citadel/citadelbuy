@@ -1,4 +1,4 @@
-# CitadelBuy Azure Key Vault - Per-App-Per-Environment Configuration
+# Broxiva Azure Key Vault - Per-App-Per-Environment Configuration
 # This creates isolated vaults for each application (api, web, mobile) per environment
 # Following the principle of least privilege and separation of concerns
 
@@ -12,7 +12,7 @@ variable "location" {
 variable "resource_group_name" {
   description = "Resource group name"
   type        = string
-  default     = "citadelbuy-rg"
+  default     = "broxiva-rg"
 }
 
 variable "apps" {
@@ -157,7 +157,7 @@ resource "random_password" "postgres" {
 
 resource "azurerm_key_vault_secret" "shared_postgres_url" {
   name         = "postgres-url"
-  value        = "postgresql://citadelbuy_admin:${random_password.postgres.result}@postgres.${var.environment}.citadelbuy.internal:5432/citadelbuy"
+  value        = "postgresql://broxiva_admin:${random_password.postgres.result}@postgres.${var.environment}.broxiva.internal:5432/broxiva"
   key_vault_id = azurerm_key_vault.shared.id
   depends_on   = [azurerm_role_assignment.terraform_shared]
 
@@ -190,7 +190,7 @@ resource "random_password" "redis" {
 
 resource "azurerm_key_vault_secret" "shared_redis_url" {
   name         = "redis-url"
-  value        = "redis://:${random_password.redis.result}@redis.${var.environment}.citadelbuy.internal:6379"
+  value        = "redis://:${random_password.redis.result}@redis.${var.environment}.broxiva.internal:6379"
   key_vault_id = azurerm_key_vault.shared.id
   depends_on   = [azurerm_role_assignment.terraform_shared]
 

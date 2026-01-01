@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Media Management Service handles all media assets for the CitadelBuy platform including image uploads, processing, optimization, CDN distribution, and video management. It provides fast, optimized media delivery worldwide.
+The Media Management Service handles all media assets for the Broxiva platform including image uploads, processing, optimization, CDN distribution, and video management. It provides fast, optimized media delivery worldwide.
 
 ## Key Features
 
@@ -39,14 +39,14 @@ PORT=8008
 
 # Storage
 STORAGE_BACKEND=s3  # s3, gcs, azure
-AWS_S3_BUCKET=citadelbuy-media
+AWS_S3_BUCKET=broxiva-media
 AWS_REGION=us-east-1
 AWS_ACCESS_KEY_ID=your_key
 AWS_SECRET_ACCESS_KEY=your_secret
 
 # CDN
 CDN_ENABLED=true
-CDN_URL=https://cdn.citadelbuy.com
+CDN_URL=https://cdn.broxiva.com
 CLOUDFRONT_DISTRIBUTION_ID=your_distribution_id
 
 # Image Processing
@@ -115,8 +115,8 @@ uvicorn main:app --reload --port 8008
 ## Docker Usage
 
 ```bash
-docker build -t citadelbuy/media:latest .
-docker run -p 8008:8008 --env-file .env citadelbuy/media:latest
+docker build -t broxiva/media:latest .
+docker run -p 8008:8008 --env-file .env broxiva/media:latest
 ```
 
 ## Usage Examples
@@ -150,4 +150,4 @@ pytest tests/ --cov=src --cov-report=html
 ## Support
 
 - Internal Slack: #media-support
-- Email: media@citadelbuy.com
+- Email: media@broxiva.com

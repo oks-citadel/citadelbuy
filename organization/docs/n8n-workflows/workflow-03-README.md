@@ -1,8 +1,8 @@
-# CitadelBuy Inventory Management & Alerts - Workflow 3
+# Broxiva Inventory Management & Alerts - Workflow 3
 
 ## Overview
 
-This n8n workflow provides comprehensive inventory management and automated alerting for the CitadelBuy e-commerce platform. It monitors stock levels, predicts restocking needs, identifies dead stock, and sends multi-channel notifications based on configurable thresholds.
+This n8n workflow provides comprehensive inventory management and automated alerting for the Broxiva e-commerce platform. It monitors stock levels, predicts restocking needs, identifies dead stock, and sends multi-channel notifications based on configurable thresholds.
 
 ## Features
 
@@ -46,7 +46,7 @@ The workflow calculates these key metrics for each product:
 ### Prerequisites
 
 1. **n8n Instance**: Running n8n version 1.0+
-2. **API Access**: CitadelBuy API credentials
+2. **API Access**: Broxiva API credentials
 3. **Integrations**:
    - Slack OAuth2 credentials
    - SMTP email account
@@ -63,11 +63,11 @@ The workflow calculates these key metrics for each product:
 
 ### Step 2: Configure Credentials
 
-#### CitadelBuy API
+#### Broxiva API
 1. Go to **Credentials** → **New**
 2. Select **Header Auth** type
 3. Configure:
-   - **Name**: `citadelBuyApi`
+   - **Name**: `broxivaBuyApi`
    - **Header Name**: `Authorization`
    - **Header Value**: `Bearer YOUR_API_KEY`
 
@@ -88,7 +88,7 @@ The workflow calculates these key metrics for each product:
    Host: smtp.yourdomain.com
    Port: 587
    Secure: TLS
-   User: inventory@citadelbuy.com
+   User: inventory@broxiva.com
    Password: YOUR_PASSWORD
    ```
 
@@ -143,13 +143,13 @@ Create a Notion database with these properties:
 1. In n8n, open the workflow
 2. Click on **Webhook: Order Fulfilled** node
 3. Copy the **Production URL**
-4. In your CitadelBuy backend, configure webhook:
+4. In your Broxiva backend, configure webhook:
 
 ```javascript
 // Example webhook configuration
 {
   "event": "order.fulfilled",
-  "url": "https://your-n8n-instance.com/webhook/citadelbuy-inventory-webhook",
+  "url": "https://your-n8n-instance.com/webhook/broxiva-inventory-webhook",
   "method": "POST",
   "headers": {
     "Content-Type": "application/json"
@@ -276,10 +276,10 @@ const recommendedOrderQty = Math.max(
 Edit the **Email: Low Stock Warning** node:
 ```javascript
 // Current recipients
-toEmail: "purchasing@citadelbuy.com"
+toEmail: "purchasing@broxiva.com"
 
 // Multiple recipients
-toEmail: "purchasing@citadelbuy.com, manager@citadelbuy.com, ops@citadelbuy.com"
+toEmail: "purchasing@broxiva.com, manager@broxiva.com, ops@broxiva.com"
 ```
 
 ### Slack Mentions
@@ -301,7 +301,7 @@ text: "🚨 *CRITICAL STOCK ALERT*\n..."
 Edit the **Email: Daily Summary Report** node:
 ```javascript
 // Current recipients
-toEmail: "management@citadelbuy.com, purchasing@citadelbuy.com, operations@citadelbuy.com"
+toEmail: "management@broxiva.com, purchasing@broxiva.com, operations@broxiva.com"
 
 // Add or remove recipients as needed
 ```
@@ -333,7 +333,7 @@ To send the daily report at a specific time, add a second schedule trigger:
 
 ## API Endpoints
 
-The workflow uses these CitadelBuy API endpoints:
+The workflow uses these Broxiva API endpoints:
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
@@ -420,7 +420,7 @@ Create a test endpoint that returns mock low-stock data:
 Use curl to test the webhook trigger:
 
 ```bash
-curl -X POST https://your-n8n-instance.com/webhook/citadelbuy-inventory-webhook \
+curl -X POST https://your-n8n-instance.com/webhook/broxiva-inventory-webhook \
   -H "Content-Type: application/json" \
   -d '{
     "event": "order.fulfilled",
@@ -451,7 +451,7 @@ Monitor these metrics:
 - **Execution Time**: Should be < 2 minutes for 1000 products
 - **Success Rate**: Target > 99%
 - **Alert Accuracy**: Validate threshold triggers
-- **API Response Times**: Monitor CitadelBuy API performance
+- **API Response Times**: Monitor Broxiva API performance
 
 ## Troubleshooting
 
@@ -461,7 +461,7 @@ Monitor these metrics:
 ```
 Error: 401 Unauthorized
 ```
-**Solution**: Verify CitadelBuy API credentials are correct and active
+**Solution**: Verify Broxiva API credentials are correct and active
 
 #### 2. Slack Notifications Not Sending
 ```
@@ -632,9 +632,9 @@ const projectedDemand = adjustedVelocity * (lead_time_days + 30);
 ## Support
 
 For issues or questions:
-- **Email**: devops@citadelbuy.com
+- **Email**: devops@broxiva.com
 - **Slack**: #n8n-workflows
-- **Documentation**: https://docs.citadelbuy.com/workflows
+- **Documentation**: https://docs.broxiva.com/workflows
 
 ## Changelog
 
@@ -650,4 +650,4 @@ For issues or questions:
 
 ## License
 
-Internal use only - CitadelBuy E-commerce Platform
+Internal use only - Broxiva E-commerce Platform

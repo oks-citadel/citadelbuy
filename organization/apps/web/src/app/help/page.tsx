@@ -163,7 +163,7 @@ export default function HelpPage() {
                   Mon-Fri: 9AM - 6PM EST
                 </p>
                 <Button variant="outline" className="w-full">
-                  1-800-CITADEL
+                  1-800-BROXIVA
                 </Button>
               </CardContent>
             </Card>

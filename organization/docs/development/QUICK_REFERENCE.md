@@ -374,7 +374,7 @@ await prisma.product.findMany({
 
 ```env
 # Database
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/citadelbuy_dev"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/broxiva_dev"
 
 # Redis
 REDIS_HOST=localhost
@@ -398,7 +398,7 @@ FRONTEND_URL=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:4000/api
 
 # App
-NEXT_PUBLIC_APP_NAME=CitadelBuy
+NEXT_PUBLIC_APP_NAME=Broxiva
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
@@ -594,7 +594,7 @@ docker-compose build --no-cache
 
 ```bash
 # PostgreSQL
-psql -h localhost -U postgres -d citadelbuy_dev
+psql -h localhost -U postgres -d broxiva_dev
 
 # Common commands
 \dt          # List tables
@@ -721,6 +721,6 @@ npx prisma migrate reset
 
 | Role | Email | Password |
 |------|-------|----------|
-| Customer | customer@citadelbuy.com | password123 |
-| Admin | admin@citadelbuy.com | password123 |
-| Vendor | vendor1@citadelbuy.com | password123 |
+| Customer | customer@broxiva.com | password123 |
+| Admin | admin@broxiva.com | password123 |
+| Vendor | vendor1@broxiva.com | password123 |

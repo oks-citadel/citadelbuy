@@ -1,13 +1,13 @@
 # ==================================================================================================
-# CitadelBuy - Unified Master Pipeline
+# Broxiva - Unified Master Pipeline
 # ==================================================================================================
 #
 # This is the MAIN entry point for ALL CI/CD operations in Azure DevOps
 #
-# Organization: citadelcloudmanagement
-# Project: CitadelBuy
-# ACR: citadelbuyacr.azurecr.io
-# Service Connection: CitadelBuyAzure
+# Organization: broxivacloudmanagement
+# Project: Broxiva
+# ACR: broxivaacr.azurecr.io
+# Service Connection: BroxivaAzure
 #
 # Pipeline orchestrates:
 # - Code validation (linting, type checking, code quality)
@@ -251,9 +251,9 @@ stages:
     jobs:
       - template: templates/stages/docker-build.yml
         parameters:
-          registry: citadelbuyacr.azurecr.io
-          serviceConnection: CitadelBuyAzure
-          acrServiceConnection: CitadelBuyACR
+          registry: broxivaacr.azurecr.io
+          serviceConnection: BroxivaAzure
+          acrServiceConnection: BroxivaACR
           buildContext: $(System.DefaultWorkingDirectory)
           microservices: '${{ parameters.buildMicroservices }}'
           tags:
@@ -284,10 +284,10 @@ stages:
       - template: templates/stages/deploy-dev.yml
         parameters:
           environment: dev
-          serviceConnection: CitadelBuyAzure
-          aksResourceGroup: citadelbuy-dev-rg
-          aksClusterName: citadelbuy-dev-aks
-          namespace: citadelbuy-dev
+          serviceConnection: BroxivaAzure
+          aksResourceGroup: broxiva-dev-rg
+          aksClusterName: broxiva-dev-aks
+          namespace: broxiva-dev
           imageTag: $(ShortSHA)
           runMigrations: true
           healthCheckEnabled: true
@@ -314,10 +314,10 @@ stages:
       - template: templates/stages/deploy-staging.yml
         parameters:
           environment: staging
-          serviceConnection: CitadelBuyAzure
-          aksResourceGroup: citadelbuy-staging-rg
-          aksClusterName: citadelbuy-staging-aks
-          namespace: citadelbuy-staging
+          serviceConnection: BroxivaAzure
+          aksResourceGroup: broxiva-staging-rg
+          aksClusterName: broxiva-staging-aks
+          namespace: broxiva-staging
           imageTag: $(ShortSHA)
           runMigrations: true
           healthCheckEnabled: true
@@ -342,7 +342,7 @@ stages:
       - template: templates/stages/e2e-tests.yml
         parameters:
           environment: staging
-          baseUrl: https://staging.citadelbuy.com
+          baseUrl: https://staging.broxiva.com
           browser: chromium
           parallelWorkers: 4
           retries: 2
@@ -380,10 +380,10 @@ stages:
       - template: templates/stages/deploy-production.yml
         parameters:
           environment: production
-          serviceConnection: CitadelBuyAzure
-          aksResourceGroup: citadelbuy-prod-rg
-          aksClusterName: citadelbuy-prod-aks
-          namespace: citadelbuy-prod
+          serviceConnection: BroxivaAzure
+          aksResourceGroup: broxiva-prod-rg
+          aksClusterName: broxiva-prod-aks
+          namespace: broxiva-prod
           imageTag: $(ShortSHA)
           deploymentStrategy: blueGreen
           runMigrations: true
@@ -407,13 +407,13 @@ stages:
           environment: production
           endpoints:
             - name: API Health
-              url: https://api.citadelbuy.com/health
+              url: https://api.broxiva.com/health
               expectedStatus: 200
             - name: Web Application
-              url: https://citadelbuy.com
+              url: https://broxiva.com
               expectedStatus: 200
             - name: Admin Portal
-              url: https://admin.citadelbuy.com
+              url: https://admin.broxiva.com
               expectedStatus: 200
           performanceTests: true
           metricsValidation: true
@@ -440,7 +440,7 @@ stages:
       - template: templates/stages/terraform.yml
         parameters:
           action: '${{ parameters.terraformAction }}'
-          serviceConnection: CitadelBuyAzure
+          serviceConnection: BroxivaAzure
           environment: ${{ if eq(variables.IsMainBranch, true) }}
             production
           ${{ elseif eq(variables.IsDevelopBranch, true) }}
@@ -448,8 +448,8 @@ stages:
           ${{ else }}
             dev
           workingDirectory: infrastructure/terraform/environments
-          backendResourceGroup: citadelbuy-tfstate-rg
-          backendStorageAccount: citadelbuytfstate
+          backendResourceGroup: broxiva-tfstate-rg
+          backendStorageAccount: broxivatfstate
           backendContainer: tfstate
           requireApproval: ${{ eq(parameters.terraformAction, 'apply') }}
 

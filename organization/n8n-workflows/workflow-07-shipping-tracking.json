@@ -778,7 +778,7 @@
             {
               "id": "email-data-exception",
               "name": "emailData",
-              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  trackingUrl: $json.trackingUrl,\n  carrier: $json.carrier,\n  exceptionReason: $json.status,\n  supportUrl: 'https://broxiva.com/support',\n  contactEmail: 'support@broxiva.com',\n  contactPhone: '1-800-CITADEL'\n} }}",
+              "value": "={{ {\n  customerName: $('Fetch Order Details').item.json.customer.name,\n  orderNumber: $json.orderNumber,\n  trackingNumber: $json.trackingNumber,\n  trackingUrl: $json.trackingUrl,\n  carrier: $json.carrier,\n  exceptionReason: $json.status,\n  supportUrl: 'https://broxiva.com/support',\n  contactEmail: 'support@broxiva.com',\n  contactPhone: '1-800-BROXIVA'\n} }}",
               "type": "object"
             },
             {

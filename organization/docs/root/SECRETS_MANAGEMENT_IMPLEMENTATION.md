@@ -1,6 +1,6 @@
-# CitadelBuy Secrets Management Implementation Summary
+# Broxiva Secrets Management Implementation Summary
 
-This document summarizes the comprehensive secrets management configuration implemented for the CitadelBuy platform.
+This document summarizes the comprehensive secrets management configuration implemented for the Broxiva platform.
 
 ## Overview
 
@@ -17,7 +17,7 @@ A complete, production-ready secrets management solution has been implemented su
 - **Location:** `infrastructure/aws/secrets-manager.tf`
 - **Description:** Complete Terraform configuration for AWS Secrets Manager including:
   - KMS encryption key
-  - Secret definitions for all CitadelBuy services
+  - Secret definitions for all Broxiva services
   - IAM roles for External Secrets Operator
   - Lambda rotation functions
   - CloudWatch audit logging
@@ -42,10 +42,10 @@ A complete, production-ready secrets management solution has been implemented su
   - Telemetry and monitoring
   - High availability setup
 
-- **Location:** `infrastructure/vault/policies/citadelbuy.hcl`
+- **Location:** `infrastructure/vault/policies/broxiva.hcl`
 - **Description:** Application access policy with read-only permissions
 
-- **Location:** `infrastructure/vault/policies/citadelbuy-admin.hcl`
+- **Location:** `infrastructure/vault/policies/broxiva-admin.hcl`
 - **Description:** Admin policy with full secret management permissions
 
 ### Sync Scripts
@@ -390,12 +390,12 @@ All configurations support the following secret categories:
 - [External Secrets Operator](https://external-secrets.io/)
 
 ### Contact
-- Platform Team: platform@citadelbuy.com
-- Security Team: security@citadelbuy.com
+- Platform Team: platform@broxiva.com
+- Security Team: security@broxiva.com
 
 ## Conclusion
 
-This implementation provides CitadelBuy with enterprise-grade secrets management capabilities across multiple cloud providers. The solution is:
+This implementation provides Broxiva with enterprise-grade secrets management capabilities across multiple cloud providers. The solution is:
 
 - **Secure:** Encryption, access control, audit logging
 - **Flexible:** Supports AWS, Azure, and HashiCorp Vault

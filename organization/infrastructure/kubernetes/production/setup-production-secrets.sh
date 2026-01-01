@@ -160,7 +160,7 @@ echo ""
 echo -e "${YELLOW}[6/8] Applying RBAC configuration...${NC}"
 # Update namespace references in RBAC file
 sed "s/namespace: broxiva-production/namespace: ${NAMESPACE}/g" \
-  C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/infrastructure/kubernetes/production/rbac.yaml | \
+  C:/Users/Dell/OneDrive/Documents/Broxiva/organization/infrastructure/kubernetes/production/rbac.yaml | \
   kubectl apply -f -
 
 if [ $? -eq 0 ]; then

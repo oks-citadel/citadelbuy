@@ -1,15 +1,15 @@
-# CitadelBuy Notification & Email System - Comprehensive Scan Report
+# Broxiva Notification & Email System - Comprehensive Scan Report
 
 **Date:** December 6, 2024
 **Scanned by:** Claude (AI Assistant)
-**Project:** CitadelBuy E-commerce Platform
+**Project:** Broxiva E-commerce Platform
 **Modules Scanned:** Notifications, Email
 
 ---
 
 ## Executive Summary
 
-Completed comprehensive scan and enhancement of the CitadelBuy notification and email infrastructure. The system was **90% complete** with excellent foundation but had **critical missing implementations** for push notifications and SMS services.
+Completed comprehensive scan and enhancement of the Broxiva notification and email infrastructure. The system was **90% complete** with excellent foundation but had **critical missing implementations** for push notifications and SMS services.
 
 ### Actions Taken:
 1. **Scanned** all notification and email module files
@@ -27,7 +27,7 @@ Completed comprehensive scan and enhancement of the CitadelBuy notification and 
 ## Files Scanned
 
 ### Notification Module
-**Location:** `C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api/src/modules/notifications/`
+**Location:** `C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api/src/modules/notifications/`
 
 #### Core Files:
 - ✅ `notifications.service.ts` - Main notification orchestration service
@@ -47,7 +47,7 @@ Completed comprehensive scan and enhancement of the CitadelBuy notification and 
 - ✅ `README.md` - **NEW** Comprehensive module documentation
 
 ### Email Module
-**Location:** `C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api/src/modules/email/`
+**Location:** `C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api/src/modules/email/`
 
 #### Core Files:
 - ✅ `email.service.ts` - Email sending and template rendering (948 lines)
@@ -63,7 +63,7 @@ Completed comprehensive scan and enhancement of the CitadelBuy notification and 
 - ✅ `dto/update-notification-preferences.dto.ts` - User preferences
 
 #### Email Templates (18 total):
-**Location:** `C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api/src/modules/email/templates/`
+**Location:** `C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api/src/modules/email/templates/`
 
 **Transactional:**
 - ✅ `welcome.hbs` - New user welcome
@@ -118,10 +118,10 @@ Completed comprehensive scan and enhancement of the CitadelBuy notification and 
 ```env
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
-EMAIL_USER=noreply@citadelbuy.com
+EMAIL_USER=noreply@broxiva.com
 EMAIL_PASSWORD=your_password
-EMAIL_FROM=noreply@citadelbuy.com
-FRONTEND_URL=https://citadelbuy.com
+EMAIL_FROM=noreply@broxiva.com
+FRONTEND_URL=https://broxiva.com
 ```
 
 **API Endpoints:** 25+ endpoints for sending, templates, preferences, analytics
@@ -498,14 +498,14 @@ POST   /api/email/dead-letter/:id/retry    - Retry dead letter (Admin)
 # SMTP Server
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
-EMAIL_USER=noreply@citadelbuy.com
+EMAIL_USER=noreply@broxiva.com
 EMAIL_PASSWORD=your_app_password
-EMAIL_FROM=noreply@citadelbuy.com
+EMAIL_FROM=noreply@broxiva.com
 
 # Application URLs
-FRONTEND_URL=https://citadelbuy.com
-API_URL=https://api.citadelbuy.com
-SUPPORT_EMAIL=support@citadelbuy.com
+FRONTEND_URL=https://broxiva.com
+API_URL=https://api.broxiva.com
+SUPPORT_EMAIL=support@broxiva.com
 ```
 
 #### Push Notification Configuration (Firebase)
@@ -748,7 +748,7 @@ These are nice-to-have features, not blocking issues:
 
 ### System Status: ✅ PRODUCTION READY
 
-The CitadelBuy notification and email system is now **fully functional and production-ready** across all channels:
+The Broxiva notification and email system is now **fully functional and production-ready** across all channels:
 
 1. ✅ **Email**: Complete with 18 templates, queue system, analytics
 2. ✅ **Push Notifications**: Firebase FCM integration, multi-platform support

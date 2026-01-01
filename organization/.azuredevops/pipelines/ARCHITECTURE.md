@@ -1,10 +1,10 @@
-# CitadelBuy Pipelines - Architecture Overview
+# Broxiva Pipelines - Architecture Overview
 
 ## System Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                          CitadelBuy Platform                                 │
+│                          Broxiva Platform                                 │
 │                      Azure DevOps CI/CD Architecture                         │
 └─────────────────────────────────────────────────────────────────────────────┘
 
@@ -52,7 +52,7 @@
 │  │                            ▼                                           │  │
 │  │              ┌─────────────────────────────┐                           │  │
 │  │              │  Azure Container Registry   │                           │  │
-│  │              │  citadelbuyprod.azurecr.io  │                           │  │
+│  │              │  broxivaprod.azurecr.io  │                           │  │
 │  │              └─────────────────────────────┘                           │  │
 │  └────────────────────────────────────────────────────────────────────────┘  │
 │                                                                               │
@@ -61,31 +61,31 @@
 │  │                                                                        │  │
 │  │  ┌──────────────────────────────────────────────────────────────────┐ │  │
 │  │  │ DEVELOPMENT (dev)                                                │ │  │
-│  │  │ - Namespace: citadelbuy-dev                                      │ │  │
+│  │  │ - Namespace: broxiva-dev                                      │ │  │
 │  │  │ - Trigger: Automatic on develop push                             │ │  │
 │  │  │ - Approval: None                                                 │ │  │
-│  │  │ - URL: https://dev.citadelbuy.com                                │ │  │
+│  │  │ - URL: https://dev.broxiva.com                                │ │  │
 │  │  └──────────────────────────────────────────────────────────────────┘ │  │
 │  │                            │                                           │  │
 │  │                            ▼                                           │  │
 │  │  ┌──────────────────────────────────────────────────────────────────┐ │  │
 │  │  │ STAGING (staging)                                                │ │  │
-│  │  │ - Namespace: citadelbuy-staging                                  │ │  │
+│  │  │ - Namespace: broxiva-staging                                  │ │  │
 │  │  │ - Trigger: Automatic after dev success                           │ │  │
 │  │  │ - Approval: 1 approver required                                  │ │  │
 │  │  │ - E2E Tests: Playwright                                          │ │  │
-│  │  │ - URL: https://staging.citadelbuy.com                            │ │  │
+│  │  │ - URL: https://staging.broxiva.com                            │ │  │
 │  │  └──────────────────────────────────────────────────────────────────┘ │  │
 │  │                            │                                           │  │
 │  │                            ▼ (Manual Approval)                         │  │
 │  │  ┌──────────────────────────────────────────────────────────────────┐ │  │
 │  │  │ PRODUCTION (prod)                                                │ │  │
-│  │  │ - Namespace: citadelbuy-prod                                     │ │  │
+│  │  │ - Namespace: broxiva-prod                                     │ │  │
 │  │  │ - Trigger: Automatic after staging approval                      │ │  │
 │  │  │ - Approval: 2 approvers required                                 │ │  │
 │  │  │ - Strategy: Canary (25% → 100%)                                  │ │  │
 │  │  │ - Smoke Tests: Critical endpoints                                │ │  │
-│  │  │ - URL: https://citadelbuy.com                                    │ │  │
+│  │  │ - URL: https://broxiva.com                                    │ │  │
 │  │  └──────────────────────────────────────────────────────────────────┘ │  │
 │  └────────────────────────────────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -112,9 +112,9 @@
 │                                                                               │
 │  ┌────────────────────────────────────────────────────────────────────────┐  │
 │  │                    Azure DevOps Organization                           │  │
-│  │                    citadelcloudmanagement                              │  │
+│  │                    broxivacloudmanagement                              │  │
 │  │  ┌──────────────────────────────────────────────────────────────────┐ │  │
-│  │  │  Project: CitadelBuy                                             │ │  │
+│  │  │  Project: Broxiva                                             │ │  │
 │  │  │  - Repos (Git)                                                   │ │  │
 │  │  │  - Pipelines (YAML)                                              │ │  │
 │  │  │  - Environments (dev, staging, prod)                             │ │  │
@@ -125,13 +125,13 @@
 │                                                                               │
 │  ┌────────────────────────────────────────────────────────────────────────┐  │
 │  │                    Azure Container Registry                            │  │
-│  │                    citadelbuyprod.azurecr.io                           │  │
+│  │                    broxivaprod.azurecr.io                           │  │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                │  │
-│  │  │ citadelbuy-  │  │ citadelbuy-  │  │ citadelbuy-  │                │  │
+│  │  │ broxiva-  │  │ broxiva-  │  │ broxiva-  │                │  │
 │  │  │     api      │  │     web      │  │  ai-agents   │                │  │
 │  │  └──────────────┘  └──────────────┘  └──────────────┘                │  │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                │  │
-│  │  │ citadelbuy-  │  │ citadelbuy-  │  │ citadelbuy-  │                │  │
+│  │  │ broxiva-  │  │ broxiva-  │  │ broxiva-  │                │  │
 │  │  │  inventory   │  │    media     │  │notification  │                │  │
 │  │  └──────────────┘  └──────────────┘  └──────────────┘                │  │
 │  └────────────────────────────────────────────────────────────────────────┘  │
@@ -141,11 +141,11 @@
 │  │                                                                        │  │
 │  │  ┌────────────────────┐  ┌────────────────────┐  ┌──────────────────┐ │  │
 │  │  │  Dev Cluster       │  │ Staging Cluster    │  │  Prod Cluster    │ │  │
-│  │  │  citadelbuy-aks-   │  │ citadelbuy-aks-    │  │ citadelbuy-aks-  │ │  │
+│  │  │  broxiva-aks-   │  │ broxiva-aks-    │  │ broxiva-aks-  │ │  │
 │  │  │        dev         │  │     staging        │  │      prod        │ │  │
 │  │  │                    │  │                    │  │                  │ │  │
 │  │  │  Namespace:        │  │  Namespace:        │  │  Namespace:      │ │  │
-│  │  │  citadelbuy-dev    │  │  citadelbuy-staging│  │  citadelbuy-prod │ │  │
+│  │  │  broxiva-dev    │  │  broxiva-staging│  │  broxiva-prod │ │  │
 │  │  │                    │  │                    │  │                  │ │  │
 │  │  │  ┌──────────────┐  │  │  ┌──────────────┐  │  │  ┌────────────┐  │ │  │
 │  │  │  │ API Pods     │  │  │  │ API Pods     │  │  │  │ API Pods   │  │ │  │
@@ -195,14 +195,14 @@ cd-api.yml (API Deployment)
     ├─→ Azure Container Registry
     ├─→ Azure Kubernetes Service
     ├─→ Prisma CLI
-    ├─→ Variable Group: citadelbuy-dev
-    ├─→ Variable Group: citadelbuy-staging
-    ├─→ Variable Group: citadelbuy-production
-    ├─→ Service Connection: citadelbuy-azure-connection
-    ├─→ Service Connection: citadelbuy-acr-connection
-    ├─→ Service Connection: citadelbuy-aks-dev
-    ├─→ Service Connection: citadelbuy-aks-staging
-    └─→ Service Connection: citadelbuy-aks-production
+    ├─→ Variable Group: broxiva-dev
+    ├─→ Variable Group: broxiva-staging
+    ├─→ Variable Group: broxiva-production
+    ├─→ Service Connection: broxiva-azure-connection
+    ├─→ Service Connection: broxiva-acr-connection
+    ├─→ Service Connection: broxiva-aks-dev
+    ├─→ Service Connection: broxiva-aks-staging
+    └─→ Service Connection: broxiva-aks-production
 
 cd-web.yml (Web Deployment)
     │
@@ -232,8 +232,8 @@ infrastructure.yml (Terraform IaC)
     ├─→ Python 3.11 (for Checkov)
     ├─→ Checkov
     ├─→ Azure CLI
-    ├─→ Variable Group: citadelbuy-terraform
-    ├─→ Service Connection: citadelbuy-azure-connection
+    ├─→ Variable Group: broxiva-terraform
+    ├─→ Service Connection: broxiva-azure-connection
     └─→ Azure Storage (Terraform state backend)
 
 release-pipeline.yml (Coordinated Release)

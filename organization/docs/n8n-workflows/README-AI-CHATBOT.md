@@ -1,4 +1,4 @@
-# CitadelBuy AI-Powered Customer Support Chatbot
+# Broxiva AI-Powered Customer Support Chatbot
 
 ## Overview
 
@@ -20,7 +20,7 @@ This n8n workflow provides an intelligent, multi-channel customer support chatbo
 - **Confidence Scoring**: Self-assessment of response quality
 
 ### Automated Responses
-- **Order Tracking**: Real-time order status from CitadelBuy API
+- **Order Tracking**: Real-time order status from Broxiva API
 - **Product Questions**: RAG-powered product information
 - **Return/Refund**: Policy information and process guidance
 - **Shipping Inquiries**: ShipStation tracking integration
@@ -108,7 +108,7 @@ Automatically creates Zendesk tickets when:
 - Twilio Account SID + Auth Token
 - Telegram Bot Token
 - SendGrid API Key
-- CitadelBuy API Key
+- Broxiva API Key
 - ShipStation API Key + Secret
 
 ## Installation
@@ -125,7 +125,7 @@ Automatically creates Zendesk tickets when:
 #### PostgreSQL (ID: 1)
 ```
 Host: your-postgres-host
-Database: citadelbuy
+Database: broxiva
 User: n8n_user
 Password: your-password
 Port: 5432
@@ -187,24 +187,24 @@ API Key: sk-proj-...
 Organization ID: (optional)
 ```
 
-#### CitadelBuy API (ID: 3)
+#### Broxiva API (ID: 3)
 ```
 Type: Header Auth
 Header Name: X-API-Key
-Header Value: your-citadelbuy-api-key
+Header Value: your-broxiva-api-key
 ```
 
 #### Pinecone API (ID: 4)
 ```
 API Key: your-pinecone-api-key
 Environment: us-west1-gcp
-Index Name: citadelbuy-products
+Index Name: broxiva-products
 ```
 
 #### Zendesk API (ID: 6)
 ```
 Subdomain: your-subdomain
-Email: admin@citadelbuy.com
+Email: admin@broxiva.com
 API Token: your-zendesk-token
 ```
 
@@ -252,7 +252,7 @@ pinecone.init(
 
 # Create index with OpenAI embeddings dimension (1536)
 pinecone.create_index(
-    name="citadelbuy-products",
+    name="broxiva-products",
     dimension=1536,
     metric="cosine",
     pod_type="p1"
@@ -279,7 +279,7 @@ pinecone.init(
     api_key=os.getenv("PINECONE_API_KEY"),
     environment="us-west1-gcp"
 )
-index = pinecone.Index("citadelbuy-products")
+index = pinecone.Index("broxiva-products")
 
 def create_embedding(text: str) -> List[float]:
     """Generate embedding using OpenAI"""
@@ -354,20 +354,20 @@ def ingest_faqs(faqs: List[Dict]):
 
 # Example usage
 if __name__ == "__main__":
-    # Load from CitadelBuy API
+    # Load from Broxiva API
     import requests
 
     # Fetch products
     products_response = requests.get(
-        "https://api.citadelbuy.com/v1/products",
-        headers={"X-API-Key": os.getenv("CITADELBUY_API_KEY")}
+        "https://api.broxiva.com/v1/products",
+        headers={"X-API-Key": os.getenv("BROXIVA_API_KEY")}
     )
     products = products_response.json()['data']
 
     # Fetch FAQs
     faqs_response = requests.get(
-        "https://api.citadelbuy.com/v1/support/faqs",
-        headers={"X-API-Key": os.getenv("CITADELBUY_API_KEY")}
+        "https://api.broxiva.com/v1/support/faqs",
+        headers={"X-API-Key": os.getenv("BROXIVA_API_KEY")}
     )
     faqs = faqs_response.json()['data']
 
@@ -392,10 +392,10 @@ python ingest_knowledge_base.py
 Add to your website:
 ```html
 <script>
-window.citadelChat = {
+window.broxivaChat = {
   apiUrl: 'https://your-n8n-instance.com/webhook/chat-webhook',
   onSend: async (message) => {
-    const response = await fetch(window.citadelChat.apiUrl, {
+    const response = await fetch(window.broxivaChat.apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -432,7 +432,7 @@ curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
 #### Email via SendGrid Inbound Parse
 1. Go to SendGrid → Settings → Inbound Parse
 2. Add new hostname/URL
-3. Hostname: `support.citadelbuy.com`
+3. Hostname: `support.broxiva.com`
 4. URL: `https://your-n8n-instance.com/webhook/email-webhook`
 5. Check "POST the raw, full MIME message"
 
@@ -574,7 +574,7 @@ python update_pinecone.py --full-reindex
 # Check index stats
 import pinecone
 pinecone.init(api_key="...", environment="...")
-index = pinecone.Index("citadelbuy-products")
+index = pinecone.Index("broxiva-products")
 stats = index.describe_index_stats()
 print(f"Total vectors: {stats['total_vector_count']}")
 ```
@@ -696,14 +696,14 @@ For issues with this workflow:
 2. Review PostgreSQL query logs
 3. Check OpenAI API status
 4. Verify Pinecone index health
-5. Contact: support@citadelbuy.com
+5. Contact: support@broxiva.com
 
 ## License
 
-Proprietary - CitadelBuy Internal Use Only
+Proprietary - Broxiva Internal Use Only
 
 ---
 
 **Version**: 1.0.0
 **Last Updated**: 2025-12-03
-**Maintained By**: CitadelBuy DevOps Team
+**Maintained By**: Broxiva DevOps Team

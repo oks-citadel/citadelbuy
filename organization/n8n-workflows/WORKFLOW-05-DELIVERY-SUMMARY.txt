@@ -5,7 +5,7 @@
 ║                                                                           ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
 
-Project: CitadelBuy E-commerce Platform
+Project: Broxiva E-commerce Platform
 Workflow: Automated Customer Feedback & Review Collection
 Delivered: 2025-12-03
 Status: COMPLETE & PRODUCTION READY
@@ -76,7 +76,7 @@ TOTAL DOCUMENTATION: ~149KB across 8 files
 Customer Experience:
   ✓ Automated review requests (5-day delay after delivery)
   ✓ 1-click star ratings (1-5 stars)
-  ✓ Multi-platform reviews (CitadelBuy, Google, Trustpilot)
+  ✓ Multi-platform reviews (Broxiva, Google, Trustpilot)
   ✓ NPS surveys for high-value orders (>$200)
   ✓ Smart reminders (3 days if no response)
 
@@ -111,7 +111,7 @@ External Services:
   ✓ Mixpanel (analytics)
   ✓ ShipStation (delivery webhooks)
 
-CitadelBuy API:
+Broxiva API:
   ✓ Order retrieval
   ✓ Customer information
   ✓ Review storage
@@ -186,20 +186,20 @@ Support Response Time:
 
 📧 EMAIL TEMPLATES INCLUDED
 
-Template 1: Review Request (d-citadelbuy-review-request-v2)
+Template 1: Review Request (d-broxiva-review-request-v2)
   - Personalized greeting
   - Product images from CDN
   - 1-click star ratings (1-5)
-  - Platform links (CitadelBuy, Google, Trustpilot)
+  - Platform links (Broxiva, Google, Trustpilot)
   - Order details and tracking
 
-Template 2: Thank You (d-citadelbuy-review-thank-you)
+Template 2: Thank You (d-broxiva-review-thank-you)
   - Appreciation message
   - 15% discount code
   - Referral program invitation
   - $10 credit for both parties
 
-Template 3: NPS Survey (d-citadelbuy-nps-survey)
+Template 3: NPS Survey (d-broxiva-nps-survey)
   - 0-10 scale buttons
   - Optional feedback textarea
   - Order details context
@@ -274,7 +274,7 @@ Ready for:
 📍 FILE LOCATION
 
 All files saved to:
-C:\Users\citad\OneDrive\Documents\citadelbuy-master\organization\n8n-workflows\
+C:\Users\citad\OneDrive\Documents\broxiva-master\organization\n8n-workflows\
 
 Files:
   ├── workflow-05-feedback-reviews.json
@@ -297,7 +297,7 @@ Next Steps:
   3. Follow WORKFLOW-05-IMPLEMENTATION-CHECKLIST.md for deployment
 
 Support:
-  - Internal: dev@citadelbuy.com
+  - Internal: dev@broxiva.com
   - Slack: #platform-engineering
   - Documentation: All files in n8n-workflows/
 
@@ -358,7 +358,7 @@ Created: 2025-12-03
 Total Files: 9
 Total Size: ~150KB
 
-The workflow is ready for deployment to CitadelBuy's n8n instance.
+The workflow is ready for deployment to Broxiva's n8n instance.
 
 ═══════════════════════════════════════════════════════════════════════════
 

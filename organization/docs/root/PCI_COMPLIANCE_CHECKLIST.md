@@ -2,7 +2,7 @@
 
 **Document Version:** 1.0
 **Last Updated:** December 3, 2025
-**Platform:** CitadelBuy E-Commerce Platform
+**Platform:** Broxiva E-Commerce Platform
 **Compliance Level:** SAQ A-EP (E-commerce with Outsourced Payment Processing)
 
 ---
@@ -970,9 +970,9 @@
 ## Contact Information
 
 **Compliance Team:**
-- **Compliance Officer:** compliance@citadelbuy.com
-- **Security Team:** security@citadelbuy.com
-- **IT Operations:** devops@citadelbuy.com
+- **Compliance Officer:** compliance@broxiva.com
+- **Security Team:** security@broxiva.com
+- **IT Operations:** devops@broxiva.com
 
 **External Contacts:**
 - **Acquiring Bank:** [Bank contact info]
@@ -981,7 +981,7 @@
 - **Legal Counsel:** [Legal contact info]
 
 **Emergency Contacts:**
-- **Security Incidents:** security@citadelbuy.com
+- **Security Incidents:** security@broxiva.com
 - **After-hours:** [Phone number]
 - **Incident Commander:** [Contact info]
 
@@ -991,7 +991,7 @@
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | 2025-12-03 | CitadelBuy Compliance Team | Initial checklist creation |
+| 1.0 | 2025-12-03 | Broxiva Compliance Team | Initial checklist creation |
 
 **Next Review Date:** 2026-03-03
 

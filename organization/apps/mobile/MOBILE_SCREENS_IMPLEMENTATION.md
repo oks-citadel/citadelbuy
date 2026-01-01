@@ -1,7 +1,7 @@
 # Mobile App Core Screens Implementation Summary
 
 ## Overview
-This document summarizes the implementation of core mobile app screens for the CitadelBuy React Native application. All screens follow a consistent design system with proper error handling, loading states, and responsive UI.
+This document summarizes the implementation of core mobile app screens for the Broxiva React Native application. All screens follow a consistent design system with proper error handling, loading states, and responsive UI.
 
 ## Completed Screens
 

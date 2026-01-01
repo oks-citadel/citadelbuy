@@ -1,17 +1,17 @@
 @echo off
-REM CitadelBuy Fraud Detection Workflow Test Script (Windows)
+REM Broxiva Fraud Detection Workflow Test Script (Windows)
 REM Tests all risk levels with sample data
 
 setlocal enabledelayedexpansion
 
 if "%N8N_WEBHOOK_URL%"=="" (
-    set WEBHOOK_URL=https://n8n.citadelbuy.com/webhook/fraud-detection
+    set WEBHOOK_URL=https://n8n.broxiva.com/webhook/fraud-detection
 ) else (
     set WEBHOOK_URL=%N8N_WEBHOOK_URL%
 )
 
 echo ========================================
-echo CitadelBuy Fraud Detection Test Suite
+echo Broxiva Fraud Detection Test Suite
 echo ========================================
 echo Webhook URL: %WEBHOOK_URL%
 echo.

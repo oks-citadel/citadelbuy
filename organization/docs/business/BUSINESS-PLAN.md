@@ -1,4 +1,4 @@
-# CitadelBuy Platform - Business Plan
+# Broxiva Platform - Business Plan
 ## Transforming Global Commerce Through Strategic Marketplace Innovation
 
 **Document Version:** 2.0  
@@ -12,7 +12,7 @@
 
 ### Business Overview
 
-**CitadelBuy** is a next-generation multi-vendor e-commerce platform designed to connect quality vendors with global customers through a curated marketplace experience. Unlike existing platforms that prioritize volume over value, CitadelBuy focuses on verified vendors, quality products, and exceptional customer experience.
+**Broxiva** is a next-generation multi-vendor e-commerce platform designed to connect quality vendors with global customers through a curated marketplace experience. Unlike existing platforms that prioritize volume over value, Broxiva focuses on verified vendors, quality products, and exceptional customer experience.
 
 **Current State:** WordPress/WooCommerce platform with $30-$299 subscription tiers  
 **Target State:** Scalable, AI-powered marketplace with transaction-based revenue model  
@@ -36,7 +36,7 @@
 
 ### Our Solution
 
-CitadelBuy provides a **curated marketplace ecosystem** that balances vendor empowerment with customer protection:
+Broxiva provides a **curated marketplace ecosystem** that balances vendor empowerment with customer protection:
 
 1. **Vendor Success Program**
    - Transparent pricing (8-15% commission vs. industry 15-30%)
@@ -348,7 +348,7 @@ CitadelBuy provides a **curated marketplace ecosystem** that balances vendor emp
 ### Marketing & Brand Strategy
 
 **Brand Positioning:**
-"CitadelBuy: Where Quality Meets Opportunity"
+"Broxiva: Where Quality Meets Opportunity"
 
 **Brand Promise:**
 - To Vendors: "Grow your business with tools that empower, not exploit"
@@ -661,7 +661,7 @@ All features evaluated using RICE scoring model:
 
 ## Value Proposition & Competitive Positioning
 
-### Why Vendors Should Sell on CitadelBuy
+### Why Vendors Should Sell on Broxiva
 
 **1. Fair and Transparent Pricing**
 
@@ -675,9 +675,9 @@ Amazon: $100 sale
 = Net to vendor: $64 (36% fee burden)
 ```
 
-*CitadelBuy Economics:*
+*Broxiva Economics:*
 ```
-CitadelBuy: $100 sale
+Broxiva: $100 sale
 - 12% platform fee: -$12
 - Payment processing: -$3
 = Net to vendor: $85 (15% fee burden)
@@ -687,7 +687,7 @@ Result: 32% more profit per sale
 
 **2. Professional-Grade Tools Without Enterprise Costs**
 
-| Capability | Traditional Platforms | Enterprise Solutions | CitadelBuy |
+| Capability | Traditional Platforms | Enterprise Solutions | Broxiva |
 |------------|----------------------|---------------------|------------|
 | Real-time analytics | ❌ or basic | ✅ ($500+/month) | ✅ Included |
 | Inventory management | ✅ Basic | ✅ Advanced | ✅ Advanced |
@@ -755,7 +755,7 @@ Months 7-12: Mature and expand
 - Amazon: 10-15% (high traffic, low intent)
 - eBay: 5-8% (bargain hunters, price-focused)
 - Etsy: 1-3% (niche, but overwhelming choice)
-- CitadelBuy Target: 8-12% (curated, quality-focused)
+- Broxiva Target: 8-12% (curated, quality-focused)
 
 *How We Achieve This:*
 - Vendor vetting reduces buyer hesitation
@@ -764,7 +764,7 @@ Months 7-12: Mature and expand
 - Better search relevance (quality over volume)
 - Trust signals throughout shopping experience
 
-### Why Customers Should Buy on CitadelBuy
+### Why Customers Should Buy on Broxiva
 
 **1. Quality Assurance You Can Trust**
 
@@ -797,7 +797,7 @@ Months 7-12: Mature and expand
 
 *The Paradox of Choice:*
 - Amazon: 350M products → analysis paralysis
-- CitadelBuy: Curated selection → confident decisions
+- Broxiva: Curated selection → confident decisions
 
 *Our Curation Promise:*
 - Maximum 3 similar products per search page
@@ -1309,7 +1309,7 @@ Total Investor Return: 20x blended
 *User Story 1.1: Vendor Registration*
 ```
 As a potential vendor
-I want to create an account and apply to sell on CitadelBuy
+I want to create an account and apply to sell on Broxiva
 So that I can reach new customers
 
 Acceptance Criteria:
@@ -1524,7 +1524,7 @@ Sprint: Sprint 12-13
 **Document Control:**
 - Version: 2.0
 - Date: January 2025
-- Authors: CitadelBuy Founding Team
+- Authors: Broxiva Founding Team
 - Reviewers: [To be assigned]
 - Next Review: March 2025
 

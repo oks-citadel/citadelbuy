@@ -2,7 +2,7 @@
 
 ## Overview
 
-Complete documentation for Sentry error tracking and monitoring implementation for CitadelBuy's e-commerce platform. This index provides quick access to all Sentry-related documentation for operations teams.
+Complete documentation for Sentry error tracking and monitoring implementation for Broxiva's e-commerce platform. This index provides quick access to all Sentry-related documentation for operations teams.
 
 ---
 
@@ -428,7 +428,7 @@ When updating Sentry documentation:
 
 **For urgent issues:**
 - Post in #devops-team Slack channel
-- Email devops-team@citadelbuy.com
+- Email devops-team@broxiva.com
 
 **For improvements:**
 - Create Jira ticket in OPS project
@@ -476,18 +476,18 @@ To request new documentation:
 ### Internal Support
 
 **DevOps Team:**
-- Email: devops-team@citadelbuy.com
+- Email: devops-team@broxiva.com
 - Slack: #devops-team
 - Office Hours: Daily 2-3 PM EST
 
 **Platform Team:**
-- Email: platform-team@citadelbuy.com
+- Email: platform-team@broxiva.com
 - Slack: #platform-team
 - Office Hours: Daily 3-4 PM EST
 
 **On-Call:**
-- PagerDuty: https://citadelbuy.pagerduty.com
-- Emergency: oncall@citadelbuy.com
+- PagerDuty: https://broxiva.pagerduty.com
+- Emergency: oncall@broxiva.com
 
 ### External Support
 

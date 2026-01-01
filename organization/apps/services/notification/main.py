@@ -48,8 +48,8 @@ class SendGridConfig:
             return None
         return cls(
             api_key=api_key,
-            from_email=os.getenv('SENDGRID_FROM_EMAIL', 'noreply@citadelbuy.com'),
-            from_name=os.getenv('SENDGRID_FROM_NAME', 'CitadelBuy'),
+            from_email=os.getenv('SENDGRID_FROM_EMAIL', 'noreply@broxiva.com'),
+            from_name=os.getenv('SENDGRID_FROM_NAME', 'Broxiva'),
             sandbox_mode=os.getenv('SENDGRID_SANDBOX_MODE', 'false').lower() == 'true'
         )
 
@@ -75,8 +75,8 @@ class AWSSESConfig:
             access_key_id=access_key,
             secret_access_key=secret_key,
             region=os.getenv('AWS_SES_REGION', os.getenv('AWS_REGION', 'us-east-1')),
-            from_email=os.getenv('AWS_SES_FROM_EMAIL', 'noreply@citadelbuy.com'),
-            from_name=os.getenv('AWS_SES_FROM_NAME', 'CitadelBuy'),
+            from_email=os.getenv('AWS_SES_FROM_EMAIL', 'noreply@broxiva.com'),
+            from_name=os.getenv('AWS_SES_FROM_NAME', 'Broxiva'),
             configuration_set=os.getenv('AWS_SES_CONFIGURATION_SET')
         )
 
@@ -916,9 +916,9 @@ ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '').split(',') if os.getenv('ALLO
     "http://localhost:3000",
     "http://localhost:8000",
     "http://localhost:8080",
-    "https://citadelbuy.com",
-    "https://admin.citadelbuy.com",
-    "https://api.citadelbuy.com",
+    "https://broxiva.com",
+    "https://admin.broxiva.com",
+    "https://api.broxiva.com",
 ]
 
 # In-memory storage (replace with database in production)
@@ -985,7 +985,7 @@ async def lifespan(app: FastAPI):
 
 # Initialize FastAPI app with lifespan
 app = FastAPI(
-    title="CitadelBuy Notification Service",
+    title="Broxiva Notification Service",
     description="Multi-channel notification service for email, SMS, and push notifications",
     version="1.0.0",
     docs_url="/docs",
@@ -1649,7 +1649,7 @@ async def get_analytics_summary(
 async def root():
     """Root endpoint with service information"""
     return {
-        "service": "CitadelBuy Notification Service",
+        "service": "Broxiva Notification Service",
         "version": "1.0.0",
         "description": "Multi-channel notification service for email, SMS, and push notifications",
         "endpoints": {
@@ -1703,8 +1703,8 @@ def _initialize_sample_templates():
             "id": "welcome",
             "name": "Welcome Email",
             "channel": NotificationChannel.EMAIL.value,
-            "subject": "Welcome to CitadelBuy!",
-            "body": "Hello {customer_name},\n\nWelcome to CitadelBuy! We're excited to have you.",
+            "subject": "Welcome to Broxiva!",
+            "body": "Hello {customer_name},\n\nWelcome to Broxiva! We're excited to have you.",
             "html_body": "<h1>Welcome!</h1><p>Hello {customer_name},</p><p>We're excited to have you!</p>",
             "variables": ["customer_name"],
             "is_active": True,

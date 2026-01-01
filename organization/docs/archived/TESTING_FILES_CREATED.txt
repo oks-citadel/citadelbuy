@@ -3,7 +3,7 @@ LOAD TESTING AND SECURITY TESTING SETUP - FILES CREATED
 ================================================================================
 
 Date: December 3, 2024
-Location: C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+Location: C:/Users/citad/OneDrive/Documents/broxiva-master/organization
 
 ================================================================================
 1. LOAD TESTING WITH k6 (tests/load/)

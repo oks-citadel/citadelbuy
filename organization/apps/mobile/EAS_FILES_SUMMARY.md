@@ -1,6 +1,6 @@
 # EAS Configuration Files Summary
 
-This document lists all EAS-related files created for the CitadelBuy mobile app.
+This document lists all EAS-related files created for the Broxiva mobile app.
 
 ## Core Configuration Files
 

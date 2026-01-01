@@ -1,12 +1,12 @@
-# CitadelBuy - Azure Boards User Stories
+# Broxiva - Azure Boards User Stories
 
 This document contains user stories to be created in Azure Boards for future development tasks.
 
 ## Azure DevOps Project Details
-- **Project URL**: https://dev.azure.com/citadelcloudmanagement/CitadelBuy
-- **Board URL**: https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_workitems/recentlyupdated/
-- **Repos URL**: https://dev.azure.com/citadelcloudmanagement/_git/CitadelBuy
-- **Pipelines URL**: https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_build
+- **Project URL**: https://dev.azure.com/broxivacloudmanagement/Broxiva
+- **Board URL**: https://dev.azure.com/broxivacloudmanagement/Broxiva/_workitems/recentlyupdated/
+- **Repos URL**: https://dev.azure.com/broxivacloudmanagement/_git/Broxiva
+- **Pipelines URL**: https://dev.azure.com/broxivacloudmanagement/Broxiva/_build
 
 ---
 
@@ -326,7 +326,7 @@ As a performance engineer, I want load testing capabilities so that the system c
 ## How to Import to Azure Boards
 
 ### Option 1: Manual Creation
-1. Navigate to Azure Boards: https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_workitems
+1. Navigate to Azure Boards: https://dev.azure.com/broxivacloudmanagement/Broxiva/_workitems
 2. Click "New Work Item" > "User Story"
 3. Copy details from each story above
 4. Set appropriate Epic links
@@ -341,7 +341,7 @@ Use the Azure CLI with Azure DevOps extension:
 az extension add --name azure-devops
 
 # Login and set defaults
-az devops configure --defaults organization=https://dev.azure.com/citadelcloudmanagement project=CitadelBuy
+az devops configure --defaults organization=https://dev.azure.com/broxivacloudmanagement project=Broxiva
 
 # Create work item
 az boards work-item create --title "User Story Title" --type "User Story" --description "Description"

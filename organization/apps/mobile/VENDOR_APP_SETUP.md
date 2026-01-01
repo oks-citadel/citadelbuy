@@ -1,4 +1,4 @@
-# CitadelBuy Vendor Mobile App - Setup Guide
+# Broxiva Vendor Mobile App - Setup Guide
 
 ## Overview
 The vendor mobile app foundation has been created with all necessary screens, navigation, stores, and services. The app uses role-based routing to direct vendors to their specialized interface.

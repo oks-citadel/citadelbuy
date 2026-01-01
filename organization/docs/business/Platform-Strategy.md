@@ -1,11 +1,11 @@
-# CitadelBuy Platform Operational Structure
+# Broxiva Platform Operational Structure
 ## Strategic Business & Technical Blueprint
 
 ---
 
 ## 📋 Executive Summary
 
-**CitadelBuy** is an AI-powered, next-generation global commerce platform that transcends traditional e-commerce by creating a truly intelligent, personalized, and socially-connected shopping ecosystem. Unlike competitors who focus solely on transactions, CitadelBuy builds relationships, predicts needs, and creates immersive shopping experiences.
+**Broxiva** is an AI-powered, next-generation global commerce platform that transcends traditional e-commerce by creating a truly intelligent, personalized, and socially-connected shopping ecosystem. Unlike competitors who focus solely on transactions, Broxiva builds relationships, predicts needs, and creates immersive shopping experiences.
 
 **Mission**: Democratize global commerce through intelligent automation, empowering vendors of all sizes to reach global markets while providing customers with hyper-personalized, trust-driven shopping experiences.
 
@@ -99,7 +99,7 @@
 
 ### 1.3 Competitive Differentiation Strategy
 
-#### What Makes CitadelBuy Different
+#### What Makes Broxiva Different
 
 **1. Hyper-Intelligence Layer**
 - AI that learns individual shopping DNA

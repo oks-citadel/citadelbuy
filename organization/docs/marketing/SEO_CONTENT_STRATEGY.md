@@ -1,4 +1,4 @@
-# CitadelBuy SEO & Content Marketing Strategy
+# Broxiva SEO & Content Marketing Strategy
 
 ## Table of Contents
 1. [SEO Strategy Overview](#seo-strategy-overview)
@@ -22,7 +22,7 @@
 - Achieve 500,000 organic monthly visits by Q4 2027
 - Rank in top 3 for 50+ high-intent B2B keywords by Q2 2027
 - Generate 5,000+ organic SQLs per month by Q4 2027
-- Establish CitadelBuy as the thought leader in Africa-global B2B trade
+- Establish Broxiva as the thought leader in Africa-global B2B trade
 
 **Target Keywords**: 200+ primary keywords, 1,000+ long-tail keywords
 
@@ -64,17 +64,17 @@
 ### 2.2 Multi-Language Implementation
 
 **URL Structure**: Subdirectories (hreflang-optimized)
-- English (Global): `citadelbuy.com/en/`
-- French: `citadelbuy.com/fr/`
-- Arabic: `citadelbuy.com/ar/`
-- German: `citadelbuy.com/de/`
+- English (Global): `broxiva.com/en/`
+- French: `broxiva.com/fr/`
+- Arabic: `broxiva.com/ar/`
+- German: `broxiva.com/de/`
 
 **Hreflang Tags**:
 ```html
-<link rel="alternate" hreflang="en" href="https://citadelbuy.com/en/guide-to-african-sourcing" />
-<link rel="alternate" hreflang="fr" href="https://citadelbuy.com/fr/guide-dapprovisionnement-africain" />
-<link rel="alternate" hreflang="ar" href="https://citadelbuy.com/ar/guide-to-african-sourcing" />
-<link rel="alternate" hreflang="x-default" href="https://citadelbuy.com/en/guide-to-african-sourcing" />
+<link rel="alternate" hreflang="en" href="https://broxiva.com/en/guide-to-african-sourcing" />
+<link rel="alternate" hreflang="fr" href="https://broxiva.com/fr/guide-dapprovisionnement-africain" />
+<link rel="alternate" hreflang="ar" href="https://broxiva.com/ar/guide-to-african-sourcing" />
+<link rel="alternate" hreflang="x-default" href="https://broxiva.com/en/guide-to-african-sourcing" />
 ```
 
 **Localization Strategy**:
@@ -292,7 +292,7 @@
 - Week 1: "How to Find International Buyers for Your Products" (Blog - Nigeria, Kenya focus)
 - Week 2: "Export Documentation Checklist for African Businesses" (Blog + Downloadable PDF)
 - Week 3: "Pricing Your Products for the U.S. Market" (Blog)
-- Week 4: Video: "How to Use CitadelBuy as an African Exporter" (Tutorial)
+- Week 4: Video: "How to Use Broxiva as an African Exporter" (Tutorial)
 
 **May** (Europe Launch Content):
 - Week 1: "Sourcing African Products for UK Retailers" (Blog - UK focus)
@@ -352,7 +352,7 @@
 - **Length**: 25 pages
 - **Research**: Survey 500 U.S. buyers, analyze 1,000+ transactions
 - **Key Findings**: 20-30% cost savings, 15-day faster shipping (West Africa to U.S. East Coast)
-- **CTA**: "Sign up for CitadelBuy to access vetted African suppliers"
+- **CTA**: "Sign up for Broxiva to access vetted African suppliers"
 
 **Q2 2026**: "The State of Africa-Europe Trade 2026"
 - **Length**: 30 pages
@@ -371,7 +371,7 @@
 **Q1 2027**: "U.S.-Africa Trade Compliance Handbook"
 - **Length**: 40 pages
 - **Focus**: Customs, FDA, USDA requirements, step-by-step guides
-- **Value**: Position CitadelBuy as compliance experts
+- **Value**: Position Broxiva as compliance experts
 
 **Q2 2027**: "Trade Finance for Emerging Markets: Best Practices"
 - **Length**: 25 pages
@@ -394,8 +394,8 @@
 
 ### 7.1 Case Study Template
 
-**Title Format**: "How [Company Name] [Achieved Result] Using CitadelBuy"
-- Example: "How XYZ Retail Reduced Sourcing Costs by 28% Using CitadelBuy"
+**Title Format**: "How [Company Name] [Achieved Result] Using Broxiva"
+- Example: "How XYZ Retail Reduced Sourcing Costs by 28% Using Broxiva"
 
 **Structure**:
 1. **Executive Summary** (100 words)
@@ -415,7 +415,7 @@
    - Business impact of the problem
 
 4. **The Solution** (300 words)
-   - How they found CitadelBuy
+   - How they found Broxiva
    - Implementation process
    - Key features used
    - Timeline
@@ -431,11 +431,11 @@
      - Process improvements
 
 6. **Looking Ahead** (100 words)
-   - Future plans with CitadelBuy
+   - Future plans with Broxiva
    - Expansion opportunities
 
 7. **Call-to-Action**
-   - "See how CitadelBuy can help your business. Request a demo."
+   - "See how Broxiva can help your business. Request a demo."
 
 ### 7.2 Case Study Target Segments
 
@@ -443,11 +443,11 @@
 1. **U.S. Retailer**: "How [Retailer] Diversified Supply Chain and Saved 25% with African Suppliers"
 2. **Nigerian Exporter**: "From Local Manufacturer to $2M in U.S. Sales: [Company] Success Story"
 3. **European Importer**: "UK Fashion Brand Sources Sustainable Textiles from Ghana"
-4. **U.S. Food Distributor**: "Ethiopian Coffee Roaster Scales to 50 U.S. Retailers with CitadelBuy"
+4. **U.S. Food Distributor**: "Ethiopian Coffee Roaster Scales to 50 U.S. Retailers with Broxiva"
 
 **Q3-Q4 2026**:
 5. **Middle East Buyer**: "Dubai Distributor Expands Sourcing to Africa, Increases Margins by 18%"
-6. **South African Exporter**: "Wine Producer Breaks into U.S. Market with CitadelBuy"
+6. **South African Exporter**: "Wine Producer Breaks into U.S. Market with Broxiva"
 7. **Government Procurement**: "How [U.S. Municipality] Met Diversity Supplier Goals with African Vendors"
 8. **Manufacturing OEM**: "Automotive Parts Supplier Finds Reliable African Component Manufacturers"
 
@@ -490,7 +490,7 @@
 
 **Site Architecture**:
 ```
-citadelbuy.com/
+broxiva.com/
 ├── /en/ (English)
 │   ├── /blog/
 │   │   ├── /sourcing/
@@ -544,7 +544,7 @@ Disallow: /checkout/
 Disallow: /dashboard/
 
 # Sitemap location
-Sitemap: https://citadelbuy.com/sitemap.xml
+Sitemap: https://broxiva.com/sitemap.xml
 ```
 
 ---

@@ -1,8 +1,8 @@
-# CitadelBuy AI Services - Docker Compose Setup
+# Broxiva AI Services - Docker Compose Setup
 
 ## Overview
 
-The `docker-compose.ai.yml` file provides a complete Docker stack for running all AI/ML services in the CitadelBuy platform. This stack includes 300+ AI capabilities across 7 specialized microservices.
+The `docker-compose.ai.yml` file provides a complete Docker stack for running all AI/ML services in the Broxiva platform. This stack includes 300+ AI capabilities across 7 specialized microservices.
 
 ## Services Included
 
@@ -90,12 +90,12 @@ The `docker-compose.ai.yml` file provides a complete Docker stack for running al
 ### PostgreSQL (Port 5433)
 - **Purpose**: Database for AI services
 - **Version**: PostgreSQL 16 Alpine
-- **Container**: `citadelbuy-postgres-ai`
+- **Container**: `broxiva-postgres-ai`
 
 ### Redis (Port 6380)
 - **Purpose**: Caching and session management
 - **Version**: Redis 7 Alpine
-- **Container**: `citadelbuy-redis-ai`
+- **Container**: `broxiva-redis-ai`
 - **Configuration**: 2GB max memory with LRU eviction
 
 ## Quick Start
@@ -111,15 +111,15 @@ Create a `.env` file in the `organization/` directory with the following variabl
 ```bash
 # Required
 POSTGRES_PASSWORD=<your-secure-password>
-DATABASE_URL=postgresql://citadelbuy:${POSTGRES_PASSWORD}@postgres:5432/citadelbuy_ai
+DATABASE_URL=postgresql://broxiva:${POSTGRES_PASSWORD}@postgres:5432/broxiva_ai
 REDIS_URL=redis://redis:6379
 OPENAI_API_KEY=<your-openai-api-key>
 
 # Optional
 LOG_LEVEL=INFO
 SERVICE_ENV=development
-POSTGRES_USER=citadelbuy
-POSTGRES_DB=citadelbuy_ai
+POSTGRES_USER=broxiva
+POSTGRES_DB=broxiva_ai
 
 # Service-specific (optional with defaults)
 RECOMMENDATION_STRATEGY=hybrid
@@ -211,7 +211,7 @@ The following Docker volumes persist data:
 
 ## Network Configuration
 
-All services run on the `citadelbuy-ai-network` bridge network with subnet `172.21.0.0/16`.
+All services run on the `broxiva-ai-network` bridge network with subnet `172.21.0.0/16`.
 
 Services can communicate with each other using their container names:
 - `ai-engine:8002`
@@ -235,12 +235,12 @@ docker-compose -f infrastructure/docker/docker-compose.ai.yml logs -f ai-engine
 
 ### Check Resource Usage
 ```bash
-docker stats $(docker ps --filter "label=com.citadelbuy.service" --format "{{.Names}}")
+docker stats $(docker ps --filter "label=com.broxiva.service" --format "{{.Names}}")
 ```
 
 ### Access Service Shell
 ```bash
-docker exec -it citadelbuy-ai-engine /bin/sh
+docker exec -it broxiva-ai-engine /bin/sh
 ```
 
 ## Production Considerations
@@ -272,7 +272,7 @@ For production deployments:
 ### Out of Memory
 1. Increase Docker memory limit
 2. Reduce number of workers per service
-3. Clear Redis cache: `docker exec citadelbuy-redis-ai redis-cli FLUSHALL`
+3. Clear Redis cache: `docker exec broxiva-redis-ai redis-cli FLUSHALL`
 
 ## API Documentation
 

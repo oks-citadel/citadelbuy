@@ -1,6 +1,6 @@
 # E2E Testing Quick Reference
 
-Quick reference guide for running and writing E2E tests in CitadelBuy.
+Quick reference guide for running and writing E2E tests in Broxiva.
 
 ## Quick Start
 
@@ -311,7 +311,7 @@ await page.waitForTimeout(1000);
 Create `.env.test`:
 
 ```env
-DATABASE_URL=postgresql://user:pass@localhost:5432/citadelbuy_test
+DATABASE_URL=postgresql://user:pass@localhost:5432/broxiva_test
 JWT_SECRET=test-secret
 JWT_REFRESH_SECRET=test-refresh-secret
 REDIS_URL=redis://localhost:6379

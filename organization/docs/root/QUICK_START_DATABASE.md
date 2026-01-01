@@ -9,13 +9,13 @@
 cd organization/apps/api
 
 # Backup database first!
-pg_dump citadelbuy > backup_$(date +%Y%m%d).sql
+pg_dump broxiva > backup_$(date +%Y%m%d).sql
 
 # Apply migration
 npx prisma migrate deploy
 
 # Verify
-psql citadelbuy -c "SELECT COUNT(*) FROM pg_indexes WHERE indexname LIKE 'idx_%';"
+psql broxiva -c "SELECT COUNT(*) FROM pg_indexes WHERE indexname LIKE 'idx_%';"
 # Should show 150+ indexes
 ```
 
@@ -85,7 +85,7 @@ SELECT COUNT(*) FROM pg_indexes WHERE indexname LIKE 'idx_%';
 
 ```bash
 ls -lh /backups/full/ | head -5
-aws s3 ls s3://citadelbuy-backups/full/ | tail -5
+aws s3 ls s3://broxiva-backups/full/ | tail -5
 ```
 
 ### Monitor Query Performance
@@ -114,9 +114,9 @@ psql -p 6432 -U postgres pgbouncer -c "SHOW POOLS;"
 docker-compose stop api
 
 # Restore database
-dropdb citadelbuy
-createdb citadelbuy
-pg_restore -d citadelbuy /backups/full/latest.sql.gz
+dropdb broxiva
+createdb broxiva
+pg_restore -d broxiva /backups/full/latest.sql.gz
 
 # Restart application
 docker-compose start api
@@ -193,10 +193,10 @@ FROM pg_stat_database;
 
 ```bash
 # Manual full backup
-pg_dump citadelbuy | gzip > citadelbuy_$(date +%Y%m%d).sql.gz
+pg_dump broxiva | gzip > broxiva_$(date +%Y%m%d).sql.gz
 
 # List backups
-aws s3 ls s3://citadelbuy-backups/full/
+aws s3 ls s3://broxiva-backups/full/
 
 # Verify backup
 pg_restore --list backup_file.sql.gz
@@ -218,8 +218,8 @@ pg_restore --list backup_file.sql.gz
 ## 📞 Support
 
 - **Documentation**: See links above
-- **DBA**: dba@citadelbuy.com
-- **DevOps**: oncall@citadelbuy.com
+- **DBA**: dba@broxiva.com
+- **DevOps**: oncall@broxiva.com
 - **Emergency**: +1-XXX-XXX-XXXX
 
 ---

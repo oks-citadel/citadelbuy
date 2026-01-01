@@ -29,7 +29,7 @@ This guide provides step-by-step instructions for removing sensitive .env files 
 
 3. **Create a backup** of your repository before any destructive operations:
    ```bash
-   git clone --mirror C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization C:/Users/citad/OneDrive/Documents/citadelbuy-master-backup
+   git clone --mirror C:/Users/citad/OneDrive/Documents/broxiva-master/organization C:/Users/citad/OneDrive/Documents/broxiva-master-backup
    ```
 
 4. **Revoke any compromised API keys immediately**:
@@ -48,7 +48,7 @@ This guide provides step-by-step instructions for removing sensitive .env files 
 
 ```bash
 # Navigate to repository
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization
 
 # Find all commits that touched .env files
 git log --all --full-history --pretty=format:"%H|%ai|%an|%s" -- ".env" "**/.env" ".env.*" "**/.env.*"
@@ -115,8 +115,8 @@ alias bfg='java -jar bfg-1.14.0.jar'
 ```bash
 # Clone a fresh mirror copy (this is required for BFG)
 cd C:/Users/citad/OneDrive/Documents
-git clone --mirror C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization citadelbuy-cleanup.git
-cd citadelbuy-cleanup.git
+git clone --mirror C:/Users/citad/OneDrive/Documents/broxiva-master/organization broxiva-cleanup.git
+cd broxiva-cleanup.git
 ```
 
 #### Step 3: Remove .env Files with BFG
@@ -164,7 +164,7 @@ git push --force --all
 git push --force --tags
 
 # If using the mirror:
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-cleanup.git
+cd C:/Users/citad/OneDrive/Documents/broxiva-cleanup.git
 git push
 ```
 
@@ -177,7 +177,7 @@ Use this method if BFG is not available or if you need more fine-grained control
 #### Step 1: Create a Backup Branch
 
 ```bash
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization
 git checkout -b backup-before-cleanup
 git push origin backup-before-cleanup
 ```
@@ -240,8 +240,8 @@ brew install git-filter-repo
 
 ```bash
 cd C:/Users/citad/OneDrive/Documents
-git clone C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization citadelbuy-cleanup
-cd citadelbuy-cleanup
+git clone C:/Users/citad/OneDrive/Documents/broxiva-master/organization broxiva-cleanup
+cd broxiva-cleanup
 ```
 
 #### Step 3: Remove Files
@@ -316,7 +316,7 @@ AFTER HISTORY REWRITE, ALL TEAM MEMBERS MUST:
 2. Delete your local repository and re-clone:
    ```
    cd [parent-directory]
-   rm -rf citadelbuy-master
+   rm -rf broxiva-master
    git clone [repository-url]
    ```
 
@@ -376,7 +376,7 @@ git check-ignore -v .env  # Should show .env is ignored by .gitignore
 git count-objects -vH
 
 # Compare with backup
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master-backup
+cd C:/Users/citad/OneDrive/Documents/broxiva-master-backup
 git count-objects -vH
 ```
 

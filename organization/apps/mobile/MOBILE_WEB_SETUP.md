@@ -31,7 +31,7 @@ Enable the Expo mobile app to run in browser for testing purposes, allowing rapi
 ```json
 {
   "expo": {
-    "name": "CitadelBuy",
+    "name": "Broxiva",
     "web": {
       "favicon": "./assets/favicon.png"
     }
@@ -42,7 +42,7 @@ Enable the Expo mobile app to run in browser for testing purposes, allowing rapi
 ## Required Changes
 
 ### 1. Package.json Updates
-**File**: `C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/apps/mobile/package.json`
+**File**: `C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/apps/mobile/package.json`
 
 #### Added Scripts
 ```json
@@ -85,7 +85,7 @@ pnpm add -D @expo/webpack-config
 ### Development Server (Recommended)
 ```bash
 # Navigate to mobile app directory
-cd C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/apps/mobile
+cd C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/apps/mobile
 
 # Install dependencies (if not already done)
 pnpm install
@@ -176,7 +176,7 @@ if (Platform.OS === 'web') {
 
 ### Output Location
 ```
-C:/Users/Dell/OneDrive/Documents/Citadelbuy/CitadelBuy/organization/apps/mobile/web-build/
+C:/Users/Dell/OneDrive/Documents/Broxivabuy/Broxiva/organization/apps/mobile/web-build/
 ```
 
 ### Build Contents
@@ -317,7 +317,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./apps/mobile/web-build
-          cname: mobile.citadelbuy.com # Optional: custom domain
+          cname: mobile.broxiva.com # Optional: custom domain
 ```
 
 ## Next Steps

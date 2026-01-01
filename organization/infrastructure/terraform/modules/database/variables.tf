@@ -82,7 +82,7 @@ variable "private_dns_zone_id" {
 variable "administrator_login" {
   description = "Database administrator login"
   type        = string
-  default     = "citadeladmin"
+  default     = "broxivaadmin"
 }
 
 variable "administrator_password" {

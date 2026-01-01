@@ -2,7 +2,7 @@
 
 ## Overview
 
-This migration adds comprehensive database indexes to optimize query performance across the CitadelBuy platform. The indexes are designed to support common query patterns and improve response times for frequently accessed data.
+This migration adds comprehensive database indexes to optimize query performance across the Broxiva platform. The indexes are designed to support common query patterns and improve response times for frequently accessed data.
 
 ## What This Migration Does
 
@@ -49,12 +49,12 @@ Before applying this migration:
 
 1. **Backup your database**:
    ```bash
-   pg_dump citadelbuy > citadelbuy_backup_$(date +%Y%m%d).sql
+   pg_dump broxiva > broxiva_backup_$(date +%Y%m%d).sql
    ```
 
 2. **Check available disk space**:
    ```sql
-   SELECT pg_size_pretty(pg_database_size('citadelbuy'));
+   SELECT pg_size_pretty(pg_database_size('broxiva'));
    ```
    Ensure you have at least 15% additional space available.
 
@@ -84,7 +84,7 @@ npx prisma migrate status
 
 ```bash
 # Connect to database
-psql -U postgres -d citadelbuy
+psql -U postgres -d broxiva
 
 # Run migration
 \i prisma/migrations/add_performance_indexes/migration.sql
@@ -97,7 +97,7 @@ psql -U postgres -d citadelbuy
 
 ```bash
 # If using Docker Compose
-docker-compose exec postgres psql -U postgres -d citadelbuy -f /migrations/add_performance_indexes/migration.sql
+docker-compose exec postgres psql -U postgres -d broxiva -f /migrations/add_performance_indexes/migration.sql
 ```
 
 ## Verification
@@ -245,9 +245,9 @@ WHERE indexname LIKE 'idx_%'
 docker-compose stop api
 
 # Restore database
-dropdb citadelbuy
-createdb citadelbuy
-psql citadelbuy < citadelbuy_backup_20251203.sql
+dropdb broxiva
+createdb broxiva
+psql broxiva < broxiva_backup_20251203.sql
 
 # Restart application
 docker-compose start api
@@ -348,7 +348,7 @@ If you encounter issues:
 
 1. Check PostgreSQL logs: `/var/log/postgresql/postgresql-14-main.log`
 2. Review application logs for query errors
-3. Contact DevOps team: devops@citadelbuy.com
+3. Contact DevOps team: devops@broxiva.com
 4. Create incident ticket with:
    - Error messages
    - Query plans (EXPLAIN ANALYZE output)

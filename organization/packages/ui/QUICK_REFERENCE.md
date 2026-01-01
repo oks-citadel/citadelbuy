@@ -320,13 +320,13 @@ document.documentElement.setAttribute('data-theme', 'light');
 
 ### TypeScript
 ```typescript
-import { broxivaDesignTokens } from '@citadelbuy/ui/styles';
-import { broxivaTailwindConfig } from '@citadelbuy/ui/styles/tailwind.config';
+import { broxivaDesignTokens } from '@broxiva/ui/styles';
+import { broxivaTailwindConfig } from '@broxiva/ui/styles/tailwind.config';
 ```
 
 ### CSS
 ```css
-@import '@citadelbuy/ui/styles/broxiva-theme.css';
+@import '@broxiva/ui/styles/broxiva-theme.css';
 @import '@/styles/broxiva-globals.css';
 ```
 

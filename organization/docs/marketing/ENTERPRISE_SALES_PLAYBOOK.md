@@ -1,4 +1,4 @@
-# CitadelBuy Enterprise Sales Playbook
+# Broxiva Enterprise Sales Playbook
 
 ## Table of Contents
 1. [Sales Process Overview](#sales-process-overview)
@@ -16,7 +16,7 @@
 
 ### 1.1 High-Ticket Sales Motion
 
-CitadelBuy operates a **two-sided marketplace sales model**:
+Broxiva operates a **two-sided marketplace sales model**:
 
 **Supply Side (African Exporters)**:
 - **Deal Size**: $1,200-$30,000 ACV (Annual Contract Value)
@@ -103,7 +103,7 @@ Use BANT for deals <$30K ACV or shorter sales cycles:
 Use MEDDIC for deals >$30K ACV or complex enterprise sales:
 
 **M - Metrics**:
-- What economic impact will CitadelBuy deliver?
+- What economic impact will Broxiva deliver?
 - Quantify cost savings, efficiency gains, revenue impact
 
 **Discovery Questions**:
@@ -400,7 +400,7 @@ Use MEDDIC for deals >$30K ACV or complex enterprise sales:
 **Discovery Call**:
 - Understand what they're sourcing, current suppliers, pain points
 - Qualify using MEDDIC
-- Position CitadelBuy as Alibaba alternative with Africa focus
+- Position Broxiva as Alibaba alternative with Africa focus
 
 **Demo**:
 - Show supplier search, RFQ process, trade finance
@@ -427,7 +427,7 @@ Use MEDDIC for deals >$30K ACV or complex enterprise sales:
 ```
 Dear [Supplier Name],
 
-Thank you for submitting your quote for RFQ #[RFQ_ID] on CitadelBuy.
+Thank you for submitting your quote for RFQ #[RFQ_ID] on Broxiva.
 
 **RFQ Details**:
 - Product: [Product Name]
@@ -447,7 +447,7 @@ You can expect a response within [X business days]. In the meantime, please ensu
 2. Relevant certifications are uploaded (ISO, CE, FDA, etc.)
 3. Production samples are available if required
 
-If you have any questions, please reply to this message or contact our support team at support@citadelbuy.com.
+If you have any questions, please reply to this message or contact our support team at support@broxiva.com.
 
 Best regards,
 [Buyer Name]
@@ -534,7 +534,7 @@ While we appreciate your submission, the following factors influenced our decisi
 We encourage you to:
 1. Review your pricing for better competitiveness
 2. Obtain [specific certification] to qualify for future orders
-3. Keep your CitadelBuy profile updated with new products
+3. Keep your Broxiva profile updated with new products
 
 We have other sourcing opportunities that may be a better fit. Our team will reach out if we have an RFQ matching your capabilities.
 
@@ -748,7 +748,7 @@ Chief Revenue Officer (CRO)
 - Product training
 - Sales methodology (MEDDIC, SPIN selling)
 
-**Demo Environment**: Sandbox instance of CitadelBuy platform
+**Demo Environment**: Sandbox instance of Broxiva platform
 - Sales team can create demo accounts
 - Pre-populated with sample suppliers and buyers
 

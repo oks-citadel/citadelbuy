@@ -1,8 +1,8 @@
-# CitadelBuy Secrets Generation System - Implementation Summary
+# Broxiva Secrets Generation System - Implementation Summary
 
 ## Overview
 
-A comprehensive production secrets generation and validation system has been implemented for CitadelBuy. This system ensures all production deployments use cryptographically secure secrets that meet industry standards and regulatory requirements.
+A comprehensive production secrets generation and validation system has been implemented for Broxiva. This system ensures all production deployments use cryptographically secure secrets that meet industry standards and regulatory requirements.
 
 ## Created Files
 
@@ -162,7 +162,7 @@ while IFS='=' read -r key value; do
   [[ "$key" =~ ^#.*$ ]] && continue
   [[ -z "$key" ]] && continue
   aws secretsmanager create-secret \
-    --name "citadelbuy/production/${key,,}" \
+    --name "broxiva/production/${key,,}" \
     --secret-string "$value"
 done < .env.production
 
@@ -177,7 +177,7 @@ rm .env.production
 ./scripts/generate-secrets.sh --format yaml --output secrets.yaml
 
 # Create Kubernetes secret
-kubectl create secret generic citadelbuy-secrets \
+kubectl create secret generic broxiva-secrets \
   --from-file=secrets.yaml
 
 # Or use with Sealed Secrets
@@ -365,7 +365,7 @@ Example validation report:
 
 ```
 ╔════════════════════════════════════════════════════════════════════╗
-║  CitadelBuy Secrets Validation                                    ║
+║  Broxiva Secrets Validation                                    ║
 ╚════════════════════════════════════════════════════════════════════╝
 
 Validating: .env.production
@@ -492,11 +492,11 @@ Potential improvements:
 
 - **Documentation**: `docs/SECURITY_CREDENTIALS.md`
 - **Script Documentation**: `scripts/SECRETS_MANAGEMENT.md`
-- **Security Issues**: security@citadelbuy.com
+- **Security Issues**: security@broxiva.com
 
 ## Conclusion
 
-The CitadelBuy secrets generation system provides a production-ready, secure, and compliant solution for managing application secrets. The system:
+The Broxiva secrets generation system provides a production-ready, secure, and compliant solution for managing application secrets. The system:
 
 - ✅ Generates cryptographically secure secrets
 - ✅ Validates secret strength automatically

@@ -1,8 +1,8 @@
-# CitadelBuy Shipping & Tracking Updates Workflow
+# Broxiva Shipping & Tracking Updates Workflow
 
 ## Overview
 
-This n8n workflow automates shipping tracking updates and customer notifications for CitadelBuy orders. It monitors shipments across multiple carriers (FedEx, UPS, USPS, DHL), sends milestone notifications via multiple channels (Email, SMS, WhatsApp), and handles exceptions proactively.
+This n8n workflow automates shipping tracking updates and customer notifications for Broxiva orders. It monitors shipments across multiple carriers (FedEx, UPS, USPS, DHL), sends milestone notifications via multiple channels (Email, SMS, WhatsApp), and handles exceptions proactively.
 
 ## Features
 
@@ -12,7 +12,7 @@ This n8n workflow automates shipping tracking updates and customer notifications
 - **Milestone Tracking**: Shipped, In Transit, Out for Delivery, Delivered, Exceptions
 - **Exception Handling**: Delays, delivery failures, lost packages
 - **Multi-Channel Notifications**: Email (SendGrid), SMS (Twilio), WhatsApp (Twilio)
-- **Automated Order Updates**: Real-time status sync with CitadelBuy API
+- **Automated Order Updates**: Real-time status sync with Broxiva API
 - **Performance Analytics**: Carrier performance tracking via Mixpanel
 
 ### Milestone Notifications
@@ -84,10 +84,10 @@ Before configuring carriers, ensure you have:
 - **Username**: Your ShipStation API Key
 - **Password**: Your ShipStation API Secret
 
-#### 2. CitadelBuy API Credentials
+#### 2. Broxiva API Credentials
 
 **Setup Steps:**
-1. Access CitadelBuy admin panel
+1. Access Broxiva admin panel
 2. Navigate to **Settings** → **API Keys**
 3. Generate new API key with permissions:
    - `orders:read`
@@ -97,9 +97,9 @@ Before configuring carriers, ensure you have:
 
 **n8n Configuration:**
 - **Credential Type**: Custom API Auth
-- **Credential Name**: `citadelbuy-api`
+- **Credential Name**: `broxiva-api`
 - **Authentication**: Bearer Token
-- **Token**: Your CitadelBuy API Key
+- **Token**: Your Broxiva API Key
 
 #### 3. SendGrid API Credentials
 
@@ -457,7 +457,7 @@ Use these variables in your email templates:
 
 Follow the credential setup instructions above for:
 - ShipStation API
-- CitadelBuy API
+- Broxiva API
 - SendGrid API
 - Twilio API
 - Zendesk API
@@ -487,7 +487,7 @@ Replace placeholder phone numbers with your actual Twilio numbers:
    - Verify it fetches recent shipments
 
 3. **Test Notifications:**
-   - Create a test order in CitadelBuy
+   - Create a test order in Broxiva
    - Ship the order via ShipStation
    - Verify notifications are sent
 
@@ -498,9 +498,9 @@ Replace placeholder phone numbers with your actual Twilio numbers:
 
 ## API Endpoints
 
-### CitadelBuy API
+### Broxiva API
 
-The workflow interacts with these CitadelBuy endpoints:
+The workflow interacts with these Broxiva endpoints:
 
 #### Get Order Details
 ```
@@ -765,7 +765,7 @@ The workflow tracks these events in Mixpanel:
 **Issue**: Customers not receiving notifications
 
 **Solutions:**
-1. Verify customer preferences in CitadelBuy:
+1. Verify customer preferences in Broxiva:
    ```javascript
    customer.preferences.emailNotifications === true
    customer.preferences.smsNotifications === true
@@ -779,13 +779,13 @@ The workflow tracks these events in Mixpanel:
 
 ### Order Status Not Updating
 
-**Issue**: Order status not syncing with CitadelBuy
+**Issue**: Order status not syncing with Broxiva
 
 **Solutions:**
-1. Verify CitadelBuy API credentials
+1. Verify Broxiva API credentials
 2. Check API endpoint URL is correct
-3. Review CitadelBuy API logs for errors
-4. Ensure order exists in CitadelBuy
+3. Review Broxiva API logs for errors
+4. Ensure order exists in Broxiva
 5. Verify API key has `orders:write` permission
 
 ### Polling Not Fetching Data
@@ -807,7 +807,7 @@ The workflow tracks these events in Mixpanel:
 1. Verify exception type detection logic in "Determine Milestone & Tracking URL" node
 2. Check carrier status mapping for "lost" packages
 3. Ensure Zendesk API credentials are valid
-4. Verify CitadelBuy replacement order endpoint is working
+4. Verify Broxiva replacement order endpoint is working
 5. Review workflow execution logs
 
 ## Best Practices
@@ -866,7 +866,7 @@ For issues or questions:
 - **ShipStation API**: https://www.shipstation.com/docs/api/
 - **SendGrid Support**: https://support.sendgrid.com
 - **Twilio Support**: https://support.twilio.com
-- **CitadelBuy Support**: support@citadelbuy.com
+- **Broxiva Support**: support@broxiva.com
 
 ## Version History
 
@@ -880,4 +880,4 @@ For issues or questions:
 
 ## License
 
-Copyright (c) 2025 CitadelBuy. All rights reserved.
+Copyright (c) 2025 Broxiva. All rights reserved.

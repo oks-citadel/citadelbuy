@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Analytics Service provides real-time and batch analytics with ML-powered insights for the CitadelBuy platform. It tracks user behavior, monitors business metrics, performs cohort analysis, generates forecasts, and detects anomalies to drive data-driven decision making.
+The Analytics Service provides real-time and batch analytics with ML-powered insights for the Broxiva platform. It tracks user behavior, monitors business metrics, performs cohort analysis, generates forecasts, and detects anomalies to drive data-driven decision making.
 
 ## Key Features
 
@@ -38,7 +38,7 @@ LOG_LEVEL=INFO
 PORT=8005
 
 # Database (PostgreSQL)
-DATABASE_URL=postgresql://user:password@localhost:5432/citadelbuy
+DATABASE_URL=postgresql://user:password@localhost:5432/broxiva
 ANALYTICS_DATABASE_URL=postgresql://user:password@localhost:5432/analytics
 
 # Redis Cache
@@ -198,10 +198,10 @@ python tests/pipelines/test_analytics_pipeline.py
 
 ```bash
 # Build the Docker image
-docker build -t citadelbuy/analytics:latest .
+docker build -t broxiva/analytics:latest .
 
 # Build with specific version
-docker build -t citadelbuy/analytics:v2.0.0 .
+docker build -t broxiva/analytics:v2.0.0 .
 ```
 
 ### Run Container
@@ -212,7 +212,7 @@ docker run -d \
   --name analytics \
   -p 8005:8005 \
   --env-file .env \
-  citadelbuy/analytics:latest
+  broxiva/analytics:latest
 
 # Run with Docker Compose
 docker-compose up analytics
@@ -233,7 +233,7 @@ services:
     ports:
       - "8005:8005"
     environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/citadelbuy
+      - DATABASE_URL=postgresql://postgres:password@db:5432/broxiva
       - ANALYTICS_DATABASE_URL=postgresql://postgres:password@timescaledb:5432/analytics
       - REDIS_URL=redis://redis:6379/4
     depends_on:
@@ -444,7 +444,7 @@ python scripts/export_analytics.py --format csv --output data/
 # grafana_dashboard.json
 {
   "dashboard": {
-    "title": "CitadelBuy Analytics",
+    "title": "Broxiva Analytics",
     "panels": [
       {
         "title": "Revenue Trend",
@@ -579,10 +579,10 @@ See [Contributing Guide](../../../CONTRIBUTING.md) for development guidelines.
 
 ## License
 
-Proprietary - CitadelBuy Platform
+Proprietary - Broxiva Platform
 
 ## Support
 
 For issues and questions:
 - Internal Slack: #analytics-support
-- Email: data@citadelbuy.com
+- Email: data@broxiva.com

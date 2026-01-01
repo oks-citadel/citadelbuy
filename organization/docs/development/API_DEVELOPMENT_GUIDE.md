@@ -1,6 +1,6 @@
 # API Development Guide
 
-This guide covers best practices for developing APIs in the CitadelBuy platform using NestJS.
+This guide covers best practices for developing APIs in the Broxiva platform using NestJS.
 
 ## Table of Contents
 

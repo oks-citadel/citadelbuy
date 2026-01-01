@@ -4,7 +4,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                     CitadelBuy Order Created                            │
+│                     Broxiva Order Created                            │
 │                           (Webhook Event)                                │
 └────────────────────────────┬────────────────────────────────────────────┘
                              │
@@ -19,7 +19,7 @@
                              ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                  2. HMAC-SHA256 Verification                            │
-│  • Extract X-CitadelBuy-Signature header                                │
+│  • Extract X-Broxiva-Signature header                                │
 │  • Reconstruct payload                                                  │
 │  • Calculate expected signature                                         │
 │  • Timing-safe comparison                                               │
@@ -280,7 +280,7 @@
           │              │              │
           ▼              ▼              ▼
 ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-│ CitadelBuy  │  │   Notion    │  │  SendGrid   │
+│ Broxiva  │  │   Notion    │  │  SendGrid   │
 │     API     │  │     API     │  │     API     │
 │             │  │             │  │             │
 │ /inventory  │  │ POST        │  │ POST        │

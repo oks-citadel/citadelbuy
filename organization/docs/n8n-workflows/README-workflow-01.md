@@ -1,8 +1,8 @@
-# CitadelBuy Order Processing & Fulfillment Automation - Workflow 01
+# Broxiva Order Processing & Fulfillment Automation - Workflow 01
 
 ## Overview
 
-This n8n workflow automates the complete order processing and fulfillment pipeline for CitadelBuy's e-commerce platform. It handles webhook events, validates orders, manages inventory checks, routes orders based on business rules, and integrates with multiple external services.
+This n8n workflow automates the complete order processing and fulfillment pipeline for Broxiva's e-commerce platform. It handles webhook events, validates orders, manages inventory checks, routes orders based on business rules, and integrates with multiple external services.
 
 ## Workflow Diagram
 
@@ -73,8 +73,8 @@ docker run -it --rm \
 
 ### 2. Required Credentials
 
-#### CitadelBuy API
-- **Name**: `citadelBuyApi`
+#### Broxiva API
+- **Name**: `broxivaBuyApi`
 - **Type**: Header Auth
 - **Configuration**:
   - Header Name: `Authorization`
@@ -109,7 +109,7 @@ Set these in n8n settings or `.env` file:
 
 ```bash
 # Webhook Security
-CITADELBUY_WEBHOOK_SECRET=your-webhook-secret-key-min-32-chars
+BROXIVA_WEBHOOK_SECRET=your-webhook-secret-key-min-32-chars
 
 # SendGrid Configuration
 SENDGRID_ORDER_CONFIRMATION_TEMPLATE_ID=d-1234567890abcdef
@@ -146,14 +146,14 @@ NOTION_FULFILLMENT_DB_ID=your-notion-database-id
 docker run -it --rm \
   --name n8n \
   -p 5678:5678 \
-  -e CITADELBUY_WEBHOOK_SECRET=your-secret \
+  -e BROXIVA_WEBHOOK_SECRET=your-secret \
   -e SENDGRID_ORDER_CONFIRMATION_TEMPLATE_ID=d-xxx \
   -e NOTION_FULFILLMENT_DB_ID=your-db-id \
   -v ~/.n8n:/home/node/.n8n \
   n8nio/n8n
 ```
 
-### Step 4: Configure Webhook Secret in CitadelBuy
+### Step 4: Configure Webhook Secret in Broxiva
 
 Generate a secure webhook secret:
 ```bash
@@ -161,15 +161,15 @@ openssl rand -hex 32
 ```
 
 Then set it in both:
-1. CitadelBuy backend configuration
-2. n8n environment variable `CITADELBUY_WEBHOOK_SECRET`
+1. Broxiva backend configuration
+2. n8n environment variable `BROXIVA_WEBHOOK_SECRET`
 
 ### Step 5: Get Webhook URL
 
 1. Open the workflow in n8n
 2. Click on **Webhook - Order Created** node
-3. Copy the **Production URL** (e.g., `https://your-n8n.com/webhook/citadelbuy-order-webhook`)
-4. Configure this URL in CitadelBuy admin panel
+3. Copy the **Production URL** (e.g., `https://your-n8n.com/webhook/broxiva-order-webhook`)
+4. Configure this URL in Broxiva admin panel
 
 ### Step 6: Set Up Notion Database
 
@@ -213,9 +213,9 @@ Create a SendGrid Dynamic Template with these variables:
 
 **Test Payload:**
 ```bash
-curl -X POST https://your-n8n.com/webhook/citadelbuy-order-webhook \
+curl -X POST https://your-n8n.com/webhook/broxiva-order-webhook \
   -H "Content-Type: application/json" \
-  -H "X-CitadelBuy-Signature: CALCULATED_HMAC_SIGNATURE" \
+  -H "X-Broxiva-Signature: CALCULATED_HMAC_SIGNATURE" \
   -d '{
     "event": "order.created",
     "timestamp": "2024-01-15T10:30:00Z",
@@ -261,7 +261,7 @@ const crypto = require('crypto');
 const payload = JSON.stringify(webhookData);
 const secret = 'your-webhook-secret';
 const signature = crypto.createHmac('sha256', secret).update(payload).digest('hex');
-console.log('X-CitadelBuy-Signature:', signature);
+console.log('X-Broxiva-Signature:', signature);
 ```
 
 ### Step 10: Activate Workflow
@@ -310,8 +310,8 @@ console.log('X-CitadelBuy-Signature:', signature);
 #### 1. Invalid HMAC Signature
 **Symptom**: 401 responses from webhook
 **Solution**:
-- Verify `CITADELBUY_WEBHOOK_SECRET` matches backend
-- Check that signature is sent in `X-CitadelBuy-Signature` header
+- Verify `BROXIVA_WEBHOOK_SECRET` matches backend
+- Check that signature is sent in `X-Broxiva-Signature` header
 - Ensure raw body is used for signature calculation
 
 #### 2. Notion Task Creation Fails
@@ -341,7 +341,7 @@ console.log('X-CitadelBuy-Signature:', signature);
 1. **Enable Save Execution Data**: Settings → Save Data → Always
 2. **Use Test Webhook**: Click "Listen for Test Event" on webhook node
 3. **Check Error Output**: Click on red error nodes to see details
-4. **Review Audit Logs**: Check CitadelBuy API audit endpoint
+4. **Review Audit Logs**: Check Broxiva API audit endpoint
 
 ## Performance Optimization
 
@@ -358,7 +358,7 @@ console.log('X-CitadelBuy-Signature:', signature);
 
 ## API Endpoints Used
 
-### CitadelBuy API
+### Broxiva API
 - `GET /v1/inventory/check?order_id={id}` - Check inventory
 - `PATCH /v1/orders/{id}` - Update order status
 - `POST /v1/audit-log` - Log events
@@ -440,14 +440,14 @@ if (orderData.custom_condition) {
 
 ### Documentation
 - [n8n Documentation](https://docs.n8n.io)
-- [CitadelBuy API Docs](https://api.citadelbuy.com/docs)
+- [Broxiva API Docs](https://api.broxiva.com/docs)
 - [SendGrid API Reference](https://docs.sendgrid.com/api-reference)
 - [Notion API Reference](https://developers.notion.com)
 - [Slack API Reference](https://api.slack.com)
 
 ### Contact
-- **Engineering Team**: engineering@citadelbuy.com
-- **DevOps Support**: devops@citadelbuy.com
+- **Engineering Team**: engineering@broxiva.com
+- **DevOps Support**: devops@broxiva.com
 - **Emergency Hotline**: +1-XXX-XXX-XXXX
 
 ## Changelog
@@ -462,6 +462,6 @@ if (orderData.custom_condition) {
 
 ## License
 
-Copyright (c) 2024 CitadelBuy. All rights reserved.
+Copyright (c) 2024 Broxiva. All rights reserved.
 
 Internal use only. Do not distribute.

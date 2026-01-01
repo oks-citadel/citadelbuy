@@ -1,6 +1,6 @@
-# Kubernetes Security Hardening Guide for CitadelBuy
+# Kubernetes Security Hardening Guide for Broxiva
 
-This document provides a comprehensive overview of the security hardening implemented for the CitadelBuy Kubernetes infrastructure.
+This document provides a comprehensive overview of the security hardening implemented for the Broxiva Kubernetes infrastructure.
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -16,7 +16,7 @@ This document provides a comprehensive overview of the security hardening implem
 
 ## Overview
 
-The CitadelBuy platform has been hardened following Kubernetes security best practices and industry standards including:
+The Broxiva platform has been hardened following Kubernetes security best practices and industry standards including:
 - **CIS Kubernetes Benchmark**
 - **NIST SP 800-190** (Application Container Security Guide)
 - **NSA/CISA Kubernetes Hardening Guide**
@@ -75,9 +75,9 @@ Databases are completely isolated from external access:
 
 ### Namespace-Level Enforcement
 All namespaces enforce Pod Security Standards:
-- **citadelbuy**: `restricted` profile
-- **citadelbuy-ai**: `restricted` profile
-- **citadelbuy-monitoring**: `baseline` profile
+- **broxiva**: `restricted` profile
+- **broxiva-ai**: `restricted` profile
+- **broxiva-monitoring**: `baseline` profile
 
 ### Security Context Requirements
 
@@ -218,8 +218,8 @@ resources:
 
 ### Service Accounts
 Dedicated service accounts for each component with minimal permissions:
-- `citadelbuy-api` - API backend
-- `citadelbuy-web` - Web frontend
+- `broxiva-api` - API backend
+- `broxiva-web` - Web frontend
 - `postgres`, `redis`, `elasticsearch` - Database services
 - `postgres-exporter`, `redis-exporter`, `elasticsearch-exporter` - Monitoring
 - `external-secrets` - Secrets management
@@ -230,15 +230,15 @@ Dedicated service accounts for each component with minimal permissions:
 #### API Backend Role
 ```yaml
 Permissions:
-  - Get/List/Watch: configmaps (citadelbuy-config only)
-  - Get/List/Watch: secrets (citadelbuy-secrets only)
+  - Get/List/Watch: configmaps (broxiva-config only)
+  - Get/List/Watch: secrets (broxiva-secrets only)
   - Get/List: pods, services
 ```
 
 #### Web Frontend Role
 ```yaml
 Permissions:
-  - Get/List/Watch: configmaps (citadelbuy-config only)
+  - Get/List/Watch: configmaps (broxiva-config only)
   - Get/List: pods, services
 ```
 
@@ -257,9 +257,9 @@ Permissions:
 ```
 
 ### ClusterRoles
-- `citadelbuy-metrics-reader` - For Prometheus to scrape metrics
-- `citadelbuy-psp-restricted` - For application pod security policies
-- `citadelbuy-psp-database` - For database pod security policies
+- `broxiva-metrics-reader` - For Prometheus to scrape metrics
+- `broxiva-psp-restricted` - For application pod security policies
+- `broxiva-psp-database` - For database pod security policies
 
 ### Service Account Token Auto-mounting
 - **Disabled** for database pods (not needed)
@@ -299,13 +299,13 @@ helm install external-secrets external-secrets/external-secrets \
 
 # 2. Create secrets in AWS Secrets Manager
 aws secretsmanager create-secret \
-  --name citadelbuy/database \
+  --name broxiva/database \
   --secret-string '{"password":"YOUR_SECURE_PASSWORD"}'
 
 # 3. Annotate service account with IAM role (IRSA)
 kubectl annotate serviceaccount external-secrets \
-  -n citadelbuy \
-  eks.amazonaws.com/role-arn=arn:aws:iam::ACCOUNT:role/citadelbuy-secrets
+  -n broxiva \
+  eks.amazonaws.com/role-arn=arn:aws:iam::ACCOUNT:role/broxiva-secrets
 
 # 4. Apply external secrets configuration
 kubectl apply -f base/external-secrets.yaml
@@ -403,45 +403,45 @@ kubectl apply -f base/redis-deployment.yaml
 kubectl apply -f base/elasticsearch-deployment.yaml
 
 # 9. Wait for databases to be ready
-kubectl wait --for=condition=ready pod -l app=postgres -n citadelbuy --timeout=300s
-kubectl wait --for=condition=ready pod -l app=redis -n citadelbuy --timeout=300s
-kubectl wait --for=condition=ready pod -l app=elasticsearch -n citadelbuy --timeout=600s
+kubectl wait --for=condition=ready pod -l app=postgres -n broxiva --timeout=300s
+kubectl wait --for=condition=ready pod -l app=redis -n broxiva --timeout=300s
+kubectl wait --for=condition=ready pod -l app=elasticsearch -n broxiva --timeout=600s
 
 # 10. Deploy applications
 kubectl apply -f apps/api-deployment.yaml
 kubectl apply -f apps/web-deployment.yaml
 
 # 11. Verify deployments
-kubectl get all -n citadelbuy
-kubectl get networkpolicies -n citadelbuy
-kubectl get externalsecrets -n citadelbuy
+kubectl get all -n broxiva
+kubectl get networkpolicies -n broxiva
+kubectl get externalsecrets -n broxiva
 ```
 
 ### Verification
 
 ```bash
 # Check pod security contexts
-kubectl get pods -n citadelbuy -o json | \
+kubectl get pods -n broxiva -o json | \
   jq '.items[] | {name: .metadata.name, securityContext: .spec.securityContext}'
 
 # Verify network policies
-kubectl describe networkpolicy -n citadelbuy
+kubectl describe networkpolicy -n broxiva
 
 # Check resource limits
-kubectl describe resourcequota -n citadelbuy
-kubectl describe limitrange -n citadelbuy
+kubectl describe resourcequota -n broxiva
+kubectl describe limitrange -n broxiva
 
 # Verify RBAC
-kubectl get serviceaccounts -n citadelbuy
-kubectl get roles,rolebindings -n citadelbuy
+kubectl get serviceaccounts -n broxiva
+kubectl get roles,rolebindings -n broxiva
 
 # Check external secrets sync status
-kubectl get externalsecrets -n citadelbuy
-kubectl describe externalsecret citadelbuy-database-credentials -n citadelbuy
+kubectl get externalsecrets -n broxiva
+kubectl describe externalsecret broxiva-database-credentials -n broxiva
 
 # Test health checks
-kubectl get pods -n citadelbuy -w
-kubectl describe pod <pod-name> -n citadelbuy | grep -A 10 Conditions
+kubectl get pods -n broxiva -w
+kubectl describe pod <pod-name> -n broxiva | grep -A 10 Conditions
 ```
 
 ## Security Best Practices
@@ -496,7 +496,7 @@ kubectl describe pod <pod-name> -n citadelbuy | grep -A 10 Conditions
 ### Pod Security Policy Violations
 ```bash
 # Check pod events for PSP errors
-kubectl describe pod <pod-name> -n citadelbuy
+kubectl describe pod <pod-name> -n broxiva
 
 # Common issues:
 # - runAsNonRoot violation: Add securityContext with runAsUser
@@ -507,10 +507,10 @@ kubectl describe pod <pod-name> -n citadelbuy
 ### Network Policy Issues
 ```bash
 # Test connectivity between pods
-kubectl run -it --rm debug --image=nicolaka/netshoot -n citadelbuy -- /bin/bash
+kubectl run -it --rm debug --image=nicolaka/netshoot -n broxiva -- /bin/bash
 
 # Inside debug pod, test connectivity:
-curl http://citadelbuy-api
+curl http://broxiva-api
 curl http://postgres:5432
 curl http://redis:6379
 
@@ -521,23 +521,23 @@ kubectl logs -n kube-system -l k8s-app=calico-node
 ### RBAC Permission Denied
 ```bash
 # Check service account permissions
-kubectl auth can-i list pods --as=system:serviceaccount:citadelbuy:citadelbuy-api
+kubectl auth can-i list pods --as=system:serviceaccount:broxiva:broxiva-api
 
 # View effective permissions
-kubectl describe role citadelbuy-api-role -n citadelbuy
-kubectl describe rolebinding citadelbuy-api-rolebinding -n citadelbuy
+kubectl describe role broxiva-api-role -n broxiva
+kubectl describe rolebinding broxiva-api-rolebinding -n broxiva
 ```
 
 ### External Secrets Sync Issues
 ```bash
 # Check ExternalSecret status
-kubectl describe externalsecret citadelbuy-database-credentials -n citadelbuy
+kubectl describe externalsecret broxiva-database-credentials -n broxiva
 
 # View External Secrets Operator logs
 kubectl logs -n external-secrets-system deployment/external-secrets
 
 # Verify SecretStore connectivity
-kubectl describe secretstore aws-secrets-manager -n citadelbuy
+kubectl describe secretstore aws-secrets-manager -n broxiva
 
 # Common issues:
 # - Invalid credentials: Check service account annotations (IRSA)
@@ -548,13 +548,13 @@ kubectl describe secretstore aws-secrets-manager -n citadelbuy
 ### Resource Limit Issues
 ```bash
 # Check if pods are being OOMKilled
-kubectl get pods -n citadelbuy | grep OOMKilled
+kubectl get pods -n broxiva | grep OOMKilled
 
 # View pod resource usage
-kubectl top pods -n citadelbuy
+kubectl top pods -n broxiva
 
 # Check resource quotas
-kubectl describe resourcequota citadelbuy-quota -n citadelbuy
+kubectl describe resourcequota broxiva-quota -n broxiva
 
 # Solution: Increase memory limits or optimize application
 ```
@@ -562,12 +562,12 @@ kubectl describe resourcequota citadelbuy-quota -n citadelbuy
 ### Health Check Failures
 ```bash
 # Check probe configuration
-kubectl describe pod <pod-name> -n citadelbuy | grep -A 5 Liveness
-kubectl describe pod <pod-name> -n citadelbuy | grep -A 5 Readiness
+kubectl describe pod <pod-name> -n broxiva | grep -A 5 Liveness
+kubectl describe pod <pod-name> -n broxiva | grep -A 5 Readiness
 
 # View container logs
-kubectl logs <pod-name> -n citadelbuy
-kubectl logs <pod-name> -n citadelbuy --previous  # For crashed containers
+kubectl logs <pod-name> -n broxiva
+kubectl logs <pod-name> -n broxiva --previous  # For crashed containers
 
 # Common issues:
 # - Timeout too short: Increase timeoutSeconds
@@ -618,4 +618,4 @@ For security issues or questions:
 
 **Last Updated**: December 2025
 **Version**: 1.0
-**Maintained by**: CitadelBuy DevOps Team
+**Maintained by**: Broxiva DevOps Team

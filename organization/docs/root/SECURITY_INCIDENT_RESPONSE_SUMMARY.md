@@ -14,7 +14,7 @@ A critical security issue has been identified: sensitive `.env` files may have b
 ## Documents Created
 
 ### 1. SECURITY_ENV_REMOVAL.md
-**Location:** `C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/docs/SECURITY_ENV_REMOVAL.md`
+**Location:** `C:/Users/citad/OneDrive/Documents/broxiva-master/organization/docs/SECURITY_ENV_REMOVAL.md`
 
 **Purpose:** Complete guide for removing .env files from git history
 
@@ -38,7 +38,7 @@ A critical security issue has been identified: sensitive `.env` files may have b
 ---
 
 ### 2. CREDENTIAL_ROTATION_CHECKLIST.md
-**Location:** `C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/docs/CREDENTIAL_ROTATION_CHECKLIST.md`
+**Location:** `C:/Users/citad/OneDrive/Documents/broxiva-master/organization/docs/CREDENTIAL_ROTATION_CHECKLIST.md`
 
 **Purpose:** Comprehensive credential rotation guide for ALL services
 
@@ -98,7 +98,7 @@ A critical security issue has been identified: sensitive `.env` files may have b
 ---
 
 ### 3. .gitignore.enhanced
-**Location:** `C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/.gitignore.enhanced`
+**Location:** `C:/Users/citad/OneDrive/Documents/broxiva-master/organization/.gitignore.enhanced`
 
 **Purpose:** Enhanced .gitignore with comprehensive security patterns
 
@@ -131,7 +131,7 @@ A critical security issue has been identified: sensitive `.env` files may have b
 ---
 
 ### 4. .env.production.template
-**Location:** `C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/.env.production.template`
+**Location:** `C:/Users/citad/OneDrive/Documents/broxiva-master/organization/.env.production.template`
 
 **Purpose:** Secure production environment template with NO actual credentials
 
@@ -180,7 +180,7 @@ A critical security issue has been identified: sensitive `.env` files may have b
 ### Step 1: Assess Exposure (Do This First!)
 
 ```bash
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization
 
 # Check if .env files exist in git history
 git log --all --full-history --pretty=format:"%H|%ai|%s" -- ".env" "**/.env"
@@ -214,7 +214,7 @@ git log --all --full-history --pretty=format:"%H|%ai|%s" -- ".env" "**/.env"
 
 1. **Update .gitignore**
    ```bash
-   cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+   cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization
    cp .gitignore .gitignore.old
    cp .gitignore.enhanced .gitignore
    git add .gitignore
@@ -259,7 +259,7 @@ git log --all --full-history --pretty=format:"%H|%ai|%s" -- ".env" "**/.env"
 
 ### Check if .env is currently ignored
 ```bash
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization
 git check-ignore -v .env
 # Should output: .gitignore:13:.env    .env
 ```

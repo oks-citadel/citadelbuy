@@ -1,6 +1,6 @@
 # Notifications Module
 
-Comprehensive notification system for CitadelBuy e-commerce platform supporting multiple channels: email, push notifications, SMS, and in-app notifications.
+Comprehensive notification system for Broxiva e-commerce platform supporting multiple channels: email, push notifications, SMS, and in-app notifications.
 
 ## Features
 
@@ -423,4 +423,4 @@ All services provide detailed logging:
 
 ## License
 
-Proprietary - CitadelBuy Platform
+Proprietary - Broxiva Platform

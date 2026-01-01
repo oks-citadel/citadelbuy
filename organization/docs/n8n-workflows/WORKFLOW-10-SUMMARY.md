@@ -1,7 +1,7 @@
 # Workflow 10: Fraud Detection & Prevention - Summary
 
 ## Overview
-Complete n8n workflow implementation for real-time fraud detection and prevention in the CitadelBuy e-commerce platform. Uses multi-factor risk scoring algorithm with 12 fraud indicators and Stripe Radar integration.
+Complete n8n workflow implementation for real-time fraud detection and prevention in the Broxiva e-commerce platform. Uses multi-factor risk scoring algorithm with 12 fraud indicators and Stripe Radar integration.
 
 ## Files Created
 
@@ -84,7 +84,7 @@ Complete n8n workflow implementation for real-time fraud detection and preventio
 | CRITICAL | 86-100 | Auto-cancel + Block | Slack critical + Email + Audit |
 
 ### Integrations
-- **CitadelBuy API:** Customer history, order velocity, payment failures, order management
+- **Broxiva API:** Customer history, order velocity, payment failures, order management
 - **Stripe Radar:** ML-based fraud detection signals
 - **IP Geolocation:** IP-API.com (free tier) with fallback providers
 - **Slack:** Real-time alerts to #fraud-review and #fraud-alerts
@@ -144,7 +144,7 @@ Workflows → Import from File → Select workflow-10-fraud-detection.json
 ```
 
 ### 2. Configure Credentials
-- CitadelBuy API (Header Auth)
+- Broxiva API (Header Auth)
 - Stripe (OAuth2 or API Key)
 - Slack (OAuth2)
 - Zendesk (API Token)
@@ -413,19 +413,19 @@ GET /v1/orders?status=fraud_review&riskLevel=high
 - [n8n Documentation](https://docs.n8n.io/)
 - [Stripe Radar Guide](https://stripe.com/docs/radar)
 - [IP-API Documentation](https://ip-api.com/docs)
-- CitadelBuy API Docs: https://api.citadelbuy.com/docs
+- Broxiva API Docs: https://api.broxiva.com/docs
 
 ## Contact
 
-- **Fraud Team:** fraud@citadelbuy.com
-- **Technical Support:** devops@citadelbuy.com
+- **Fraud Team:** fraud@broxiva.com
+- **Technical Support:** devops@broxiva.com
 - **Slack:** #fraud-alerts, #fraud-review
 
 ---
 
 **Workflow Version:** 1.0.0
 **Created:** 2025-12-03
-**Author:** CitadelBuy Development Team
+**Author:** Broxiva Development Team
 **Maintained By:** Security & Fraud Prevention Team
 
 ---

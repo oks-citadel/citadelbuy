@@ -2,7 +2,7 @@
 
 **Document Version:** 1.0
 **Last Updated:** December 3, 2025
-**Platform:** CitadelBuy E-Commerce Platform
+**Platform:** Broxiva E-Commerce Platform
 
 ---
 
@@ -20,7 +20,7 @@
 
 ## Overview
 
-Security headers are HTTP response headers that instruct browsers to enable built-in security features, protecting against various web vulnerabilities. CitadelBuy implements comprehensive security headers as part of our PCI DSS compliance strategy and general security best practices.
+Security headers are HTTP response headers that instruct browsers to enable built-in security features, protecting against various web vulnerabilities. Broxiva implements comprehensive security headers as part of our PCI DSS compliance strategy and general security best practices.
 
 ### Why Security Headers Matter
 
@@ -52,7 +52,7 @@ apps/api/src/main.ts
 
 **How It Works:** The browser only loads resources (scripts, styles, images, etc.) from sources explicitly allowed in the policy.
 
-**CitadelBuy Configuration:**
+**Broxiva Configuration:**
 
 ```http
 Content-Security-Policy:
@@ -119,7 +119,7 @@ Content-Security-Policy:
 
 **Purpose:** Prevents clickjacking attacks by controlling whether the page can be embedded in a frame or iframe.
 
-**CitadelBuy Configuration:**
+**Broxiva Configuration:**
 
 ```http
 X-Frame-Options: DENY
@@ -133,7 +133,7 @@ X-Frame-Options: DENY
 
 **Why We Use DENY:**
 
-CitadelBuy's main application should never be framed. Payment pages especially must not be embedded to prevent UI redressing attacks.
+Broxiva's main application should never be framed. Payment pages especially must not be embedded to prevent UI redressing attacks.
 
 **Security Benefits:**
 
@@ -145,7 +145,7 @@ CitadelBuy's main application should never be framed. Payment pages especially m
 
 ```html
 <!-- Attacker's malicious page -->
-<iframe src="https://citadelbuy.com/checkout" style="opacity: 0; position: absolute;">
+<iframe src="https://broxiva.com/checkout" style="opacity: 0; position: absolute;">
 </iframe>
 <button style="position: absolute; top: 100px; left: 100px;">
   Click for free gift!
@@ -161,7 +161,7 @@ CitadelBuy's main application should never be framed. Payment pages especially m
 
 **Purpose:** Prevents MIME type sniffing, forcing browsers to respect the declared Content-Type.
 
-**CitadelBuy Configuration:**
+**Broxiva Configuration:**
 
 ```http
 X-Content-Type-Options: nosniff
@@ -194,7 +194,7 @@ alert('XSS');
 
 **Purpose:** Forces browsers to always use HTTPS, preventing protocol downgrade attacks.
 
-**CitadelBuy Configuration:**
+**Broxiva Configuration:**
 
 ```http
 Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
@@ -208,7 +208,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 
 **Why This Matters:**
 
-Even if user types `http://citadelbuy.com`, browser automatically converts to `https://citadelbuy.com`.
+Even if user types `http://broxiva.com`, browser automatically converts to `https://broxiva.com`.
 
 **Security Benefits:**
 
@@ -220,7 +220,7 @@ Even if user types `http://citadelbuy.com`, browser automatically converts to `h
 **Example Attack Prevented:**
 
 ```
-User on public WiFi types: http://citadelbuy.com
+User on public WiFi types: http://broxiva.com
 
 Without HSTS:
 1. Browser sends HTTP request
@@ -245,7 +245,7 @@ Once preloaded, browsers enforce HTTPS even before first visit.
 
 **Purpose:** Enables browser's built-in XSS filter (legacy browsers).
 
-**CitadelBuy Configuration:**
+**Broxiva Configuration:**
 
 ```http
 X-XSS-Protection: 1; mode=block
@@ -271,7 +271,7 @@ X-XSS-Protection: 1; mode=block
 
 **Purpose:** Controls how much referrer information is sent with requests.
 
-**CitadelBuy Configuration:**
+**Broxiva Configuration:**
 
 ```http
 Referrer-Policy: strict-origin-when-cross-origin
@@ -302,11 +302,11 @@ Referrer-Policy: strict-origin-when-cross-origin
 **Example Privacy Protection:**
 
 ```
-User visits: https://citadelbuy.com/orders/12345/details?token=secret123
+User visits: https://broxiva.com/orders/12345/details?token=secret123
 Then clicks external link to: https://social-media.com
 
 Without policy: Full URL sent including secret token
-With strict-origin-when-cross-origin: Only "https://citadelbuy.com" sent
+With strict-origin-when-cross-origin: Only "https://broxiva.com" sent
 ```
 
 ---
@@ -315,7 +315,7 @@ With strict-origin-when-cross-origin: Only "https://citadelbuy.com" sent
 
 **Purpose:** Controls which browser features and APIs can be used by the page and embedded content.
 
-**CitadelBuy Configuration:**
+**Broxiva Configuration:**
 
 ```http
 Permissions-Policy:
@@ -577,7 +577,7 @@ export class EmbedController {
 
 **How to Test:**
 1. Visit https://securityheaders.com/
-2. Enter: https://api.citadelbuy.com
+2. Enter: https://api.broxiva.com
 3. Click "Scan"
 4. Review grade (Target: A or A+)
 
@@ -595,7 +595,7 @@ export class EmbedController {
 
 **How to Test:**
 1. Visit https://observatory.mozilla.org/
-2. Enter: api.citadelbuy.com
+2. Enter: api.broxiva.com
 3. Click "Scan Me"
 4. Review score (Target: A or A+)
 
@@ -614,7 +614,7 @@ export class EmbedController {
 #!/bin/bash
 
 # Test security headers
-URL="https://api.citadelbuy.com"
+URL="https://api.broxiva.com"
 
 echo "Testing Security Headers for: $URL"
 echo "======================================="
@@ -996,7 +996,7 @@ Every quarter, review and update:
 
 ## Conclusion
 
-Security headers are a critical component of CitadelBuy's defense-in-depth security strategy. By implementing comprehensive headers, we:
+Security headers are a critical component of Broxiva's defense-in-depth security strategy. By implementing comprehensive headers, we:
 
 - **Protect Users:** Multiple layers of browser-level protection
 - **Meet Compliance:** PCI DSS and industry security requirements
@@ -1008,8 +1008,8 @@ Regular testing, monitoring, and updates ensure our security headers remain effe
 ---
 
 **Contact:**
-- **Security Team:** security@citadelbuy.com
-- **Technical Support:** devops@citadelbuy.com
+- **Security Team:** security@broxiva.com
+- **Technical Support:** devops@broxiva.com
 
 **Document Version:** 1.0
 **Last Updated:** December 3, 2025

@@ -269,11 +269,11 @@ export function Footer() {
                 support@broxiva.com
               </a>
               <a
-                href="tel:1-800-CITADEL"
+                href="tel:1-800-BROXIVA"
                 className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
               >
                 <Phone className="h-4 w-4" />
-                1-800-CITADEL
+                1-800-BROXIVA
               </a>
               <span className="flex items-center gap-2 text-slate-400">
                 <MapPin className="h-4 w-4" />

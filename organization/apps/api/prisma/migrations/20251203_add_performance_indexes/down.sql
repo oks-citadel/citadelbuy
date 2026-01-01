@@ -1,6 +1,6 @@
 -- Rollback migration: 20251203_add_performance_indexes
 -- This script reverses all changes made in migration.sql
--- Drops all performance indexes added for CitadelBuy platform
+-- Drops all performance indexes added for Broxiva platform
 
 -- ============================================================================
 -- COVERING INDEXES

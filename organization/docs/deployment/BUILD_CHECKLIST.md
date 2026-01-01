@@ -6,7 +6,7 @@
 - [ ] Docker Desktop is running
 - [ ] At least 20 GB of free disk space available
 - [ ] Internet connection is stable
-- [ ] Located in correct directory: `C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization`
+- [ ] Located in correct directory: `C:\Users\Dell\OneDrive\Documents\Broxivabuy\Broxiva\organization`
 
 ### Verify Docker Installation
 

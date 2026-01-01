@@ -1,8 +1,8 @@
-# CitadelBuy Test Coverage Enhancements
+# Broxiva Test Coverage Enhancements
 
 ## Executive Summary
 
-This document summarizes the comprehensive test enhancements added to the CitadelBuy API to improve test coverage from 10% to a significantly higher level. The enhancements focus on critical business logic modules including payments, orders, authentication, and organization billing.
+This document summarizes the comprehensive test enhancements added to the Broxiva API to improve test coverage from 10% to a significantly higher level. The enhancements focus on critical business logic modules including payments, orders, authentication, and organization billing.
 
 ## Date
 
@@ -254,7 +254,7 @@ This document summarizes the comprehensive test enhancements added to the Citade
 
 ### Prerequisites:
 ```bash
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api
 npm install
 ```
 
@@ -370,7 +370,7 @@ npm run test:cov
 
 ## Conclusion
 
-The test enhancements significantly improve the reliability and maintainability of the CitadelBuy platform. The comprehensive test coverage ensures that critical business logic is protected against regressions and provides confidence in future refactoring and feature development.
+The test enhancements significantly improve the reliability and maintainability of the Broxiva platform. The comprehensive test coverage ensures that critical business logic is protected against regressions and provides confidence in future refactoring and feature development.
 
 ### Key Achievements:
 - ✅ 70+ new comprehensive test cases
@@ -410,6 +410,6 @@ The test enhancements significantly improve the reliability and maintainability 
 ---
 
 **Report Generated**: 2025-12-04
-**Platform**: CitadelBuy E-Commerce Platform
+**Platform**: Broxiva E-Commerce Platform
 **Module**: API Backend (NestJS)
 **Test Coverage Goal**: 70%+ for critical modules

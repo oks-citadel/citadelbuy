@@ -95,7 +95,7 @@ export default function AccessibilityPage() {
           </p>
           <ul>
             <li>Email: accessibility@broxiva.com</li>
-            <li>Phone: 1-800-CITADEL (option 4)</li>
+            <li>Phone: 1-800-BROXIVA (option 4)</li>
             <li>Mail: Accessibility Team, 123 Commerce Street, San Francisco, CA 94102</li>
           </ul>
           <p>

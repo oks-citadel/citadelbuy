@@ -1,8 +1,8 @@
-# CitadelBuy Internationalization (i18n)
+# Broxiva Internationalization (i18n)
 
 ## Overview
 
-Comprehensive multi-language support for the CitadelBuy Global B2B Enterprise Marketplace, covering 15+ languages with full RTL support.
+Comprehensive multi-language support for the Broxiva Global B2B Enterprise Marketplace, covering 15+ languages with full RTL support.
 
 ## Quick Start
 
@@ -413,19 +413,19 @@ console.log(language);
 
 ### Resources
 
-- **Documentation**: https://docs.citadelbuy.com/i18n
-- **API Reference**: https://api.citadelbuy.com/docs#tag/i18n
-- **GitHub Issues**: https://github.com/citadelbuy/platform/issues
+- **Documentation**: https://docs.broxiva.com/i18n
+- **API Reference**: https://api.broxiva.com/docs#tag/i18n
+- **GitHub Issues**: https://github.com/broxiva/platform/issues
 
 ### Contact
 
-- **Email**: i18n@citadelbuy.com
+- **Email**: i18n@broxiva.com
 - **Slack**: #i18n-support
 - **Discord**: #internationalization
 
 ## License
 
-Part of the CitadelBuy platform. See main LICENSE file.
+Part of the Broxiva platform. See main LICENSE file.
 
 ---
 

@@ -1,8 +1,8 @@
-# CitadelBuy Global B2B Enterprise Marketplace
+# Broxiva Global B2B Enterprise Marketplace
 
 ## Platform Overview
 
-CitadelBuy is an AI-powered global B2B enterprise marketplace platform with 300+ AI capabilities across 38 categories, designed for multi-tenant enterprise operations, cross-border commerce, and intelligent automation.
+Broxiva is an AI-powered global B2B enterprise marketplace platform with 300+ AI capabilities across 38 categories, designed for multi-tenant enterprise operations, cross-border commerce, and intelligent automation.
 
 ### Key Features
 
@@ -64,8 +64,8 @@ CitadelBuy is an AI-powered global B2B enterprise marketplace platform with 300+
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/oks-citadel/citadelbuy.git
-cd citadelbuy/organization
+git clone https://github.com/oks-broxiva/broxiva.git
+cd broxiva/organization
 
 # 2. Install dependencies
 pnpm install
@@ -302,7 +302,7 @@ For detailed architecture, see [architecture/ARCHITECTURE.md](./architecture/ARC
 ## API Documentation
 
 ### REST API
-- **Base URL**: `https://api.citadelbuy.com/api`
+- **Base URL**: `https://api.broxiva.com/api`
 - **Authentication**: JWT Bearer tokens
 - **Rate Limiting**: 100 requests/minute (authenticated), 20 requests/minute (anonymous)
 - **API Documentation**: `/api/docs` (Swagger UI)
@@ -510,10 +510,10 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 - **Stripe**: https://stripe.com/docs
 
 ### Community
-- **GitHub Issues**: https://github.com/oks-citadel/citadelbuy/issues
-- **Discussions**: https://github.com/oks-citadel/citadelbuy/discussions
+- **GitHub Issues**: https://github.com/oks-broxiva/broxiva/issues
+- **Discussions**: https://github.com/oks-broxiva/broxiva/discussions
 - **Discord**: [Join our Discord](#)
-- **Email**: dev@citadelbuy.com
+- **Email**: dev@broxiva.com
 
 ### Support Channels
 - **#engineering** - General engineering discussions
@@ -542,7 +542,7 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 **DO NOT** create public GitHub issues for security vulnerabilities.
 
-Instead, please email: **security@citadelbuy.com**
+Instead, please email: **security@broxiva.com**
 
 We will respond within 24 hours and provide a timeline for resolution.
 
@@ -563,7 +563,7 @@ We will respond within 24 hours and provide a timeline for resolution.
 
 ## License
 
-Copyright © 2024-2025 CitadelBuy Global Enterprise Marketplace
+Copyright © 2024-2025 Broxiva Global Enterprise Marketplace
 
 All rights reserved. Proprietary and confidential.
 

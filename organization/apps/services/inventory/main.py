@@ -59,9 +59,9 @@ ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '').split(',') if os.getenv('ALLO
     "http://localhost:3000",
     "http://localhost:8000",
     "http://localhost:8080",
-    "https://citadelbuy.com",
-    "https://admin.citadelbuy.com",
-    "https://api.citadelbuy.com",
+    "https://broxiva.com",
+    "https://admin.broxiva.com",
+    "https://api.broxiva.com",
 ]
 
 
@@ -117,7 +117,7 @@ async def lifespan(app: FastAPI):
 
 # Initialize FastAPI app with lifespan
 app = FastAPI(
-    title="CitadelBuy Inventory Service",
+    title="Broxiva Inventory Service",
     description="Inventory management, stock levels, and low stock alerts service",
     version="1.0.0",
     docs_url="/docs",
@@ -834,7 +834,7 @@ async def get_warehouse_inventory(
 async def root():
     """Root endpoint with service information"""
     return {
-        "service": "CitadelBuy Inventory Service",
+        "service": "Broxiva Inventory Service",
         "version": "1.0.0",
         "description": "Inventory management, stock levels, and low stock alerts",
         "endpoints": {

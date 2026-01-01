@@ -1,6 +1,6 @@
 # Search Module - Elasticsearch Integration
 
-Complete search implementation for CitadelBuy e-commerce platform with Elasticsearch, Algolia, and internal fallback support.
+Complete search implementation for Broxiva e-commerce platform with Elasticsearch, Algolia, and internal fallback support.
 
 ## Features
 
@@ -37,14 +37,14 @@ SEARCH_PROVIDER=auto
 ELASTICSEARCH_NODE=http://localhost:9200
 ELASTICSEARCH_USERNAME=
 ELASTICSEARCH_PASSWORD=
-ELASTICSEARCH_INDEX_PREFIX=citadelbuy
+ELASTICSEARCH_INDEX_PREFIX=broxiva
 ELASTICSEARCH_BULK_SIZE=1000
 ELASTICSEARCH_REQUEST_TIMEOUT=30000
 
 # Algolia Configuration (optional)
 ALGOLIA_APP_ID=your_app_id
 ALGOLIA_API_KEY=your_api_key
-ALGOLIA_INDEX_NAME=citadelbuy_products
+ALGOLIA_INDEX_NAME=broxiva_products
 
 # OpenAI for Semantic Search (optional)
 OPENAI_API_KEY=sk-...

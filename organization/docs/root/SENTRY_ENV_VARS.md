@@ -1,6 +1,6 @@
 # Sentry Environment Variables Reference
 
-This document provides a comprehensive reference for all Sentry-related environment variables used in CitadelBuy.
+This document provides a comprehensive reference for all Sentry-related environment variables used in Broxiva.
 
 ## Table of Contents
 
@@ -27,7 +27,7 @@ These variables should be set in `apps/api/.env`:
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
 | `SENTRY_ENVIRONMENT` | Environment name for filtering | `development` | `production`, `staging`, `development` |
-| `SENTRY_RELEASE` | Release version | Auto-generated | `citadelbuy-backend@1.2.3` |
+| `SENTRY_RELEASE` | Release version | Auto-generated | `broxiva-backend@1.2.3` |
 | `SENTRY_TRACES_SAMPLE_RATE` | Performance monitoring sample rate (0.0-1.0) | `1.0` (dev), `0.1` (prod) | `0.1` for 10% |
 | `SENTRY_DEBUG` | Enable verbose logging | `false` | `true`, `false` |
 
@@ -64,7 +64,7 @@ These variables should be set in `apps/web/.env.local`:
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
 | `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | Environment name | `development` | `production`, `staging` |
-| `NEXT_PUBLIC_SENTRY_RELEASE` | Release version | Auto-generated | `citadelbuy-web@1.2.3` |
+| `NEXT_PUBLIC_SENTRY_RELEASE` | Release version | Auto-generated | `broxiva-web@1.2.3` |
 | `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | Performance sample rate | `1.0` (dev), `0.1` (prod) | `0.1` |
 | `NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE` | Session replay sampling | `0.1` | `0.1` for 10% |
 | `NEXT_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE` | Error replay sampling | `1.0` | `1.0` for 100% |
@@ -77,8 +77,8 @@ These are used during build to upload source maps:
 | Variable | Description | Required | Example |
 |----------|-------------|----------|---------|
 | `SENTRY_AUTH_TOKEN` | Authentication token | Yes | `sntrys_abc123...` |
-| `SENTRY_ORG` | Organization slug | Yes | `citadelbuy` |
-| `SENTRY_PROJECT` | Project slug | Yes | `citadelbuy-web-prod` |
+| `SENTRY_ORG` | Organization slug | Yes | `broxiva` |
+| `SENTRY_PROJECT` | Project slug | Yes | `broxiva-web-prod` |
 
 ### Example Frontend `.env.local`
 
@@ -121,9 +121,9 @@ Navigate to: **Repository Settings** > **Secrets and variables** > **Actions** >
 
 | Variable Name | Description | Example |
 |---------------|-------------|---------|
-| `SENTRY_ORG` | Organization slug | `citadelbuy` |
-| `SENTRY_PROJECT_BACKEND_PROD` | Backend production project | `citadelbuy-backend-prod` |
-| `SENTRY_PROJECT_FRONTEND_PROD` | Frontend production project | `citadelbuy-web-prod` |
+| `SENTRY_ORG` | Organization slug | `broxiva` |
+| `SENTRY_PROJECT_BACKEND_PROD` | Backend production project | `broxiva-backend-prod` |
+| `SENTRY_PROJECT_FRONTEND_PROD` | Frontend production project | `broxiva-web-prod` |
 
 ### Azure DevOps Variables
 
@@ -229,14 +229,14 @@ NEXT_PUBLIC_SENTRY_DEBUG=false
 ### Initial Setup
 
 - [ ] Create Sentry account at https://sentry.io
-- [ ] Create organization: `citadelbuy`
+- [ ] Create organization: `broxiva`
 - [ ] Create 6 projects (3 environments × 2 apps):
-  - [ ] `citadelbuy-backend-dev`
-  - [ ] `citadelbuy-backend-staging`
-  - [ ] `citadelbuy-backend-prod`
-  - [ ] `citadelbuy-web-dev`
-  - [ ] `citadelbuy-web-staging`
-  - [ ] `citadelbuy-web-prod`
+  - [ ] `broxiva-backend-dev`
+  - [ ] `broxiva-backend-staging`
+  - [ ] `broxiva-backend-prod`
+  - [ ] `broxiva-web-dev`
+  - [ ] `broxiva-web-staging`
+  - [ ] `broxiva-web-prod`
 
 ### Get DSN Values
 
@@ -345,4 +345,4 @@ NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE=0.05
 ---
 
 **Last Updated**: 2024-12-04
-**Maintained By**: CitadelBuy DevOps Team
+**Maintained By**: Broxiva DevOps Team

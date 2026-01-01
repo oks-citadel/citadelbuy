@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ################################################################################
-# CitadelBuy Production Secrets Generator
+# Broxiva Production Secrets Generator
 ################################################################################
 # This script generates cryptographically secure secrets for production use.
 #
@@ -43,7 +43,7 @@ VALIDATE_MODE=false
 
 print_header() {
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║${NC}  ${BLUE}CitadelBuy Production Secrets Generator${NC}                        ${CYAN}║${NC}"
+    echo -e "${CYAN}║${NC}  ${BLUE}Broxiva Production Secrets Generator${NC}                        ${CYAN}║${NC}"
     echo -e "${CYAN}╚════════════════════════════════════════════════════════════════════╝${NC}"
     echo ""
 }
@@ -72,7 +72,7 @@ print_section() {
 
 show_help() {
     cat << EOF
-CitadelBuy Production Secrets Generator
+Broxiva Production Secrets Generator
 
 Usage:
     ./generate-secrets.sh [OPTIONS]
@@ -296,7 +296,7 @@ output_env_format() {
 
     cat > "$output_file" << EOF
 ################################################################################
-# CitadelBuy Production Secrets
+# Broxiva Production Secrets
 ################################################################################
 # Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
 #
@@ -335,13 +335,13 @@ KYC_ENCRYPTION_KEY=${KYC_ENCRYPTION_KEY}
 # =============================================================================
 # PostgreSQL database password
 # Used in DATABASE_URL connection string
-POSTGRES_USER=citadelbuy
+POSTGRES_USER=broxiva
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-POSTGRES_DB=citadelbuy_production
+POSTGRES_DB=broxiva_production
 
 # Full database connection URL
 # Format: postgresql://USER:PASSWORD@HOST:PORT/DATABASE
-DATABASE_URL=postgresql://citadelbuy:${POSTGRES_PASSWORD}@localhost:5432/citadelbuy_production?schema=public
+DATABASE_URL=postgresql://broxiva:${POSTGRES_PASSWORD}@localhost:5432/broxiva_production?schema=public
 
 # =============================================================================
 # Redis Cache/Session Store
@@ -359,14 +359,14 @@ SESSION_SECRET=${SESSION_SECRET}
 # =============================================================================
 # Message Queue (RabbitMQ)
 # =============================================================================
-RABBITMQ_USER=citadelbuy
+RABBITMQ_USER=broxiva
 RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
-RABBITMQ_URL=amqp://citadelbuy:${RABBITMQ_PASSWORD}@localhost:5672
+RABBITMQ_URL=amqp://broxiva:${RABBITMQ_PASSWORD}@localhost:5672
 
 # =============================================================================
 # Object Storage (MinIO/S3-compatible)
 # =============================================================================
-MINIO_ROOT_USER=citadelbuy_admin
+MINIO_ROOT_USER=broxiva_admin
 MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
 MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
 MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
@@ -379,7 +379,7 @@ GRAFANA_ADMIN_USER=admin
 GRAFANA_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
 
 # pgAdmin database management
-PGADMIN_DEFAULT_EMAIL=admin@citadelbuy.com
+PGADMIN_DEFAULT_EMAIL=admin@broxiva.com
 PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
 
 # =============================================================================
@@ -436,22 +436,22 @@ output_json_format() {
     "kyc_encryption_key": "${KYC_ENCRYPTION_KEY}"
   },
   "database": {
-    "postgres_user": "citadelbuy",
+    "postgres_user": "broxiva",
     "postgres_password": "${POSTGRES_PASSWORD}",
-    "postgres_db": "citadelbuy_production",
-    "database_url": "postgresql://citadelbuy:${POSTGRES_PASSWORD}@localhost:5432/citadelbuy_production?schema=public"
+    "postgres_db": "broxiva_production",
+    "database_url": "postgresql://broxiva:${POSTGRES_PASSWORD}@localhost:5432/broxiva_production?schema=public"
   },
   "cache": {
     "redis_password": "${REDIS_PASSWORD}",
     "redis_url": "redis://:${REDIS_PASSWORD}@localhost:6379"
   },
   "message_queue": {
-    "rabbitmq_user": "citadelbuy",
+    "rabbitmq_user": "broxiva",
     "rabbitmq_password": "${RABBITMQ_PASSWORD}",
-    "rabbitmq_url": "amqp://citadelbuy:${RABBITMQ_PASSWORD}@localhost:5672"
+    "rabbitmq_url": "amqp://broxiva:${RABBITMQ_PASSWORD}@localhost:5672"
   },
   "storage": {
-    "minio_root_user": "citadelbuy_admin",
+    "minio_root_user": "broxiva_admin",
     "minio_root_password": "${MINIO_ROOT_PASSWORD}",
     "minio_access_key": "${MINIO_ACCESS_KEY}",
     "minio_secret_key": "${MINIO_SECRET_KEY}"
@@ -459,7 +459,7 @@ output_json_format() {
   "admin_tools": {
     "grafana_admin_user": "admin",
     "grafana_admin_password": "${GRAFANA_ADMIN_PASSWORD}",
-    "pgadmin_default_email": "admin@citadelbuy.com",
+    "pgadmin_default_email": "admin@broxiva.com",
     "pgadmin_default_password": "${PGADMIN_DEFAULT_PASSWORD}"
   },
   "internal": {
@@ -479,7 +479,7 @@ output_yaml_format() {
     local output_file=$1
 
     cat > "$output_file" << EOF
-# CitadelBuy Production Secrets
+# Broxiva Production Secrets
 # Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
 # WARNING: NEVER commit this file to version control
 
@@ -499,22 +499,22 @@ encryption:
   kyc_encryption_key: "${KYC_ENCRYPTION_KEY}"
 
 database:
-  postgres_user: "citadelbuy"
+  postgres_user: "broxiva"
   postgres_password: "${POSTGRES_PASSWORD}"
-  postgres_db: "citadelbuy_production"
-  database_url: "postgresql://citadelbuy:${POSTGRES_PASSWORD}@localhost:5432/citadelbuy_production?schema=public"
+  postgres_db: "broxiva_production"
+  database_url: "postgresql://broxiva:${POSTGRES_PASSWORD}@localhost:5432/broxiva_production?schema=public"
 
 cache:
   redis_password: "${REDIS_PASSWORD}"
   redis_url: "redis://:${REDIS_PASSWORD}@localhost:6379"
 
 message_queue:
-  rabbitmq_user: "citadelbuy"
+  rabbitmq_user: "broxiva"
   rabbitmq_password: "${RABBITMQ_PASSWORD}"
-  rabbitmq_url: "amqp://citadelbuy:${RABBITMQ_PASSWORD}@localhost:5672"
+  rabbitmq_url: "amqp://broxiva:${RABBITMQ_PASSWORD}@localhost:5672"
 
 storage:
-  minio_root_user: "citadelbuy_admin"
+  minio_root_user: "broxiva_admin"
   minio_root_password: "${MINIO_ROOT_PASSWORD}"
   minio_access_key: "${MINIO_ACCESS_KEY}"
   minio_secret_key: "${MINIO_SECRET_KEY}"
@@ -522,7 +522,7 @@ storage:
 admin_tools:
   grafana_admin_user: "admin"
   grafana_admin_password: "${GRAFANA_ADMIN_PASSWORD}"
-  pgadmin_default_email: "admin@citadelbuy.com"
+  pgadmin_default_email: "admin@broxiva.com"
   pgadmin_default_password: "${PGADMIN_DEFAULT_PASSWORD}"
 
 internal:

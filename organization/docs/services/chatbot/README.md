@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Chatbot Service is CitadelBuy's AI-powered conversational assistant that provides customer support and shopping assistance. Built with advanced NLP models and dialogue management, it handles customer inquiries, product recommendations, order tracking, and seamlessly escalates to human support when needed.
+The Chatbot Service is Broxiva's AI-powered conversational assistant that provides customer support and shopping assistance. Built with advanced NLP models and dialogue management, it handles customer inquiries, product recommendations, order tracking, and seamlessly escalates to human support when needed.
 
 ## Key Features
 
@@ -38,7 +38,7 @@ LOG_LEVEL=INFO
 PORT=8004
 
 # Database (PostgreSQL)
-DATABASE_URL=postgresql://user:password@localhost:5432/citadelbuy
+DATABASE_URL=postgresql://user:password@localhost:5432/broxiva
 
 # Redis Cache
 REDIS_URL=redis://localhost:6379/5
@@ -203,10 +203,10 @@ python tests/integration/test_conversation.py
 
 ```bash
 # Build the Docker image
-docker build -t citadelbuy/chatbot:latest .
+docker build -t broxiva/chatbot:latest .
 
 # Build with specific version
-docker build -t citadelbuy/chatbot:v2.0.0 .
+docker build -t broxiva/chatbot:v2.0.0 .
 ```
 
 ### Run Container
@@ -218,7 +218,7 @@ docker run -d \
   -p 8004:8004 \
   --env-file .env \
   -v $(pwd)/models:/app/models \
-  citadelbuy/chatbot:latest
+  broxiva/chatbot:latest
 
 # Run with Docker Compose
 docker-compose up chatbot
@@ -239,7 +239,7 @@ services:
     ports:
       - "8004:8004"
     environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/citadelbuy
+      - DATABASE_URL=postgresql://postgres:password@db:5432/broxiva
       - REDIS_URL=redis://redis:6379/5
       - PRODUCT_SERVICE_URL=http://api:3000
     depends_on:
@@ -592,10 +592,10 @@ See [Contributing Guide](../../../CONTRIBUTING.md) for development guidelines.
 
 ## License
 
-Proprietary - CitadelBuy Platform
+Proprietary - Broxiva Platform
 
 ## Support
 
 For issues and questions:
 - Internal Slack: #chatbot-support
-- Email: support@citadelbuy.com
+- Email: support@broxiva.com

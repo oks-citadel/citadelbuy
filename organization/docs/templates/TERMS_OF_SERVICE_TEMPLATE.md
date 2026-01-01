@@ -1,4 +1,4 @@
-# Terms of Service Template - CitadelBuy
+# Terms of Service Template - Broxiva
 
 **Document Type:** Terms of Service Legal Template
 **Version:** 1.0
@@ -41,12 +41,12 @@
 
 ### 1.1 Agreement to Terms
 
-Welcome to CitadelBuy! These Terms of Service ("Terms," "Agreement") are a legally binding contract between you ("you," "your," "user," or "customer") and CitadelBuy, Inc. ("CitadelBuy," "we," "us," or "our"), a [State] corporation with its principal place of business at [Address].
+Welcome to Broxiva! These Terms of Service ("Terms," "Agreement") are a legally binding contract between you ("you," "your," "user," or "customer") and Broxiva, Inc. ("Broxiva," "we," "us," or "our"), a [State] corporation with its principal place of business at [Address].
 
 These Terms govern your access to and use of:
-- Our website located at [www.citadelbuy.com] (the "Website")
+- Our website located at [www.broxiva.com] (the "Website")
 - Our mobile applications (iOS and Android) (the "App")
-- All products, services, features, content, and applications offered by CitadelBuy (collectively, the "Platform" or "Services")
+- All products, services, features, content, and applications offered by Broxiva (collectively, the "Platform" or "Services")
 
 **BY ACCESSING OR USING THE PLATFORM, CREATING AN ACCOUNT, OR MAKING A PURCHASE, YOU ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREE TO BE BOUND BY THESE TERMS AND OUR PRIVACY POLICY, WHICH IS INCORPORATED BY REFERENCE.**
 
@@ -105,10 +105,10 @@ For purposes of these Terms:
 - **"Content"** means text, images, photos, videos, audio, graphics, software, data, and other materials.
 - **"Order"** means your request to purchase products or services through the Platform.
 - **"Product"** means any goods, merchandise, or items available for sale on the Platform.
-- **"Services"** means the e-commerce platform and related services provided by CitadelBuy.
+- **"Services"** means the e-commerce platform and related services provided by Broxiva.
 - **"User Content"** means any Content that you submit, post, or upload to the Platform.
 - **"Vendor"** means third-party sellers offering products through our marketplace (if applicable).
-- **"We," "Us," "Our"** means CitadelBuy, Inc. and its affiliates, subsidiaries, and assigns.
+- **"We," "Us," "Our"** means Broxiva, Inc. and its affiliates, subsidiaries, and assigns.
 - **"You," "Your"** means the individual or entity using the Platform or accessing our Services.
 
 ---
@@ -296,7 +296,7 @@ If a product becomes unavailable after you place an order, we will notify you an
 
 **If applicable:** Some products may be sold by third-party vendors through our marketplace platform.
 
-- Vendors are independent businesses, not employees or agents of CitadelBuy.
+- Vendors are independent businesses, not employees or agents of Broxiva.
 - Vendors are responsible for the accuracy of their product listings and fulfillment of orders.
 - These Terms and our policies apply to vendor transactions, but vendors may have additional terms.
 - We may assist with customer service and dispute resolution but are not liable for vendor products or conduct.
@@ -305,7 +305,7 @@ If a product becomes unavailable after you place an order, we will notify you an
 ### 5.4 Product Reviews and Ratings
 
 - Users may post reviews and ratings of products.
-- Reviews represent the opinions of individual users and not CitadelBuy.
+- Reviews represent the opinions of individual users and not Broxiva.
 - We do not verify the accuracy of reviews but reserve the right to remove reviews that violate our policies.
 - See Section 11 for more on User Content.
 
@@ -660,7 +660,7 @@ If you have not received a refund after the expected timeframe:
 
 ## 10. Intellectual Property
 
-### 10.1 CitadelBuy Intellectual Property
+### 10.1 Broxiva Intellectual Property
 
 **Ownership:**
 All content, features, and functionality of the Platform, including but not limited to:
@@ -671,10 +671,10 @@ All content, features, and functionality of the Platform, including but not limi
 - Product descriptions and listings (created by us)
 - Compilation and arrangement of content
 
-...are owned by CitadelBuy, its licensors, or other providers and are protected by United States and international copyright, trademark, patent, trade secret, and other intellectual property laws.
+...are owned by Broxiva, its licensors, or other providers and are protected by United States and international copyright, trademark, patent, trade secret, and other intellectual property laws.
 
 **Trademarks:**
-CitadelBuy®, the CitadelBuy logo, and other marks used on the Platform are trademarks or registered trademarks of CitadelBuy, Inc. You may not use these marks without our prior written permission.
+Broxiva®, the Broxiva logo, and other marks used on the Platform are trademarks or registered trademarks of Broxiva, Inc. You may not use these marks without our prior written permission.
 
 ### 10.2 Limited License
 
@@ -696,7 +696,7 @@ You may not:
 - Remove or alter any copyright, trademark, or proprietary notices
 - Use automated means to scrape or collect content
 - Frame or mirror the Platform or any content
-- Imply endorsement or association with CitadelBuy without authorization
+- Imply endorsement or association with Broxiva without authorization
 
 ### 10.4 Digital Millennium Copyright Act (DMCA)
 
@@ -713,10 +713,10 @@ If you believe content on the Platform infringes your copyright, please provide 
 6. A statement, under penalty of perjury, that the information is accurate and you are authorized to act on behalf of the copyright owner
 
 **Designated Copyright Agent:**
-CitadelBuy, Inc.
+Broxiva, Inc.
 Attn: Copyright Agent / Legal Department
 [Address]
-Email: copyright@citadelbuy.com
+Email: copyright@broxiva.com
 Phone: [Phone Number]
 
 **Counter-Notification:**
@@ -743,9 +743,9 @@ The Platform may contain content owned by third parties (vendors, users, partner
 - Profile information
 - Messages to customer support or other users
 
-### 11.2 License Grant to CitadelBuy
+### 11.2 License Grant to Broxiva
 
-By submitting User Content, you grant CitadelBuy a worldwide, non-exclusive, royalty-free, perpetual, irrevocable, transferable, sublicensable license to use, reproduce, modify, adapt, publish, translate, create derivative works from, distribute, perform, and display such User Content in any media formats and through any channels, now known or hereafter developed, for the purposes of:
+By submitting User Content, you grant Broxiva a worldwide, non-exclusive, royalty-free, perpetual, irrevocable, transferable, sublicensable license to use, reproduce, modify, adapt, publish, translate, create derivative works from, distribute, perform, and display such User Content in any media formats and through any channels, now known or hereafter developed, for the purposes of:
 - Operating, improving, and promoting the Platform
 - Displaying your reviews and content to other users
 - Marketing and advertising our services
@@ -871,7 +871,7 @@ Violation of this section may result in immediate account termination, legal act
 
 ### 13.1 Third-Party Links
 
-The Platform may contain links to third-party websites, services, or resources that are not owned or controlled by CitadelBuy, including:
+The Platform may contain links to third-party websites, services, or resources that are not owned or controlled by Broxiva, including:
 - Payment processors (Stripe, PayPal, etc.)
 - Shipping carriers (UPS, FedEx, etc.)
 - Social media platforms
@@ -880,7 +880,7 @@ The Platform may contain links to third-party websites, services, or resources t
 
 ### 13.2 No Endorsement
 
-The inclusion of any link does not imply endorsement, approval, or recommendation by CitadelBuy. We are not responsible for:
+The inclusion of any link does not imply endorsement, approval, or recommendation by Broxiva. We are not responsible for:
 - The content, accuracy, or availability of third-party sites
 - Products or services offered by third parties
 - Privacy practices of third-party sites (review their privacy policies)
@@ -906,7 +906,7 @@ The Platform may include social media features (e.g., "Like" buttons, "Share" bu
 
 TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, THE PLATFORM AND ALL PRODUCTS, SERVICES, CONTENT, AND MATERIALS ARE PROVIDED "AS IS," "AS AVAILABLE," AND "WITH ALL FAULTS."
 
-CITADELBUY MAKES NO REPRESENTATIONS OR WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO:
+BROXIVA MAKES NO REPRESENTATIONS OR WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO:
 - WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
 - WARRANTIES REGARDING ACCURACY, RELIABILITY, COMPLETENESS, OR TIMELINESS OF CONTENT
 - WARRANTIES THAT THE PLATFORM WILL BE UNINTERRUPTED, SECURE, OR ERROR-FREE
@@ -961,7 +961,7 @@ Some jurisdictions do not allow disclaimers of implied warranties. If you are lo
 
 ### 15.1 Exclusion of Damages
 
-TO THE FULLEST EXTENT PERMITTED BY LAW, IN NO EVENT SHALL CITADELBUY, ITS AFFILIATES, DIRECTORS, OFFICERS, EMPLOYEES, AGENTS, OR LICENSORS BE LIABLE FOR ANY:
+TO THE FULLEST EXTENT PERMITTED BY LAW, IN NO EVENT SHALL BROXIVA, ITS AFFILIATES, DIRECTORS, OFFICERS, EMPLOYEES, AGENTS, OR LICENSORS BE LIABLE FOR ANY:
 
 **INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, PUNITIVE, OR EXEMPLARY DAMAGES**, including but not limited to:
 - Loss of profits, revenue, or business opportunities
@@ -979,21 +979,21 @@ TO THE FULLEST EXTENT PERMITTED BY LAW, IN NO EVENT SHALL CITADELBUY, ITS AFFILI
 - Errors, mistakes, or inaccuracies of content
 - Interruption or cessation of the Platform
 
-WHETHER BASED ON WARRANTY, CONTRACT, TORT (INCLUDING NEGLIGENCE), PRODUCT LIABILITY, OR ANY OTHER LEGAL THEORY, AND WHETHER OR NOT CITADELBUY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+WHETHER BASED ON WARRANTY, CONTRACT, TORT (INCLUDING NEGLIGENCE), PRODUCT LIABILITY, OR ANY OTHER LEGAL THEORY, AND WHETHER OR NOT BROXIVA HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 
 ### 15.2 Cap on Liability
 
-TO THE EXTENT NOT PROHIBITED BY LAW, CITADELBUY'S TOTAL AGGREGATE LIABILITY ARISING OUT OF OR RELATED TO THESE TERMS OR YOUR USE OF THE PLATFORM SHALL NOT EXCEED THE GREATER OF:
-- (A) THE AMOUNT YOU PAID TO CITADELBUY IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM, OR
+TO THE EXTENT NOT PROHIBITED BY LAW, BROXIVA'S TOTAL AGGREGATE LIABILITY ARISING OUT OF OR RELATED TO THESE TERMS OR YOUR USE OF THE PLATFORM SHALL NOT EXCEED THE GREATER OF:
+- (A) THE AMOUNT YOU PAID TO BROXIVA IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM, OR
 - (B) ONE HUNDRED DOLLARS ($100.00)
 
 ### 15.3 Basis of the Bargain
 
-You acknowledge that the limitations of liability in this section are fundamental elements of the agreement between you and CitadelBuy, and that the Platform would not be provided to you without these limitations.
+You acknowledge that the limitations of liability in this section are fundamental elements of the agreement between you and Broxiva, and that the Platform would not be provided to you without these limitations.
 
 ### 15.4 Jurisdictional Variations
 
-Some jurisdictions do not allow the exclusion or limitation of incidental or consequential damages, so the above limitations may not apply to you. In such jurisdictions, CitadelBuy's liability will be limited to the maximum extent permitted by law.
+Some jurisdictions do not allow the exclusion or limitation of incidental or consequential damages, so the above limitations may not apply to you. In such jurisdictions, Broxiva's liability will be limited to the maximum extent permitted by law.
 
 ### 15.5 Exceptions
 
@@ -1008,7 +1008,7 @@ The limitations in this section do not apply to:
 
 ### 16.1 Your Indemnification Obligation
 
-You agree to defend, indemnify, and hold harmless CitadelBuy, its affiliates, subsidiaries, officers, directors, employees, agents, licensors, and service providers from and against any and all claims, damages, obligations, losses, liabilities, costs, and expenses (including attorney's fees and costs) arising from or related to:
+You agree to defend, indemnify, and hold harmless Broxiva, its affiliates, subsidiaries, officers, directors, employees, agents, licensors, and service providers from and against any and all claims, damages, obligations, losses, liabilities, costs, and expenses (including attorney's fees and costs) arising from or related to:
 
 1. Your use of the Platform or products purchased through the Platform
 2. Your violation of these Terms
@@ -1020,11 +1020,11 @@ You agree to defend, indemnify, and hold harmless CitadelBuy, its affiliates, su
 
 ### 16.2 Defense and Settlement
 
-CitadelBuy reserves the right to assume the exclusive defense and control of any matter subject to indemnification by you, in which case you will cooperate with CitadelBuy in asserting any available defenses. You may not settle any claim without CitadelBuy's prior written consent.
+Broxiva reserves the right to assume the exclusive defense and control of any matter subject to indemnification by you, in which case you will cooperate with Broxiva in asserting any available defenses. You may not settle any claim without Broxiva's prior written consent.
 
 ### 16.3 Notice
 
-You will promptly notify CitadelBuy of any third-party claim subject to indemnification.
+You will promptly notify Broxiva of any third-party claim subject to indemnification.
 
 ---
 
@@ -1034,10 +1034,10 @@ You will promptly notify CitadelBuy of any third-party claim subject to indemnif
 
 **Before filing a claim**, you agree to first contact us to attempt to resolve the dispute informally by sending a written description of your claim to:
 
-CitadelBuy, Inc.
+Broxiva, Inc.
 Attn: Legal Department - Dispute Resolution
 [Address]
-Email: legal@citadelbuy.com
+Email: legal@broxiva.com
 
 Include your name, contact information, account information, description of the dispute, and the relief you seek.
 
@@ -1048,7 +1048,7 @@ We will attempt to resolve the dispute internally within 60 days. If we cannot r
 **PLEASE READ THIS SECTION CAREFULLY. IT AFFECTS YOUR LEGAL RIGHTS, INCLUDING YOUR RIGHT TO FILE A LAWSUIT IN COURT.**
 
 **Agreement to Arbitrate:**
-You and CitadelBuy agree that any dispute, claim, or controversy arising out of or relating to these Terms, the Platform, or products purchased (collectively, "Disputes") will be settled by binding arbitration, except as set forth below.
+You and Broxiva agree that any dispute, claim, or controversy arising out of or relating to these Terms, the Platform, or products purchased (collectively, "Disputes") will be settled by binding arbitration, except as set forth below.
 
 Arbitration uses a neutral arbitrator instead of a judge or jury, is subject to very limited review by courts, and may be more limited than in court. Arbitrators can award the same damages and relief that a court can award.
 
@@ -1071,34 +1071,34 @@ The AAA Rules are available at www.adr.org or by calling 1-800-778-7879.
 - Each party is responsible for its own attorney fees and costs unless the arbitrator awards them.
 
 **Filing a Claim:**
-To begin arbitration, submit a Demand for Arbitration to AAA and send a copy to CitadelBuy at the address above.
+To begin arbitration, submit a Demand for Arbitration to AAA and send a copy to Broxiva at the address above.
 
 **Costs:**
-- If your claim is for less than $10,000, CitadelBuy will pay all AAA filing, administration, and arbitrator fees.
+- If your claim is for less than $10,000, Broxiva will pay all AAA filing, administration, and arbitrator fees.
 - If your claim is for $10,000 or more, the payment of fees will be governed by the AAA Rules.
-- CitadelBuy will not seek attorney's fees and costs in arbitration unless the arbitrator determines your claim was frivolous.
+- Broxiva will not seek attorney's fees and costs in arbitration unless the arbitrator determines your claim was frivolous.
 
 ### 17.3 Class Action and Jury Trial Waiver
 
 **CLASS ACTION WAIVER:**
-YOU AND CITADELBUY AGREE THAT DISPUTES WILL BE RESOLVED ONLY ON AN INDIVIDUAL BASIS AND NOT AS A CLASS ACTION, CONSOLIDATED ACTION, OR REPRESENTATIVE ACTION.
+YOU AND BROXIVA AGREE THAT DISPUTES WILL BE RESOLVED ONLY ON AN INDIVIDUAL BASIS AND NOT AS A CLASS ACTION, CONSOLIDATED ACTION, OR REPRESENTATIVE ACTION.
 
-You and CitadelBuy agree not to participate in a class or representative action, private attorney general action, or consolidated arbitration involving any other current or former users. The arbitrator may not consolidate more than one person's claims or preside over any form of representative or class proceeding.
+You and Broxiva agree not to participate in a class or representative action, private attorney general action, or consolidated arbitration involving any other current or former users. The arbitrator may not consolidate more than one person's claims or preside over any form of representative or class proceeding.
 
 **JURY TRIAL WAIVER:**
-TO THE FULLEST EXTENT PERMITTED BY LAW, YOU AND CITADELBUY WAIVE THE RIGHT TO A TRIAL BY JURY.
+TO THE FULLEST EXTENT PERMITTED BY LAW, YOU AND BROXIVA WAIVE THE RIGHT TO A TRIAL BY JURY.
 
 ### 17.4 Opt-Out of Arbitration
 
-**You may opt out of this arbitration agreement** by sending written notice to CitadelBuy within **30 days** of first accepting these Terms.
+**You may opt out of this arbitration agreement** by sending written notice to Broxiva within **30 days** of first accepting these Terms.
 
 The opt-out notice must be sent to:
-CitadelBuy, Inc.
+Broxiva, Inc.
 Attn: Arbitration Opt-Out
 [Address]
-Email: arbitration-optout@citadelbuy.com
+Email: arbitration-optout@broxiva.com
 
-Include your name, address, account email, and a clear statement that you wish to opt out of the arbitration agreement. If you opt out, you and CitadelBuy can resolve disputes in court subject to Section 17.5.
+Include your name, address, account email, and a clear statement that you wish to opt out of the arbitration agreement. If you opt out, you and Broxiva can resolve disputes in court subject to Section 17.5.
 
 ### 17.5 Governing Law and Jurisdiction
 
@@ -1133,14 +1133,14 @@ Upon termination by you:
 - Outstanding orders will be fulfilled unless you cancel them separately.
 - You remain liable for any amounts owed.
 
-### 18.2 Termination by CitadelBuy
+### 18.2 Termination by Broxiva
 
 We may terminate or suspend your account and access to the Platform, with or without notice, for any reason, including:
 - Violation of these Terms
 - Fraudulent, abusive, or illegal conduct
 - Extended inactivity
 - Legal or regulatory requirements
-- Protecting the rights, property, or safety of CitadelBuy, users, or others
+- Protecting the rights, property, or safety of Broxiva, users, or others
 
 We are not liable for any damages or losses resulting from termination.
 
@@ -1170,13 +1170,13 @@ If your account is terminated for violation of these Terms, you are not entitled
 
 ### 19.1 Entire Agreement
 
-These Terms, together with our Privacy Policy, Cookie Policy, and any Supplemental Terms, constitute the entire agreement between you and CitadelBuy regarding the Platform and supersede all prior agreements, understandings, and communications, whether written or oral.
+These Terms, together with our Privacy Policy, Cookie Policy, and any Supplemental Terms, constitute the entire agreement between you and Broxiva regarding the Platform and supersede all prior agreements, understandings, and communications, whether written or oral.
 
 ### 19.2 Assignment
 
 You may not assign, transfer, or delegate these Terms or your rights and obligations without our prior written consent. Any attempted assignment in violation of this section is void.
 
-CitadelBuy may freely assign or transfer these Terms and our rights and obligations, including in connection with a merger, acquisition, sale of assets, or by operation of law.
+Broxiva may freely assign or transfer these Terms and our rights and obligations, including in connection with a merger, acquisition, sale of assets, or by operation of law.
 
 ### 19.3 Severability
 
@@ -1184,7 +1184,7 @@ If any provision of these Terms is found to be invalid, illegal, or unenforceabl
 
 ### 19.4 Waiver
 
-Our failure to enforce any right or provision of these Terms does not constitute a waiver of that right or provision. Any waiver must be in writing and signed by an authorized representative of CitadelBuy.
+Our failure to enforce any right or provision of these Terms does not constitute a waiver of that right or provision. Any waiver must be in writing and signed by an authorized representative of Broxiva.
 
 ### 19.5 Force Majeure
 
@@ -1198,11 +1198,11 @@ We are not liable for any failure or delay in performance due to events beyond o
 
 ### 19.6 Relationship of Parties
 
-These Terms do not create any partnership, joint venture, employment, or agency relationship between you and CitadelBuy. You have no authority to bind CitadelBuy or make commitments on our behalf.
+These Terms do not create any partnership, joint venture, employment, or agency relationship between you and Broxiva. You have no authority to bind Broxiva or make commitments on our behalf.
 
 ### 19.7 Third-Party Beneficiaries
 
-These Terms are for the benefit of you and CitadelBuy only. No third party has any right to enforce these Terms.
+These Terms are for the benefit of you and Broxiva only. No third party has any right to enforce these Terms.
 
 Exception: Payment processors, shipping carriers, and other service providers are third-party beneficiaries of the provisions that relate to them.
 
@@ -1238,7 +1238,7 @@ If you are a New Jersey resident, certain provisions of these Terms (including w
 
 ### 19.14 Accessibility
 
-We are committed to making our Platform accessible to users with disabilities. If you encounter accessibility issues, please contact us at accessibility@citadelbuy.com.
+We are committed to making our Platform accessible to users with disabilities. If you encounter accessibility issues, please contact us at accessibility@broxiva.com.
 
 ### 19.15 Modification and Interpretation
 
@@ -1256,7 +1256,7 @@ Provisions of these Terms that by their nature should survive termination shall 
 We may disclose your information to law enforcement, government officials, or third parties if:
 - Required by law, subpoena, or court order
 - We believe it is necessary to prevent fraud, security threats, or illegal activity
-- We believe it is necessary to protect the rights, property, or safety of CitadelBuy, users, or the public
+- We believe it is necessary to protect the rights, property, or safety of Broxiva, users, or the public
 
 ### 19.18 Feedback and Suggestions
 
@@ -1269,25 +1269,25 @@ If you provide us with feedback, suggestions, or ideas ("Feedback"), you grant u
 If you have questions, concerns, or disputes regarding these Terms or the Platform, please contact us:
 
 **General Inquiries:**
-Email: support@citadelbuy.com
+Email: support@broxiva.com
 Phone: 1-XXX-XXX-XXXX (Monday-Friday, 9 AM - 5 PM EST)
-Web Form: https://www.citadelbuy.com/contact
+Web Form: https://www.broxiva.com/contact
 
 **Legal Inquiries:**
-Email: legal@citadelbuy.com
+Email: legal@broxiva.com
 
 **Mailing Address:**
-CitadelBuy, Inc.
+Broxiva, Inc.
 [Street Address]
 [City, State, ZIP Code]
 [Country]
 
 **Copyright Infringement (DMCA):**
-Email: copyright@citadelbuy.com
+Email: copyright@broxiva.com
 See Section 10.4 for detailed DMCA notice requirements.
 
 **Dispute Resolution:**
-Email: legal@citadelbuy.com
+Email: legal@broxiva.com
 See Section 17 for dispute resolution process.
 
 ---

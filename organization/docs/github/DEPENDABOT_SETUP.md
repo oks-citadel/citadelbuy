@@ -1,7 +1,7 @@
 # Dependabot Configuration Summary
 
 ## Overview
-Dependabot has been configured for the CitadelBuy repository to automate dependency updates across all components of the platform.
+Dependabot has been configured for the Broxiva repository to automate dependency updates across all components of the platform.
 
 ## Configuration File
 **Location:** `.github/dependabot.yml`
@@ -80,12 +80,12 @@ Each PR is automatically labeled with:
 
 ### Reviewers
 PRs are automatically assigned to relevant teams:
-- `citadelbuy/platform-team` - Root workspace, Terraform
-- `citadelbuy/backend-team` - API dependencies
-- `citadelbuy/frontend-team` - Web dependencies
-- `citadelbuy/mobile-team` - Mobile dependencies
-- `citadelbuy/devops-team` - Docker, GitHub Actions, Infrastructure
-- `citadelbuy/security-team` - Security-related Terraform modules
+- `broxiva/platform-team` - Root workspace, Terraform
+- `broxiva/backend-team` - API dependencies
+- `broxiva/frontend-team` - Web dependencies
+- `broxiva/mobile-team` - Mobile dependencies
+- `broxiva/devops-team` - Docker, GitHub Actions, Infrastructure
+- `broxiva/security-team` - Security-related Terraform modules
 
 ### Commit Message Format
 All commits follow conventional commit format:
@@ -128,12 +128,12 @@ All commits follow conventional commit format:
 
 ### 1. Configure GitHub Teams
 Create the following teams in your GitHub organization:
-- `citadelbuy/platform-team`
-- `citadelbuy/backend-team`
-- `citadelbuy/frontend-team`
-- `citadelbuy/mobile-team`
-- `citadelbuy/devops-team`
-- `citadelbuy/security-team`
+- `broxiva/platform-team`
+- `broxiva/backend-team`
+- `broxiva/frontend-team`
+- `broxiva/mobile-team`
+- `broxiva/devops-team`
+- `broxiva/security-team`
 
 Or update the reviewers in `dependabot.yml` to match your existing team structure.
 

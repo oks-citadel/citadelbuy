@@ -1,5 +1,5 @@
 # ==================================
-# CitadelBuy - Common Variables
+# Broxiva - Common Variables
 # Shared across all pipelines and environments
 # ==================================
 
@@ -15,15 +15,15 @@ variables:
   AGENT_VM_IMAGE: 'ubuntu-latest'
 
   # Azure Container Registry
-  AZURE_CONTAINER_REGISTRY: 'citadelbuyacr.azurecr.io'
-  ACR_SERVICE_CONNECTION: 'CitadelBuyACR'
+  AZURE_CONTAINER_REGISTRY: 'broxivaacr.azurecr.io'
+  ACR_SERVICE_CONNECTION: 'BroxivaACR'
 
   # Azure Service Connection
-  AZURE_SERVICE_CONNECTION: 'CitadelBuyAzure'
+  AZURE_SERVICE_CONNECTION: 'BroxivaAzure'
 
   # Azure DevOps
-  AZURE_DEVOPS_ORG: 'citadelcloudmanagement'
-  AZURE_DEVOPS_PROJECT: 'CitadelBuy'
+  AZURE_DEVOPS_ORG: 'broxivacloudmanagement'
+  AZURE_DEVOPS_PROJECT: 'Broxiva'
 
   # Cache Directories
   PNPM_CACHE_FOLDER: '$(Pipeline.Workspace)/.pnpm-store'
@@ -38,7 +38,7 @@ variables:
   JEST_MAX_WORKERS: '2'
 
   # Database Configuration (Test)
-  TEST_DATABASE_URL: 'postgresql://citadelbuy:citadelbuy123@localhost:5432/citadelbuy_test'
+  TEST_DATABASE_URL: 'postgresql://broxiva:broxiva123@localhost:5432/broxiva_test'
   TEST_REDIS_URL: 'redis://localhost:6379'
 
   # Security

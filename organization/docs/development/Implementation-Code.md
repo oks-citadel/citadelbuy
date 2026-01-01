@@ -1,4 +1,4 @@
-# CitadelBuy Complete Code Implementation
+# Broxiva Complete Code Implementation
 ## Backend & Frontend Production Code
 
 ---
@@ -492,7 +492,7 @@ export const useCartStore = create<CartStore>()(
       }, 0),
     }),
     {
-      name: 'citadelbuy-cart',
+      name: 'broxiva-cart',
     }
   )
 );
@@ -569,7 +569,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const product = await apiClient.get<Product>(`/products/${params.slug}`);
     return {
-      title: `${product.name} | CitadelBuy`,
+      title: `${product.name} | Broxiva`,
       description: product.description,
       openGraph: {
         title: product.name,
@@ -646,12 +646,12 @@ export default async function ProductPage({ params }: Props) {
 
 # .env.example
 NODE_ENV=production
-SQL_SERVER=citadelbuy-prod-sql.database.windows.net
+SQL_SERVER=broxiva-prod-sql.database.windows.net
 SQL_DATABASE=orders
-COSMOS_ENDPOINT=https://citadelbuy-prod-cosmos.documents.azure.com:443/
-REDIS_HOST=citadelbuy-prod-redis.redis.cache.windows.net
-SERVICE_BUS_NAMESPACE=citadelbuy-prod-sb.servicebus.windows.net
-STORAGE_ACCOUNT_URL=https://citadelbuyprodstrg.blob.core.windows.net
+COSMOS_ENDPOINT=https://broxiva-prod-cosmos.documents.azure.com:443/
+REDIS_HOST=broxiva-prod-redis.redis.cache.windows.net
+SERVICE_BUS_NAMESPACE=broxiva-prod-sb.servicebus.windows.net
+STORAGE_ACCOUNT_URL=https://broxivaprodstrg.blob.core.windows.net
 JWT_SECRET=${KEY_VAULT_SECRET}
 STRIPE_SECRET_KEY=${KEY_VAULT_SECRET}
 ```

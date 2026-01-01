@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the implementation of idempotent payment webhook processing in CitadelBuy, ensuring that payment events are processed exactly once to prevent duplicate charges, order confirmations, and other critical payment operations.
+This document summarizes the implementation of idempotent payment webhook processing in Broxiva, ensuring that payment events are processed exactly once to prevent duplicate charges, order confirmations, and other critical payment operations.
 
 ## Implementation Date
 
@@ -384,7 +384,7 @@ If issues arise:
    ```bash
    git revert <commit-hash>
    npm run build
-   pm2 restart citadelbuy-api
+   pm2 restart broxiva-api
    ```
 
 3. **Rollback Database** (if required)
@@ -494,6 +494,6 @@ The idempotent payment webhook processing system is now fully implemented and re
 
 **Document Version**: 1.0
 **Last Updated**: 2025-12-03
-**Implemented By**: CitadelBuy Engineering Team
+**Implemented By**: Broxiva Engineering Team
 **Reviewed By**: [Pending]
 **Approved By**: [Pending]

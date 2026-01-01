@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains the complete n8n workflow implementation for CitadelBuy's abandoned cart recovery system, including a multi-stage email sequence, AI-powered product recommendations, exclusion rules, and comprehensive analytics tracking.
+This directory contains the complete n8n workflow implementation for Broxiva's abandoned cart recovery system, including a multi-stage email sequence, AI-powered product recommendations, exclusion rules, and comprehensive analytics tracking.
 
 ---
 
@@ -177,7 +177,7 @@ config.exclusion_rules.check_cart_value.min_value = 50.00;
 3. Data flow example (cart journey)
 4. Error handling strategy
 5. Performance characteristics
-6. Integration patterns (CitadelBuy, Klaviyo, Algolia, Zendesk, Mixpanel)
+6. Integration patterns (Broxiva, Klaviyo, Algolia, Zendesk, Mixpanel)
 7. Scalability considerations
 8. Security architecture
 9. Monitoring and observability
@@ -207,7 +207,7 @@ config.exclusion_rules.check_cart_value.min_value = 50.00;
 ### Step 2: Configure Credentials (2 minutes)
 ```bash
 # Create credentials in n8n:
-1. CitadelBuy API Key (HTTP Header Auth)
+1. Broxiva API Key (HTTP Header Auth)
    - Header: Authorization
    - Value: Bearer YOUR_API_KEY
 
@@ -223,15 +223,15 @@ config.exclusion_rules.check_cart_value.min_value = 50.00;
 ### Step 3: Set Environment Variables (1 minute)
 ```bash
 # In n8n settings or .env file:
-CITADELBUY_API_KEY=your_key
+BROXIVA_API_KEY=your_key
 KLAVIYO_PUBLIC_API_KEY=pk_xxx
 KLAVIYO_PRIVATE_API_KEY=pk_xxx
 KLAVIYO_SUPPRESSION_LIST_ID=list_xxx
 ALGOLIA_APP_ID=app_xxx
 ALGOLIA_API_KEY=key_xxx
 MIXPANEL_PROJECT_TOKEN=token_xxx
-ZENDESK_SUBDOMAIN=citadelbuy
-ZENDESK_EMAIL=support@citadelbuy.com
+ZENDESK_SUBDOMAIN=broxiva
+ZENDESK_EMAIL=support@broxiva.com
 ZENDESK_API_TOKEN=token_xxx
 ```
 
@@ -309,14 +309,14 @@ Cart Abandoned (T=0)
 
 ### Required Services
 - **n8n:** v0.200.0 or higher
-- **CitadelBuy API:** v1
+- **Broxiva API:** v1
 - **Klaviyo:** Account with email templates
 - **Algolia:** Search index with products
 - **Mixpanel:** Project for analytics
 - **Zendesk:** (Optional) For support ticket checks
 
 ### API Rate Limits
-- CitadelBuy: 1,000 requests/min
+- Broxiva: 1,000 requests/min
 - Klaviyo: 300 requests/min
 - Algolia: 10,000 requests/min
 - Zendesk: 700 requests/min
@@ -420,16 +420,16 @@ git tag v1.1.0
 ```
 
 ### Contact
-- **Email:** devops@citadelbuy.com
+- **Email:** devops@broxiva.com
 - **Slack:** #n8n-workflows
-- **Docs:** https://docs.citadelbuy.com/automation/abandoned-cart
-- **Issues:** https://github.com/citadelbuy/workflows/issues
+- **Docs:** https://docs.broxiva.com/automation/abandoned-cart
+- **Issues:** https://github.com/broxiva/workflows/issues
 
 ---
 
 ## Related Workflows
 
-### Other CitadelBuy n8n Workflows
+### Other Broxiva n8n Workflows
 1. **Workflow 01:** Order Confirmation Emails
 2. **Workflow 02:** Shipping Notifications
 3. **Workflow 03:** Customer Feedback Collection
@@ -442,7 +442,7 @@ git tag v1.1.0
 - **Search:** Algolia product index
 - **Analytics:** Mixpanel dashboards
 - **Support:** Zendesk ticket API
-- **Backend:** CitadelBuy cart and order APIs
+- **Backend:** Broxiva cart and order APIs
 
 ---
 
@@ -458,9 +458,9 @@ git tag v1.1.0
 
 ## License & Usage
 
-**License:** Internal use only - CitadelBuy E-commerce Platform
+**License:** Internal use only - Broxiva E-commerce Platform
 **Confidentiality:** Contains proprietary business logic and API integrations
-**Distribution:** Authorized CitadelBuy team members only
+**Distribution:** Authorized Broxiva team members only
 
 ---
 
@@ -496,7 +496,7 @@ git tag v1.1.0
 ║  • README-abandoned-cart.md         ← Setup guide           ║
 ║  • RECOVERY-SEQUENCE-GUIDE.md       ← Quick reference       ║
 ║                                                              ║
-║  SUPPORT: devops@citadelbuy.com                             ║
+║  SUPPORT: devops@broxiva.com                             ║
 ╚══════════════════════════════════════════════════════════════╝
 ```
 
@@ -504,4 +504,4 @@ git tag v1.1.0
 
 **Last Updated:** 2024-01-15
 **Document Version:** 1.0.0
-**Maintained By:** CitadelBuy DevOps Team
+**Maintained By:** Broxiva DevOps Team

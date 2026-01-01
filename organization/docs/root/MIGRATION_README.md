@@ -1,4 +1,4 @@
-# CitadelBuy Database Migrations - Quick Reference
+# Broxiva Database Migrations - Quick Reference
 
 ## Overview
 
@@ -8,7 +8,7 @@ This document provides a quick reference for database migration documentation an
 
 ## Documentation Structure
 
-### C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/
+### C:/Users/citad/OneDrive/Documents/broxiva-master/organization/
 
 ```
 organization/
@@ -40,10 +40,10 @@ organization/
 ### Development Environment
 
 ```bash
-cd C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization
+cd C:/Users/citad/OneDrive/Documents/broxiva-master/organization
 
 # Set database URL
-export DATABASE_URL="postgresql://user:password@localhost:5432/citadelbuy_dev"
+export DATABASE_URL="postgresql://user:password@localhost:5432/broxiva_dev"
 
 # Apply migrations
 ./scripts/apply-migrations.sh
@@ -183,8 +183,8 @@ psql $DATABASE_URL < backup_YYYYMMDD_HHMMSS.sql
 | CTO | [Name] - [Phone] |
 
 **Communication:**
-- Slack: #citadelbuy-infrastructure
-- Status: https://status.citadelbuy.com
+- Slack: #broxiva-infrastructure
+- Status: https://status.broxiva.com
 
 ---
 

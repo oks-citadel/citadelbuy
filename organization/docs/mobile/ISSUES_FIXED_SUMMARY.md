@@ -1,7 +1,7 @@
 # Mobile App Issues Fixed - Summary Report
 
 **Date:** 2025-12-06
-**Scan Location:** `C:\Users\citad\OneDrive\Documents\citadelbuy-master\organization\apps\mobile`
+**Scan Location:** `C:\Users\citad\OneDrive\Documents\broxiva-master\organization\apps\mobile`
 
 ---
 
@@ -232,7 +232,7 @@ npm install expo-clipboard expo-device
 Or with pnpm:
 ```bash
 cd organization
-pnpm add expo-clipboard expo-device --filter @citadelbuy/mobile
+pnpm add expo-clipboard expo-device --filter @broxiva/mobile
 ```
 
 ---

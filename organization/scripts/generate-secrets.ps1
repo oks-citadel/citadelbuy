@@ -1,5 +1,5 @@
 ################################################################################
-# CitadelBuy Production Secrets Generator (PowerShell)
+# Broxiva Production Secrets Generator (PowerShell)
 ################################################################################
 # This script generates cryptographically secure secrets for production use.
 #
@@ -39,7 +39,7 @@ function Write-Header {
     Write-Host ""
     Write-Host "╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
     Write-Host "║  " -NoNewline -ForegroundColor Cyan
-    Write-Host "CitadelBuy Production Secrets Generator (PowerShell)" -NoNewline -ForegroundColor Blue
+    Write-Host "Broxiva Production Secrets Generator (PowerShell)" -NoNewline -ForegroundColor Blue
     Write-Host "       ║" -ForegroundColor Cyan
     Write-Host "╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
     Write-Host ""
@@ -78,7 +78,7 @@ function Write-Section {
 
 function Show-Help {
     @"
-CitadelBuy Production Secrets Generator (PowerShell)
+Broxiva Production Secrets Generator (PowerShell)
 
 Usage:
     .\generate-secrets.ps1 [OPTIONS]
@@ -350,7 +350,7 @@ function Write-EnvFormat {
 
     $content = @"
 ################################################################################
-# CitadelBuy Production Secrets
+# Broxiva Production Secrets
 ################################################################################
 # Generated: $timestamp
 #
@@ -389,13 +389,13 @@ KYC_ENCRYPTION_KEY=$($Secrets.KYC_ENCRYPTION_KEY)
 # =============================================================================
 # PostgreSQL database password
 # Used in DATABASE_URL connection string
-POSTGRES_USER=citadelbuy
+POSTGRES_USER=broxiva
 POSTGRES_PASSWORD=$($Secrets.POSTGRES_PASSWORD)
-POSTGRES_DB=citadelbuy_production
+POSTGRES_DB=broxiva_production
 
 # Full database connection URL
 # Format: postgresql://USER:PASSWORD@HOST:PORT/DATABASE
-DATABASE_URL=postgresql://citadelbuy:$($Secrets.POSTGRES_PASSWORD)@localhost:5432/citadelbuy_production?schema=public
+DATABASE_URL=postgresql://broxiva:$($Secrets.POSTGRES_PASSWORD)@localhost:5432/broxiva_production?schema=public
 
 # =============================================================================
 # Redis Cache/Session Store
@@ -413,14 +413,14 @@ SESSION_SECRET=$($Secrets.SESSION_SECRET)
 # =============================================================================
 # Message Queue (RabbitMQ)
 # =============================================================================
-RABBITMQ_USER=citadelbuy
+RABBITMQ_USER=broxiva
 RABBITMQ_PASSWORD=$($Secrets.RABBITMQ_PASSWORD)
-RABBITMQ_URL=amqp://citadelbuy:$($Secrets.RABBITMQ_PASSWORD)@localhost:5672
+RABBITMQ_URL=amqp://broxiva:$($Secrets.RABBITMQ_PASSWORD)@localhost:5672
 
 # =============================================================================
 # Object Storage (MinIO/S3-compatible)
 # =============================================================================
-MINIO_ROOT_USER=citadelbuy_admin
+MINIO_ROOT_USER=broxiva_admin
 MINIO_ROOT_PASSWORD=$($Secrets.MINIO_ROOT_PASSWORD)
 MINIO_ACCESS_KEY=$($Secrets.MINIO_ACCESS_KEY)
 MINIO_SECRET_KEY=$($Secrets.MINIO_SECRET_KEY)
@@ -433,7 +433,7 @@ GRAFANA_ADMIN_USER=admin
 GRAFANA_ADMIN_PASSWORD=$($Secrets.GRAFANA_ADMIN_PASSWORD)
 
 # pgAdmin database management
-PGADMIN_DEFAULT_EMAIL=admin@citadelbuy.com
+PGADMIN_DEFAULT_EMAIL=admin@broxiva.com
 PGADMIN_DEFAULT_PASSWORD=$($Secrets.PGADMIN_DEFAULT_PASSWORD)
 
 # =============================================================================
@@ -495,22 +495,22 @@ function Write-JsonFormat {
             kyc_encryption_key = $Secrets.KYC_ENCRYPTION_KEY
         }
         database = @{
-            postgres_user = "citadelbuy"
+            postgres_user = "broxiva"
             postgres_password = $Secrets.POSTGRES_PASSWORD
-            postgres_db = "citadelbuy_production"
-            database_url = "postgresql://citadelbuy:$($Secrets.POSTGRES_PASSWORD)@localhost:5432/citadelbuy_production?schema=public"
+            postgres_db = "broxiva_production"
+            database_url = "postgresql://broxiva:$($Secrets.POSTGRES_PASSWORD)@localhost:5432/broxiva_production?schema=public"
         }
         cache = @{
             redis_password = $Secrets.REDIS_PASSWORD
             redis_url = "redis://:$($Secrets.REDIS_PASSWORD)@localhost:6379"
         }
         message_queue = @{
-            rabbitmq_user = "citadelbuy"
+            rabbitmq_user = "broxiva"
             rabbitmq_password = $Secrets.RABBITMQ_PASSWORD
-            rabbitmq_url = "amqp://citadelbuy:$($Secrets.RABBITMQ_PASSWORD)@localhost:5672"
+            rabbitmq_url = "amqp://broxiva:$($Secrets.RABBITMQ_PASSWORD)@localhost:5672"
         }
         storage = @{
-            minio_root_user = "citadelbuy_admin"
+            minio_root_user = "broxiva_admin"
             minio_root_password = $Secrets.MINIO_ROOT_PASSWORD
             minio_access_key = $Secrets.MINIO_ACCESS_KEY
             minio_secret_key = $Secrets.MINIO_SECRET_KEY
@@ -518,7 +518,7 @@ function Write-JsonFormat {
         admin_tools = @{
             grafana_admin_user = "admin"
             grafana_admin_password = $Secrets.GRAFANA_ADMIN_PASSWORD
-            pgadmin_default_email = "admin@citadelbuy.com"
+            pgadmin_default_email = "admin@broxiva.com"
             pgadmin_default_password = $Secrets.PGADMIN_DEFAULT_PASSWORD
         }
         internal = @{
@@ -544,7 +544,7 @@ function Write-YamlFormat {
     $timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss UTC")
 
     $content = @"
-# CitadelBuy Production Secrets
+# Broxiva Production Secrets
 # Generated: $timestamp
 # WARNING: NEVER commit this file to version control
 
@@ -564,22 +564,22 @@ encryption:
   kyc_encryption_key: "$($Secrets.KYC_ENCRYPTION_KEY)"
 
 database:
-  postgres_user: "citadelbuy"
+  postgres_user: "broxiva"
   postgres_password: "$($Secrets.POSTGRES_PASSWORD)"
-  postgres_db: "citadelbuy_production"
-  database_url: "postgresql://citadelbuy:$($Secrets.POSTGRES_PASSWORD)@localhost:5432/citadelbuy_production?schema=public"
+  postgres_db: "broxiva_production"
+  database_url: "postgresql://broxiva:$($Secrets.POSTGRES_PASSWORD)@localhost:5432/broxiva_production?schema=public"
 
 cache:
   redis_password: "$($Secrets.REDIS_PASSWORD)"
   redis_url: "redis://:$($Secrets.REDIS_PASSWORD)@localhost:6379"
 
 message_queue:
-  rabbitmq_user: "citadelbuy"
+  rabbitmq_user: "broxiva"
   rabbitmq_password: "$($Secrets.RABBITMQ_PASSWORD)"
-  rabbitmq_url: "amqp://citadelbuy:$($Secrets.RABBITMQ_PASSWORD)@localhost:5672"
+  rabbitmq_url: "amqp://broxiva:$($Secrets.RABBITMQ_PASSWORD)@localhost:5672"
 
 storage:
-  minio_root_user: "citadelbuy_admin"
+  minio_root_user: "broxiva_admin"
   minio_root_password: "$($Secrets.MINIO_ROOT_PASSWORD)"
   minio_access_key: "$($Secrets.MINIO_ACCESS_KEY)"
   minio_secret_key: "$($Secrets.MINIO_SECRET_KEY)"
@@ -587,7 +587,7 @@ storage:
 admin_tools:
   grafana_admin_user: "admin"
   grafana_admin_password: "$($Secrets.GRAFANA_ADMIN_PASSWORD)"
-  pgadmin_default_email: "admin@citadelbuy.com"
+  pgadmin_default_email: "admin@broxiva.com"
   pgadmin_default_password: "$($Secrets.PGADMIN_DEFAULT_PASSWORD)"
 
 internal:

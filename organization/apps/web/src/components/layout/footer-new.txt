@@ -49,7 +49,7 @@ const footerLinks = {
     { name: 'Blog', href: '/blog' },
   ],
   sell: [
-    { name: 'Sell on CitadelBuy', href: '/sell' },
+    { name: 'Sell on Broxiva', href: '/sell' },
     { name: 'Vendor Portal', href: '/vendor/login' },
     { name: 'Vendor Guidelines', href: '/vendor/guidelines' },
     { name: 'Advertising', href: '/advertising' },

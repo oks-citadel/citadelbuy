@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Dependency Check Script for CitadelBuy
+# Dependency Check Script for Broxiva
 # This script checks for outdated packages and security vulnerabilities across all workspaces
 
 set -e
@@ -23,13 +23,13 @@ REPORT_FILE="$PROJECT_ROOT/dependency-check-report.txt"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}CitadelBuy Dependency Check${NC}"
+echo -e "${BLUE}Broxiva Dependency Check${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo -e "Timestamp: $TIMESTAMP\n"
 
 # Initialize report
 cat > "$REPORT_FILE" << EOF
-CitadelBuy Dependency Check Report
+Broxiva Dependency Check Report
 ===================================
 Generated: $TIMESTAMP
 

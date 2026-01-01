@@ -17,7 +17,7 @@ cd organization
 docker-compose -f apps/api/docker-compose.elasticsearch.yml up -d
 
 # Wait for Elasticsearch to be ready (30 seconds)
-docker logs -f citadelbuy-elasticsearch
+docker logs -f broxiva-elasticsearch
 
 # Check cluster health
 curl http://localhost:9200/_cluster/health?pretty
@@ -31,7 +31,7 @@ SEARCH_PROVIDER=elasticsearch
 ELASTICSEARCH_NODE=http://localhost:9200
 ELASTICSEARCH_USERNAME=
 ELASTICSEARCH_PASSWORD=
-ELASTICSEARCH_INDEX_PREFIX=citadelbuy
+ELASTICSEARCH_INDEX_PREFIX=broxiva
 ```
 
 ### 3. Create Indices and Import Data
@@ -46,14 +46,14 @@ npm run cli search:initialize
 npm run cli search:index
 
 # Verify
-curl http://localhost:9200/citadelbuy-development-products/_count
+curl http://localhost:9200/broxiva-development-products/_count
 ```
 
 ### 4. Test Search
 
 ```bash
 # Search for products
-curl -X POST http://localhost:9200/citadelbuy-development-products/_search \
+curl -X POST http://localhost:9200/broxiva-development-products/_search \
   -H 'Content-Type: application/json' \
   -d '{
     "query": {
@@ -95,10 +95,10 @@ echo "ELASTICSEARCH_PASSWORD=$ELASTICSEARCH_PASSWORD" >> .env.production
 docker-compose -f infrastructure/docker/docker-compose.elasticsearch-prod.yml up -d
 
 # Wait for cluster to be healthy (2-3 minutes)
-docker logs -f citadelbuy-elasticsearch-01
+docker logs -f broxiva-elasticsearch-01
 
 # Setup passwords
-docker exec citadelbuy-elasticsearch-01 \
+docker exec broxiva-elasticsearch-01 \
   bin/elasticsearch-setup-passwords auto
 
 # IMPORTANT: Save all generated passwords!
@@ -119,7 +119,7 @@ SEARCH_PROVIDER=elasticsearch
 ELASTICSEARCH_NODE=https://elasticsearch-01:9200
 ELASTICSEARCH_USERNAME=elastic
 ELASTICSEARCH_PASSWORD=your_generated_password
-ELASTICSEARCH_INDEX_PREFIX=citadelbuy
+ELASTICSEARCH_INDEX_PREFIX=broxiva
 ```
 
 ### 6. Import Production Data
@@ -140,13 +140,13 @@ NODE_ENV=production npm run cli search:index
 curl -u elastic:PASSWORD http://localhost:9200/_cat/indices?v
 
 # Get index stats
-curl -u elastic:PASSWORD http://localhost:9200/citadelbuy-*/_stats?pretty
+curl -u elastic:PASSWORD http://localhost:9200/broxiva-*/_stats?pretty
 
 # Delete an index
-curl -u elastic:PASSWORD -X DELETE http://localhost:9200/citadelbuy-dev-products
+curl -u elastic:PASSWORD -X DELETE http://localhost:9200/broxiva-dev-products
 
 # Refresh index (make recent changes searchable)
-curl -u elastic:PASSWORD -X POST http://localhost:9200/citadelbuy-*/_refresh
+curl -u elastic:PASSWORD -X POST http://localhost:9200/broxiva-*/_refresh
 ```
 
 ### Cluster Health
@@ -166,13 +166,13 @@ curl -u elastic:PASSWORD http://localhost:9200/_cluster/settings?pretty
 
 ```bash
 # Count documents
-curl -u elastic:PASSWORD http://localhost:9200/citadelbuy-*/_count?pretty
+curl -u elastic:PASSWORD http://localhost:9200/broxiva-*/_count?pretty
 
 # Search all products
-curl -u elastic:PASSWORD -X GET http://localhost:9200/citadelbuy-*-products/_search?pretty
+curl -u elastic:PASSWORD -X GET http://localhost:9200/broxiva-*-products/_search?pretty
 
 # Delete all documents (keep index structure)
-curl -u elastic:PASSWORD -X POST http://localhost:9200/citadelbuy-*-products/_delete_by_query \
+curl -u elastic:PASSWORD -X POST http://localhost:9200/broxiva-*-products/_delete_by_query \
   -H 'Content-Type: application/json' -d '{"query": {"match_all": {}}}'
 ```
 
@@ -184,7 +184,7 @@ curl -u elastic:PASSWORD -X POST http://localhost:9200/citadelbuy-*-products/_de
 # Login with elastic / your_password
 
 # View slow queries
-docker exec citadelbuy-elasticsearch-01 \
+docker exec broxiva-elasticsearch-01 \
   tail -f /usr/share/elasticsearch/logs/*_index_search_slowlog.json
 ```
 
@@ -196,7 +196,7 @@ docker exec citadelbuy-elasticsearch-01 \
 
 ```bash
 # Check logs
-docker logs citadelbuy-elasticsearch-01
+docker logs broxiva-elasticsearch-01
 
 # Common fixes:
 # 1. Increase vm.max_map_count (Linux)
@@ -219,7 +219,7 @@ curl -u elastic:PASSWORD -X POST http://localhost:9200/_cluster/reroute?retry_fa
 
 # For development (single node), yellow is normal
 # Set replicas to 0 for dev:
-curl -u elastic:PASSWORD -X PUT http://localhost:9200/citadelbuy-*/_settings \
+curl -u elastic:PASSWORD -X PUT http://localhost:9200/broxiva-*/_settings \
   -H 'Content-Type: application/json' -d '{"number_of_replicas": 0}'
 ```
 
@@ -230,14 +230,14 @@ curl -u elastic:PASSWORD -X PUT http://localhost:9200/citadelbuy-*/_settings \
 curl -u elastic:PASSWORD http://localhost:9200/_cat/indices?v
 
 # 2. Check document count
-curl -u elastic:PASSWORD http://localhost:9200/citadelbuy-*/_count?pretty
+curl -u elastic:PASSWORD http://localhost:9200/broxiva-*/_count?pretty
 
 # 3. Re-index products
 cd apps/api
 npm run cli search:index --rebuild
 
 # 4. Check application logs
-docker logs citadelbuy-backend
+docker logs broxiva-backend
 ```
 
 ### Out of Memory
@@ -342,7 +342,7 @@ const { suggestions, products } = await response.json();
 ## Support
 
 For issues:
-1. Check logs: `docker logs citadelbuy-elasticsearch-01`
+1. Check logs: `docker logs broxiva-elasticsearch-01`
 2. Check cluster health: `curl http://localhost:9200/_cluster/health`
-3. Review application logs: `docker logs citadelbuy-backend`
+3. Review application logs: `docker logs broxiva-backend`
 4. See [Troubleshooting](#troubleshooting) section above

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers how to add, update, and manage translations across the CitadelBuy platform.
+This guide covers how to add, update, and manage translations across the Broxiva platform.
 
 ## Supported Languages
 
@@ -88,7 +88,7 @@ Content-Type: application/json
 {
   "languageCode": "fr",
   "key": "email.welcome",
-  "value": "Bienvenue chez CitadelBuy",
+  "value": "Bienvenue chez Broxiva",
   "namespace": "email"
 }
 ```
@@ -417,7 +417,7 @@ DELETE /api/i18n/categories/:categoryId/translations/:languageCode
 
 1. Check browser language settings
 2. Clear cookies
-3. Check `CITADELBUY_LANG` cookie
+3. Check `BROXIVA_LANG` cookie
 4. Verify `Accept-Language` header
 
 ### RTL Layout Issues
@@ -431,5 +431,5 @@ DELETE /api/i18n/categories/:categoryId/translations/:languageCode
 
 For translation issues or questions:
 - Slack: #i18n-support
-- Email: i18n@citadelbuy.com
-- Documentation: https://docs.citadelbuy.com/i18n
+- Email: i18n@broxiva.com
+- Documentation: https://docs.broxiva.com/i18n

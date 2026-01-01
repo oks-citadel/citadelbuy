@@ -1,6 +1,6 @@
 # Sanctions Screening Dashboard
 
-This directory contains the Compliance and Sanctions Screening Dashboard for the CitadelBuy admin panel.
+This directory contains the Compliance and Sanctions Screening Dashboard for the Broxiva admin panel.
 
 ## Directory Structure
 

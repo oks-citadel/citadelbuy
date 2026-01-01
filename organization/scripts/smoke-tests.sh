@@ -148,7 +148,7 @@ test_api_health() {
     log INFO "Running: $test_name"
 
     local api_url
-    api_url=$(get_ingress_url "citadelbuy-api")
+    api_url=$(get_ingress_url "broxiva-api")
 
     if [ -z "$api_url" ]; then
         test_failed "$test_name" "Could not determine API URL"

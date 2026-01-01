@@ -114,12 +114,12 @@ Check for and document any required manual installations:
 
 - [ ] **Workspace Dependencies Linked**
   ```bash
-  pnpm list @citadelbuy/types @citadelbuy/utils @citadelbuy/ui @citadelbuy/ai-sdk
+  pnpm list @broxiva/types @broxiva/utils @broxiva/ui @broxiva/ai-sdk
   ```
-  - @citadelbuy/types: ✓ / ✗
-  - @citadelbuy/utils: ✓ / ✗
-  - @citadelbuy/ui: ✓ / ✗
-  - @citadelbuy/ai-sdk: ✓ / ✗
+  - @broxiva/types: ✓ / ✗
+  - @broxiva/utils: ✓ / ✗
+  - @broxiva/ui: ✓ / ✗
+  - @broxiva/ai-sdk: ✓ / ✗
 
 ---
 

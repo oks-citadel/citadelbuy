@@ -1,6 +1,6 @@
 # Logging Infrastructure Migration Guide
 
-This guide documents the implementation of a proper logging infrastructure for CitadelBuy API, replacing console.log statements with structured logging.
+This guide documents the implementation of a proper logging infrastructure for Broxiva API, replacing console.log statements with structured logging.
 
 ## Overview
 

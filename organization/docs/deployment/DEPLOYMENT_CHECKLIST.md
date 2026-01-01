@@ -16,7 +16,7 @@ Your GitHub PAT is exposed in git config. Rotate it immediately:
 3. Create a new token
 4. Update the remote:
 ```bash
-git remote set-url github https://github.com/oks-citadel/citadelbuy.git
+git remote set-url github https://github.com/oks-broxiva/broxiva.git
 ```
 
 ---
@@ -65,7 +65,7 @@ terraform apply tfplan
 ## Step 4: Commit and Push Changes
 
 ```bash
-cd CitadelBuy
+cd Broxiva
 
 # Add all changes
 git add -A
@@ -95,7 +95,7 @@ git push origin main
 
 After pushing:
 
-1. Go to GitHub Actions: https://github.com/oks-citadel/citadelbuy/actions
+1. Go to GitHub Actions: https://github.com/oks-broxiva/broxiva/actions
 2. Watch the `CI Build & Push to ACR (Selective)` workflow
 3. Verify images are pushed to ACR
 4. Watch the `CD - Deploy to AKS` workflow
@@ -141,7 +141,7 @@ curl https://api.broxiva.com/api/health
 
 ```bash
 # One-liner to commit and push all changes
-cd CitadelBuy && git add -A && git commit -m "Deploy full Broxiva platform" && git push origin main
+cd Broxiva && git add -A && git commit -m "Deploy full Broxiva platform" && git push origin main
 
 # Watch deployment
 gh run watch

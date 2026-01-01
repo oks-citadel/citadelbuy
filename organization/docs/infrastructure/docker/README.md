@@ -1,6 +1,6 @@
-# CitadelBuy Docker Infrastructure
+# Broxiva Docker Infrastructure
 
-Comprehensive Docker Compose setup for the CitadelBuy e-commerce platform with complete application stack and monitoring.
+Comprehensive Docker Compose setup for the Broxiva e-commerce platform with complete application stack and monitoring.
 
 ## Table of Contents
 
@@ -45,7 +45,7 @@ docker/
 │   ├── prometheus/
 │   │   ├── prometheus.yml         # Prometheus configuration
 │   │   └── alerts/
-│   │       └── citadelbuy-alerts.yml  # Alert rules
+│   │       └── broxiva-alerts.yml  # Alert rules
 │   └── grafana/
 │       ├── datasources/
 │       │   └── prometheus.yml     # Grafana datasource config
@@ -54,7 +54,7 @@ docker/
 ├── nginx/
 │   ├── nginx.conf                 # Main Nginx configuration
 │   ├── conf.d/
-│   │   └── citadelbuy.conf       # Site-specific configuration
+│   │   └── broxiva.conf       # Site-specific configuration
 │   └── ssl/                       # SSL certificates (production)
 └── redis/
     └── redis.conf                 # Redis configuration
@@ -168,7 +168,7 @@ docker compose -f docker-compose.production.yml up -d
 
 ### Backend (NestJS)
 
-**Image:** `citadelplatforms/citadelbuy-ecommerce:backend-latest`
+**Image:** `broxivaplatforms/broxiva-ecommerce:backend-latest`
 **Port:** 4000
 **Health check:** `http://localhost:4000/health`
 
@@ -176,7 +176,7 @@ docker compose -f docker-compose.production.yml up -d
 ```bash
 NODE_ENV=production
 PORT=4000
-DATABASE_URL=postgresql://user:pass@postgres:5432/citadelbuy_prod
+DATABASE_URL=postgresql://user:pass@postgres:5432/broxiva_prod
 REDIS_URL=redis://:password@redis:6379
 JWT_SECRET=your-jwt-secret
 JWT_EXPIRES_IN=1h
@@ -205,7 +205,7 @@ deploy:
 
 ### Frontend (Next.js)
 
-**Image:** `citadelplatforms/citadelbuy-ecommerce:frontend-latest`
+**Image:** `broxivaplatforms/broxiva-ecommerce:frontend-latest`
 **Port:** 3000
 **Health check:** `http://localhost:3000/health`
 
@@ -245,9 +245,9 @@ deploy:
 
 **Default Configuration:**
 ```bash
-POSTGRES_USER=citadelbuy
-POSTGRES_PASSWORD=citadelbuy123  # Change in production!
-POSTGRES_DB=citadelbuy_dev
+POSTGRES_USER=broxiva
+POSTGRES_PASSWORD=broxiva123  # Change in production!
+POSTGRES_DB=broxiva_dev
 ```
 
 **Production Tuning:**
@@ -268,7 +268,7 @@ max_wal_size=4GB
 
 **Health Check:**
 ```bash
-pg_isready -U citadelbuy
+pg_isready -U broxiva
 ```
 
 ### Redis 7
@@ -306,9 +306,9 @@ See [Redis Configuration](#redis-configuration) for details.
 
 **Configuration:**
 ```bash
-MONGO_INITDB_ROOT_USERNAME=citadelbuy
+MONGO_INITDB_ROOT_USERNAME=broxiva
 MONGO_INITDB_ROOT_PASSWORD=secure_password
-MONGO_INITDB_DATABASE=citadelbuy
+MONGO_INITDB_DATABASE=broxiva
 ```
 
 ### RabbitMQ 3.12
@@ -325,7 +325,7 @@ MONGO_INITDB_DATABASE=citadelbuy
 - Event-driven workflows
 
 **Management UI:** http://localhost:15672
-**Default credentials:** citadelbuy / password
+**Default credentials:** broxiva / password
 
 ### Elasticsearch 8.11
 
@@ -374,7 +374,7 @@ See [Nginx Configuration](#nginx-configuration) for details.
 
 **Default credentials:**
 ```bash
-Email: admin@citadelbuy.com
+Email: admin@broxiva.com
 Password: admin123  # Change in production!
 ```
 
@@ -545,7 +545,7 @@ proxy_cache_path /var/cache/nginx/static levels=1:2 keys_zone=static_cache:10m
 
 ### Site Configuration
 
-**File:** `nginx/conf.d/citadelbuy.conf`
+**File:** `nginx/conf.d/broxiva.conf`
 
 **Route Configuration:**
 
@@ -619,7 +619,7 @@ add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type...' alway
 
 ### SSL Configuration (Production)
 
-Uncomment SSL blocks in `citadelbuy.conf` for production:
+Uncomment SSL blocks in `broxiva.conf` for production:
 
 ```nginx
 listen 443 ssl http2;
@@ -712,7 +712,7 @@ requirepass yourpasswordhere  # Uncomment and set strong password
 
 **1. Start database services:**
 ```bash
-cd citadelbuy/infrastructure/docker
+cd broxiva/infrastructure/docker
 docker compose up -d
 ```
 
@@ -730,7 +730,7 @@ docker compose logs -f redis
 **4. Access pgAdmin:**
 ```
 URL: http://localhost:5050
-Email: admin@citadelbuy.com
+Email: admin@broxiva.com
 Password: admin123
 ```
 
@@ -811,11 +811,11 @@ cp /path/to/privkey.pem nginx/ssl/
 ```bash
 # Backend
 cd ../../backend
-docker build -t citadelplatforms/citadelbuy-ecommerce:backend-latest .
+docker build -t broxivaplatforms/broxiva-ecommerce:backend-latest .
 
 # Frontend
 cd ../frontend
-docker build -t citadelplatforms/citadelbuy-ecommerce:frontend-latest .
+docker build -t broxivaplatforms/broxiva-ecommerce:frontend-latest .
 
 cd ../infrastructure/docker
 ```
@@ -852,9 +852,9 @@ Create a `.env` file from `.env.example`:
 # ==================================
 # Database Configuration
 # ==================================
-POSTGRES_USER=citadelbuy
+POSTGRES_USER=broxiva
 POSTGRES_PASSWORD=secure_password_here  # CHANGE THIS!
-POSTGRES_DB=citadelbuy_prod
+POSTGRES_DB=broxiva_prod
 
 # ==================================
 # Redis Configuration
@@ -864,13 +864,13 @@ REDIS_PASSWORD=secure_redis_password  # CHANGE THIS!
 # ==================================
 # MongoDB Configuration
 # ==================================
-MONGO_USER=citadelbuy
+MONGO_USER=broxiva
 MONGO_PASSWORD=secure_mongo_password  # CHANGE THIS!
 
 # ==================================
 # RabbitMQ Configuration
 # ==================================
-RABBITMQ_USER=citadelbuy
+RABBITMQ_USER=broxiva
 RABBITMQ_PASSWORD=secure_rabbitmq_password  # CHANGE THIS!
 
 # ==================================
@@ -885,18 +885,18 @@ JWT_REFRESH_EXPIRES_IN=7d
 # ==================================
 # Frontend Configuration
 # ==================================
-NEXT_PUBLIC_API_URL=https://api.citadelbuy.com
-NEXT_PUBLIC_WS_URL=wss://api.citadelbuy.com/ws
-NEXT_PUBLIC_APP_URL=https://citadelbuy.com
+NEXT_PUBLIC_API_URL=https://api.broxiva.com
+NEXT_PUBLIC_WS_URL=wss://api.broxiva.com/ws
+NEXT_PUBLIC_APP_URL=https://broxiva.com
 
 # ==================================
 # Email Configuration
 # ==================================
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
-EMAIL_USER=noreply@citadelbuy.com
+EMAIL_USER=noreply@broxiva.com
 EMAIL_PASSWORD=email_app_password  # CHANGE THIS!
-EMAIL_FROM=CitadelBuy <noreply@citadelbuy.com>
+EMAIL_FROM=Broxiva <noreply@broxiva.com>
 
 # ==================================
 # Payment Providers
@@ -917,7 +917,7 @@ PAYPAL_CLIENT_SECRET=...
 AWS_ACCESS_KEY_ID=...
 AWS_SECRET_ACCESS_KEY=...
 AWS_REGION=us-east-1
-AWS_S3_BUCKET=citadelbuy-uploads
+AWS_S3_BUCKET=broxiva-uploads
 
 # Algolia (Search)
 ALGOLIA_APP_ID=...
@@ -940,13 +940,13 @@ GRAFANA_ADMIN_PASSWORD=secure_grafana_password  # CHANGE THIS!
 # ==================================
 # Database Admin Tools
 # ==================================
-PGADMIN_EMAIL=admin@citadelbuy.com
+PGADMIN_EMAIL=admin@broxiva.com
 PGADMIN_PASSWORD=secure_pgadmin_password  # CHANGE THIS!
 
 # ==================================
 # CORS Configuration
 # ==================================
-CORS_ORIGIN=https://citadelbuy.com
+CORS_ORIGIN=https://broxiva.com
 
 # ==================================
 # Database Connection Pooling
@@ -962,23 +962,23 @@ DATABASE_POOL_TIMEOUT=10
 # .env.development
 NODE_ENV=development
 NEXT_PUBLIC_API_URL=http://localhost:4000
-DATABASE_URL=postgresql://citadelbuy:citadelbuy123@localhost:5432/citadelbuy_dev
+DATABASE_URL=postgresql://broxiva:broxiva123@localhost:5432/broxiva_dev
 ```
 
 **Staging:**
 ```bash
 # .env.staging
 NODE_ENV=staging
-NEXT_PUBLIC_API_URL=https://staging-api.citadelbuy.com
-DATABASE_URL=postgresql://citadelbuy:password@staging-db:5432/citadelbuy_staging
+NEXT_PUBLIC_API_URL=https://staging-api.broxiva.com
+DATABASE_URL=postgresql://broxiva:password@staging-db:5432/broxiva_staging
 ```
 
 **Production:**
 ```bash
 # .env.production
 NODE_ENV=production
-NEXT_PUBLIC_API_URL=https://api.citadelbuy.com
-DATABASE_URL=postgresql://citadelbuy:strongpassword@prod-db:5432/citadelbuy_prod
+NEXT_PUBLIC_API_URL=https://api.broxiva.com
+DATABASE_URL=postgresql://broxiva:strongpassword@prod-db:5432/broxiva_prod
 ```
 
 ## Usage Examples
@@ -1028,7 +1028,7 @@ docker compose exec backend npm run migrate:deploy
 docker compose exec backend npx prisma generate
 
 # PostgreSQL shell
-docker compose exec postgres psql -U citadelbuy -d citadelbuy_dev
+docker compose exec postgres psql -U broxiva -d broxiva_dev
 
 # Redis CLI
 docker compose exec redis redis-cli
@@ -1045,19 +1045,19 @@ docker compose -f docker-compose.production.yml exec rabbitmq rabbitmqctl status
 **PostgreSQL:**
 ```bash
 # Backup database
-docker compose exec postgres pg_dump -U citadelbuy citadelbuy_dev > backup.sql
+docker compose exec postgres pg_dump -U broxiva broxiva_dev > backup.sql
 
 # Restore database
-docker compose exec -T postgres psql -U citadelbuy citadelbuy_dev < backup.sql
+docker compose exec -T postgres psql -U broxiva broxiva_dev < backup.sql
 
 # Create new database
-docker compose exec postgres createdb -U citadelbuy new_database
+docker compose exec postgres createdb -U broxiva new_database
 
 # List databases
-docker compose exec postgres psql -U citadelbuy -c "\l"
+docker compose exec postgres psql -U broxiva -c "\l"
 
 # Connect to database
-docker compose exec postgres psql -U citadelbuy -d citadelbuy_dev
+docker compose exec postgres psql -U broxiva -d broxiva_dev
 ```
 
 **Redis:**
@@ -1127,7 +1127,7 @@ docker system prune -a --volumes
 docker compose ps
 
 # Detailed health check
-docker inspect citadelbuy-backend | jq '.[0].State.Health'
+docker inspect broxiva-backend | jq '.[0].State.Health'
 
 # Test backend health endpoint
 curl http://localhost:4000/health
@@ -1149,7 +1149,7 @@ docker compose top
 docker compose exec backend env
 
 # Check container events
-docker events --filter container=citadelbuy-backend
+docker events --filter container=broxiva-backend
 
 # Restart unhealthy containers
 docker compose ps --filter "health=unhealthy" -q | xargs docker restart
@@ -1182,7 +1182,7 @@ docker compose ps --filter "health=unhealthy" -q | xargs docker restart
 
 1. **Use specific image tags:**
    ```yaml
-   image: citadelplatforms/citadelbuy-ecommerce:backend-v2.0.0
+   image: broxivaplatforms/broxiva-ecommerce:backend-v2.0.0
    ```
 
 2. **Set resource limits:**
@@ -1224,7 +1224,7 @@ docker compose ps --filter "health=unhealthy" -q | xargs docker restart
 7. **Regular backups:**
    ```bash
    # Automated backup script
-   docker compose exec postgres pg_dump -U citadelbuy citadelbuy_prod | gzip > backup-$(date +%Y%m%d).sql.gz
+   docker compose exec postgres pg_dump -U broxiva broxiva_prod | gzip > backup-$(date +%Y%m%d).sql.gz
    ```
 
 8. **Monitor with Prometheus/Grafana**
@@ -1235,7 +1235,7 @@ docker compose ps --filter "health=unhealthy" -q | xargs docker restart
 
 10. **Security scanning:**
     ```bash
-    docker scan citadelplatforms/citadelbuy-ecommerce:backend-latest
+    docker scan broxivaplatforms/broxiva-ecommerce:backend-latest
     ```
 
 ### Security
@@ -1258,7 +1258,7 @@ docker compose ps --filter "health=unhealthy" -q | xargs docker restart
 4. **Restrict network access:**
    ```yaml
    networks:
-     citadelbuy-network:
+     broxiva-network:
        internal: true
    ```
 
@@ -1319,7 +1319,7 @@ docker compose up -d container_name
 docker compose ps postgres
 
 # Test connection
-docker compose exec backend psql postgresql://citadelbuy:password@postgres:5432/citadelbuy_dev
+docker compose exec backend psql postgresql://broxiva:password@postgres:5432/broxiva_dev
 
 # Check logs
 docker compose logs postgres
@@ -1331,7 +1331,7 @@ docker compose restart postgres
 **3. Health Check Failing**
 ```bash
 # Check health status
-docker inspect citadelbuy-backend --format='{{json .State.Health}}' | jq
+docker inspect broxiva-backend --format='{{json .State.Health}}' | jq
 
 # Test health endpoint manually
 docker compose exec backend curl http://localhost:4000/health
@@ -1365,7 +1365,7 @@ docker system df
 docker system prune -a --volumes
 
 # Remove specific volumes
-docker volume rm citadelbuy-postgres-data
+docker volume rm broxiva-postgres-data
 ```
 
 **6. Network Issues**
@@ -1374,11 +1374,11 @@ docker volume rm citadelbuy-postgres-data
 docker network ls
 
 # Inspect network
-docker network inspect citadelbuy_citadelbuy-network
+docker network inspect broxiva_broxiva-network
 
 # Recreate network
 docker compose down
-docker network rm citadelbuy_citadelbuy-network
+docker network rm broxiva_broxiva-network
 docker compose up -d
 ```
 
@@ -1440,7 +1440,7 @@ docker compose ps
 docker compose ps -a
 
 # Detailed container info
-docker inspect citadelbuy-backend
+docker inspect broxiva-backend
 
 # Network connectivity test
 docker compose exec backend ping postgres
@@ -1456,7 +1456,7 @@ docker compose top backend
 docker stats --no-stream
 
 # File system changes
-docker diff citadelbuy-backend
+docker diff broxiva-backend
 ```
 
 ### Performance Issues
@@ -1464,7 +1464,7 @@ docker diff citadelbuy-backend
 **Slow database queries:**
 ```bash
 # Enable slow query logging in PostgreSQL
-docker compose exec postgres psql -U citadelbuy -c "ALTER SYSTEM SET log_min_duration_statement = 1000;"
+docker compose exec postgres psql -U broxiva -c "ALTER SYSTEM SET log_min_duration_statement = 1000;"
 docker compose restart postgres
 
 # Check slow queries
@@ -1531,9 +1531,9 @@ docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 For issues or questions:
 - Check logs: `docker compose logs service_name`
 - Review configuration files
-- Check GitHub issues: https://github.com/oks-citadel/citadelbuy/issues
-- Contact: dev@citadelbuy.com
+- Check GitHub issues: https://github.com/oks-broxiva/broxiva/issues
+- Contact: dev@broxiva.com
 
 ## License
 
-Copyright (c) 2024 CitadelBuy. All rights reserved.
+Copyright (c) 2024 Broxiva. All rights reserved.

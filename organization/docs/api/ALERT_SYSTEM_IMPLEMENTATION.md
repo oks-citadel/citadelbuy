@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented a production-ready email alert notification system for CitadelBuy that replaces the TODO at line 430 in `email.processor.ts`. The system provides multi-channel alerting capabilities with Slack, PagerDuty, and email integration.
+Successfully implemented a production-ready email alert notification system for Broxiva that replaces the TODO at line 430 in `email.processor.ts`. The system provides multi-channel alerting capabilities with Slack, PagerDuty, and email integration.
 
 ## Implementation Date
 
@@ -12,7 +12,7 @@ December 4, 2024
 
 ### 1. Created Alert Service (`src/common/alerts/alert.service.ts`)
 
-**Location:** `C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api/src/common/alerts/alert.service.ts`
+**Location:** `C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api/src/common/alerts/alert.service.ts`
 
 **Features:**
 - **Multi-Channel Support:**
@@ -42,7 +42,7 @@ sendTestAlert(): Promise<void>
 
 ### 2. Created Alert Module (`src/common/alerts/alert.module.ts`)
 
-**Location:** `C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api/src/common/alerts/alert.module.ts`
+**Location:** `C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api/src/common/alerts/alert.module.ts`
 
 **Features:**
 - Registered as `@Global()` module for application-wide availability
@@ -85,7 +85,7 @@ await this.alertService.sendAlert({
 
 ### 5. Added Environment Variables (`.env.example`)
 
-**Location:** `C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/apps/api/.env.example`
+**Location:** `C:/Users/citad/OneDrive/Documents/broxiva-master/organization/apps/api/.env.example`
 
 **New Variables:**
 ```bash
@@ -143,7 +143,7 @@ cp .env.example .env
 
 4. **Configure Email Recipients:**
    - Set comma-separated email addresses in `ALERT_EMAIL_RECIPIENTS`
-   - Example: `ops@citadelbuy.com,engineering@citadelbuy.com`
+   - Example: `ops@broxiva.com,engineering@broxiva.com`
 
 5. **Test the configuration:**
 ```typescript

@@ -1,4 +1,4 @@
-# Legal Contacts - CitadelBuy
+# Legal Contacts - Broxiva
 
 **Document Type:** Legal and Regulatory Contact Directory
 **Version:** 1.0
@@ -27,7 +27,7 @@
 **Name:** [Full Name]
 **Title:** General Counsel & Chief Legal Officer
 **Department:** Legal
-**Email:** generalcounsel@citadelbuy.com
+**Email:** generalcounsel@broxiva.com
 **Office Phone:** [Phone Number]
 **Mobile:** [Mobile Number]
 **Office Location:** [Office Address]
@@ -52,7 +52,7 @@
 **Name:** [Full Name]
 **Title:** Deputy General Counsel
 **Department:** Legal
-**Email:** deputygc@citadelbuy.com
+**Email:** deputygc@broxiva.com
 **Office Phone:** [Phone Number]
 **Mobile:** [Mobile Number]
 **Office Location:** [Office Address]
@@ -75,7 +75,7 @@
 **Name:** [Full Name]
 **Title:** Corporate Counsel
 **Department:** Legal
-**Email:** commercial@citadelbuy.com
+**Email:** commercial@broxiva.com
 **Office Phone:** [Phone Number]
 **Office Location:** [Office Address]
 **Reports To:** Deputy General Counsel
@@ -96,7 +96,7 @@
 **Name:** [Full Name]
 **Title:** IP Counsel
 **Department:** Legal
-**Email:** ip@citadelbuy.com
+**Email:** ip@broxiva.com
 **Office Phone:** [Phone Number]
 **Office Location:** [Office Address]
 **Reports To:** General Counsel
@@ -118,7 +118,7 @@
 **Name:** [Full Name]
 **Title:** Compliance Manager
 **Department:** Legal / Compliance
-**Email:** compliance@citadelbuy.com
+**Email:** compliance@broxiva.com
 **Office Phone:** [Phone Number]
 **Office Location:** [Office Address]
 **Reports To:** General Counsel / Chief Compliance Officer
@@ -139,7 +139,7 @@
 **Name:** [Full Name]
 **Title:** Legal Operations Coordinator
 **Department:** Legal
-**Email:** legalops@citadelbuy.com
+**Email:** legalops@broxiva.com
 **Office Phone:** [Phone Number]
 **Office Location:** [Office Address]
 **Reports To:** Deputy General Counsel
@@ -162,7 +162,7 @@
 **Name:** [Full Name]
 **Title:** Chief Privacy Officer & Data Protection Officer
 **Department:** Privacy / Legal
-**Email:** privacy@citadelbuy.com / dpo@citadelbuy.com
+**Email:** privacy@broxiva.com / dpo@broxiva.com
 **Office Phone:** [Phone Number]
 **Mobile:** [Mobile Number]
 **Office Location:** [Office Address]
@@ -188,9 +188,9 @@
 **After Hours:** Available via mobile for data breach emergencies
 
 **Contact Channels for Data Subjects:**
-- Email: privacy@citadelbuy.com
-- Web Form: https://www.citadelbuy.com/privacy/contact
-- Mail: CitadelBuy, Inc., Attn: Data Protection Officer, [Full Address]
+- Email: privacy@broxiva.com
+- Web Form: https://www.broxiva.com/privacy/contact
+- Mail: Broxiva, Inc., Attn: Data Protection Officer, [Full Address]
 - Phone: 1-XXX-XXX-XXXX (toll-free)
 
 ---
@@ -200,7 +200,7 @@
 **Name:** [Full Name]
 **Title:** Privacy Analyst
 **Department:** Privacy
-**Email:** privacyteam@citadelbuy.com
+**Email:** privacyteam@broxiva.com
 **Office Phone:** [Phone Number]
 **Office Location:** [Office Address]
 **Reports To:** Chief Privacy Officer
@@ -666,7 +666,7 @@
 - **Contact:** [Phone/Email]
 - **Purpose:** [Privacy, consumer protection, etc.]
 
-*Add as CitadelBuy expands to additional markets*
+*Add as Broxiva expands to additional markets*
 
 ---
 
@@ -893,17 +893,17 @@
 
 **Incident Commander:**
 - Name: [CISO Name]
-- Email: security@citadelbuy.com
+- Email: security@broxiva.com
 - Mobile: [24/7 Mobile Number]
 
 **Legal Lead:**
 - Name: [General Counsel Name]
-- Email: generalcounsel@citadelbuy.com
+- Email: generalcounsel@broxiva.com
 - Mobile: [Mobile Number]
 
 **Privacy Lead:**
 - Name: [CPO Name]
-- Email: privacy@citadelbuy.com
+- Email: privacy@broxiva.com
 - Mobile: [Mobile Number]
 
 **IT Lead:**
@@ -990,7 +990,7 @@
 **Next Scheduled Review:** March 1, 2026
 
 **To Report Contact Changes:**
-- Email: legalops@citadelbuy.com
+- Email: legalops@broxiva.com
 - Subject: "Legal Contacts Update - [Category]"
 
 ---
@@ -1011,7 +1011,7 @@
 **Access Restrictions:** This document contains sensitive contact information and should not be shared externally without General Counsel approval.
 
 **Document Location:**
-- Primary: C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/docs/
+- Primary: C:/Users/citad/OneDrive/Documents/broxiva-master/organization/docs/
 - Backup: Legal Department SharePoint (Confidential folder)
 
 **Retention Period:** Permanent - superseded versions retained for 3 years
@@ -1051,9 +1051,9 @@
 
 **For Data Subjects/Customers:**
 - This is an internal document. Data subjects and customers should use public-facing contact information:
-  - Privacy inquiries: privacy@citadelbuy.com or https://www.citadelbuy.com/privacy/contact
-  - General inquiries: support@citadelbuy.com
-  - Legal inquiries: legal@citadelbuy.com
+  - Privacy inquiries: privacy@broxiva.com or https://www.broxiva.com/privacy/contact
+  - General inquiries: support@broxiva.com
+  - Legal inquiries: legal@broxiva.com
 
 **Confidentiality:**
 - Mobile phone numbers and personal contact information are confidential and for business use only

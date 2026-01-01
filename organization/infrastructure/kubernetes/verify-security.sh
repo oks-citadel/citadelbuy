@@ -1,5 +1,5 @@
 #!/bin/bash
-# Security Verification Script for CitadelBuy Kubernetes Infrastructure
+# Security Verification Script for Broxiva Kubernetes Infrastructure
 # This script validates that security hardening has been properly applied
 
 set -e
@@ -10,13 +10,13 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-NAMESPACE="citadelbuy"
+NAMESPACE="broxiva"
 PASSED=0
 FAILED=0
 WARNINGS=0
 
 echo "=========================================="
-echo "CitadelBuy Security Verification Script"
+echo "Broxiva Security Verification Script"
 echo "=========================================="
 echo ""
 
@@ -86,7 +86,7 @@ echo "3. Checking RBAC Configuration..."
 echo "----------------------------------"
 
 # Check service accounts
-REQUIRED_SA=("citadelbuy-api" "citadelbuy-web" "postgres" "redis" "elasticsearch")
+REQUIRED_SA=("broxiva-api" "broxiva-web" "postgres" "redis" "elasticsearch")
 for sa in "${REQUIRED_SA[@]}"; do
     if kubectl get serviceaccount $sa -n $NAMESPACE &> /dev/null; then
         print_result "ServiceAccount: $sa" "PASS"
@@ -96,7 +96,7 @@ for sa in "${REQUIRED_SA[@]}"; do
 done
 
 # Check roles
-REQUIRED_ROLES=("citadelbuy-api-role" "citadelbuy-web-role" "monitoring-exporter-role")
+REQUIRED_ROLES=("broxiva-api-role" "broxiva-web-role" "monitoring-exporter-role")
 for role in "${REQUIRED_ROLES[@]}"; do
     if kubectl get role $role -n $NAMESPACE &> /dev/null; then
         print_result "Role: $role" "PASS"
@@ -110,21 +110,21 @@ echo "4. Checking Pod Security Contexts..."
 echo "--------------------------------------"
 
 # Check API deployment security context
-API_RUN_AS_NONROOT=$(kubectl get deployment citadelbuy-api -n $NAMESPACE -o jsonpath='{.spec.template.spec.securityContext.runAsNonRoot}' 2>/dev/null || echo "false")
+API_RUN_AS_NONROOT=$(kubectl get deployment broxiva-api -n $NAMESPACE -o jsonpath='{.spec.template.spec.securityContext.runAsNonRoot}' 2>/dev/null || echo "false")
 if [ "$API_RUN_AS_NONROOT" = "true" ]; then
     print_result "API runs as non-root" "PASS"
 else
     print_result "API runs as non-root" "FAIL" "runAsNonRoot not set to true"
 fi
 
-API_PRIVILEGE_ESC=$(kubectl get deployment citadelbuy-api -n $NAMESPACE -o jsonpath='{.spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation}' 2>/dev/null || echo "true")
+API_PRIVILEGE_ESC=$(kubectl get deployment broxiva-api -n $NAMESPACE -o jsonpath='{.spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation}' 2>/dev/null || echo "true")
 if [ "$API_PRIVILEGE_ESC" = "false" ]; then
     print_result "API privilege escalation disabled" "PASS"
 else
     print_result "API privilege escalation disabled" "FAIL" "allowPrivilegeEscalation not set to false"
 fi
 
-API_READONLY_FS=$(kubectl get deployment citadelbuy-api -n $NAMESPACE -o jsonpath='{.spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem}' 2>/dev/null || echo "false")
+API_READONLY_FS=$(kubectl get deployment broxiva-api -n $NAMESPACE -o jsonpath='{.spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem}' 2>/dev/null || echo "false")
 if [ "$API_READONLY_FS" = "true" ]; then
     print_result "API read-only root filesystem" "PASS"
 else
@@ -150,8 +150,8 @@ check_resources() {
     fi
 }
 
-check_resources "citadelbuy-api"
-check_resources "citadelbuy-web"
+check_resources "broxiva-api"
+check_resources "broxiva-web"
 
 # Check StatefulSets
 check_statefulset_resources() {
@@ -187,14 +187,14 @@ check_probes() {
     fi
 }
 
-check_probes "citadelbuy-api"
-check_probes "citadelbuy-web"
+check_probes "broxiva-api"
+check_probes "broxiva-web"
 
 echo ""
 echo "7. Checking Pod Disruption Budgets..."
 echo "---------------------------------------"
 
-REQUIRED_PDB=("citadelbuy-api-pdb" "citadelbuy-web-pdb" "postgres-pdb" "redis-pdb" "elasticsearch-pdb")
+REQUIRED_PDB=("broxiva-api-pdb" "broxiva-web-pdb" "postgres-pdb" "redis-pdb" "elasticsearch-pdb")
 for pdb in "${REQUIRED_PDB[@]}"; do
     if kubectl get pdb $pdb -n $NAMESPACE &> /dev/null; then
         print_result "PodDisruptionBudget: $pdb" "PASS"
@@ -226,13 +226,13 @@ echo ""
 echo "9. Checking Resource Quotas..."
 echo "-------------------------------"
 
-if kubectl get resourcequota citadelbuy-quota -n $NAMESPACE &> /dev/null; then
+if kubectl get resourcequota broxiva-quota -n $NAMESPACE &> /dev/null; then
     print_result "ResourceQuota configured" "PASS"
 else
     print_result "ResourceQuota configured" "WARN" "Not found"
 fi
 
-if kubectl get limitrange citadelbuy-limitrange -n $NAMESPACE &> /dev/null; then
+if kubectl get limitrange broxiva-limitrange -n $NAMESPACE &> /dev/null; then
     print_result "LimitRange configured" "PASS"
 else
     print_result "LimitRange configured" "WARN" "Not found"

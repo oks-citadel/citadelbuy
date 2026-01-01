@@ -1,6 +1,6 @@
-# Getting Started with CitadelBuy Development
+# Getting Started with Broxiva Development
 
-This guide will help you set up your development environment and start contributing to CitadelBuy.
+This guide will help you set up your development environment and start contributing to Broxiva.
 
 ## Table of Contents
 
@@ -120,11 +120,11 @@ git --version
 
 ```bash
 # Fork the repository on GitHub first, then clone your fork
-git clone https://github.com/YOUR_USERNAME/citadelbuy.git
-cd citadelbuy/organization
+git clone https://github.com/YOUR_USERNAME/broxiva.git
+cd broxiva/organization
 
 # Add upstream remote
-git remote add upstream https://github.com/citadelbuy/citadelbuy.git
+git remote add upstream https://github.com/broxiva/broxiva.git
 ```
 
 ### 2. Install Dependencies
@@ -154,7 +154,7 @@ cp .env.example .env
 
 ```env
 # Database
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/citadelbuy_dev"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/broxiva_dev"
 
 # Redis
 REDIS_HOST=localhost
@@ -180,7 +180,7 @@ SMTP_HOST=smtp.mailtrap.io
 SMTP_PORT=2525
 SMTP_USER=your-mailtrap-user
 SMTP_PASSWORD=your-mailtrap-password
-EMAIL_FROM=noreply@citadelbuy.com
+EMAIL_FROM=noreply@broxiva.com
 
 # Optional: Third-party services (can be added later)
 STRIPE_SECRET_KEY=
@@ -214,7 +214,7 @@ NEXT_PUBLIC_WS_URL=ws://localhost:4000
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 
 # App Configuration
-NEXT_PUBLIC_APP_NAME=CitadelBuy
+NEXT_PUBLIC_APP_NAME=Broxiva
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
@@ -360,9 +360,9 @@ Use these accounts to test the application:
 
 | Role | Email | Password |
 |------|-------|----------|
-| Customer | customer@citadelbuy.com | password123 |
-| Admin | admin@citadelbuy.com | password123 |
-| Vendor | vendor1@citadelbuy.com | password123 |
+| Customer | customer@broxiva.com | password123 |
+| Admin | admin@broxiva.com | password123 |
+| Vendor | vendor1@broxiva.com | password123 |
 
 ## Project Structure
 
@@ -535,7 +535,7 @@ taskkill /PID <PID> /F
 docker ps | grep postgres
 
 # Check connection
-psql -h localhost -U postgres -d citadelbuy_dev
+psql -h localhost -U postgres -d broxiva_dev
 
 # Reset database
 pnpm db:migrate:reset
@@ -683,6 +683,6 @@ If you're stuck or have questions:
 
 ## Welcome to the Team!
 
-Thank you for contributing to CitadelBuy! We're excited to have you as part of the community.
+Thank you for contributing to Broxiva! We're excited to have you as part of the community.
 
 Happy coding! 🚀

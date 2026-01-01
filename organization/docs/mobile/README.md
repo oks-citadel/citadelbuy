@@ -1,6 +1,6 @@
 # Mobile App Assets
 
-This directory contains the app icons and splash screens for the CitadelBuy mobile application.
+This directory contains the app icons and splash screens for the Broxiva mobile application.
 
 ## Required Assets
 

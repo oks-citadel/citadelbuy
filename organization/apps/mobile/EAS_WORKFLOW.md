@@ -1,4 +1,4 @@
-# EAS Build Workflow for CitadelBuy
+# EAS Build Workflow for Broxiva
 
 Visual guide to the EAS build and deployment workflow.
 
@@ -6,7 +6,7 @@ Visual guide to the EAS build and deployment workflow.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     CitadelBuy EAS Workflow                     │
+│                     Broxiva EAS Workflow                     │
 └─────────────────────────────────────────────────────────────────┘
 
 Development Cycle:
@@ -80,7 +80,7 @@ Development Cycle:
          │                         │                          │
          ▼                         ▼                          ▼
 ┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
-│  localhost:3000 │      │  staging-api... │      │  api.citadel... │
+│  localhost:3000 │      │  staging-api... │      │  api.broxiva... │
 │  Debug: ON      │      │  Debug: ON      │      │  Debug: OFF     │
 │  Analytics: OFF │      │  Analytics: ON  │      │  Analytics: ON  │
 │  Sentry: OFF    │      │  Sentry: ON     │      │  Sentry: ON     │
@@ -95,13 +95,13 @@ Development Cycle:
 └──────────────────────────────────────────────────────────────┘
 
 Custom Scheme (All environments):
-citadelbuy:// ──────► App Opens
-                      └─► citadelbuy://product/123
-                      └─► citadelbuy://cart
-                      └─► citadelbuy://profile
+broxiva:// ──────► App Opens
+                      └─► broxiva://product/123
+                      └─► broxiva://cart
+                      └─► broxiva://profile
 
 Universal Links (iOS):
-https://citadelbuy.com/product/123
+https://broxiva.com/product/123
          │
          ▼
 ┌──────────────────────┐
@@ -111,7 +111,7 @@ https://citadelbuy.com/product/123
 └──────────────────────┘                   └─► Safari (if not installed)
 
 App Links (Android):
-https://citadelbuy.com/product/123
+https://broxiva.com/product/123
          │
          ▼
 ┌──────────────────────┐
@@ -516,7 +516,7 @@ Deep Link Not Working?
     │
     ├─► Custom Scheme?
     │   └─► Check app.json "scheme" field
-    │       └─► Test: citadelbuy://
+    │       └─► Test: broxiva://
     │
     ├─► Universal Link (iOS)?
     │   └─► Verify apple-app-site-association

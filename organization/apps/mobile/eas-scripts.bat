@@ -1,11 +1,11 @@
 @echo off
-REM CitadelBuy EAS Build Scripts for Windows
+REM Broxiva EAS Build Scripts for Windows
 REM Common commands for building and deploying the mobile app
 
 :menu
 cls
 echo ====================================
-echo CitadelBuy EAS Build Scripts
+echo Broxiva EAS Build Scripts
 echo ====================================
 echo.
 echo Select an option:

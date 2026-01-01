@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================================
-# CitadelBuy Dependency Verification Script
+# Broxiva Dependency Verification Script
 # =============================================================================
 # This comprehensive script verifies all dependencies, checks for issues,
 # and ensures the project is ready for build and deployment.
@@ -517,7 +517,7 @@ EOF
 main() {
     # Initialize report
     cat > "$REPORT_FILE" << EOF
-CitadelBuy Dependency Verification Report
+Broxiva Dependency Verification Report
 =========================================
 Generated: $(date '+%Y-%m-%d %H:%M:%S')
 Project Root: $PROJECT_ROOT
@@ -531,7 +531,7 @@ Options:
 
 EOF
 
-    print_header "CitadelBuy Dependency Verification"
+    print_header "Broxiva Dependency Verification"
 
     # Run all checks
     check_prerequisites

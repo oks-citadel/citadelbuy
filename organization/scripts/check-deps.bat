@@ -1,5 +1,5 @@
 @echo off
-REM Dependency Check Script for CitadelBuy (Windows)
+REM Dependency Check Script for Broxiva (Windows)
 REM This script checks for outdated packages and security vulnerabilities across all workspaces
 
 setlocal enabledelayedexpansion
@@ -14,13 +14,13 @@ for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set da
 set TIMESTAMP=%datetime:~0,4%-%datetime:~4,2%-%datetime:~6,2% %datetime:~8,2%:%datetime:~10,2%:%datetime:~12,2%
 
 echo ========================================
-echo CitadelBuy Dependency Check
+echo Broxiva Dependency Check
 echo ========================================
 echo Timestamp: %TIMESTAMP%
 echo.
 
 REM Initialize report
-echo CitadelBuy Dependency Check Report > "%REPORT_FILE%"
+echo Broxiva Dependency Check Report > "%REPORT_FILE%"
 echo =================================== >> "%REPORT_FILE%"
 echo Generated: %TIMESTAMP% >> "%REPORT_FILE%"
 echo. >> "%REPORT_FILE%"

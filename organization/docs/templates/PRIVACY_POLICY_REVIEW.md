@@ -1,4 +1,4 @@
-# Privacy Policy Review Template - CitadelBuy
+# Privacy Policy Review Template - Broxiva
 
 **Document Type:** Privacy Policy Review Guide
 **Version:** 1.0
@@ -24,7 +24,7 @@
 **Purpose:** Establish who controls data, what the policy covers, and when it applies.
 
 **Review Questions:**
-- [ ] Is CitadelBuy clearly identified as the data controller?
+- [ ] Is Broxiva clearly identified as the data controller?
 - [ ] Is the legal entity name, registration number, and address included?
 - [ ] Is it clear that this policy applies to the website, mobile app, and all services?
 - [ ] Are any excluded services or platforms specifically noted?
@@ -40,7 +40,7 @@ Our Privacy Policy
 Effective Date: [DATE]
 Last Updated: [DATE]
 
-This Privacy Policy describes how CitadelBuy, Inc. ("CitadelBuy," "we," "us," or "our"),
+This Privacy Policy describes how Broxiva, Inc. ("Broxiva," "we," "us," or "our"),
 located at [FULL ADDRESS], collects, uses, and shares your personal information when you
 use our website at [URL], mobile applications, and related services (collectively, the "Platform").
 
@@ -466,7 +466,7 @@ We do not sell your personal information to data brokers or for purposes unrelat
 #### B. GDPR Rights (European Economic Area, UK, Switzerland)
 - [ ] **Right to Access (Subject Access Request)**
   - Description: Obtain copy of your personal data
-  - Method: Email to privacy@citadelbuy.com or account settings
+  - Method: Email to privacy@broxiva.com or account settings
   - Timeframe: 1 month (extendable by 2 months if complex)
   - Format: Electronic, machine-readable format
   - Identity verification: Required to prevent unauthorized disclosure
@@ -478,7 +478,7 @@ We do not sell your personal information to data brokers or for purposes unrelat
 
 - [ ] **Right to Erasure (Right to be Forgotten)**
   - Description: Request deletion of your personal data
-  - Method: Email to privacy@citadelbuy.com
+  - Method: Email to privacy@broxiva.com
   - Timeframe: 1 month
   - Exceptions: Legal obligations, legal claims, public interest
   - Note: Some data may be retained in backups for limited period
@@ -522,14 +522,14 @@ We do not sell your personal information to data brokers or for purposes unrelat
 #### C. CCPA/CPRA Rights (California Residents)
 - [ ] **Right to Know**
   - Description: Know what personal information we collect, use, and share
-  - Method: Submit request via privacy@citadelbuy.com or toll-free: 1-XXX-XXX-XXXX
+  - Method: Submit request via privacy@broxiva.com or toll-free: 1-XXX-XXX-XXXX
   - Timeframe: 45 days (extendable by 45 days)
   - Frequency: Up to 2 requests per 12-month period
   - Verification: Two-step verification process
 
 - [ ] **Right to Delete**
   - Description: Request deletion of your personal information
-  - Method: Submit request via privacy@citadelbuy.com or toll-free: 1-XXX-XXX-XXXX
+  - Method: Submit request via privacy@broxiva.com or toll-free: 1-XXX-XXX-XXXX
   - Timeframe: 45 days
   - Exceptions: Legal obligations, fraud prevention, internal uses
   - Verification: Required
@@ -582,13 +582,13 @@ European Economic Area, UK, and Swiss Users (GDPR):
 You have the following rights:
 
 1. Right to Access: You can request a copy of your personal data.
-   How to exercise: Email privacy@citadelbuy.com or visit Account Settings > Privacy
+   How to exercise: Email privacy@broxiva.com or visit Account Settings > Privacy
    Response time: Within 1 month
 
 [Continue with all rights]
 
 To exercise your rights, contact us at:
-Email: privacy@citadelbuy.com
+Email: privacy@broxiva.com
 Phone: 1-XXX-XXX-XXXX (toll-free)
 Mail: [Address]
 
@@ -602,7 +602,7 @@ California Residents (CCPA/CPRA):
 
 Do Not Sell or Share My Personal Information:
 California residents can opt out of the sale or sharing of personal information by clicking
-[link] or emailing privacy@citadelbuy.com.
+[link] or emailing privacy@broxiva.com.
 ```
 
 **Identity Verification Process:**
@@ -715,7 +715,7 @@ Please help us protect your information by:
 - Not sharing your account credentials
 - Enabling two-factor authentication
 - Keeping your contact information current
-- Reporting suspicious activity immediately to security@citadelbuy.com
+- Reporting suspicious activity immediately to security@broxiva.com
 
 While we implement strong security measures, no system is 100% secure. We cannot guarantee
 absolute security, but we are committed to protecting your personal information using
@@ -770,7 +770,7 @@ Personal data may remain in our backup systems for up to 90 days after deletion 
 systems. These backups are not accessible for ordinary use and are retained solely for
 disaster recovery purposes.
 
-You can request deletion of your data at any time by contacting privacy@citadelbuy.com,
+You can request deletion of your data at any time by contacting privacy@broxiva.com,
 subject to legal retention requirements.
 ```
 
@@ -796,7 +796,7 @@ subject to legal retention requirements.
 ```
 International Data Transfers
 
-CitadelBuy is based in [Country], and your personal information may be transferred to,
+Broxiva is based in [Country], and your personal information may be transferred to,
 stored, and processed in the United States and other countries where our service providers
 operate.
 
@@ -815,7 +815,7 @@ safeguards are in place:
 
 You have the right to request information about the safeguards we use for international
 transfers and to obtain a copy of the Standard Contractual Clauses by contacting
-privacy@citadelbuy.com.
+privacy@broxiva.com.
 
 Service providers located outside your country include:
 - Cloud hosting: AWS (United States, Europe)
@@ -850,7 +850,7 @@ Our Platform is not intended for children under the age of 13 (or 16 in the Euro
 Area). We do not knowingly collect personal information from children under these ages.
 
 If you are a parent or guardian and believe your child has provided us with personal
-information, please contact us immediately at privacy@citadelbuy.com. We will take steps to
+information, please contact us immediately at privacy@broxiva.com. We will take steps to
 delete such information from our systems.
 
 If you are under 18, you may use our Platform only with the involvement of a parent or guardian.
@@ -900,7 +900,7 @@ We encourage you to review this Privacy Policy periodically to stay informed abo
 protect your information.
 
 Version History:
-You can view previous versions of our Privacy Policy by contacting privacy@citadelbuy.com.
+You can view previous versions of our Privacy Policy by contacting privacy@broxiva.com.
 ```
 
 **Compliance Notes:**
@@ -1198,17 +1198,17 @@ A: European users can lodge a complaint with their local data protection authori
 ### Minimum Required Contact Points
 
 #### 1. General Privacy Inquiries
-- **Email:** privacy@citadelbuy.com
+- **Email:** privacy@broxiva.com
 - **Response Time:** Within 5 business days for inquiries; statutory timeframes for rights requests
 - **Who Monitors:** Privacy team or designated privacy officer
 
 #### 2. Data Protection Officer (if required under GDPR)
 - **Name:** [Full Name] (if designated)
 - **Title:** Data Protection Officer
-- **Email:** dpo@citadelbuy.com (or privacy@citadelbuy.com with DPO in subject)
+- **Email:** dpo@broxiva.com (or privacy@broxiva.com with DPO in subject)
 - **Address:** [Physical address for formal communications]
 - **Note:** DPO required if:
-  - Public authority (not applicable to CitadelBuy)
+  - Public authority (not applicable to Broxiva)
   - Core activities involve large-scale regular and systematic monitoring
   - Core activities involve large-scale processing of special categories of data
 
@@ -1220,7 +1220,7 @@ A: European users can lodge a complaint with their local data protection authori
 
 #### 4. Physical Mailing Address
 - **For Legal Notices:**
-  CitadelBuy, Inc.
+  Broxiva, Inc.
   Attn: Legal Department - Privacy
   [Street Address]
   [City, State, ZIP]
@@ -1228,14 +1228,14 @@ A: European users can lodge a complaint with their local data protection authori
 
 - **For Data Rights Requests:**
   Same as above or:
-  CitadelBuy, Inc.
+  Broxiva, Inc.
   Attn: Privacy Rights Requests
   [Address]
 
 #### 5. Online Request Portals
-- **Web Form:** https://www.citadelbuy.com/privacy/request
+- **Web Form:** https://www.broxiva.com/privacy/request
 - **Account Settings:** Users can access, update, and delete certain data directly
-- **Cookie Preferences:** https://www.citadelbuy.com/cookie-settings
+- **Cookie Preferences:** https://www.broxiva.com/cookie-settings
 
 #### 6. Supervisory Authority Contact (for GDPR compliance)
 **For European Users:**
@@ -1248,7 +1248,7 @@ A: European users can lodge a complaint with their local data protection authori
 - **Phone:** 0303 123 1113
 
 #### 7. Security Issues
-- **Email:** security@citadelbuy.com
+- **Email:** security@broxiva.com
 - **Purpose:** Report security vulnerabilities or suspected data breaches
 - **Response Time:** Acknowledged within 24 hours
 
@@ -1260,21 +1260,21 @@ Contact Us
 If you have questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:
 
 Privacy Inquiries:
-Email: privacy@citadelbuy.com
+Email: privacy@broxiva.com
 Phone: 1-XXX-XXX-XXXX (toll-free, Monday-Friday 9 AM - 5 PM EST)
-Web Form: https://www.citadelbuy.com/privacy/request
+Web Form: https://www.broxiva.com/privacy/request
 
 Data Protection Officer:
 [If applicable]
-Email: dpo@citadelbuy.com
+Email: dpo@broxiva.com
 
 Mailing Address:
-CitadelBuy, Inc.
+Broxiva, Inc.
 Attn: Privacy Department
 [Full Address]
 
 For Security Issues:
-Email: security@citadelbuy.com
+Email: security@broxiva.com
 
 For Residents of the European Economic Area:
 You have the right to lodge a complaint with your local data protection authority.
@@ -1288,9 +1288,9 @@ You can contact the Information Commissioner's Office (ICO) at https://ico.org.u
 
 | Contact Point | Responsible Team/Person | Backup | SLA |
 |---------------|-------------------------|--------|-----|
-| privacy@citadelbuy.com | Privacy Officer | Legal Counsel | 5 business days (acknowledgment: 48 hours) |
-| dpo@citadelbuy.com | Data Protection Officer | N/A | Per statutory requirements |
-| security@citadelbuy.com | Security Team Lead | CISO | 24 hours |
+| privacy@broxiva.com | Privacy Officer | Legal Counsel | 5 business days (acknowledgment: 48 hours) |
+| dpo@broxiva.com | Data Protection Officer | N/A | Per statutory requirements |
+| security@broxiva.com | Security Team Lead | CISO | 24 hours |
 | Toll-Free Phone | Customer Support (Privacy-trained) | Privacy Officer | Immediate answer; resolution per statutory requirements |
 | Web Form | Automated routing to Privacy Team | N/A | Acknowledgment: automated; response: 5 business days |
 
@@ -1353,4 +1353,4 @@ You can contact the Information Commissioner's Office (ICO) at https://ico.org.u
 
 ---
 
-**Note:** This template is a comprehensive guide for reviewing and drafting a privacy policy. It should be customized to reflect CitadelBuy's actual practices and reviewed by qualified legal counsel familiar with the jurisdictions in which CitadelBuy operates. This document does not constitute legal advice.
+**Note:** This template is a comprehensive guide for reviewing and drafting a privacy policy. It should be customized to reflect Broxiva's actual practices and reviewed by qualified legal counsel familiar with the jurisdictions in which Broxiva operates. This document does not constitute legal advice.

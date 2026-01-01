@@ -1,13 +1,13 @@
-# CitadelBuy - Azure DevOps Pipeline Documentation Index
+# Broxiva - Azure DevOps Pipeline Documentation Index
 
 ## Overview
 
-This directory contains the complete Unified Pipeline Architecture for CitadelBuy's CI/CD operations.
+This directory contains the complete Unified Pipeline Architecture for Broxiva's CI/CD operations.
 
 **Status:** ✅ Architecture Complete - Ready for Implementation
 **Created:** December 10, 2025
-**Organization:** citadelcloudmanagement
-**Project:** CitadelBuy
+**Organization:** broxivacloudmanagement
+**Project:** Broxiva
 
 ---
 
@@ -325,20 +325,20 @@ See **README.md** (Environment Variables section) for requirements.
 ## Quick Links
 
 ### Azure DevOps
-- **Organization:** https://dev.azure.com/citadelcloudmanagement
-- **Project:** https://dev.azure.com/citadelcloudmanagement/CitadelBuy
-- **Pipelines:** https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_build
-- **Environments:** https://dev.azure.com/citadelcloudmanagement/CitadelBuy/_environments
+- **Organization:** https://dev.azure.com/broxivacloudmanagement
+- **Project:** https://dev.azure.com/broxivacloudmanagement/Broxiva
+- **Pipelines:** https://dev.azure.com/broxivacloudmanagement/Broxiva/_build
+- **Environments:** https://dev.azure.com/broxivacloudmanagement/Broxiva/_environments
 
 ### Azure Resources
-- **ACR:** https://portal.azure.com/#resource/citadelbuyacr
-- **Dev AKS:** citadelbuy-dev-aks
-- **Staging AKS:** citadelbuy-staging-aks
-- **Production AKS:** citadelbuy-prod-aks
+- **ACR:** https://portal.azure.com/#resource/broxivaacr
+- **Dev AKS:** broxiva-dev-aks
+- **Staging AKS:** broxiva-staging-aks
+- **Production AKS:** broxiva-prod-aks
 
 ### Support
 - **Slack:** #devops-support
-- **Email:** devops@citadelbuy.com
+- **Email:** devops@broxiva.com
 
 ---
 
@@ -441,14 +441,14 @@ When updating documentation:
 
 **Questions about documentation?**
 - Slack: #devops-support
-- Email: devops@citadelbuy.com
+- Email: devops@broxiva.com
 
 **Found an issue?**
 - Create a ticket in Azure DevOps
 - Tag with: documentation, pipeline
 
 **Suggestions for improvement?**
-- Share in #citadelbuy-deployments
+- Share in #broxiva-deployments
 - Submit PR with changes
 
 ---
@@ -461,7 +461,7 @@ When updating documentation:
 
 ## Navigation
 
-[⬆️ Back to Top](#citadelbuy---azure-devops-pipeline-documentation-index)
+[⬆️ Back to Top](#broxiva---azure-devops-pipeline-documentation-index)
 
 **Recommended Starting Points:**
 - **New to pipeline?** → Start with [QUICKSTART.md](QUICKSTART.md)

@@ -104,7 +104,7 @@ Use this checklist to ensure a successful Elasticsearch production deployment.
 - [ ] **Wait for Cluster Formation**
   ```bash
   # Wait 2-3 minutes
-  docker logs -f citadelbuy-elasticsearch-01
+  docker logs -f broxiva-elasticsearch-01
   ```
   - [ ] Cluster formed successfully
   - [ ] All nodes joined cluster
@@ -112,7 +112,7 @@ Use this checklist to ensure a successful Elasticsearch production deployment.
 
 - [ ] **Setup Built-in User Passwords**
   ```bash
-  docker exec citadelbuy-elasticsearch-01 \
+  docker exec broxiva-elasticsearch-01 \
     bin/elasticsearch-setup-passwords auto
   ```
   - [ ] Passwords generated successfully
@@ -190,9 +190,9 @@ Use this checklist to ensure a successful Elasticsearch production deployment.
   # In apps/api/.env.production
   SEARCH_PROVIDER=elasticsearch
   ELASTICSEARCH_NODE=https://elasticsearch-01:9200
-  ELASTICSEARCH_USERNAME=citadelbuy_app_user
+  ELASTICSEARCH_USERNAME=broxiva_app_user
   ELASTICSEARCH_PASSWORD=your_app_user_password
-  ELASTICSEARCH_INDEX_PREFIX=citadelbuy
+  ELASTICSEARCH_INDEX_PREFIX=broxiva
   ```
   - [ ] Environment variables set
   - [ ] Application can connect to ES
@@ -223,13 +223,13 @@ Use this checklist to ensure a successful Elasticsearch production deployment.
 - [ ] **S3 Repository (Recommended)**
   ```bash
   # Install S3 plugin
-  docker exec citadelbuy-elasticsearch-01 \
+  docker exec broxiva-elasticsearch-01 \
     bin/elasticsearch-plugin install repository-s3
 
   # Configure credentials
-  docker exec citadelbuy-elasticsearch-01 \
+  docker exec broxiva-elasticsearch-01 \
     bin/elasticsearch-keystore add s3.client.default.access_key
-  docker exec citadelbuy-elasticsearch-01 \
+  docker exec broxiva-elasticsearch-01 \
     bin/elasticsearch-keystore add s3.client.default.secret_key
 
   # Create repository
@@ -238,7 +238,7 @@ Use this checklist to ensure a successful Elasticsearch production deployment.
   {
     "type": "s3",
     "settings": {
-      "bucket": "citadelbuy-elasticsearch-backups",
+      "bucket": "broxiva-elasticsearch-backups",
       "region": "us-east-1",
       "compress": true
     }
@@ -267,7 +267,7 @@ Use this checklist to ensure a successful Elasticsearch production deployment.
     "name": "<daily-snapshot-{now/d}>",
     "repository": "s3_backup",
     "config": {
-      "indices": ["citadelbuy-*"]
+      "indices": ["broxiva-*"]
     },
     "retention": {
       "expire_after": "30d",

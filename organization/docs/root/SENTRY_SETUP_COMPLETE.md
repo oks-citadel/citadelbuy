@@ -1,8 +1,8 @@
-# Sentry Setup Complete - CitadelBuy Platform
+# Sentry Setup Complete - Broxiva Platform
 
 ## Overview
 
-Comprehensive Sentry error tracking and performance monitoring has been successfully configured for the CitadelBuy e-commerce platform.
+Comprehensive Sentry error tracking and performance monitoring has been successfully configured for the Broxiva e-commerce platform.
 
 **Implementation Date**: December 4, 2024
 **Status**: ✅ Complete and Ready for Deployment
@@ -135,21 +135,21 @@ organization/
 
 1. Go to [https://sentry.io/signup/](https://sentry.io/signup/)
 2. Create account (use GitHub for easier integration)
-3. Create organization: `citadelbuy`
+3. Create organization: `broxiva`
 
 ### Step 2: Create Sentry Projects (30 minutes)
 
 Create 6 projects (one for each environment and app):
 
 **Backend Projects**:
-- `citadelbuy-backend-dev` (Platform: Node.js)
-- `citadelbuy-backend-staging` (Platform: Node.js)
-- `citadelbuy-backend-prod` (Platform: Node.js)
+- `broxiva-backend-dev` (Platform: Node.js)
+- `broxiva-backend-staging` (Platform: Node.js)
+- `broxiva-backend-prod` (Platform: Node.js)
 
 **Frontend Projects**:
-- `citadelbuy-web-dev` (Platform: Next.js)
-- `citadelbuy-web-staging` (Platform: Next.js)
-- `citadelbuy-web-prod` (Platform: Next.js)
+- `broxiva-web-dev` (Platform: Next.js)
+- `broxiva-web-staging` (Platform: Next.js)
+- `broxiva-web-prod` (Platform: Next.js)
 
 ### Step 3: Get DSN Values (10 minutes)
 
@@ -164,7 +164,7 @@ You should have 6 DSN values total.
 
 1. Go to **Settings** > **Account** > **API** > **Auth Tokens**
 2. Click **"Create New Token"**
-3. Name: `CitadelBuy CI/CD`
+3. Name: `Broxiva CI/CD`
 4. Scopes: `project:read`, `project:write`, `project:releases`, `org:read`
 5. Copy the token (you won't see it again!)
 
@@ -218,7 +218,7 @@ Check Sentry dashboard to verify errors appear.
    - `SENTRY_AUTH_TOKEN` = Your auth token
    - `NEXT_PUBLIC_SENTRY_DSN` = Frontend production DSN
 3. Add variables:
-   - `SENTRY_ORG` = `citadelbuy`
+   - `SENTRY_ORG` = `broxiva`
 
 **Azure DevOps** (if using):
 1. Go to **Pipelines** > **Library**
@@ -386,7 +386,7 @@ See `docs/SENTRY_SETUP.md` for detailed alert configurations.
 1. Check `docs/SENTRY_SETUP.md` for detailed instructions
 2. Review `docs/SENTRY_ENV_VARS.md` for configuration issues
 3. Review Sentry official documentation
-4. Contact DevOps team: devops@citadelbuy.com
+4. Contact DevOps team: devops@broxiva.com
 5. Open Sentry support ticket (paid plans)
 
 ---
@@ -465,7 +465,7 @@ See `docs/SENTRY_SETUP.md` for detailed alert configurations.
 
 ## Conclusion
 
-The Sentry integration for CitadelBuy is **fully configured and ready for deployment**. All code, configuration, documentation, and automation are in place.
+The Sentry integration for Broxiva is **fully configured and ready for deployment**. All code, configuration, documentation, and automation are in place.
 
 **Next Actions**:
 1. Create Sentry account and projects
@@ -485,7 +485,7 @@ The Sentry integration for CitadelBuy is **fully configured and ready for deploy
 **Testing Status**: ⏳ Ready to test
 **Deployment Status**: ⏳ Ready to deploy
 
-**Implemented By**: CitadelBuy DevOps Team
+**Implemented By**: Broxiva DevOps Team
 **Date**: December 4, 2024
 **Version**: 1.0.0
 

@@ -1,4 +1,4 @@
-# Compliance Tracker - CitadelBuy
+# Compliance Tracker - Broxiva
 
 **Document Type:** Compliance Monitoring and Tracking
 **Version:** 1.0
@@ -250,15 +250,15 @@
 
 | Role | Name | Email | Phone | Responsibilities |
 |------|------|-------|-------|------------------|
-| **Chief Compliance Officer** | [Name] | compliance@citadelbuy.com | [Phone] | Overall compliance strategy and oversight |
-| **Chief Privacy Officer / DPO** | [Name] | privacy@citadelbuy.com | [Phone] | Data privacy, GDPR, CCPA compliance |
-| **Chief Information Security Officer** | [Name] | security@citadelbuy.com | [Phone] | Information security, PCI DSS, breach response |
-| **General Counsel** | [Name] | legal@citadelbuy.com | [Phone] | Legal review, terms, contracts, disputes |
-| **VP of Finance** | [Name] | finance@citadelbuy.com | [Phone] | Tax compliance, financial regulations |
-| **VP of Operations** | [Name] | operations@citadelbuy.com | [Phone] | Product compliance, shipping, returns |
-| **VP of Marketing** | [Name] | marketing@citadelbuy.com | [Phone] | Marketing compliance, advertising, communications |
-| **VP of Engineering** | [Name] | engineering@citadelbuy.com | [Phone] | Technical implementation of compliance requirements |
-| **HR Director** | [Name] | hr@citadelbuy.com | [Phone] | Employee data, background checks, workplace compliance |
+| **Chief Compliance Officer** | [Name] | compliance@broxiva.com | [Phone] | Overall compliance strategy and oversight |
+| **Chief Privacy Officer / DPO** | [Name] | privacy@broxiva.com | [Phone] | Data privacy, GDPR, CCPA compliance |
+| **Chief Information Security Officer** | [Name] | security@broxiva.com | [Phone] | Information security, PCI DSS, breach response |
+| **General Counsel** | [Name] | legal@broxiva.com | [Phone] | Legal review, terms, contracts, disputes |
+| **VP of Finance** | [Name] | finance@broxiva.com | [Phone] | Tax compliance, financial regulations |
+| **VP of Operations** | [Name] | operations@broxiva.com | [Phone] | Product compliance, shipping, returns |
+| **VP of Marketing** | [Name] | marketing@broxiva.com | [Phone] | Marketing compliance, advertising, communications |
+| **VP of Engineering** | [Name] | engineering@broxiva.com | [Phone] | Technical implementation of compliance requirements |
+| **HR Director** | [Name] | hr@broxiva.com | [Phone] | Employee data, background checks, workplace compliance |
 
 ### Compliance Committee
 
@@ -440,10 +440,10 @@
 For compliance-related inquiries, reports, or escalations:
 
 **Internal Contacts:**
-- Compliance Team Email: compliance@citadelbuy.com
-- Privacy Officer Email: privacy@citadelbuy.com
-- Security Team Email: security@citadelbuy.com
-- Legal Team Email: legal@citadelbuy.com
+- Compliance Team Email: compliance@broxiva.com
+- Privacy Officer Email: privacy@broxiva.com
+- Security Team Email: security@broxiva.com
+- Legal Team Email: legal@broxiva.com
 
 **External Resources:**
 - External Legal Counsel: [Law Firm Name] - [Contact]
@@ -462,7 +462,7 @@ For compliance-related inquiries, reports, or escalations:
 ## Document Control
 
 **Document Owner:** Chief Compliance Officer
-**Document Location:** C:/Users/citad/OneDrive/Documents/citadelbuy-master/organization/docs/
+**Document Location:** C:/Users/citad/OneDrive/Documents/broxiva-master/organization/docs/
 **Access Level:** Internal - Management, Legal, Compliance
 **Retention Period:** Permanent with version history
 

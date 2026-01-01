@@ -24,18 +24,18 @@
 ### Option A: GitHub.com (Recommended)
 ```bash
 # Using GitHub CLI
-gh repo create citadelbuy/CitadelBuy --private --description "CitadelBuy E-Commerce Platform"
+gh repo create broxiva/Broxiva --private --description "Broxiva E-Commerce Platform"
 
 # Or via GitHub.com:
 # 1. Go to https://github.com/new
-# 2. Repository name: CitadelBuy
+# 2. Repository name: Broxiva
 # 3. Visibility: Private
 # 4. Create repository
 ```
 
 ### Option B: GitHub Enterprise
 ```bash
-gh repo create YOUR_ORG/CitadelBuy --private
+gh repo create YOUR_ORG/Broxiva --private
 ```
 
 ---
@@ -45,10 +45,10 @@ gh repo create YOUR_ORG/CitadelBuy --private
 ### 2.1 Create Azure AD App Registration
 ```bash
 # Create the app registration
-az ad app create --display-name "GitHub-CitadelBuy-OIDC"
+az ad app create --display-name "GitHub-Broxiva-OIDC"
 
 # Get the App ID (save this - it's your AZURE_CLIENT_ID)
-APP_ID=$(az ad app list --display-name "GitHub-CitadelBuy-OIDC" --query "[0].appId" -o tsv)
+APP_ID=$(az ad app list --display-name "GitHub-Broxiva-OIDC" --query "[0].appId" -o tsv)
 echo "AZURE_CLIENT_ID: $APP_ID"
 
 # Create service principal
@@ -69,7 +69,7 @@ az role assignment create \
 az role assignment create \
   --assignee $APP_ID \
   --role "AcrPush" \
-  --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/citadelbuy-acr-rg/providers/Microsoft.ContainerRegistry/registries/citadelbuyacr"
+  --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/broxiva-acr-rg/providers/Microsoft.ContainerRegistry/registries/broxivaacr"
 
 # AKS Cluster User role
 az role assignment create \
@@ -81,7 +81,7 @@ az role assignment create \
 az role assignment create \
   --assignee $APP_ID \
   --role "Storage Blob Data Contributor" \
-  --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/citadelbuy-tfstate-rg/providers/Microsoft.Storage/storageAccounts/citadelbuytfstate"
+  --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/broxiva-tfstate-rg/providers/Microsoft.Storage/storageAccounts/broxivatfstate"
 ```
 
 ### 2.3 Create Federated Credentials
@@ -91,7 +91,7 @@ APP_OBJECT_ID=$(az ad app show --id $APP_ID --query id -o tsv)
 
 # Replace with your GitHub organization/username
 GITHUB_ORG="YOUR_GITHUB_ORG"
-GITHUB_REPO="CitadelBuy"
+GITHUB_REPO="Broxiva"
 
 # Main branch
 az ad app federated-credential create --id $APP_OBJECT_ID --parameters '{
@@ -146,7 +146,7 @@ az ad app federated-credential create --id $APP_OBJECT_ID --parameters '{
 
 ## Step 3: Configure GitHub Repository Secrets
 
-Go to: `https://github.com/YOUR_ORG/CitadelBuy/settings/secrets/actions`
+Go to: `https://github.com/YOUR_ORG/Broxiva/settings/secrets/actions`
 
 ### Required Secrets
 | Secret Name | Value | Description |
@@ -167,7 +167,7 @@ Go to: `https://github.com/YOUR_ORG/CitadelBuy/settings/secrets/actions`
 
 ## Step 4: Create GitHub Environments
 
-Go to: `https://github.com/YOUR_ORG/CitadelBuy/settings/environments`
+Go to: `https://github.com/YOUR_ORG/Broxiva/settings/environments`
 
 ### Development Environment
 1. Click "New environment"
@@ -198,10 +198,10 @@ Go to: `https://github.com/YOUR_ORG/CitadelBuy/settings/environments`
 
 ```bash
 # Navigate to project
-cd C:\Users\Dell\OneDrive\Documents\Citadelbuy\CitadelBuy\organization
+cd C:\Users\Dell\OneDrive\Documents\Broxivabuy\Broxiva\organization
 
 # Add GitHub as a remote
-git remote add github https://github.com/YOUR_ORG/CitadelBuy.git
+git remote add github https://github.com/YOUR_ORG/Broxiva.git
 
 # Push all branches
 git push github main
@@ -237,32 +237,32 @@ git push github main
 ## Step 7: Verify Deployment
 
 ### Check GitHub Actions
-1. Go to: `https://github.com/YOUR_ORG/CitadelBuy/actions`
+1. Go to: `https://github.com/YOUR_ORG/Broxiva/actions`
 2. Monitor workflow runs
 3. Check for any failures
 
 ### Check AKS Deployment
 ```bash
 # Get AKS credentials
-az aks get-credentials --resource-group citadelbuy-dev-rg --name citadelbuy-dev-aks
+az aks get-credentials --resource-group broxiva-dev-rg --name broxiva-dev-aks
 
 # Check pods
-kubectl get pods -n citadelbuy-dev
+kubectl get pods -n broxiva-dev
 
 # Check services
-kubectl get svc -n citadelbuy-dev
+kubectl get svc -n broxiva-dev
 
 # Check deployments
-kubectl get deployments -n citadelbuy-dev
+kubectl get deployments -n broxiva-dev
 ```
 
 ### Check Application Health
 ```bash
 # Dev environment
-curl https://dev.citadelbuy.com/api/health
+curl https://dev.broxiva.com/api/health
 
 # Staging environment (after staging deployment)
-curl https://staging.citadelbuy.com/api/health
+curl https://staging.broxiva.com/api/health
 ```
 
 ---
@@ -310,19 +310,19 @@ Error: AADSTS70021: No matching federated identity record found
 ### AKS Deployment Fails
 ```bash
 # Check AKS cluster status
-az aks show --resource-group citadelbuy-dev-rg --name citadelbuy-dev-aks --query provisioningState
+az aks show --resource-group broxiva-dev-rg --name broxiva-dev-aks --query provisioningState
 
 # Check kubeconfig
-az aks get-credentials --resource-group citadelbuy-dev-rg --name citadelbuy-dev-aks --overwrite-existing
+az aks get-credentials --resource-group broxiva-dev-rg --name broxiva-dev-aks --overwrite-existing
 ```
 
 ### Container Push Fails
 ```bash
 # Verify ACR permissions
-az role assignment list --assignee $APP_ID --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/citadelbuy-acr-rg/providers/Microsoft.ContainerRegistry/registries/citadelbuyacr
+az role assignment list --assignee $APP_ID --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/broxiva-acr-rg/providers/Microsoft.ContainerRegistry/registries/broxivaacr
 
 # Test ACR access
-az acr login --name citadelbuyacr
+az acr login --name broxivaacr
 ```
 
 ---

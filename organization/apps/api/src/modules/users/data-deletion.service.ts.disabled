@@ -104,7 +104,7 @@ export class DataDeletionService {
     await this.prisma.user.update({
       where: { id: userId },
       data: {
-        email: `deleted_${userId}@citadelbuy.deleted`,
+        email: `deleted_${userId}@broxiva.deleted`,
         name: 'Deleted User',
         password: 'DELETED',
         // Note: In production, add a 'deletedAt' field to schema
@@ -219,7 +219,7 @@ export class DataDeletionService {
    */
   private async anonymizeUser(userId: string): Promise<DeletionResult> {
     const deletedAt = new Date();
-    const anonymousEmail = `anonymous_${userId}@citadelbuy.anonymized`;
+    const anonymousEmail = `anonymous_${userId}@broxiva.anonymized`;
     const anonymousName = 'Anonymous User';
 
     await this.prisma.$transaction(async (prisma) => {
@@ -308,7 +308,7 @@ export class DataDeletionService {
         // Anonymize personal fields in address
         if (shippingAddress) {
           shippingAddress.name = 'Anonymous';
-          shippingAddress.email = 'anonymous@citadelbuy.com';
+          shippingAddress.email = 'anonymous@broxiva.com';
           shippingAddress.phone = 'REDACTED';
         }
       } catch (e) {
@@ -319,7 +319,7 @@ export class DataDeletionService {
         where: { id: order.id },
         data: {
           shippingAddress: JSON.stringify(shippingAddress),
-          guestEmail: order.guestEmail ? 'anonymous@citadelbuy.com' : null,
+          guestEmail: order.guestEmail ? 'anonymous@broxiva.com' : null,
           guestPhone: order.guestPhone ? 'REDACTED' : null,
         },
       });

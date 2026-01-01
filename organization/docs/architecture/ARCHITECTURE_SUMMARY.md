@@ -1,8 +1,8 @@
-# CitadelBuy Global B2B Enterprise Marketplace - Architecture Summary
+# Broxiva Global B2B Enterprise Marketplace - Architecture Summary
 
 ## Overview
 
-This document provides a comprehensive overview of the architecture documentation created for the CitadelBuy Global B2B Enterprise Marketplace platform. The architecture supports cross-border trade operations across six global regions (Africa, United States, Europe, Asia-Pacific, Latin America, Middle East) with 12 specialized AI agents and enterprise-grade capabilities.
+This document provides a comprehensive overview of the architecture documentation created for the Broxiva Global B2B Enterprise Marketplace platform. The architecture supports cross-border trade operations across six global regions (Africa, United States, Europe, Asia-Pacific, Latin America, Middle East) with 12 specialized AI agents and enterprise-grade capabilities.
 
 ## Documentation Structure
 
@@ -541,7 +541,7 @@ organization/docs/architecture/
 
 ## Summary
 
-This comprehensive architecture documentation provides a complete blueprint for the CitadelBuy Global B2B Enterprise Marketplace platform. The architecture supports:
+This comprehensive architecture documentation provides a complete blueprint for the Broxiva Global B2B Enterprise Marketplace platform. The architecture supports:
 
 - **Global Scale**: 6 regions, 1M+ users, 10K+ req/sec per region
 - **AI-Powered**: 12 specialized AI agents for intelligent operations

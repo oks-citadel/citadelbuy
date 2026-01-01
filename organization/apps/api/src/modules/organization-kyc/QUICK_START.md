@@ -228,7 +228,7 @@ KYC_ENCRYPTION_KEY=your_generated_256_bit_key
 
 # Storage (AWS S3 example)
 STORAGE_PROVIDER=S3
-STORAGE_BUCKET=citadelbuy-kyc-documents
+STORAGE_BUCKET=broxiva-kyc-documents
 AWS_ACCESS_KEY_ID=AKIA...
 AWS_SECRET_ACCESS_KEY=...
 AWS_REGION=us-east-1
@@ -237,7 +237,7 @@ AWS_REGION=us-east-1
 ### 3. Configure Production Webhooks
 
 In provider dashboard:
-1. Add webhook URL: `https://api.citadelbuy.com/api/kyc/webhook/onfido`
+1. Add webhook URL: `https://api.broxiva.com/api/kyc/webhook/onfido`
 2. Select events: `check.completed`, `check.failed`
 3. Verify SSL certificate
 4. Test webhook delivery
@@ -257,7 +257,7 @@ npm run build
 
 Test with a real KYC submission:
 ```bash
-curl -X POST https://api.citadelbuy.com/api/kyc/submit \
+curl -X POST https://api.broxiva.com/api/kyc/submit \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer PRODUCTION_JWT_TOKEN" \
   -d @test_kyc_data.json
@@ -289,14 +289,14 @@ Configure alerts for:
 ### Check KYC Application Status
 
 ```bash
-curl -X GET https://api.citadelbuy.com/api/kyc/:kycId \
+curl -X GET https://api.broxiva.com/api/kyc/:kycId \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ### Manually Review Application
 
 ```bash
-curl -X POST https://api.citadelbuy.com/api/kyc/:kycId/review \
+curl -X POST https://api.broxiva.com/api/kyc/:kycId/review \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ADMIN_JWT_TOKEN" \
   -d '{
@@ -309,14 +309,14 @@ curl -X POST https://api.citadelbuy.com/api/kyc/:kycId/review \
 ### Retry Failed Verification
 
 ```bash
-curl -X POST https://api.citadelbuy.com/api/kyc/:kycId/retry \
+curl -X POST https://api.broxiva.com/api/kyc/:kycId/retry \
   -H "Authorization: Bearer ADMIN_JWT_TOKEN"
 ```
 
 ### Get Verification Statistics
 
 ```bash
-curl -X GET https://api.citadelbuy.com/api/kyc/stats \
+curl -X GET https://api.broxiva.com/api/kyc/stats \
   -H "Authorization: Bearer ADMIN_JWT_TOKEN"
 ```
 
@@ -388,12 +388,12 @@ ORDER BY created_at DESC;
 
 ```bash
 # Export to JSON
-curl -X GET https://api.citadelbuy.com/api/kyc/export \
+curl -X GET https://api.broxiva.com/api/kyc/export \
   -H "Authorization: Bearer ADMIN_JWT_TOKEN" \
   > kyc_export_$(date +%Y%m%d).json
 
 # Export specific organization
-curl -X GET https://api.citadelbuy.com/api/kyc/export?organizationId=org_123 \
+curl -X GET https://api.broxiva.com/api/kyc/export?organizationId=org_123 \
   -H "Authorization: Bearer ADMIN_JWT_TOKEN" \
   > kyc_org123_$(date +%Y%m%d).json
 ```

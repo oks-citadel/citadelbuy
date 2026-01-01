@@ -2,7 +2,7 @@
 
 ##############################################################################
 # Elasticsearch Production Setup Script
-# CitadelBuy E-Commerce Platform
+# Broxiva E-Commerce Platform
 ##############################################################################
 # This script:
 # 1. Creates production indices with optimized settings
@@ -32,7 +32,7 @@ CONFIG_DIR="$PROJECT_ROOT/apps/api/src/modules/search/config"
 ES_HOST="${ELASTICSEARCH_NODE:-http://localhost:9200}"
 ES_USER="${ELASTICSEARCH_USERNAME:-elastic}"
 ES_PASS="${ELASTICSEARCH_PASSWORD}"
-ES_INDEX_PREFIX="${ELASTICSEARCH_INDEX_PREFIX:-citadelbuy}"
+ES_INDEX_PREFIX="${ELASTICSEARCH_INDEX_PREFIX:-broxiva}"
 ES_ENV="${NODE_ENV:-production}"
 
 # Check if password is provided
@@ -416,7 +416,7 @@ setup_snapshot_repository() {
         log_warning "S3 repository requires manual configuration. See documentation."
     elif [ "$repo_type" = "fs" ]; then
         log_info "Configuring filesystem snapshot repository..."
-        es_api PUT "/_snapshot/citadelbuy_backup" '{
+        es_api PUT "/_snapshot/broxiva_backup" '{
           "type": "fs",
           "settings": {
             "location": "/mount/backups/elasticsearch",
@@ -489,7 +489,7 @@ verify_setup() {
 main() {
     echo ""
     echo "=========================================="
-    echo "  CitadelBuy Elasticsearch Setup"
+    echo "  Broxiva Elasticsearch Setup"
     echo "=========================================="
     echo ""
     echo "Configuration:"

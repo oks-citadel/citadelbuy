@@ -1,6 +1,6 @@
 #!/bin/bash
 # =========================================================================
-# CitadelBuy Security Check Script
+# Broxiva Security Check Script
 # =========================================================================
 # Purpose: Check if .env files have been committed to git history
 # Usage: ./scripts/check-env-security.sh
@@ -9,7 +9,7 @@
 set -e
 
 echo "=========================================="
-echo "CitadelBuy .env Security Check"
+echo "Broxiva .env Security Check"
 echo "=========================================="
 echo ""
 

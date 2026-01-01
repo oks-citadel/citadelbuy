@@ -1,8 +1,8 @@
-# CitadelBuy Global B2B Enterprise Marketplace - Global Architecture
+# Broxiva Global B2B Enterprise Marketplace - Global Architecture
 
 ## Executive Summary
 
-CitadelBuy is a global enterprise B2B marketplace platform designed to facilitate cross-border trade between Africa, United States, Europe, Asia-Pacific, Latin America, and the Middle East. This document outlines the complete system architecture supporting enterprise-grade procurement, multi-region deployment, AI-powered operations, and compliance with international trade regulations.
+Broxiva is a global enterprise B2B marketplace platform designed to facilitate cross-border trade between Africa, United States, Europe, Asia-Pacific, Latin America, and the Middle East. This document outlines the complete system architecture supporting enterprise-grade procurement, multi-region deployment, AI-powered operations, and compliance with international trade regulations.
 
 ## Table of Contents
 

@@ -1,6 +1,6 @@
 # Kubernetes Deployment Checklist
 
-Quick reference checklist for deploying CitadelBuy to Kubernetes.
+Quick reference checklist for deploying Broxiva to Kubernetes.
 
 ## Pre-Deployment Checklist
 
@@ -55,7 +55,7 @@ Quick reference checklist for deploying CitadelBuy to Kubernetes.
 kubectl apply -f staging/namespace.yaml
 kubectl apply -f staging/rbac.yaml
 ```
-- [ ] Namespace created (citadelbuy-staging)
+- [ ] Namespace created (broxiva-staging)
 - [ ] Resource quotas applied
 - [ ] Service accounts created
 - [ ] RBAC roles configured
@@ -92,7 +92,7 @@ kubectl apply -f staging/postgres-deployment.yaml
 kubectl apply -f staging/redis-deployment.yaml
 ```
 - [ ] PostgreSQL deployed
-- [ ] PostgreSQL ready (check with: `kubectl wait --for=condition=ready pod -l app=postgres -n citadelbuy-staging`)
+- [ ] PostgreSQL ready (check with: `kubectl wait --for=condition=ready pod -l app=postgres -n broxiva-staging`)
 - [ ] Redis deployed
 - [ ] Redis ready
 
@@ -103,7 +103,7 @@ kubectl apply -f staging/web-deployment.yaml
 ```
 - [ ] API deployment successful
 - [ ] Web deployment successful
-- [ ] Pods running (check with: `kubectl get pods -n citadelbuy-staging`)
+- [ ] Pods running (check with: `kubectl get pods -n broxiva-staging`)
 - [ ] Health checks passing
 
 ### 7. Ingress & Services
@@ -125,8 +125,8 @@ kubectl apply -f staging/hpa.yaml
 ### 9. Verification
 - [ ] All pods in Running state
 - [ ] Health endpoints responding
-  - [ ] API: `curl https://staging-api.citadelbuy.com/api/health`
-  - [ ] Web: `curl https://staging.citadelbuy.com/api/health`
+  - [ ] API: `curl https://staging-api.broxiva.com/api/health`
+  - [ ] Web: `curl https://staging.broxiva.com/api/health`
 - [ ] Database connectivity verified
 - [ ] Redis connectivity verified
 - [ ] Logs show no errors
@@ -149,7 +149,7 @@ kubectl apply -f staging/hpa.yaml
 kubectl apply -f production/namespace.yaml
 kubectl apply -f production/rbac.yaml
 ```
-- [ ] Namespace created (citadelbuy-production)
+- [ ] Namespace created (broxiva-production)
 - [ ] Resource quotas applied (50 CPU, 100Gi memory)
 - [ ] Service accounts created with IAM annotations
 - [ ] RBAC roles configured
@@ -161,7 +161,7 @@ kubectl apply -f base/external-secrets.yaml
 - [ ] SecretStore configured
 - [ ] Secrets created in AWS Secrets Manager/Vault
 - [ ] ExternalSecrets syncing successfully
-- [ ] Verify: `kubectl get externalsecrets -n citadelbuy-production`
+- [ ] Verify: `kubectl get externalsecrets -n broxiva-production`
 
 ### 3. Secrets & ConfigMaps
 ```bash
@@ -252,17 +252,17 @@ kubectl apply -f production/servicemonitor.yaml
 
 ### 11. DNS Configuration
 - [ ] DNS A/CNAME records created
-  - [ ] api.citadelbuy.com → LoadBalancer IP
-  - [ ] citadelbuy.com → LoadBalancer IP
-  - [ ] www.citadelbuy.com → LoadBalancer IP
+  - [ ] api.broxiva.com → LoadBalancer IP
+  - [ ] broxiva.com → LoadBalancer IP
+  - [ ] www.broxiva.com → LoadBalancer IP
 - [ ] DNS propagation verified
 - [ ] TTL set appropriately (300s recommended)
 
 ### 12. Production Verification
 - [ ] All pods in Running state
 - [ ] Health checks passing
-  - [ ] API: `curl https://api.citadelbuy.com/api/health`
-  - [ ] Web: `curl https://citadelbuy.com/api/health`
+  - [ ] API: `curl https://api.broxiva.com/api/health`
+  - [ ] Web: `curl https://broxiva.com/api/health`
 - [ ] Database connections working
 - [ ] Redis connections working
 - [ ] Payment gateway integration tested
@@ -323,20 +323,20 @@ kubectl apply -f production/servicemonitor.yaml
 ### Quick Rollback
 ```bash
 # Rollback API
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy-production
+kubectl rollout undo deployment/broxiva-api -n broxiva-production
 
 # Rollback Web
-kubectl rollout undo deployment/citadelbuy-web -n citadelbuy-production
+kubectl rollout undo deployment/broxiva-web -n broxiva-production
 
 # Verify rollback
-kubectl rollout status deployment/citadelbuy-api -n citadelbuy-production
-kubectl rollout status deployment/citadelbuy-web -n citadelbuy-production
+kubectl rollout status deployment/broxiva-api -n broxiva-production
+kubectl rollout status deployment/broxiva-web -n broxiva-production
 ```
 
 ### Emergency Procedures
 1. Scale down to minimum replicas
-2. Check logs: `kubectl logs -f deployment/citadelbuy-api -n citadelbuy-production`
-3. Check events: `kubectl get events -n citadelbuy-production --sort-by='.lastTimestamp'`
+2. Check logs: `kubectl logs -f deployment/broxiva-api -n broxiva-production`
+3. Check events: `kubectl get events -n broxiva-production --sort-by='.lastTimestamp'`
 4. Rollback if needed
 5. Notify team
 6. Update incident log
@@ -348,56 +348,56 @@ kubectl rollout status deployment/citadelbuy-web -n citadelbuy-production
 ### Viewing Resources
 ```bash
 # Get all resources
-kubectl get all -n citadelbuy-production
+kubectl get all -n broxiva-production
 
 # Get pod status
-kubectl get pods -n citadelbuy-production -o wide
+kubectl get pods -n broxiva-production -o wide
 
 # Watch pod status
-kubectl get pods -n citadelbuy-production -w
+kubectl get pods -n broxiva-production -w
 
 # Check resource usage
-kubectl top pods -n citadelbuy-production
+kubectl top pods -n broxiva-production
 kubectl top nodes
 ```
 
 ### Viewing Logs
 ```bash
 # API logs
-kubectl logs -f deployment/citadelbuy-api -n citadelbuy-production
+kubectl logs -f deployment/broxiva-api -n broxiva-production
 
 # Web logs
-kubectl logs -f deployment/citadelbuy-web -n citadelbuy-production
+kubectl logs -f deployment/broxiva-web -n broxiva-production
 
 # Previous logs (after crash)
-kubectl logs deployment/citadelbuy-api -n citadelbuy-production --previous
+kubectl logs deployment/broxiva-api -n broxiva-production --previous
 ```
 
 ### Debugging
 ```bash
 # Describe pod
-kubectl describe pod <pod-name> -n citadelbuy-production
+kubectl describe pod <pod-name> -n broxiva-production
 
 # Get events
-kubectl get events -n citadelbuy-production --sort-by='.lastTimestamp'
+kubectl get events -n broxiva-production --sort-by='.lastTimestamp'
 
 # Execute command in pod
-kubectl exec -it <pod-name> -n citadelbuy-production -- /bin/sh
+kubectl exec -it <pod-name> -n broxiva-production -- /bin/sh
 
 # Port forward for testing
-kubectl port-forward svc/citadelbuy-api 4000:4000 -n citadelbuy-production
+kubectl port-forward svc/broxiva-api 4000:4000 -n broxiva-production
 ```
 
 ### Scaling
 ```bash
 # Manual scale
-kubectl scale deployment/citadelbuy-api --replicas=10 -n citadelbuy-production
+kubectl scale deployment/broxiva-api --replicas=10 -n broxiva-production
 
 # Check HPA status
-kubectl get hpa -n citadelbuy-production
+kubectl get hpa -n broxiva-production
 
 # Describe HPA
-kubectl describe hpa citadelbuy-api-hpa -n citadelbuy-production
+kubectl describe hpa broxiva-api-hpa -n broxiva-production
 ```
 
 ---
@@ -423,10 +423,10 @@ kubectl describe hpa citadelbuy-api-hpa -n citadelbuy-production
 
 ## Support Contacts
 
-- **DevOps Team:** devops@citadelbuy.com
+- **DevOps Team:** devops@broxiva.com
 - **On-Call:** PagerDuty escalation
-- **Documentation:** https://docs.citadelbuy.com
-- **Status Page:** https://status.citadelbuy.com
+- **Documentation:** https://docs.broxiva.com
+- **Status Page:** https://status.broxiva.com
 
 ---
 

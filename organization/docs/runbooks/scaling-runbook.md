@@ -8,8 +8,8 @@
 
 | Scenario | Action | Command |
 |----------|--------|---------|
-| High CPU | Scale up API pods | `kubectl scale deployment/citadelbuy-api --replicas=15 -n citadelbuy` |
-| High Memory | Increase memory limits | `kubectl set resources deployment/citadelbuy-api --limits=memory=2Gi -n citadelbuy` |
+| High CPU | Scale up API pods | `kubectl scale deployment/broxiva-api --replicas=15 -n broxiva` |
+| High Memory | Increase memory limits | `kubectl set resources deployment/broxiva-api --limits=memory=2Gi -n broxiva` |
 | Database slow | Add read replica | See Database Scaling section |
 | Cache overload | Enable Redis cluster | See Redis Scaling section |
 
@@ -34,26 +34,26 @@
 **Scale Up**:
 ```bash
 # Immediate scale for traffic spike
-kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=20
+kubectl scale deployment/broxiva-api -n broxiva --replicas=20
 
 # Update HPA limits
-kubectl patch hpa citadelbuy-api -n citadelbuy -p '{"spec":{"maxReplicas":30}}'
+kubectl patch hpa broxiva-api -n broxiva -p '{"spec":{"maxReplicas":30}}'
 ```
 
 **Scale Down**:
 ```bash
 # Gradual scale down during low traffic
-kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=3
+kubectl scale deployment/broxiva-api -n broxiva --replicas=3
 
 # Reset HPA
-kubectl patch hpa citadelbuy-api -n citadelbuy -p '{"spec":{"maxReplicas":10}}'
+kubectl patch hpa broxiva-api -n broxiva -p '{"spec":{"maxReplicas":10}}'
 ```
 
 ### Vertical Scaling
 
 **Increase Resources**:
 ```bash
-kubectl set resources deployment/citadelbuy-api -n citadelbuy \
+kubectl set resources deployment/broxiva-api -n broxiva \
   --limits=cpu=2000m,memory=4Gi \
   --requests=cpu=1000m,memory=2Gi
 ```
@@ -65,13 +65,13 @@ kubectl set resources deployment/citadelbuy-api -n citadelbuy \
 ```bash
 # Create read replica (Azure)
 az postgres flexible-server replica create \
-  --resource-group citadelbuy-prod-rg \
-  --name citadelbuy-db-replica-02 \
-  --source-server citadelbuy-db-primary
+  --resource-group broxiva-prod-rg \
+  --name broxiva-db-replica-02 \
+  --source-server broxiva-db-primary
 
 # Update application
-kubectl set env deployment/citadelbuy-api -n citadelbuy \
-  DATABASE_READ_REPLICA_URL="postgresql://replica02.postgres.database.azure.com/citadelbuy"
+kubectl set env deployment/broxiva-api -n broxiva \
+  DATABASE_READ_REPLICA_URL="postgresql://replica02.postgres.database.azure.com/broxiva"
 ```
 
 ### Connection Pooling
@@ -79,10 +79,10 @@ kubectl set env deployment/citadelbuy-api -n citadelbuy \
 **PgBouncer Scaling**:
 ```bash
 # Increase connection pool
-kubectl scale deployment/pgbouncer -n citadelbuy --replicas=3
+kubectl scale deployment/pgbouncer -n broxiva --replicas=3
 
 # Update pool size
-kubectl patch configmap pgbouncer-config -n citadelbuy \
+kubectl patch configmap pgbouncer-config -n broxiva \
   -p '{"data":{"default_pool_size":"50"}}'
 ```
 
@@ -95,11 +95,11 @@ kubectl patch configmap pgbouncer-config -n citadelbuy \
 kubectl apply -f infrastructure/kubernetes/redis-cluster.yaml
 
 # Verify cluster
-kubectl exec -it redis-cluster-0 -n citadelbuy -- \
+kubectl exec -it redis-cluster-0 -n broxiva -- \
   redis-cli --cluster check redis-cluster-0:6379
 
 # Update app configuration
-kubectl set env deployment/citadelbuy-api -n citadelbuy \
+kubectl set env deployment/broxiva-api -n broxiva \
   REDIS_CLUSTER_ENABLED=true
 ```
 
@@ -107,13 +107,13 @@ kubectl set env deployment/citadelbuy-api -n citadelbuy \
 
 ```bash
 # Monitor pod metrics
-watch kubectl top pods -n citadelbuy
+watch kubectl top pods -n broxiva
 
 # Check HPA status
-kubectl get hpa -n citadelbuy -w
+kubectl get hpa -n broxiva -w
 
 # View scaling events
-kubectl get events -n citadelbuy --sort-by='.lastTimestamp'
+kubectl get events -n broxiva --sort-by='.lastTimestamp'
 ```
 
 ---

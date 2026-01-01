@@ -1,4 +1,4 @@
-# CitadelBuy Troubleshooting Guide
+# Broxiva Troubleshooting Guide
 
 **Version:** 1.0.0
 **Last Updated:** 2025-12-03
@@ -32,42 +32,42 @@ Error: P1001: Can't reach database server at `postgres:5432`
 **Diagnosis:**
 ```bash
 # Check if PostgreSQL pod is running
-kubectl get pods -n citadelbuy -l app=postgres
+kubectl get pods -n broxiva -l app=postgres
 
 # Check PostgreSQL logs
-kubectl logs -n citadelbuy -l app=postgres --tail=50
+kubectl logs -n broxiva -l app=postgres --tail=50
 
 # Test database connectivity
 kubectl run psql-test --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres.citadelbuy.svc.cluster.local -U citadelbuy -d citadelbuy_production -c "SELECT 1;"
+  -- psql -h postgres.broxiva.svc.cluster.local -U broxiva -d broxiva_production -c "SELECT 1;"
 ```
 
 **Solutions:**
 
 1. **Database pod not running:**
    ```bash
-   kubectl describe pod postgres-0 -n citadelbuy
-   kubectl rollout restart statefulset/postgres -n citadelbuy
+   kubectl describe pod postgres-0 -n broxiva
+   kubectl rollout restart statefulset/postgres -n broxiva
    ```
 
 2. **Network connectivity issue:**
    ```bash
    # Verify service exists
-   kubectl get service postgres -n citadelbuy
+   kubectl get service postgres -n broxiva
 
    # Check endpoints
-   kubectl get endpoints postgres -n citadelbuy
+   kubectl get endpoints postgres -n broxiva
    ```
 
 3. **Wrong credentials:**
    ```bash
    # Verify secret
-   kubectl get secret citadelbuy-secrets -n citadelbuy -o jsonpath='{.data.DATABASE_URL}' | base64 -d
+   kubectl get secret broxiva-secrets -n broxiva -o jsonpath='{.data.DATABASE_URL}' | base64 -d
 
    # Update if needed
-   kubectl create secret generic citadelbuy-secrets \
+   kubectl create secret generic broxiva-secrets \
      --from-literal=DATABASE_URL="postgresql://user:pass@postgres:5432/db" \
      --dry-run=client -o yaml | kubectl apply -f -
    ```
@@ -84,43 +84,43 @@ Error: connect ECONNREFUSED 127.0.0.1:6379
 **Diagnosis:**
 ```bash
 # Check Redis pod
-kubectl get pods -n citadelbuy -l app=redis
+kubectl get pods -n broxiva -l app=redis
 
 # Test Redis connection
 kubectl run redis-test --rm -it --restart=Never \
   --image=redis:7-alpine \
-  -- redis-cli -h redis.citadelbuy.svc.cluster.local PING
+  -- redis-cli -h redis.broxiva.svc.cluster.local PING
 
 # Check logs
-kubectl logs -n citadelbuy -l app=redis --tail=100
+kubectl logs -n broxiva -l app=redis --tail=100
 ```
 
 **Solutions:**
 
 1. **Redis not running:**
    ```bash
-   kubectl rollout restart deployment/redis -n citadelbuy
+   kubectl rollout restart deployment/redis -n broxiva
    ```
 
 2. **Wrong Redis URL:**
    ```bash
    # Check environment variable
-   kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- env | grep REDIS
+   kubectl exec -it deployment/broxiva-api -n broxiva -- env | grep REDIS
 
    # Update if needed
-   kubectl set env deployment/citadelbuy-api \
-     REDIS_URL=redis://redis.citadelbuy.svc.cluster.local:6379 \
-     -n citadelbuy
+   kubectl set env deployment/broxiva-api \
+     REDIS_URL=redis://redis.broxiva.svc.cluster.local:6379 \
+     -n broxiva
    ```
 
 3. **Redis out of memory:**
    ```bash
    # Check memory usage
-   kubectl exec -it deployment/redis -n citadelbuy -- \
+   kubectl exec -it deployment/redis -n broxiva -- \
      redis-cli INFO memory
 
    # Clear cache if needed
-   kubectl exec -it deployment/redis -n citadelbuy -- \
+   kubectl exec -it deployment/redis -n broxiva -- \
      redis-cli FLUSHDB
    ```
 
@@ -138,20 +138,20 @@ Exit Code: 137
 **Diagnosis:**
 ```bash
 # Check pod events
-kubectl describe pod <pod-name> -n citadelbuy
+kubectl describe pod <pod-name> -n broxiva
 
 # Check memory usage
-kubectl top pod <pod-name> -n citadelbuy
+kubectl top pod <pod-name> -n broxiva
 
 # Check memory limits
-kubectl get pod <pod-name> -n citadelbuy -o jsonpath='{.spec.containers[0].resources}'
+kubectl get pod <pod-name> -n broxiva -o jsonpath='{.spec.containers[0].resources}'
 ```
 
 **Solutions:**
 
 1. **Increase memory limits:**
    ```bash
-   kubectl set resources deployment/citadelbuy-api -n citadelbuy \
+   kubectl set resources deployment/broxiva-api -n broxiva \
      --limits=memory=1Gi \
      --requests=memory=512Mi
    ```
@@ -159,11 +159,11 @@ kubectl get pod <pod-name> -n citadelbuy -o jsonpath='{.spec.containers[0].resou
 2. **Find memory leak:**
    ```bash
    # Enable heap profiling
-   kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+   kubectl exec -it deployment/broxiva-api -n broxiva -- \
      node --inspect=0.0.0.0:9229 dist/main.js
 
    # Connect with Chrome DevTools
-   kubectl port-forward deployment/citadelbuy-api 9229:9229 -n citadelbuy
+   kubectl port-forward deployment/broxiva-api 9229:9229 -n broxiva
    # Open chrome://inspect in Chrome
    ```
 
@@ -188,29 +188,29 @@ kubectl get pod <pod-name> -n citadelbuy -o jsonpath='{.spec.containers[0].resou
 **Diagnosis:**
 ```bash
 # Check rate limiting configuration
-kubectl get configmap citadelbuy-config -n citadelbuy -o yaml | grep -i throttle
+kubectl get configmap broxiva-config -n broxiva -o yaml | grep -i throttle
 
 # Check logs for throttled requests
-kubectl logs -n citadelbuy -l app=citadelbuy-api | grep -i "429\|throttle"
+kubectl logs -n broxiva -l app=broxiva-api | grep -i "429\|throttle"
 ```
 
 **Solutions:**
 
 1. **Legitimate traffic spike - increase limits:**
    ```bash
-   kubectl set env deployment/citadelbuy-api \
+   kubectl set env deployment/broxiva-api \
      THROTTLE_TTL=60 \
      THROTTLE_LIMIT=100 \
-     -n citadelbuy
+     -n broxiva
    ```
 
 2. **Identify source of requests:**
    ```bash
    # Check access logs
-   kubectl logs -n citadelbuy -l app=nginx | grep " 429 "
+   kubectl logs -n broxiva -l app=nginx | grep " 429 "
 
    # Block IP if malicious
-   kubectl exec -it deployment/nginx -n citadelbuy -- \
+   kubectl exec -it deployment/nginx -n broxiva -- \
      nginx -s reload
    ```
 
@@ -232,7 +232,7 @@ Error: Request entity too large
 **Diagnosis:**
 ```bash
 # Check NGINX configuration
-kubectl exec -it deployment/nginx -n citadelbuy -- \
+kubectl exec -it deployment/nginx -n broxiva -- \
   cat /etc/nginx/nginx.conf | grep client_max_body_size
 ```
 
@@ -241,9 +241,9 @@ kubectl exec -it deployment/nginx -n citadelbuy -- \
 1. **Increase NGINX limit:**
    ```bash
    # Update ingress annotation
-   kubectl annotate ingress citadelbuy-ingress \
+   kubectl annotate ingress broxiva-ingress \
      nginx.ingress.kubernetes.io/proxy-body-size=50m \
-     -n citadelbuy
+     -n broxiva
    ```
 
 2. **Increase NestJS limit:**
@@ -271,15 +271,15 @@ cd apps/api
 npx prisma generate
 
 # Or in pod
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+kubectl exec -it deployment/broxiva-api -n broxiva -- \
   npx prisma generate
 
 # Rebuild Docker image
-docker build -t citadelplatforms/citadelbuy-ecommerce:backend-latest .
-docker push citadelplatforms/citadelbuy-ecommerce:backend-latest
+docker build -t broxivaplatforms/broxiva-ecommerce:backend-latest .
+docker push broxivaplatforms/broxiva-ecommerce:backend-latest
 
 # Restart deployment
-kubectl rollout restart deployment/citadelbuy-api -n citadelbuy
+kubectl rollout restart deployment/broxiva-api -n broxiva
 ```
 
 ---
@@ -291,68 +291,68 @@ kubectl rollout restart deployment/citadelbuy-api -n citadelbuy
 **View real-time API logs:**
 ```bash
 # All API pods
-kubectl logs -n citadelbuy -l app=citadelbuy-api -f --tail=100
+kubectl logs -n broxiva -l app=broxiva-api -f --tail=100
 
 # Specific pod
-kubectl logs -n citadelbuy <pod-name> -f
+kubectl logs -n broxiva <pod-name> -f
 
 # Previous container logs (if pod restarted)
-kubectl logs -n citadelbuy <pod-name> --previous
+kubectl logs -n broxiva <pod-name> --previous
 ```
 
 **Filter logs by severity:**
 ```bash
 # Errors only
-kubectl logs -n citadelbuy -l app=citadelbuy-api | grep -i error
+kubectl logs -n broxiva -l app=broxiva-api | grep -i error
 
 # Warnings
-kubectl logs -n citadelbuy -l app=citadelbuy-api | grep -i warn
+kubectl logs -n broxiva -l app=broxiva-api | grep -i warn
 
 # With timestamps
-kubectl logs -n citadelbuy -l app=citadelbuy-api --timestamps
+kubectl logs -n broxiva -l app=broxiva-api --timestamps
 ```
 
 **Search for specific patterns:**
 ```bash
 # Payment errors
-kubectl logs -n citadelbuy -l app=citadelbuy-api | grep -i "stripe\|payment"
+kubectl logs -n broxiva -l app=broxiva-api | grep -i "stripe\|payment"
 
 # Database errors
-kubectl logs -n citadelbuy -l app=citadelbuy-api | grep -i "prisma\|database\|postgresql"
+kubectl logs -n broxiva -l app=broxiva-api | grep -i "prisma\|database\|postgresql"
 
 # Authentication errors
-kubectl logs -n citadelbuy -l app=citadelbuy-api | grep -i "auth\|jwt\|login"
+kubectl logs -n broxiva -l app=broxiva-api | grep -i "auth\|jwt\|login"
 ```
 
 ### Database Logs
 
 ```bash
 # PostgreSQL logs
-kubectl logs -n citadelbuy -l app=postgres --tail=200
+kubectl logs -n broxiva -l app=postgres --tail=200
 
 # Check for slow queries
-kubectl logs -n citadelbuy -l app=postgres | grep "duration:"
+kubectl logs -n broxiva -l app=postgres | grep "duration:"
 
 # Connection errors
-kubectl logs -n citadelbuy -l app=postgres | grep -i "connection\|fatal"
+kubectl logs -n broxiva -l app=postgres | grep -i "connection\|fatal"
 ```
 
 ### NGINX Access Logs
 
 ```bash
 # Access logs
-kubectl logs -n citadelbuy -l app=nginx -f
+kubectl logs -n broxiva -l app=nginx -f
 
 # Filter by status code
-kubectl logs -n citadelbuy -l app=nginx | grep " 500 "
-kubectl logs -n citadelbuy -l app=nginx | grep " 404 "
+kubectl logs -n broxiva -l app=nginx | grep " 500 "
+kubectl logs -n broxiva -l app=nginx | grep " 404 "
 
 # Top IP addresses
-kubectl logs -n citadelbuy -l app=nginx | \
+kubectl logs -n broxiva -l app=nginx | \
   awk '{print $1}' | sort | uniq -c | sort -rn | head -20
 
 # Requests per minute
-kubectl logs -n citadelbuy -l app=nginx | \
+kubectl logs -n broxiva -l app=nginx | \
   awk '{print $4}' | cut -d: -f2 | sort | uniq -c
 ```
 
@@ -360,22 +360,22 @@ kubectl logs -n citadelbuy -l app=nginx | \
 
 ```bash
 # Redis logs
-kubectl logs -n citadelbuy -l app=redis --tail=100
+kubectl logs -n broxiva -l app=redis --tail=100
 
 # Check for memory warnings
-kubectl logs -n citadelbuy -l app=redis | grep -i "memory\|oom"
+kubectl logs -n broxiva -l app=redis | grep -i "memory\|oom"
 ```
 
 ### Log Aggregation (if using ELK/Loki)
 
 ```bash
 # Query logs in Kibana
-# Navigate to: https://kibana.citadelbuy.com
+# Navigate to: https://kibana.broxiva.com
 
 # Loki query examples
-{namespace="citadelbuy",app="citadelbuy-api"} |= "error"
-{namespace="citadelbuy",app="citadelbuy-api"} |= "timeout"
-{namespace="citadelbuy"} | json | level="error"
+{namespace="broxiva",app="broxiva-api"} |= "error"
+{namespace="broxiva",app="broxiva-api"} |= "timeout"
+{namespace="broxiva"} | json | level="error"
 ```
 
 ---
@@ -395,15 +395,15 @@ kubectl logs -n citadelbuy -l app=redis | grep -i "memory\|oom"
 
 ```bash
 # Basic health check
-curl -f https://api.citadelbuy.com/api/health
+curl -f https://api.broxiva.com/api/health
 
 # Detailed health (includes timing)
-curl https://api.citadelbuy.com/api/health/detailed | jq '.'
+curl https://api.broxiva.com/api/health/detailed | jq '.'
 
 # From within cluster
 kubectl run curl-test --rm -it --restart=Never \
   --image=curlimages/curl:latest -- \
-  curl http://citadelbuy-api.citadelbuy.svc.cluster.local/api/health
+  curl http://broxiva-api.broxiva.svc.cluster.local/api/health
 ```
 
 ### Interpreting Health Check Results
@@ -494,7 +494,7 @@ kubectl run curl-test --rm -it --restart=Never \
 kubectl run psql-client --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres.citadelbuy.svc.cluster.local -U citadelbuy -d citadelbuy_production << 'EOF'
+  -- psql -h postgres.broxiva.svc.cluster.local -U broxiva -d broxiva_production << 'EOF'
 SELECT
   query,
   calls,
@@ -516,7 +516,7 @@ ALTER SYSTEM SET log_min_duration_statement = 100;
 SELECT pg_reload_conf();
 
 -- View logs
--- kubectl logs -n citadelbuy -l app=postgres | grep "duration:"
+-- kubectl logs -n broxiva -l app=postgres | grep "duration:"
 ```
 
 **Analyze query plan:**
@@ -532,7 +532,7 @@ SELECT * FROM "Product" WHERE category_id = 'electronics' ORDER BY price DESC LI
 kubectl run psql-client --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres -U citadelbuy -d citadelbuy_production -c \
+  -- psql -h postgres -U broxiva -d broxiva_production -c \
   "SELECT count(*), state FROM pg_stat_activity GROUP BY state;"
 ```
 
@@ -625,7 +625,7 @@ LIMIT 20;
 VACUUM ANALYZE;
 
 -- Reindex if needed
-REINDEX DATABASE citadelbuy_production;
+REINDEX DATABASE broxiva_production;
 ```
 
 ---
@@ -642,14 +642,14 @@ REINDEX DATABASE citadelbuy_production;
 **Diagnosis:**
 ```bash
 # Check Stripe webhook logs
-kubectl logs -n citadelbuy -l app=citadelbuy-api | grep -i stripe
+kubectl logs -n broxiva -l app=broxiva-api | grep -i stripe
 
 # Check Stripe dashboard
 # https://dashboard.stripe.com/webhooks
 # Look for failed webhook deliveries
 
 # Test webhook endpoint
-curl -X POST https://api.citadelbuy.com/api/webhooks/stripe \
+curl -X POST https://api.broxiva.com/api/webhooks/stripe \
   -H "Content-Type: application/json" \
   -H "stripe-signature: test" \
   -d '{"type":"test.event"}'
@@ -660,19 +660,19 @@ curl -X POST https://api.citadelbuy.com/api/webhooks/stripe \
 1. **Verify webhook signature:**
    ```bash
    # Check webhook secret
-   kubectl get secret citadelbuy-secrets -n citadelbuy \
+   kubectl get secret broxiva-secrets -n broxiva \
      -o jsonpath='{.data.STRIPE_WEBHOOK_SECRET}' | base64 -d
    ```
 
 2. **Re-register webhook:**
    ```bash
    # Using Stripe CLI
-   stripe listen --forward-to https://api.citadelbuy.com/api/webhooks/stripe
+   stripe listen --forward-to https://api.broxiva.com/api/webhooks/stripe
    ```
 
 3. **Process failed webhooks manually:**
    ```bash
-   kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+   kubectl exec -it deployment/broxiva-api -n broxiva -- \
      npm run stripe:process-failed-webhooks
    ```
 
@@ -692,11 +692,11 @@ curl -X POST https://api.citadelbuy.com/api/webhooks/stripe \
 3. **"API key invalid"**
    ```bash
    # Verify API key
-   kubectl get secret citadelbuy-secrets -n citadelbuy \
+   kubectl get secret broxiva-secrets -n broxiva \
      -o jsonpath='{.data.STRIPE_SECRET_KEY}' | base64 -d
 
    # Update if needed
-   kubectl create secret generic citadelbuy-secrets \
+   kubectl create secret generic broxiva-secrets \
      --from-literal=STRIPE_SECRET_KEY="sk_live_..." \
      --dry-run=client -o yaml | kubectl apply -f -
    ```
@@ -724,17 +724,17 @@ curl https://api.stripe.com/v1/refunds \
 **Diagnosis:**
 ```bash
 # Check current response times
-kubectl logs -n citadelbuy -l app=citadelbuy-api | \
+kubectl logs -n broxiva -l app=broxiva-api | \
   grep "duration" | awk '{print $NF}' | sort -n | tail -20
 
 # Check resource usage
-kubectl top pods -n citadelbuy
+kubectl top pods -n broxiva
 
 # Check database performance
 kubectl run psql-client --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres -U citadelbuy -d citadelbuy_production -c \
+  -- psql -h postgres -U broxiva -d broxiva_production -c \
   "SELECT query, mean_exec_time FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;"
 ```
 
@@ -742,7 +742,7 @@ kubectl run psql-client --rm -it --restart=Never \
 
 1. **Scale up pods:**
    ```bash
-   kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=10
+   kubectl scale deployment/broxiva-api -n broxiva --replicas=10
    ```
 
 2. **Add database indexes:**
@@ -768,14 +768,14 @@ kubectl run psql-client --rm -it --restart=Never \
 **Identify memory leak:**
 ```bash
 # Monitor memory usage over time
-watch kubectl top pods -n citadelbuy -l app=citadelbuy-api
+watch kubectl top pods -n broxiva -l app=broxiva-api
 
 # Enable heap profiling
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+kubectl exec -it deployment/broxiva-api -n broxiva -- \
   node --inspect=0.0.0.0:9229 --heap-prof dist/main.js
 
 # Port forward and connect with Chrome DevTools
-kubectl port-forward deployment/citadelbuy-api 9229:9229 -n citadelbuy
+kubectl port-forward deployment/broxiva-api 9229:9229 -n broxiva
 ```
 
 **Common causes:**
@@ -826,7 +826,7 @@ try {
 echo "eyJhbGc..." | cut -d. -f2 | base64 -d | jq '.'
 
 # Check JWT secret
-kubectl get secret citadelbuy-secrets -n citadelbuy \
+kubectl get secret broxiva-secrets -n broxiva \
   -o jsonpath='{.data.JWT_SECRET}' | base64 -d
 ```
 
@@ -842,11 +842,11 @@ kubectl get secret citadelbuy-secrets -n citadelbuy \
 **Check configuration:**
 ```bash
 # Verify Google OAuth credentials
-kubectl get secret citadelbuy-secrets -n citadelbuy \
+kubectl get secret broxiva-secrets -n broxiva \
   -o jsonpath='{.data.GOOGLE_CLIENT_ID}' | base64 -d
 
 # Check redirect URI
-# Must match: https://api.citadelbuy.com/api/auth/google/callback
+# Must match: https://api.broxiva.com/api/auth/google/callback
 ```
 
 **Common issues:**
@@ -862,11 +862,11 @@ kubectl get secret citadelbuy-secrets -n citadelbuy \
 kubectl run psql-client --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres -U citadelbuy -d citadelbuy_production -c \
+  -- psql -h postgres -U broxiva -d broxiva_production -c \
   "SELECT * FROM \"PasswordReset\" WHERE email = 'user@example.com' ORDER BY created_at DESC LIMIT 1;"
 
 # Check if email was sent
-kubectl logs -n citadelbuy -l app=citadelbuy-api | grep -i "password reset"
+kubectl logs -n broxiva -l app=broxiva-api | grep -i "password reset"
 ```
 
 ---
@@ -877,7 +877,7 @@ kubectl logs -n citadelbuy -l app=citadelbuy-api | grep -i "password reset"
 
 **Check cache statistics:**
 ```bash
-kubectl exec -it deployment/redis -n citadelbuy -- \
+kubectl exec -it deployment/redis -n broxiva -- \
   redis-cli INFO stats | grep -E "keyspace_hits|keyspace_misses"
 ```
 
@@ -897,7 +897,7 @@ kubectl exec -it deployment/redis -n citadelbuy -- \
 
 **Check memory usage:**
 ```bash
-kubectl exec -it deployment/redis -n citadelbuy -- \
+kubectl exec -it deployment/redis -n broxiva -- \
   redis-cli INFO memory
 ```
 
@@ -905,19 +905,19 @@ kubectl exec -it deployment/redis -n citadelbuy -- \
 
 1. **Increase memory limit:**
    ```bash
-   kubectl set resources deployment/redis -n citadelbuy \
+   kubectl set resources deployment/redis -n broxiva \
      --limits=memory=4Gi
    ```
 
 2. **Set eviction policy:**
    ```bash
-   kubectl exec -it deployment/redis -n citadelbuy -- \
+   kubectl exec -it deployment/redis -n broxiva -- \
      redis-cli CONFIG SET maxmemory-policy allkeys-lru
    ```
 
 3. **Clear old data:**
    ```bash
-   kubectl exec -it deployment/redis -n citadelbuy -- \
+   kubectl exec -it deployment/redis -n broxiva -- \
      redis-cli --scan --pattern "cache:old:*" | xargs redis-cli DEL
    ```
 
@@ -929,15 +929,15 @@ kubectl exec -it deployment/redis -n citadelbuy -- \
 
 **Check Elasticsearch health:**
 ```bash
-curl https://elasticsearch.citadelbuy.com/_cluster/health | jq '.'
+curl https://elasticsearch.broxiva.com/_cluster/health | jq '.'
 
 # Check indices
-curl https://elasticsearch.citadelbuy.com/_cat/indices?v
+curl https://elasticsearch.broxiva.com/_cat/indices?v
 ```
 
 **Reindex products:**
 ```bash
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+kubectl exec -it deployment/broxiva-api -n broxiva -- \
   npm run search:reindex
 ```
 
@@ -945,15 +945,15 @@ kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
 
 **Check nodes:**
 ```bash
-curl https://elasticsearch.citadelbuy.com/_cat/nodes?v
+curl https://elasticsearch.broxiva.com/_cat/nodes?v
 
 # Check node health
-curl https://elasticsearch.citadelbuy.com/_nodes/stats | jq '.nodes'
+curl https://elasticsearch.broxiva.com/_nodes/stats | jq '.nodes'
 ```
 
 **Restart Elasticsearch:**
 ```bash
-kubectl rollout restart statefulset/elasticsearch -n citadelbuy
+kubectl rollout restart statefulset/elasticsearch -n broxiva
 ```
 
 ---
@@ -964,7 +964,7 @@ kubectl rollout restart statefulset/elasticsearch -n citadelbuy
 
 **Check queue:**
 ```bash
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+kubectl exec -it deployment/broxiva-api -n broxiva -- \
   npm run queue:email:status
 ```
 
@@ -975,13 +975,13 @@ curl https://status.sendgrid.com/api/v2/status.json
 
 **Verify API key:**
 ```bash
-kubectl get secret citadelbuy-secrets -n citadelbuy \
+kubectl get secret broxiva-secrets -n broxiva \
   -o jsonpath='{.data.SENDGRID_API_KEY}' | base64 -d
 ```
 
 **Retry failed emails:**
 ```bash
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+kubectl exec -it deployment/broxiva-api -n broxiva -- \
   npm run queue:email:retry
 ```
 
@@ -998,8 +998,8 @@ kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
 // apps/api/src/main.ts
 app.enableCors({
   origin: [
-    'https://citadelbuy.com',
-    'https://www.citadelbuy.com',
+    'https://broxiva.com',
+    'https://www.broxiva.com',
     'http://localhost:3000',
   ],
   credentials: true,
@@ -1010,10 +1010,10 @@ app.enableCors({
 
 **Check certificate:**
 ```bash
-kubectl get certificate -n citadelbuy
+kubectl get certificate -n broxiva
 
 # Describe certificate
-kubectl describe certificate citadelbuy-tls -n citadelbuy
+kubectl describe certificate broxiva-tls -n broxiva
 
 # Check cert-manager logs
 kubectl logs -n cert-manager -l app=cert-manager
@@ -1021,7 +1021,7 @@ kubectl logs -n cert-manager -l app=cert-manager
 
 **Renew certificate:**
 ```bash
-kubectl delete certificate citadelbuy-tls -n citadelbuy
+kubectl delete certificate broxiva-tls -n broxiva
 kubectl apply -f infrastructure/kubernetes/base/certificates.yaml
 ```
 
@@ -1033,25 +1033,25 @@ kubectl apply -f infrastructure/kubernetes/base/certificates.yaml
 #!/bin/bash
 # quick-diagnostic.sh
 
-echo "=== CitadelBuy Health Check ==="
+echo "=== Broxiva Health Check ==="
 
 echo -e "\n1. Pod Status:"
-kubectl get pods -n citadelbuy
+kubectl get pods -n broxiva
 
 echo -e "\n2. Health Endpoints:"
-curl -f https://api.citadelbuy.com/api/health || echo "FAIL"
+curl -f https://api.broxiva.com/api/health || echo "FAIL"
 
 echo -e "\n3. Recent Errors:"
-kubectl logs -n citadelbuy -l app=citadelbuy-api --tail=50 | grep -i error | tail -10
+kubectl logs -n broxiva -l app=broxiva-api --tail=50 | grep -i error | tail -10
 
 echo -e "\n4. Resource Usage:"
-kubectl top pods -n citadelbuy
+kubectl top pods -n broxiva
 
 echo -e "\n5. Database Connections:"
 kubectl run psql-client --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres -U citadelbuy -d citadelbuy_production \
+  -- psql -h postgres -U broxiva -d broxiva_production \
   -c "SELECT count(*) FROM pg_stat_activity;"
 
 echo -e "\n6. Redis Status:"

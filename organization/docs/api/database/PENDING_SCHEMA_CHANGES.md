@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-This document outlines all pending database migrations that need to be applied to the CitadelBuy production database. The migrations introduce significant new features while maintaining backward compatibility.
+This document outlines all pending database migrations that need to be applied to the Broxiva production database. The migrations introduce significant new features while maintaining backward compatibility.
 
 ### Key Highlights
 
@@ -395,7 +395,7 @@ KYC_ENCRYPTION_KEY=<32-byte hex key>
 
 # Storage for KYC documents (required if using KYC)
 STORAGE_PROVIDER=S3|AZURE|LOCAL
-STORAGE_BUCKET=citadelbuy-kyc-documents
+STORAGE_BUCKET=broxiva-kyc-documents
 ```
 
 ### Feature Flags
@@ -465,7 +465,7 @@ The migration script automatically creates backups:
 
 ### Manual Backup
 ```bash
-pg_dump -h localhost -p 5432 -U citadelbuy citadelbuy_prod \
+pg_dump -h localhost -p 5432 -U broxiva broxiva_prod \
   --format=custom \
   --compress=9 \
   --file=backup_pre_migration_$(date +%Y%m%d_%H%M%S).sql

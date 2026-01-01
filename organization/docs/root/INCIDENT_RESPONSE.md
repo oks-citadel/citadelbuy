@@ -1,4 +1,4 @@
-# CitadelBuy Incident Response Guide
+# Broxiva Incident Response Guide
 
 **Version:** 1.0.0
 **Last Updated:** 2025-12-03
@@ -167,28 +167,28 @@ On-Call Engineer:
 
 Platform Lead:
   Name: [Platform Lead Name]
-  Email: platform-lead@citadelbuy.com
+  Email: platform-lead@broxiva.com
   Phone: +1-XXX-XXX-XXXX
   Slack: @platform-lead
 
 Engineering Manager:
   Name: [Engineering Manager Name]
-  Email: engineering-manager@citadelbuy.com
+  Email: engineering-manager@broxiva.com
   Phone: +1-XXX-XXX-XXXX
   Slack: @eng-manager
 
 CTO:
   Name: [CTO Name]
-  Email: cto@citadelbuy.com
+  Email: cto@broxiva.com
   Phone: +1-XXX-XXX-XXXX
   Slack: @cto
 
 Security Team:
-  Email: security@citadelbuy.com
+  Email: security@broxiva.com
   Slack: #security-incidents
 
 DevOps Team:
-  Email: devops@citadelbuy.com
+  Email: devops@broxiva.com
   Slack: #devops-incidents
 ```
 
@@ -223,22 +223,22 @@ DevOps Team:
 1. **Gather Information**
    ```bash
    # Check application health
-   curl https://api.citadelbuy.com/api/health/detailed
+   curl https://api.broxiva.com/api/health/detailed
 
    # Check pod status
-   kubectl get pods -n citadelbuy
+   kubectl get pods -n broxiva
 
    # Check recent deployments
-   kubectl rollout history deployment/citadelbuy-api -n citadelbuy
+   kubectl rollout history deployment/broxiva-api -n broxiva
 
    # Check logs
-   kubectl logs -n citadelbuy -l app=citadelbuy-api --tail=200 --timestamps
+   kubectl logs -n broxiva -l app=broxiva-api --tail=200 --timestamps
 
    # Check Grafana dashboards
-   # Open: https://grafana.citadelbuy.com/d/main-dashboard
+   # Open: https://grafana.broxiva.com/d/main-dashboard
 
    # Check error tracking
-   # Open: https://sentry.io/citadelbuy
+   # Open: https://sentry.io/broxiva
    ```
 
 2. **Hypothesis Formation**
@@ -266,13 +266,13 @@ DevOps Team:
 2. **Implement Fix**
    ```bash
    # Example: Quick rollback
-   kubectl rollout undo deployment/citadelbuy-api -n citadelbuy
+   kubectl rollout undo deployment/broxiva-api -n broxiva
 
    # Example: Scale up resources
-   kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=10
+   kubectl scale deployment/broxiva-api -n broxiva --replicas=10
 
    # Example: Disable feature via feature flag
-   kubectl set env deployment/citadelbuy-api FEATURE_X_ENABLED=false -n citadelbuy
+   kubectl set env deployment/broxiva-api FEATURE_X_ENABLED=false -n broxiva
    ```
 
 3. **Verify Fix**
@@ -338,9 +338,9 @@ See [Post-Incident Review Process](#post-incident-review-process)
 ### Customer Status Update (P1/P2)
 
 ```markdown
-Subject: [URGENT] Service Issue - CitadelBuy Platform
+Subject: [URGENT] Service Issue - Broxiva Platform
 
-Dear CitadelBuy Users,
+Dear Broxiva Users,
 
 We are currently experiencing [brief description of issue]. Our team is actively working to resolve this issue.
 
@@ -349,20 +349,20 @@ We are currently experiencing [brief description of issue]. Our team is actively
 **Started:** [Timestamp]
 **Estimated Resolution:** [Best estimate or "Investigating"]
 
-We will provide updates every [frequency]. You can check our status page at status.citadelbuy.com for real-time updates.
+We will provide updates every [frequency]. You can check our status page at status.broxiva.com for real-time updates.
 
 We apologize for any inconvenience this may cause.
 
 Best regards,
-CitadelBuy Engineering Team
+Broxiva Engineering Team
 ```
 
 ### Customer Resolution Notice
 
 ```markdown
-Subject: Resolved - CitadelBuy Service Issue
+Subject: Resolved - Broxiva Service Issue
 
-Dear CitadelBuy Users,
+Dear Broxiva Users,
 
 The service issue we experienced earlier has been resolved. All systems are now operating normally.
 
@@ -371,12 +371,12 @@ The service issue we experienced earlier has been resolved. All systems are now 
 **Impact:** [What was affected]
 **Resolution:** [How we fixed it]
 
-If you continue to experience any issues, please contact our support team at support@citadelbuy.com.
+If you continue to experience any issues, please contact our support team at support@broxiva.com.
 
 We apologize for the inconvenience and thank you for your patience.
 
 Best regards,
-CitadelBuy Engineering Team
+Broxiva Engineering Team
 ```
 
 ### Internal Post-Mortem Invitation
@@ -428,16 +428,16 @@ Looking forward to a constructive discussion focused on learning and improvement
 **Diagnosis:**
 ```bash
 # Check pod resource usage
-kubectl top pods -n citadelbuy
+kubectl top pods -n broxiva
 
 # Check database connections
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- npx prisma studio
+kubectl exec -it deployment/broxiva-api -n broxiva -- npx prisma studio
 
 # Check slow queries
 kubectl run psql-client --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres -U citadelbuy -d citadelbuy_production \
+  -- psql -h postgres -U broxiva -d broxiva_production \
   -c "SELECT query, calls, mean_exec_time FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;"
 
 # Check Redis latency
@@ -449,13 +449,13 @@ kubectl run redis-test --rm -it --restart=Never \
 **Quick Fixes:**
 ```bash
 # Scale up API pods
-kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=10
+kubectl scale deployment/broxiva-api -n broxiva --replicas=10
 
 # Restart Redis (if cache issues)
-kubectl rollout restart deployment/redis -n citadelbuy
+kubectl rollout restart deployment/redis -n broxiva
 
 # Clear cache
-kubectl exec -it deployment/redis -n citadelbuy -- redis-cli FLUSHDB
+kubectl exec -it deployment/redis -n broxiva -- redis-cli FLUSHDB
 ```
 
 ---
@@ -473,14 +473,14 @@ kubectl exec -it deployment/redis -n citadelbuy -- redis-cli FLUSHDB
 kubectl run psql-client --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres -U citadelbuy -d citadelbuy_production \
+  -- psql -h postgres -U broxiva -d broxiva_production \
   -c "SELECT count(*) FROM pg_stat_activity;"
 
 # Check connection limits
 kubectl run psql-client --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres -U citadelbuy -d citadelbuy_production \
+  -- psql -h postgres -U broxiva -d broxiva_production \
   -c "SHOW max_connections;"
 ```
 
@@ -490,11 +490,11 @@ kubectl run psql-client --rm -it --restart=Never \
 kubectl run psql-client --rm -it --restart=Never \
   --image=postgres:16-alpine \
   --env="PGPASSWORD=${DB_PASSWORD}" \
-  -- psql -h postgres -U citadelbuy -d citadelbuy_production \
+  -- psql -h postgres -U broxiva -d broxiva_production \
   -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'idle' AND state_change < NOW() - INTERVAL '5 minutes';"
 
 # Increase connection pool size (temporary)
-kubectl set env deployment/citadelbuy-api DATABASE_POOL_SIZE=50 -n citadelbuy
+kubectl set env deployment/broxiva-api DATABASE_POOL_SIZE=50 -n broxiva
 ```
 
 ---
@@ -509,27 +509,27 @@ kubectl set env deployment/citadelbuy-api DATABASE_POOL_SIZE=50 -n citadelbuy
 **Diagnosis:**
 ```bash
 # Check Stripe webhook logs
-kubectl logs -n citadelbuy -l app=citadelbuy-api | grep -i stripe
+kubectl logs -n broxiva -l app=broxiva-api | grep -i stripe
 
 # Check Stripe dashboard
 # https://dashboard.stripe.com/webhooks
 
 # Test Stripe connectivity
-curl -X POST https://api.citadelbuy.com/api/checkout/test-stripe \
+curl -X POST https://api.broxiva.com/api/checkout/test-stripe \
   -H "Authorization: Bearer ${ADMIN_TOKEN}"
 ```
 
 **Quick Fixes:**
 ```bash
 # Verify Stripe keys are correct
-kubectl get secret citadelbuy-secrets -n citadelbuy -o jsonpath='{.data.STRIPE_SECRET_KEY}' | base64 -d
+kubectl get secret broxiva-secrets -n broxiva -o jsonpath='{.data.STRIPE_SECRET_KEY}' | base64 -d
 
 # Re-register webhooks
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+kubectl exec -it deployment/broxiva-api -n broxiva -- \
   npm run stripe:setup-webhooks
 
 # Fallback: Disable checkout temporarily
-kubectl set env deployment/citadelbuy-api CHECKOUT_ENABLED=false -n citadelbuy
+kubectl set env deployment/broxiva-api CHECKOUT_ENABLED=false -n broxiva
 ```
 
 ---
@@ -544,27 +544,27 @@ kubectl set env deployment/citadelbuy-api CHECKOUT_ENABLED=false -n citadelbuy
 **Diagnosis:**
 ```bash
 # Check email queue
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+kubectl exec -it deployment/broxiva-api -n broxiva -- \
   npm run queue:status
 
 # Check SendGrid status
 curl https://status.sendgrid.com/api/v2/status.json
 
 # Check logs for email errors
-kubectl logs -n citadelbuy -l app=citadelbuy-api | grep -i "email\|sendgrid"
+kubectl logs -n broxiva -l app=broxiva-api | grep -i "email\|sendgrid"
 ```
 
 **Quick Fixes:**
 ```bash
 # Restart queue workers
-kubectl rollout restart deployment/citadelbuy-worker -n citadelbuy
+kubectl rollout restart deployment/broxiva-worker -n broxiva
 
 # Clear stuck jobs
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+kubectl exec -it deployment/broxiva-api -n broxiva -- \
   npm run queue:clear-failed
 
 # Verify SendGrid API key
-kubectl get secret citadelbuy-secrets -n citadelbuy -o jsonpath='{.data.SENDGRID_API_KEY}' | base64 -d
+kubectl get secret broxiva-secrets -n broxiva -o jsonpath='{.data.SENDGRID_API_KEY}' | base64 -d
 ```
 
 ---
@@ -579,25 +579,25 @@ kubectl get secret citadelbuy-secrets -n citadelbuy -o jsonpath='{.data.SENDGRID
 **Diagnosis:**
 ```bash
 # Check pod memory usage
-kubectl top pods -n citadelbuy
+kubectl top pods -n broxiva
 
 # Check pod events
-kubectl get events -n citadelbuy --sort-by='.lastTimestamp' | grep OOM
+kubectl get events -n broxiva --sort-by='.lastTimestamp' | grep OOM
 
 # Check memory limits
-kubectl get pods -n citadelbuy -o jsonpath='{.items[*].spec.containers[*].resources.limits.memory}'
+kubectl get pods -n broxiva -o jsonpath='{.items[*].spec.containers[*].resources.limits.memory}'
 ```
 
 **Quick Fixes:**
 ```bash
 # Increase memory limits
-kubectl set resources deployment/citadelbuy-api \
-  -n citadelbuy \
+kubectl set resources deployment/broxiva-api \
+  -n broxiva \
   --limits=memory=1Gi \
   --requests=memory=512Mi
 
 # Restart pods to clear memory
-kubectl rollout restart deployment/citadelbuy-api -n citadelbuy
+kubectl rollout restart deployment/broxiva-api -n broxiva
 ```
 
 ---
@@ -612,7 +612,7 @@ kubectl rollout restart deployment/citadelbuy-api -n citadelbuy
 **Diagnosis:**
 ```bash
 # Check Redis pod
-kubectl get pods -n citadelbuy -l app=redis
+kubectl get pods -n broxiva -l app=redis
 
 # Test Redis connectivity
 kubectl run redis-test --rm -it --restart=Never \
@@ -620,19 +620,19 @@ kubectl run redis-test --rm -it --restart=Never \
   -- redis-cli -h redis PING
 
 # Check Redis memory
-kubectl exec -it deployment/redis -n citadelbuy -- redis-cli INFO memory
+kubectl exec -it deployment/redis -n broxiva -- redis-cli INFO memory
 ```
 
 **Quick Fixes:**
 ```bash
 # Restart Redis
-kubectl rollout restart deployment/redis -n citadelbuy
+kubectl rollout restart deployment/redis -n broxiva
 
 # Clear Redis cache
-kubectl exec -it deployment/redis -n citadelbuy -- redis-cli FLUSHALL
+kubectl exec -it deployment/redis -n broxiva -- redis-cli FLUSHALL
 
 # Check Redis configuration
-kubectl get configmap redis-config -n citadelbuy -o yaml
+kubectl get configmap redis-config -n broxiva -o yaml
 ```
 
 ---
@@ -647,27 +647,27 @@ kubectl get configmap redis-config -n citadelbuy -o yaml
 **Diagnosis:**
 ```bash
 # Check Elasticsearch health
-curl https://elasticsearch.citadelbuy.com/_cluster/health
+curl https://elasticsearch.broxiva.com/_cluster/health
 
 # Check indices
-curl https://elasticsearch.citadelbuy.com/_cat/indices
+curl https://elasticsearch.broxiva.com/_cat/indices
 
 # Check logs
-kubectl logs -n citadelbuy -l app=elasticsearch --tail=100
+kubectl logs -n broxiva -l app=elasticsearch --tail=100
 ```
 
 **Quick Fixes:**
 ```bash
 # Reindex products
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+kubectl exec -it deployment/broxiva-api -n broxiva -- \
   npm run search:reindex
 
 # Restart Elasticsearch
-kubectl rollout restart deployment/elasticsearch -n citadelbuy
+kubectl rollout restart deployment/elasticsearch -n broxiva
 
 # Clear and rebuild index
-curl -X DELETE https://elasticsearch.citadelbuy.com/products
-kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+curl -X DELETE https://elasticsearch.broxiva.com/products
+kubectl exec -it deployment/broxiva-api -n broxiva -- \
   npm run search:init
 ```
 
@@ -886,15 +886,15 @@ kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
 
 ### Monitoring & Alerting
 
-- **Grafana:** https://grafana.citadelbuy.com
-- **Prometheus:** https://prometheus.citadelbuy.com
-- **PagerDuty:** https://citadelbuy.pagerduty.com
-- **Status Page:** https://status.citadelbuy.com
+- **Grafana:** https://grafana.broxiva.com
+- **Prometheus:** https://prometheus.broxiva.com
+- **PagerDuty:** https://broxiva.pagerduty.com
+- **Status Page:** https://status.broxiva.com
 
 ### Logging & Debugging
 
-- **Kibana:** https://kibana.citadelbuy.com
-- **Sentry:** https://sentry.io/citadelbuy
+- **Kibana:** https://kibana.broxiva.com
+- **Sentry:** https://sentry.io/broxiva
 - **Kubernetes Logs:** `kubectl logs`
 
 ### External Services
@@ -921,22 +921,22 @@ kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
 
 ```bash
 # Check overall health
-kubectl get pods -n citadelbuy && curl https://api.citadelbuy.com/api/health
+kubectl get pods -n broxiva && curl https://api.broxiva.com/api/health
 
 # View logs
-kubectl logs -n citadelbuy -l app=citadelbuy-api --tail=100 --timestamps
+kubectl logs -n broxiva -l app=broxiva-api --tail=100 --timestamps
 
 # Restart deployment
-kubectl rollout restart deployment/citadelbuy-api -n citadelbuy
+kubectl rollout restart deployment/broxiva-api -n broxiva
 
 # Rollback deployment
-kubectl rollout undo deployment/citadelbuy-api -n citadelbuy
+kubectl rollout undo deployment/broxiva-api -n broxiva
 
 # Scale deployment
-kubectl scale deployment/citadelbuy-api -n citadelbuy --replicas=10
+kubectl scale deployment/broxiva-api -n broxiva --replicas=10
 
 # Port forward for debugging
-kubectl port-forward -n citadelbuy deployment/citadelbuy-api 4000:3000
+kubectl port-forward -n broxiva deployment/broxiva-api 4000:3000
 ```
 
 ---

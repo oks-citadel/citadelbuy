@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ################################################################################
-# CitadelBuy Migration Verification Script
+# Broxiva Migration Verification Script
 #
 # Purpose: Verify that all database migrations were applied successfully
 #          and check database integrity after migration
@@ -19,7 +19,7 @@
 #   1 - Verification failed
 #   2 - Critical issues found
 #
-# Author: CitadelBuy Platform Team
+# Author: Broxiva Platform Team
 # Version: 1.0.0
 ################################################################################
 
@@ -732,7 +732,7 @@ EOF
 }
 
 main() {
-    print_header "CitadelBuy Migration Verification"
+    print_header "Broxiva Migration Verification"
 
     # Test database connection
     test_database_connection || exit 2

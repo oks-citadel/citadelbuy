@@ -1,4 +1,4 @@
-# CitadelBuy Go-to-Market Strategy & Feature Roadmap
+# Broxiva Go-to-Market Strategy & Feature Roadmap
 
 ---
 
@@ -335,7 +335,7 @@ More Sales → Higher Revenue → More Vendors
 - Full product access
 - Basic customer service
 
-**CitadelBuy Prime ($9.99/month or $99/year)**
+**Broxiva Prime ($9.99/month or $99/year)**
 - Free shipping on orders >$25
 - Early access to deals (24 hours)
 - Exclusive products
@@ -386,7 +386,7 @@ More Sales → Higher Revenue → More Vendors
 
 | Platform | Fee | Payment Processing | Monthly Fee |
 |----------|-----|-------------------|-------------|
-| **CitadelBuy** | 8-12% | Included | $0-299 |
+| **Broxiva** | 8-12% | Included | $0-299 |
 | Amazon | 15% | Included | $39.99 |
 | eBay | 12.9% | 2.9% + $0.30 | $0 |
 | Etsy | 6.5% | 3% + $0.25 | $0 |

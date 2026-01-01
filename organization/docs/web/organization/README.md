@@ -1,6 +1,6 @@
 # Organization UI Components
 
-Enterprise-grade organization management components for the CitadelBuy admin/web apps.
+Enterprise-grade organization management components for the Broxiva admin/web apps.
 
 ## Components Overview
 

@@ -1,4 +1,4 @@
-# CitadelBuy Quick Start & Deployment Guide
+# Broxiva Quick Start & Deployment Guide
 ## From Zero to Production in 8 Weeks
 
 ---
@@ -75,12 +75,12 @@ az account show
 **Day 1-2: Azure Account Setup**
 ```bash
 # Create resource group for Terraform state
-az group create --name citadelbuy-tfstate-rg --location eastus
+az group create --name broxiva-tfstate-rg --location eastus
 
 # Create storage account for Terraform state
 az storage account create \
-  --name citadelbuytfstate \
-  --resource-group citadelbuy-tfstate-rg \
+  --name broxivatfstate \
+  --resource-group broxiva-tfstate-rg \
   --location eastus \
   --sku Standard_LRS \
   --encryption-services blob
@@ -88,14 +88,14 @@ az storage account create \
 # Create container for state files
 az storage container create \
   --name tfstate-dev \
-  --account-name citadelbuytfstate
+  --account-name broxivatfstate
 ```
 
 **Day 3-4: Deploy Base Infrastructure**
 ```bash
 # Clone repository
-git clone https://github.com/your-org/citadelbuy.git
-cd citadelbuy
+git clone https://github.com/your-org/broxiva.git
+cd broxiva
 
 # Navigate to dev environment
 cd infrastructure/terraform/environments/dev
@@ -154,7 +154,7 @@ npm run migrate:dev
 npm run seed:dev
 
 # Verify
-sqlcmd -S $SQL_SERVER -d $SQL_DB -U citadeladmin -P <password> \
+sqlcmd -S $SQL_SERVER -d $SQL_DB -U broxivaadmin -P <password> \
   -Q "SELECT COUNT(*) FROM Users"
 ```
 
@@ -314,7 +314,7 @@ npm audit
 npm audit fix
 
 # Scan Docker images
-docker scan citadelbuy/backend:latest
+docker scan broxiva/backend:latest
 
 # Check dependencies
 npm install -g snyk
@@ -364,12 +364,12 @@ kubectl get nodes
 kubectl apply -k k8s/overlays/production
 
 # Wait for rollout
-kubectl rollout status deployment/auth-service -n citadelbuy-prod
-kubectl rollout status deployment/product-service -n citadelbuy-prod
-kubectl rollout status deployment/order-service -n citadelbuy-prod
+kubectl rollout status deployment/auth-service -n broxiva-prod
+kubectl rollout status deployment/product-service -n broxiva-prod
+kubectl rollout status deployment/order-service -n broxiva-prod
 
 # Verify pods
-kubectl get pods -n citadelbuy-prod
+kubectl get pods -n broxiva-prod
 ```
 
 **Day 6-7: DNS & SSL Configuration**
@@ -378,15 +378,15 @@ kubectl get pods -n citadelbuy-prod
 FRONTDOOR_ENDPOINT=$(terraform output -raw frontdoor_endpoint)
 
 echo "Configure DNS records:"
-echo "CNAME www.citadelbuy.com -> $FRONTDOOR_ENDPOINT"
-echo "CNAME api.citadelbuy.com -> $FRONTDOOR_ENDPOINT"
+echo "CNAME www.broxiva.com -> $FRONTDOOR_ENDPOINT"
+echo "CNAME api.broxiva.com -> $FRONTDOOR_ENDPOINT"
 
 # Azure Front Door automatically provisions SSL certificates
 # via Let's Encrypt after DNS propagation
 
 # Verify SSL (after DNS propagation)
-curl -I https://www.citadelbuy.com
-curl -I https://api.citadelbuy.com
+curl -I https://www.broxiva.com
+curl -I https://api.broxiva.com
 ```
 
 **Day 8-10: Smoke Testing & Monitoring**
@@ -395,8 +395,8 @@ curl -I https://api.citadelbuy.com
 ./scripts/smoke-tests.sh production
 
 # Check health endpoints
-curl https://api.citadelbuy.com/health
-curl https://api.citadelbuy.com/ready
+curl https://api.broxiva.com/health
+curl https://api.broxiva.com/ready
 
 # Verify monitoring
 az monitor metrics list \
@@ -405,7 +405,7 @@ az monitor metrics list \
   --interval PT1M
 
 # Check logs
-kubectl logs -l app=product-service -n citadelbuy-prod --tail=100
+kubectl logs -l app=product-service -n broxiva-prod --tail=100
 ```
 
 **Deliverables:**
@@ -490,13 +490,13 @@ kubectl logs -l app=product-service -n citadelbuy-prod --tail=100
 
 set -e
 
-echo "🚀 Setting up CitadelBuy local development environment..."
+echo "🚀 Setting up Broxiva local development environment..."
 
 # Clone repository
-if [ ! -d "citadelbuy" ]; then
-  git clone https://github.com/your-org/citadelbuy.git
+if [ ! -d "broxiva" ]; then
+  git clone https://github.com/your-org/broxiva.git
 fi
-cd citadelbuy
+cd broxiva
 
 # Backend setup
 echo "📦 Setting up backend services..."
@@ -546,7 +546,7 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: citadelbuy_dev
+      POSTGRES_DB: broxiva_dev
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -604,7 +604,7 @@ fi
 
 set -e
 
-echo "🚀 Deploying CitadelBuy to $ENVIRONMENT (version: $VERSION)"
+echo "🚀 Deploying Broxiva to $ENVIRONMENT (version: $VERSION)"
 
 # 1. Deploy Terraform infrastructure
 echo "📦 Deploying infrastructure..."
@@ -616,45 +616,45 @@ cd -
 
 # 2. Build and push Docker images
 echo "🐳 Building and pushing images..."
-az acr login --name citadelbuyacr
+az acr login --name broxivaacr
 
 services=("auth" "product" "order" "payment" "notification")
 for service in "${services[@]}"; do
     echo "Building $service-service..."
     docker build \
-      -t citadelbuyacr.azurecr.io/$service-service:$VERSION \
-      -t citadelbuyacr.azurecr.io/$service-service:latest \
+      -t broxivaacr.azurecr.io/$service-service:$VERSION \
+      -t broxivaacr.azurecr.io/$service-service:latest \
       -f services/$service-service/Dockerfile \
       services/$service-service
     
-    docker push citadelbuyacr.azurecr.io/$service-service:$VERSION
-    docker push citadelbuyacr.azurecr.io/$service-service:latest
+    docker push broxivaacr.azurecr.io/$service-service:$VERSION
+    docker push broxivaacr.azurecr.io/$service-service:latest
 done
 
 # 3. Build and push frontend
 echo "Building frontend..."
 docker build \
-  -t citadelbuyacr.azurecr.io/frontend:$VERSION \
-  -t citadelbuyacr.azurecr.io/frontend:latest \
+  -t broxivaacr.azurecr.io/frontend:$VERSION \
+  -t broxivaacr.azurecr.io/frontend:latest \
   -f frontend/Dockerfile \
   frontend
 
-docker push citadelbuyacr.azurecr.io/frontend:$VERSION
-docker push citadelbuyacr.azurecr.io/frontend:latest
+docker push broxivaacr.azurecr.io/frontend:$VERSION
+docker push broxivaacr.azurecr.io/frontend:latest
 
 # 4. Deploy to Kubernetes
 echo "☸️  Deploying to AKS..."
 az aks get-credentials \
-  --resource-group citadelbuy-$ENVIRONMENT-rg \
-  --name citadelbuy-$ENVIRONMENT-aks
+  --resource-group broxiva-$ENVIRONMENT-rg \
+  --name broxiva-$ENVIRONMENT-aks
 
 # Update image tags
 cd k8s/overlays/$ENVIRONMENT
 kustomize edit set image \
-  auth-service=citadelbuyacr.azurecr.io/auth-service:$VERSION \
-  product-service=citadelbuyacr.azurecr.io/product-service:$VERSION \
-  order-service=citadelbuyacr.azurecr.io/order-service:$VERSION \
-  frontend=citadelbuyacr.azurecr.io/frontend:$VERSION
+  auth-service=broxivaacr.azurecr.io/auth-service:$VERSION \
+  product-service=broxivaacr.azurecr.io/product-service:$VERSION \
+  order-service=broxivaacr.azurecr.io/order-service:$VERSION \
+  frontend=broxivaacr.azurecr.io/frontend:$VERSION
 
 # Apply manifests
 kubectl apply -k .
@@ -662,9 +662,9 @@ cd -
 
 # 5. Wait for rollout
 echo "⏳ Waiting for rollout..."
-kubectl rollout status deployment/auth-service -n citadelbuy-$ENVIRONMENT
-kubectl rollout status deployment/product-service -n citadelbuy-$ENVIRONMENT
-kubectl rollout status deployment/order-service -n citadelbuy-$ENVIRONMENT
+kubectl rollout status deployment/auth-service -n broxiva-$ENVIRONMENT
+kubectl rollout status deployment/product-service -n broxiva-$ENVIRONMENT
+kubectl rollout status deployment/order-service -n broxiva-$ENVIRONMENT
 
 # 6. Run smoke tests
 echo "🧪 Running smoke tests..."
@@ -691,10 +691,10 @@ terraform destroy
 **Issue: Pod CrashLoopBackOff**
 ```bash
 # Check pod logs
-kubectl logs <pod-name> -n citadelbuy-prod
+kubectl logs <pod-name> -n broxiva-prod
 
 # Check pod events
-kubectl describe pod <pod-name> -n citadelbuy-prod
+kubectl describe pod <pod-name> -n broxiva-prod
 
 # Common causes:
 # - Missing environment variables
@@ -708,18 +708,18 @@ kubectl describe pod <pod-name> -n citadelbuy-prod
 kubectl run -it --rm debug \
   --image=postgres:16 \
   --restart=Never \
-  -- psql -h <SQL_SERVER> -U citadeladmin -d orders
+  -- psql -h <SQL_SERVER> -U broxivaadmin -d orders
 
 # Check firewall rules
 az sql server firewall-rule list \
-  --resource-group citadelbuy-prod-rg \
-  --server citadelbuy-prod-sql
+  --resource-group broxiva-prod-rg \
+  --server broxiva-prod-sql
 ```
 
 **Issue: High response times**
 ```bash
 # Check Redis connection
-kubectl exec -it <pod-name> -n citadelbuy-prod -- redis-cli ping
+kubectl exec -it <pod-name> -n broxiva-prod -- redis-cli ping
 
 # Check database query performance
 # Enable slow query log
@@ -728,30 +728,30 @@ kubectl exec -it <pod-name> -n citadelbuy-prod -- redis-cli ping
 # Scale pods
 kubectl scale deployment/product-service \
   --replicas=10 \
-  -n citadelbuy-prod
+  -n broxiva-prod
 ```
 
 **Issue: Out of memory**
 ```bash
 # Check resource usage
-kubectl top pods -n citadelbuy-prod
+kubectl top pods -n broxiva-prod
 
 # Increase memory limits
 kubectl set resources deployment/product-service \
   --limits=memory=1Gi \
-  -n citadelbuy-prod
+  -n broxiva-prod
 ```
 
 ### Getting Help
 
 **Documentation**
 - Platform docs: `docs/README.md`
-- API docs: `https://api.citadelbuy.com/docs`
+- API docs: `https://api.broxiva.com/docs`
 - Azure docs: https://docs.microsoft.com/azure
 
 **Support Channels**
-- Slack: #citadelbuy-support
-- Email: devops@citadelbuy.com
+- Slack: #broxiva-support
+- Email: devops@broxiva.com
 - On-call: +1-XXX-XXX-XXXX
 
 ---

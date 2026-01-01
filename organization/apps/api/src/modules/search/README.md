@@ -1,6 +1,6 @@
 # Elasticsearch Search Integration
 
-Complete Elasticsearch search integration for the CitadelBuy platform with advanced features including full-text search, autocomplete, faceted search, and intelligent ranking.
+Complete Elasticsearch search integration for the Broxiva platform with advanced features including full-text search, autocomplete, faceted search, and intelligent ranking.
 
 ## Features
 
@@ -76,7 +76,7 @@ ELASTICSEARCH_USERNAME=elastic
 ELASTICSEARCH_PASSWORD=changeme
 ELASTICSEARCH_REQUEST_TIMEOUT=30000
 ELASTICSEARCH_BULK_SIZE=1000
-ELASTICSEARCH_INDEX_PREFIX=citadelbuy
+ELASTICSEARCH_INDEX_PREFIX=broxiva
 
 # Search Provider Selection
 SEARCH_PROVIDER=auto  # Options: elasticsearch, algolia, internal, auto

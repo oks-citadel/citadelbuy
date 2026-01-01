@@ -3,7 +3,7 @@
 **Document Version:** 1.0
 **Last Updated:** December 3, 2025
 **Compliance Standard:** PCI DSS v4.0
-**Platform:** CitadelBuy E-Commerce Platform
+**Platform:** Broxiva E-Commerce Platform
 
 ---
 
@@ -26,7 +26,7 @@
 
 ## Executive Summary
 
-CitadelBuy is committed to maintaining the highest standards of payment card security in compliance with the Payment Card Industry Data Security Standard (PCI DSS). This document outlines our approach to PCI DSS compliance, leveraging industry-leading payment processors (Stripe and PayPal) to minimize our compliance scope and ensure cardholder data protection.
+Broxiva is committed to maintaining the highest standards of payment card security in compliance with the Payment Card Industry Data Security Standard (PCI DSS). This document outlines our approach to PCI DSS compliance, leveraging industry-leading payment processors (Stripe and PayPal) to minimize our compliance scope and ensure cardholder data protection.
 
 **Key Compliance Strategy:**
 - **No Direct Card Data Handling:** All payment card data is processed directly by PCI DSS Level 1 compliant providers (Stripe and PayPal)
@@ -53,7 +53,7 @@ The Payment Card Industry Data Security Standard (PCI DSS) is a set of security 
 
 ### Merchant Levels
 
-CitadelBuy qualifies as a **Level 4 Merchant** (processing fewer than 1 million e-commerce transactions annually per card brand):
+Broxiva qualifies as a **Level 4 Merchant** (processing fewer than 1 million e-commerce transactions annually per card brand):
 
 - **Level 1:** Over 6 million transactions/year
 - **Level 2:** 1 to 6 million transactions/year
@@ -106,7 +106,7 @@ Systems explicitly outside PCI DSS scope:
 
 ### SAQ A-EP: E-commerce Outsourced Payments
 
-CitadelBuy qualifies for **SAQ A-EP** based on the following criteria:
+Broxiva qualifies for **SAQ A-EP** based on the following criteria:
 
 #### Qualification Requirements
 
@@ -265,7 +265,7 @@ SAQ A-EP includes approximately **178 controls** across the following areas:
 
 **Strict Policy: NO CARD DATA STORAGE**
 
-CitadelBuy **NEVER** stores the following:
+Broxiva **NEVER** stores the following:
 
 ❌ Full magnetic stripe data or equivalent on chip
 ❌ Card verification code (CVV2, CVC2, CID)
@@ -651,7 +651,7 @@ const SECURITY_ALERTS = {
     count: 5,
     window: '5m',
     action: 'account_lock',
-    notify: ['security@citadelbuy.com']
+    notify: ['security@broxiva.com']
   },
 
   // Unusual activity
@@ -662,7 +662,7 @@ const SECURITY_ALERTS = {
       'unusual_ip_location'
     ],
     action: 'flag_for_review',
-    notify: ['security@citadelbuy.com', 'fraud@citadelbuy.com']
+    notify: ['security@broxiva.com', 'fraud@broxiva.com']
   },
 
   // System security
@@ -673,7 +673,7 @@ const SECURITY_ALERTS = {
       'certificate_expiration_warning'
     ],
     action: 'immediate_alert',
-    notify: ['security@citadelbuy.com', 'devops@citadelbuy.com']
+    notify: ['security@broxiva.com', 'devops@broxiva.com']
   }
 };
 ```
@@ -746,7 +746,7 @@ jobs:
 
       - name: Container scan
         run: |
-          docker scan citadelbuy:latest
+          docker scan broxiva:latest
 
       - name: Secret scan
         uses: trufflesecurity/trufflehog@main
@@ -1052,7 +1052,7 @@ import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 
 ## Conclusion
 
-CitadelBuy maintains PCI DSS compliance through a defense-in-depth strategy that leverages PCI DSS Level 1 certified payment processors (Stripe and PayPal) to minimize our compliance scope. By never storing or processing raw cardholder data, we qualify for the simplest compliance path (SAQ A-EP) while still maintaining robust security controls across our platform.
+Broxiva maintains PCI DSS compliance through a defense-in-depth strategy that leverages PCI DSS Level 1 certified payment processors (Stripe and PayPal) to minimize our compliance scope. By never storing or processing raw cardholder data, we qualify for the simplest compliance path (SAQ A-EP) while still maintaining robust security controls across our platform.
 
 **Key Compliance Strengths:**
 
@@ -1067,7 +1067,7 @@ CitadelBuy maintains PCI DSS compliance through a defense-in-depth strategy that
 
 **Commitment to Security:**
 
-CitadelBuy is committed to maintaining and continuously improving our security posture to protect customer payment information and maintain PCI DSS compliance. This document is reviewed and updated annually or whenever significant changes occur to our systems or the PCI DSS standard.
+Broxiva is committed to maintaining and continuously improving our security posture to protect customer payment information and maintain PCI DSS compliance. This document is reviewed and updated annually or whenever significant changes occur to our systems or the PCI DSS standard.
 
 ---
 
@@ -1075,13 +1075,13 @@ CitadelBuy is committed to maintaining and continuously improving our security p
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | 2025-12-03 | CitadelBuy Security Team | Initial documentation |
+| 1.0 | 2025-12-03 | Broxiva Security Team | Initial documentation |
 
 **Next Review Date:** 2026-12-03
 
 **Contact Information:**
-- **Security Team:** security@citadelbuy.com
-- **Compliance Officer:** compliance@citadelbuy.com
+- **Security Team:** security@broxiva.com
+- **Compliance Officer:** compliance@broxiva.com
 - **Emergency Hotline:** +1-XXX-XXX-XXXX (24/7)
 
 ---

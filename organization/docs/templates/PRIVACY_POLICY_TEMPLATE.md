@@ -1,4 +1,4 @@
-# Privacy Policy Template - CitadelBuy
+# Privacy Policy Template - Broxiva
 
 **Effective Date**: [INSERT DATE]
 **Last Updated**: [INSERT DATE]
@@ -8,14 +8,14 @@
 
 ## Introduction
 
-Welcome to CitadelBuy ("we," "our," or "us"). We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our e-commerce platform.
+Welcome to Broxiva ("we," "our," or "us"). We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our e-commerce platform.
 
 This policy complies with:
 - General Data Protection Regulation (GDPR) - EU Regulation 2016/679
 - California Consumer Privacy Act (CCPA) - California Civil Code Section 1798.100 et seq.
 - Other applicable privacy laws and regulations
 
-**By using CitadelBuy, you agree to the collection and use of information in accordance with this policy.**
+**By using Broxiva, you agree to the collection and use of information in accordance with this policy.**
 
 ---
 
@@ -76,7 +76,7 @@ We collect information that you voluntarily provide when you:
 
 ### 1.2 Information Automatically Collected
 
-When you use CitadelBuy, we automatically collect:
+When you use Broxiva, we automatically collect:
 
 **Device and Usage Information**:
 - IP address
@@ -291,8 +291,8 @@ You have the following rights regarding your personal information:
 
 ### How to Exercise Your Rights
 
-1. **Online**: Visit your Privacy Dashboard at [citadelbuy.com/privacy](/privacy)
-2. **Email**: Send a request to privacy@citadelbuy.com
+1. **Online**: Visit your Privacy Dashboard at [broxiva.com/privacy](/privacy)
+2. **Email**: Send a request to privacy@broxiva.com
 3. **Mail**: [INSERT MAILING ADDRESS]
 
 We will respond to your request within:
@@ -398,7 +398,7 @@ We currently do not respond to "Do Not Track" browser signals, but you can manag
 
 ## 9. International Data Transfers
 
-CitadelBuy operates globally, and your information may be transferred to, stored in, or accessed from countries other than your country of residence.
+Broxiva operates globally, and your information may be transferred to, stored in, or accessed from countries other than your country of residence.
 
 ### Transfer Mechanisms
 
@@ -425,9 +425,9 @@ Your data may be processed in:
 
 ## 10. Children's Privacy
 
-CitadelBuy is not intended for children under the age of 16 (or 13 in some jurisdictions).
+Broxiva is not intended for children under the age of 16 (or 13 in some jurisdictions).
 
-We do not knowingly collect personal information from children. If you are a parent or guardian and believe your child has provided us with personal information, please contact us immediately at privacy@citadelbuy.com.
+We do not knowingly collect personal information from children. If you are a parent or guardian and believe your child has provided us with personal information, please contact us immediately at privacy@broxiva.com.
 
 If we become aware that we have collected personal information from a child without parental consent, we will take steps to delete that information.
 
@@ -455,19 +455,19 @@ We collect the following categories of personal information:
 
 ### We Do Not Sell Personal Information
 
-CitadelBuy does not sell personal information as defined by the CCPA. We share information with service providers for business purposes only.
+Broxiva does not sell personal information as defined by the CCPA. We share information with service providers for business purposes only.
 
 ### "Do Not Sell My Personal Information"
 
 To opt-out of any potential data sharing that could constitute a "sale" under CCPA:
 - Visit: [Do Not Sell My Info](/privacy/do-not-sell)
-- Email: privacy@citadelbuy.com
+- Email: privacy@broxiva.com
 - Call: [INSERT TOLL-FREE NUMBER]
 
 ### How to Exercise Your Rights
 
 **Online**: Visit [Privacy Dashboard](/privacy)
-**Email**: privacy@citadelbuy.com
+**Email**: privacy@broxiva.com
 **Phone**: [INSERT TOLL-FREE NUMBER]
 **Mail**: [INSERT MAILING ADDRESS]
 
@@ -492,7 +492,7 @@ You can file a complaint with your national data protection authority:
 - **Find your authority**: https://edpb.europa.eu/about-edpb/board/members_en
 
 **Data Protection Officer**:
-[IF APPLICABLE: We have appointed a Data Protection Officer (DPO). You can contact our DPO at dpo@citadelbuy.com]
+[IF APPLICABLE: We have appointed a Data Protection Officer (DPO). You can contact our DPO at dpo@broxiva.com]
 
 **EU Representative**:
 [IF APPLICABLE: Our EU representative can be contacted at [INSERT CONTACT INFO]]
@@ -515,7 +515,7 @@ We may update this Privacy Policy from time to time to reflect changes in our pr
 - **Material Changes**: We will notify you via email and/or prominent notice on our website at least 30 days before changes take effect
 - **Minor Changes**: We will post the updated policy on our website with a revised "Last Updated" date
 
-**Your Continued Use**: By continuing to use CitadelBuy after changes take effect, you accept the updated policy.
+**Your Continued Use**: By continuing to use Broxiva after changes take effect, you accept the updated policy.
 
 **Version History**: Previous versions of this policy are available upon request.
 
@@ -525,12 +525,12 @@ We may update this Privacy Policy from time to time to reflect changes in our pr
 
 If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:
 
-**Email**: privacy@citadelbuy.com
-**Data Protection Officer**: dpo@citadelbuy.com (if appointed)
-**Customer Support**: support@citadelbuy.com
+**Email**: privacy@broxiva.com
+**Data Protection Officer**: dpo@broxiva.com (if appointed)
+**Customer Support**: support@broxiva.com
 
 **Mailing Address**:
-CitadelBuy Privacy Team
+Broxiva Privacy Team
 [INSERT STREET ADDRESS]
 [INSERT CITY, STATE/PROVINCE, ZIP/POSTAL CODE]
 [INSERT COUNTRY]
@@ -549,7 +549,7 @@ CitadelBuy Privacy Team
 
 **Processing**: Any operation performed on personal data, including collection, storage, use, disclosure, and deletion.
 
-**Controller**: The entity that determines the purposes and means of processing personal data (CitadelBuy).
+**Controller**: The entity that determines the purposes and means of processing personal data (Broxiva).
 
 **Processor**: An entity that processes personal data on behalf of the controller (our service providers).
 

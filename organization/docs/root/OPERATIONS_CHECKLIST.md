@@ -1,4 +1,4 @@
-# CitadelBuy Operations Checklist
+# Broxiva Operations Checklist
 
 **Version:** 1.0.0
 **Last Updated:** 2025-12-03
@@ -27,14 +27,14 @@
 - [ ] **Check Overall Platform Status**
   ```bash
   # Quick health check
-  curl -f https://api.citadelbuy.com/api/health/detailed | jq '.'
+  curl -f https://api.broxiva.com/api/health/detailed | jq '.'
 
   # Verify all services running
-  kubectl get pods -n citadelbuy
+  kubectl get pods -n broxiva
   ```
 
 - [ ] **Review Monitoring Dashboards**
-  - Open Grafana main dashboard: https://grafana.citadelbuy.com/d/main-dashboard
+  - Open Grafana main dashboard: https://grafana.broxiva.com/d/main-dashboard
   - Check for any anomalies in:
     - Request rate
     - Error rate
@@ -45,16 +45,16 @@
   ```bash
   # Check PagerDuty for active incidents
   # Check Prometheus alerts
-  curl https://prometheus.citadelbuy.com/api/v1/alerts | jq '.data.alerts[] | select(.state=="firing")'
+  curl https://prometheus.broxiva.com/api/v1/alerts | jq '.data.alerts[] | select(.state=="firing")'
   ```
 
 - [ ] **Review Application Logs**
   ```bash
   # Check for errors in last hour
-  kubectl logs -n citadelbuy -l app=citadelbuy-api --since=1h | grep -i error | tail -20
+  kubectl logs -n broxiva -l app=broxiva-api --since=1h | grep -i error | tail -20
 
   # Check for critical issues
-  kubectl logs -n citadelbuy -l app=citadelbuy-api --since=1h | grep -i critical
+  kubectl logs -n broxiva -l app=broxiva-api --since=1h | grep -i critical
   ```
 
 #### 2. Database Health
@@ -62,13 +62,13 @@
 - [ ] **Check Database Status**
   ```bash
   # Verify PostgreSQL is running
-  kubectl get pods -n citadelbuy -l app=postgres
+  kubectl get pods -n broxiva -l app=postgres
 
   # Check database connections
   kubectl run psql-client --rm -it --restart=Never \
     --image=postgres:16-alpine \
     --env="PGPASSWORD=${DB_PASSWORD}" \
-    -- psql -h postgres -U citadelbuy -d citadelbuy_production -c \
+    -- psql -h postgres -U broxiva -d broxiva_production -c \
     "SELECT count(*), state FROM pg_stat_activity GROUP BY state;"
   ```
 
@@ -87,7 +87,7 @@
   kubectl run psql-client --rm -it --restart=Never \
     --image=postgres:16-alpine \
     --env="PGPASSWORD=${DB_PASSWORD}" \
-    -- psql -h postgres -U citadelbuy -d citadelbuy_production -c \
+    -- psql -h postgres -U broxiva -d broxiva_production -c \
     "SELECT query, calls, mean_exec_time
      FROM pg_stat_statements
      WHERE mean_exec_time > 100
@@ -105,21 +105,21 @@
     -- redis-cli -h redis PING
 
   # Check memory usage
-  kubectl exec -it deployment/redis -n citadelbuy -- \
+  kubectl exec -it deployment/redis -n broxiva -- \
     redis-cli INFO memory | grep used_memory_human
 
   # Check cache hit rate
-  kubectl exec -it deployment/redis -n citadelbuy -- \
+  kubectl exec -it deployment/redis -n broxiva -- \
     redis-cli INFO stats | grep -E "keyspace_hits|keyspace_misses"
   ```
 
 - [ ] **Verify Elasticsearch**
   ```bash
   # Check cluster health
-  curl https://elasticsearch.citadelbuy.com/_cluster/health | jq '.'
+  curl https://elasticsearch.broxiva.com/_cluster/health | jq '.'
 
   # Verify indices
-  curl https://elasticsearch.citadelbuy.com/_cat/indices?v | grep products
+  curl https://elasticsearch.broxiva.com/_cat/indices?v | grep products
   ```
 
 #### 4. Business Metrics Review
@@ -137,7 +137,7 @@
   kubectl run psql-client --rm -it --restart=Never \
     --image=postgres:16-alpine \
     --env="PGPASSWORD=${DB_PASSWORD}" \
-    -- psql -h postgres -U citadelbuy -d citadelbuy_production -c \
+    -- psql -h postgres -U broxiva -d broxiva_production -c \
     "SELECT
        COUNT(*) as total_orders,
        SUM(total) as revenue,
@@ -155,14 +155,14 @@
 
   ```bash
   # Check failed login attempts
-  kubectl logs -n citadelbuy -l app=citadelbuy-api --since=24h | \
+  kubectl logs -n broxiva -l app=broxiva-api --since=24h | \
     grep -i "failed login\|unauthorized" | wc -l
   ```
 
 - [ ] **Verify SSL Certificates**
   ```bash
   # Check certificate expiration
-  kubectl get certificate -n citadelbuy
+  kubectl get certificate -n broxiva
 
   # Should show "True" in READY column
   ```
@@ -172,7 +172,7 @@
 - [ ] **Check Background Job Queues**
   ```bash
   # Check email queue
-  kubectl exec -it deployment/citadelbuy-api -n citadelbuy -- \
+  kubectl exec -it deployment/broxiva-api -n broxiva -- \
     npm run queue:status
 
   # Look for:
@@ -199,7 +199,7 @@
 - [ ] **Review Error Logs**
   ```bash
   # Summarize errors for the day
-  kubectl logs -n citadelbuy -l app=citadelbuy-api --since=24h | \
+  kubectl logs -n broxiva -l app=broxiva-api --since=24h | \
     grep -i error | wc -l
   ```
 
@@ -241,10 +241,10 @@
   ```bash
   # Check resource usage trends
   kubectl top nodes
-  kubectl top pods -n citadelbuy
+  kubectl top pods -n broxiva
 
   # Review HPA status
-  kubectl get hpa -n citadelbuy
+  kubectl get hpa -n broxiva
   ```
 
 ### Tuesday: Database Maintenance
@@ -294,14 +294,14 @@
 - [ ] **Verify Backup Integrity**
   ```bash
   # Test restore from backup (on staging)
-  pg_restore --dbname=citadelbuy_test \
+  pg_restore --dbname=broxiva_test \
     --verbose \
     /backups/postgres/latest-backup.dump
 
   # Verify data integrity
-  psql -d citadelbuy_test -c "SELECT COUNT(*) FROM \"User\";"
-  psql -d citadelbuy_test -c "SELECT COUNT(*) FROM \"Product\";"
-  psql -d citadelbuy_test -c "SELECT COUNT(*) FROM \"Order\";"
+  psql -d broxiva_test -c "SELECT COUNT(*) FROM \"User\";"
+  psql -d broxiva_test -c "SELECT COUNT(*) FROM \"Product\";"
+  psql -d broxiva_test -c "SELECT COUNT(*) FROM \"Order\";"
   ```
 
 - [ ] **Database Optimization**
@@ -331,17 +331,17 @@
 - [ ] **Review Access Logs**
   ```bash
   # Check for unusual access patterns
-  kubectl logs -n citadelbuy -l app=nginx --since=7d | \
+  kubectl logs -n broxiva -l app=nginx --since=7d | \
     awk '{print $1}' | sort | uniq -c | sort -rn | head -20
 
   # Check for suspicious requests
-  kubectl logs -n citadelbuy -l app=nginx --since=7d | \
+  kubectl logs -n broxiva -l app=nginx --since=7d | \
     grep -E "sql|script|exec|\.\./" | head -20
   ```
 
 - [ ] **Review Failed Authentication Attempts**
   ```bash
-  kubectl logs -n citadelbuy -l app=citadelbuy-api --since=7d | \
+  kubectl logs -n broxiva -l app=broxiva-api --since=7d | \
     grep -i "failed login\|unauthorized" | \
     awk '{print $NF}' | sort | uniq -c | sort -rn
   ```
@@ -366,7 +366,7 @@
 - [ ] **Verify Security Headers**
   ```bash
   # Check security headers on production
-  curl -I https://citadelbuy.com | grep -E "Strict-Transport-Security|X-Frame-Options|X-Content-Type-Options"
+  curl -I https://broxiva.com | grep -E "Strict-Transport-Security|X-Frame-Options|X-Content-Type-Options"
   ```
 
 ### Thursday: Performance Review
@@ -380,7 +380,7 @@
 
   ```bash
   # Extract response time metrics
-  kubectl logs -n citadelbuy -l app=citadelbuy-api --since=7d | \
+  kubectl logs -n broxiva -l app=broxiva-api --since=7d | \
     grep "duration" | \
     awk '{print $NF}' | \
     sort -n | \
@@ -390,7 +390,7 @@
 - [ ] **Review Cache Performance**
   ```bash
   # Check Redis cache hit rate
-  kubectl exec -it deployment/redis -n citadelbuy -- \
+  kubectl exec -it deployment/redis -n broxiva -- \
     redis-cli INFO stats | grep -E "keyspace_hits|keyspace_misses"
 
   # Calculate hit rate
@@ -458,13 +458,13 @@
 - [ ] **Clean Up Resources**
   ```bash
   # Remove old PVCs
-  kubectl get pvc -n citadelbuy | grep "Released"
+  kubectl get pvc -n broxiva | grep "Released"
 
   # Clean up old Docker images
   docker image prune -a --filter "until=168h"
 
   # Clean up old logs
-  kubectl logs -n citadelbuy -l app=citadelbuy-api --tail=0
+  kubectl logs -n broxiva -l app=broxiva-api --tail=0
   ```
 
 - [ ] **Review Open Tickets**
@@ -494,7 +494,7 @@
   ```bash
   # Review resource utilization trends
   # Check if scaling policies are appropriate
-  kubectl get hpa -n citadelbuy -o wide
+  kubectl get hpa -n broxiva -o wide
 
   # Review node utilization
   kubectl describe nodes | grep -A 5 "Allocated resources"
@@ -508,7 +508,7 @@
 - [ ] **SSL Certificate Audit**
   ```bash
   # Check all certificates
-  kubectl get certificate -n citadelbuy
+  kubectl get certificate -n broxiva
 
   # Verify expiration dates
   # Plan renewals
@@ -587,7 +587,7 @@
   ANALYZE;
 
   -- Rebuild indexes if needed
-  REINDEX DATABASE citadelbuy_production;
+  REINDEX DATABASE broxiva_production;
 
   -- Update statistics
   VACUUM ANALYZE;
@@ -596,7 +596,7 @@
 - [ ] **Cache Optimization**
   ```bash
   # Review cache keys and TTLs
-  kubectl exec -it deployment/redis -n citadelbuy -- \
+  kubectl exec -it deployment/redis -n broxiva -- \
     redis-cli --scan --pattern "*" | head -100
 
   # Identify candidates for longer/shorter TTL
@@ -820,7 +820,7 @@ DATE=$(date +"%Y-%m-%d %H:%M:%S")
 echo "Running daily health check at $DATE"
 
 # Check API health
-API_HEALTH=$(curl -sf https://api.citadelbuy.com/api/health/detailed)
+API_HEALTH=$(curl -sf https://api.broxiva.com/api/health/detailed)
 if [ $? -eq 0 ]; then
   echo "✅ API health check passed"
 else
@@ -832,7 +832,7 @@ else
 fi
 
 # Check pod status
-FAILING_PODS=$(kubectl get pods -n citadelbuy --no-headers | grep -v "Running\|Completed" | wc -l)
+FAILING_PODS=$(kubectl get pods -n broxiva --no-headers | grep -v "Running\|Completed" | wc -l)
 if [ "$FAILING_PODS" -gt 0 ]; then
   echo "❌ Found $FAILING_PODS failing pods"
   curl -X POST -H 'Content-type: application/json' \
@@ -863,7 +863,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: daily-health-check
-  namespace: citadelbuy
+  namespace: broxiva
 spec:
   schedule: "0 9 * * *"  # Daily at 9 AM
   jobTemplate:
@@ -872,7 +872,7 @@ spec:
         spec:
           containers:
           - name: health-check
-            image: citadelplatforms/health-checker:latest
+            image: broxivaplatforms/health-checker:latest
             env:
             - name: SLACK_WEBHOOK_URL
               valueFrom:

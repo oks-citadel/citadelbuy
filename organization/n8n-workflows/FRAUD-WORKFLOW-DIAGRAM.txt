@@ -1,12 +1,12 @@
 ╔══════════════════════════════════════════════════════════════════════════════════════════╗
-║                   CitadelBuy Fraud Detection & Prevention Workflow                      ║
+║                   Broxiva Fraud Detection & Prevention Workflow                      ║
 ║                                    Workflow 10                                           ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════╝
 
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
 │ TRIGGER: Order Created Webhook                                                          │
 │ Event: order.created                                                                    │
-│ URL: https://n8n.citadelbuy.com/webhook/fraud-detection                               │
+│ URL: https://n8n.broxiva.com/webhook/fraud-detection                               │
 └──────────────────────────────────┬──────────────────────────────────────────────────────┘
                                    │
                                    ▼
@@ -316,7 +316,7 @@ Average Execution Time:   2-20 seconds (based on risk level)
 Max Timeout:              30 seconds
 
 External Integrations:
-  ✓ CitadelBuy API       (8 endpoints)
+  ✓ Broxiva API       (8 endpoints)
   ✓ Stripe Radar API     (1 endpoint)
   ✓ IP Geolocation API   (1 endpoint)
   ✓ Slack API            (3 channels)

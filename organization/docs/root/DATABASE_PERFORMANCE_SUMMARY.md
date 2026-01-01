@@ -1,8 +1,8 @@
-# CitadelBuy Database Performance & Backup Strategy - Summary
+# Broxiva Database Performance & Backup Strategy - Summary
 
 ## Overview
 
-This document provides a high-level summary of the database performance optimizations and backup strategies implemented for CitadelBuy. For detailed information, refer to the linked documentation.
+This document provides a high-level summary of the database performance optimizations and backup strategies implemented for Broxiva. For detailed information, refer to the linked documentation.
 
 ## What Was Implemented
 
@@ -142,14 +142,14 @@ organization/
 
 ```bash
 # Backup first!
-pg_dump citadelbuy > backup_$(date +%Y%m%d).sql
+pg_dump broxiva > backup_$(date +%Y%m%d).sql
 
 # Apply migration
 cd organization/apps/api
 npx prisma migrate deploy
 
 # Verify
-psql -d citadelbuy -c "SELECT COUNT(*) FROM pg_indexes WHERE indexname LIKE 'idx_%';"
+psql -d broxiva -c "SELECT COUNT(*) FROM pg_indexes WHERE indexname LIKE 'idx_%';"
 ```
 
 ### 2. Configure Automated Backups
@@ -389,14 +389,14 @@ sudo systemctl start pgbouncer
 - [PgBouncer Documentation](https://www.pgbouncer.org/)
 
 ### Team Contacts
-- **DBA**: dba@citadelbuy.com
-- **DevOps On-Call**: oncall@citadelbuy.com
+- **DBA**: dba@broxiva.com
+- **DevOps On-Call**: oncall@broxiva.com
 - **Emergency Hotline**: +1-XXX-XXX-XXXX
 
 ### Monitoring Tools
-- **Grafana Dashboard**: https://grafana.citadelbuy.com/d/postgres
-- **PgAdmin**: https://pgadmin.citadelbuy.com
-- **Log Aggregation**: https://logs.citadelbuy.com
+- **Grafana Dashboard**: https://grafana.broxiva.com/d/postgres
+- **PgAdmin**: https://pgadmin.broxiva.com
+- **Log Aggregation**: https://logs.broxiva.com
 
 ## Next Steps
 
@@ -452,7 +452,7 @@ Track these KPIs to measure success:
 
 ## Conclusion
 
-This comprehensive database performance and backup strategy provides CitadelBuy with:
+This comprehensive database performance and backup strategy provides Broxiva with:
 
 ✅ **90% faster queries** through strategic indexing
 ✅ **<15 minute RPO** with continuous WAL archiving

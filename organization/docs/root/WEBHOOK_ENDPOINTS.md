@@ -1,6 +1,6 @@
 # Webhook Endpoints Documentation
 
-This document provides comprehensive information about webhook configuration, implementation, and troubleshooting for CitadelBuy payment gateways.
+This document provides comprehensive information about webhook configuration, implementation, and troubleshooting for Broxiva payment gateways.
 
 ## Table of Contents
 
@@ -50,15 +50,15 @@ Return 200 OK (within 10 seconds)
 
 | Provider | Endpoint URL | Method |
 |----------|-------------|--------|
-| Stripe | `https://citadelbuy.com/api/webhooks/stripe` | POST |
-| PayPal | `https://citadelbuy.com/api/webhooks/paypal` | POST |
+| Stripe | `https://broxiva.com/api/webhooks/stripe` | POST |
+| PayPal | `https://broxiva.com/api/webhooks/paypal` | POST |
 
 ### Development URLs
 
 | Provider | Endpoint URL | Method |
 |----------|-------------|--------|
-| Stripe | `https://dev.citadelbuy.com/api/webhooks/stripe` | POST |
-| PayPal | `https://dev.citadelbuy.com/api/webhooks/paypal` | POST |
+| Stripe | `https://dev.broxiva.com/api/webhooks/stripe` | POST |
+| PayPal | `https://dev.broxiva.com/api/webhooks/paypal` | POST |
 
 ### Local Development (with tunneling)
 
@@ -904,4 +904,4 @@ if (error) {
 
 **Last Updated**: December 2024
 **Version**: 1.0
-**Maintained by**: CitadelBuy Development Team
+**Maintained by**: Broxiva Development Team

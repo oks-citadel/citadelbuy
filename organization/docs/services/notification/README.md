@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Notification Service manages all communications for the CitadelBuy platform including email, SMS, push notifications, and in-app messages. It provides templating, scheduling, and delivery tracking for all notification types.
+The Notification Service manages all communications for the Broxiva platform including email, SMS, push notifications, and in-app messages. It provides templating, scheduling, and delivery tracking for all notification types.
 
 ## Key Features
 
@@ -38,7 +38,7 @@ LOG_LEVEL=INFO
 PORT=8009
 
 # Database (PostgreSQL)
-DATABASE_URL=postgresql://user:password@localhost:5432/citadelbuy
+DATABASE_URL=postgresql://user:password@localhost:5432/broxiva
 
 # Redis Queue
 REDIS_URL=redis://localhost:6379/9
@@ -47,8 +47,8 @@ REDIS_PASSWORD=your_redis_password
 # Email Configuration
 EMAIL_PROVIDER=sendgrid  # sendgrid, ses, smtp
 SENDGRID_API_KEY=your_sendgrid_key
-FROM_EMAIL=noreply@citadelbuy.com
-FROM_NAME=CitadelBuy
+FROM_EMAIL=noreply@broxiva.com
+FROM_NAME=Broxiva
 
 # SMS Configuration
 SMS_PROVIDER=twilio  # twilio, sns
@@ -134,8 +134,8 @@ uvicorn main:app --reload --port 8009
 ## Docker Usage
 
 ```bash
-docker build -t citadelbuy/notification:latest .
-docker run -p 8009:8009 --env-file .env citadelbuy/notification:latest
+docker build -t broxiva/notification:latest .
+docker run -p 8009:8009 --env-file .env broxiva/notification:latest
 ```
 
 ## Usage Examples
@@ -195,4 +195,4 @@ pytest tests/ --cov=src --cov-report=html
 ## Support
 
 - Internal Slack: #notification-support
-- Email: notifications@citadelbuy.com
+- Email: notifications@broxiva.com

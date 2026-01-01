@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the real KYC provider integration implemented in the CitadelBuy platform. The mock KYC implementation has been replaced with production-ready integrations for Onfido, Jumio, and Sumsub.
+This document describes the real KYC provider integration implemented in the Broxiva platform. The mock KYC implementation has been replaced with production-ready integrations for Onfido, Jumio, and Sumsub.
 
 ## Implemented Features
 

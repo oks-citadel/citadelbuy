@@ -1,6 +1,6 @@
 # Payment Configuration Checklist
 
-This checklist ensures all payment gateway configurations are properly set up for CitadelBuy. Use this for both initial setup and routine audits.
+This checklist ensures all payment gateway configurations are properly set up for Broxiva. Use this for both initial setup and routine audits.
 
 ## Quick Start
 
@@ -80,7 +80,7 @@ npm run test:payments
   - **Format**: `merchant.com.yourdomain`
   - **Location**: Apple Developer → Merchant IDs
   - **Required**: Only if using Apple Pay
-  - **Example**: `merchant.com.citadelbuy`
+  - **Example**: `merchant.com.broxiva`
 
 ### Optional Variables (Google Pay)
 
@@ -94,7 +94,7 @@ npm run test:payments
 
 - [ ] `APP_NAME` - Application name for payment providers
   - **Format**: String
-  - **Default**: `CitadelBuy`
+  - **Default**: `Broxiva`
   - **Used by**: PayPal, Apple Pay, Google Pay
   - **Example**: Shown on payment sheets
 
@@ -212,15 +212,15 @@ npm run test:payments
 ### Development/Staging
 
 ```
-Stripe:  https://dev.citadelbuy.com/api/webhooks/stripe
-PayPal:  https://dev.citadelbuy.com/api/webhooks/paypal
+Stripe:  https://dev.broxiva.com/api/webhooks/stripe
+PayPal:  https://dev.broxiva.com/api/webhooks/paypal
 ```
 
 ### Production
 
 ```
-Stripe:  https://citadelbuy.com/api/webhooks/stripe
-PayPal:  https://citadelbuy.com/api/webhooks/paypal
+Stripe:  https://broxiva.com/api/webhooks/stripe
+PayPal:  https://broxiva.com/api/webhooks/paypal
 ```
 
 ### Local Development (with tunneling)
@@ -615,4 +615,4 @@ node scripts/verify-payment-config.js
 
 **Last Updated**: December 2024
 **Version**: 1.0
-**Maintained by**: CitadelBuy Development Team
+**Maintained by**: Broxiva Development Team

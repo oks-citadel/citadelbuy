@@ -9,7 +9,7 @@
 ## 1. MONOREPO STRUCTURE
 
 ```
-CitadelBuy/
+Broxiva/
 ├── apps/
 │   ├── api/                    # NestJS Backend API
 │   │   ├── src/

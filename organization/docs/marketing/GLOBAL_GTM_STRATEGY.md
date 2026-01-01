@@ -1,8 +1,8 @@
-# CitadelBuy Global Go-to-Market Strategy
+# Broxiva Global Go-to-Market Strategy
 
 ## Executive Summary
 
-CitadelBuy is positioned as the premier global B2B enterprise marketplace connecting African exporters with U.S., European, Middle Eastern, and Asia-Pacific buyers. This GTM strategy outlines market entry, positioning, channel strategy, and growth tactics for achieving $100M+ ARR within 36 months.
+Broxiva is positioned as the premier global B2B enterprise marketplace connecting African exporters with U.S., European, Middle Eastern, and Asia-Pacific buyers. This GTM strategy outlines market entry, positioning, channel strategy, and growth tactics for achieving $100M+ ARR within 36 months.
 
 **Target Markets**: Africa (supply side), U.S. (demand side), Europe, Middle East, Asia-Pacific
 **Business Model**: High-ticket B2B transactions ($10K-$5M+), SaaS subscriptions, transaction fees, premium services
@@ -263,7 +263,7 @@ CitadelBuy is positioned as the premier global B2B enterprise marketplace connec
 
 ### 7.1 Differentiation Matrix
 
-| Competitor | CitadelBuy Advantage |
+| Competitor | Broxiva Advantage |
 |------------|---------------------|
 | **Alibaba** | Africa-first focus, better quality control, U.S. compliance expertise |
 | **Global Sources** | Integrated trade finance, end-to-end logistics, African market specialization |
@@ -272,7 +272,7 @@ CitadelBuy is positioned as the premier global B2B enterprise marketplace connec
 
 ### 7.2 Brand Positioning Statement
 
-"CitadelBuy is the trusted global marketplace connecting verified African exporters with enterprise buyers worldwide. We combine cutting-edge technology, integrated trade finance, and end-to-end logistics to make cross-border B2B trade seamless, secure, and scalable."
+"Broxiva is the trusted global marketplace connecting verified African exporters with enterprise buyers worldwide. We combine cutting-edge technology, integrated trade finance, and end-to-end logistics to make cross-border B2B trade seamless, secure, and scalable."
 
 **Target Audience**: Procurement officers, sourcing directors, import/export managers
 **Brand Attributes**: Trust, Innovation, Africa-focused, Enterprise-grade

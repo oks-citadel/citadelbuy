@@ -60,7 +60,7 @@ POST /shipping/rates/calculate
 ```json
 {
   "fromAddress": {
-    "name": "CitadelBuy Warehouse",
+    "name": "Broxiva Warehouse",
     "street1": "123 Warehouse St",
     "city": "Los Angeles",
     "state": "CA",

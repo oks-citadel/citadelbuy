@@ -1,4 +1,4 @@
-# CitadelBuy Dependency Analysis Report
+# Broxiva Dependency Analysis Report
 
 **Generated:** 2025-12-04
 **Version:** 2.0.0
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-This document provides a comprehensive analysis of all dependencies in the CitadelBuy platform, including identified issues, version conflicts, security concerns, and recommendations.
+This document provides a comprehensive analysis of all dependencies in the Broxiva platform, including identified issues, version conflicts, security concerns, and recommendations.
 
 ### Quick Stats
 
@@ -25,7 +25,7 @@ This document provides a comprehensive analysis of all dependencies in the Citad
 
 ## Workspace Overview
 
-### 1. Root Workspace (citadelbuy-platform)
+### 1. Root Workspace (broxiva-platform)
 
 **Purpose:** Monorepo management and build orchestration
 
@@ -334,7 +334,7 @@ This document provides a comprehensive analysis of all dependencies in the Citad
 
 ### 5. Shared Packages
 
-#### @citadelbuy/types
+#### @broxiva/types
 
 **Purpose:** Shared TypeScript type definitions
 
@@ -347,7 +347,7 @@ This document provides a comprehensive analysis of all dependencies in the Citad
 
 **Status:** Minimal and clean
 
-#### @citadelbuy/utils
+#### @broxiva/utils
 
 **Purpose:** Shared utility functions
 
@@ -364,7 +364,7 @@ This document provides a comprehensive analysis of all dependencies in the Citad
 - **Utils:** 2.30.0
 - **Recommendation:** Update utils to 4.1.0
 
-#### @citadelbuy/ui
+#### @broxiva/ui
 
 **Purpose:** Shared React components
 
@@ -385,14 +385,14 @@ This document provides a comprehensive analysis of all dependencies in the Citad
 - **UI Package:** 0.294.0
 - **Recommendation:** Update to match web version
 
-#### @citadelbuy/ai-sdk
+#### @broxiva/ai-sdk
 
 **Purpose:** AI service client library
 
 **Dependencies:**
 | Package | Version |
 |---------|---------|
-| @citadelbuy/types | workspace:* |
+| @broxiva/types | workspace:* |
 | axios | ^1.6.0 |
 
 **Status:** Clean, using workspace dependency

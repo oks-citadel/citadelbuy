@@ -1,11 +1,11 @@
-# CitadelBuy: Azure DevOps to GitHub Actions Migration Map
+# Broxiva: Azure DevOps to GitHub Actions Migration Map
 
 ## Migration Overview
 
 | Aspect | Azure DevOps | GitHub Actions |
 |--------|--------------|----------------|
-| **Organization** | citadelcloudmanagement | TBD (GitHub Org) |
-| **Project** | CitadelBuy | CitadelBuy |
+| **Organization** | broxivacloudmanagement | TBD (GitHub Org) |
+| **Project** | Broxiva | Broxiva |
 | **Repository** | Azure Repos | GitHub Repository |
 | **CI/CD** | Azure Pipelines | GitHub Actions |
 | **Secrets** | Variable Groups + Key Vault | GitHub Secrets + Key Vault |
@@ -20,12 +20,12 @@
 
 | ID | Pipeline Name | YAML Path | GitHub Equivalent |
 |----|---------------|-----------|-------------------|
-| 30 | CitadelBuy-Main-CI-CD | `.azuredevops/pipelines/main.yml` | `ci.yml` + `cd-*.yml` |
-| 31 | CitadelBuy-Pipeline-Health-Monitor | `.azuredevops/pipelines/monitoring/pipeline-health.yml` | `pipeline-health.yml` |
-| 32 | CitadelBuy-Deployment-Watcher | `.azuredevops/pipelines/monitoring/deployment-watcher.yml` | `deployment-watcher.yml` |
-| 33 | CitadelBuy-Self-Healing | `.azuredevops/pipelines/monitoring/self-healing.yml` | `self-healing.yml` |
-| 34 | CitadelBuy-Cost-Optimization | `.azuredevops/pipelines/monitoring/cost-optimization.yml` | `cost-optimization.yml` |
-| 35 | CitadelBuy-Security-Scheduled | `.azuredevops/pipelines/templates/pipelines/security-scheduled.yml` | `security-scheduled.yml` |
+| 30 | Broxiva-Main-CI-CD | `.azuredevops/pipelines/main.yml` | `ci.yml` + `cd-*.yml` |
+| 31 | Broxiva-Pipeline-Health-Monitor | `.azuredevops/pipelines/monitoring/pipeline-health.yml` | `pipeline-health.yml` |
+| 32 | Broxiva-Deployment-Watcher | `.azuredevops/pipelines/monitoring/deployment-watcher.yml` | `deployment-watcher.yml` |
+| 33 | Broxiva-Self-Healing | `.azuredevops/pipelines/monitoring/self-healing.yml` | `self-healing.yml` |
+| 34 | Broxiva-Cost-Optimization | `.azuredevops/pipelines/monitoring/cost-optimization.yml` | `cost-optimization.yml` |
+| 35 | Broxiva-Security-Scheduled | `.azuredevops/pipelines/templates/pipelines/security-scheduled.yml` | `security-scheduled.yml` |
 
 ### Legacy Pipelines (azure-pipelines/ folder)
 
@@ -91,12 +91,12 @@
 
 | ID | Variable Group | GitHub Environment |
 |----|---------------|-------------------|
-| 25 | citadelbuy-secrets-common | Repository Secrets |
-| 26 | citadelbuy-secrets-dev | `dev` Environment |
-| 27 | citadelbuy-secrets-staging | `staging` Environment |
-| 28 | citadelbuy-secrets-prod | `production` Environment |
-| 29 | citadelbuy-terraform-shared | Repository Secrets |
-| 30 | citadelbuy-monitoring | Repository Secrets |
+| 25 | broxiva-secrets-common | Repository Secrets |
+| 26 | broxiva-secrets-dev | `dev` Environment |
+| 27 | broxiva-secrets-staging | `staging` Environment |
+| 28 | broxiva-secrets-prod | `production` Environment |
+| 29 | broxiva-terraform-shared | Repository Secrets |
+| 30 | broxiva-monitoring | Repository Secrets |
 
 ### Secret Mapping
 
@@ -156,8 +156,8 @@
 
 | Connection Name | Type | GitHub Equivalent |
 |----------------|------|-------------------|
-| CitadelBuyAzure | Azure Resource Manager | OIDC Federated Credential |
-| CitadelBuy-ACR | Docker Registry | OIDC + ACR Login Action |
+| BroxivaAzure | Azure Resource Manager | OIDC Federated Credential |
+| Broxiva-ACR | Docker Registry | OIDC + ACR Login Action |
 
 ### GitHub OIDC Configuration
 
@@ -241,11 +241,11 @@ The following Azure resources remain unchanged during migration:
 
 | Resource | Name | Resource Group |
 |----------|------|----------------|
-| AKS Dev | citadelbuy-dev-aks | citadelbuy-dev-rg |
-| AKS Staging | citadelbuy-staging-aks | citadelbuy-staging-rg |
-| AKS Production | citadelbuy-prod-aks | citadelbuy-prod-rg |
-| ACR | citadelbuyacr | citadelbuy-acr-rg |
-| Terraform State | citadelbuytfstate | citadelbuy-tfstate-rg |
+| AKS Dev | broxiva-dev-aks | broxiva-dev-rg |
+| AKS Staging | broxiva-staging-aks | broxiva-staging-rg |
+| AKS Production | broxiva-prod-aks | broxiva-prod-rg |
+| ACR | broxivaacr | broxiva-acr-rg |
+| Terraform State | broxivatfstate | broxiva-tfstate-rg |
 
 ---
 

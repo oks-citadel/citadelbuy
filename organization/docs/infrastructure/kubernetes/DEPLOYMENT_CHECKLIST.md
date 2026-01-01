@@ -1,4 +1,4 @@
-# CitadelBuy Kubernetes Security Deployment Checklist
+# Broxiva Kubernetes Security Deployment Checklist
 
 Use this checklist to ensure all security hardening measures are properly deployed and configured.
 
@@ -27,7 +27,7 @@ Use this checklist to ensure all security hardening measures are properly deploy
   ```
 - [ ] Verify namespaces created
   ```bash
-  kubectl get namespaces citadelbuy citadelbuy-ai citadelbuy-monitoring
+  kubectl get namespaces broxiva broxiva-ai broxiva-monitoring
   ```
 
 ### Pod Security Standards
@@ -37,15 +37,15 @@ Use this checklist to ensure all security hardening measures are properly deploy
   ```
 - [ ] Verify PSS labels on namespaces
   ```bash
-  kubectl get namespace citadelbuy -o yaml | grep pod-security
+  kubectl get namespace broxiva -o yaml | grep pod-security
   ```
 - [ ] Verify Pod Disruption Budgets created
   ```bash
-  kubectl get pdb -n citadelbuy
+  kubectl get pdb -n broxiva
   ```
 - [ ] Verify LimitRange and ResourceQuota created
   ```bash
-  kubectl get limitrange,resourcequota -n citadelbuy
+  kubectl get limitrange,resourcequota -n broxiva
   ```
 
 ### RBAC Configuration
@@ -55,15 +55,15 @@ Use this checklist to ensure all security hardening measures are properly deploy
   ```
 - [ ] Verify service accounts created
   ```bash
-  kubectl get serviceaccounts -n citadelbuy
+  kubectl get serviceaccounts -n broxiva
   ```
 - [ ] Verify roles and rolebindings
   ```bash
-  kubectl get roles,rolebindings -n citadelbuy
+  kubectl get roles,rolebindings -n broxiva
   ```
 - [ ] Test API service account permissions
   ```bash
-  kubectl auth can-i list configmaps --as=system:serviceaccount:citadelbuy:citadelbuy-api -n citadelbuy
+  kubectl auth can-i list configmaps --as=system:serviceaccount:broxiva:broxiva-api -n broxiva
   ```
 
 ## Phase 2: Network Security
@@ -75,16 +75,16 @@ Use this checklist to ensure all security hardening measures are properly deploy
   ```
 - [ ] Verify default deny policies created
   ```bash
-  kubectl get networkpolicy default-deny-ingress -n citadelbuy
-  kubectl get networkpolicy default-deny-egress -n citadelbuy
+  kubectl get networkpolicy default-deny-ingress -n broxiva
+  kubectl get networkpolicy default-deny-egress -n broxiva
   ```
 - [ ] Verify all allow policies created
   ```bash
-  kubectl get networkpolicies -n citadelbuy
+  kubectl get networkpolicies -n broxiva
   ```
 - [ ] Count should be approximately 15+ policies
   ```bash
-  kubectl get networkpolicies -n citadelbuy --no-headers | wc -l
+  kubectl get networkpolicies -n broxiva --no-headers | wc -l
   ```
 
 ## Phase 3: Secrets Management
@@ -109,8 +109,8 @@ Use this checklist to ensure all security hardening measures are properly deploy
   ```bash
   # Annotate service account with IAM role
   kubectl annotate serviceaccount external-secrets \
-    -n citadelbuy \
-    eks.amazonaws.com/role-arn=arn:aws:iam::ACCOUNT_ID:role/citadelbuy-secrets-role
+    -n broxiva \
+    eks.amazonaws.com/role-arn=arn:aws:iam::ACCOUNT_ID:role/broxiva-secrets-role
   ```
 
 ### Create Secrets in Provider
@@ -130,25 +130,25 @@ Use this checklist to ensure all security hardening measures are properly deploy
   ```
 - [ ] Verify SecretStore is ready
   ```bash
-  kubectl get secretstore -n citadelbuy
-  kubectl describe secretstore aws-secrets-manager -n citadelbuy
+  kubectl get secretstore -n broxiva
+  kubectl describe secretstore aws-secrets-manager -n broxiva
   ```
 - [ ] Verify ExternalSecrets are syncing
   ```bash
-  kubectl get externalsecrets -n citadelbuy
-  kubectl describe externalsecret citadelbuy-database-credentials -n citadelbuy
+  kubectl get externalsecrets -n broxiva
+  kubectl describe externalsecret broxiva-database-credentials -n broxiva
   ```
 - [ ] Verify secrets are created
   ```bash
-  kubectl get secrets -n citadelbuy
+  kubectl get secrets -n broxiva
   ```
 
 ### Alternative: Manual Secrets (Development Only)
 If not using External Secrets Operator:
 - [ ] Create secrets manually
   ```bash
-  kubectl create secret generic citadelbuy-secrets \
-    -n citadelbuy \
+  kubectl create secret generic broxiva-secrets \
+    -n broxiva \
     --from-literal=DATABASE_PASSWORD=your-password \
     --from-literal=REDIS_PASSWORD=your-redis-password \
     --from-literal=ELASTICSEARCH_PASSWORD=your-es-password
@@ -165,8 +165,8 @@ If not using External Secrets Operator:
   ```
 - [ ] Verify ConfigMap created
   ```bash
-  kubectl get configmap citadelbuy-config -n citadelbuy
-  kubectl describe configmap citadelbuy-config -n citadelbuy
+  kubectl get configmap broxiva-config -n broxiva
+  kubectl describe configmap broxiva-config -n broxiva
   ```
 
 ## Phase 5: Database Deployments
@@ -179,23 +179,23 @@ If not using External Secrets Operator:
   ```
 - [ ] Wait for PostgreSQL to be ready
   ```bash
-  kubectl wait --for=condition=ready pod -l app=postgres -n citadelbuy --timeout=300s
+  kubectl wait --for=condition=ready pod -l app=postgres -n broxiva --timeout=300s
   ```
 - [ ] Verify StatefulSet is running
   ```bash
-  kubectl get statefulset postgres -n citadelbuy
+  kubectl get statefulset postgres -n broxiva
   ```
 - [ ] Verify PVC is bound
   ```bash
-  kubectl get pvc postgres-pvc -n citadelbuy
+  kubectl get pvc postgres-pvc -n broxiva
   ```
 - [ ] Check pod security context
   ```bash
-  kubectl get pod -l app=postgres -n citadelbuy -o jsonpath='{.items[0].spec.securityContext}'
+  kubectl get pod -l app=postgres -n broxiva -o jsonpath='{.items[0].spec.securityContext}'
   ```
 - [ ] Verify resource limits
   ```bash
-  kubectl get pod -l app=postgres -n citadelbuy -o jsonpath='{.items[0].spec.containers[0].resources}'
+  kubectl get pod -l app=postgres -n broxiva -o jsonpath='{.items[0].spec.containers[0].resources}'
   ```
 
 ### Redis
@@ -206,15 +206,15 @@ If not using External Secrets Operator:
   ```
 - [ ] Wait for Redis to be ready
   ```bash
-  kubectl wait --for=condition=ready pod -l app=redis -n citadelbuy --timeout=300s
+  kubectl wait --for=condition=ready pod -l app=redis -n broxiva --timeout=300s
   ```
 - [ ] Verify StatefulSet is running
   ```bash
-  kubectl get statefulset redis -n citadelbuy
+  kubectl get statefulset redis -n broxiva
   ```
 - [ ] Test Redis connectivity (from inside cluster)
   ```bash
-  kubectl run -it --rm redis-test --image=redis:7-alpine -n citadelbuy -- redis-cli -h redis ping
+  kubectl run -it --rm redis-test --image=redis:7-alpine -n broxiva -- redis-cli -h redis ping
   ```
 
 ### Elasticsearch
@@ -225,26 +225,26 @@ If not using External Secrets Operator:
   ```
 - [ ] Wait for Elasticsearch to be ready (may take 5-10 minutes)
   ```bash
-  kubectl wait --for=condition=ready pod -l app=elasticsearch -n citadelbuy --timeout=600s
+  kubectl wait --for=condition=ready pod -l app=elasticsearch -n broxiva --timeout=600s
   ```
 - [ ] Verify cluster health
   ```bash
-  kubectl run -it --rm es-test --image=curlimages/curl -n citadelbuy -- \
+  kubectl run -it --rm es-test --image=curlimages/curl -n broxiva -- \
     curl -u elastic:PASSWORD http://elasticsearch:9200/_cluster/health
   ```
 
 ### Monitoring Exporters
 - [ ] Verify postgres-exporter is running
   ```bash
-  kubectl get deployment postgres-exporter -n citadelbuy
+  kubectl get deployment postgres-exporter -n broxiva
   ```
 - [ ] Verify redis-exporter is running
   ```bash
-  kubectl get deployment redis-exporter -n citadelbuy
+  kubectl get deployment redis-exporter -n broxiva
   ```
 - [ ] Verify elasticsearch-exporter is running
   ```bash
-  kubectl get deployment elasticsearch-exporter -n citadelbuy
+  kubectl get deployment elasticsearch-exporter -n broxiva
   ```
 
 ## Phase 6: Application Deployments
@@ -253,7 +253,7 @@ If not using External Secrets Operator:
 - [ ] Review apps/api-deployment.yaml security settings
 - [ ] Verify Docker image is available
   ```bash
-  docker pull citadelplatforms/citadelbuy-ecommerce:backend-latest
+  docker pull broxivaplatforms/broxiva-ecommerce:backend-latest
   ```
 - [ ] Apply API deployment
   ```bash
@@ -261,27 +261,27 @@ If not using External Secrets Operator:
   ```
 - [ ] Wait for API to be ready
   ```bash
-  kubectl wait --for=condition=ready pod -l app=citadelbuy-api -n citadelbuy --timeout=300s
+  kubectl wait --for=condition=ready pod -l app=broxiva-api -n broxiva --timeout=300s
   ```
 - [ ] Verify deployment is scaled to 3 replicas
   ```bash
-  kubectl get deployment citadelbuy-api -n citadelbuy
+  kubectl get deployment broxiva-api -n broxiva
   ```
 - [ ] Test health endpoint
   ```bash
-  kubectl run -it --rm api-test --image=curlimages/curl -n citadelbuy -- \
-    curl http://citadelbuy-api/health
+  kubectl run -it --rm api-test --image=curlimages/curl -n broxiva -- \
+    curl http://broxiva-api/health
   ```
 - [ ] Verify HPA is created
   ```bash
-  kubectl get hpa citadelbuy-api-hpa -n citadelbuy
+  kubectl get hpa broxiva-api-hpa -n broxiva
   ```
 
 ### Web Frontend
 - [ ] Review apps/web-deployment.yaml security settings
 - [ ] Verify Docker image is available
   ```bash
-  docker pull citadelplatforms/citadelbuy-ecommerce:frontend-latest
+  docker pull broxivaplatforms/broxiva-ecommerce:frontend-latest
   ```
 - [ ] Apply web deployment
   ```bash
@@ -289,15 +289,15 @@ If not using External Secrets Operator:
   ```
 - [ ] Wait for web to be ready
   ```bash
-  kubectl wait --for=condition=ready pod -l app=citadelbuy-web -n citadelbuy --timeout=300s
+  kubectl wait --for=condition=ready pod -l app=broxiva-web -n broxiva --timeout=300s
   ```
 - [ ] Verify deployment is scaled to 3 replicas
   ```bash
-  kubectl get deployment citadelbuy-web -n citadelbuy
+  kubectl get deployment broxiva-web -n broxiva
   ```
 - [ ] Verify HPA is created
   ```bash
-  kubectl get hpa citadelbuy-web-hpa -n citadelbuy
+  kubectl get hpa broxiva-web-hpa -n broxiva
   ```
 
 ## Phase 7: Verification
@@ -313,21 +313,21 @@ If not using External Secrets Operator:
 ### Manual Security Checks
 - [ ] Verify all pods are running as non-root
   ```bash
-  kubectl get pods -n citadelbuy -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.securityContext.runAsUser}{"\n"}{end}'
+  kubectl get pods -n broxiva -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.securityContext.runAsUser}{"\n"}{end}'
   ```
 - [ ] Verify read-only root filesystems (where applicable)
   ```bash
-  kubectl get deployments -n citadelbuy -o json | \
+  kubectl get deployments -n broxiva -o json | \
     jq '.items[] | {name: .metadata.name, readOnlyRootFilesystem: .spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem}'
   ```
 - [ ] Verify privilege escalation is disabled
   ```bash
-  kubectl get deployments -n citadelbuy -o json | \
+  kubectl get deployments -n broxiva -o json | \
     jq '.items[] | {name: .metadata.name, allowPrivilegeEscalation: .spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation}'
   ```
 - [ ] Verify resource limits are set
   ```bash
-  kubectl get deployments,statefulsets -n citadelbuy -o json | \
+  kubectl get deployments,statefulsets -n broxiva -o json | \
     jq '.items[] | {name: .metadata.name, resources: .spec.template.spec.containers[0].resources}'
   ```
 
@@ -346,13 +346,13 @@ If not using External Secrets Operator:
 - [ ] Test that databases are NOT accessible from unauthorized pods
   ```bash
   # This should FAIL (timeout)
-  kubectl run -it --rm unauthorized --image=postgres:15-alpine -n citadelbuy -- \
-    psql -h postgres -U citadelbuy -d citadelbuy -c "SELECT 1"
+  kubectl run -it --rm unauthorized --image=postgres:15-alpine -n broxiva -- \
+    psql -h postgres -U broxiva -d broxiva -c "SELECT 1"
   ```
 - [ ] Test that API can access databases
   ```bash
   # Check API logs for database connection success
-  kubectl logs -l app=citadelbuy-api -n citadelbuy | grep -i "database\|connection"
+  kubectl logs -l app=broxiva-api -n broxiva | grep -i "database\|connection"
   ```
 - [ ] Test that web can access API
 - [ ] Test that monitoring exporters can scrape metrics
@@ -360,25 +360,25 @@ If not using External Secrets Operator:
 ### Performance Testing
 - [ ] Check pod resource usage
   ```bash
-  kubectl top pods -n citadelbuy
+  kubectl top pods -n broxiva
   ```
 - [ ] Verify autoscaling is working
   ```bash
-  kubectl get hpa -n citadelbuy
+  kubectl get hpa -n broxiva
   ```
 - [ ] Load test API endpoints (optional)
 
 ## Phase 8: Monitoring Setup
 
 ### Prometheus (if not already deployed)
-- [ ] Deploy Prometheus to citadelbuy-monitoring namespace
-- [ ] Configure Prometheus to scrape CitadelBuy metrics
+- [ ] Deploy Prometheus to broxiva-monitoring namespace
+- [ ] Configure Prometheus to scrape Broxiva metrics
 - [ ] Verify Prometheus is collecting metrics from exporters
 
 ### Grafana (if not already deployed)
-- [ ] Deploy Grafana to citadelbuy-monitoring namespace
+- [ ] Deploy Grafana to broxiva-monitoring namespace
 - [ ] Import dashboards for PostgreSQL, Redis, Elasticsearch
-- [ ] Create custom dashboards for CitadelBuy application
+- [ ] Create custom dashboards for Broxiva application
 
 ### Alerting
 - [ ] Configure alerts for:
@@ -414,7 +414,7 @@ If not using External Secrets Operator:
   ```
 - [ ] Run vulnerability scanning on images
   ```bash
-  trivy image citadelplatforms/citadelbuy-ecommerce:backend-latest
+  trivy image broxivaplatforms/broxiva-ecommerce:backend-latest
   ```
 - [ ] Run security posture assessment
   ```bash
@@ -448,9 +448,9 @@ If not using External Secrets Operator:
 
 If you encounter issues, refer to:
 - [ ] SECURITY_HARDENING.md - Troubleshooting section
-- [ ] Kubernetes events: `kubectl get events -n citadelbuy --sort-by='.lastTimestamp'`
-- [ ] Pod logs: `kubectl logs <pod-name> -n citadelbuy`
-- [ ] Pod descriptions: `kubectl describe pod <pod-name> -n citadelbuy`
+- [ ] Kubernetes events: `kubectl get events -n broxiva --sort-by='.lastTimestamp'`
+- [ ] Pod logs: `kubectl logs <pod-name> -n broxiva`
+- [ ] Pod descriptions: `kubectl describe pod <pod-name> -n broxiva`
 
 ## Sign-off
 

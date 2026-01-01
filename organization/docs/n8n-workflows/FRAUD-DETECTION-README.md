@@ -1,4 +1,4 @@
-# CitadelBuy Fraud Detection & Prevention Workflow
+# Broxiva Fraud Detection & Prevention Workflow
 
 ## Overview
 
@@ -19,7 +19,7 @@ The Fraud Detection & Prevention workflow is a comprehensive real-time fraud mon
 ## Trigger
 
 **Event:** `order.created` webhook
-**Endpoint:** `https://n8n.citadelbuy.com/webhook/fraud-detection`
+**Endpoint:** `https://n8n.broxiva.com/webhook/fraud-detection`
 **Method:** POST
 **Runs:** In parallel with Order Processing workflow
 
@@ -177,7 +177,7 @@ Error Response (500)
 
 ## API Endpoints Used
 
-### CitadelBuy API
+### Broxiva API
 
 1. **Get Customer History**
    - `GET /v1/customers/{customerId}`
@@ -235,9 +235,9 @@ Error Response (500)
 
 ### 2. Configure Credentials
 
-#### CitadelBuy API Credentials
+#### Broxiva API Credentials
 ```
-Name: citadelBuyApi
+Name: broxivaBuyApi
 Type: Header Auth
 Header Name: Authorization
 Header Value: Bearer YOUR_API_KEY
@@ -273,7 +273,7 @@ API Token: YOUR_ZENDESK_TOKEN
 
 ```bash
 # Set webhook URL in your order processing system
-WEBHOOK_URL="https://n8n.citadelbuy.com/webhook/fraud-detection"
+WEBHOOK_URL="https://n8n.broxiva.com/webhook/fraud-detection"
 
 # Test webhook
 curl -X POST $WEBHOOK_URL \
@@ -434,7 +434,7 @@ const DISPOSABLE_DOMAINS = [
 • Address Mismatch: +20 points
 
 *Action Required:* Review order in admin panel
-<https://admin.citadelbuy.com/orders/ORD-12345|View Order>
+<https://admin.broxiva.com/orders/ORD-12345|View Order>
 ```
 
 #### High Risk
@@ -458,7 +458,7 @@ const DISPOSABLE_DOMAINS = [
 *Stripe Radar:* elevated
 
 *Action Required:* URGENT manual review required
-<https://admin.citadelbuy.com/orders/ORD-12345|View Order> | <https://admin.citadelbuy.com/fraud/review/ORD-12345|Fraud Review Panel>
+<https://admin.broxiva.com/orders/ORD-12345|View Order> | <https://admin.broxiva.com/fraud/review/ORD-12345|Fraud Review Panel>
 
 @fraud-team @security-team
 ```
@@ -487,7 +487,7 @@ const DISPOSABLE_DOMAINS = [
 • Customer account blocked
 • Added to fraud blacklist
 
-<https://admin.citadelbuy.com/fraud/case/ORD-12345|View Fraud Case>
+<https://admin.broxiva.com/fraud/case/ORD-12345|View Fraud Case>
 
 @fraud-team @security-team @management
 ```
@@ -496,7 +496,7 @@ const DISPOSABLE_DOMAINS = [
 
 #### Order Hold Email
 ```
-Subject: Your CitadelBuy Order Requires Verification
+Subject: Your Broxiva Order Requires Verification
 
 Dear [Customer Name],
 
@@ -506,7 +506,7 @@ As part of our security measures to protect our customers, we need to verify
 some information before processing your order.
 
 Our team will review your order and contact you within 24 hours. If you have
-any questions, please contact our support team at support@citadelbuy.com.
+any questions, please contact our support team at support@broxiva.com.
 
 Order Details:
 - Order Number: ORD-12345
@@ -516,12 +516,12 @@ Order Details:
 Thank you for your patience and understanding.
 
 Best regards,
-CitadelBuy Security Team
+Broxiva Security Team
 ```
 
 #### Order Cancelled Email
 ```
-Subject: Your CitadelBuy Order Has Been Cancelled
+Subject: Your Broxiva Order Has Been Cancelled
 
 Dear [Customer Name],
 
@@ -531,7 +531,7 @@ due to security concerns.
 Your payment has been refunded and should appear in your account within 5-10 business days.
 
 If you believe this was an error, please contact our support team at
-support@citadelbuy.com with your order number.
+support@broxiva.com with your order number.
 
 Order Details:
 - Order Number: ORD-12345
@@ -542,7 +542,7 @@ Order Details:
 Thank you for your understanding.
 
 Best regards,
-CitadelBuy Security Team
+Broxiva Security Team
 ```
 
 ## Monitoring & Analytics
@@ -574,15 +574,15 @@ CitadelBuy Security Team
 
 ```bash
 # Get fraud decisions for date range
-curl -X GET "https://api.citadelbuy.com/v1/audit/fraud-decisions?startDate=2025-12-01&endDate=2025-12-03" \
+curl -X GET "https://api.broxiva.com/v1/audit/fraud-decisions?startDate=2025-12-01&endDate=2025-12-03" \
   -H "Authorization: Bearer YOUR_API_KEY"
 
 # Get blocked customers
-curl -X GET "https://api.citadelbuy.com/v1/customers/blocked?reason=fraud_detected" \
+curl -X GET "https://api.broxiva.com/v1/customers/blocked?reason=fraud_detected" \
   -H "Authorization: Bearer YOUR_API_KEY"
 
 # Get high-risk orders
-curl -X GET "https://api.citadelbuy.com/v1/orders?status=fraud_review&riskLevel=high" \
+curl -X GET "https://api.broxiva.com/v1/orders?status=fraud_review&riskLevel=high" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -828,17 +828,17 @@ Average execution time: **2-4 seconds**
 - [n8n Fraud Detection Best Practices](https://docs.n8n.io/use-cases/fraud-detection/)
 - [Stripe Radar Documentation](https://stripe.com/docs/radar)
 - [IP Geolocation API Docs](https://ip-api.com/docs)
-- [CitadelBuy API Reference](https://api.citadelbuy.com/docs)
+- [Broxiva API Reference](https://api.broxiva.com/docs)
 
 ## Contact
 
 For questions or support:
-- **Fraud Team:** fraud@citadelbuy.com
-- **Technical Support:** devops@citadelbuy.com
+- **Fraud Team:** fraud@broxiva.com
+- **Technical Support:** devops@broxiva.com
 - **Slack:** #fraud-alerts, #fraud-review
 
 ---
 
 **Last Updated:** 2025-12-03
 **Version:** 1.0.0
-**Maintained By:** CitadelBuy Security Team
+**Maintained By:** Broxiva Security Team
