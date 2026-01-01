@@ -47,6 +47,21 @@ phases:
       - docker build -t broxiva/web:$IMAGE_TAG -f apps/web/Dockerfile .
       - docker tag broxiva/web:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG
       - docker tag broxiva/web:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:latest
+      - echo "===== BUILDING PYTHON MICROSERVICES ====="
+      - cd $CODEBUILD_SRC_DIR/organization
+      - |
+        for SERVICE in ai-agents ai-engine analytics chatbot fraud-detection inventory media notification personalization pricing recommendation search supplier-integration; do
+          echo "===== Building $SERVICE ====="
+          SERVICE_PATH="apps/services/$SERVICE"
+          if [ -f "$SERVICE_PATH/Dockerfile" ]; then
+            docker build -t broxiva/$SERVICE:$IMAGE_TAG -f $SERVICE_PATH/Dockerfile $SERVICE_PATH/
+            docker tag broxiva/$SERVICE:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:$IMAGE_TAG
+            docker tag broxiva/$SERVICE:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:latest
+            echo "$SERVICE built successfully"
+          else
+            echo "WARNING: Dockerfile not found for $SERVICE at $SERVICE_PATH/Dockerfile"
+          fi
+        done
 
   post_build:
     commands:
@@ -57,9 +72,35 @@ phases:
       - echo "Pushing Web..."
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:latest
+      - echo "===== PUSHING PYTHON MICROSERVICES ====="
+      - |
+        for SERVICE in ai-agents ai-engine analytics chatbot fraud-detection inventory media notification personalization pricing recommendation search supplier-integration; do
+          echo "Pushing $SERVICE..."
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:$IMAGE_TAG || echo "Failed to push $SERVICE (image may not exist)"
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:latest || echo "Failed to push $SERVICE:latest"
+        done
       - echo "===== BUILD COMPLETE ====="
       - cd $CODEBUILD_SRC_DIR
-      - printf '[{"name":"api","imageUri":"%s"},{"name":"web","imageUri":"%s"}]' "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:$IMAGE_TAG" "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG" > imagedefinitions.json
+      - |
+        cat > imagedefinitions.json << EOF
+        [
+          {"name":"api","imageUri":"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:$IMAGE_TAG"},
+          {"name":"web","imageUri":"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG"},
+          {"name":"ai-agents","imageUri":"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/ai-agents:$IMAGE_TAG"},
+          {"name":"ai-engine","imageUri":"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/ai-engine:$IMAGE_TAG"},
+          {"name":"analytics","imageUri":"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/analytics:$IMAGE_TAG"},
+          {"name":"chatbot","imageUri":"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/chatbot:$IMAGE_TAG"},
+          {"name":"fraud-detection","imageUri":"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/fraud-detection:$IMAGE_TAG"},
+          {"name":"inventory","imageUri":"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/inventory:$IMAGE_TAG"},
+          {"name":"media","imageUri":"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/media:$IMAGE_TAG"},
+          {"name":"notification","imageUri":"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/notification:$IMAGE_TAG"},
+          {"name":"personalization","imageUri":"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/personalization:$IMAGE_TAG"},
+          {"name":"pricing","imageUri":"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/pricing:$IMAGE_TAG"},
+          {"name":"recommendation","imageUri":"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/recommendation:$IMAGE_TAG"},
+          {"name":"search","imageUri":"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/search:$IMAGE_TAG"},
+          {"name":"supplier-integration","imageUri":"$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/supplier-integration:$IMAGE_TAG"}
+        ]
+        EOF
       - cat imagedefinitions.json
 
 artifacts:
