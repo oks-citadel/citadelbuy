@@ -17,8 +17,6 @@
     "strictBindCallApply": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "typeRoots": ["./node_modules/@types", "./src/types"],
-    "types": ["node", "express", "multer", "jest", "bcrypt", "bcryptjs", "compression", "cookie-parser", "jsonwebtoken", "nodemailer", "passport-jwt", "passport-local", "qrcode", "speakeasy", "supertest"],
     "paths": {
       "@/*": ["src/*"],
       "@/common/*": ["src/common/*"],
@@ -26,6 +24,6 @@
       "@/config/*": ["src/config/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/types/**/*"],
   "exclude": ["node_modules", "dist", "test", "**/*.spec.ts", "src/modules/dropshipping.disabled/**/*"]
 }
