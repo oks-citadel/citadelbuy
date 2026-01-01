@@ -18,7 +18,7 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "typeRoots": ["./node_modules/@types", "./src/types"],
-    "types": ["node", "multer", "express"],
+    "types": ["node", "express", "multer", "jest", "bcrypt", "bcryptjs", "compression", "cookie-parser", "jsonwebtoken", "nodemailer", "passport-jwt", "passport-local", "qrcode", "speakeasy", "supertest"],
     "paths": {
       "@/*": ["src/*"],
       "@/common/*": ["src/common/*"],
