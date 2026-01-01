@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: broxiva-api
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     app: broxiva-api
     tier: backend
@@ -76,7 +76,7 @@ spec:
             app: broxiva-api
       containers:
       - name: api
-        image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/api:v2.0.0
+        image: 992382449461.dkr.ecr.us-east-1.amazonaws.com/broxiva/api:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 4000
@@ -267,7 +267,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: broxiva-api
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     app: broxiva-api
     tier: backend
@@ -299,17 +299,17 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: broxiva-api
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     app: broxiva-api
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/broxiva-api-production
+    eks.amazonaws.com/role-arn: arn:aws:iam::992382449461:role/broxiva-api-production
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: broxiva-api-pdb
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     app: broxiva-api
 spec:
