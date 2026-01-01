@@ -8,6 +8,7 @@
  * @see https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API
  */
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface SpeechRecognitionErrorEvent extends Event {
   readonly error: SpeechRecognitionErrorCode;
   readonly message: string;
@@ -41,6 +42,7 @@ interface SpeechRecognitionResultList {
   [index: number]: SpeechRecognitionResult;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface SpeechRecognitionEvent extends Event {
   readonly resultIndex: number;
   readonly results: SpeechRecognitionResultList;
@@ -88,15 +90,7 @@ interface SpeechRecognitionConstructor {
   prototype: SpeechRecognition;
 }
 
-declare global {
-  interface Window {
-    SpeechRecognition?: SpeechRecognitionConstructor;
-    webkitSpeechRecognition?: SpeechRecognitionConstructor;
-  }
-
-  // Constructor types
-  const SpeechRecognition: SpeechRecognitionConstructor | undefined;
-  const webkitSpeechRecognition: SpeechRecognitionConstructor | undefined;
+interface Window {
+  SpeechRecognition?: SpeechRecognitionConstructor;
+  webkitSpeechRecognition?: SpeechRecognitionConstructor;
 }
-
-export {};

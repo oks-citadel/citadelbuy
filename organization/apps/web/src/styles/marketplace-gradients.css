@@ -9,8 +9,7 @@
  * 4. Respects prefers-reduced-motion
  */
 
-@layer utilities {
-  /* ==========================================================================
+/* ==========================================================================
      PRIMARY MARKETPLACE GRADIENTS
      ========================================================================== */
 
@@ -294,13 +293,12 @@
       linear-gradient(135deg, #c9a227 0%, #1a365d 100%) border-box;
   }
 
-  .dark .badge-gradient-gold {
-    background: linear-gradient(135deg, rgba(201, 162, 39, 0.2) 0%, rgba(201, 162, 39, 0.3) 100%);
-    color: #e6b82e;
-  }
+.dark .badge-gradient-gold {
+  background: linear-gradient(135deg, rgba(201, 162, 39, 0.2) 0%, rgba(201, 162, 39, 0.3) 100%);
+  color: #e6b82e;
+}
 
-  .dark .badge-gradient-navy {
-    background: linear-gradient(135deg, rgba(45, 74, 124, 0.3) 0%, rgba(45, 74, 124, 0.4) 100%);
-    color: #93c5fd;
-  }
+.dark .badge-gradient-navy {
+  background: linear-gradient(135deg, rgba(45, 74, 124, 0.3) 0%, rgba(45, 74, 124, 0.4) 100%);
+  color: #93c5fd;
 }

@@ -6,50 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Mic, MicOff, Loader2, Volume2, X, Search } from 'lucide-react';
 
-// Web Speech API types
-interface SpeechRecognitionResult {
-  readonly isFinal: boolean;
-  readonly length: number;
-  readonly [index: number]: SpeechRecognitionAlternative;
-}
-
-interface SpeechRecognitionAlternative {
-  readonly transcript: string;
-  readonly confidence: number;
-}
-
-interface SpeechRecognitionResultList {
-  readonly length: number;
-  readonly [index: number]: SpeechRecognitionResult;
-}
-
-interface SpeechRecognitionResultEvent extends Event {
-  readonly resultIndex: number;
-  readonly results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionErrorEventCustom extends Event {
-  readonly error: string;
-}
-
-interface SpeechRecognitionInstance {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult: ((event: SpeechRecognitionResultEvent) => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEventCustom) => void) | null;
-  onend: (() => void) | null;
-  start(): void;
-  stop(): void;
-  abort(): void;
-}
-
-type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
-
-interface WindowWithSpeechRecognition extends Window {
-  SpeechRecognition?: SpeechRecognitionConstructor;
-  webkitSpeechRecognition?: SpeechRecognitionConstructor;
-}
+// Web Speech API types - uses global types from @/types/speech-recognition.d.ts
 
 interface VoiceSearchProps {
   onSearch: (query: string) => void;
@@ -78,7 +35,7 @@ export function VoiceSearch({
   useEffect(() => {
     // Check if Web Speech API is supported
     if (typeof window !== 'undefined') {
-      const win = window as WindowWithSpeechRecognition;
+      const win = window;
       const SpeechRecognitionAPI = win.SpeechRecognition || win.webkitSpeechRecognition;
       setIsSupported(!!SpeechRecognitionAPI);
     }
@@ -95,7 +52,7 @@ export function VoiceSearch({
     setIsListening(true);
 
     // Get the SpeechRecognition constructor from window
-    const win = window as WindowWithSpeechRecognition;
+    const win = window;
     const SpeechRecognitionAPI = win.SpeechRecognition || win.webkitSpeechRecognition;
 
     if (!SpeechRecognitionAPI) {
@@ -108,7 +65,8 @@ export function VoiceSearch({
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 
-    recognition.onresult = (event: SpeechRecognitionResultEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
       const current = event.resultIndex;
       const result = event.results[current];
       const text = result[0].transcript;
@@ -124,7 +82,8 @@ export function VoiceSearch({
       }
     };
 
-    recognition.onerror = (event: SpeechRecognitionErrorEventCustom) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onerror = (event: any) => {
       setIsListening(false);
       if (event.error === 'no-speech') {
         setError('No speech detected. Please try again.');
