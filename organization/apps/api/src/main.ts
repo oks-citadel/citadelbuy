@@ -119,9 +119,9 @@ async function bootstrap() {
   // CRITICAL: Always enforce HTTPS in production to protect sensitive data
   if (isProduction) {
     app.use((req: Request, res: Response, next: NextFunction) => {
-      // Skip HTTPS enforcement for health check endpoints (used by K8s probes)
+      // Skip HTTPS enforcement for health check endpoints (used by K8s and ALB probes)
       // These endpoints must be accessible via HTTP for internal cluster communication
-      if (req.url === '/api/health' || req.url.startsWith('/api/health?')) {
+      if (req.url.startsWith('/api/health')) {
         return next();
       }
 
