@@ -242,7 +242,9 @@ export function validate(config: Record<string, unknown>) {
   }
 
   // Additional custom validations for production
-  if (validatedConfig.NODE_ENV === 'production') {
+  // Skip if SKIP_PRODUCTION_VALIDATION is set (for initial deployment/testing)
+  const skipValidation = process.env.SKIP_PRODUCTION_VALIDATION === 'true';
+  if (validatedConfig.NODE_ENV === 'production' && !skipValidation) {
     performProductionValidation(validatedConfig);
   }
 
