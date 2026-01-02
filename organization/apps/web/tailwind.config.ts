@@ -22,6 +22,41 @@ const config: Config = {
     },
     extend: {
       colors: {
+        // ============================================
+        // BROXIVA DESIGN SYSTEM TOKENS (bx-*)
+        // ============================================
+        bx: {
+          // Background layers (dark atmospheric system)
+          bg: {
+            0: 'var(--bx-bg-0)',
+            1: 'var(--bx-bg-1)',
+            2: 'var(--bx-bg-2)',
+            3: 'var(--bx-bg-3)',
+          },
+          // Text colors (high contrast for readability)
+          text: {
+            DEFAULT: 'var(--bx-text)',
+            secondary: 'var(--bx-text-secondary)',
+            muted: 'var(--bx-text-muted)',
+            dim: 'var(--bx-text-dim)',
+          },
+          // Brand signature colors
+          pink: 'var(--bx-pink)',
+          violet: 'var(--bx-violet)',
+          cyan: 'var(--bx-cyan)',
+          mint: 'var(--bx-mint)',
+          gold: 'var(--bx-gold)',
+          // Semantic colors
+          success: 'var(--bx-success)',
+          warning: 'var(--bx-warning)',
+          danger: 'var(--bx-danger)',
+          info: 'var(--bx-info)',
+          // Border
+          border: 'var(--bx-border)',
+        },
+        // ============================================
+        // LEGACY COLORS (preserved for compatibility)
+        // ============================================
         // Broxiva Primary - Elegant deep navy
         primary: {
           50: '#f0f4ff',
@@ -161,9 +196,24 @@ const config: Config = {
         display: ['Playfair Display', 'Georgia', 'Times New Roman', 'serif'],
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', 'monospace'],
+        // Broxiva Design System font
+        bx: ['Georgia', 'serif'],
       },
       fontSize: {
         display: ['4rem', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '700' }],
+        // Broxiva Design System typography (9/10pt)
+        'bx-xs': ['0.75rem', { lineHeight: '1rem' }],
+        'bx-sm': ['0.8125rem', { lineHeight: '1.25rem' }],
+        'bx-base': ['0.875rem', { lineHeight: '1.5rem' }],
+        'bx-lg': ['1rem', { lineHeight: '1.75rem' }],
+      },
+      // Broxiva Design System background gradients
+      backgroundImage: {
+        'bx-app': 'linear-gradient(180deg, #0D0D0D 0%, #1A1A2E 100%)',
+        'bx-aurora': 'linear-gradient(135deg, #EC4899 0%, #8B5CF6 50%, #06B6D4 100%)',
+        'bx-trust': 'linear-gradient(135deg, #1E3A5F 0%, #3B82F6 50%, #06B6D4 100%)',
+        'bx-elite': 'linear-gradient(135deg, #92400E 0%, #F59E0B 100%)',
+        'bx-glass': 'linear-gradient(180deg, rgba(31,31,46,0.8) 0%, rgba(31,31,46,0.6) 100%)',
       },
       spacing: {
         18: '4.5rem',   // 72px
@@ -176,6 +226,10 @@ const config: Config = {
         lg: '12px',
         xl: '16px',
         '2xl': '24px',
+        // Broxiva Design System border radius
+        'bx-card': '20px',
+        'bx-chip': '999px',
+        'bx-modal': '24px',
       },
       boxShadow: {
         xs: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
@@ -193,6 +247,12 @@ const config: Config = {
         'accent-lg': '0 20px 40px -10px rgba(201, 162, 39, 0.4)',
         glow: '0 0 20px rgba(26, 54, 93, 0.15)',
         'glow-accent': '0 0 20px rgba(201, 162, 39, 0.15)',
+        // Broxiva Design System shadows
+        'bx-card': '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05)',
+        'bx-glow-pink': '0 0 40px rgba(236,72,153,0.3)',
+        'bx-glow-cyan': '0 0 40px rgba(6,182,212,0.3)',
+        'bx-glow-violet': '0 0 40px rgba(139,92,246,0.3)',
+        'bx-glow-gold': '0 0 40px rgba(245,158,11,0.3)',
       },
       transitionTimingFunction: {
         spring: 'cubic-bezier(0.34, 1.56, 0.64, 1)',

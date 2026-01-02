@@ -28,6 +28,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useCartStore, selectCartItemCount } from '@/stores/cart-store';
 import { useSearchStore } from '@/stores/search-store';
 import { cn } from '@/lib/utils';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 const categories = [
   { name: 'Electronics', href: '/categories/electronics' },
@@ -101,13 +102,8 @@ export function Header() {
             {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
 
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0E3A8A 0%, #3B82F6 100%)' }}>
-              <span className="text-white font-bold text-lg">B</span>
-            </div>
-            <span className="hidden sm:inline-block font-bold text-xl text-white">Broxiva</span>
-          </Link>
+          {/* Logo - Unified BrandLogo component */}
+          <BrandLogo variant="default" theme="auto" />
 
           {/* Search bar - Desktop */}
           <form

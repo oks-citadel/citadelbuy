@@ -15,6 +15,7 @@ import {
   Linkedin,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 /**
  * MarketplaceFooter Component
@@ -152,11 +153,11 @@ export const MarketplaceFooter: React.FC<MarketplaceFooterProps> = ({ className 
       {/* Main Footer Content */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 lg:gap-12">
-          {/* Brand Column */}
+          {/* Brand Column - Unified BrandLogo component */}
           <div className="col-span-2 md:col-span-4 lg:col-span-1">
-            <Link href="/" className="inline-block mb-4">
-              <span className="text-2xl font-bold text-white">Broxiva</span>
-            </Link>
+            <div className="mb-4">
+              <BrandLogo variant="footer" theme="dark" />
+            </div>
             <p className="text-sm text-neutral-400 mb-6 max-w-xs">
               The trusted marketplace connecting quality vendors with customers worldwide.
             </p>
