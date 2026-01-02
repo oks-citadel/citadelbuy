@@ -79,15 +79,18 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
 
     // Cross-Origin-Embedder-Policy
     // Controls cross-origin resource embedding
-    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+    // Note: 'unsafe-none' allows cross-origin API access (required for frontend at different subdomain)
+    res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
 
     // Cross-Origin-Opener-Policy
     // Isolates browsing context from cross-origin documents
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    // Note: 'same-origin-allow-popups' allows payment provider popups
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
 
     // Cross-Origin-Resource-Policy
     // Controls cross-origin resource sharing
-    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+    // Note: 'cross-origin' allows frontend at broxiva.com to access API at api.broxiva.com
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
 
     // Remove sensitive headers that expose technology stack
     res.removeHeader('X-Powered-By');
@@ -110,6 +113,10 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
       // Script sources (JavaScript)
       'script-src': [
         "'self'",
+        // Allow inline scripts (required for some third-party integrations)
+        "'unsafe-inline'",
+        // Allow eval (required for some third-party scripts like Stripe)
+        "'unsafe-eval'",
         // Stripe.js (required for PCI DSS compliant payment processing)
         'https://js.stripe.com',
         // PayPal SDK
@@ -118,10 +125,6 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
         // Google Analytics (if used)
         'https://www.google-analytics.com',
         'https://ssl.google-analytics.com',
-        // Development only: allow 'unsafe-eval' for HMR
-        ...(this.isDevelopment ? ["'unsafe-eval'"] : []),
-        // Allow inline scripts with nonce (better than 'unsafe-inline')
-        // Note: In production, use nonce-based CSP for inline scripts
       ],
 
       // Style sources (CSS)
