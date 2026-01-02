@@ -42,19 +42,26 @@ export class PushNotificationService implements OnModuleInit {
   }
 
   onModuleInit() {
-    // In production, fail loudly if Firebase is not configured
+    // In production, warn if Firebase is not configured (unless explicitly skipped)
     const nodeEnv = this.configService.get('NODE_ENV');
+    const skipValidation = this.configService.get('SKIP_PRODUCTION_VALIDATION') === 'true';
+
     if (nodeEnv === 'production' && !this.isInitialized) {
       this.logger.error(
         'CRITICAL: Firebase is not configured in production! ' +
         'Push notifications will fail. ' +
         'Set FIREBASE_SERVICE_ACCOUNT_PATH, FIREBASE_SERVICE_ACCOUNT_JSON, or FIREBASE_PROJECT_ID.'
       );
-      // Throw error to prevent silent failures in production
-      throw new Error(
-        'Firebase must be configured for production. ' +
-        'Push notifications are required for order updates and user engagement.'
-      );
+
+      // Allow skipping validation during initial deployment
+      if (!skipValidation) {
+        throw new Error(
+          'Firebase must be configured for production. ' +
+          'Push notifications are required for order updates and user engagement.'
+        );
+      }
+
+      this.logger.warn('SKIP_PRODUCTION_VALIDATION is set - continuing without Firebase');
     }
   }
 
