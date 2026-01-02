@@ -3,6 +3,30 @@ const nextConfig = {
   // output: 'standalone' disabled for local Windows builds, enable for Docker
   output: process.env.DOCKER_BUILD === 'true' ? 'standalone' : undefined,
   reactStrictMode: true,
+  async redirects() {
+    return [
+      {
+        source: '/login',
+        destination: '/auth/login',
+        permanent: true,
+      },
+      {
+        source: '/signin',
+        destination: '/auth/login',
+        permanent: true,
+      },
+      {
+        source: '/register',
+        destination: '/auth/register',
+        permanent: true,
+      },
+      {
+        source: '/signup',
+        destination: '/auth/register',
+        permanent: true,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

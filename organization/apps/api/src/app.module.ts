@@ -61,6 +61,7 @@ import { MeModule } from './modules/me/me.module';
 import { AiModule } from './modules/ai/ai.module';
 import { MarketingModule } from './modules/marketing/marketing.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
+import { SentryModule } from './common/monitoring/sentry.module';
 import { validate } from './common/config/config-validation';
 
 @Module({
@@ -147,6 +148,7 @@ import { validate } from './common/config/config-validation';
     AiModule,
     MarketingModule,
     ComplianceModule,
+    SentryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

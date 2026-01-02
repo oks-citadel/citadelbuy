@@ -14,6 +14,7 @@ async function main() {
   await prisma.review.deleteMany();
   await prisma.product.deleteMany();
   await prisma.category.deleteMany();
+  await prisma.vendor.deleteMany();
   await prisma.user.deleteMany();
 
   // Hash password for all test users (password: "password123")
@@ -67,6 +68,34 @@ async function main() {
   });
 
   console.log('✅ Users created');
+
+  // Create Vendor entities (required for product foreign key constraint)
+  console.log('🏪 Creating vendor entities...');
+  await prisma.vendor.create({
+    data: {
+      id: vendor1.id,
+      name: 'TechStore Vendor',
+      slug: 'techstore-vendor',
+      description: 'Technology and Electronics Store',
+      status: 'ACTIVE',
+      isVerified: true,
+      isActive: true,
+    },
+  });
+
+  await prisma.vendor.create({
+    data: {
+      id: vendor2.id,
+      name: 'Fashion Boutique',
+      slug: 'fashion-boutique',
+      description: 'Fashion and Apparel Store',
+      status: 'ACTIVE',
+      isVerified: true,
+      isActive: true,
+    },
+  });
+
+  console.log('✅ Vendor entities created');
 
   // Create Categories
   console.log('📁 Creating categories...');
