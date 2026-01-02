@@ -37,20 +37,30 @@ export class ShippingService {
   }
 
   private async initializeProviders() {
-    // Load active providers from database and initialize them
-    const providers = await this.prisma.shippingProvider.findMany({
-      where: { isActive: true },
-    });
+    try {
+      // Load active providers from database and initialize them
+      const providers = await this.prisma.shippingProvider.findMany({
+        where: { isActive: true },
+      });
 
-    for (const provider of providers) {
-      try {
-        this.logger.log(`Initializing ${provider.carrier} provider`);
-        const providerInstance = this.createProviderInstance(provider);
-        if (providerInstance) {
-          this.providers.set(provider.carrier, providerInstance);
+      for (const provider of providers) {
+        try {
+          this.logger.log(`Initializing ${provider.carrier} provider`);
+          const providerInstance = this.createProviderInstance(provider);
+          if (providerInstance) {
+            this.providers.set(provider.carrier, providerInstance);
+          }
+        } catch (error) {
+          this.logger.error(`Failed to initialize ${provider.carrier}: ${error.message}`);
         }
-      } catch (error) {
-        this.logger.error(`Failed to initialize ${provider.carrier}: ${error.message}`);
+      }
+    } catch (error) {
+      // Handle case where shipping_providers table doesn't exist yet
+      // This allows the app to start while migrations are pending
+      if (error.code === 'P2021') {
+        this.logger.warn('Shipping providers table does not exist. Shipping functionality will be limited until migrations are run.');
+      } else {
+        this.logger.error(`Failed to initialize shipping providers: ${error.message}`);
       }
     }
   }
