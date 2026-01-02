@@ -36,7 +36,7 @@ phases:
       - pnpm build
       - echo "===== BUILDING DOCKER IMAGE FOR API ====="
       - cd $CODEBUILD_SRC_DIR/organization
-      - docker build -t broxiva/api:$IMAGE_TAG -f apps/api/Dockerfile .
+      - docker build --no-cache -t broxiva/api:$IMAGE_TAG -f apps/api/Dockerfile .
       - docker tag broxiva/api:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:$IMAGE_TAG
       - docker tag broxiva/api:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/api:latest
       - echo "===== BUILDING WEB ====="
@@ -44,7 +44,7 @@ phases:
       - pnpm build
       - echo "===== BUILDING DOCKER IMAGE FOR WEB ====="
       - cd $CODEBUILD_SRC_DIR/organization
-      - docker build -t broxiva/web:$IMAGE_TAG -f apps/web/Dockerfile .
+      - docker build --no-cache -t broxiva/web:$IMAGE_TAG -f apps/web/Dockerfile .
       - docker tag broxiva/web:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:$IMAGE_TAG
       - docker tag broxiva/web:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/web:latest
       - echo "===== BUILDING PYTHON MICROSERVICES ====="
@@ -54,7 +54,7 @@ phases:
           echo "===== Building $SERVICE ====="
           SERVICE_PATH="apps/services/$SERVICE"
           if [ -f "$SERVICE_PATH/Dockerfile" ]; then
-            docker build -t broxiva/$SERVICE:$IMAGE_TAG -f $SERVICE_PATH/Dockerfile $SERVICE_PATH/
+            docker build --no-cache -t broxiva/$SERVICE:$IMAGE_TAG -f $SERVICE_PATH/Dockerfile $SERVICE_PATH/
             docker tag broxiva/$SERVICE:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:$IMAGE_TAG
             docker tag broxiva/$SERVICE:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/broxiva/$SERVICE:latest
             echo "$SERVICE built successfully"
