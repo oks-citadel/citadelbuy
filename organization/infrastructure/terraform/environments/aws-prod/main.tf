@@ -547,7 +547,33 @@ resource "aws_cloudwatch_log_group" "app" {
   tags = local.common_tags
 }
 
-# SNS Topic for Alerts
+# ============================================
+# Messaging Infrastructure (SES, SNS, SQS)
+# ============================================
+# AWS-native messaging services replace external providers (Twilio, SendGrid)
+module "messaging" {
+  source = "../../modules/messaging"
+
+  name_prefix             = local.name_prefix
+  domain_name             = "broxiva.com"
+  enable_custom_mail_from = true
+
+  ses_from_addresses = [
+    "noreply@broxiva.com",
+    "support@broxiva.com",
+    "orders@broxiva.com",
+    "notifications@broxiva.com"
+  ]
+
+  sns_sms_sender_id    = "Broxiva"
+  sns_sms_default_type = "Transactional"
+
+  alert_email_addresses = var.alert_email_addresses
+
+  tags = local.common_tags
+}
+
+# Legacy SNS Topic for Alerts (kept for backward compatibility)
 resource "aws_sns_topic" "alerts" {
   name = "${local.name_prefix}-alerts"
 

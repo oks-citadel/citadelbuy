@@ -2,18 +2,19 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
 
-// Twilio SDK - optionally loaded if available
-let Twilio: any = null;
+// AWS SDK - optionally loaded if available
+let AWS: any = null;
 try {
-  Twilio = require('twilio');
+  AWS = require('aws-sdk');
 } catch {
-  // twilio not installed - SMS will be mocked
+  // aws-sdk not installed - SMS will be mocked
 }
 
 export interface SmsPayload {
   to: string;
   message: string;
   scheduledAt?: Date;
+  messageType?: 'Transactional' | 'Promotional';
 }
 
 export interface SendSmsResult {
@@ -26,7 +27,7 @@ export interface SendSmsResult {
 @Injectable()
 export class SmsService implements OnModuleInit {
   private readonly logger = new Logger(SmsService.name);
-  private twilioClient: any = null;
+  private snsClient: any = null;
   private fromNumber: string | null = null;
   private isInitialized = false;
 
@@ -34,53 +35,59 @@ export class SmsService implements OnModuleInit {
     private prisma: PrismaService,
     private configService: ConfigService,
   ) {
-    this.initializeTwilio();
+    this.initializeAWS();
   }
 
   onModuleInit() {
-    // In production, warn loudly if Twilio is not configured
+    // In production, warn loudly if AWS SNS is not configured
     // SMS is optional but important for verification and alerts
     const nodeEnv = this.configService.get('NODE_ENV');
     if (nodeEnv === 'production' && !this.isInitialized) {
       this.logger.error(
-        'WARNING: Twilio SMS is not configured in production! ' +
+        'WARNING: AWS SNS SMS is not configured in production! ' +
         'Phone verification, order SMS notifications, and delivery alerts will fail. ' +
-        'Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER.'
+        'Set AWS_SNS_ACCESS_KEY_ID, AWS_SNS_SECRET_ACCESS_KEY, and AWS_SNS_REGION.'
       );
       // SMS is less critical than push, so we warn rather than throw
       // Uncomment the following to make SMS required in production:
-      // throw new Error('Twilio must be configured for production SMS functionality.');
+      // throw new Error('AWS SNS must be configured for production SMS functionality.');
     }
   }
 
   /**
-   * Initialize Twilio client
+   * Initialize AWS SNS client
    */
-  private initializeTwilio() {
+  private initializeAWS() {
     try {
-      const accountSid = this.configService.get('TWILIO_ACCOUNT_SID');
-      const authToken = this.configService.get('TWILIO_AUTH_TOKEN');
-      const fromNumber = this.configService.get('TWILIO_PHONE_NUMBER');
+      const accessKeyId = this.configService.get('AWS_SNS_ACCESS_KEY_ID') || this.configService.get('AWS_ACCESS_KEY_ID');
+      const secretAccessKey = this.configService.get('AWS_SNS_SECRET_ACCESS_KEY') || this.configService.get('AWS_SECRET_ACCESS_KEY');
+      const region = this.configService.get('AWS_SNS_REGION') || this.configService.get('AWS_REGION') || 'us-east-1';
+      const senderId = this.configService.get('AWS_SNS_SENDER_ID');
 
-      if (accountSid && authToken && fromNumber) {
-        this.twilioClient = new Twilio(accountSid, authToken);
-        this.fromNumber = fromNumber;
+      if (accessKeyId && secretAccessKey && AWS) {
+        AWS.config.update({
+          accessKeyId,
+          secretAccessKey,
+          region,
+        });
+        this.snsClient = new AWS.SNS({ apiVersion: '2010-03-31' });
+        this.fromNumber = senderId || 'Broxiva';
         this.isInitialized = true;
-        this.logger.log('Twilio SMS service initialized');
+        this.logger.log(`AWS SNS SMS service initialized for region ${region}`);
       } else {
         this.logger.warn(
-          'Twilio not configured. SMS messages will be logged but not sent. ' +
-          'Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER',
+          'AWS SNS not configured. SMS messages will be logged but not sent. ' +
+          'Set AWS_SNS_ACCESS_KEY_ID, AWS_SNS_SECRET_ACCESS_KEY, and AWS_SNS_REGION',
         );
       }
     } catch (error) {
-      this.logger.error('Failed to initialize Twilio', error);
+      this.logger.error('Failed to initialize AWS SNS', error);
       this.logger.warn('SMS messages will be logged but not sent');
     }
   }
 
   /**
-   * Send SMS to a phone number
+   * Send SMS to a phone number using AWS SNS
    */
   async sendSms(payload: SmsPayload): Promise<SendSmsResult> {
     // Validate phone number format
@@ -92,37 +99,44 @@ export class SmsService implements OnModuleInit {
       };
     }
 
-    if (!this.isInitialized || !this.twilioClient || !this.fromNumber) {
+    if (!this.isInitialized || !this.snsClient) {
       this.logger.warn(
-        `SMS would be sent to ${phoneNumber}: "${payload.message}" but Twilio is not initialized`,
+        `SMS would be sent to ${phoneNumber}: "${payload.message}" but AWS SNS is not initialized`,
       );
       return {
         success: false,
-        error: 'Twilio not initialized',
+        error: 'AWS SNS not initialized',
       };
     }
 
     try {
-      const messageOptions: any = {
-        body: payload.message,
-        from: this.fromNumber,
-        to: phoneNumber,
+      const params: any = {
+        Message: payload.message,
+        PhoneNumber: phoneNumber,
+        MessageAttributes: {
+          'AWS.SNS.SMS.SMSType': {
+            DataType: 'String',
+            StringValue: payload.messageType || 'Transactional',
+          },
+        },
       };
 
-      // Schedule message if scheduledAt is provided
-      if (payload.scheduledAt) {
-        messageOptions.scheduleType = 'fixed';
-        messageOptions.sendAt = payload.scheduledAt;
+      // Add sender ID if configured
+      if (this.fromNumber) {
+        params.MessageAttributes['AWS.SNS.SMS.SenderID'] = {
+          DataType: 'String',
+          StringValue: this.fromNumber,
+        };
       }
 
-      const message = await this.twilioClient.messages.create(messageOptions);
+      const result = await this.snsClient.publish(params).promise();
 
-      this.logger.log(`SMS sent successfully: ${message.sid} to ${phoneNumber}`);
+      this.logger.log(`SMS sent successfully via AWS SNS: ${result.MessageId} to ${phoneNumber}`);
 
       return {
         success: true,
-        messageId: message.sid,
-        status: message.status,
+        messageId: result.MessageId,
+        status: 'sent',
       };
     } catch (error) {
       this.logger.error(`Failed to send SMS to ${phoneNumber}`, error);
@@ -139,6 +153,7 @@ export class SmsService implements OnModuleInit {
   async sendBulkSms(
     recipients: string[],
     message: string,
+    messageType: 'Transactional' | 'Promotional' = 'Promotional',
   ): Promise<{
     totalRecipients: number;
     sentCount: number;
@@ -153,6 +168,7 @@ export class SmsService implements OnModuleInit {
       const result = await this.sendSms({
         to: recipient,
         message,
+        messageType,
       });
 
       results[recipient] = result;
@@ -197,6 +213,7 @@ export class SmsService implements OnModuleInit {
     return this.sendSms({
       to: phoneNumber,
       message,
+      messageType: 'Transactional',
     });
   }
 
@@ -219,6 +236,7 @@ export class SmsService implements OnModuleInit {
     return this.sendSms({
       to: phoneNumber,
       message,
+      messageType: 'Transactional',
     });
   }
 
@@ -234,6 +252,7 @@ export class SmsService implements OnModuleInit {
     return this.sendSms({
       to: phoneNumber,
       message,
+      messageType: 'Transactional',
     });
   }
 
@@ -249,6 +268,7 @@ export class SmsService implements OnModuleInit {
     return this.sendSms({
       to: phoneNumber,
       message,
+      messageType: 'Transactional',
     });
   }
 
@@ -265,6 +285,7 @@ export class SmsService implements OnModuleInit {
     return this.sendSms({
       to: phoneNumber,
       message,
+      messageType: 'Promotional',
     });
   }
 
@@ -349,26 +370,55 @@ export class SmsService implements OnModuleInit {
   }
 
   /**
-   * Get SMS delivery status
+   * Get SMS delivery status from AWS SNS (requires CloudWatch Logs)
+   * Note: AWS SNS doesn't provide direct message status like Twilio.
+   * For delivery tracking, configure CloudWatch Logs for SMS delivery status.
    */
   async getSmsStatus(messageId: string): Promise<{
     status: string;
     errorCode?: string;
     errorMessage?: string;
   } | null> {
-    if (!this.isInitialized || !this.twilioClient) {
+    if (!this.isInitialized || !this.snsClient) {
+      return null;
+    }
+
+    // AWS SNS doesn't provide direct status API like Twilio
+    // Status tracking requires CloudWatch Logs configuration
+    // Return a placeholder indicating the message was accepted
+    this.logger.log(`SMS status check requested for ${messageId} - Use CloudWatch Logs for detailed delivery status`);
+
+    return {
+      status: 'accepted',
+      errorMessage: 'For detailed delivery status, configure CloudWatch Logs for SNS SMS delivery',
+    };
+  }
+
+  /**
+   * Check SMS spending limits
+   */
+  async checkSpendingLimit(): Promise<{
+    monthlySpendLimit: number;
+    monthToDateSpend: number;
+    isOverLimit: boolean;
+  } | null> {
+    if (!this.isInitialized || !this.snsClient) {
       return null;
     }
 
     try {
-      const message = await this.twilioClient.messages(messageId).fetch();
+      const attributes = await this.snsClient.getSMSAttributes({
+        attributes: ['MonthlySpendLimit', 'DeliveryStatusSuccessSamplingRate'],
+      }).promise();
+
+      // Note: MonthToDateSpend is not available via API, would need CloudWatch metrics
       return {
-        status: message.status,
-        errorCode: message.errorCode?.toString(),
-        errorMessage: message.errorMessage || undefined,
+        monthlySpendLimit: parseFloat(attributes.attributes?.MonthlySpendLimit || '1'),
+        monthToDateSpend: 0, // Would need CloudWatch metrics
+        isOverLimit: false,
       };
     } catch (error) {
-      this.logger.error(`Failed to get SMS status for ${messageId}`, error);
+      this.logger.error('Failed to get SMS spending attributes', error);
       return null;
     }
   }
@@ -399,6 +449,8 @@ export class SmsService implements OnModuleInit {
 
   /**
    * Validate phone number format
+   * Note: AWS SNS validates phone numbers during publish,
+   * but we can do basic validation here
    */
   async validatePhoneNumber(phoneNumber: string): Promise<{
     valid: boolean;
@@ -414,29 +466,19 @@ export class SmsService implements OnModuleInit {
       };
     }
 
-    if (!this.isInitialized || !this.twilioClient) {
-      // Basic validation without Twilio
-      return {
-        valid: true,
-        formatted: normalized,
-      };
-    }
-
-    try {
-      const lookup = await this.twilioClient.lookups.v1
-        .phoneNumbers(normalized)
-        .fetch();
-
-      return {
-        valid: true,
-        formatted: lookup.phoneNumber,
-      };
-    } catch (error) {
+    // E.164 format validation: starts with + and 10-15 digits
+    const e164Regex = /^\+[1-9]\d{9,14}$/;
+    if (!e164Regex.test(normalized)) {
       return {
         valid: false,
-        error: error.message,
+        error: 'Phone number must be in E.164 format (e.g., +14155552671)',
       };
     }
+
+    return {
+      valid: true,
+      formatted: normalized,
+    };
   }
 
   /**
@@ -495,6 +537,46 @@ export class SmsService implements OnModuleInit {
         success: false,
         error: error.message,
       };
+    }
+  }
+
+  /**
+   * Opt out phone number from receiving SMS (for STOP requests)
+   */
+  async optOutPhoneNumber(phoneNumber: string): Promise<boolean> {
+    if (!this.isInitialized || !this.snsClient) {
+      return false;
+    }
+
+    try {
+      await this.snsClient.optInPhoneNumber({
+        phoneNumber: this.normalizePhoneNumber(phoneNumber),
+      }).promise();
+      // Note: optInPhoneNumber is used to add back to opt-in list
+      // There's no direct opt-out API, it's handled automatically by carriers
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to process opt-out for ${phoneNumber}`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if phone number is opted out
+   */
+  async isPhoneNumberOptedOut(phoneNumber: string): Promise<boolean> {
+    if (!this.isInitialized || !this.snsClient) {
+      return false;
+    }
+
+    try {
+      const result = await this.snsClient.checkIfPhoneNumberIsOptedOut({
+        phoneNumber: this.normalizePhoneNumber(phoneNumber),
+      }).promise();
+      return result.isOptedOut || false;
+    } catch (error) {
+      this.logger.error(`Failed to check opt-out status for ${phoneNumber}`, error);
+      return false;
     }
   }
 

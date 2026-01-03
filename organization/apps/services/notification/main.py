@@ -3,8 +3,9 @@ Notification Service - FastAPI Application
 
 This service provides multi-channel notification capabilities including:
 - Email notifications (SendGrid/AWS SES)
-- SMS notifications (Twilio)
+- SMS notifications (AWS SNS)
 - Push notifications (Firebase Cloud Messaging)
+- Message queuing (AWS SQS)
 - Notification templates and scheduling
 - Delivery tracking and analytics
 
@@ -82,26 +83,54 @@ class AWSSESConfig:
 
 
 @dataclass
-class TwilioConfig:
-    """Twilio SMS provider configuration"""
-    account_sid: str
-    auth_token: str
-    from_number: str
-    messaging_service_sid: Optional[str] = None
+class AWSSNSConfig:
+    """AWS SNS SMS provider configuration"""
+    access_key_id: str
+    secret_access_key: str
+    region: str
+    sender_id: Optional[str] = None
+    default_sms_type: str = 'Transactional'
 
     @classmethod
-    def from_env(cls) -> Optional['TwilioConfig']:
+    def from_env(cls) -> Optional['AWSSNSConfig']:
         """Load configuration from environment variables"""
-        account_sid = os.getenv('TWILIO_ACCOUNT_SID')
-        auth_token = os.getenv('TWILIO_AUTH_TOKEN')
-        from_number = os.getenv('TWILIO_FROM_NUMBER')
-        if not account_sid or not auth_token or not from_number:
+        access_key = os.getenv('AWS_SNS_ACCESS_KEY_ID') or os.getenv('AWS_ACCESS_KEY_ID')
+        secret_key = os.getenv('AWS_SNS_SECRET_ACCESS_KEY') or os.getenv('AWS_SECRET_ACCESS_KEY')
+        if not access_key or not secret_key:
             return None
         return cls(
-            account_sid=account_sid,
-            auth_token=auth_token,
-            from_number=from_number,
-            messaging_service_sid=os.getenv('TWILIO_MESSAGING_SERVICE_SID')
+            access_key_id=access_key,
+            secret_access_key=secret_key,
+            region=os.getenv('AWS_SNS_REGION', os.getenv('AWS_REGION', 'us-east-1')),
+            sender_id=os.getenv('AWS_SNS_SENDER_ID', 'Broxiva'),
+            default_sms_type=os.getenv('AWS_SNS_DEFAULT_SMS_TYPE', 'Transactional')
+        )
+
+
+@dataclass
+class AWSSQSConfig:
+    """AWS SQS message queue configuration"""
+    access_key_id: str
+    secret_access_key: str
+    region: str
+    queue_url: Optional[str] = None
+    queue_name: str = 'broxiva-notifications'
+    dead_letter_queue_url: Optional[str] = None
+
+    @classmethod
+    def from_env(cls) -> Optional['AWSSQSConfig']:
+        """Load configuration from environment variables"""
+        access_key = os.getenv('AWS_SQS_ACCESS_KEY_ID') or os.getenv('AWS_ACCESS_KEY_ID')
+        secret_key = os.getenv('AWS_SQS_SECRET_ACCESS_KEY') or os.getenv('AWS_SECRET_ACCESS_KEY')
+        if not access_key or not secret_key:
+            return None
+        return cls(
+            access_key_id=access_key,
+            secret_access_key=secret_key,
+            region=os.getenv('AWS_SQS_REGION', os.getenv('AWS_REGION', 'us-east-1')),
+            queue_url=os.getenv('AWS_SQS_QUEUE_URL'),
+            queue_name=os.getenv('AWS_SQS_QUEUE_NAME', 'broxiva-notifications'),
+            dead_letter_queue_url=os.getenv('AWS_SQS_DLQ_URL')
         )
 
 
@@ -161,7 +190,8 @@ class SMSProvider(ABC):
         self,
         to: str,
         message: str,
-        media_urls: Optional[List[str]] = None
+        media_urls: Optional[List[str]] = None,
+        message_type: str = 'Transactional'
     ) -> Dict[str, Any]:
         """Send an SMS and return result with message_id"""
         pass
@@ -187,6 +217,39 @@ class PushProvider(ABC):
         ttl: Optional[int] = None
     ) -> Dict[str, Any]:
         """Send push notification and return result"""
+        pass
+
+    @abstractmethod
+    def get_provider_name(self) -> str:
+        """Return the provider name for logging"""
+        pass
+
+
+class QueueProvider(ABC):
+    """Abstract base class for message queue providers"""
+
+    @abstractmethod
+    async def send_message(
+        self,
+        message: Dict[str, Any],
+        delay_seconds: int = 0,
+        message_group_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Send a message to the queue"""
+        pass
+
+    @abstractmethod
+    async def receive_messages(
+        self,
+        max_messages: int = 10,
+        wait_time_seconds: int = 20
+    ) -> List[Dict[str, Any]]:
+        """Receive messages from the queue"""
+        pass
+
+    @abstractmethod
+    async def delete_message(self, receipt_handle: str) -> bool:
+        """Delete a message from the queue"""
         pass
 
     @abstractmethod
@@ -399,86 +462,347 @@ class AWSSESProvider(EmailProvider):
         return "aws_ses"
 
 
-class TwilioProvider(SMSProvider):
-    """Twilio SMS provider implementation"""
+class AWSSNSProvider(SMSProvider):
+    """AWS SNS SMS provider implementation"""
 
-    def __init__(self, config: TwilioConfig):
+    def __init__(self, config: AWSSNSConfig):
         self.config = config
         self._client = None
-        self._logger = logging.getLogger(f"{__name__}.TwilioProvider")
+        self._logger = logging.getLogger(f"{__name__}.AWSSNSProvider")
 
     async def _get_client(self):
-        """Lazy initialization of Twilio client"""
+        """Lazy initialization of AWS SNS client"""
         if self._client is None:
             try:
-                from twilio.rest import Client
-                self._client = Client(self.config.account_sid, self.config.auth_token)
-                self._logger.info("Twilio client initialized successfully")
+                import boto3
+                self._client = boto3.client(
+                    'sns',
+                    aws_access_key_id=self.config.access_key_id,
+                    aws_secret_access_key=self.config.secret_access_key,
+                    region_name=self.config.region
+                )
+                self._logger.info(f"AWS SNS client initialized for region {self.config.region}")
             except ImportError:
-                self._logger.error("Twilio package not installed. Run: pip install twilio")
-                raise RuntimeError("Twilio package not installed")
+                self._logger.error("boto3 package not installed. Run: pip install boto3")
+                raise RuntimeError("boto3 package not installed")
         return self._client
 
     async def send_sms(
         self,
         to: str,
         message: str,
-        media_urls: Optional[List[str]] = None
+        media_urls: Optional[List[str]] = None,
+        message_type: str = 'Transactional'
     ) -> Dict[str, Any]:
         try:
             import asyncio
 
             client = await self._get_client()
 
-            send_args = {
-                'body': message,
-                'to': to
+            # Normalize phone number to E.164 format
+            phone_number = self._normalize_phone_number(to)
+            if not phone_number:
+                return {
+                    'success': False,
+                    'provider': 'aws_sns',
+                    'error': 'Invalid phone number format'
+                }
+
+            # Build message attributes
+            message_attributes = {
+                'AWS.SNS.SMS.SMSType': {
+                    'DataType': 'String',
+                    'StringValue': message_type or self.config.default_sms_type
+                }
             }
 
-            # Use messaging service if configured, otherwise use from number
-            if self.config.messaging_service_sid:
-                send_args['messaging_service_sid'] = self.config.messaging_service_sid
-            else:
-                send_args['from_'] = self.config.from_number
+            # Add sender ID if configured
+            if self.config.sender_id:
+                message_attributes['AWS.SNS.SMS.SenderID'] = {
+                    'DataType': 'String',
+                    'StringValue': self.config.sender_id
+                }
 
-            # Add media URLs for MMS if provided
-            if media_urls:
-                send_args['media_url'] = media_urls
+            publish_args = {
+                'PhoneNumber': phone_number,
+                'Message': message,
+                'MessageAttributes': message_attributes
+            }
 
-            # Run synchronous Twilio call in executor to avoid blocking
+            # Run synchronous boto3 call in executor to avoid blocking
             loop = asyncio.get_event_loop()
-            twilio_message = await loop.run_in_executor(
+            response = await loop.run_in_executor(
                 None,
-                lambda: client.messages.create(**send_args)
+                lambda: client.publish(**publish_args)
             )
 
             self._logger.info(
-                f"Twilio SMS sent successfully",
+                f"AWS SNS SMS sent successfully",
                 extra={
-                    'to': to,
-                    'message_sid': twilio_message.sid,
-                    'status': twilio_message.status
+                    'to': phone_number,
+                    'message_id': response['MessageId'],
+                    'message_type': message_type
                 }
             )
 
             return {
                 'success': True,
-                'provider': 'twilio',
-                'message_id': twilio_message.sid,
-                'status': twilio_message.status,
-                'segments': twilio_message.num_segments if hasattr(twilio_message, 'num_segments') else 1
+                'provider': 'aws_sns',
+                'message_id': response['MessageId'],
+                'status': 'sent',
+                'segments': (len(message) // 160) + 1
             }
 
         except Exception as e:
-            self._logger.error(f"Twilio SMS failed: {str(e)}", exc_info=True)
+            self._logger.error(f"AWS SNS SMS failed: {str(e)}", exc_info=True)
             return {
                 'success': False,
-                'provider': 'twilio',
+                'provider': 'aws_sns',
                 'error': str(e)
             }
 
+    async def check_phone_opted_out(self, phone_number: str) -> bool:
+        """Check if a phone number has opted out of receiving SMS"""
+        try:
+            import asyncio
+            client = await self._get_client()
+            normalized = self._normalize_phone_number(phone_number)
+
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: client.check_if_phone_number_is_opted_out(phoneNumber=normalized)
+            )
+            return response.get('isOptedOut', False)
+        except Exception as e:
+            self._logger.error(f"Failed to check opt-out status: {str(e)}")
+            return False
+
+    async def get_sms_attributes(self) -> Dict[str, Any]:
+        """Get SMS sending attributes including spending limits"""
+        try:
+            import asyncio
+            client = await self._get_client()
+
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: client.get_sms_attributes(
+                    attributes=['MonthlySpendLimit', 'DeliveryStatusSuccessSamplingRate', 'DefaultSMSType']
+                )
+            )
+            return response.get('attributes', {})
+        except Exception as e:
+            self._logger.error(f"Failed to get SMS attributes: {str(e)}")
+            return {}
+
+    def _normalize_phone_number(self, phone_number: str) -> Optional[str]:
+        """Normalize phone number to E.164 format"""
+        import re
+        cleaned = re.sub(r'\D', '', phone_number)
+
+        if len(cleaned) < 10 or len(cleaned) > 15:
+            return None
+
+        if not phone_number.startswith('+'):
+            if len(cleaned) == 10:
+                return f"+1{cleaned}"
+            return f"+{cleaned}"
+
+        return phone_number
+
     def get_provider_name(self) -> str:
-        return "twilio"
+        return "aws_sns"
+
+
+class AWSSQSProvider(QueueProvider):
+    """AWS SQS message queue provider implementation"""
+
+    def __init__(self, config: AWSSQSConfig):
+        self.config = config
+        self._client = None
+        self._queue_url = None
+        self._logger = logging.getLogger(f"{__name__}.AWSSQSProvider")
+
+    async def _get_client(self):
+        """Lazy initialization of AWS SQS client"""
+        if self._client is None:
+            try:
+                import boto3
+                self._client = boto3.client(
+                    'sqs',
+                    aws_access_key_id=self.config.access_key_id,
+                    aws_secret_access_key=self.config.secret_access_key,
+                    region_name=self.config.region
+                )
+                self._logger.info(f"AWS SQS client initialized for region {self.config.region}")
+
+                # Get or create queue URL
+                if self.config.queue_url:
+                    self._queue_url = self.config.queue_url
+                else:
+                    await self._get_or_create_queue()
+
+            except ImportError:
+                self._logger.error("boto3 package not installed. Run: pip install boto3")
+                raise RuntimeError("boto3 package not installed")
+        return self._client
+
+    async def _get_or_create_queue(self):
+        """Get existing queue URL or create new queue"""
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: self._client.get_queue_url(QueueName=self.config.queue_name)
+            )
+            self._queue_url = response['QueueUrl']
+            self._logger.info(f"Using existing SQS queue: {self._queue_url}")
+        except self._client.exceptions.QueueDoesNotExist:
+            # Create the queue
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: self._client.create_queue(
+                    QueueName=self.config.queue_name,
+                    Attributes={
+                        'VisibilityTimeout': '300',
+                        'MessageRetentionPeriod': '1209600',  # 14 days
+                        'ReceiveMessageWaitTimeSeconds': '20'  # Long polling
+                    }
+                )
+            )
+            self._queue_url = response['QueueUrl']
+            self._logger.info(f"Created new SQS queue: {self._queue_url}")
+
+    async def send_message(
+        self,
+        message: Dict[str, Any],
+        delay_seconds: int = 0,
+        message_group_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        try:
+            import asyncio
+            client = await self._get_client()
+
+            send_args = {
+                'QueueUrl': self._queue_url,
+                'MessageBody': json.dumps(message),
+                'DelaySeconds': delay_seconds
+            }
+
+            # Add message group ID for FIFO queues
+            if message_group_id:
+                send_args['MessageGroupId'] = message_group_id
+                send_args['MessageDeduplicationId'] = str(uuid4())
+
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: client.send_message(**send_args)
+            )
+
+            self._logger.info(
+                f"SQS message sent successfully",
+                extra={'message_id': response['MessageId']}
+            )
+
+            return {
+                'success': True,
+                'provider': 'aws_sqs',
+                'message_id': response['MessageId'],
+                'md5': response.get('MD5OfMessageBody')
+            }
+
+        except Exception as e:
+            self._logger.error(f"SQS send failed: {str(e)}", exc_info=True)
+            return {
+                'success': False,
+                'provider': 'aws_sqs',
+                'error': str(e)
+            }
+
+    async def receive_messages(
+        self,
+        max_messages: int = 10,
+        wait_time_seconds: int = 20
+    ) -> List[Dict[str, Any]]:
+        try:
+            import asyncio
+            client = await self._get_client()
+
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: client.receive_message(
+                    QueueUrl=self._queue_url,
+                    MaxNumberOfMessages=min(max_messages, 10),
+                    WaitTimeSeconds=wait_time_seconds,
+                    AttributeNames=['All'],
+                    MessageAttributeNames=['All']
+                )
+            )
+
+            messages = []
+            for msg in response.get('Messages', []):
+                messages.append({
+                    'message_id': msg['MessageId'],
+                    'receipt_handle': msg['ReceiptHandle'],
+                    'body': json.loads(msg['Body']),
+                    'attributes': msg.get('Attributes', {}),
+                    'message_attributes': msg.get('MessageAttributes', {})
+                })
+
+            return messages
+
+        except Exception as e:
+            self._logger.error(f"SQS receive failed: {str(e)}", exc_info=True)
+            return []
+
+    async def delete_message(self, receipt_handle: str) -> bool:
+        try:
+            import asyncio
+            client = await self._get_client()
+
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(
+                None,
+                lambda: client.delete_message(
+                    QueueUrl=self._queue_url,
+                    ReceiptHandle=receipt_handle
+                )
+            )
+
+            return True
+
+        except Exception as e:
+            self._logger.error(f"SQS delete failed: {str(e)}", exc_info=True)
+            return False
+
+    async def get_queue_attributes(self) -> Dict[str, Any]:
+        """Get queue attributes including message counts"""
+        try:
+            import asyncio
+            client = await self._get_client()
+
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: client.get_queue_attributes(
+                    QueueUrl=self._queue_url,
+                    AttributeNames=['All']
+                )
+            )
+
+            return response.get('Attributes', {})
+
+        except Exception as e:
+            self._logger.error(f"Failed to get queue attributes: {str(e)}")
+            return {}
+
+    def get_provider_name(self) -> str:
+        return "aws_sqs"
 
 
 class FCMProvider(PushProvider):
@@ -710,7 +1034,8 @@ class SimulatedSMSProvider(SMSProvider):
         self,
         to: str,
         message: str,
-        media_urls: Optional[List[str]] = None
+        media_urls: Optional[List[str]] = None,
+        message_type: str = 'Transactional'
     ) -> Dict[str, Any]:
         import asyncio
         await asyncio.sleep(0.3)  # Simulate network delay
@@ -777,6 +1102,60 @@ class SimulatedPushProvider(PushProvider):
         return "simulation"
 
 
+class SimulatedQueueProvider(QueueProvider):
+    """Simulated queue provider for development/testing"""
+
+    def __init__(self):
+        self._logger = logging.getLogger(f"{__name__}.SimulatedQueueProvider")
+        self._messages: List[Dict[str, Any]] = []
+
+    async def send_message(
+        self,
+        message: Dict[str, Any],
+        delay_seconds: int = 0,
+        message_group_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        import asyncio
+        await asyncio.sleep(0.1)  # Simulate network delay
+
+        message_id = str(uuid4())
+        self._messages.append({
+            'message_id': message_id,
+            'receipt_handle': f"sim-receipt-{uuid4()}",
+            'body': message,
+            'attributes': {},
+            'message_attributes': {}
+        })
+
+        self._logger.info(
+            f"[SIMULATION] Message queued",
+            extra={'message_id': message_id}
+        )
+
+        return {
+            'success': True,
+            'provider': 'simulation',
+            'message_id': message_id,
+            'simulated': True
+        }
+
+    async def receive_messages(
+        self,
+        max_messages: int = 10,
+        wait_time_seconds: int = 20
+    ) -> List[Dict[str, Any]]:
+        messages = self._messages[:max_messages]
+        self._messages = self._messages[max_messages:]
+        return messages
+
+    async def delete_message(self, receipt_handle: str) -> bool:
+        self._messages = [m for m in self._messages if m['receipt_handle'] != receipt_handle]
+        return True
+
+    def get_provider_name(self) -> str:
+        return "simulation"
+
+
 # ============================================
 # Provider Manager
 # ============================================
@@ -788,6 +1167,7 @@ class ProviderManager:
         self._email_provider: Optional[EmailProvider] = None
         self._sms_provider: Optional[SMSProvider] = None
         self._push_provider: Optional[PushProvider] = None
+        self._queue_provider: Optional[QueueProvider] = None
         self._logger = logging.getLogger(f"{__name__}.ProviderManager")
 
     def initialize(self):
@@ -795,33 +1175,27 @@ class ProviderManager:
         self._initialize_email_provider()
         self._initialize_sms_provider()
         self._initialize_push_provider()
+        self._initialize_queue_provider()
 
     def _initialize_email_provider(self):
-        """Initialize email provider (SendGrid preferred, then AWS SES, then simulation)"""
-        # Try SendGrid first
-        sendgrid_config = SendGridConfig.from_env()
-        if sendgrid_config:
-            self._email_provider = SendGridProvider(sendgrid_config)
-            self._logger.info("Email provider initialized: SendGrid")
-            return
-
-        # Try AWS SES
+        """Initialize email provider (AWS SES preferred, then simulation - NO external providers)"""
+        # AWS SES is the ONLY supported email provider (AWS-only constraint)
         ses_config = AWSSESConfig.from_env()
         if ses_config:
             self._email_provider = AWSSESProvider(ses_config)
             self._logger.info("Email provider initialized: AWS SES")
             return
 
-        # Fall back to simulation
+        # Fall back to simulation (development/testing only)
         self._email_provider = SimulatedEmailProvider()
-        self._logger.warning("No email provider configured - using simulation mode")
+        self._logger.warning("AWS SES not configured - using simulation mode. Configure AWS_SES_* environment variables for production.")
 
     def _initialize_sms_provider(self):
-        """Initialize SMS provider (Twilio or simulation)"""
-        twilio_config = TwilioConfig.from_env()
-        if twilio_config:
-            self._sms_provider = TwilioProvider(twilio_config)
-            self._logger.info("SMS provider initialized: Twilio")
+        """Initialize SMS provider (AWS SNS or simulation)"""
+        sns_config = AWSSNSConfig.from_env()
+        if sns_config:
+            self._sms_provider = AWSSNSProvider(sns_config)
+            self._logger.info("SMS provider initialized: AWS SNS")
             return
 
         # Fall back to simulation
@@ -840,6 +1214,18 @@ class ProviderManager:
         self._push_provider = SimulatedPushProvider()
         self._logger.warning("No push provider configured - using simulation mode")
 
+    def _initialize_queue_provider(self):
+        """Initialize queue provider (AWS SQS or simulation)"""
+        sqs_config = AWSSQSConfig.from_env()
+        if sqs_config:
+            self._queue_provider = AWSSQSProvider(sqs_config)
+            self._logger.info("Queue provider initialized: AWS SQS")
+            return
+
+        # Fall back to simulation
+        self._queue_provider = SimulatedQueueProvider()
+        self._logger.warning("No queue provider configured - using simulation mode")
+
     @property
     def email_provider(self) -> EmailProvider:
         return self._email_provider
@@ -851,6 +1237,10 @@ class ProviderManager:
     @property
     def push_provider(self) -> PushProvider:
         return self._push_provider
+
+    @property
+    def queue_provider(self) -> QueueProvider:
+        return self._queue_provider
 
     def get_status(self) -> Dict[str, Any]:
         """Get provider status for health checks"""
@@ -866,6 +1256,10 @@ class ProviderManager:
             'push': {
                 'provider': self._push_provider.get_provider_name() if self._push_provider else None,
                 'configured': not isinstance(self._push_provider, SimulatedPushProvider)
+            },
+            'queue': {
+                'provider': self._queue_provider.get_provider_name() if self._queue_provider else None,
+                'configured': not isinstance(self._queue_provider, SimulatedQueueProvider)
             }
         }
 
@@ -963,6 +1357,11 @@ class Priority(str, Enum):
     URGENT = "urgent"
 
 
+class SMSType(str, Enum):
+    TRANSACTIONAL = "Transactional"
+    PROMOTIONAL = "Promotional"
+
+
 # ============================================
 # Lifespan Manager
 # ============================================
@@ -986,8 +1385,8 @@ async def lifespan(app: FastAPI):
 # Initialize FastAPI app with lifespan
 app = FastAPI(
     title="Broxiva Notification Service",
-    description="Multi-channel notification service for email, SMS, and push notifications",
-    version="1.0.0",
+    description="Multi-channel notification service for email, SMS, and push notifications using AWS SNS, SES, and SQS",
+    version="2.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan
@@ -1029,6 +1428,7 @@ class SMSNotification(BaseModel):
     template_data: Optional[Dict[str, Any]] = None
     priority: Priority = Priority.NORMAL
     notification_type: NotificationType = NotificationType.TRANSACTIONAL
+    sms_type: SMSType = SMSType.TRANSACTIONAL
     scheduled_at: Optional[str] = None
 
 
@@ -1043,6 +1443,13 @@ class PushNotification(BaseModel):
     priority: Priority = Priority.NORMAL
     notification_type: NotificationType = NotificationType.TRANSACTIONAL
     ttl: Optional[int] = Field(None, description="Time to live in seconds")
+
+
+class QueueMessage(BaseModel):
+    message_type: str = Field(..., description="Type of message (email, sms, push)")
+    payload: Dict[str, Any] = Field(..., description="Message payload")
+    delay_seconds: int = Field(0, ge=0, le=900, description="Delay before message is available")
+    priority: Priority = Priority.NORMAL
 
 
 class BulkNotification(BaseModel):
@@ -1086,7 +1493,7 @@ async def health_check():
         "status": "healthy",
         "service": "notification-service",
         "timestamp": datetime.utcnow().isoformat(),
-        "version": "1.0.0",
+        "version": "2.0.0",
         "providers": provider_manager.get_status()
     }
 
@@ -1162,7 +1569,7 @@ async def send_sms(
     notification: SMSNotification,
     background_tasks: BackgroundTasks
 ):
-    """Send an SMS notification."""
+    """Send an SMS notification via AWS SNS."""
     notification_id = str(uuid4())
 
     message = notification.message
@@ -1178,6 +1585,7 @@ async def send_sms(
         "message": message,
         "priority": notification.priority.value,
         "notification_type": notification.notification_type.value,
+        "sms_type": notification.sms_type.value,
         "status": NotificationStatus.QUEUED.value,
         "scheduled_at": notification.scheduled_at,
         "created_at": datetime.utcnow().isoformat(),
@@ -1192,7 +1600,7 @@ async def send_sms(
     }
 
     notifications[notification_id] = notification_record
-    background_tasks.add_task(_send_sms_notification, notification_id, notification.to, message)
+    background_tasks.add_task(_send_sms_notification, notification_id, notification.to, message, notification.sms_type.value)
 
     logger.info(f"SMS notification queued: {notification_id}, to: {notification.to}, provider: {provider_manager.sms_provider.get_provider_name()}")
 
@@ -1258,6 +1666,96 @@ async def send_push(
             "provider": provider_manager.push_provider.get_provider_name()
         }
     }
+
+
+# ============================================
+# Queue Endpoints (AWS SQS)
+# ============================================
+
+@app.post("/api/v1/queue/send", response_model=Dict[str, Any], status_code=201)
+async def queue_message(message: QueueMessage):
+    """Send a message to the notification queue (AWS SQS)."""
+    result = await provider_manager.queue_provider.send_message(
+        message={
+            "type": message.message_type,
+            "payload": message.payload,
+            "priority": message.priority.value,
+            "timestamp": datetime.utcnow().isoformat()
+        },
+        delay_seconds=message.delay_seconds
+    )
+
+    if result.get('success'):
+        return {
+            "success": True,
+            "message": "Message queued successfully",
+            "data": {
+                "message_id": result.get('message_id'),
+                "provider": provider_manager.queue_provider.get_provider_name()
+            }
+        }
+    else:
+        raise HTTPException(status_code=500, detail=result.get('error', 'Failed to queue message'))
+
+
+@app.get("/api/v1/queue/receive", response_model=Dict[str, Any])
+async def receive_messages(
+    max_messages: int = Query(10, ge=1, le=10),
+    wait_time: int = Query(0, ge=0, le=20)
+):
+    """Receive messages from the notification queue (AWS SQS)."""
+    messages = await provider_manager.queue_provider.receive_messages(
+        max_messages=max_messages,
+        wait_time_seconds=wait_time
+    )
+
+    return {
+        "success": True,
+        "data": {
+            "messages": messages,
+            "count": len(messages),
+            "provider": provider_manager.queue_provider.get_provider_name()
+        }
+    }
+
+
+@app.delete("/api/v1/queue/message/{receipt_handle}", response_model=Dict[str, Any])
+async def delete_queue_message(receipt_handle: str = Path(..., description="Receipt handle of the message")):
+    """Delete a message from the queue after processing."""
+    success = await provider_manager.queue_provider.delete_message(receipt_handle)
+
+    if success:
+        return {
+            "success": True,
+            "message": "Message deleted successfully"
+        }
+    else:
+        raise HTTPException(status_code=500, detail="Failed to delete message")
+
+
+@app.get("/api/v1/queue/status", response_model=Dict[str, Any])
+async def get_queue_status():
+    """Get queue status and attributes."""
+    if isinstance(provider_manager.queue_provider, AWSSQSProvider):
+        attributes = await provider_manager.queue_provider.get_queue_attributes()
+        return {
+            "success": True,
+            "data": {
+                "provider": "aws_sqs",
+                "attributes": attributes,
+                "approximate_messages": attributes.get('ApproximateNumberOfMessages', '0'),
+                "approximate_messages_not_visible": attributes.get('ApproximateNumberOfMessagesNotVisible', '0'),
+                "approximate_messages_delayed": attributes.get('ApproximateNumberOfMessagesDelayed', '0')
+            }
+        }
+    else:
+        return {
+            "success": True,
+            "data": {
+                "provider": "simulation",
+                "message": "Queue is running in simulation mode"
+            }
+        }
 
 
 # ============================================
@@ -1650,14 +2148,15 @@ async def root():
     """Root endpoint with service information"""
     return {
         "service": "Broxiva Notification Service",
-        "version": "1.0.0",
-        "description": "Multi-channel notification service for email, SMS, and push notifications",
+        "version": "2.0.0",
+        "description": "Multi-channel notification service using AWS SNS, SES, and SQS",
         "endpoints": {
             "health": "/health",
             "email": "/api/v1/notifications/email",
             "sms": "/api/v1/notifications/sms",
             "push": "/api/v1/notifications/push",
             "bulk": "/api/v1/notifications/bulk",
+            "queue": "/api/v1/queue/send",
             "templates": "/api/v1/templates",
             "subscriptions": "/api/v1/subscriptions",
             "analytics": "/api/v1/analytics/summary",
@@ -1777,8 +2276,8 @@ async def _send_email_notification(notification_id: str, notification: EmailNoti
         logger.error(f"Email notification error: {notification_id}", exc_info=True)
 
 
-async def _send_sms_notification(notification_id: str, to: str, message: str):
-    """Send SMS notification using configured provider."""
+async def _send_sms_notification(notification_id: str, to: str, message: str, sms_type: str = 'Transactional'):
+    """Send SMS notification using AWS SNS."""
     if notification_id not in notifications:
         return
 
@@ -1788,7 +2287,8 @@ async def _send_sms_notification(notification_id: str, to: str, message: str):
         # Send via provider
         result = await provider_manager.sms_provider.send_sms(
             to=to,
-            message=message
+            message=message,
+            message_type=sms_type
         )
 
         n["sent_at"] = datetime.utcnow().isoformat()

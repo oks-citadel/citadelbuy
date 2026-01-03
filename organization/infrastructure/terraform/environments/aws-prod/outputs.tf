@@ -149,3 +149,62 @@ output "redis_connection_string" {
   value       = "redis://${module.elasticache.cluster_address}:${module.elasticache.port}"
   sensitive   = true
 }
+
+# ============================================
+# Messaging Infrastructure Outputs (SES, SNS, SQS)
+# ============================================
+
+output "ses_domain_verification_token" {
+  description = "SES domain verification token (add as TXT record)"
+  value       = module.messaging.ses_domain_verification_token
+}
+
+output "ses_dkim_tokens" {
+  description = "SES DKIM tokens (add as CNAME records)"
+  value       = module.messaging.ses_dkim_tokens
+}
+
+output "ses_configuration_set" {
+  description = "SES configuration set name"
+  value       = module.messaging.ses_configuration_set_name
+}
+
+output "sns_transactional_topic_arn" {
+  description = "SNS topic ARN for transactional notifications"
+  value       = module.messaging.sns_topic_transactional_arn
+}
+
+output "sns_marketing_topic_arn" {
+  description = "SNS topic ARN for marketing notifications"
+  value       = module.messaging.sns_topic_marketing_arn
+}
+
+output "sqs_notifications_queue_url" {
+  description = "SQS notifications queue URL"
+  value       = module.messaging.sqs_notifications_queue_url
+}
+
+output "sqs_email_queue_url" {
+  description = "SQS email queue URL"
+  value       = module.messaging.sqs_email_queue_url
+}
+
+output "sqs_sms_queue_url" {
+  description = "SQS SMS queue URL"
+  value       = module.messaging.sqs_sms_queue_url
+}
+
+output "messaging_iam_policy_arn" {
+  description = "IAM policy ARN for full messaging access"
+  value       = module.messaging.iam_policy_messaging_full_arn
+}
+
+output "messaging_env_vars" {
+  description = "Environment variables for application messaging configuration"
+  value       = module.messaging.application_env_vars
+}
+
+output "dns_records_required" {
+  description = "DNS records required for SES verification"
+  value       = module.messaging.dns_records_required
+}

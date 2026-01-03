@@ -146,3 +146,9 @@ variable "alert_email" {
   type        = string
   default     = "ops@broxiva.com"
 }
+
+variable "alert_email_addresses" {
+  description = "List of email addresses to receive alerts"
+  type        = list(string)
+  default     = ["ops@broxiva.com", "oncall@broxiva.com"]
+}
