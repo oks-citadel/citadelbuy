@@ -30,7 +30,7 @@ variable "postgres_sku_name" {
 variable "postgres_storage_mb" {
   description = "PostgreSQL storage in MB"
   type        = number
-  default     = 32768  # 32GB
+  default     = 32768 # 32GB
 }
 
 variable "postgres_version" {
@@ -66,7 +66,7 @@ variable "postgres_max_connections" {
 variable "postgres_work_mem" {
   description = "Work memory in KB"
   type        = string
-  default     = "4096"  # 4MB
+  default     = "4096" # 4MB
 }
 
 variable "database_subnet_id" {
@@ -160,7 +160,7 @@ variable "log_analytics_workspace_id" {
 variable "redis_allow_azure_services" {
   description = "Allow Azure services to access Redis (uses 0.0.0.0 convention). Recommended for PaaS connectivity."
   type        = bool
-  default     = true  # Required for many Azure services to connect
+  default     = true # Required for many Azure services to connect
 }
 
 # SECURITY: Custom IP ranges for Redis access
@@ -172,7 +172,7 @@ variable "redis_allowed_ip_ranges" {
     start_ip = string
     end_ip   = string
   }))
-  default = []  # Empty by default - rely on Azure services rule or VNet for Premium
+  default = [] # Empty by default - rely on Azure services rule or VNet for Premium
 
   # Example usage:
   # redis_allowed_ip_ranges = [

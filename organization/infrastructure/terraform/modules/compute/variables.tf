@@ -123,7 +123,7 @@ variable "allowed_ip_ranges" {
 variable "acr_allowed_ip_ranges" {
   description = "Allowed IP ranges for ACR network access. Use restrictive ranges to limit exposure."
   type        = list(string)
-  default     = ["10.0.0.0/8"]  # Default: internal networks only
+  default     = ["10.0.0.0/8"] # Default: internal networks only
 }
 
 variable "allowed_subnet_ids" {

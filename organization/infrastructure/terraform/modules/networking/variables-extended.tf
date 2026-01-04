@@ -33,7 +33,7 @@ variable "enable_flow_logs" {
 variable "alb_ingress_cidr_blocks" {
   description = "CIDR blocks for ALB ingress. Use 0.0.0.0/0 for public, restrict for internal."
   type        = list(string)
-  default     = ["0.0.0.0/0"]  # Public-facing by default
+  default     = ["0.0.0.0/0"] # Public-facing by default
 }
 
 # SECURITY: Application egress CIDR blocks
@@ -42,7 +42,7 @@ variable "alb_ingress_cidr_blocks" {
 variable "app_egress_cidr_blocks" {
   description = "CIDR blocks for application egress. Consider restricting in production."
   type        = list(string)
-  default     = ["0.0.0.0/0"]  # Required for most applications
+  default     = ["0.0.0.0/0"] # Required for most applications
 }
 
 variable "log_retention_days" {

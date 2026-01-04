@@ -200,6 +200,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "pipeline_artifacts" {
     id     = "cleanup-old-artifacts"
     status = "Enabled"
 
+    filter {}
+
     expiration {
       days = 30
     }

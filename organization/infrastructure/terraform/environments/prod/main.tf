@@ -74,9 +74,9 @@ resource "azurerm_resource_group" "main" {
 module "networking" {
   source = "../../modules/networking"
 
-  project_name       = local.project_name
-  environment        = local.environment
-  location           = local.location
+  project_name        = local.project_name
+  environment         = local.environment
+  location            = local.location
   resource_group_name = azurerm_resource_group.main.name
 
   vnet_cidr          = "10.0.0.0/16"
@@ -99,21 +99,21 @@ module "database" {
   resource_group_name = azurerm_resource_group.main.name
 
   # PostgreSQL Configuration
-  postgres_sku_name           = "GP_Standard_D4s_v3"
-  postgres_storage_mb         = 131072 # 128GB
-  postgres_version            = "15"
-  postgres_backup_retention   = 35
-  postgres_geo_redundant      = true
-  postgres_high_availability  = true
-  database_subnet_id          = module.networking.database_subnet_ids[0]
-  private_dns_zone_id         = module.networking.postgresql_private_dns_zone_id
+  postgres_sku_name          = "GP_Standard_D4s_v3"
+  postgres_storage_mb        = 131072 # 128GB
+  postgres_version           = "15"
+  postgres_backup_retention  = 35
+  postgres_geo_redundant     = true
+  postgres_high_availability = true
+  database_subnet_id         = module.networking.database_subnet_ids[0]
+  private_dns_zone_id        = module.networking.postgresql_private_dns_zone_id
 
   # Redis Configuration
-  redis_sku_name     = "Premium"
-  redis_family       = "P"
-  redis_capacity     = 1
-  redis_shard_count  = 2
-  redis_subnet_id    = module.networking.private_subnet_ids[0]
+  redis_sku_name    = "Premium"
+  redis_family      = "P"
+  redis_capacity    = 1
+  redis_shard_count = 2
+  redis_subnet_id   = module.networking.private_subnet_ids[0]
 
   administrator_login    = var.db_admin_username
   administrator_password = var.db_admin_password
@@ -184,8 +184,8 @@ module "security" {
   subscription_id     = var.subscription_id
 
   # Network Configuration
-  allowed_ip_ranges  = var.allowed_ip_ranges
-  blocked_ip_ranges  = var.blocked_ip_ranges
+  allowed_ip_ranges = var.allowed_ip_ranges
+  blocked_ip_ranges = var.blocked_ip_ranges
   allowed_subnet_ids = concat(
     module.networking.private_subnet_ids,
     [module.networking.aks_subnet_id]
@@ -205,11 +205,11 @@ module "security" {
   blocked_countries    = var.blocked_countries
 
   # Security Features
-  enable_ddos_protection   = true
-  enable_defender          = true
-  enable_private_endpoints = true
-  private_endpoint_subnet_id    = module.networking.private_subnet_ids[0]
-  keyvault_private_dns_zone_id  = module.networking.keyvault_private_dns_zone_id
+  enable_ddos_protection       = true
+  enable_defender              = true
+  enable_private_endpoints     = true
+  private_endpoint_subnet_id   = module.networking.private_subnet_ids[0]
+  keyvault_private_dns_zone_id = module.networking.keyvault_private_dns_zone_id
 
   tags = local.tags
 }
@@ -266,9 +266,9 @@ module "storage" {
   soft_delete_days         = 90
 
   # CDN for static assets
-  enable_cdn        = true
-  cdn_sku           = "Premium_AzureFrontDoor"
-  custom_domain     = "cdn.broxiva.com"
+  enable_cdn    = true
+  cdn_sku       = "Premium_AzureFrontDoor"
+  custom_domain = "cdn.broxiva.com"
 
   allowed_subnet_ids = module.networking.private_subnet_ids
 
@@ -289,9 +289,9 @@ module "dns" {
   use_cname_for_www   = true
 
   # API and CDN Endpoints
-  api_hostname     = module.compute.app_service_hostname
-  cdn_hostname     = module.storage.cdn_endpoint_hostname
-  staging_hostname = module.compute.staging_app_service_hostname
+  api_hostname         = module.compute.app_service_hostname
+  cdn_hostname         = module.storage.cdn_endpoint_hostname
+  staging_hostname     = module.compute.staging_app_service_hostname
   staging_api_hostname = module.compute.staging_api_hostname
 
   # Email Configuration
@@ -306,7 +306,7 @@ module "dns" {
   azure_verification_code = var.azure_verification_code
 
   tags = merge(local.tags, {
-    Domain = "broxiva.com"
+    Domain  = "broxiva.com"
     Purpose = "Primary DNS Zone"
   })
 }

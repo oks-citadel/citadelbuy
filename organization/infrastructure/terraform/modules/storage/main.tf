@@ -108,7 +108,7 @@ resource "azurerm_storage_container" "logs" {
 resource "azurerm_storage_container" "static" {
   name                  = "static"
   storage_account_name  = azurerm_storage_account.main.name
-  container_access_type = "blob"  # Public read access for static assets
+  container_access_type = "blob" # Public read access for static assets
 }
 
 resource "azurerm_storage_container" "exports" {
@@ -224,10 +224,10 @@ resource "azurerm_cdn_frontdoor_endpoint" "main" {
 # Front Door Origin Group - Storage
 # ============================================
 resource "azurerm_cdn_frontdoor_origin_group" "storage" {
-  count                                                    = var.enable_cdn ? 1 : 0
-  name                                                     = "storage-origin-group"
-  cdn_frontdoor_profile_id                                 = azurerm_cdn_frontdoor_profile.main[0].id
-  session_affinity_enabled                                 = false
+  count                                                     = var.enable_cdn ? 1 : 0
+  name                                                      = "storage-origin-group"
+  cdn_frontdoor_profile_id                                  = azurerm_cdn_frontdoor_profile.main[0].id
+  session_affinity_enabled                                  = false
   restore_traffic_time_to_healed_or_new_endpoint_in_minutes = 10
 
   health_probe {

@@ -29,10 +29,10 @@ variable "sku_name" {
 variable "regional_endpoints" {
   description = "Map of regional endpoints and their configurations"
   type = map(object({
-    hostname                   = string
-    priority                   = number
-    weight                     = number
-    session_affinity_enabled   = bool
+    hostname                 = string
+    priority                 = number
+    weight                   = number
+    session_affinity_enabled = bool
   }))
 
   default = {
@@ -95,7 +95,7 @@ variable "rate_limit_threshold" {
 variable "rate_limit_ip_ranges" {
   description = "IP ranges to apply rate limiting to. Default matches all traffic for protection."
   type        = list(string)
-  default     = ["0.0.0.0/0"]  # Match all traffic for rate limiting (protective)
+  default     = ["0.0.0.0/0"] # Match all traffic for rate limiting (protective)
 }
 
 variable "enable_geo_blocking" {

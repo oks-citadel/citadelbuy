@@ -369,7 +369,6 @@ export default function CheckoutPage() {
           setTaxRate(stateTaxRates[stateCode] || 0.08);
         } catch (error: any) {
           const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch shipping rates';
-          console.error('Failed to fetch shipping rates:', error);
           toast.error(errorMessage, {
             description: 'Using default shipping options',
           });
@@ -408,7 +407,6 @@ export default function CheckoutPage() {
           });
         } catch (error: any) {
           const errorMessage = error?.response?.data?.message || error?.message || 'Fraud check temporarily unavailable';
-          console.error('Fraud check failed:', error);
           toast.warning(errorMessage, {
             description: 'Your transaction will proceed with additional verification',
           });
@@ -583,7 +581,6 @@ export default function CheckoutPage() {
         throw new Error('Payment processing failed - no order ID returned');
       }
     } catch (error: any) {
-      console.error('Checkout error:', error);
 
       // Display user-friendly error message
       const errorMessage = error?.message || 'Failed to place order. Please try again.';

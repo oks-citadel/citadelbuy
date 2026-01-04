@@ -20,9 +20,9 @@ terraform {
 # Random Password for Database (if not provided)
 # ============================================
 resource "random_password" "db_password" {
-  count   = var.administrator_password == null ? 1 : 0
-  length  = 32
-  special = true
+  count            = var.administrator_password == null ? 1 : 0
+  length           = 32
+  special          = true
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
@@ -58,8 +58,8 @@ resource "azurerm_postgresql_flexible_server" "main" {
   }
 
   maintenance_window {
-    day_of_week  = 0  # Sunday
-    start_hour   = 3  # 3 AM UTC
+    day_of_week  = 0 # Sunday
+    start_hour   = 3 # 3 AM UTC
     start_minute = 0
   }
 
@@ -118,7 +118,7 @@ resource "azurerm_postgresql_flexible_server_configuration" "log_duration" {
 resource "azurerm_postgresql_flexible_server_configuration" "log_min_duration" {
   name      = "log_min_duration_statement"
   server_id = azurerm_postgresql_flexible_server.main.id
-  value     = "1000"  # Log queries taking > 1 second
+  value     = "1000" # Log queries taking > 1 second
 }
 
 resource "azurerm_postgresql_flexible_server_configuration" "shared_preload" {
@@ -152,9 +152,9 @@ resource "azurerm_redis_cache" "main" {
   enable_non_ssl_port = false
   minimum_tls_version = "1.2"
 
-  subnet_id           = var.redis_sku_name == "Premium" ? var.redis_subnet_id : null
+  subnet_id = var.redis_sku_name == "Premium" ? var.redis_subnet_id : null
 
-  shard_count         = var.redis_sku_name == "Premium" ? var.redis_shard_count : null
+  shard_count = var.redis_sku_name == "Premium" ? var.redis_shard_count : null
 
   redis_configuration {
     maxmemory_reserved              = var.redis_maxmemory_reserved

@@ -58,9 +58,9 @@ resource "aws_security_group" "rds" {
 # Random Password for RDS (if not provided)
 # ============================================
 resource "random_password" "rds_password" {
-  count   = var.cloud_provider == "aws" && var.administrator_password == null ? 1 : 0
-  length  = 32
-  special = true
+  count            = var.cloud_provider == "aws" && var.administrator_password == null ? 1 : 0
+  length           = 32
+  special          = true
   override_special = "!#$%&*()-_=+[]{}:?"
 }
 
@@ -140,16 +140,16 @@ resource "aws_db_instance" "postgres" {
   multi_az = var.postgres_high_availability
 
   # Backup
-  backup_retention_period = var.postgres_backup_retention
-  backup_window           = "03:00-04:00"
-  maintenance_window      = "sun:04:00-sun:05:00"
-  skip_final_snapshot     = var.environment != "prod"
+  backup_retention_period   = var.postgres_backup_retention
+  backup_window             = "03:00-04:00"
+  maintenance_window        = "sun:04:00-sun:05:00"
+  skip_final_snapshot       = var.environment != "prod"
   final_snapshot_identifier = var.environment == "prod" ? "${var.project_name}-${var.environment}-final-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}" : null
-  copy_tags_to_snapshot  = true
+  copy_tags_to_snapshot     = true
 
   # Performance Insights
-  performance_insights_enabled    = var.environment == "prod"
-  performance_insights_kms_key_id = var.environment == "prod" ? var.kms_key_arn : null
+  performance_insights_enabled          = var.environment == "prod"
+  performance_insights_kms_key_id       = var.environment == "prod" ? var.kms_key_arn : null
   performance_insights_retention_period = var.environment == "prod" ? 7 : null
 
   # Enhanced Monitoring
@@ -183,8 +183,8 @@ resource "aws_db_instance" "postgres" {
 # RDS Read Replica (for production)
 # ============================================
 resource "aws_db_instance" "postgres_replica" {
-  count              = var.cloud_provider == "aws" && var.environment == "prod" && var.create_read_replica ? 1 : 0
-  identifier         = "${var.project_name}-${var.environment}-postgres-replica"
+  count               = var.cloud_provider == "aws" && var.environment == "prod" && var.create_read_replica ? 1 : 0
+  identifier          = "${var.project_name}-${var.environment}-postgres-replica"
   replicate_source_db = aws_db_instance.postgres[0].identifier
 
   instance_class = var.rds_instance_class
@@ -193,7 +193,7 @@ resource "aws_db_instance" "postgres_replica" {
   publicly_accessible = false
   skip_final_snapshot = true
 
-  performance_insights_enabled = true
+  performance_insights_enabled    = true
   performance_insights_kms_key_id = var.kms_key_arn
 
   monitoring_interval = 60
@@ -316,8 +316,8 @@ resource "aws_elasticache_parameter_group" "redis" {
 # ElastiCache Replication Group (Redis Cluster)
 # ============================================
 resource "aws_elasticache_replication_group" "redis" {
-  count                      = var.cloud_provider == "aws" ? 1 : 0
-  replication_group_id       = "${var.project_name}-${var.environment}-redis"
+  count                         = var.cloud_provider == "aws" ? 1 : 0
+  replication_group_id          = "${var.project_name}-${var.environment}-redis"
   replication_group_description = "Redis cluster for ${var.project_name} ${var.environment}"
 
   engine               = "redis"
@@ -340,12 +340,12 @@ resource "aws_elasticache_replication_group" "redis" {
 
   # High Availability
   automatic_failover_enabled = var.redis_num_cache_nodes > 1
-  multi_az_enabled          = var.redis_num_cache_nodes > 1
+  multi_az_enabled           = var.redis_num_cache_nodes > 1
 
   # Backup
-  snapshot_retention_limit = var.redis_snapshot_retention_days
-  snapshot_window          = "03:00-04:00"
-  maintenance_window       = "sun:04:00-sun:05:00"
+  snapshot_retention_limit  = var.redis_snapshot_retention_days
+  snapshot_window           = "03:00-04:00"
+  maintenance_window        = "sun:04:00-sun:05:00"
   final_snapshot_identifier = var.environment == "prod" ? "${var.project_name}-${var.environment}-redis-final" : null
 
   # Auto minor version upgrade

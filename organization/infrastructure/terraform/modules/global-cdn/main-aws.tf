@@ -45,7 +45,7 @@ resource "aws_cloudfront_distribution" "static" {
 
     viewer_protocol_policy = "redirect-to-https"
     min_ttl                = 0
-    default_ttl            = 86400   # 1 day
+    default_ttl            = 86400    # 1 day
     max_ttl                = 31536000 # 1 year
     compress               = true
 
@@ -120,9 +120,9 @@ resource "aws_cloudfront_distribution" "static" {
 
   # SSL/TLS certificate
   viewer_certificate {
-    acm_certificate_arn      = var.acm_certificate_arn
-    ssl_support_method       = var.acm_certificate_arn != "" ? "sni-only" : null
-    minimum_protocol_version = "TLSv1.2_2021"
+    acm_certificate_arn            = var.acm_certificate_arn
+    ssl_support_method             = var.acm_certificate_arn != "" ? "sni-only" : null
+    minimum_protocol_version       = "TLSv1.2_2021"
     cloudfront_default_certificate = var.acm_certificate_arn == ""
   }
 
@@ -235,9 +235,9 @@ resource "aws_cloudfront_distribution" "api" {
   }
 
   viewer_certificate {
-    acm_certificate_arn      = var.api_acm_certificate_arn
-    ssl_support_method       = var.api_acm_certificate_arn != "" ? "sni-only" : null
-    minimum_protocol_version = "TLSv1.2_2021"
+    acm_certificate_arn            = var.api_acm_certificate_arn
+    ssl_support_method             = var.api_acm_certificate_arn != "" ? "sni-only" : null
+    minimum_protocol_version       = "TLSv1.2_2021"
     cloudfront_default_certificate = var.api_acm_certificate_arn == ""
   }
 

@@ -64,10 +64,10 @@ variable "aks_admin_group_ids" {
 variable "allowed_ip_ranges" {
   description = "Allowed IP ranges for accessing resources. Avoid 0.0.0.0/0."
   type        = list(string)
-  default     = [
-    "10.0.0.0/8",        # Internal RFC1918 networks
-    "172.16.0.0/12",     # Internal RFC1918 networks
-    "192.168.0.0/16"     # Internal RFC1918 networks
+  default = [
+    "10.0.0.0/8",    # Internal RFC1918 networks
+    "172.16.0.0/12", # Internal RFC1918 networks
+    "192.168.0.0/16" # Internal RFC1918 networks
     # Add your office/VPN IPs here, e.g.:
     # "203.0.113.0/24",  # Example office IP range
   ]
@@ -78,8 +78,8 @@ variable "allowed_ip_ranges" {
 variable "acr_allowed_ip_ranges" {
   description = "IP ranges allowed to access ACR. Restrict to known sources."
   type        = list(string)
-  default     = [
-    "10.0.0.0/8"         # Internal networks only by default
+  default = [
+    "10.0.0.0/8" # Internal networks only by default
     # Add CI/CD runner IPs and developer IPs as needed
   ]
 }

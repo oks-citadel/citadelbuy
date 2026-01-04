@@ -83,7 +83,7 @@ output "cdn_fqdn" {
 
 output "godaddy_instructions" {
   description = "Step-by-step instructions for configuring GoDaddy"
-  value = <<-EOT
+  value       = <<-EOT
 
     ======================================================
     GODADDY NAMESERVER CONFIGURATION FOR BROXIVA.COM
@@ -135,7 +135,7 @@ output "godaddy_instructions" {
 
 output "verification_commands" {
   description = "Commands to verify DNS configuration"
-  value = <<-EOT
+  value       = <<-EOT
     # Verify nameservers are updated:
     nslookup -type=NS broxiva.com
 
@@ -161,13 +161,13 @@ output "verification_commands" {
 output "dns_config_summary" {
   description = "Summary of DNS configuration for CI/CD pipelines"
   value = {
-    domain          = var.domain_name
-    zone_id         = azurerm_dns_zone.main.id
-    nameservers     = azurerm_dns_zone.main.name_servers
-    subdomains      = ["www", "api", "cdn", "staging", "staging-api", "health"]
-    email_enabled   = var.enable_email_records
-    caa_enabled     = var.enable_caa_records
-    registrar       = "GoDaddy"
-    cloud_provider  = "Microsoft Azure"
+    domain         = var.domain_name
+    zone_id        = azurerm_dns_zone.main.id
+    nameservers    = azurerm_dns_zone.main.name_servers
+    subdomains     = ["www", "api", "cdn", "staging", "staging-api", "health"]
+    email_enabled  = var.enable_email_records
+    caa_enabled    = var.enable_caa_records
+    registrar      = "GoDaddy"
+    cloud_provider = "Microsoft Azure"
   }
 }

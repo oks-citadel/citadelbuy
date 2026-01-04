@@ -24,7 +24,7 @@ terraform {
 provider "azurerm" {
   features {
     key_vault {
-      purge_soft_delete_on_destroy = false
+      purge_soft_delete_on_destroy    = false
       recover_soft_deleted_key_vaults = true
     }
     resource_group {
@@ -35,11 +35,11 @@ provider "azurerm" {
 
 # Local variables
 locals {
-  environment       = "prod"
-  project_name      = "broxiva"
-  primary_region    = "southeastasia"  # Singapore
-  secondary_region  = "australiaeast"  # Sydney
-  tertiary_region   = "japaneast"      # Tokyo
+  environment      = "prod"
+  project_name     = "broxiva"
+  primary_region   = "southeastasia" # Singapore
+  secondary_region = "australiaeast" # Sydney
+  tertiary_region  = "japaneast"     # Tokyo
 
   common_tags = {
     Project     = "Broxiva"
@@ -47,7 +47,7 @@ locals {
     Region      = "Asia-Pacific"
     ManagedBy   = "Terraform"
     CostCenter  = "APAC-Operations"
-    Compliance  = "GDPR,PDPA,APPI"  # Singapore PDPA, Japan APPI
+    Compliance  = "GDPR,PDPA,APPI" # Singapore PDPA, Japan APPI
   }
 }
 
@@ -59,9 +59,9 @@ resource "azurerm_resource_group" "primary" {
   tags = merge(
     local.common_tags,
     {
-      Name        = "${local.project_name}-${local.environment}-apac-primary-rg"
-      RegionType  = "Primary"
-      DataCenter  = "Singapore"
+      Name       = "${local.project_name}-${local.environment}-apac-primary-rg"
+      RegionType = "Primary"
+      DataCenter = "Singapore"
     }
   )
 }
@@ -74,9 +74,9 @@ resource "azurerm_resource_group" "secondary" {
   tags = merge(
     local.common_tags,
     {
-      Name        = "${local.project_name}-${local.environment}-apac-secondary-rg"
-      RegionType  = "Secondary"
-      DataCenter  = "Sydney"
+      Name       = "${local.project_name}-${local.environment}-apac-secondary-rg"
+      RegionType = "Secondary"
+      DataCenter = "Sydney"
     }
   )
 }
@@ -89,9 +89,9 @@ resource "azurerm_resource_group" "tertiary" {
   tags = merge(
     local.common_tags,
     {
-      Name        = "${local.project_name}-${local.environment}-apac-tertiary-rg"
-      RegionType  = "Tertiary"
-      DataCenter  = "Tokyo"
+      Name       = "${local.project_name}-${local.environment}-apac-tertiary-rg"
+      RegionType = "Tertiary"
+      DataCenter = "Tokyo"
     }
   )
 }
@@ -199,15 +199,15 @@ module "compute_primary" {
   location            = local.primary_region
   resource_group_name = azurerm_resource_group.primary.name
 
-  vnet_id            = module.networking_primary.vnet_id
-  aks_subnet_id      = module.networking_primary.aks_subnet_id
-  aci_subnet_id      = module.networking_primary.aci_subnet_id
+  vnet_id       = module.networking_primary.vnet_id
+  aks_subnet_id = module.networking_primary.aks_subnet_id
+  aci_subnet_id = module.networking_primary.aci_subnet_id
 
-  aks_node_count     = var.aks_node_count
-  aks_node_vm_size   = var.aks_node_vm_size
+  aks_node_count      = var.aks_node_count
+  aks_node_vm_size    = var.aks_node_vm_size
   enable_auto_scaling = true
-  min_node_count     = var.min_node_count
-  max_node_count     = var.max_node_count
+  min_node_count      = var.min_node_count
+  max_node_count      = var.max_node_count
 
   tags = local.common_tags
 }
@@ -221,15 +221,15 @@ module "compute_secondary" {
   location            = local.secondary_region
   resource_group_name = azurerm_resource_group.secondary.name
 
-  vnet_id            = module.networking_secondary.vnet_id
-  aks_subnet_id      = module.networking_secondary.aks_subnet_id
-  aci_subnet_id      = module.networking_secondary.aci_subnet_id
+  vnet_id       = module.networking_secondary.vnet_id
+  aks_subnet_id = module.networking_secondary.aks_subnet_id
+  aci_subnet_id = module.networking_secondary.aci_subnet_id
 
-  aks_node_count     = var.aks_node_count
-  aks_node_vm_size   = var.aks_node_vm_size
+  aks_node_count      = var.aks_node_count
+  aks_node_vm_size    = var.aks_node_vm_size
   enable_auto_scaling = true
-  min_node_count     = var.min_node_count
-  max_node_count     = var.max_node_count
+  min_node_count      = var.min_node_count
+  max_node_count      = var.max_node_count
 
   tags = local.common_tags
 }
@@ -246,16 +246,16 @@ module "database_primary" {
   vnet_id             = module.networking_primary.vnet_id
   database_subnet_ids = module.networking_primary.database_subnet_ids
 
-  postgresql_sku_name        = var.postgresql_sku_name
-  postgresql_storage_mb      = var.postgresql_storage_mb
-  postgresql_version         = "14"
-  enable_high_availability   = true
-  enable_geo_replication     = true
-  geo_backup_location        = local.secondary_region
+  postgresql_sku_name      = var.postgresql_sku_name
+  postgresql_storage_mb    = var.postgresql_storage_mb
+  postgresql_version       = "14"
+  enable_high_availability = true
+  enable_geo_replication   = true
+  geo_backup_location      = local.secondary_region
 
   # Data residency for APAC
-  backup_retention_days      = 35
-  geo_redundant_backup       = true
+  backup_retention_days = 35
+  geo_redundant_backup  = true
 
   tags = local.common_tags
 }
@@ -272,13 +272,13 @@ module "database_secondary" {
   vnet_id             = module.networking_secondary.vnet_id
   database_subnet_ids = module.networking_secondary.database_subnet_ids
 
-  postgresql_sku_name        = var.postgresql_sku_name
-  postgresql_storage_mb      = var.postgresql_storage_mb
-  postgresql_version         = "14"
-  enable_high_availability   = true
+  postgresql_sku_name      = var.postgresql_sku_name
+  postgresql_storage_mb    = var.postgresql_storage_mb
+  postgresql_version       = "14"
+  enable_high_availability = true
 
-  backup_retention_days      = 35
-  geo_redundant_backup       = true
+  backup_retention_days = 35
+  geo_redundant_backup  = true
 
   tags = local.common_tags
 }
@@ -293,7 +293,7 @@ module "storage_primary" {
   resource_group_name = azurerm_resource_group.primary.name
 
   account_tier             = "Standard"
-  account_replication_type = "GZRS"  # Geo-zone-redundant for APAC
+  account_replication_type = "GZRS" # Geo-zone-redundant for APAC
   enable_https_only        = true
   enable_blob_encryption   = true
 
@@ -314,10 +314,10 @@ module "security_primary" {
   location            = local.primary_region
   resource_group_name = azurerm_resource_group.primary.name
 
-  vnet_id             = module.networking_primary.vnet_id
-  subnet_ids          = module.networking_primary.private_subnet_ids
+  vnet_id    = module.networking_primary.vnet_id
+  subnet_ids = module.networking_primary.private_subnet_ids
 
-  enable_purge_protection = true
+  enable_purge_protection    = true
   soft_delete_retention_days = 90
 
   # PDPA/APPI compliance
@@ -347,7 +347,7 @@ module "monitoring_primary" {
 resource "azurerm_traffic_manager_profile" "apac" {
   name                   = "${local.project_name}-${local.environment}-apac-tm"
   resource_group_name    = azurerm_resource_group.primary.name
-  traffic_routing_method = "Performance"  # Route to fastest endpoint
+  traffic_routing_method = "Performance" # Route to fastest endpoint
 
   dns_config {
     relative_name = "${local.project_name}-apac"
@@ -375,12 +375,12 @@ resource "azurerm_traffic_manager_azure_endpoint" "singapore" {
   weight             = 100
 
   geo_mappings = [
-    "SG",  # Singapore
-    "MY",  # Malaysia
-    "TH",  # Thailand
-    "VN",  # Vietnam
-    "ID",  # Indonesia
-    "PH",  # Philippines
+    "SG", # Singapore
+    "MY", # Malaysia
+    "TH", # Thailand
+    "VN", # Vietnam
+    "ID", # Indonesia
+    "PH", # Philippines
   ]
 }
 
@@ -393,8 +393,8 @@ resource "azurerm_traffic_manager_azure_endpoint" "sydney" {
   weight             = 100
 
   geo_mappings = [
-    "AU",  # Australia
-    "NZ",  # New Zealand
+    "AU", # Australia
+    "NZ", # New Zealand
   ]
 }
 
@@ -417,7 +417,7 @@ resource "azurerm_cosmosdb_account" "apac" {
   offer_type          = "Standard"
   kind                = "GlobalDocumentDB"
 
-  enable_automatic_failover = true
+  enable_automatic_failover       = true
   enable_multiple_write_locations = true
 
   consistency_policy {
@@ -451,7 +451,7 @@ resource "azurerm_redis_cache" "apac" {
   location            = local.primary_region
   resource_group_name = azurerm_resource_group.primary.name
   capacity            = 2
-  family              = "P"  # Premium
+  family              = "P" # Premium
   sku_name            = "Premium"
 
   enable_non_ssl_port = false
@@ -470,7 +470,7 @@ resource "azurerm_redis_cache" "apac" {
 resource "azurerm_policy_assignment" "data_residency" {
   name                 = "${local.project_name}-apac-data-residency"
   scope                = azurerm_resource_group.primary.id
-  policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/e56962a6-4747-49cd-b67b-bf8b01975c4c"  # Allowed locations policy
+  policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/e56962a6-4747-49cd-b67b-bf8b01975c4c" # Allowed locations policy
 
   parameters = jsonencode({
     listOfAllowedLocations = {

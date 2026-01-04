@@ -348,9 +348,9 @@ resource "aws_eks_node_group" "spot" {
   }
 
   labels = {
-    "nodepool-type"        = "spot"
-    "environment"          = var.environment
-    "workload"             = "batch"
+    "nodepool-type"                = "spot"
+    "environment"                  = var.environment
+    "workload"                     = "batch"
     "node.kubernetes.io/lifecycle" = "spot"
   }
 
@@ -382,30 +382,30 @@ resource "aws_eks_node_group" "spot" {
 # EKS Add-ons
 # ============================================
 resource "aws_eks_addon" "vpc_cni" {
-  count             = var.cloud_provider == "aws" ? 1 : 0
-  cluster_name      = aws_eks_cluster.main[0].name
-  addon_name        = "vpc-cni"
-  addon_version     = var.vpc_cni_version
+  count                       = var.cloud_provider == "aws" ? 1 : 0
+  cluster_name                = aws_eks_cluster.main[0].name
+  addon_name                  = "vpc-cni"
+  addon_version               = var.vpc_cni_version
   resolve_conflicts_on_update = "PRESERVE"
 
   tags = var.tags
 }
 
 resource "aws_eks_addon" "kube_proxy" {
-  count             = var.cloud_provider == "aws" ? 1 : 0
-  cluster_name      = aws_eks_cluster.main[0].name
-  addon_name        = "kube-proxy"
-  addon_version     = var.kube_proxy_version
+  count                       = var.cloud_provider == "aws" ? 1 : 0
+  cluster_name                = aws_eks_cluster.main[0].name
+  addon_name                  = "kube-proxy"
+  addon_version               = var.kube_proxy_version
   resolve_conflicts_on_update = "PRESERVE"
 
   tags = var.tags
 }
 
 resource "aws_eks_addon" "coredns" {
-  count             = var.cloud_provider == "aws" ? 1 : 0
-  cluster_name      = aws_eks_cluster.main[0].name
-  addon_name        = "coredns"
-  addon_version     = var.coredns_version
+  count                       = var.cloud_provider == "aws" ? 1 : 0
+  cluster_name                = aws_eks_cluster.main[0].name
+  addon_name                  = "coredns"
+  addon_version               = var.coredns_version
   resolve_conflicts_on_update = "PRESERVE"
 
   depends_on = [
@@ -416,10 +416,10 @@ resource "aws_eks_addon" "coredns" {
 }
 
 resource "aws_eks_addon" "ebs_csi_driver" {
-  count             = var.cloud_provider == "aws" ? 1 : 0
-  cluster_name      = aws_eks_cluster.main[0].name
-  addon_name        = "aws-ebs-csi-driver"
-  addon_version     = var.ebs_csi_version
+  count                       = var.cloud_provider == "aws" ? 1 : 0
+  cluster_name                = aws_eks_cluster.main[0].name
+  addon_name                  = "aws-ebs-csi-driver"
+  addon_version               = var.ebs_csi_version
   resolve_conflicts_on_update = "PRESERVE"
 
   tags = var.tags

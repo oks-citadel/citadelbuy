@@ -46,11 +46,11 @@ provider "aws" {
 # Local Variables
 # ============================================
 locals {
-  project_name     = "broxiva"
-  environment      = "dev"
-  cloud_provider   = var.cloud_provider # "azure" or "aws"
-  location         = var.cloud_provider == "azure" ? "eastus" : null
-  aws_region       = var.cloud_provider == "aws" ? var.aws_region : null
+  project_name   = "broxiva"
+  environment    = "dev"
+  cloud_provider = var.cloud_provider # "azure" or "aws"
+  location       = var.cloud_provider == "azure" ? "eastus" : null
+  aws_region     = var.cloud_provider == "aws" ? var.aws_region : null
 
   tags = {
     Project     = "Broxiva"
@@ -117,13 +117,13 @@ module "database" {
   private_dns_zone_id        = var.cloud_provider == "azure" ? module.networking.postgresql_private_dns_zone_id : null
 
   # AWS RDS Configuration
-  vpc_id                       = var.cloud_provider == "aws" ? module.networking.vpc_id : ""
-  database_subnet_ids          = var.cloud_provider == "aws" ? module.networking.database_subnet_ids : []
-  allowed_security_group_ids   = var.cloud_provider == "aws" ? [module.networking.app_security_group_id] : []
-  rds_instance_class           = "db.t3.small"
-  postgres_storage_gb          = 20
-  postgres_max_storage_gb      = 100
-  create_read_replica          = false
+  vpc_id                     = var.cloud_provider == "aws" ? module.networking.vpc_id : ""
+  database_subnet_ids        = var.cloud_provider == "aws" ? module.networking.database_subnet_ids : []
+  allowed_security_group_ids = var.cloud_provider == "aws" ? [module.networking.app_security_group_id] : []
+  rds_instance_class         = "db.t3.small"
+  postgres_storage_gb        = 20
+  postgres_max_storage_gb    = 100
+  create_read_replica        = false
 
   # Azure Redis Configuration
   redis_sku_name  = "Basic"
@@ -132,9 +132,9 @@ module "database" {
   redis_subnet_id = null
 
   # AWS ElastiCache Configuration
-  redis_subnet_ids          = var.cloud_provider == "aws" ? module.networking.private_subnet_ids : []
-  redis_node_type           = "cache.t3.micro"
-  redis_num_cache_nodes     = 1
+  redis_subnet_ids              = var.cloud_provider == "aws" ? module.networking.private_subnet_ids : []
+  redis_node_type               = "cache.t3.micro"
+  redis_num_cache_nodes         = 1
   redis_snapshot_retention_days = 1
 
   administrator_login    = "broxivaadmin"
@@ -164,8 +164,8 @@ module "compute" {
   aks_admin_group_ids = var.aks_admin_group_ids
 
   # AWS EKS Configuration
-  vpc_id          = var.cloud_provider == "aws" ? module.networking.vpc_id : ""
-  eks_subnet_ids  = var.cloud_provider == "aws" ? module.networking.private_subnet_ids : []
+  vpc_id            = var.cloud_provider == "aws" ? module.networking.vpc_id : ""
+  eks_subnet_ids    = var.cloud_provider == "aws" ? module.networking.private_subnet_ids : []
   eks_public_access = var.cloud_provider == "aws" ? true : null
 
   # Node Configuration (smaller for dev)
@@ -209,10 +209,10 @@ module "storage" {
   enable_soft_delete       = false
 
   # AWS S3 Configuration
-  enable_cdn                = false # Disabled in dev
-  cors_allowed_origins      = ["http://localhost:3000", "http://localhost:4000"]
-  allowed_subnet_ids        = var.cloud_provider == "azure" ? module.networking.private_subnet_ids : []
-  log_retention_days        = 7
+  enable_cdn           = false # Disabled in dev
+  cors_allowed_origins = ["http://localhost:3000", "http://localhost:4000"]
+  allowed_subnet_ids   = var.cloud_provider == "azure" ? module.networking.private_subnet_ids : []
+  log_retention_days   = 7
 
   tags = local.tags
 }
@@ -242,8 +242,8 @@ module "monitoring" {
   exceptions_threshold       = 50
 
   # Resources to Monitor
-  aks_cluster_id  = var.cloud_provider == "azure" ? module.compute.aks_id : null
-  database_id     = var.cloud_provider == "azure" ? module.database.postgresql_server_id : null
+  aks_cluster_id   = var.cloud_provider == "azure" ? module.compute.aks_id : null
+  database_id      = var.cloud_provider == "azure" ? module.database.postgresql_server_id : null
   eks_cluster_name = var.cloud_provider == "aws" ? module.compute.eks_cluster_name : ""
   rds_instance_id  = var.cloud_provider == "aws" ? module.database.rds_endpoint : ""
 

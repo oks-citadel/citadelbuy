@@ -27,7 +27,7 @@ variable "aks_node_count" {
 variable "aks_node_vm_size" {
   description = "VM size for AKS nodes"
   type        = string
-  default     = "Standard_D4s_v3"  # 4 vCPU, 16 GB RAM
+  default     = "Standard_D4s_v3" # 4 vCPU, 16 GB RAM
 }
 
 variable "min_node_count" {
@@ -45,13 +45,13 @@ variable "max_node_count" {
 variable "postgresql_sku_name" {
   description = "SKU for PostgreSQL Flexible Server"
   type        = string
-  default     = "GP_Standard_D4s_v3"  # General Purpose, 4 vCPU, 16 GB RAM
+  default     = "GP_Standard_D4s_v3" # General Purpose, 4 vCPU, 16 GB RAM
 }
 
 variable "postgresql_storage_mb" {
   description = "Storage size in MB for PostgreSQL"
   type        = number
-  default     = 262144  # 256 GB
+  default     = 262144 # 256 GB
 }
 
 variable "alert_email_addresses" {

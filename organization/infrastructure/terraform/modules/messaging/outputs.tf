@@ -202,20 +202,20 @@ output "dns_records_required" {
 output "application_env_vars" {
   description = "Environment variables to configure in the application"
   value = {
-    AWS_SES_REGION               = data.aws_region.current.name
-    AWS_SES_FROM_EMAIL           = "noreply@${var.domain_name}"
-    AWS_SES_FROM_NAME            = var.name_prefix
-    AWS_SES_CONFIGURATION_SET    = aws_ses_configuration_set.main.name
-    AWS_SNS_REGION               = data.aws_region.current.name
-    AWS_SNS_SENDER_ID            = var.sns_sms_sender_id
-    AWS_SNS_DEFAULT_SMS_TYPE     = var.sns_sms_default_type
-    AWS_SQS_REGION               = data.aws_region.current.name
-    AWS_SQS_QUEUE_NAME           = aws_sqs_queue.notifications.name
-    AWS_SQS_QUEUE_URL            = aws_sqs_queue.notifications.url
-    AWS_SQS_DLQ_URL              = aws_sqs_queue.notifications_dlq.url
-    AWS_SQS_EMAIL_QUEUE_URL      = aws_sqs_queue.email.url
-    AWS_SQS_SMS_QUEUE_URL        = aws_sqs_queue.sms.url
-    AWS_SQS_WEBHOOKS_QUEUE_URL   = aws_sqs_queue.webhooks.url
+    AWS_SES_REGION             = data.aws_region.current.name
+    AWS_SES_FROM_EMAIL         = "noreply@${var.domain_name}"
+    AWS_SES_FROM_NAME          = var.name_prefix
+    AWS_SES_CONFIGURATION_SET  = aws_ses_configuration_set.main.name
+    AWS_SNS_REGION             = data.aws_region.current.name
+    AWS_SNS_SENDER_ID          = var.sns_sms_sender_id
+    AWS_SNS_DEFAULT_SMS_TYPE   = var.sns_sms_default_type
+    AWS_SQS_REGION             = data.aws_region.current.name
+    AWS_SQS_QUEUE_NAME         = aws_sqs_queue.notifications.name
+    AWS_SQS_QUEUE_URL          = aws_sqs_queue.notifications.url
+    AWS_SQS_DLQ_URL            = aws_sqs_queue.notifications_dlq.url
+    AWS_SQS_EMAIL_QUEUE_URL    = aws_sqs_queue.email.url
+    AWS_SQS_SMS_QUEUE_URL      = aws_sqs_queue.sms.url
+    AWS_SQS_WEBHOOKS_QUEUE_URL = aws_sqs_queue.webhooks.url
   }
   sensitive = false
 }

@@ -43,8 +43,8 @@ resource "azurerm_cdn_frontdoor_origin_group" "regional" {
   cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.main.id
 
   load_balancing {
-    sample_size                 = 4
-    successful_samples_required = 3
+    sample_size                        = 4
+    successful_samples_required        = 3
     additional_latency_in_milliseconds = 50
   }
 
@@ -131,7 +131,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "main" {
       operator           = "IPMatch"
       negation_condition = false
       # Match all IPs for rate limiting - this is security protective, not permissive
-      match_values       = var.rate_limit_ip_ranges
+      match_values = var.rate_limit_ip_ranges
     }
   }
 

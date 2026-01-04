@@ -17,8 +17,8 @@ export function TrendingProducts() {
       try {
         const data = await recommendationService.getTrending(8);
         setProducts(data.products);
-      } catch (error) {
-        console.error('Failed to fetch trending products:', error);
+      } catch {
+        // Error handled silently - UI shows loading state fallback
       } finally {
         setIsLoading(false);
       }

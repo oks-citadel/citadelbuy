@@ -58,8 +58,8 @@ resource "aws_subnet" "public" {
   tags = merge(
     var.tags,
     {
-      Name                                                = "${var.project_name}-${var.environment}-public-${count.index + 1}"
-      "kubernetes.io/role/elb"                            = "1"
+      Name                                                               = "${var.project_name}-${var.environment}-public-${count.index + 1}"
+      "kubernetes.io/role/elb"                                           = "1"
       "kubernetes.io/cluster/${var.project_name}-${var.environment}-eks" = "shared"
     }
   )
@@ -77,8 +77,8 @@ resource "aws_subnet" "private" {
   tags = merge(
     var.tags,
     {
-      Name                                                = "${var.project_name}-${var.environment}-private-${count.index + 1}"
-      "kubernetes.io/role/internal-elb"                   = "1"
+      Name                                                               = "${var.project_name}-${var.environment}-private-${count.index + 1}"
+      "kubernetes.io/role/internal-elb"                                  = "1"
       "kubernetes.io/cluster/${var.project_name}-${var.environment}-eks" = "shared"
     }
   )
@@ -368,10 +368,10 @@ resource "aws_security_group" "app" {
   }
 
   ingress {
-    from_port = 0
-    to_port   = 65535
-    protocol  = "tcp"
-    self      = true
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    self        = true
     description = "All TCP from self"
   }
 
@@ -397,11 +397,11 @@ resource "aws_security_group" "app" {
 # VPC Flow Logs
 # ============================================
 resource "aws_flow_log" "main" {
-  count                = var.cloud_provider == "aws" && var.enable_flow_logs ? 1 : 0
-  iam_role_arn         = aws_iam_role.flow_logs[0].arn
-  log_destination      = aws_cloudwatch_log_group.flow_logs[0].arn
-  traffic_type         = "ALL"
-  vpc_id               = aws_vpc.main[0].id
+  count                    = var.cloud_provider == "aws" && var.enable_flow_logs ? 1 : 0
+  iam_role_arn             = aws_iam_role.flow_logs[0].arn
+  log_destination          = aws_cloudwatch_log_group.flow_logs[0].arn
+  traffic_type             = "ALL"
+  vpc_id                   = aws_vpc.main[0].id
   max_aggregation_interval = 60
 
   tags = merge(

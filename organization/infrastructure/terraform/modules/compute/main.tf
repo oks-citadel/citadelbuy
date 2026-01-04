@@ -135,12 +135,12 @@ resource "azurerm_kubernetes_cluster" "main" {
 
   # Network configuration
   network_profile {
-    network_plugin     = "azure"
-    network_policy     = "calico"
-    service_cidr       = "10.100.0.0/16"
-    dns_service_ip     = "10.100.0.10"
-    load_balancer_sku  = "standard"
-    outbound_type      = "loadBalancer"
+    network_plugin    = "azure"
+    network_policy    = "calico"
+    service_cidr      = "10.100.0.0/16"
+    dns_service_ip    = "10.100.0.10"
+    load_balancer_sku = "standard"
+    outbound_type     = "loadBalancer"
   }
 
   # Monitoring
@@ -242,7 +242,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "spot" {
   os_disk_size_gb       = 128
   priority              = "Spot"
   eviction_policy       = "Delete"
-  spot_max_price        = -1  # Pay up to on-demand price
+  spot_max_price        = -1 # Pay up to on-demand price
   zones                 = ["1", "2", "3"]
 
   node_labels = {
@@ -308,11 +308,11 @@ resource "azurerm_linux_web_app" "api" {
   https_only          = true
 
   site_config {
-    always_on                = true
-    minimum_tls_version      = "1.2"
-    http2_enabled            = true
-    ftps_state               = "Disabled"
-    vnet_route_all_enabled   = true
+    always_on                               = true
+    minimum_tls_version                     = "1.2"
+    http2_enabled                           = true
+    ftps_state                              = "Disabled"
+    vnet_route_all_enabled                  = true
     container_registry_use_managed_identity = true
 
     application_stack {
@@ -323,9 +323,9 @@ resource "azurerm_linux_web_app" "api" {
     # SECURITY: Only allow traffic from Azure Front Door with specific header validation.
     # This ensures all traffic flows through the WAF for protection.
     ip_restriction {
-      name       = "FrontDoor"
-      priority   = 100
-      action     = "Allow"
+      name        = "FrontDoor"
+      priority    = 100
+      action      = "Allow"
       service_tag = "AzureFrontDoor.Backend"
       headers {
         x_azure_fdid = [var.front_door_id]
@@ -348,9 +348,9 @@ resource "azurerm_linux_web_app" "api" {
   }
 
   app_settings = {
-    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
-    "DOCKER_REGISTRY_SERVER_URL"          = "https://${azurerm_container_registry.main.login_server}"
-    "APPLICATIONINSIGHTS_CONNECTION_STRING" = var.app_insights_connection_string
+    "WEBSITES_ENABLE_APP_SERVICE_STORAGE"        = "false"
+    "DOCKER_REGISTRY_SERVER_URL"                 = "https://${azurerm_container_registry.main.login_server}"
+    "APPLICATIONINSIGHTS_CONNECTION_STRING"      = var.app_insights_connection_string
     "ApplicationInsightsAgent_EXTENSION_VERSION" = "~3"
   }
 
@@ -388,11 +388,11 @@ resource "azurerm_linux_web_app" "web" {
   https_only          = true
 
   site_config {
-    always_on              = true
-    minimum_tls_version    = "1.2"
-    http2_enabled          = true
-    ftps_state             = "Disabled"
-    vnet_route_all_enabled = true
+    always_on                               = true
+    minimum_tls_version                     = "1.2"
+    http2_enabled                           = true
+    ftps_state                              = "Disabled"
+    vnet_route_all_enabled                  = true
     container_registry_use_managed_identity = true
 
     application_stack {
@@ -406,9 +406,9 @@ resource "azurerm_linux_web_app" "web" {
   }
 
   app_settings = {
-    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
-    "DOCKER_REGISTRY_SERVER_URL"          = "https://${azurerm_container_registry.main.login_server}"
-    "NEXT_PUBLIC_API_URL"                 = var.api_url
+    "WEBSITES_ENABLE_APP_SERVICE_STORAGE"   = "false"
+    "DOCKER_REGISTRY_SERVER_URL"            = "https://${azurerm_container_registry.main.login_server}"
+    "NEXT_PUBLIC_API_URL"                   = var.api_url
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = var.app_insights_connection_string
   }
 
@@ -431,10 +431,10 @@ resource "azurerm_linux_web_app_slot" "api_staging" {
   https_only     = true
 
   site_config {
-    always_on           = true
-    minimum_tls_version = "1.2"
-    http2_enabled       = true
-    ftps_state          = "Disabled"
+    always_on                               = true
+    minimum_tls_version                     = "1.2"
+    http2_enabled                           = true
+    ftps_state                              = "Disabled"
     container_registry_use_managed_identity = true
 
     application_stack {
@@ -448,8 +448,8 @@ resource "azurerm_linux_web_app_slot" "api_staging" {
   }
 
   app_settings = {
-    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
-    "DOCKER_REGISTRY_SERVER_URL"          = "https://${azurerm_container_registry.main.login_server}"
+    "WEBSITES_ENABLE_APP_SERVICE_STORAGE"   = "false"
+    "DOCKER_REGISTRY_SERVER_URL"            = "https://${azurerm_container_registry.main.login_server}"
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = var.app_insights_connection_string
   }
 
