@@ -286,7 +286,7 @@ export class SmartSearchService {
       if (productName.includes(termLower)) {
         score += 0.4;
         // Bonus for exact word match
-        if (productName.split(/\s+/).some(word => word === termLower)) {
+        if (productName.split(/\s+/).some((word: string) => word === termLower)) {
           score += 0.2;
         }
       }

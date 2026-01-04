@@ -107,7 +107,7 @@ services:
   # WARNING: pgAdmin should NOT be deployed in production
   # Only use for local development and testing
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:8.13
     container_name: broxiva-pgadmin-dev
     restart: unless-stopped
     ports:

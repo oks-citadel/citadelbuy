@@ -20,6 +20,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Camera, CameraType } from 'expo-camera';
 import * as MediaLibrary from 'expo-media-library';
 import { RootStackParamList } from '../../types/navigation';
+import FALLBACK_PLACEHOLDER from '../../../assets/icon.png';
 
 type ARTryOnRouteProp = RouteProp<RootStackParamList, 'ARTryOn'>;
 type ARTryOnNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -28,7 +29,6 @@ const { width, height } = Dimensions.get('window');
 
 // Placeholder image configuration
 const PLACEHOLDER_IMAGE_URL = 'https://placehold.co/100x100/e5e7eb/9ca3af?text=Product';
-const FALLBACK_PLACEHOLDER = require('../../../assets/icon.png');
 
 // Supported product categories for AR
 type ARCategory = 'eyewear' | 'accessories' | 'jewelry' | 'hats' | 'watches' | 'furniture';

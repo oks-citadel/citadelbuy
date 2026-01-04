@@ -150,7 +150,7 @@ export class ChatbotService {
       general_inquiry: "Thank you for your message. How can I help you today?",
     };
 
-    return responses[intent.type] || responses.general_inquiry;
+    return (responses as Record<string, string>)[intent.type] || responses.general_inquiry;
   }
 
   private storeMessage(userId: string, message: Message) {
@@ -159,11 +159,13 @@ export class ChatbotService {
     }
 
     const messages = this.conversations.get(userId);
-    messages.push(message);
+    if (messages) {
+      messages.push(message);
 
-    // Keep only last 50 messages
-    if (messages.length > 50) {
-      messages.shift();
+      // Keep only last 50 messages
+      if (messages.length > 50) {
+        messages.shift();
+      }
     }
   }
 }

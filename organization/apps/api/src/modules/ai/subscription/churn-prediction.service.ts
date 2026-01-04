@@ -306,7 +306,7 @@ export class ChurnPredictionService {
       medium: "We noticed you haven't been around lately",
       low: 'How are you enjoying your subscription?',
     };
-    return subjects[riskLevel] || subjects.low;
+    return (subjects as Record<string, string>)[riskLevel] || subjects.low;
   }
 
   private analyzePauseReason(reason: string): any[] {

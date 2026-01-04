@@ -417,9 +417,9 @@ export class OnfidoProvider implements IKycProvider {
     const status = error.response?.status;
 
     // Handle rate limiting (429)
-    if (status === 429) {
+    if (status === 429 && config) {
       const retryAfter = error.response?.headers['retry-after'];
-      const delay = retryAfter ? parseInt(retryAfter) * 1000 : 5000;
+      const delay = retryAfter ? parseInt(retryAfter as string) * 1000 : 5000;
 
       this.logger.warn(`Rate limited by Onfido. Retrying after ${delay}ms`);
       await this.sleep(delay);
@@ -429,7 +429,7 @@ export class OnfidoProvider implements IKycProvider {
     }
 
     // Handle server errors (5xx) with exponential backoff
-    if (status >= 500 && status < 600) {
+    if (status !== undefined && status >= 500 && status < 600 && config) {
       const retryCount = (config as any)._retryCount || 0;
 
       if (retryCount < this.maxRetries) {
@@ -465,16 +465,16 @@ export class OnfidoProvider implements IKycProvider {
    * Execute request with retry logic
    */
   private async executeWithRetry<T>(fn: () => Promise<T>): Promise<T> {
-    let lastError: Error;
+    let lastError: Error | undefined;
 
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       try {
         return await fn();
       } catch (error) {
-        lastError = error;
+        lastError = error as Error;
 
         // Don't retry client errors (4xx except 429)
-        if (error.response?.status >= 400 && error.response?.status < 500 && error.response?.status !== 429) {
+        if ((error as any).response?.status >= 400 && (error as any).response?.status < 500 && (error as any).response?.status !== 429) {
           throw error;
         }
 
@@ -486,7 +486,7 @@ export class OnfidoProvider implements IKycProvider {
       }
     }
 
-    throw lastError;
+    throw lastError!;
   }
 
   private mapDocumentType(type: string): string {

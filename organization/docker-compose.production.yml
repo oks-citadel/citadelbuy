@@ -346,8 +346,9 @@ services:
     image: postgres:16-alpine
     container_name: broxiva-postgres-prod
     restart: unless-stopped
-    ports:
-      - "5432:5432"
+    # SECURITY: Database ports should not be exposed externally in production
+    expose:
+      - "5432"
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-broxiva}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -417,8 +418,9 @@ services:
     image: redis:7-alpine
     container_name: broxiva-redis-prod
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    # SECURITY: Cache ports should not be exposed externally in production
+    expose:
+      - "6379"
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     volumes:
@@ -461,9 +463,10 @@ services:
     image: rabbitmq:3.12-management-alpine
     container_name: broxiva-rabbitmq-prod
     restart: unless-stopped
-    ports:
-      - "5672:5672"   # AMQP
-      - "15672:15672" # Management UI
+    # SECURITY: Message queue ports should not be exposed externally in production
+    # Management UI (15672) removed for security - access via VPN or SSH tunnel if needed
+    expose:
+      - "5672"
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-broxiva}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
@@ -498,8 +501,9 @@ services:
     image: mongo:7-jammy
     container_name: broxiva-mongodb-prod
     restart: unless-stopped
-    ports:
-      - "27017:27017"
+    # SECURITY: Database ports should not be exposed externally in production
+    expose:
+      - "27017"
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-broxiva}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
@@ -535,9 +539,10 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
     container_name: broxiva-elasticsearch-prod
     restart: unless-stopped
-    ports:
-      - "9200:9200"
-      - "9300:9300"
+    # SECURITY: Search engine ports should not be exposed externally in production
+    expose:
+      - "9200"
+      - "9300"
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=true

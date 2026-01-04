@@ -487,7 +487,6 @@ export class AdminVendorsController {
       data: {
         status: VendorStatus.SUSPENDED,
         canSell: false,
-        suspensionReason: suspendDto.reason,
       },
     });
 
@@ -515,7 +514,6 @@ export class AdminVendorsController {
       data: {
         status: VendorStatus.ACTIVE,
         canSell: true,
-        suspensionReason: null,
       },
     });
 

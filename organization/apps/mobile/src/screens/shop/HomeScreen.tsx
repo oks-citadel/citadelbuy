@@ -17,12 +17,12 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery } from '@tanstack/react-query';
 import { productsApi } from '../../services/api';
 import { RootStackParamList } from '../../navigation/RootNavigator';
+import FALLBACK_PLACEHOLDER from '../../../assets/icon.png';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 // Placeholder image configuration
 const PLACEHOLDER_IMAGE_URL = 'https://placehold.co/150x150/e5e7eb/9ca3af?text=Product';
-const FALLBACK_PLACEHOLDER = require('../../../assets/icon.png');
 
 interface Product {
   id: string;

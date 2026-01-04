@@ -226,14 +226,16 @@ export class ConversationalService {
     }
 
     const history = this.conversationHistory.get(userId);
-    history.push({
-      ...entry,
-      timestamp: new Date().toISOString(),
-    });
+    if (history) {
+      history.push({
+        ...entry,
+        timestamp: new Date().toISOString(),
+      });
 
-    // Keep only last 10 entries
-    if (history.length > 10) {
-      history.shift();
+      // Keep only last 10 entries
+      if (history.length > 10) {
+        history.shift();
+      }
     }
   }
 

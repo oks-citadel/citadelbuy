@@ -333,7 +333,7 @@ model CategoryView {
   createdAt  DateTime @default(now())
 
   category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  user     User?    @relation(fields: [userId], references: [id])
+  user     User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([categoryId])
   @@index([userId])
@@ -438,7 +438,7 @@ model Order {
   updatedAt DateTime @updatedAt
 
   // Relations
-  user                    User?                    @relation(fields: [userId], references: [id])
+  user                    User?                    @relation(fields: [userId], references: [id], onDelete: SetNull)
   items                   OrderItem[]
   bnplPaymentPlan         BnplPaymentPlan?
   pointTransactions       PointTransaction[]
@@ -468,14 +468,14 @@ model Order {
 model OrderItem {
   id        String   @id @default(uuid())
   orderId   String
-  productId String
+  productId String?
   quantity  Int
   price     Float
   createdAt DateTime @default(now())
 
   // Relations
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   @@index([orderId])
   @@index([productId])
@@ -490,7 +490,7 @@ enum ReviewStatus {
 
 model Review {
   id                 String       @id @default(uuid())
-  userId             String
+  userId             String?
   productId          String
   rating             Int // 1-5
   comment            String?
@@ -501,7 +501,7 @@ model Review {
   updatedAt          DateTime     @updatedAt
 
   // Relations
-  user         User            @relation(fields: [userId], references: [id])
+  user         User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
   product      Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
   votes        ReviewVote[]
   helpfulVotes ReviewHelpful[]
@@ -1673,7 +1673,7 @@ model PointTransaction {
   createdAt DateTime @default(now())
 
   loyalty CustomerLoyalty @relation(fields: [loyaltyId], references: [id], onDelete: Cascade)
-  order   Order?          @relation(fields: [orderId], references: [id])
+  order   Order?          @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([loyaltyId, createdAt])
   @@index([orderId])
@@ -1933,9 +1933,9 @@ model DealPurchase {
 
   purchasedAt DateTime @default(now())
 
-  deal  Deal  @relation(fields: [dealId], references: [id])
-  user  User  @relation(fields: [userId], references: [id])
-  order Order @relation(fields: [orderId], references: [id])
+  deal  Deal  @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([dealId])
   @@index([userId])
@@ -3256,7 +3256,7 @@ model Refund {
   id              String @id @default(uuid())
   returnRequestId String @unique
   orderId         String
-  userId          String
+  userId          String?
 
   status RefundStatus @default(PENDING)
   method RefundMethod @default(ORIGINAL_PAYMENT)
@@ -3285,8 +3285,8 @@ model Refund {
 
   // Relations
   returnRequest ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
-  order         Order         @relation(fields: [orderId], references: [id])
-  user          User          @relation(fields: [userId], references: [id])
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([orderId])
   @@index([userId])
@@ -5243,7 +5243,7 @@ model RevenueMetric {
 model CustomerInsight {
   id                 String    @id @default(uuid())
   userId             String    @unique
-  user               User      @relation(fields: [userId], references: [id])
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   totalOrders        Int       @default(0)
   totalSpent         Float     @default(0)
   averageOrderValue  Float     @default(0)
@@ -5389,7 +5389,7 @@ model PushNotificationToken {
 model MobileNotification {
   id             String               @id @default(uuid())
   userId         String?
-  user           User?                @relation(fields: [userId], references: [id])
+  user           User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
   title          String
   body           String
   data           Json?

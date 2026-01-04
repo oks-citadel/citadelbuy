@@ -382,7 +382,7 @@ export class FraudDetectionService {
       let totalReturnValue = 0;
       for (const ret of returns) {
         for (const item of ret.items) {
-          totalReturnValue += item.refundAmount;
+          totalReturnValue += item.refundAmount ?? 0;
         }
       }
       const averageReturnValue = totalReturns > 0 ? totalReturnValue / totalReturns : 0;

@@ -364,7 +364,7 @@ export class ContentGenerationService {
       luxury: `Experience the ${productName}, a premium ${category} piece that embodies sophistication and excellence.`,
       technical: `The ${productName} features advanced specifications designed for optimal ${category} performance and efficiency.`,
     };
-    return templates[tone] || templates.professional;
+    return (templates as Record<string, string>)[tone] || templates.professional;
   }
 
   private generateLongDescription(
@@ -464,7 +464,7 @@ export class ContentGenerationService {
   }
 
   private getRatingDistribution(reviews: any[]) {
-    const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    const distribution: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
     reviews.forEach(r => {
       distribution[r.rating]++;
     });
@@ -501,7 +501,7 @@ export class ContentGenerationService {
       pinterest: `${productName} - Save this pin for your next shopping trip! Quality meets affordability.`,
       tiktok: `You NEED to see this ${productName}! 😍 #ProductReview #MustHave`,
     };
-    return templates[platform] || templates.facebook;
+    return (templates as Record<string, string>)[platform] || templates.facebook;
   }
 
   private generateHashtags(
@@ -525,7 +525,7 @@ export class ContentGenerationService {
       pinterest: '8-11 PM',
       tiktok: '6-10 PM, 2-4 PM',
     };
-    return times[platform] || '12-3 PM';
+    return (times as Record<string, string>)[platform] || '12-3 PM';
   }
 
   private suggestEmojis(platform: string, campaignType: string): string[] {
@@ -535,7 +535,7 @@ export class ContentGenerationService {
       feature: ['⭐', '👌', '💯', '✅'],
       testimonial: ['❤️', '🙌', '💙', '👏'],
     };
-    return emojiMap[campaignType] || emojiMap.feature;
+    return (emojiMap as Record<string, string[]>)[campaignType] || emojiMap.feature;
   }
 
   private generateCTA(platform: string, campaignType: string): string {
@@ -545,7 +545,7 @@ export class ContentGenerationService {
       feature: 'Learn More',
       testimonial: 'Join Happy Customers',
     };
-    return ctas[campaignType] || 'Shop Now';
+    return (ctas as Record<string, string>)[campaignType] || 'Shop Now';
   }
 
   private generateWelcomeEmail(name: string): string {

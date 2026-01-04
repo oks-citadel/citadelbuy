@@ -10,6 +10,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { ReturnsService } from './returns.service';
+import { PrismaService } from '../../common/prisma/prisma.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -30,7 +31,10 @@ import {
 @Controller('returns')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ReturnsController {
-  constructor(private readonly returnsService: ReturnsService) {}
+  constructor(
+    private readonly returnsService: ReturnsService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   // ==================== Customer Endpoints ====================
 
@@ -155,5 +159,4 @@ export class ReturnsController {
     return this.returnsService.getReturnAnalytics(filters);
   }
 
-  private prisma: any; // For the update endpoint - should inject PrismaService properly
 }

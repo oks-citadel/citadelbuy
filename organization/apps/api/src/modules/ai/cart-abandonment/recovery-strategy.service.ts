@@ -487,7 +487,7 @@ export class RecoveryStrategyService {
       },
     };
 
-    return messages[channel]?.[strategy] || 'Complete your purchase';
+    return (messages as Record<string, Record<string, string>>)[channel]?.[strategy] || 'Complete your purchase';
   }
 
   private calculateCampaignROI(campaign: RecoveryCampaign) {

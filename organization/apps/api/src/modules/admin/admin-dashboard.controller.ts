@@ -213,7 +213,7 @@ export class AdminDashboardController {
 
     // Check for pending return requests
     const pendingReturns = await this.prisma.returnRequest.count({
-      where: { status: 'PENDING' },
+      where: { status: 'PENDING_APPROVAL' },
     });
 
     if (pendingReturns > 0) {
