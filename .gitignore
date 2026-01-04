@@ -1,5 +1,5 @@
 # ==============================================
-# CitadelBuy E-Commerce Platform - Root Git Ignore
+# Broxiva E-Commerce Platform - Root Git Ignore
 # ==============================================
 # Last Updated: 2025-11-18
 
@@ -91,11 +91,11 @@ temp/
 # ==============================================
 # Project-Specific
 # ==============================================
-citadelbuy/backend/.env
-citadelbuy/backend/dist/
-citadelbuy/frontend/.env.local
-citadelbuy/frontend/.next/
-citadelbuy/frontend/out/
+broxiva/backend/.env
+broxiva/backend/dist/
+broxiva/frontend/.env.local
+broxiva/frontend/.next/
+broxiva/frontend/out/
 
 # ==============================================
 # Infrastructure
@@ -123,8 +123,8 @@ docs/.vitepress/cache/
 # ==============================================
 !.env.example
 !.env.local.example
-!citadelbuy/backend/.env.example
-!citadelbuy/frontend/.env.local.example
+!broxiva/backend/.env.example
+!broxiva/frontend/.env.local.example
 
 # ==============================================
 # Terraform

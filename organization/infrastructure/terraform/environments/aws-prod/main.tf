@@ -67,9 +67,9 @@ module "vpc" {
   name = "${local.name_prefix}-vpc"
   cidr = var.vpc_cidr
 
-  azs             = local.availability_zones
-  private_subnets = var.private_subnet_cidrs
-  public_subnets  = var.public_subnet_cidrs
+  azs              = local.availability_zones
+  private_subnets  = var.private_subnet_cidrs
+  public_subnets   = var.public_subnet_cidrs
   database_subnets = var.database_subnet_cidrs
 
   enable_nat_gateway     = true
@@ -90,12 +90,12 @@ module "vpc" {
   tags = local.common_tags
 
   public_subnet_tags = {
-    "kubernetes.io/role/elb"                      = 1
+    "kubernetes.io/role/elb"                         = 1
     "kubernetes.io/cluster/${local.name_prefix}-eks" = "shared"
   }
 
   private_subnet_tags = {
-    "kubernetes.io/role/internal-elb"             = 1
+    "kubernetes.io/role/internal-elb"                = 1
     "kubernetes.io/cluster/${local.name_prefix}-eks" = "shared"
   }
 }
@@ -108,9 +108,9 @@ module "eks" {
   cluster_name    = "${local.name_prefix}-eks"
   cluster_version = var.kubernetes_version
 
-  vpc_id                          = module.vpc.vpc_id
-  subnet_ids                      = module.vpc.private_subnets
-  control_plane_subnet_ids        = module.vpc.private_subnets
+  vpc_id                   = module.vpc.vpc_id
+  subnet_ids               = module.vpc.private_subnets
+  control_plane_subnet_ids = module.vpc.private_subnets
   # SECURITY: Disable public endpoint - access only via VPN/bastion
   cluster_endpoint_public_access  = false
   cluster_endpoint_private_access = true
@@ -252,12 +252,12 @@ module "rds" {
   db_subnet_group_name   = module.vpc.database_subnet_group_name
   vpc_security_group_ids = [module.db_security_group.security_group_id]
 
-  maintenance_window              = "Mon:00:00-Mon:03:00"
-  backup_window                   = "03:00-06:00"
-  backup_retention_period         = 30
-  skip_final_snapshot             = false
+  maintenance_window               = "Mon:00:00-Mon:03:00"
+  backup_window                    = "03:00-06:00"
+  backup_retention_period          = 30
+  skip_final_snapshot              = false
   final_snapshot_identifier_prefix = "${local.name_prefix}-final"
-  deletion_protection             = true
+  deletion_protection              = true
 
   performance_insights_enabled          = true
   performance_insights_retention_period = 7
@@ -314,14 +314,14 @@ module "elasticache" {
   num_cache_nodes      = var.redis_num_nodes
   parameter_group_name = "default.redis7"
 
-  subnet_group_name = module.vpc.elasticache_subnet_group_name
+  subnet_group_name  = module.vpc.elasticache_subnet_group_name
   security_group_ids = [module.redis_security_group.security_group_id]
 
   at_rest_encryption_enabled = true
   transit_encryption_enabled = true
 
-  maintenance_window = "sun:05:00-sun:09:00"
-  snapshot_window    = "00:00-04:00"
+  maintenance_window       = "sun:05:00-sun:09:00"
+  snapshot_window          = "00:00-04:00"
   snapshot_retention_limit = 7
 
   tags = local.common_tags
@@ -592,6 +592,178 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   dimensions = {
     ClusterName = module.eks.cluster_name
   }
+
+  tags = local.common_tags
+}
+
+# ============================================
+# VPC Endpoints for Cost Optimization & Security
+# ============================================
+# VPC Endpoints reduce NAT Gateway traffic costs and improve security
+# by keeping traffic within AWS network
+
+# Security Group for Interface VPC Endpoints
+resource "aws_security_group" "vpc_endpoints" {
+  name        = "${local.name_prefix}-vpc-endpoints-sg"
+  description = "Security group for VPC Interface Endpoints"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    description = "HTTPS from VPC"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  egress {
+    description = "Allow all outbound"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-vpc-endpoints-sg"
+  })
+}
+
+# S3 Gateway Endpoint (Free - no hourly charges)
+# Reduces NAT Gateway costs for S3 traffic
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = module.vpc.vpc_id
+  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
+  vpc_endpoint_type = "Gateway"
+
+  route_table_ids = module.vpc.private_route_table_ids
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-s3-endpoint"
+  })
+}
+
+# ECR API Interface Endpoint
+# Required for ECR API calls (authentication, image metadata)
+resource "aws_vpc_endpoint" "ecr_api" {
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.api"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+
+  subnet_ids         = module.vpc.private_subnets
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-ecr-api-endpoint"
+  })
+}
+
+# ECR DKR Interface Endpoint
+# Required for Docker image pull/push operations
+resource "aws_vpc_endpoint" "ecr_dkr" {
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.dkr"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+
+  subnet_ids         = module.vpc.private_subnets
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-ecr-dkr-endpoint"
+  })
+}
+
+# Secrets Manager Interface Endpoint
+# Enables secure access to secrets without traversing NAT Gateway
+resource "aws_vpc_endpoint" "secretsmanager" {
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.secretsmanager"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+
+  subnet_ids         = module.vpc.private_subnets
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-secretsmanager-endpoint"
+  })
+}
+
+# CloudWatch Logs Interface Endpoint
+# Enables log streaming without NAT Gateway traffic
+resource "aws_vpc_endpoint" "logs" {
+  vpc_id              = module.vpc.vpc_id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.logs"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+
+  subnet_ids         = module.vpc.private_subnets
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-logs-endpoint"
+  })
+}
+
+# ============================================
+# AWS Budgets - Cost Monitoring & Alerts
+# ============================================
+# Budget monitoring with automated alerts for cost control
+module "budgets" {
+  source = "../../modules/budgets"
+
+  name_prefix         = local.name_prefix
+  display_name_prefix = "Broxiva Production"
+
+  # Monthly budget: $10,000 USD
+  monthly_budget_amount = "10000"
+  budget_currency       = "USD"
+
+  # Alert thresholds
+  warning_threshold_percent  = 80  # Alert at 80% of budget
+  critical_threshold_percent = 100 # Alert at 100% of budget
+  forecast_threshold_percent = 100 # Alert when forecast exceeds budget
+
+  # Notification recipients
+  notification_email_addresses = var.alert_email_addresses
+
+  # Cost type configuration
+  include_credits       = false
+  include_discounts     = true
+  include_refunds       = false
+  include_support_costs = true
+  include_taxes         = true
+  use_amortized_costs   = false
+  use_blended_costs     = false
+
+  # Service-specific budgets for major cost centers
+  service_budgets = {
+    ec2 = {
+      limit_amount = "4000"
+      services     = ["Amazon Elastic Compute Cloud - Compute"]
+    }
+    eks = {
+      limit_amount = "2000"
+      services     = ["Amazon Elastic Kubernetes Service"]
+    }
+    rds = {
+      limit_amount = "2000"
+      services     = ["Amazon Relational Database Service"]
+    }
+    s3 = {
+      limit_amount = "500"
+      services     = ["Amazon Simple Storage Service"]
+    }
+    cloudfront = {
+      limit_amount = "500"
+      services     = ["Amazon CloudFront"]
+    }
+  }
+
+  # Enable CloudWatch alarm for budget exceeded events
+  enable_cloudwatch_alarm = true
 
   tags = local.common_tags
 }

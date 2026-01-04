@@ -156,10 +156,10 @@ resource "aws_sns_topic_policy" "email_events" {
 resource "aws_sqs_queue" "notifications" {
   name                       = "${var.name_prefix}-notifications"
   delay_seconds              = 0
-  max_message_size           = 262144 # 256 KB
+  max_message_size           = 262144  # 256 KB
   message_retention_seconds  = 1209600 # 14 days
-  receive_wait_time_seconds  = 20 # Long polling
-  visibility_timeout_seconds = 300 # 5 minutes
+  receive_wait_time_seconds  = 20      # Long polling
+  visibility_timeout_seconds = 300     # 5 minutes
 
   # Enable encryption
   sqs_managed_sse_enabled = true
@@ -175,9 +175,9 @@ resource "aws_sqs_queue" "notifications" {
 
 # Notifications Dead Letter Queue
 resource "aws_sqs_queue" "notifications_dlq" {
-  name                       = "${var.name_prefix}-notifications-dlq"
-  message_retention_seconds  = 1209600 # 14 days
-  sqs_managed_sse_enabled    = true
+  name                      = "${var.name_prefix}-notifications-dlq"
+  message_retention_seconds = 1209600 # 14 days
+  sqs_managed_sse_enabled   = true
 
   tags = var.tags
 }
@@ -203,9 +203,9 @@ resource "aws_sqs_queue" "email" {
 
 # Email Dead Letter Queue
 resource "aws_sqs_queue" "email_dlq" {
-  name                       = "${var.name_prefix}-email-dlq"
-  message_retention_seconds  = 1209600
-  sqs_managed_sse_enabled    = true
+  name                      = "${var.name_prefix}-email-dlq"
+  message_retention_seconds = 1209600
+  sqs_managed_sse_enabled   = true
 
   tags = var.tags
 }
@@ -231,9 +231,9 @@ resource "aws_sqs_queue" "sms" {
 
 # SMS Dead Letter Queue
 resource "aws_sqs_queue" "sms_dlq" {
-  name                       = "${var.name_prefix}-sms-dlq"
-  message_retention_seconds  = 1209600
-  sqs_managed_sse_enabled    = true
+  name                      = "${var.name_prefix}-sms-dlq"
+  message_retention_seconds = 1209600
+  sqs_managed_sse_enabled   = true
 
   tags = var.tags
 }
@@ -259,9 +259,9 @@ resource "aws_sqs_queue" "webhooks" {
 
 # Webhooks Dead Letter Queue
 resource "aws_sqs_queue" "webhooks_dlq" {
-  name                       = "${var.name_prefix}-webhooks-dlq"
-  message_retention_seconds  = 1209600
-  sqs_managed_sse_enabled    = true
+  name                      = "${var.name_prefix}-webhooks-dlq"
+  message_retention_seconds = 1209600
+  sqs_managed_sse_enabled   = true
 
   tags = var.tags
 }
@@ -332,7 +332,12 @@ resource "aws_iam_policy" "ses_send" {
           "ses:SendTemplatedEmail",
           "ses:SendBulkTemplatedEmail"
         ]
-        Resource = "*"
+        Resource = [
+          # SES domain identity ARN
+          "arn:aws:ses:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:identity/${var.domain_name}",
+          # SES configuration set ARN
+          "arn:aws:ses:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:configuration-set/${aws_ses_configuration_set.main.name}"
+        ]
         Condition = {
           StringEquals = {
             "ses:FromAddress" = var.ses_from_addresses
@@ -354,11 +359,27 @@ resource "aws_iam_policy" "sns_sms" {
     Version = "2012-10-17"
     Statement = [
       {
+        Sid    = "SNSPublishToTopics"
         Effect = "Allow"
         Action = [
           "sns:Publish"
         ]
-        Resource = "*"
+        # Scope to specific SNS topics created in this module
+        Resource = [
+          aws_sns_topic.transactional.arn,
+          aws_sns_topic.marketing.arn,
+          aws_sns_topic.alerts.arn,
+          aws_sns_topic.email_events.arn
+        ]
+      },
+      {
+        Sid    = "SNSPublishSMS"
+        Effect = "Allow"
+        Action = [
+          "sns:Publish"
+        ]
+        # For direct SMS publishing to phone numbers, must use * but with protocol condition
+        Resource = "arn:aws:sns:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
         Condition = {
           StringEquals = {
             "sns:Protocol" = "sms"
@@ -366,13 +387,15 @@ resource "aws_iam_policy" "sns_sms" {
         }
       },
       {
+        Sid    = "SNSSMSAccountAttributes"
         Effect = "Allow"
         Action = [
           "sns:SetSMSAttributes",
           "sns:GetSMSAttributes",
           "sns:CheckIfPhoneNumberIsOptedOut"
         ]
-        Resource = "*"
+        # Account-level SMS operations - scoped to account
+        Resource = "arn:aws:sns:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
       }
     ]
   })
@@ -420,20 +443,32 @@ resource "aws_iam_policy" "messaging_full" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "SESAccess"
+        Sid    = "SESSendAccess"
         Effect = "Allow"
         Action = [
           "ses:SendEmail",
           "ses:SendRawEmail",
           "ses:SendTemplatedEmail",
-          "ses:SendBulkTemplatedEmail",
+          "ses:SendBulkTemplatedEmail"
+        ]
+        # Scoped to specific SES identity and configuration set
+        Resource = [
+          "arn:aws:ses:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:identity/${var.domain_name}",
+          "arn:aws:ses:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:configuration-set/${aws_ses_configuration_set.main.name}"
+        ]
+      },
+      {
+        Sid    = "SESAccountAccess"
+        Effect = "Allow"
+        Action = [
           "ses:GetSendQuota",
           "ses:GetSendStatistics"
         ]
+        # Account-level SES operations - these require * but are read-only
         Resource = "*"
       },
       {
-        Sid    = "SNSAccess"
+        Sid    = "SNSTopicAccess"
         Effect = "Allow"
         Action = [
           "sns:Publish"
@@ -441,24 +476,34 @@ resource "aws_iam_policy" "messaging_full" {
         Resource = [
           aws_sns_topic.transactional.arn,
           aws_sns_topic.marketing.arn,
-          aws_sns_topic.alerts.arn
+          aws_sns_topic.alerts.arn,
+          aws_sns_topic.email_events.arn
         ]
       },
       {
-        Sid    = "SNSSMSAccess"
+        Sid    = "SNSSMSPublish"
         Effect = "Allow"
         Action = [
-          "sns:Publish",
-          "sns:SetSMSAttributes",
-          "sns:GetSMSAttributes",
-          "sns:CheckIfPhoneNumberIsOptedOut"
+          "sns:Publish"
         ]
-        Resource = "*"
+        # For direct SMS to phone numbers - scoped to account with protocol condition
+        Resource = "arn:aws:sns:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
         Condition = {
           StringEquals = {
             "sns:Protocol" = "sms"
           }
         }
+      },
+      {
+        Sid    = "SNSSMSAttributes"
+        Effect = "Allow"
+        Action = [
+          "sns:SetSMSAttributes",
+          "sns:GetSMSAttributes",
+          "sns:CheckIfPhoneNumberIsOptedOut"
+        ]
+        # Account-level SMS attribute operations
+        Resource = "arn:aws:sns:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
       },
       {
         Sid    = "SQSAccess"

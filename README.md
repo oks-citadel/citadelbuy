@@ -395,9 +395,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - **Documentation:** [docs/](docs/)
-- **Issues:** [GitHub Issues](https://github.com/oks-citadel/citadelbuy/issues)
-- **Email:** support@citadelbuy.com
-- **Website:** https://citadelbuy.com
+- **Issues:** [GitHub Issues](https://github.com/broxiva/broxiva/issues)
+- **Email:** support@broxiva.com
+- **Website:** https://broxiva.com
 
 ---
 
@@ -427,6 +427,6 @@ Documentation:     100+ pages
 
 ---
 
-Made with ❤️ by the CitadelBuy Team
+Made with love by the Broxiva Team
 
 **🤖 Powered by Advanced AI Technology**

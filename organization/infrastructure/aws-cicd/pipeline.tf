@@ -82,6 +82,18 @@ variable "enable_microservices_pipeline" {
   default     = true
 }
 
+variable "eks_cluster_name" {
+  description = "Name of the EKS cluster for deployments"
+  type        = string
+  default     = "broxiva-prod-eks"
+}
+
+variable "kubernetes_namespace" {
+  description = "Kubernetes namespace for deployments"
+  type        = string
+  default     = "broxiva"
+}
+
 # ==============================================================================
 # Provider Configuration
 # ==============================================================================
@@ -464,6 +476,148 @@ resource "aws_iam_role_policy" "codebuild" {
 }
 
 # ==============================================================================
+# IAM Role for CodeBuild Deploy (EKS Access)
+# ==============================================================================
+
+resource "aws_iam_role" "codebuild_deploy" {
+  name = "${var.project_name}-codebuild-deploy-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "codebuild.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = local.common_tags
+}
+
+resource "aws_iam_role_policy" "codebuild_deploy" {
+  name = "${var.project_name}-codebuild-deploy-policy"
+  role = aws_iam_role.codebuild_deploy.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = [
+          "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/codebuild/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:PutObject"
+        ]
+        Resource = [
+          aws_s3_bucket.pipeline_artifacts.arn,
+          "${aws_s3_bucket.pipeline_artifacts.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:DescribeImages",
+          "ecr:ListImages"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "eks:DescribeCluster",
+          "eks:ListClusters"
+        ]
+        Resource = "arn:aws:eks:${local.region}:${local.account_id}:cluster/${var.eks_cluster_name}"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sts:AssumeRole"
+        ]
+        Resource = "arn:aws:iam::${local.account_id}:role/${var.project_name}-eks-deploy-role"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameters",
+          "ssm:GetParameter"
+        ]
+        Resource = "arn:aws:ssm:${local.region}:${local.account_id}:parameter/${var.project_name}/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = "arn:aws:secretsmanager:${local.region}:${local.account_id}:secret:${var.project_name}/*"
+      }
+    ]
+  })
+}
+
+# ==============================================================================
+# IAM Role for EKS Deployment (Assumed by CodeBuild)
+# ==============================================================================
+
+resource "aws_iam_role" "eks_deploy" {
+  name = "${var.project_name}-eks-deploy-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          AWS = aws_iam_role.codebuild_deploy.arn
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = local.common_tags
+}
+
+resource "aws_iam_role_policy" "eks_deploy" {
+  name = "${var.project_name}-eks-deploy-policy"
+  role = aws_iam_role.eks_deploy.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "eks:DescribeCluster",
+          "eks:ListClusters",
+          "eks:AccessKubernetesApi"
+        ]
+        Resource = "arn:aws:eks:${local.region}:${local.account_id}:cluster/${var.eks_cluster_name}"
+      }
+    ]
+  })
+}
+
+# ==============================================================================
 # CodeBuild Project - Node.js Services (API & Web)
 # ==============================================================================
 
@@ -586,6 +740,92 @@ resource "aws_codebuild_project" "microservices" {
 }
 
 # ==============================================================================
+# CodeBuild Project - EKS Deployment
+# ==============================================================================
+
+resource "aws_codebuild_project" "deploy" {
+  name          = "${var.project_name}-eks-deploy"
+  description   = "Deploy services to EKS cluster"
+  build_timeout = 30
+  service_role  = aws_iam_role.codebuild_deploy.arn
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+    privileged_mode             = false
+
+    environment_variable {
+      name  = "AWS_ACCOUNT_ID"
+      value = local.account_id
+    }
+
+    environment_variable {
+      name  = "AWS_DEFAULT_REGION"
+      value = local.region
+    }
+
+    environment_variable {
+      name  = "ENVIRONMENT"
+      value = var.environment
+    }
+
+    environment_variable {
+      name  = "EKS_CLUSTER_NAME"
+      value = var.eks_cluster_name
+    }
+
+    environment_variable {
+      name  = "KUBERNETES_NAMESPACE"
+      value = var.kubernetes_namespace
+    }
+
+    environment_variable {
+      name  = "ECR_REGISTRY"
+      value = "${local.account_id}.dkr.ecr.${local.region}.amazonaws.com"
+    }
+
+    environment_variable {
+      name  = "PROJECT_NAME"
+      value = var.project_name
+    }
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = "/aws/codebuild/${var.project_name}-eks-deploy"
+      stream_name = "deploy-log"
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = "organization/infrastructure/aws-cicd/buildspec-deploy.yml"
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project_name}-eks-deploy"
+    Type = "Deployment"
+  })
+}
+
+# ==============================================================================
+# CloudWatch Log Group for EKS Deploy
+# ==============================================================================
+
+resource "aws_cloudwatch_log_group" "eks_deploy" {
+  name              = "/aws/codebuild/${var.project_name}-eks-deploy"
+  retention_in_days = 30
+
+  tags = local.common_tags
+}
+
+# ==============================================================================
 # CodePipeline - Main Pipeline
 # ==============================================================================
 
@@ -678,6 +918,32 @@ resource "aws_codepipeline" "main" {
         configuration = {
           CustomData = "Please review the build artifacts and approve deployment to ${var.environment}"
         }
+      }
+    }
+  }
+
+  # Stage 5: Deploy to EKS
+  stage {
+    name = "Deploy"
+
+    action {
+      name            = "Deploy_to_EKS"
+      category        = "Build"
+      owner           = "AWS"
+      provider        = "CodeBuild"
+      input_artifacts = ["source_output"]
+      version         = "1"
+      run_order       = 1
+
+      configuration = {
+        ProjectName = aws_codebuild_project.deploy.name
+        EnvironmentVariables = jsonencode([
+          {
+            name  = "CODEBUILD_RESOLVED_SOURCE_VERSION"
+            value = "#{codepipeline.PipelineExecutionId}"
+            type  = "PLAINTEXT"
+          }
+        ])
       }
     }
   }
@@ -821,6 +1087,21 @@ output "codebuild_microservices_project" {
   value       = var.enable_microservices_pipeline ? aws_codebuild_project.microservices[0].name : null
 }
 
+output "codebuild_deploy_project" {
+  description = "CodeBuild project for EKS deployment"
+  value       = aws_codebuild_project.deploy.name
+}
+
+output "codebuild_deploy_role_arn" {
+  description = "ARN of the IAM role for CodeBuild deployment"
+  value       = aws_iam_role.codebuild_deploy.arn
+}
+
+output "eks_deploy_role_arn" {
+  description = "ARN of the IAM role for EKS deployment (add to EKS aws-auth configmap)"
+  value       = aws_iam_role.eks_deploy.arn
+}
+
 output "sns_topic_arn" {
   description = "ARN of the SNS topic for notifications"
   value       = aws_sns_topic.pipeline_notifications.arn
@@ -853,7 +1134,18 @@ output "post_deployment_instructions" {
        The following repositories have been created:
        ${join("\n       ", [for service in local.all_services : "- ${var.project_name}/${service}"])}
 
-    5. TRIGGER FIRST BUILD:
+    5. EKS CLUSTER CONFIGURATION:
+       Add the deployment IAM role to your EKS aws-auth ConfigMap:
+
+       kubectl edit configmap aws-auth -n kube-system
+
+       Add the following under mapRoles:
+       - rolearn: ${aws_iam_role.eks_deploy.arn}
+         username: codebuild-deploy
+         groups:
+           - system:masters
+
+    6. TRIGGER FIRST BUILD:
        Push a commit to the ${var.github_branch} branch to trigger the pipeline.
 
     =====================================================

@@ -1,15 +1,15 @@
-# CITADELBUY PLATFORM - COMPREHENSIVE COMPLIANCE AUDIT REPORT
+# BROXIVA PLATFORM - COMPREHENSIVE COMPLIANCE AUDIT REPORT
 
 **Generated:** 2025-12-28
-**Platform:** CitadelBuy Global B2B Enterprise Marketplace
-**Repository:** citadelbuy-master
+**Platform:** Broxiva Global B2B Enterprise Marketplace
+**Repository:** broxiva
 **Analysis Method:** Multi-Agent Autonomous Security Assessment
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-This report presents findings from a comprehensive autonomous security and compliance assessment of the CitadelBuy platform. The assessment was conducted to identify risks related to Azure Acceptable Use Policy (AUP) compliance, security vulnerabilities, and infrastructure hardening gaps.
+This report presents findings from a comprehensive autonomous security and compliance assessment of the Broxiva platform. The assessment was conducted to identify risks related to Azure Acceptable Use Policy (AUP) compliance, security vulnerabilities, and infrastructure hardening gaps.
 
 ### OVERALL RISK ASSESSMENT: **HIGH**
 
@@ -78,9 +78,9 @@ allow_origins=["*"]
 
 # AFTER
 allow_origins=[
-    "https://citadelbuy.com",
-    "https://api.citadelbuy.com",
-    "https://admin.citadelbuy.com"
+    "https://broxiva.com",
+    "https://api.broxiva.com",
+    "https://admin.broxiva.com"
 ]
 ```
 
@@ -124,7 +124,7 @@ No manual approval required before production deployment:
 **Immediate Remediation:**
 ```yaml
 - stage: DeployProduction
-  environment: 'citadelbuy-production'  # Requires approval in Azure DevOps
+  environment: 'broxiva-production'  # Requires approval in Azure DevOps
 ```
 
 ---
@@ -168,7 +168,7 @@ Remove `continueOnError: true` from all critical deployment stages.
 
 Rollout commands use `|| true`:
 ```bash
-kubectl rollout status deployment/api -n citadelbuy-staging --timeout=300s || true
+kubectl rollout status deployment/api -n broxiva-staging --timeout=300s || true
 ```
 
 This silently ignores deployment failures.
@@ -372,7 +372,7 @@ The platform has several compliance-positive features:
 
 ## SECTION 9: CONCLUSION
 
-The CitadelBuy platform demonstrates **mature security practices** in infrastructure and container security, with excellent encryption and network policies. However, **critical issues** must be addressed before production deployment:
+The Broxiva platform demonstrates **mature security practices** in infrastructure and container security, with excellent encryption and network policies. However, **critical issues** must be addressed before production deployment:
 
 1. **CRITICAL**: Secrets exposure must be remediated immediately
 2. **CRITICAL**: CORS and IP exposure must be restricted

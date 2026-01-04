@@ -1,4 +1,4 @@
-# CITADELBUY REMEDIATION ACTION PLAN
+# BROXIVA REMEDIATION ACTION PLAN
 
 **Generated:** 2025-12-28
 **Status:** Action Required
@@ -18,9 +18,9 @@ openssl rand -base64 64  # For JWT secrets
 openssl rand -base64 32  # For passwords
 
 # Step 2: Update in Azure Key Vault (or equivalent)
-az keyvault secret set --vault-name citadelbuy-kv --name JWT-SECRET --value "NEW_VALUE"
-az keyvault secret set --vault-name citadelbuy-kv --name JWT-REFRESH-SECRET --value "NEW_VALUE"
-az keyvault secret set --vault-name citadelbuy-kv --name DB-PASSWORD --value "NEW_VALUE"
+az keyvault secret set --vault-name broxiva-kv --name JWT-SECRET --value "NEW_VALUE"
+az keyvault secret set --vault-name broxiva-kv --name JWT-REFRESH-SECRET --value "NEW_VALUE"
+az keyvault secret set --vault-name broxiva-kv --name DB-PASSWORD --value "NEW_VALUE"
 
 # Step 3: Remove .env from git history
 # WARNING: This rewrites history - coordinate with team
@@ -59,9 +59,9 @@ app.add_middleware(
 
 # AFTER
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_ORIGINS") else [
-    "https://citadelbuy.com",
-    "https://api.citadelbuy.com",
-    "https://admin.citadelbuy.com",
+    "https://broxiva.com",
+    "https://api.broxiva.com",
+    "https://admin.broxiva.com",
 ]
 
 app.add_middleware(
@@ -128,7 +128,7 @@ tags: |
   condition: succeeded()
   jobs:
   - deployment: DeployToProduction
-    environment: 'citadelbuy-production'  # Requires approval
+    environment: 'broxiva-production'  # Requires approval
     strategy:
       runOnce:
         deploy:
@@ -231,7 +231,7 @@ jobs:
 - script: |
     # Sign image with Cosign
     cosign sign --key cosign.key \
-      $(AZURE_CONTAINER_REGISTRY)/citadelbuy-api:$(IMAGE_TAG)
+      $(AZURE_CONTAINER_REGISTRY)/broxiva-api:$(IMAGE_TAG)
   displayName: 'Sign Container Image'
   env:
     COSIGN_KEY: $(COSIGN_PRIVATE_KEY)
@@ -304,7 +304,7 @@ grep -r "sk_live\|sk_test\|password\|secret\|api_key" --include="*.ts" --include
 ### Verify CORS Headers
 ```bash
 # Test CORS response
-curl -I -X OPTIONS https://api.citadelbuy.com/health \
+curl -I -X OPTIONS https://api.broxiva.com/health \
   -H "Origin: https://evil.com" \
   -H "Access-Control-Request-Method: GET"
 # Should NOT return Access-Control-Allow-Origin: *
@@ -313,7 +313,7 @@ curl -I -X OPTIONS https://api.citadelbuy.com/health \
 ### Check Image Tags
 ```bash
 # List images with 'latest' tag
-az acr repository show-tags --name citadelbuyacr --repository citadelbuy-api | grep latest
+az acr repository show-tags --name broxivaacr --repository broxiva-api | grep latest
 # Should return empty
 ```
 
@@ -352,7 +352,7 @@ git push origin main
 ### Credential Rollback
 ```bash
 # Restore previous secrets from Key Vault backup
-az keyvault secret recover --vault-name citadelbuy-kv --name JWT-SECRET
+az keyvault secret recover --vault-name broxiva-kv --name JWT-SECRET
 ```
 
 ---
