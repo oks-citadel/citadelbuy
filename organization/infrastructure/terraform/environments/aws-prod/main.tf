@@ -519,18 +519,21 @@ resource "aws_route53_zone" "main" {
   tags = local.common_tags
 }
 
-resource "aws_route53_record" "api" {
-  count   = var.create_dns_zone ? 1 : 0
-  zone_id = aws_route53_zone.main[0].zone_id
-  name    = "api.broxiva.com"
-  type    = "A"
-
-  alias {
-    name                   = module.eks.cluster_endpoint
-    zone_id                = module.eks.cluster_primary_security_group_id
-    evaluate_target_health = true
-  }
-}
+# NOTE: API DNS record should point to the Application Load Balancer, not EKS endpoint directly
+# The EKS endpoint is private (cluster_endpoint_public_access = false)
+# This record will be configured after ALB ingress controller is deployed
+# resource "aws_route53_record" "api" {
+#   count   = var.create_dns_zone ? 1 : 0
+#   zone_id = aws_route53_zone.main[0].zone_id
+#   name    = "api.broxiva.com"
+#   type    = "A"
+#
+#   alias {
+#     name                   = data.aws_lb.api_alb.dns_name
+#     zone_id                = data.aws_lb.api_alb.zone_id
+#     evaluate_target_health = true
+#   }
+# }
 
 # CloudWatch Log Groups
 resource "aws_cloudwatch_log_group" "eks" {
@@ -573,25 +576,18 @@ module "messaging" {
   tags = local.common_tags
 }
 
-# Legacy SNS Topic for Alerts (kept for backward compatibility)
-resource "aws_sns_topic" "alerts" {
-  name = "${local.name_prefix}-alerts"
-
-  tags = local.common_tags
-}
-
-# CloudWatch Alarms
+# CloudWatch Alarms - Using alerts topic from messaging module
 resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   alarm_name          = "${local.name_prefix}-cpu-high"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
   metric_name         = "CPUUtilization"
-  namespace           = "AWS/ECS"
+  namespace           = "AWS/EKS"
   period              = 300
   statistic           = "Average"
   threshold           = 80
   alarm_description   = "This metric monitors EKS CPU utilization"
-  alarm_actions       = [aws_sns_topic.alerts.arn]
+  alarm_actions       = [module.messaging.sns_topic_alerts_arn]
 
   dimensions = {
     ClusterName = module.eks.cluster_name

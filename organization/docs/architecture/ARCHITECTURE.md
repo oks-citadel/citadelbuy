@@ -25,8 +25,9 @@
 10. [Naming Conventions](#naming-conventions)
 11. [Resource Dependencies](#resource-dependencies)
 12. [Monitoring and Observability](#monitoring-and-observability)
-13. [CI/CD Integration](#cicd-integration)
-14. [Cost Optimization](#cost-optimization)
+13. [Messaging Infrastructure (AWS)](#messaging-infrastructure-aws)
+14. [CI/CD Integration](#cicd-integration)
+15. [Cost Optimization](#cost-optimization)
 
 ---
 
@@ -570,8 +571,10 @@ ns4-08.azure-dns.info
 | Name | Type | Value | Purpose |
 |------|------|-------|---------|
 | @ | TXT | [Azure verification code] | Domain verification |
-| @ | TXT | v=spf1 include:_spf.google.com include:sendgrid.net ~all | Email SPF |
-| google._domainkey | TXT | [DKIM key] | Email authentication |
+| @ | TXT | v=spf1 include:_spf.google.com include:amazonses.com ~all | Email SPF (AWS SES) |
+| google._domainkey | TXT | [DKIM key] | Email authentication (Google Workspace) |
+| _amazonses | TXT | [SES verification token] | AWS SES domain verification |
+| {token}._domainkey | CNAME | {token}.dkim.amazonses.com | AWS SES DKIM (3 records) |
 | _dmarc | TXT | v=DMARC1; p=quarantine; rua=mailto:dmarc@broxiva.com | DMARC policy |
 
 **MX Records:**
@@ -957,6 +960,432 @@ Key Vault Resource Group (broxiva-prod-rg-keyvaults-prod)
 - NSG rule changes
 - Unusual database query patterns
 - Failed authentication spikes
+
+---
+
+## Messaging Infrastructure (AWS)
+
+Broxiva uses an **AWS-only messaging infrastructure** for all notification services. External messaging providers (Twilio, SendGrid, etc.) are NOT supported. All messaging MUST use AWS-native services.
+
+### AWS-Only Policy
+
+| Service | Purpose | Provider |
+|---------|---------|----------|
+| Email (Transactional) | Order confirmations, password resets, receipts | AWS SES |
+| Email (Marketing) | Newsletters, promotions, campaigns | AWS SES |
+| SMS Notifications | Order updates, delivery alerts, verification codes | AWS SNS |
+| Push Notifications | Mobile/web push notifications | Firebase Cloud Messaging |
+| Message Queuing | Async notification processing | AWS SQS |
+| Event Fan-out | Multi-subscriber notifications | AWS SNS Topics |
+
+**Rationale:**
+- Unified billing and cost management through AWS
+- Consistent IAM-based access control
+- Native integration with CloudWatch monitoring
+- Simplified compliance and audit trail
+- Reduced vendor complexity
+
+### System Architecture Diagram
+
+```
+                                   ┌─────────────────────────────────────┐
+                                   │         Application Layer           │
+                                   │   (API Server / Notification Svc)   │
+                                   └──────────────┬──────────────────────┘
+                                                  │
+                    ┌─────────────────────────────┼─────────────────────────────┐
+                    │                             │                             │
+                    ▼                             ▼                             ▼
+         ┌──────────────────┐          ┌──────────────────┐          ┌──────────────────┐
+         │   AWS SES        │          │   AWS SNS        │          │   AWS SQS        │
+         │   (Email)        │          │   (SMS/Topics)   │          │   (Queues)       │
+         └────────┬─────────┘          └────────┬─────────┘          └────────┬─────────┘
+                  │                             │                             │
+      ┌───────────┼───────────┐     ┌───────────┼───────────┐     ┌───────────┼───────────┐
+      │           │           │     │           │           │     │           │           │
+      ▼           ▼           ▼     ▼           ▼           ▼     ▼           ▼           ▼
+┌──────────┐┌──────────┐┌──────────┐┌──────────┐┌──────────┐┌──────────┐┌──────────┐┌──────────┐
+│ Config   ││ Events   ││ DKIM/SPF ││ Trans.   ││ Marketing││ Alerts   ││ Notif.   ││ Email    │
+│ Set      ││ Topic    ││ DNS      ││ Topic    ││ Topic    ││ Topic    ││ Queue    ││ Queue    │
+└──────────┘└────┬─────┘└──────────┘└──────────┘└──────────┘└──────────┘└────┬─────┘└────┬─────┘
+                 │                                                           │           │
+                 ▼                                                           ▼           ▼
+         ┌──────────────┐                                            ┌──────────┐┌──────────┐
+         │ Email Events │                                            │ Notif.   ││ Email    │
+         │ SQS Queue    │                                            │ DLQ      ││ DLQ      │
+         └──────────────┘                                            └──────────┘└──────────┘
+                 │
+                 ▼
+         ┌──────────────────────────────────────────────────────────────────────────┐
+         │                         CloudWatch Monitoring                             │
+         │   (Metrics, Alarms, Dashboards, Bounce/Complaint Rate Tracking)          │
+         └──────────────────────────────────────────────────────────────────────────┘
+```
+
+### AWS SES - Email Service
+
+**Purpose:** Transactional and marketing email delivery
+
+```yaml
+Domain Identity: broxiva.com
+Configuration Set: broxiva-email-tracking
+Reputation Metrics: Enabled
+TLS Policy: REQUIRE
+```
+
+**Event Destinations:**
+- **SNS** - Bounce, complaint, delivery, send, reject events
+- **CloudWatch** - Open, click tracking metrics
+
+**Email Types:**
+| Type | Examples | Priority |
+|------|----------|----------|
+| Transactional | Order confirmations, password resets, receipts | High |
+| Marketing | Newsletters, promotions, campaigns | Normal |
+| System | Account alerts, security notifications | High |
+
+**DNS Records Required for SES:**
+
+| Record Type | Name | Value |
+|-------------|------|-------|
+| TXT | `_amazonses.broxiva.com` | SES verification token |
+| CNAME | `{token1}._domainkey.broxiva.com` | `{token1}.dkim.amazonses.com` |
+| CNAME | `{token2}._domainkey.broxiva.com` | `{token2}.dkim.amazonses.com` |
+| CNAME | `{token3}._domainkey.broxiva.com` | `{token3}.dkim.amazonses.com` |
+| MX | `mail.broxiva.com` | `10 feedback-smtp.{region}.amazonses.com` |
+| TXT | `mail.broxiva.com` | `v=spf1 include:amazonses.com ~all` |
+
+### AWS SNS - SMS and Notifications
+
+**Purpose:** SMS delivery and event fan-out
+
+**SNS Topics:**
+
+| Topic | Purpose | Encryption |
+|-------|---------|------------|
+| `broxiva-transactional-notifications` | Order updates, shipping alerts | KMS/AWS managed |
+| `broxiva-marketing-notifications` | Marketing campaigns | KMS/AWS managed |
+| `broxiva-system-alerts` | System alerts, DLQ monitoring | KMS/AWS managed |
+| `broxiva-email-events` | SES event processing | KMS/AWS managed |
+
+**SMS Configuration:**
+
+```yaml
+Sender ID: Broxiva
+Default SMS Type: Transactional
+Message Types:
+  - Transactional: Verification codes, order updates, delivery alerts
+  - Promotional: Marketing messages (with opt-out notice)
+```
+
+**SMS Message Format:**
+- Transactional: Up to 140 characters, no opt-out required
+- Promotional: Includes "Reply STOP to unsubscribe" notice
+
+### AWS SQS - Message Queues
+
+**Purpose:** Asynchronous notification processing with guaranteed delivery
+
+**Queue Structure:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Main Queues                               │
+├─────────────────┬───────────────────┬───────────────────────────┤
+│ notifications   │ email-queue       │ sms-queue                 │
+│ (General)       │ (Email processing)│ (SMS processing)          │
+├─────────────────┼───────────────────┼───────────────────────────┤
+│ webhooks        │ email-events      │                           │
+│ (Webhook retry) │ (Bounce handling) │                           │
+└────────┬────────┴─────────┬─────────┴─────────┬─────────────────┘
+         │                  │                   │
+         ▼                  ▼                   ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Dead Letter Queues (DLQ)                      │
+├─────────────────┬───────────────────┬───────────────────────────┤
+│ notifications-  │ email-dlq         │ sms-dlq                   │
+│ dlq             │                   │                           │
+├─────────────────┴───────────────────┴───────────────────────────┤
+│ webhooks-dlq                                                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Queue Configuration:**
+
+| Setting | Value | Purpose |
+|---------|-------|---------|
+| Message Retention | 14 days | Ensures no message loss |
+| Visibility Timeout | 5 minutes | Processing time allowance |
+| Long Polling | 20 seconds | Reduced API calls |
+| Max Receive Count | 3 (5 for webhooks) | Before DLQ transfer |
+| Encryption | SSE-SQS | At-rest encryption |
+
+**Dead Letter Queue (DLQ) Configuration:**
+
+```yaml
+Purpose: Capture failed messages for analysis
+Retention: 14 days
+Max Receive Count:
+  - Notifications: 3 attempts before DLQ
+  - Email: 3 attempts before DLQ
+  - SMS: 3 attempts before DLQ
+  - Webhooks: 5 attempts before DLQ (higher retry for transient failures)
+```
+
+### Data Flow for Notifications
+
+```
+┌────────────────┐
+│  API Request   │
+│ (Send Notif.)  │
+└───────┬────────┘
+        │
+        ▼
+┌────────────────┐     ┌────────────────┐
+│ Validate &     │────▶│ Check User     │
+│ Enqueue        │     │ Preferences    │
+└───────┬────────┘     └────────────────┘
+        │
+        ▼
+┌────────────────┐
+│   SQS Queue    │ (notifications-queue)
+│   (Buffering)  │
+└───────┬────────┘
+        │
+        ▼
+┌────────────────┐     ┌────────────────┐     ┌────────────────┐
+│  Worker Pool   │────▶│  Route by      │────▶│  AWS Service   │
+│  (Consumers)   │     │  Channel       │     │  (SES/SNS)     │
+└────────────────┘     └────────────────┘     └───────┬────────┘
+                                                      │
+                       ┌──────────────────────────────┼──────────────────────────────┐
+                       │                              │                              │
+                       ▼                              ▼                              ▼
+                ┌────────────┐                 ┌────────────┐                 ┌────────────┐
+                │   Email    │                 │    SMS     │                 │   Push     │
+                │   (SES)    │                 │   (SNS)    │                 │   (FCM)    │
+                └─────┬──────┘                 └─────┬──────┘                 └─────┬──────┘
+                      │                              │                              │
+                      ▼                              ▼                              ▼
+                ┌────────────┐                 ┌────────────┐                 ┌────────────┐
+                │ Delivery   │                 │ Carrier    │                 │ Device     │
+                │ Success/   │                 │ Delivery   │                 │ Delivery   │
+                │ Bounce     │                 │            │                 │            │
+                └─────┬──────┘                 └────────────┘                 └────────────┘
+                      │
+                      ▼
+                ┌────────────────┐
+                │ Email Events   │ (bounce, complaint, delivery)
+                │ SNS Topic      │
+                └───────┬────────┘
+                        │
+                        ▼
+                ┌────────────────┐
+                │ Email Events   │
+                │ SQS Queue      │
+                └───────┬────────┘
+                        │
+                        ▼
+                ┌────────────────┐
+                │ Process Events │ (Update user status, handle bounces)
+                │ Worker         │
+                └────────────────┘
+```
+
+### Terraform Module Structure
+
+The messaging infrastructure is managed via Terraform:
+
+```
+infrastructure/terraform/modules/messaging/
+├── main.tf          # SES, SNS, SQS resources
+├── variables.tf     # Input variables
+└── outputs.tf       # Output values for app configuration
+```
+
+**Module Usage:**
+
+```hcl
+module "messaging" {
+  source = "./modules/messaging"
+
+  name_prefix            = "broxiva"
+  domain_name            = "broxiva.com"
+  enable_custom_mail_from = true
+
+  ses_from_addresses = [
+    "noreply@broxiva.com",
+    "support@broxiva.com",
+    "notifications@broxiva.com",
+    "orders@broxiva.com"
+  ]
+
+  sns_sms_sender_id     = "Broxiva"
+  sns_sms_default_type  = "Transactional"
+
+  sqs_message_retention_days    = 14
+  sqs_visibility_timeout_seconds = 300
+  dlq_max_receive_count         = 3
+
+  enable_cloudwatch_dashboard = true
+
+  tags = {
+    Project     = "Broxiva"
+    Environment = "production"
+    ManagedBy   = "Terraform"
+  }
+}
+```
+
+**Module Outputs:**
+
+| Output | Description |
+|--------|-------------|
+| `ses_domain_identity_arn` | ARN of SES domain identity |
+| `ses_dkim_tokens` | DKIM tokens for DNS configuration |
+| `sns_topic_transactional_arn` | ARN of transactional notifications topic |
+| `sns_topic_alerts_arn` | ARN of system alerts topic |
+| `sqs_notifications_queue_url` | URL of main notifications queue |
+| `sqs_*_dlq_url` | URLs of dead letter queues |
+| `iam_policy_messaging_full_arn` | ARN of combined messaging IAM policy |
+| `dns_records_required` | DNS records needed for SES verification |
+| `application_env_vars` | Environment variables for application config |
+
+### IAM Policy Requirements
+
+**SES Send Policy:**
+```json
+{
+  "Effect": "Allow",
+  "Action": [
+    "ses:SendEmail",
+    "ses:SendRawEmail",
+    "ses:SendTemplatedEmail",
+    "ses:SendBulkTemplatedEmail"
+  ],
+  "Resource": "*",
+  "Condition": {
+    "StringEquals": {
+      "ses:FromAddress": ["noreply@broxiva.com", "support@broxiva.com"]
+    }
+  }
+}
+```
+
+**SNS SMS Policy:**
+```json
+{
+  "Effect": "Allow",
+  "Action": [
+    "sns:Publish",
+    "sns:SetSMSAttributes",
+    "sns:GetSMSAttributes",
+    "sns:CheckIfPhoneNumberIsOptedOut"
+  ],
+  "Resource": "*",
+  "Condition": {
+    "StringEquals": {
+      "sns:Protocol": "sms"
+    }
+  }
+}
+```
+
+**SQS Access Policy:**
+```json
+{
+  "Effect": "Allow",
+  "Action": [
+    "sqs:SendMessage",
+    "sqs:ReceiveMessage",
+    "sqs:DeleteMessage",
+    "sqs:GetQueueAttributes",
+    "sqs:GetQueueUrl",
+    "sqs:ChangeMessageVisibility"
+  ],
+  "Resource": [
+    "arn:aws:sqs:*:*:broxiva-notifications",
+    "arn:aws:sqs:*:*:broxiva-email-queue",
+    "arn:aws:sqs:*:*:broxiva-sms-queue",
+    "arn:aws:sqs:*:*:broxiva-webhooks",
+    "arn:aws:sqs:*:*:broxiva-email-events"
+  ]
+}
+```
+
+**Combined Messaging Policy:** Use `iam_policy_messaging_full_arn` output for services that need full messaging access.
+
+### CloudWatch Monitoring
+
+**Dashboard Widgets:**
+1. SQS Queue Depths (all queues)
+2. DLQ Message Counts (alert trigger)
+3. SES Sending Statistics (send, delivery, bounce, complaint)
+4. SNS Published Messages (by topic)
+
+**CloudWatch Alarms:**
+
+| Alarm | Threshold | Action |
+|-------|-----------|--------|
+| DLQ Messages | > 10 messages | Alert to ops team |
+| SES Bounce Rate | > 5% | Alert to ops team |
+| SES Complaint Rate | > 0.1% | Alert to ops team |
+
+### Environment Variables for Application
+
+Set these environment variables in your application deployment:
+
+```bash
+# AWS SES Configuration
+AWS_SES_ACCESS_KEY_ID=your_access_key
+AWS_SES_SECRET_ACCESS_KEY=your_secret_key
+AWS_SES_REGION=us-east-1
+AWS_SES_FROM_EMAIL=noreply@broxiva.com
+AWS_SES_FROM_NAME=Broxiva
+AWS_SES_CONFIGURATION_SET=broxiva-email-tracking
+
+# AWS SNS Configuration
+AWS_SNS_ACCESS_KEY_ID=your_access_key
+AWS_SNS_SECRET_ACCESS_KEY=your_secret_key
+AWS_SNS_REGION=us-east-1
+AWS_SNS_SENDER_ID=Broxiva
+AWS_SNS_DEFAULT_SMS_TYPE=Transactional
+
+# AWS SQS Configuration
+AWS_SQS_ACCESS_KEY_ID=your_access_key
+AWS_SQS_SECRET_ACCESS_KEY=your_secret_key
+AWS_SQS_REGION=us-east-1
+AWS_SQS_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789/broxiva-notifications
+AWS_SQS_DLQ_URL=https://sqs.us-east-1.amazonaws.com/123456789/broxiva-notifications-dlq
+```
+
+**Note:** For production, use IAM roles with instance profiles or Kubernetes service accounts instead of access keys.
+
+### Migration from External Providers
+
+If migrating from Twilio/SendGrid:
+
+1. **Email (SendGrid to SES):**
+   - Verify domain in SES
+   - Add DNS records (DKIM, SPF, verification)
+   - Request SES production access (sandbox limits removed)
+   - Update application to use AWS SDK
+   - Test with configuration set tracking
+
+2. **SMS (Twilio to SNS):**
+   - Request SNS SMS spending limit increase
+   - Configure sender ID (regional restrictions apply)
+   - Update application to use AWS SDK
+   - Test opt-out handling
+
+3. **Environment Variables to Remove:**
+   ```bash
+   # No longer needed
+   SENDGRID_API_KEY
+   TWILIO_ACCOUNT_SID
+   TWILIO_AUTH_TOKEN
+   TWILIO_PHONE_NUMBER
+   ```
 
 ---
 

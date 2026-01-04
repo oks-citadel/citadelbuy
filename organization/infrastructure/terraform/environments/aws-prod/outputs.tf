@@ -114,10 +114,10 @@ output "secrets_manager_database_arn" {
   value       = aws_secretsmanager_secret.database.arn
 }
 
-# SNS Outputs
+# SNS Outputs - Using messaging module
 output "sns_alerts_topic_arn" {
   description = "SNS alerts topic ARN"
-  value       = aws_sns_topic.alerts.arn
+  value       = module.messaging.sns_topic_alerts_arn
 }
 
 # CloudWatch Outputs
