@@ -112,15 +112,17 @@
     },
     "extra": {
       "eas": {
-        "projectId": "TODO: Replace with your actual EAS project ID from https://expo.dev"
-      }
+        "projectId": "${EAS_PROJECT_ID}"
+      },
+      "apiUrl": "${API_URL}",
+      "environment": "${APP_ENVIRONMENT}"
     },
     "hooks": {
       "postPublish": []
     },
     "updates": {
       "fallbackToCacheTimeout": 0,
-      "url": "https://u.expo.dev/TODO-PROJECT-ID"
+      "url": "https://u.expo.dev/${EAS_PROJECT_ID}"
     },
     "runtimeVersion": {
       "policy": "appVersion"

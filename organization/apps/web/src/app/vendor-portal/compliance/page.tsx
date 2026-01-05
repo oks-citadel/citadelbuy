@@ -114,13 +114,28 @@ export default function VendorCompliancePage() {
         return;
       }
 
-      // TODO: Replace with actual API call
+      // Upload certification via API
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('certificationName', selectedCert?.name || 'Unknown');
+      formData.append('region', selectedCert?.region || 'Global');
+
       toast.promise(
-        new Promise((resolve) => setTimeout(resolve, 1500)),
+        fetch('/api/vendor/certifications/upload', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+        }).then(async (res) => {
+          if (!res.ok) {
+            const error = await res.json().catch(() => ({ message: 'Upload failed' }));
+            throw new Error(error.message || 'Failed to upload certification');
+          }
+          return res.json();
+        }),
         {
           loading: `Uploading ${selectedCert?.name || 'certification'}...`,
           success: `${selectedCert?.name || 'Certification'} uploaded successfully`,
-          error: 'Failed to upload certification',
+          error: (err) => err.message || 'Failed to upload certification',
         }
       );
     }
@@ -145,13 +160,27 @@ export default function VendorCompliancePage() {
         return;
       }
 
-      // TODO: Replace with actual API call
+      // Upload new certification via API
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('isNew', 'true');
+
       toast.promise(
-        new Promise((resolve) => setTimeout(resolve, 1500)),
+        fetch('/api/vendor/certifications/upload', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+        }).then(async (res) => {
+          if (!res.ok) {
+            const error = await res.json().catch(() => ({ message: 'Upload failed' }));
+            throw new Error(error.message || 'Failed to upload certification');
+          }
+          return res.json();
+        }),
         {
           loading: `Uploading ${file.name}...`,
           success: `${file.name} uploaded successfully. It will be reviewed shortly.`,
-          error: 'Failed to upload certification',
+          error: (err) => err.message || 'Failed to upload certification',
         }
       );
     }

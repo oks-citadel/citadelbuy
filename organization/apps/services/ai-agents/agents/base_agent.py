@@ -120,11 +120,41 @@ class BaseAgent(ABC):
     ) -> str:
         """
         Call LLM (OpenAI/Anthropic) for AI reasoning.
-        This is a placeholder - implement with actual API calls.
+        Uses OpenAI API by default, falls back to mock in test mode.
         """
-        # TODO: Implement actual LLM API call
-        # For now, return a placeholder
-        return f"LLM response for: {prompt[:100]}..."
+        import os
+        import httpx
+
+        api_key = os.getenv("OPENAI_API_KEY")
+
+        if not api_key:
+            self.logger.warning("OPENAI_API_KEY not set, using mock response")
+            return f"[Mock LLM Response] Analysis for: {prompt[:100]}..."
+
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": model,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "temperature": temperature,
+                        "max_tokens": max_tokens,
+                    },
+                )
+                response.raise_for_status()
+                data = response.json()
+                return data["choices"][0]["message"]["content"]
+        except httpx.HTTPStatusError as e:
+            self.logger.error(f"LLM API error: {e.response.status_code} - {e.response.text}")
+            raise RuntimeError(f"LLM API error: {e.response.status_code}")
+        except Exception as e:
+            self.logger.error(f"LLM call failed: {str(e)}")
+            raise RuntimeError(f"LLM call failed: {str(e)}")
 
     async def _retrieve_context(self, context_id: str) -> Optional[Dict[str, Any]]:
         """Retrieve context from shared memory."""

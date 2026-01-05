@@ -9,6 +9,8 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { GiftCardsService } from './gift-cards.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
@@ -34,6 +36,7 @@ import {
   GetStoreCreditHistoryDto,
 } from './dto/store-credit.dto';
 
+@ApiTags('Gift Cards')
 @Controller('gift-cards')
 export class GiftCardsController {
   constructor(private readonly giftCardsService: GiftCardsService) {}
@@ -44,6 +47,7 @@ export class GiftCardsController {
    * Check gift card balance
    * POST /gift-cards/check-balance
    */
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('check-balance')
   async checkBalance(@Body() dto: CheckGiftCardBalanceDto) {
     return this.giftCardsService.checkBalance(dto);
@@ -55,8 +59,10 @@ export class GiftCardsController {
    * Purchase a gift card
    * POST /gift-cards/purchase
    */
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('purchase')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async purchaseGiftCard(@Body() dto: PurchaseGiftCardDto, @Request() req: AuthRequest) {
     return this.giftCardsService.purchaseGiftCard(dto, req.user.userId);
   }
@@ -65,8 +71,10 @@ export class GiftCardsController {
    * Redeem gift card
    * POST /gift-cards/redeem
    */
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('redeem')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async redeemGiftCard(@Body() dto: RedeemGiftCardDto, @Request() req: AuthRequest) {
     return this.giftCardsService.redeemGiftCard(dto, req.user.userId);
   }
