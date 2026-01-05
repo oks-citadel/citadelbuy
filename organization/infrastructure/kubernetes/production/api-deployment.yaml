@@ -76,7 +76,9 @@ spec:
             app: broxiva-api
       containers:
       - name: api
-        image: 992382449461.dkr.ecr.us-east-1.amazonaws.com/broxiva/api:latest
+        # Image tag is updated dynamically during deployment via kubectl set image
+        # Use IMAGE_TAG environment variable or commit SHA for production deployments
+        image: 992382449461.dkr.ecr.us-east-1.amazonaws.com/broxiva/api:${IMAGE_TAG:-latest}
         imagePullPolicy: Always
         ports:
         - containerPort: 4000

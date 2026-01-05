@@ -1,14 +1,17 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CampaignService } from './campaign.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CreateCampaignDto, UpdateCampaignDto, CampaignStatus, CampaignMetricsDto } from './dto/campaign.dto';
 
+@ApiTags('marketing/campaigns')
 @Controller('marketing/campaigns')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class CampaignController {
   constructor(private readonly campaignService: CampaignService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
   async createCampaign(@Body() dto: CreateCampaignDto) {
     return this.campaignService.createCampaign(dto);
   }
@@ -44,13 +47,11 @@ export class CampaignController {
   }
 
   @Post(':id/start')
-  @UseGuards(JwtAuthGuard)
   async startCampaign(@Param('id') id: string) {
     return this.campaignService.startCampaign(id);
   }
 
   @Post(':id/pause')
-  @UseGuards(JwtAuthGuard)
   async pauseCampaign(@Param('id') id: string) {
     return this.campaignService.pauseCampaign(id);
   }
@@ -61,7 +62,6 @@ export class CampaignController {
   }
 
   @Post(':id/track')
-  @UseGuards(JwtAuthGuard)
   async trackEvent(
     @Param('id') campaignId: string,
     @Body() event: {

@@ -160,3 +160,50 @@ export class GetGiftCardsQueryDto {
   @Max(100)
   limit?: number;
 }
+
+export class TransferGiftCardDto {
+  @IsString()
+  giftCardCode: string;
+
+  @IsString()
+  toUserId: string;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  amount?: number; // Optional for partial transfer
+}
+
+export class BulkCreateGiftCardsDto {
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  count: number;
+
+  @IsNumber()
+  @Min(1)
+  amount: number;
+
+  @IsEnum(GiftCardType)
+  @IsOptional()
+  type?: GiftCardType;
+
+  @IsDateString()
+  @IsOptional()
+  expirationDate?: string;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  minimumPurchase?: number;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  allowedCategories?: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  excludedProducts?: string[];
+}

@@ -7,13 +7,20 @@ on:
   pull_request:
     branches:
       - main
-  # Scheduled deployment at 9:00 PM UTC daily (bundles all commits for unified release)
+  # UNIFIED RELEASE: Scheduled for Tuesday January 6, 2026 at 9:00 PM CST
+  # CST (UTC-6) means 9PM CST = 03:00 UTC on January 7, 2026
+  # This deployment bundles ALL commits accumulated on main branch
   schedule:
-    - cron: '0 21 * * *'
+    - cron: '0 3 7 1 *'
   workflow_dispatch:
     inputs:
       deploy:
         description: 'Deploy to production after build'
+        required: false
+        type: boolean
+        default: false
+      force_deploy:
+        description: 'Force deployment even outside scheduled window'
         required: false
         type: boolean
         default: false
@@ -307,8 +314,9 @@ jobs:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: [docker-build, docker-build-microservices]
-    # Only deploy on scheduled runs (9 PM daily) or manual dispatch - NOT on every push
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true'))
+    # UNIFIED RELEASE: Deploy only on scheduled run (Jan 6, 2026 9PM CST) or manual dispatch with deploy=true
+    # Scheduled deployment bundles ALL accumulated commits for unified release
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.deploy == 'true' || github.event.inputs.force_deploy == 'true')))
     environment: production
     steps:
       - uses: actions/checkout@v4
@@ -328,14 +336,22 @@ jobs:
 
       - name: Deploy Core Services to EKS
         run: |
-          # Update deployment image tags for API and Web
+          # Update deployment image tags for API and Web using commit SHA
           kubectl set image deployment/broxiva-api \
-            api=${{ env.ECR_REGISTRY }}/broxiva/api:latest \
+            api=${{ env.ECR_REGISTRY }}/broxiva/api:${{ github.sha }} \
             -n broxiva
 
           kubectl set image deployment/broxiva-web \
-            web=${{ env.ECR_REGISTRY }}/broxiva/web:latest \
+            web=${{ env.ECR_REGISTRY }}/broxiva/web:${{ github.sha }} \
             -n broxiva
+
+          # Add deployment annotations for traceability
+          kubectl annotate deployment/broxiva-api \
+            kubernetes.io/change-cause="Deployed commit ${{ github.sha }} via GitHub Actions" \
+            -n broxiva --overwrite
+          kubectl annotate deployment/broxiva-web \
+            kubernetes.io/change-cause="Deployed commit ${{ github.sha }} via GitHub Actions" \
+            -n broxiva --overwrite
 
           # Wait for rollout - fail if deployment fails
           kubectl rollout status deployment/broxiva-api -n broxiva --timeout=300s
@@ -360,12 +376,17 @@ jobs:
             "supplier-integration"
           )
 
-          # Update deployment image tags for each microservice
+          # Update deployment image tags for each microservice using commit SHA
           for SERVICE in "${MICROSERVICES[@]}"; do
             echo "Deploying $SERVICE..."
             kubectl set image deployment/broxiva-${SERVICE} \
-              ${SERVICE}=${{ env.ECR_REGISTRY }}/broxiva/${SERVICE}:latest \
+              ${SERVICE}=${{ env.ECR_REGISTRY }}/broxiva/${SERVICE}:${{ github.sha }} \
               -n broxiva || echo "Warning: Failed to update $SERVICE deployment"
+
+            # Add deployment annotation for traceability
+            kubectl annotate deployment/broxiva-${SERVICE} \
+              kubernetes.io/change-cause="Deployed commit ${{ github.sha }} via GitHub Actions" \
+              -n broxiva --overwrite || true
           done
 
           # Wait for rollouts to complete
@@ -378,24 +399,28 @@ jobs:
         run: |
           echo "## Production Deployment Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Info" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit SHA**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Tag**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Core Services" >> $GITHUB_STEP_SUMMARY
-          echo "- **API Image**: ${{ env.ECR_REGISTRY }}/broxiva/api:latest" >> $GITHUB_STEP_SUMMARY
-          echo "- **Web Image**: ${{ env.ECR_REGISTRY }}/broxiva/web:latest" >> $GITHUB_STEP_SUMMARY
+          echo "- **API Image**: ${{ env.ECR_REGISTRY }}/broxiva/api:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Web Image**: ${{ env.ECR_REGISTRY }}/broxiva/web:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Microservices" >> $GITHUB_STEP_SUMMARY
-          echo "- **ai-agents**: ${{ env.ECR_REGISTRY }}/broxiva/ai-agents:latest" >> $GITHUB_STEP_SUMMARY
-          echo "- **ai-engine**: ${{ env.ECR_REGISTRY }}/broxiva/ai-engine:latest" >> $GITHUB_STEP_SUMMARY
-          echo "- **analytics**: ${{ env.ECR_REGISTRY }}/broxiva/analytics:latest" >> $GITHUB_STEP_SUMMARY
-          echo "- **chatbot**: ${{ env.ECR_REGISTRY }}/broxiva/chatbot:latest" >> $GITHUB_STEP_SUMMARY
-          echo "- **fraud-detection**: ${{ env.ECR_REGISTRY }}/broxiva/fraud-detection:latest" >> $GITHUB_STEP_SUMMARY
-          echo "- **inventory**: ${{ env.ECR_REGISTRY }}/broxiva/inventory:latest" >> $GITHUB_STEP_SUMMARY
-          echo "- **media**: ${{ env.ECR_REGISTRY }}/broxiva/media:latest" >> $GITHUB_STEP_SUMMARY
-          echo "- **notification**: ${{ env.ECR_REGISTRY }}/broxiva/notification:latest" >> $GITHUB_STEP_SUMMARY
-          echo "- **personalization**: ${{ env.ECR_REGISTRY }}/broxiva/personalization:latest" >> $GITHUB_STEP_SUMMARY
-          echo "- **pricing**: ${{ env.ECR_REGISTRY }}/broxiva/pricing:latest" >> $GITHUB_STEP_SUMMARY
-          echo "- **recommendation**: ${{ env.ECR_REGISTRY }}/broxiva/recommendation:latest" >> $GITHUB_STEP_SUMMARY
-          echo "- **search**: ${{ env.ECR_REGISTRY }}/broxiva/search:latest" >> $GITHUB_STEP_SUMMARY
-          echo "- **supplier-integration**: ${{ env.ECR_REGISTRY }}/broxiva/supplier-integration:latest" >> $GITHUB_STEP_SUMMARY
+          echo "- **ai-agents**: ${{ env.ECR_REGISTRY }}/broxiva/ai-agents:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **ai-engine**: ${{ env.ECR_REGISTRY }}/broxiva/ai-engine:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **analytics**: ${{ env.ECR_REGISTRY }}/broxiva/analytics:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **chatbot**: ${{ env.ECR_REGISTRY }}/broxiva/chatbot:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **fraud-detection**: ${{ env.ECR_REGISTRY }}/broxiva/fraud-detection:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **inventory**: ${{ env.ECR_REGISTRY }}/broxiva/inventory:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **media**: ${{ env.ECR_REGISTRY }}/broxiva/media:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **notification**: ${{ env.ECR_REGISTRY }}/broxiva/notification:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **personalization**: ${{ env.ECR_REGISTRY }}/broxiva/personalization:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **pricing**: ${{ env.ECR_REGISTRY }}/broxiva/pricing:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **recommendation**: ${{ env.ECR_REGISTRY }}/broxiva/recommendation:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **search**: ${{ env.ECR_REGISTRY }}/broxiva/search:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **supplier-integration**: ${{ env.ECR_REGISTRY }}/broxiva/supplier-integration:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Cluster Info" >> $GITHUB_STEP_SUMMARY
           echo "- **Cluster**: ${{ env.EKS_CLUSTER }}" >> $GITHUB_STEP_SUMMARY

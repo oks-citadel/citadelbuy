@@ -24,6 +24,8 @@ import {
   SendGiftCardEmailDto,
   ConvertToStoreCreditDto,
   GetGiftCardsQueryDto,
+  TransferGiftCardDto,
+  BulkCreateGiftCardsDto,
 } from './dto/gift-card.dto';
 import {
   AddStoreCreditDto,
@@ -124,6 +126,19 @@ export class GiftCardsController {
     return this.giftCardsService.convertToStoreCredit(dto, req.user.userId);
   }
 
+  /**
+   * Transfer gift card to another user
+   * POST /gift-cards/transfer
+   */
+  @Post('transfer')
+  @UseGuards(JwtAuthGuard)
+  async transferGiftCard(
+    @Body() dto: TransferGiftCardDto,
+    @Request() req: AuthRequest,
+  ) {
+    return this.giftCardsService.transferGiftCard(dto, req.user.userId);
+  }
+
   // ==================== STORE CREDIT ENDPOINTS ====================
 
   /**
@@ -177,6 +192,17 @@ export class GiftCardsController {
   @Roles(UserRole.ADMIN)
   async createPromotionalGiftCard(@Body() dto: CreatePromotionalGiftCardDto) {
     return this.giftCardsService.createPromotionalGiftCard(dto);
+  }
+
+  /**
+   * Bulk create gift cards
+   * POST /gift-cards/admin/bulk-create
+   */
+  @Post('admin/bulk-create')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async bulkCreateGiftCards(@Body() dto: BulkCreateGiftCardsDto) {
+    return this.giftCardsService.bulkCreateGiftCards(dto);
   }
 
   /**

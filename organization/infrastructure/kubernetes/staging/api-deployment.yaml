@@ -38,7 +38,9 @@ spec:
           type: RuntimeDefault
       containers:
       - name: api
-        image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/api:staging
+        # Image tag is updated dynamically during deployment via kubectl set image
+        # For staging, use staging-${COMMIT_HASH} or similar versioning
+        image: 992382449461.dkr.ecr.us-east-1.amazonaws.com/broxiva/api:${IMAGE_TAG:-staging}
         imagePullPolicy: Always
         ports:
         - containerPort: 4000

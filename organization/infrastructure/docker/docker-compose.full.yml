@@ -142,7 +142,7 @@ services:
   # Nginx Reverse Proxy
   #-----------------------------------------
   nginx:
-    image: nginx:alpine
+    image: nginx:1.25-alpine
     container_name: broxiva-nginx
     restart: unless-stopped
     depends_on:

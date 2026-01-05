@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     API_VERSION: str = "v1"
 
     # Database
-    DATABASE_URL: str = "postgresql://broxiva:broxiva123@localhost:5432/broxiva_dev"
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://localhost:5432/broxiva_dev")
     REDIS_URL: str = "redis://localhost:6379"
 
     # Message Queue
@@ -25,8 +25,9 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:4000"]
 
-    # Encryption
-    ENCRYPTION_KEY: str = "your-encryption-key-32-bytes-here"
+    # Encryption - MUST be set via environment variable in production
+    # Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+    ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY", "")
 
     # ============================================
     # SUPPLIER API CREDENTIALS

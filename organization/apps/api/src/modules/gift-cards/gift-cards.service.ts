@@ -16,6 +16,8 @@ import {
   SendGiftCardEmailDto,
   ConvertToStoreCreditDto,
   GetGiftCardsQueryDto,
+  TransferGiftCardDto,
+  BulkCreateGiftCardsDto,
 } from './dto/gift-card.dto';
 import {
   AddStoreCreditDto,
@@ -45,55 +47,63 @@ export class GiftCardsService {
 
   /**
    * Purchase a gift card
+   * Uses transaction to ensure atomicity of gift card creation and transaction record
    */
   async purchaseGiftCard(dto: PurchaseGiftCardDto, userId: string) {
     // Generate unique code
     const code = await this.generateUniqueCode();
 
-    // Create gift card
-    const giftCard = await this.prisma.giftCard.create({
-      data: {
-        code,
-        type: dto.type || GiftCardType.DIGITAL,
-        initialAmount: dto.amount,
-        currentBalance: dto.amount,
-        purchasedBy: userId,
-        recipientEmail: dto.recipientEmail,
-        recipientName: dto.recipientName,
-        senderName: dto.senderName,
-        personalMessage: dto.personalMessage,
-        designTemplate: dto.designTemplate,
-        isScheduled: dto.isScheduled || false,
-        scheduledDelivery: dto.scheduledDelivery
-          ? new Date(dto.scheduledDelivery)
-          : undefined,
-        expirationDate: dto.expirationDate
-          ? new Date(dto.expirationDate)
-          : this.getDefaultExpirationDate(),
-      },
-      include: {
-        purchaser: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+    // Use transaction to ensure atomicity
+    const giftCard = await this.prisma.$transaction(async (tx) => {
+      // Create gift card
+      const card = await tx.giftCard.create({
+        data: {
+          code,
+          type: dto.type || GiftCardType.DIGITAL,
+          initialAmount: dto.amount,
+          currentBalance: dto.amount,
+          purchasedBy: userId,
+          recipientEmail: dto.recipientEmail,
+          recipientName: dto.recipientName,
+          senderName: dto.senderName,
+          personalMessage: dto.personalMessage,
+          designTemplate: dto.designTemplate,
+          isScheduled: dto.isScheduled || false,
+          scheduledDelivery: dto.scheduledDelivery
+            ? new Date(dto.scheduledDelivery)
+            : undefined,
+          expirationDate: dto.expirationDate
+            ? new Date(dto.expirationDate)
+            : this.getDefaultExpirationDate(),
+        },
+        include: {
+          purchaser: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
-      },
+      });
+
+      // Create transaction record within the same transaction
+      await tx.giftCardTransaction.create({
+        data: {
+          giftCardId: card.id,
+          type: TransactionType.PURCHASE,
+          amount: dto.amount,
+          balanceBefore: 0,
+          balanceAfter: dto.amount,
+          userId,
+          description: `Gift card purchased for ${dto.amount}`,
+        },
+      });
+
+      return card;
     });
 
-    // Create transaction record
-    await this.createTransaction(
-      giftCard.id,
-      TransactionType.PURCHASE,
-      dto.amount,
-      0,
-      dto.amount,
-      userId,
-      `Gift card purchased for ${dto.amount}`,
-    );
-
-    // Send email if not scheduled
+    // Send email if not scheduled (outside transaction - non-critical)
     if (!dto.isScheduled) {
       await this.sendGiftCardEmail(giftCard.id);
     }
@@ -103,36 +113,44 @@ export class GiftCardsService {
 
   /**
    * Create promotional gift card (Admin only)
+   * Uses transaction to ensure atomicity of gift card creation and transaction record
    */
   async createPromotionalGiftCard(dto: CreatePromotionalGiftCardDto) {
     const code = await this.generateUniqueCode();
 
-    const giftCard = await this.prisma.giftCard.create({
-      data: {
-        code,
-        type: GiftCardType.PROMOTIONAL,
-        initialAmount: dto.amount,
-        currentBalance: dto.amount,
-        recipientEmail: dto.recipientEmail,
-        expirationDate: dto.expirationDate
-          ? new Date(dto.expirationDate)
-          : undefined,
-        minimumPurchase: dto.minimumPurchase,
-        allowedCategories: dto.allowedCategories || [],
-        excludedProducts: dto.excludedProducts || [],
-      },
-    });
+    // Use transaction to ensure atomicity
+    const giftCard = await this.prisma.$transaction(async (tx) => {
+      const card = await tx.giftCard.create({
+        data: {
+          code,
+          type: GiftCardType.PROMOTIONAL,
+          initialAmount: dto.amount,
+          currentBalance: dto.amount,
+          recipientEmail: dto.recipientEmail,
+          expirationDate: dto.expirationDate
+            ? new Date(dto.expirationDate)
+            : undefined,
+          minimumPurchase: dto.minimumPurchase,
+          allowedCategories: dto.allowedCategories || [],
+          excludedProducts: dto.excludedProducts || [],
+        },
+      });
 
-    // Create transaction record
-    await this.createTransaction(
-      giftCard.id,
-      TransactionType.PURCHASE,
-      dto.amount,
-      0,
-      dto.amount,
-      null,
-      'Promotional gift card created',
-    );
+      // Create transaction record within the same transaction
+      await tx.giftCardTransaction.create({
+        data: {
+          giftCardId: card.id,
+          type: TransactionType.PURCHASE,
+          amount: dto.amount,
+          balanceBefore: 0,
+          balanceAfter: dto.amount,
+          userId: null,
+          description: 'Promotional gift card created',
+        },
+      });
+
+      return card;
+    });
 
     return giftCard;
   }
@@ -176,6 +194,7 @@ export class GiftCardsService {
 
   /**
    * Redeem gift card (apply to order)
+   * Uses transaction to ensure atomicity of balance update and transaction record
    */
   async redeemGiftCard(
     dto: RedeemGiftCardDto,
@@ -200,47 +219,53 @@ export class GiftCardsService {
     }
     redemptionAmount = Math.min(redemptionAmount, giftCard.currentBalance);
 
-    // Update gift card
-    const newBalance = giftCard.currentBalance - redemptionAmount;
-    const updateData: Prisma.GiftCardUpdateInput = {
-      currentBalance: newBalance,
-      lastUsedAt: new Date(),
-      usageCount: { increment: 1 },
-    };
+    // Use transaction to ensure atomicity of balance update and transaction record
+    const result = await this.prisma.$transaction(async (tx) => {
+      const newBalance = giftCard.currentBalance - redemptionAmount;
+      const updateData: Prisma.GiftCardUpdateInput = {
+        currentBalance: newBalance,
+        lastUsedAt: new Date(),
+        usageCount: { increment: 1 },
+      };
 
-    // Mark as redeemed if fully used
-    if (newBalance === 0) {
-      updateData.status = GiftCardStatus.REDEEMED;
-    }
+      // Mark as redeemed if fully used
+      if (newBalance === 0) {
+        updateData.status = GiftCardStatus.REDEEMED;
+      }
 
-    // Set redeemer on first use
-    if (!giftCard.redeemedBy) {
-      (updateData as any).redeemedBy = userId;
-      updateData.redeemedAt = new Date();
-    }
+      // Set redeemer on first use
+      if (!giftCard.redeemedBy) {
+        (updateData as any).redeemedBy = userId;
+        updateData.redeemedAt = new Date();
+      }
 
-    const updatedCard = await this.prisma.giftCard.update({
-      where: { id: giftCard.id },
-      data: updateData,
+      const updatedCard = await tx.giftCard.update({
+        where: { id: giftCard.id },
+        data: updateData,
+      });
+
+      // Create transaction record within the same transaction
+      await tx.giftCardTransaction.create({
+        data: {
+          giftCardId: giftCard.id,
+          type: TransactionType.REDEMPTION,
+          amount: -redemptionAmount,
+          balanceBefore: giftCard.currentBalance,
+          balanceAfter: newBalance,
+          userId,
+          description: `Redeemed ${redemptionAmount} from gift card`,
+          orderId: dto.orderId,
+        },
+      });
+
+      return {
+        redemptionAmount,
+        remainingBalance: newBalance,
+        giftCard: updatedCard,
+      };
     });
 
-    // Create transaction record
-    await this.createTransaction(
-      giftCard.id,
-      TransactionType.REDEMPTION,
-      -redemptionAmount,
-      giftCard.currentBalance,
-      newBalance,
-      userId,
-      `Redeemed ${redemptionAmount} from gift card`,
-      dto.orderId,
-    );
-
-    return {
-      redemptionAmount,
-      remainingBalance: newBalance,
-      giftCard: updatedCard,
-    };
+    return result;
   }
 
   /**
@@ -403,6 +428,7 @@ export class GiftCardsService {
 
   /**
    * Cancel gift card (Admin)
+   * Uses transaction to ensure atomicity of status update and transaction record
    */
   async cancelGiftCard(id: string, reason: string) {
     const giftCard = await this.prisma.giftCard.findUnique({
@@ -417,27 +443,35 @@ export class GiftCardsService {
       throw new BadRequestException('Cannot cancel fully redeemed gift card');
     }
 
-    const updatedCard = await this.prisma.giftCard.update({
-      where: { id },
-      data: { status: GiftCardStatus.CANCELLED },
-    });
+    // Use transaction to ensure atomicity
+    const updatedCard = await this.prisma.$transaction(async (tx) => {
+      const card = await tx.giftCard.update({
+        where: { id },
+        data: { status: GiftCardStatus.CANCELLED },
+      });
 
-    // Create transaction record
-    await this.createTransaction(
-      id,
-      TransactionType.CANCELLATION,
-      0,
-      giftCard.currentBalance,
-      giftCard.currentBalance,
-      null,
-      `Gift card cancelled: ${reason}`,
-    );
+      // Create transaction record within the same transaction
+      await tx.giftCardTransaction.create({
+        data: {
+          giftCardId: id,
+          type: TransactionType.CANCELLATION,
+          amount: 0,
+          balanceBefore: giftCard.currentBalance,
+          balanceAfter: giftCard.currentBalance,
+          userId: null,
+          description: `Gift card cancelled: ${reason}`,
+        },
+      });
+
+      return card;
+    });
 
     return updatedCard;
   }
 
   /**
    * Convert gift card to store credit
+   * Uses transaction to ensure atomicity of store credit addition, gift card update, and transaction record
    */
   async convertToStoreCredit(dto: ConvertToStoreCreditDto, userId: string) {
     const giftCard = await this.prisma.giftCard.findUnique({
@@ -459,38 +493,267 @@ export class GiftCardsService {
     // Transfer balance to store credit
     const amount = giftCard.currentBalance;
 
-    await this.addStoreCredit({
-      userId,
-      amount,
-      type: StoreCreditType.GIFT,
-      description: `Converted from gift card ${giftCard.code}`,
-    });
+    // Use transaction to ensure atomicity of all operations
+    await this.prisma.$transaction(async (tx) => {
+      // Get or create store credit account
+      let storeCredit = await tx.storeCredit.findUnique({
+        where: { userId },
+      });
 
-    // Mark gift card as redeemed
-    await this.prisma.giftCard.update({
-      where: { id: giftCard.id },
-      data: {
-        currentBalance: 0,
-        status: GiftCardStatus.REDEEMED,
-        redeemedBy: userId,
-        redeemedAt: new Date(),
-      },
-    });
+      if (!storeCredit) {
+        storeCredit = await tx.storeCredit.create({
+          data: { userId },
+        });
+      }
 
-    // Create transaction
-    await this.createTransaction(
-      giftCard.id,
-      TransactionType.TRANSFER,
-      -amount,
-      amount,
-      0,
-      userId,
-      'Converted to store credit',
-    );
+      const newBalance = storeCredit.currentBalance + amount;
+      const newTotalEarned = storeCredit.totalEarned + amount;
+
+      // Update store credit
+      await tx.storeCredit.update({
+        where: { userId },
+        data: {
+          currentBalance: newBalance,
+          totalEarned: newTotalEarned,
+        },
+      });
+
+      // Create store credit transaction
+      await tx.storeCreditTransaction.create({
+        data: {
+          storeCreditId: storeCredit.id,
+          type: StoreCreditType.GIFT,
+          transactionType: TransactionType.PURCHASE,
+          amount,
+          balanceBefore: storeCredit.currentBalance,
+          balanceAfter: newBalance,
+          description: `Converted from gift card ${giftCard.code}`,
+        },
+      });
+
+      // Mark gift card as redeemed
+      await tx.giftCard.update({
+        where: { id: giftCard.id },
+        data: {
+          currentBalance: 0,
+          status: GiftCardStatus.REDEEMED,
+          redeemedBy: userId,
+          redeemedAt: new Date(),
+        },
+      });
+
+      // Create gift card transaction record
+      await tx.giftCardTransaction.create({
+        data: {
+          giftCardId: giftCard.id,
+          type: TransactionType.TRANSFER,
+          amount: -amount,
+          balanceBefore: amount,
+          balanceAfter: 0,
+          userId,
+          description: 'Converted to store credit',
+        },
+      });
+    });
 
     return {
       message: 'Gift card converted to store credit successfully',
       amount,
+    };
+  }
+
+  /**
+   * Transfer gift card balance between users
+   * Uses transaction to ensure atomicity of debit from source and credit to destination
+   */
+  async transferGiftCard(
+    dto: TransferGiftCardDto,
+    fromUserId: string,
+  ) {
+    const giftCard = await this.prisma.giftCard.findUnique({
+      where: { code: dto.giftCardCode },
+    });
+
+    if (!giftCard) {
+      throw new NotFoundException('Gift card not found');
+    }
+
+    // Validate that the user owns this gift card or is the redeemer
+    if (giftCard.purchasedBy !== fromUserId && giftCard.redeemedBy !== fromUserId) {
+      throw new BadRequestException('You do not have permission to transfer this gift card');
+    }
+
+    if (giftCard.status !== GiftCardStatus.ACTIVE) {
+      throw new BadRequestException(`Gift card is ${giftCard.status.toLowerCase()}`);
+    }
+
+    if (this.isExpired(giftCard)) {
+      throw new BadRequestException('Gift card has expired');
+    }
+
+    if (giftCard.currentBalance <= 0) {
+      throw new BadRequestException('Gift card has no balance to transfer');
+    }
+
+    // Verify the recipient exists
+    const recipientExists = await this.prisma.user.findUnique({
+      where: { id: dto.toUserId },
+    });
+
+    if (!recipientExists) {
+      throw new NotFoundException('Recipient user not found');
+    }
+
+    if (dto.toUserId === fromUserId) {
+      throw new BadRequestException('Cannot transfer to yourself');
+    }
+
+    // Calculate transfer amount
+    const transferAmount = dto.amount
+      ? Math.min(dto.amount, giftCard.currentBalance)
+      : giftCard.currentBalance;
+
+    // Use transaction to ensure atomicity of transfer
+    const result = await this.prisma.$transaction(async (tx) => {
+      const newSourceBalance = giftCard.currentBalance - transferAmount;
+
+      // Update source gift card (deduct balance)
+      const updateData: Prisma.GiftCardUpdateInput = {
+        currentBalance: newSourceBalance,
+        lastUsedAt: new Date(),
+      };
+
+      if (newSourceBalance === 0) {
+        updateData.status = GiftCardStatus.REDEEMED;
+      }
+
+      await tx.giftCard.update({
+        where: { id: giftCard.id },
+        data: updateData,
+      });
+
+      // Create transfer-out transaction for source
+      await tx.giftCardTransaction.create({
+        data: {
+          giftCardId: giftCard.id,
+          type: TransactionType.TRANSFER,
+          amount: -transferAmount,
+          balanceBefore: giftCard.currentBalance,
+          balanceAfter: newSourceBalance,
+          userId: fromUserId,
+          description: `Transferred ${transferAmount} to user ${dto.toUserId}`,
+        },
+      });
+
+      // Generate a new gift card for the recipient
+      const newCode = await this.generateUniqueCode();
+      const newGiftCard = await tx.giftCard.create({
+        data: {
+          code: newCode,
+          type: giftCard.type,
+          initialAmount: transferAmount,
+          currentBalance: transferAmount,
+          purchasedBy: dto.toUserId,
+          redeemedBy: dto.toUserId,
+          redeemedAt: new Date(),
+          expirationDate: giftCard.expirationDate,
+          minimumPurchase: giftCard.minimumPurchase,
+          allowedCategories: giftCard.allowedCategories,
+          excludedProducts: giftCard.excludedProducts,
+        },
+      });
+
+      // Create transfer-in transaction for destination
+      await tx.giftCardTransaction.create({
+        data: {
+          giftCardId: newGiftCard.id,
+          type: TransactionType.TRANSFER,
+          amount: transferAmount,
+          balanceBefore: 0,
+          balanceAfter: transferAmount,
+          userId: dto.toUserId,
+          description: `Received ${transferAmount} from gift card ${giftCard.code}`,
+        },
+      });
+
+      return {
+        sourceGiftCard: {
+          code: giftCard.code,
+          remainingBalance: newSourceBalance,
+        },
+        destinationGiftCard: {
+          code: newGiftCard.code,
+          balance: transferAmount,
+        },
+        transferAmount,
+      };
+    });
+
+    return {
+      message: 'Gift card transferred successfully',
+      ...result,
+    };
+  }
+
+  /**
+   * Bulk create gift cards (Admin only)
+   * Uses transaction to ensure all gift cards are created atomically
+   */
+  async bulkCreateGiftCards(dto: BulkCreateGiftCardsDto) {
+    // Generate all unique codes first
+    const codes: string[] = [];
+    for (let i = 0; i < dto.count; i++) {
+      codes.push(await this.generateUniqueCode());
+    }
+
+    // Use transaction to ensure atomicity of bulk creation
+    const giftCards = await this.prisma.$transaction(async (tx) => {
+      const createdCards = [];
+
+      for (const code of codes) {
+        const card = await tx.giftCard.create({
+          data: {
+            code,
+            type: dto.type || GiftCardType.PROMOTIONAL,
+            initialAmount: dto.amount,
+            currentBalance: dto.amount,
+            expirationDate: dto.expirationDate
+              ? new Date(dto.expirationDate)
+              : this.getDefaultExpirationDate(),
+            minimumPurchase: dto.minimumPurchase,
+            allowedCategories: dto.allowedCategories || [],
+            excludedProducts: dto.excludedProducts || [],
+          },
+        });
+
+        // Create transaction record for each card
+        await tx.giftCardTransaction.create({
+          data: {
+            giftCardId: card.id,
+            type: TransactionType.PURCHASE,
+            amount: dto.amount,
+            balanceBefore: 0,
+            balanceAfter: dto.amount,
+            userId: null,
+            description: 'Bulk promotional gift card created',
+          },
+        });
+
+        createdCards.push(card);
+      }
+
+      return createdCards;
+    });
+
+    return {
+      message: `Successfully created ${giftCards.length} gift cards`,
+      count: giftCards.length,
+      giftCards: giftCards.map((card) => ({
+        id: card.id,
+        code: card.code,
+        amount: card.initialAmount,
+        expirationDate: card.expirationDate,
+      })),
     };
   }
 
@@ -524,44 +787,50 @@ export class GiftCardsService {
 
   /**
    * Add store credit
+   * Uses transaction to ensure atomicity of balance update and transaction record
    */
   async addStoreCredit(dto: AddStoreCreditDto) {
-    let storeCredit = await this.prisma.storeCredit.findUnique({
-      where: { userId: dto.userId },
-    });
-
-    if (!storeCredit) {
-      storeCredit = await this.prisma.storeCredit.create({
-        data: { userId: dto.userId },
+    // Use transaction to ensure atomicity
+    const updatedCredit = await this.prisma.$transaction(async (tx) => {
+      let storeCredit = await tx.storeCredit.findUnique({
+        where: { userId: dto.userId },
       });
-    }
 
-    const newBalance = storeCredit.currentBalance + dto.amount;
-    const newTotalEarned = storeCredit.totalEarned + dto.amount;
+      if (!storeCredit) {
+        storeCredit = await tx.storeCredit.create({
+          data: { userId: dto.userId },
+        });
+      }
 
-    // Update store credit
-    const updatedCredit = await this.prisma.storeCredit.update({
-      where: { userId: dto.userId },
-      data: {
-        currentBalance: newBalance,
-        totalEarned: newTotalEarned,
-      },
-    });
+      const newBalance = storeCredit.currentBalance + dto.amount;
+      const newTotalEarned = storeCredit.totalEarned + dto.amount;
 
-    // Create transaction
-    await this.prisma.storeCreditTransaction.create({
-      data: {
-        storeCreditId: storeCredit.id,
-        type: dto.type,
-        transactionType: TransactionType.PURCHASE,
-        amount: dto.amount,
-        balanceBefore: storeCredit.currentBalance,
-        balanceAfter: newBalance,
-        orderId: dto.orderId,
-        description: dto.description,
-        notes: dto.notes,
-        expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined,
-      },
+      // Update store credit
+      const updated = await tx.storeCredit.update({
+        where: { userId: dto.userId },
+        data: {
+          currentBalance: newBalance,
+          totalEarned: newTotalEarned,
+        },
+      });
+
+      // Create transaction within the same transaction
+      await tx.storeCreditTransaction.create({
+        data: {
+          storeCreditId: storeCredit.id,
+          type: dto.type,
+          transactionType: TransactionType.PURCHASE,
+          amount: dto.amount,
+          balanceBefore: storeCredit.currentBalance,
+          balanceAfter: newBalance,
+          orderId: dto.orderId,
+          description: dto.description,
+          notes: dto.notes,
+          expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined,
+        },
+      });
+
+      return updated;
     });
 
     return updatedCredit;
@@ -569,6 +838,7 @@ export class GiftCardsService {
 
   /**
    * Deduct store credit (use for order)
+   * Uses transaction to ensure atomicity of balance update and transaction record
    */
   async deductStoreCredit(dto: DeductStoreCreditDto) {
     const storeCredit = await this.prisma.storeCredit.findUnique({
@@ -583,87 +853,98 @@ export class GiftCardsService {
       throw new BadRequestException('Insufficient store credit balance');
     }
 
-    const newBalance = storeCredit.currentBalance - dto.amount;
-    const newTotalSpent = storeCredit.totalSpent + dto.amount;
+    // Use transaction to ensure atomicity
+    const result = await this.prisma.$transaction(async (tx) => {
+      const newBalance = storeCredit.currentBalance - dto.amount;
+      const newTotalSpent = storeCredit.totalSpent + dto.amount;
 
-    // Update store credit
-    const updatedCredit = await this.prisma.storeCredit.update({
-      where: { userId: dto.userId },
-      data: {
-        currentBalance: newBalance,
-        totalSpent: newTotalSpent,
-      },
+      // Update store credit
+      const updatedCredit = await tx.storeCredit.update({
+        where: { userId: dto.userId },
+        data: {
+          currentBalance: newBalance,
+          totalSpent: newTotalSpent,
+        },
+      });
+
+      // Create transaction within the same transaction
+      await tx.storeCreditTransaction.create({
+        data: {
+          storeCreditId: storeCredit.id,
+          type: StoreCreditType.REFUND, // Default type
+          transactionType: TransactionType.REDEMPTION,
+          amount: -dto.amount,
+          balanceBefore: storeCredit.currentBalance,
+          balanceAfter: newBalance,
+          orderId: dto.orderId,
+          description: dto.description || `Applied to order ${dto.orderId}`,
+        },
+      });
+
+      return {
+        deductedAmount: dto.amount,
+        remainingBalance: newBalance,
+        storeCredit: updatedCredit,
+      };
     });
 
-    // Create transaction
-    await this.prisma.storeCreditTransaction.create({
-      data: {
-        storeCreditId: storeCredit.id,
-        type: StoreCreditType.REFUND, // Default type
-        transactionType: TransactionType.REDEMPTION,
-        amount: -dto.amount,
-        balanceBefore: storeCredit.currentBalance,
-        balanceAfter: newBalance,
-        orderId: dto.orderId,
-        description: dto.description || `Applied to order ${dto.orderId}`,
-      },
-    });
-
-    return {
-      deductedAmount: dto.amount,
-      remainingBalance: newBalance,
-      storeCredit: updatedCredit,
-    };
+    return result;
   }
 
   /**
    * Adjust store credit (Admin)
+   * Uses transaction to ensure atomicity of balance update and transaction record
    */
   async adjustStoreCredit(userId: string, dto: AdjustStoreCreditDto) {
-    let storeCredit = await this.prisma.storeCredit.findUnique({
-      where: { userId },
-    });
-
-    if (!storeCredit) {
-      storeCredit = await this.prisma.storeCredit.create({
-        data: { userId },
+    // Use transaction to ensure atomicity
+    const updatedCredit = await this.prisma.$transaction(async (tx) => {
+      let storeCredit = await tx.storeCredit.findUnique({
+        where: { userId },
       });
-    }
 
-    const newBalance = storeCredit.currentBalance + dto.amount;
+      if (!storeCredit) {
+        storeCredit = await tx.storeCredit.create({
+          data: { userId },
+        });
+      }
 
-    if (newBalance < 0) {
-      throw new BadRequestException('Cannot adjust to negative balance');
-    }
+      const newBalance = storeCredit.currentBalance + dto.amount;
 
-    // Update totals
-    const updateData: Prisma.StoreCreditUpdateInput = {
-      currentBalance: newBalance,
-    };
+      if (newBalance < 0) {
+        throw new BadRequestException('Cannot adjust to negative balance');
+      }
 
-    if (dto.amount > 0) {
-      updateData.totalEarned = { increment: dto.amount };
-    } else {
-      updateData.totalSpent = { increment: Math.abs(dto.amount) };
-    }
+      // Update totals
+      const updateData: Prisma.StoreCreditUpdateInput = {
+        currentBalance: newBalance,
+      };
 
-    const updatedCredit = await this.prisma.storeCredit.update({
-      where: { userId },
-      data: updateData,
-    });
+      if (dto.amount > 0) {
+        updateData.totalEarned = { increment: dto.amount };
+      } else {
+        updateData.totalSpent = { increment: Math.abs(dto.amount) };
+      }
 
-    // Create transaction
-    await this.prisma.storeCreditTransaction.create({
-      data: {
-        storeCreditId: storeCredit.id,
-        type: StoreCreditType.COMPENSATION,
-        transactionType: TransactionType.ADJUSTMENT,
-        amount: dto.amount,
-        balanceBefore: storeCredit.currentBalance,
-        balanceAfter: newBalance,
-        description: dto.reason,
-        notes: dto.notes,
-      },
+      const updated = await tx.storeCredit.update({
+        where: { userId },
+        data: updateData,
+      });
+
+      // Create transaction within the same transaction
+      await tx.storeCreditTransaction.create({
+        data: {
+          storeCreditId: storeCredit.id,
+          type: StoreCreditType.COMPENSATION,
+          transactionType: TransactionType.ADJUSTMENT,
+          amount: dto.amount,
+          balanceBefore: storeCredit.currentBalance,
+          balanceAfter: newBalance,
+          description: dto.reason,
+          notes: dto.notes,
+        },
+      });
+
+      return updated;
     });
 
     return updatedCredit;
@@ -732,33 +1013,6 @@ export class GiftCardsService {
   }
 
   /**
-   * Create gift card transaction
-   */
-  private async createTransaction(
-    giftCardId: string,
-    type: TransactionType,
-    amount: number,
-    balanceBefore: number,
-    balanceAfter: number,
-    userId: string | null,
-    description: string,
-    orderId?: string,
-  ) {
-    return this.prisma.giftCardTransaction.create({
-      data: {
-        giftCardId,
-        type,
-        amount,
-        balanceBefore,
-        balanceAfter,
-        userId,
-        description,
-        orderId,
-      },
-    });
-  }
-
-  /**
    * Check if gift card is expired
    */
   private isExpired(giftCard: { expirationDate: Date | null }): boolean {
@@ -811,22 +1065,30 @@ export class GiftCardsService {
 
   /**
    * Expire gift card
+   * Uses transaction to ensure atomicity of status update and transaction record
    */
   private async expireGiftCard(id: string) {
-    const giftCard = await this.prisma.giftCard.update({
-      where: { id },
-      data: { status: GiftCardStatus.EXPIRED },
-    });
+    // Use transaction to ensure atomicity
+    const giftCard = await this.prisma.$transaction(async (tx) => {
+      const card = await tx.giftCard.update({
+        where: { id },
+        data: { status: GiftCardStatus.EXPIRED },
+      });
 
-    await this.createTransaction(
-      id,
-      TransactionType.EXPIRATION,
-      0,
-      giftCard.currentBalance,
-      giftCard.currentBalance,
-      null,
-      'Gift card expired',
-    );
+      await tx.giftCardTransaction.create({
+        data: {
+          giftCardId: id,
+          type: TransactionType.EXPIRATION,
+          amount: 0,
+          balanceBefore: card.currentBalance,
+          balanceAfter: card.currentBalance,
+          userId: null,
+          description: 'Gift card expired',
+        },
+      });
+
+      return card;
+    });
 
     return giftCard;
   }
@@ -902,6 +1164,7 @@ export class GiftCardsService {
 
   /**
    * Expire old gift cards (Cron job)
+   * Uses transaction to ensure atomicity of bulk expiration
    */
   async expireOldGiftCards() {
     const now = new Date();
@@ -915,9 +1178,34 @@ export class GiftCardsService {
       },
     });
 
-    for (const card of expiredCards) {
-      await this.expireGiftCard(card.id);
+    if (expiredCards.length === 0) {
+      return {
+        message: 'No gift cards to expire',
+        count: 0,
+      };
     }
+
+    // Use transaction to ensure atomicity of bulk expiration
+    await this.prisma.$transaction(async (tx) => {
+      for (const card of expiredCards) {
+        await tx.giftCard.update({
+          where: { id: card.id },
+          data: { status: GiftCardStatus.EXPIRED },
+        });
+
+        await tx.giftCardTransaction.create({
+          data: {
+            giftCardId: card.id,
+            type: TransactionType.EXPIRATION,
+            amount: 0,
+            balanceBefore: card.currentBalance,
+            balanceAfter: card.currentBalance,
+            userId: null,
+            description: 'Gift card expired',
+          },
+        });
+      }
+    });
 
     return {
       message: `Expired ${expiredCards.length} gift cards`,

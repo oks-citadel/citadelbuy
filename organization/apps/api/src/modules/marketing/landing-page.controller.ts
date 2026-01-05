@@ -1,14 +1,17 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { LandingPageService } from './landing-page.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CreateLandingPageDto, UpdateLandingPageDto, LandingPageStatus } from './dto/landing-page.dto';
 
+@ApiTags('marketing/landing-pages')
 @Controller('marketing/landing-pages')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class LandingPageController {
   constructor(private readonly landingPageService: LandingPageService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
   async createLandingPage(@Body() dto: CreateLandingPageDto) {
     return this.landingPageService.createLandingPage(dto);
   }
@@ -51,25 +54,21 @@ export class LandingPageController {
   }
 
   @Post(':id/publish')
-  @UseGuards(JwtAuthGuard)
   async publishLandingPage(@Param('id') id: string) {
     return this.landingPageService.publishLandingPage(id);
   }
 
   @Post(':id/archive')
-  @UseGuards(JwtAuthGuard)
   async archiveLandingPage(@Param('id') id: string) {
     return this.landingPageService.archiveLandingPage(id);
   }
 
   @Post(':id/track/view')
-  @UseGuards(JwtAuthGuard)
   async trackPageView(@Param('id') id: string, @Body() data: { visitorId?: string }) {
     return this.landingPageService.trackPageView(id, data.visitorId);
   }
 
   @Post(':id/track/conversion')
-  @UseGuards(JwtAuthGuard)
   async trackConversion(
     @Param('id') id: string,
     @Body() data: { ctaType: 'primary' | 'secondary' },
@@ -83,7 +82,6 @@ export class LandingPageController {
   }
 
   @Post(':id/duplicate')
-  @UseGuards(JwtAuthGuard)
   async duplicateLandingPage(@Param('id') id: string, @Body() data: { newSlug: string }) {
     return this.landingPageService.duplicateLandingPage(id, data.newSlug);
   }

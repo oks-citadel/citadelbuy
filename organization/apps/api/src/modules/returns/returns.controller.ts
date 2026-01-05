@@ -10,6 +10,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { ReturnsService } from './returns.service';
+import { ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';

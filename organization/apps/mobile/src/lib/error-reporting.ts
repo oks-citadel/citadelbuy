@@ -67,12 +67,23 @@ class ErrorReportingService {
         // Session tracking
         sessionTrackingIntervalMillis: 30000,
 
+        // Tracing options moved to root config in v6+
+        enableAppStartTracking: true,
+        enableNativeFramesTracking: true,
+        enableStallTracking: true,
+        enableUserInteractionTracing: true,
+
         integrations: [
-          new Sentry.ReactNativeTracing({
-            tracingOrigins: ['localhost', /^\//],
-            routingInstrumentation: new Sentry.ReactNavigationInstrumentation(),
+          // Updated from deprecated ReactNativeTracing class
+          Sentry.reactNativeTracingIntegration({
+            // tracingOrigins moved to tracePropagationTargets in root config
           }),
+          // Updated from deprecated ReactNavigationInstrumentation class
+          Sentry.reactNavigationIntegration(),
         ],
+
+        // Tracing propagation targets (replaces tracingOrigins)
+        tracePropagationTargets: ['localhost', /^\//],
 
         beforeSend(event, hint) {
           // Filter out specific errors
@@ -326,20 +337,48 @@ class ErrorReportingService {
   }
 
   /**
-   * Start a performance transaction
+   * Start a performance span (replaces deprecated startTransaction)
+   * Uses the new Sentry v8+ span API
    */
-  startTransaction(name: string, operation: string): any | null {
+  startSpan<T>(
+    name: string,
+    operation: string,
+    callback: (span: Sentry.Span | undefined) => T
+  ): T | null {
+    if (!this.initialized) {
+      return callback(undefined);
+    }
+
+    try {
+      return Sentry.startSpan(
+        {
+          name,
+          op: operation,
+        },
+        callback
+      );
+    } catch (err) {
+      console.error('[ErrorReporting] Failed to start span:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Start an inactive span that can be ended manually later
+   * (replaces deprecated startTransaction for manual control)
+   */
+  startInactiveSpan(name: string, operation: string): Sentry.Span | null {
     if (!this.initialized) {
       return null;
     }
 
     try {
-      return Sentry.startTransaction({
+      return Sentry.startInactiveSpan({
         name,
         op: operation,
       });
     } catch (err) {
-      console.error('[ErrorReporting] Failed to start transaction:', err);
+      console.error('[ErrorReporting] Failed to start inactive span:', err);
       return null;
     }
   }
