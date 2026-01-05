@@ -15,12 +15,13 @@ class Settings(BaseSettings):
     SERVICE_NAME: str = "supplier-integration"
     API_VERSION: str = "v1"
 
-    # Database
+    # Database - MUST be set via environment variable in production
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://localhost:5432/broxiva_dev")
-    REDIS_URL: str = "redis://localhost:6379"
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379")
 
-    # Message Queue
-    RABBITMQ_URL: str = "amqp://guest:guest@localhost:5672/"
+    # Message Queue - MUST be set via environment variable in production
+    # Never use default guest credentials in production
+    RABBITMQ_URL: str = os.getenv("RABBITMQ_URL", "amqp://localhost:5672/")
 
     # CORS
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:4000"]
