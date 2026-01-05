@@ -152,3 +152,16 @@ variable "alert_email_addresses" {
   type        = list(string)
   default     = ["ops@broxiva.com", "oncall@broxiva.com"]
 }
+
+# GitHub Configuration (for OIDC)
+variable "github_org" {
+  description = "GitHub organization name"
+  type        = string
+  default     = "oks-citadel"
+}
+
+variable "github_repo" {
+  description = "GitHub repository name"
+  type        = string
+  default     = "citadelbuy"
+}
