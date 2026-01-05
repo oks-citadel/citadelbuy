@@ -1,17 +1,21 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CampaignService } from './campaign.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CreateCampaignDto, UpdateCampaignDto, CampaignStatus, CampaignMetricsDto } from './dto/campaign.dto';
 
-@ApiTags('marketing/campaigns')
+@ApiTags('Marketing Campaigns')
 @Controller('marketing/campaigns')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class CampaignController {
   constructor(private readonly campaignService: CampaignService) {}
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post()
+  @ApiOperation({ summary: 'Create a new marketing campaign' })
+  @ApiResponse({ status: 201, description: 'Campaign created successfully' })
   async createCampaign(@Body() dto: CreateCampaignDto) {
     return this.campaignService.createCampaign(dto);
   }

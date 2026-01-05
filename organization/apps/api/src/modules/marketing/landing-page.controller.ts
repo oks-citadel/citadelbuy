@@ -1,17 +1,21 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { LandingPageService } from './landing-page.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CreateLandingPageDto, UpdateLandingPageDto, LandingPageStatus } from './dto/landing-page.dto';
 
-@ApiTags('marketing/landing-pages')
+@ApiTags('Marketing Landing Pages')
 @Controller('marketing/landing-pages')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class LandingPageController {
   constructor(private readonly landingPageService: LandingPageService) {}
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post()
+  @ApiOperation({ summary: 'Create a new landing page' })
+  @ApiResponse({ status: 201, description: 'Landing page created successfully' })
   async createLandingPage(@Body() dto: CreateLandingPageDto) {
     return this.landingPageService.createLandingPage(dto);
   }

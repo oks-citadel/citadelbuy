@@ -9,8 +9,9 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ReturnsService } from './returns.service';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -29,8 +30,10 @@ import {
   CancelReturnDto,
 } from './dto/returns.dto';
 
+@ApiTags('Returns')
 @Controller('returns')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@ApiBearerAuth()
 export class ReturnsController {
   constructor(
     private readonly returnsService: ReturnsService,
@@ -39,7 +42,11 @@ export class ReturnsController {
 
   // ==================== Customer Endpoints ====================
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post()
+  @ApiOperation({ summary: 'Create a new return request' })
+  @ApiResponse({ status: 201, description: 'Return request created successfully' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
   async createReturn(@Request() req: any, @Body() dto: CreateReturnRequestDto) {
     return this.returnsService.createReturnRequest(req.user.id, dto);
   }
