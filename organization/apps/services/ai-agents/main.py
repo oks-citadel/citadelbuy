@@ -60,13 +60,23 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS middleware
+# CORS Configuration - Use specific origins for security
+ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '').split(',') if os.getenv('ALLOWED_ORIGINS') else [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://localhost:8080",
+    "https://broxiva.com",
+    "https://admin.broxiva.com",
+    "https://api.broxiva.com",
+]
+
+# CORS middleware with secure configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
 )
 
 

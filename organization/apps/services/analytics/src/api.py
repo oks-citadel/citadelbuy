@@ -4,15 +4,36 @@ Real-time and batch analytics with ML insights
 """
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 from datetime import datetime, timedelta
 import logging
+import os
+
+# CORS Configuration - Use specific origins for security
+ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '').split(',') if os.getenv('ALLOWED_ORIGINS') else [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://localhost:8080",
+    "https://broxiva.com",
+    "https://admin.broxiva.com",
+    "https://api.broxiva.com",
+]
 
 app = FastAPI(
     title="Broxiva Analytics Service",
     description="Real-time and batch analytics with ML insights",
     version="1.0.0"
+)
+
+# Add CORS middleware with secure configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
 )
 
 logger = logging.getLogger(__name__)
@@ -63,7 +84,7 @@ async def track_event(request: EventRequest):
         return {"status": "tracked", "event_id": processed_event['id']}
     except Exception as e:
         logger.error(f"Event tracking error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="An error occurred while tracking the event")
 
 
 @app.post("/events/batch")
