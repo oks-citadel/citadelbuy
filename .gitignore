@@ -20,6 +20,11 @@ secrets.json
 serviceAccountKey.json
 
 # ==============================================
+# Claude Code Local Settings (CONTAINS SECRETS)
+# ==============================================
+.claude/settings.local.json
+
+# ==============================================
 # Dependencies
 # ==============================================
 node_modules/
