@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
   HttpStatus,
   HttpCode,
 } from '@nestjs/common';
@@ -17,7 +18,9 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiHeader,
 } from '@nestjs/swagger';
+import { IdempotencyInterceptor } from '@/common/interceptors/idempotency.interceptor';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { OrganizationService } from '../services/organization.service';
@@ -39,9 +42,15 @@ export class OrganizationController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(IdempotencyInterceptor)
   @ApiOperation({ summary: 'Create a new organization' })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    description: 'Unique key for idempotent request (prevents duplicate organizations)',
+    required: false,
+  })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'Organization created' })
-  @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Slug already exists' })
+  @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Slug already exists or request being processed' })
   async create(
     @CurrentUser() user: { id: string },
     @Body() dto: CreateOrganizationDto,

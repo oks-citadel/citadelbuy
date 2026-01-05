@@ -1,5 +1,6 @@
 # Network Policies for Broxiva Production Environment
 # Implements strict network segmentation and zero-trust security model
+# IMPORTANT: Must match the namespace where workloads are deployed
 
 ---
 # Default Deny All Ingress (enhanced security)
@@ -7,7 +8,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-ingress
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     environment: production
 spec:
@@ -21,7 +22,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-egress
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     environment: production
 spec:
@@ -35,7 +36,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     environment: production
 spec:
@@ -59,7 +60,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-web-to-api
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     environment: production
 spec:
@@ -85,7 +86,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-ingress-to-web
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     environment: production
 spec:
@@ -110,7 +111,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-ingress-to-api
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     environment: production
 spec:
@@ -135,7 +136,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-backend-to-postgres
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     environment: production
 spec:
@@ -163,7 +164,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-backend-to-redis
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     environment: production
 spec:
@@ -191,7 +192,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-egress
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     environment: production
 spec:
@@ -237,7 +238,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-worker-egress
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     environment: production
 spec:
@@ -282,7 +283,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-web-egress
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     environment: production
 spec:
@@ -317,7 +318,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: isolate-postgres
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     environment: production
 spec:
@@ -352,7 +353,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: isolate-redis
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     environment: production
 spec:
@@ -389,7 +390,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-prometheus-scraping
-  namespace: broxiva-production
+  namespace: broxiva
   labels:
     environment: production
 spec:

@@ -116,6 +116,21 @@ export class HealthController {
   }
 
   /**
+   * Version information
+   * Returns API version, build SHA, and environment
+   */
+  @Get('version')
+  getVersion() {
+    return {
+      version: process.env.npm_package_version || '2.0.0',
+      build: process.env.BUILD_SHA || process.env.GIT_COMMIT_SHA || 'development',
+      environment: process.env.NODE_ENV || 'development',
+      node: process.version,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
    * Detailed health check with metrics
    * Returns comprehensive health information for monitoring
    */

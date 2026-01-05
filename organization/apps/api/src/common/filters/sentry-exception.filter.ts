@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
+import * as crypto from 'crypto';
 
 interface SentryEvent {
   event_id?: string;
@@ -79,13 +80,21 @@ export class SentryExceptionFilter implements ExceptionFilter {
         ? exception.message
         : 'Internal server error';
 
-    // Build error response
+    // Get request ID for correlation
+    const requestId =
+      (request.headers['x-request-id'] as string) ||
+      (request.headers['x-correlation-id'] as string) ||
+      crypto.randomUUID();
+
+    // Build error response with requestId for correlation
     const errorResponse = {
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
       method: request.method,
       message,
+      requestId,
+      code: this.getErrorCode(exception, status),
     };
 
     // Log the error
@@ -268,5 +277,35 @@ export class SentryExceptionFilter implements ExceptionFilter {
       request.socket.remoteAddress ||
       'unknown'
     );
+  }
+
+  private getErrorCode(exception: unknown, status: number): string {
+    // Extract error code from HttpException if available
+    if (exception instanceof HttpException) {
+      const response = exception.getResponse();
+      if (typeof response === 'object' && response !== null) {
+        const responseObj = response as Record<string, any>;
+        if (responseObj.code) {
+          return responseObj.code;
+        }
+      }
+    }
+
+    // Map HTTP status codes to error codes
+    const statusCodeMap: Record<number, string> = {
+      400: 'BAD_REQUEST',
+      401: 'UNAUTHORIZED',
+      403: 'FORBIDDEN',
+      404: 'NOT_FOUND',
+      409: 'CONFLICT',
+      422: 'UNPROCESSABLE_ENTITY',
+      429: 'TOO_MANY_REQUESTS',
+      500: 'INTERNAL_SERVER_ERROR',
+      502: 'BAD_GATEWAY',
+      503: 'SERVICE_UNAVAILABLE',
+      504: 'GATEWAY_TIMEOUT',
+    };
+
+    return statusCodeMap[status] || `HTTP_${status}`;
   }
 }

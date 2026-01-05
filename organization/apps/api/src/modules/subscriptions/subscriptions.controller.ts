@@ -7,11 +7,13 @@ import {
   Param,
   Delete,
   UseGuards,
+  UseInterceptors,
   Request,
   Query,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
+import { IdempotencyInterceptor } from '@/common/interceptors/idempotency.interceptor';
 import { SubscriptionsService } from './subscriptions.service';
 import { SubscriptionTierService } from './services/subscription-tier.service';
 import { CreateSubscriptionPlanDto } from './dto/create-subscription-plan.dto';
@@ -91,9 +93,16 @@ export class SubscriptionsController {
 
   @Post('subscribe')
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(IdempotencyInterceptor)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Subscribe to a plan' })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    description: 'Unique key for idempotent request (prevents duplicate subscriptions)',
+    required: false,
+  })
   @ApiResponse({ status: 201, description: 'Subscription created successfully' })
+  @ApiResponse({ status: 409, description: 'Request with this idempotency key is being processed' })
   subscribe(@Request() req: AuthRequest, @Body() dto: SubscribeDto) {
     return this.subscriptionsService.subscribe(req.user.id, dto);
   }

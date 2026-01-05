@@ -5,9 +5,11 @@ import {
   Body,
   Param,
   UseGuards,
+  UseInterceptors,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam, ApiHeader } from '@nestjs/swagger';
+import { IdempotencyInterceptor } from '@/common/interceptors/idempotency.interceptor';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -144,9 +146,15 @@ export class OrdersController {
   }
 
   @Post()
+  @UseInterceptors(IdempotencyInterceptor)
   @ApiOperation({
     summary: 'Create a new order',
     description: 'Creates a new order with the provided items and shipping address. Validates inventory availability and calculates totals.',
+  })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    description: 'Unique key for idempotent request (prevents duplicate orders)',
+    required: false,
   })
   @ApiResponse({
     status: 201,
@@ -183,6 +191,7 @@ export class OrdersController {
   })
   @ApiResponse({ status: 400, description: 'Invalid order data or insufficient inventory' })
   @ApiResponse({ status: 401, description: 'Unauthorized - invalid or missing token' })
+  @ApiResponse({ status: 409, description: 'Request with this idempotency key is being processed' })
   async create(@Request() req: any, @Body() createOrderDto: CreateOrderDto) {
     return this.ordersService.create(req.user.id, createOrderDto);
   }
