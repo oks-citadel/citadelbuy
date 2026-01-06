@@ -534,7 +534,7 @@ export class CouponsService {
         discount = 0; // Handled separately in order calculation
         break;
 
-      case CouponType.TIERED:
+      case CouponType.TIERED: {
         const tieredRules = coupon.tieredRules as Array<{ minAmount: number; discount: number }>;
         const applicableRule = tieredRules
           .filter((rule) => subtotal >= rule.minAmount)
@@ -544,6 +544,7 @@ export class CouponsService {
           discount = (subtotal * applicableRule.discount) / 100;
         }
         break;
+      }
 
       case CouponType.BUY_X_GET_Y:
         // Simplified calculation - would need product prices for accurate calculation

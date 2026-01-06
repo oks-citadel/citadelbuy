@@ -158,7 +158,18 @@ export class MarketingGrowthController {
   @ApiResponse({ status: 200, description: 'Landing page updated' })
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   async updateLandingPage(@Param('id') id: string, @Body() dto: UpdateLandingPageDto) {
-    return this.growthService.updateLandingPage(id, dto);
+    return this.growthService.updateLandingPage(id, {
+      name: dto.name,
+      slug: dto.slug,
+      isActive: dto.isActive,
+      variants: dto.variants?.map((v) => ({
+        id: `variant-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+        name: v.name,
+        trafficAllocation: v.trafficAllocation,
+        content: v.content,
+        config: v.config,
+      })),
+    });
   }
 
   @Post('landing-pages/:id/view/:variantId')

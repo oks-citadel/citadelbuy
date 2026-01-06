@@ -532,14 +532,15 @@ export class AttributionService {
         credits.set(touchpoints[touchpoints.length - 1].id, 1);
         break;
 
-      case AttributionModel.LINEAR:
+      case AttributionModel.LINEAR: {
         const equalShare = 1 / touchpoints.length;
         for (const tp of touchpoints) {
           credits.set(tp.id, equalShare);
         }
         break;
+      }
 
-      case AttributionModel.TIME_DECAY:
+      case AttributionModel.TIME_DECAY: {
         // Half-life of 7 days
         const halfLife = 7 * 24 * 60 * 60 * 1000;
         const conversionTime = touchpoints[touchpoints.length - 1].timestamp.getTime();
@@ -557,6 +558,7 @@ export class AttributionService {
           credits.set(touchpoints[i].id, weights[i] / totalWeight);
         }
         break;
+      }
 
       case AttributionModel.POSITION_BASED:
         if (touchpoints.length === 1) {

@@ -460,13 +460,14 @@ export class AnalyticsQueueProcessor {
         startDate.setHours(0, 0, 0, 0);
         endDate.setHours(23, 59, 59, 999);
         break;
-      case 'WEEKLY':
+      case 'WEEKLY': {
         const day = startDate.getDay();
         startDate.setDate(startDate.getDate() - day);
         startDate.setHours(0, 0, 0, 0);
         endDate.setDate(startDate.getDate() + 6);
         endDate.setHours(23, 59, 59, 999);
         break;
+      }
       case 'MONTHLY':
         startDate.setDate(1);
         startDate.setHours(0, 0, 0, 0);

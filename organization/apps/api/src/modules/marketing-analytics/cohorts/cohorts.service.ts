@@ -468,7 +468,7 @@ export class CohortsService {
           select: { id: true },
         });
 
-      case CohortType.FIRST_PURCHASE_DATE:
+      case CohortType.FIRST_PURCHASE_DATE: {
         // Get users whose first order was in this period
         const usersWithOrders = await this.prisma.order.groupBy({
           by: ['userId'],
@@ -481,6 +481,7 @@ export class CohortsService {
           },
         });
         return usersWithOrders.map((u) => ({ id: u.userId! }));
+      }
 
       default:
         return this.prisma.user.findMany({

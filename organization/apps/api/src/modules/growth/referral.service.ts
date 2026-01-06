@@ -440,11 +440,12 @@ export class ReferralService {
     }
 
     switch (referral.program.requirementType) {
-      case 'FIRST_ORDER':
+      case 'FIRST_ORDER': {
         const orderCount = await this.prisma.order.count({
           where: { userId: referral.refereeId },
         });
         return orderCount === 1;
+      }
 
       case 'MIN_ORDER_VALUE':
         return order.total >= (referral.program.requirementValue || 0);

@@ -118,7 +118,11 @@ export class CommerceController {
   @HttpCode(HttpStatus.CREATED)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   async createCoupon(@Body() dto: CreateCouponDto) {
-    return this.commerceService.createCoupon(dto);
+    return this.commerceService.createCoupon({
+      ...dto,
+      validFrom: dto.validFrom ? new Date(dto.validFrom) : undefined,
+      validUntil: dto.validUntil ? new Date(dto.validUntil) : undefined,
+    });
   }
 
   @Get('coupons')
@@ -160,7 +164,11 @@ export class CommerceController {
   @ApiParam({ name: 'id', description: 'Coupon ID' })
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   async updateCoupon(@Param('id') id: string, @Body() dto: Partial<CreateCouponDto>) {
-    return this.commerceService.updateCoupon(id, dto);
+    return this.commerceService.updateCoupon(id, {
+      ...dto,
+      validFrom: dto.validFrom ? new Date(dto.validFrom) : undefined,
+      validUntil: dto.validUntil ? new Date(dto.validUntil) : undefined,
+    });
   }
 
   @Delete('coupons/:id')

@@ -168,9 +168,30 @@ export class MarketingGrowthService implements IGrowthService {
       throw new NotFoundException(`Landing page ${id} not found`);
     }
 
+    // Handle variants separately to preserve views/conversions or initialize them
+    let updatedVariants = page.variants;
+    if (data.variants) {
+      updatedVariants = data.variants.map((v) => {
+        // Try to find existing variant to preserve stats
+        const existing = page.variants.find((ev) => ev.id === v.id);
+        return {
+          id: v.id,
+          name: v.name,
+          trafficAllocation: v.trafficAllocation,
+          content: v.content,
+          config: v.config,
+          views: existing?.views ?? 0,
+          conversions: existing?.conversions ?? 0,
+        };
+      });
+    }
+
     const updated: LandingPage = {
       ...page,
-      ...data,
+      name: data.name ?? page.name,
+      slug: data.slug ?? page.slug,
+      isActive: data.isActive ?? page.isActive,
+      variants: updatedVariants,
       updatedAt: new Date(),
     };
 
