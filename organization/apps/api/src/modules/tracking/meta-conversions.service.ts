@@ -144,7 +144,7 @@ export class MetaConversionsService {
         userData.setZipCode([this.hashData(params.zipCode)]);
       }
       if (params.country) {
-        // @ts-ignore - Facebook SDK type definitions may be outdated
+        // @ts-expect-error - Facebook SDK type definitions may be outdated
         userData.setCountry([this.hashData(params.country)]);
       }
       if (params.externalId) {
@@ -205,7 +205,7 @@ export class MetaConversionsService {
       // Add custom properties
       if (params.customProperties) {
         Object.entries(params.customProperties).forEach(([key, value]) => {
-          // @ts-ignore - Facebook SDK type definitions may be outdated
+          // @ts-expect-error - Facebook SDK type definitions may be outdated
           customData.setCustomProperties(key, value);
         });
       }
