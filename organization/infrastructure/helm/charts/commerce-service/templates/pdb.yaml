@@ -1,0 +1,79 @@
+{{- if .Values.promoEngine.enabled }}
+{{- if .Values.promoEngine.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "commerce-service.fullname" . }}-{{ .Values.promoEngine.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "commerce-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.promoEngine.name }}
+spec:
+  minAvailable: {{ .Values.promoEngine.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "commerce-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.promoEngine.name }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.inAppMessaging.enabled }}
+{{- if .Values.inAppMessaging.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "commerce-service.fullname" . }}-{{ .Values.inAppMessaging.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "commerce-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.inAppMessaging.name }}
+spec:
+  minAvailable: {{ .Values.inAppMessaging.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "commerce-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.inAppMessaging.name }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.pricingService.enabled }}
+{{- if .Values.pricingService.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "commerce-service.fullname" . }}-{{ .Values.pricingService.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "commerce-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.pricingService.name }}
+spec:
+  minAvailable: {{ .Values.pricingService.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "commerce-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.pricingService.name }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.conversionTracker.enabled }}
+{{- if .Values.conversionTracker.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "commerce-service.fullname" . }}-{{ .Values.conversionTracker.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "commerce-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.conversionTracker.name }}
+spec:
+  minAvailable: {{ .Values.conversionTracker.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "commerce-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.conversionTracker.name }}
+{{- end }}
+{{- end }}

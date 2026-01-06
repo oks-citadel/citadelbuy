@@ -340,7 +340,7 @@ export class UsersService {
   /**
    * Update user role (admin only)
    */
-  async updateRole(id: string, role: 'CUSTOMER' | 'VENDOR' | 'ADMIN') {
+  async updateRole(id: string, role: 'CUSTOMER' | 'VENDOR' | 'SUPPORT' | 'ADMIN') {
     await this.findById(id);
 
     return this.prisma.user.update({

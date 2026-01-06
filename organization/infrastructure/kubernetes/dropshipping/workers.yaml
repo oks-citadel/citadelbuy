@@ -19,10 +19,31 @@ spec:
         app: inventory-sync-worker
         tier: worker
     spec:
+      serviceAccountName: dropshipping-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: worker
           image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/backend:v2.0.0
           command: ["node", "dist/workers/inventory-sync.worker.js"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           resources:
             requests:
               memory: "256Mi"
@@ -49,6 +70,10 @@ spec:
                   key: redis-url
             - name: SUPPLIER_SERVICE_URL
               value: "http://supplier-integration:8001"
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
 
 ---
 # Price Sync Worker Deployment
@@ -71,10 +96,31 @@ spec:
         app: price-sync-worker
         tier: worker
     spec:
+      serviceAccountName: dropshipping-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: worker
           image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/backend:v2.0.0
           command: ["node", "dist/workers/price-sync.worker.js"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           resources:
             requests:
               memory: "256Mi"
@@ -101,6 +147,10 @@ spec:
                   key: redis-url
             - name: AI_SERVICE_URL
               value: "http://ai-engine:8002"
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
 
 ---
 # Order Routing Worker Deployment
@@ -123,10 +173,31 @@ spec:
         app: order-routing-worker
         tier: worker
     spec:
+      serviceAccountName: dropshipping-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: worker
           image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/backend:v2.0.0
           command: ["node", "dist/workers/order-routing.worker.js"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           resources:
             requests:
               memory: "256Mi"
@@ -153,6 +224,10 @@ spec:
                   key: redis-url
             - name: SUPPLIER_SERVICE_URL
               value: "http://supplier-integration:8001"
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
 
 ---
 # Tracking Sync Worker Deployment
@@ -175,10 +250,31 @@ spec:
         app: tracking-sync-worker
         tier: worker
     spec:
+      serviceAccountName: dropshipping-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: worker
           image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/backend:v2.0.0
           command: ["node", "dist/workers/tracking-sync.worker.js"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           resources:
             requests:
               memory: "256Mi"
@@ -205,6 +301,10 @@ spec:
                   key: redis-url
             - name: SUPPLIER_SERVICE_URL
               value: "http://supplier-integration:8001"
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
 
 ---
 # Fraud Detection Worker Deployment
@@ -227,10 +327,31 @@ spec:
         app: fraud-detection-worker
         tier: worker
     spec:
+      serviceAccountName: dropshipping-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: worker
           image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/backend:v2.0.0
           command: ["node", "dist/workers/fraud-detection.worker.js"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           resources:
             requests:
               memory: "256Mi"
@@ -257,3 +378,18 @@ spec:
                   key: redis-url
             - name: AI_SERVICE_URL
               value: "http://ai-engine:8002"
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
+
+---
+# ServiceAccount for Dropshipping Workers
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dropshipping-worker
+  labels:
+    app: dropshipping-worker
+    component: dropshipping
+automountServiceAccountToken: false

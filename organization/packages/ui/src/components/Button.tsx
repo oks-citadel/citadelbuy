@@ -107,13 +107,15 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       xl: 'h-14 px-8 text-lg',
     };
 
-    // Loading spinner
+    // Loading spinner with accessibility
     const LoadingSpinner = () => (
       <svg
         className="animate-spin h-4 w-4"
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
+        aria-hidden="true"
+        role="presentation"
       >
         <circle
           className="opacity-25"
@@ -142,12 +144,19 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           className
         )}
         disabled={disabled || isLoading}
+        aria-disabled={disabled || isLoading}
+        aria-busy={isLoading}
         {...props}
       >
-        {isLoading && <LoadingSpinner />}
-        {!isLoading && leftIcon && <span className="flex-shrink-0">{leftIcon}</span>}
+        {isLoading && (
+          <>
+            <LoadingSpinner />
+            <span className="sr-only">Loading</span>
+          </>
+        )}
+        {!isLoading && leftIcon && <span className="flex-shrink-0" aria-hidden="true">{leftIcon}</span>}
         <span>{children}</span>
-        {!isLoading && rightIcon && <span className="flex-shrink-0">{rightIcon}</span>}
+        {!isLoading && rightIcon && <span className="flex-shrink-0" aria-hidden="true">{rightIcon}</span>}
       </button>
     );
   }

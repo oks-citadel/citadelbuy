@@ -12,6 +12,7 @@ datasource db {
 enum UserRole {
   CUSTOMER
   VENDOR
+  SUPPORT
   ADMIN
 }
 
@@ -128,6 +129,10 @@ model User {
 
   // Email verification
   emailVerificationTokens EmailVerificationToken[]
+
+  // Impersonation relations
+  impersonationSessionsAsTarget       ImpersonationSession[] @relation("ImpersonationTarget")
+  impersonationSessionsAsImpersonator ImpersonationSession[] @relation("Impersonator")
 
   @@map("users")
 }
@@ -457,6 +462,7 @@ model Order {
   supportTickets          SupportTicket[]
   escrowAccount           EscrowAccount?
   escrows                 Escrow[]
+  billingAuditLogs        BillingAuditLog[]
 
   @@index([userId])
   @@index([status])
@@ -7416,4 +7422,445 @@ model PhoneVerificationCode {
   @@index([code])
   @@index([expiresAt])
   @@map("phone_verification_codes")
+}
+
+// ============================================
+// BILLING AUDIT TRAIL SYSTEM
+// ============================================
+
+model BillingAuditLog {
+  id                 String    @id @default(uuid())
+  eventType          String    // charge.created, charge.captured, refund.initiated, etc.
+  orderId            String
+  chargeId           String?
+  amount             Decimal   @db.Decimal(10, 2)
+  currency           String    @default("USD")
+
+  // Actor information (who triggered the event)
+  actor              Json?     // { type, id, email, ipAddress, userAgent, source }
+
+  // Fee calculation breakdown
+  feeCalculation     Json?     // { baseAmount, taxAmount, shippingAmount, handlingFee, platformFee, discountAmount, totalAmount, taxBreakdown, discountsApplied }
+
+  // Payment gateway response
+  gatewayResponse    Json?     // { gateway, transactionId, chargeId, customerId, status, authorizationCode, metadata, rawResponse }
+
+  // Currency conversion details
+  currencyConversion Json?     // { fromCurrency, toCurrency, exchangeRate, originalAmount, convertedAmount, rateTimestamp, rateSource }
+
+  // Idempotency key for duplicate prevention
+  idempotencyKey     String?   @unique
+
+  // Additional context
+  reason             String?   // Reason for refunds, adjustments, etc.
+  metadata           Json?     // Additional custom data
+
+  // Timestamps
+  timestamp          DateTime  @default(now())
+  createdAt          DateTime  @default(now())
+
+  // Relations
+  order              Order?    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([chargeId])
+  @@index([eventType])
+  @@index([timestamp])
+  @@index([createdAt])
+  @@map("billing_audit_logs")
+}
+
+// ============================================
+// CUSTOMER IMPERSONATION SYSTEM
+// ============================================
+
+model ImpersonationSession {
+  id String @id @default(uuid())
+
+  // Impersonator (admin/support user)
+  impersonatorId    String
+  impersonatorEmail String
+  impersonatorName  String
+  impersonator      User   @relation("Impersonator", fields: [impersonatorId], references: [id], onDelete: Cascade)
+
+  // Target user being impersonated
+  targetUserId    String
+  targetUserEmail String
+  targetUserName  String
+  targetUser      User   @relation("ImpersonationTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  // Session details
+  reason          String  // Required reason for audit
+  ticketReference String? // Optional support ticket reference
+  mode            String  @default("VIEW_ONLY") // VIEW_ONLY or FULL_ACCESS
+
+  // Timing
+  startedAt DateTime  @default(now())
+  endedAt   DateTime? // Null if session is still active
+  expiresAt DateTime  // Max 1 hour from start
+
+  // End session notes
+  notes      String? // Notes about what was done
+  resolution String? // Resolution status (resolved, escalated, etc.)
+
+  // Request metadata
+  ipAddress String
+  userAgent String?
+
+  // Relations
+  actions ImpersonationAction[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([impersonatorId])
+  @@index([targetUserId])
+  @@index([startedAt])
+  @@index([endedAt])
+  @@index([mode])
+  @@map("impersonation_sessions")
+}
+
+model ImpersonationAction {
+  id        String @id @default(uuid())
+  sessionId String
+
+  // HTTP request details
+  method      String // GET, POST, PUT, DELETE, etc.
+  path        String // Request path
+  requestBody Json?  // Sanitized request body
+  statusCode  Int    // HTTP response status code
+
+  // Metadata
+  timestamp DateTime @default(now())
+  ipAddress String
+  userAgent String?
+
+  // Relations
+  session ImpersonationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([timestamp])
+  @@index([method])
+  @@map("impersonation_actions")
+}
+
+// ==================== EXPERIMENTATION & FEATURE FLAGS ====================
+
+enum ExperimentStatus {
+  DRAFT
+  RUNNING
+  PAUSED
+  CONCLUDED
+  ARCHIVED
+}
+
+enum FeatureFlagType {
+  BOOLEAN
+  PERCENTAGE
+  SEGMENT
+  ENVIRONMENT
+}
+
+enum TargetingRuleOperator {
+  EQUALS
+  NOT_EQUALS
+  CONTAINS
+  NOT_CONTAINS
+  GREATER_THAN
+  LESS_THAN
+  IN
+  NOT_IN
+  REGEX
+  EXISTS
+  NOT_EXISTS
+}
+
+model Experiment {
+  id          String           @id @default(uuid())
+  name        String
+  description String?
+  hypothesis  String?
+  status      ExperimentStatus @default(DRAFT)
+
+  // Experiment configuration
+  trafficAllocation Float   @default(100) // Percentage of traffic to include
+  isExclusive       Boolean @default(false) // Cannot be in other experiments
+
+  // Mutual exclusion group
+  mutualExclusionGroupId String?
+  mutualExclusionGroup   MutualExclusionGroup? @relation(fields: [mutualExclusionGroupId], references: [id])
+
+  // Metrics configuration
+  primaryMetric   String? // Key of primary metric
+  secondaryMetrics Json?   // Array of secondary metric keys
+
+  // Lifecycle
+  startedAt    DateTime?
+  pausedAt     DateTime?
+  concludedAt  DateTime?
+  winnerVariantId String?
+
+  // Audit
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  variants         ExperimentVariant[]
+  targetingRules   ExperimentTargetingRule[]
+  assignments      ExperimentAssignment[]
+  events           ExperimentEvent[]
+  metrics          ExperimentMetric[]
+  auditLogs        ExperimentAuditLog[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([mutualExclusionGroupId])
+  @@map("experiments")
+}
+
+model ExperimentVariant {
+  id           String  @id @default(uuid())
+  experimentId String
+  name         String
+  description  String?
+  weight       Float   @default(50) // Percentage weight 0-100
+  isControl    Boolean @default(false)
+
+  // Variant payload (for feature variations)
+  payload Json?
+
+  // Relations
+  experiment  Experiment             @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  assignments ExperimentAssignment[]
+  events      ExperimentEvent[]
+
+  @@unique([experimentId, name])
+  @@index([experimentId])
+  @@map("experiment_variants")
+}
+
+model ExperimentTargetingRule {
+  id           String                 @id @default(uuid())
+  experimentId String
+  attribute    String // e.g., "country", "plan", "signup_date", "user_id"
+  operator     TargetingRuleOperator
+  value        Json // Can be string, number, array, etc.
+  priority     Int                    @default(0) // Higher priority rules evaluated first
+
+  // Relations
+  experiment Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  @@index([experimentId])
+  @@map("experiment_targeting_rules")
+}
+
+model ExperimentAssignment {
+  id           String   @id @default(uuid())
+  experimentId String
+  variantId    String
+  userId       String
+  assignedAt   DateTime @default(now())
+
+  // Assignment context
+  hashKey    String // The hash key used for deterministic assignment
+  context    Json?  // Additional context at assignment time
+
+  // Relations
+  experiment Experiment        @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  variant    ExperimentVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([experimentId, userId])
+  @@index([experimentId])
+  @@index([variantId])
+  @@index([userId])
+  @@index([assignedAt])
+  @@map("experiment_assignments")
+}
+
+model ExperimentEvent {
+  id           String   @id @default(uuid())
+  experimentId String
+  variantId    String
+  userId       String
+  eventName    String // e.g., "conversion", "click", "purchase"
+  eventValue   Float?  // Optional value (e.g., revenue amount)
+  metadata     Json?   // Additional event data
+  timestamp    DateTime @default(now())
+
+  // Relations
+  experiment Experiment        @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  variant    ExperimentVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([experimentId])
+  @@index([variantId])
+  @@index([userId])
+  @@index([eventName])
+  @@index([timestamp])
+  @@map("experiment_events")
+}
+
+model ExperimentMetric {
+  id           String @id @default(uuid())
+  experimentId String
+  key          String // Metric identifier
+  name         String
+  description  String?
+  eventName    String // Event to track for this metric
+
+  // Metric configuration
+  aggregationType String @default("count") // count, sum, average, min, max, conversion_rate
+  minimumSampleSize Int @default(100)
+  confidenceLevel Float @default(0.95) // 95% confidence
+
+  // Results (updated periodically)
+  results Json? // Stores latest computed results per variant
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  experiment Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  @@unique([experimentId, key])
+  @@index([experimentId])
+  @@map("experiment_metrics")
+}
+
+model MutualExclusionGroup {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  experiments Experiment[]
+
+  @@map("mutual_exclusion_groups")
+}
+
+model ExperimentAuditLog {
+  id           String   @id @default(uuid())
+  experimentId String
+  action       String // created, started, paused, concluded, variant_added, etc.
+  userId       String?
+  changes      Json?    // Before/after state
+  timestamp    DateTime @default(now())
+
+  // Relations
+  experiment Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  @@index([experimentId])
+  @@index([timestamp])
+  @@map("experiment_audit_logs")
+}
+
+// Feature Flags
+model FeatureFlag {
+  id          String          @id @default(uuid())
+  key         String          @unique
+  name        String
+  description String?
+  type        FeatureFlagType @default(BOOLEAN)
+  enabled     Boolean         @default(false)
+
+  // Default value when no rules match
+  defaultValue Json @default("false")
+
+  // For percentage rollouts
+  percentageEnabled Float? // 0-100
+
+  // Environment-specific settings
+  environments Json? // { "production": true, "staging": true, "development": true }
+
+  // Audit
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  rules     FeatureFlagRule[]
+  segments  FeatureFlagSegment[]
+  auditLogs FeatureFlagAuditLog[]
+
+  @@index([key])
+  @@index([enabled])
+  @@index([type])
+  @@map("feature_flags")
+}
+
+model FeatureFlagRule {
+  id        String                @id @default(uuid())
+  flagId    String
+  attribute String // e.g., "country", "plan", "user_id"
+  operator  TargetingRuleOperator
+  value     Json
+  priority  Int                   @default(0) // Higher priority = evaluated first
+  enabled   Boolean               @default(true)
+
+  // Value to return when rule matches
+  returnValue Json @default("true")
+
+  // Relations
+  flag FeatureFlag @relation(fields: [flagId], references: [id], onDelete: Cascade)
+
+  @@index([flagId])
+  @@index([priority])
+  @@map("feature_flag_rules")
+}
+
+model FeatureFlagSegment {
+  id          String  @id @default(uuid())
+  flagId      String
+  segmentId   String // References a user segment
+  enabled     Boolean @default(true)
+  returnValue Json    @default("true")
+
+  // Relations
+  flag FeatureFlag @relation(fields: [flagId], references: [id], onDelete: Cascade)
+
+  @@unique([flagId, segmentId])
+  @@index([flagId])
+  @@map("feature_flag_segments")
+}
+
+model FeatureFlagAuditLog {
+  id        String   @id @default(uuid())
+  flagId    String
+  action    String // created, enabled, disabled, rule_added, rule_removed, etc.
+  userId    String?
+  changes   Json?    // Before/after state
+  timestamp DateTime @default(now())
+
+  // Relations
+  flag FeatureFlag @relation(fields: [flagId], references: [id], onDelete: Cascade)
+
+  @@index([flagId])
+  @@index([timestamp])
+  @@map("feature_flag_audit_logs")
+}
+
+// User Segments for targeting
+model UserSegment {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  name        String
+  description String?
+
+  // Segment definition
+  rules Json // Array of targeting rules
+
+  // Computed membership (cached)
+  memberCount  Int      @default(0)
+  lastComputed DateTime?
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([key])
+  @@map("user_segments")
 }

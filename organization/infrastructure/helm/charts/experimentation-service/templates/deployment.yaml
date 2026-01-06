@@ -1,0 +1,293 @@
+{{- if .Values.experimentEngine.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "experimentation-service.fullname" . }}-{{ .Values.experimentEngine.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "experimentation-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.experimentEngine.name }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.experimentEngine.autoscaling.enabled }}
+  replicas: {{ .Values.experimentEngine.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "experimentation-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.experimentEngine.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "experimentation-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ .Values.experimentEngine.name }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "experimentation-service.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "experimentation-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.experimentEngine.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.experimentEngine.image.repository }}:{{ .Values.experimentEngine.image.tag }}"
+          imagePullPolicy: {{ .Values.experimentEngine.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.experimentEngine.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.experimentEngine.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.experimentEngine.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.experimentEngine.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.experimentEngine.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.experimentEngine.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.experimentEngine.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.experimentEngine.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.experimentEngine.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.experimentEngine.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.experimentEngine.probes.readiness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.experimentEngine.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "experimentation-service.configMapName" . }}
+            {{- with .Values.experimentEngine.envFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.experimentEngine.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+
+{{- if .Values.featureFlagService.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "experimentation-service.fullname" . }}-{{ .Values.featureFlagService.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "experimentation-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.featureFlagService.name }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.featureFlagService.autoscaling.enabled }}
+  replicas: {{ .Values.featureFlagService.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "experimentation-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.featureFlagService.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "experimentation-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ .Values.featureFlagService.name }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "experimentation-service.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "experimentation-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.featureFlagService.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.featureFlagService.image.repository }}:{{ .Values.featureFlagService.image.tag }}"
+          imagePullPolicy: {{ .Values.featureFlagService.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.featureFlagService.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.featureFlagService.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.featureFlagService.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.featureFlagService.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.featureFlagService.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.featureFlagService.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.featureFlagService.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.featureFlagService.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.featureFlagService.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.featureFlagService.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.featureFlagService.probes.readiness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.featureFlagService.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "experimentation-service.configMapName" . }}
+            {{- with .Values.featureFlagService.envFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.featureFlagService.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+
+{{- if .Values.abTestAnalyzer.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "experimentation-service.fullname" . }}-{{ .Values.abTestAnalyzer.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "experimentation-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.abTestAnalyzer.name }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.abTestAnalyzer.autoscaling.enabled }}
+  replicas: {{ .Values.abTestAnalyzer.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "experimentation-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.abTestAnalyzer.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "experimentation-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ .Values.abTestAnalyzer.name }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "experimentation-service.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "experimentation-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.abTestAnalyzer.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.abTestAnalyzer.image.repository }}:{{ .Values.abTestAnalyzer.image.tag }}"
+          imagePullPolicy: {{ .Values.abTestAnalyzer.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.abTestAnalyzer.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.abTestAnalyzer.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.abTestAnalyzer.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.abTestAnalyzer.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.abTestAnalyzer.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.abTestAnalyzer.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.abTestAnalyzer.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.abTestAnalyzer.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.abTestAnalyzer.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.abTestAnalyzer.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.abTestAnalyzer.probes.readiness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.abTestAnalyzer.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "experimentation-service.configMapName" . }}
+            {{- with .Values.abTestAnalyzer.envFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.abTestAnalyzer.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

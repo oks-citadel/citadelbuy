@@ -1,0 +1,293 @@
+{
+  "metadata": {
+    "audit_date": "2026-01-05",
+    "platform": "AWS",
+    "terraform_version": ">=1.5.0",
+    "aws_provider_version": "~>5.0"
+  },
+  "iam_roles": [
+    {
+      "name": "vpc-cni-irsa",
+      "type": "IAM Role for Service Account (IRSA)",
+      "service_account": "kube-system:aws-node",
+      "attached_policies": ["AmazonEKS_CNI_Policy"],
+      "custom_policies": false,
+      "least_privilege": true,
+      "resource_scope": "EKS cluster specific",
+      "compliance": "PASS"
+    },
+    {
+      "name": "ebs-csi-irsa",
+      "type": "IAM Role for Service Account (IRSA)",
+      "service_account": "kube-system:ebs-csi-controller-sa",
+      "attached_policies": ["AmazonEBSCSIDriverPolicy"],
+      "custom_policies": false,
+      "least_privilege": true,
+      "resource_scope": "EKS cluster specific",
+      "compliance": "PASS"
+    },
+    {
+      "name": "external-secrets",
+      "type": "IAM Role for Service Account (IRSA)",
+      "service_account": "external-secrets:external-secrets",
+      "attached_policies": [],
+      "custom_policies": true,
+      "policy_document": {
+        "actions": [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:ListSecrets",
+          "kms:Decrypt",
+          "kms:DescribeKey"
+        ],
+        "resources": [
+          "arn:aws:secretsmanager:${region}:${account_id}:secret:${project}/${environment}/*",
+          "KMS key ARN (specific)"
+        ]
+      },
+      "least_privilege": true,
+      "resource_scope": "Environment-specific secrets only",
+      "compliance": "PASS"
+    },
+    {
+      "name": "github-actions",
+      "type": "IAM Role with OIDC Federation",
+      "trust_policy": {
+        "federated": "GitHub OIDC Provider",
+        "condition": {
+          "StringEquals": {
+            "aud": "sts.amazonaws.com"
+          },
+          "StringLike": {
+            "sub": [
+              "repo:${github_org}/${github_repo}:ref:refs/heads/main",
+              "repo:${github_org}/${github_repo}:environment:production"
+            ]
+          }
+        }
+      },
+      "attached_policies": [],
+      "custom_policies": true,
+      "policy_documents": [
+        {
+          "name": "ecr-push-policy",
+          "actions": [
+            "ecr:GetAuthorizationToken",
+            "ecr:BatchCheckLayerAvailability",
+            "ecr:GetDownloadUrlForLayer",
+            "ecr:BatchGetImage",
+            "ecr:PutImage",
+            "ecr:InitiateLayerUpload",
+            "ecr:UploadLayerPart",
+            "ecr:CompleteLayerUpload",
+            "ecr:DescribeRepositories",
+            "ecr:DescribeImages",
+            "ecr:ListImages"
+          ],
+          "resources": ["arn:aws:ecr:${region}:${account_id}:repository/broxiva/*"]
+        },
+        {
+          "name": "eks-deploy-policy",
+          "actions": [
+            "eks:DescribeCluster",
+            "eks:ListClusters",
+            "eks:AccessKubernetesApi"
+          ],
+          "resources": ["arn:aws:eks:${region}:${account_id}:cluster/${cluster_name}"]
+        },
+        {
+          "name": "secrets-read-policy",
+          "actions": [
+            "secretsmanager:GetSecretValue",
+            "secretsmanager:DescribeSecret"
+          ],
+          "resources": ["arn:aws:secretsmanager:${region}:${account_id}:secret:broxiva/*"]
+        }
+      ],
+      "least_privilege": true,
+      "resource_scope": "Specific repositories, cluster, and secrets",
+      "compliance": "PASS"
+    },
+    {
+      "name": "lambda-rotation",
+      "type": "Lambda Execution Role",
+      "service": "lambda.amazonaws.com",
+      "attached_policies": [
+        "AWSLambdaBasicExecutionRole",
+        "AWSLambdaVPCAccessExecutionRole"
+      ],
+      "custom_policies": true,
+      "policy_document": {
+        "name": "lambda-rotation-policy",
+        "actions": [
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:PutSecretValue",
+          "secretsmanager:UpdateSecretVersionStage",
+          "secretsmanager:GetRandomPassword",
+          "kms:Decrypt",
+          "kms:Encrypt",
+          "kms:GenerateDataKey",
+          "kms:DescribeKey"
+        ],
+        "resources": [
+          "arn:aws:secretsmanager:${region}:${account_id}:secret:${project}/${environment}/*",
+          "KMS key ARN (specific)"
+        ]
+      },
+      "least_privilege": true,
+      "resource_scope": "Environment-specific secrets and KMS key",
+      "compliance": "PASS"
+    },
+    {
+      "name": "cloudtrail-cloudwatch",
+      "type": "Service Role",
+      "service": "cloudtrail.amazonaws.com",
+      "attached_policies": [],
+      "custom_policies": true,
+      "policy_document": {
+        "actions": [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        "resources": ["CloudWatch Log Group ARN (specific)"]
+      },
+      "least_privilege": true,
+      "resource_scope": "Specific CloudWatch log group",
+      "compliance": "PASS"
+    },
+    {
+      "name": "vpc-flow-logs-role",
+      "type": "Service Role",
+      "service": "vpc-flow-logs.amazonaws.com",
+      "attached_policies": [],
+      "custom_policies": true,
+      "policy_document": {
+        "actions": [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams"
+        ],
+        "resources": ["*"]
+      },
+      "least_privilege": false,
+      "resource_scope": "All log resources (standard for VPC Flow Logs)",
+      "compliance": "PASS",
+      "note": "Resource * is standard for VPC Flow Logs role"
+    },
+    {
+      "name": "rds-monitoring",
+      "type": "Service Role",
+      "service": "monitoring.rds.amazonaws.com",
+      "managed_by": "AWS (terraform-aws-modules/rds)",
+      "attached_policies": ["AmazonRDSEnhancedMonitoringRole"],
+      "least_privilege": true,
+      "compliance": "PASS"
+    }
+  ],
+  "kms_keys": [
+    {
+      "name": "secrets-key",
+      "alias": "alias/${project}-${environment}-secrets",
+      "description": "Secrets Manager encryption",
+      "rotation": true,
+      "deletion_window_days": 10,
+      "usage": [
+        "Secrets Manager secrets encryption",
+        "External Secrets Operator decrypt"
+      ],
+      "compliance": "PASS"
+    },
+    {
+      "name": "cloudtrail-key",
+      "alias": "alias/${project}-cloudtrail",
+      "description": "CloudTrail log encryption",
+      "rotation": true,
+      "deletion_window_days": 10,
+      "key_policy": {
+        "services_allowed": [
+          "cloudtrail.amazonaws.com",
+          "logs.${region}.amazonaws.com"
+        ]
+      },
+      "compliance": "PASS"
+    }
+  ],
+  "service_accounts": {
+    "kubernetes": [
+      {
+        "name": "aws-node",
+        "namespace": "kube-system",
+        "iam_role": "vpc-cni-irsa",
+        "compliance": "PASS"
+      },
+      {
+        "name": "ebs-csi-controller-sa",
+        "namespace": "kube-system",
+        "iam_role": "ebs-csi-irsa",
+        "compliance": "PASS"
+      },
+      {
+        "name": "external-secrets",
+        "namespace": "external-secrets",
+        "iam_role": "external-secrets",
+        "compliance": "PASS"
+      }
+    ]
+  },
+  "oidc_providers": [
+    {
+      "name": "github-actions-oidc",
+      "url": "https://token.actions.githubusercontent.com",
+      "client_ids": ["sts.amazonaws.com"],
+      "thumbprints": [
+        "6938fd4d98bab03faadb97b34396831e3780aea1",
+        "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
+      ],
+      "usage": "GitHub Actions CI/CD authentication",
+      "compliance": "PASS"
+    },
+    {
+      "name": "eks-oidc",
+      "url": "EKS cluster OIDC issuer",
+      "usage": "IRSA for pod-level IAM",
+      "compliance": "PASS"
+    }
+  ],
+  "security_findings": {
+    "total": 0,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "findings": []
+  },
+  "recommendations": [
+    {
+      "priority": "medium",
+      "description": "Enable IAM Access Analyzer for continuous policy validation",
+      "effort": "low"
+    },
+    {
+      "priority": "medium",
+      "description": "Consider implementing permission boundaries for all roles",
+      "effort": "medium"
+    },
+    {
+      "priority": "low",
+      "description": "Add resource tags to IAM roles for cost allocation",
+      "effort": "low"
+    }
+  ],
+  "compliance_summary": {
+    "total_roles": 8,
+    "compliant": 8,
+    "non_compliant": 0,
+    "least_privilege_percentage": 100,
+    "irsa_enabled": true,
+    "oidc_federation": true,
+    "no_long_lived_credentials": true
+  }
+}

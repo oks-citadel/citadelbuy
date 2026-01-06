@@ -142,3 +142,84 @@ groups:
         annotations:
           summary: "Container {{ $labels.name }} is restarting frequently"
           description: "Container has restarted {{ $value }} times in the last 5 minutes"
+
+      # SLO Error Budget Alerts
+      - alert: ErrorBudgetBurnRateHigh
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[1h]))
+            /
+            sum(rate(http_requests_total[1h]))
+          ) > 0.001
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Error budget is burning at elevated rate"
+          description: "Error rate ({{ $value | humanizePercentage }}) exceeds SLO threshold of 0.1%"
+          runbook_url: "https://docs.broxiva.com/runbooks/error-budget"
+
+      - alert: ErrorBudgetCritical
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[6h]))
+            /
+            sum(rate(http_requests_total[6h]))
+          ) > 0.005
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Error budget critically low - freeze deployments"
+          description: "6-hour error rate ({{ $value | humanizePercentage }}) indicates rapid budget burn"
+          runbook_url: "https://docs.broxiva.com/runbooks/error-budget-critical"
+
+      # Business Metrics Alerts
+      - alert: CheckoutSuccessRateLow
+        expr: |
+          (
+            sum(rate(orders_total{status="completed"}[1h]))
+            /
+            sum(rate(orders_total[1h]))
+          ) < 0.98
+        for: 15m
+        labels:
+          severity: warning
+          component: checkout
+        annotations:
+          summary: "Checkout success rate below SLO"
+          description: "Checkout success rate is {{ $value | humanizePercentage }} (SLO: 98%)"
+
+      - alert: PaymentFailureRateHigh
+        expr: |
+          (
+            sum(rate(payments_failed_total[5m]))
+            /
+            sum(rate(payments_total[5m]))
+          ) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          component: payments
+        annotations:
+          summary: "Payment failure rate exceeding threshold"
+          description: "Payment failure rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      # Elasticsearch Alerts
+      - alert: ElasticsearchDown
+        expr: elasticsearch_cluster_health_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elasticsearch is down"
+          description: "Elasticsearch cluster is not responding"
+
+      - alert: ElasticsearchClusterRed
+        expr: elasticsearch_cluster_health_status{color="red"} == 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elasticsearch cluster status is red"
+          description: "Elasticsearch cluster is in red state - data may be unavailable"

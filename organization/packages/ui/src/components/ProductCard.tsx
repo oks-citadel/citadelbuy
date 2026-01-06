@@ -22,6 +22,8 @@ export interface ProductCardProps extends React.HTMLAttributes<HTMLDivElement> {
   onAddToCart?: () => void;
   onQuickView?: () => void;
   inStock?: boolean;
+  /** Shows loading spinner on add to cart button and disables it */
+  isAddingToCart?: boolean;
 }
 
 const ProductCard = React.forwardRef<HTMLDivElement, ProductCardProps>(
@@ -42,6 +44,7 @@ const ProductCard = React.forwardRef<HTMLDivElement, ProductCardProps>(
       onAddToCart,
       onQuickView,
       inStock = true,
+      isAddingToCart = false,
       ...props
     },
     ref
@@ -95,7 +98,8 @@ const ProductCard = React.forwardRef<HTMLDivElement, ProductCardProps>(
               {onQuickView && (
                 <button
                   onClick={onQuickView}
-                  className="flex-1 bg-white text-neutral-900 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-neutral-100 transition-colors"
+                  className="flex-1 bg-white text-neutral-900 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-neutral-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                  aria-label={`Quick view ${title}`}
                 >
                   Quick View
                 </button>
@@ -129,8 +133,8 @@ const ProductCard = React.forwardRef<HTMLDivElement, ProductCardProps>(
 
           {/* Rating */}
           {rating !== undefined && (
-            <div className="flex items-center gap-1 mb-3">
-              <div className="flex items-center">
+            <div className="flex items-center gap-1 mb-3" role="img" aria-label={`Rating: ${rating} out of 5 stars${reviewCount !== undefined ? `, ${reviewCount} reviews` : ''}`}>
+              <div className="flex items-center" aria-hidden="true">
                 {[...Array(5)].map((_, i) => (
                   <svg
                     key={i}
@@ -148,7 +152,7 @@ const ProductCard = React.forwardRef<HTMLDivElement, ProductCardProps>(
                 ))}
               </div>
               {reviewCount !== undefined && (
-                <span className="text-xs text-neutral-500">
+                <span className="text-xs text-neutral-500" aria-hidden="true">
                   ({reviewCount})
                 </span>
               )}
@@ -171,22 +175,52 @@ const ProductCard = React.forwardRef<HTMLDivElement, ProductCardProps>(
             {onAddToCart && inStock && (
               <button
                 onClick={onAddToCart}
-                className="p-2 rounded-lg bg-primary-500 text-white hover:bg-primary-700 transition-colors"
-                aria-label="Add to cart"
+                disabled={isAddingToCart}
+                className={cn(
+                  "p-2 rounded-lg bg-primary-500 text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2",
+                  isAddingToCart ? "opacity-70 cursor-not-allowed" : "hover:bg-primary-700"
+                )}
+                aria-label={isAddingToCart ? "Adding to cart..." : `Add ${title} to cart`}
+                aria-busy={isAddingToCart}
               >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
+                {isAddingToCart ? (
+                  <svg
+                    className="animate-spin h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
+                )}
               </button>
             )}
           </div>

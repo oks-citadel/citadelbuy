@@ -87,5 +87,5 @@ variable "log_retention_days" {
 variable "eks_egress_cidr_blocks" {
   description = "CIDR blocks for EKS cluster egress. Use restrictive ranges in production."
   type        = list(string)
-  default     = ["0.0.0.0/0"] # Required for most EKS operations
+  default     = [] # SECURITY FIX: Must be explicitly configured - use VPC CIDR with VPC endpoints
 }

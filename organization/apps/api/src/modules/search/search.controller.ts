@@ -13,6 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SearchService } from './search.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
 import { SearchProductsDto } from './dto/search-products.dto';
 import { TrackSearchDto } from './dto/track-search.dto';
 import { AutocompleteDto } from './dto/autocomplete.dto';
@@ -196,39 +197,43 @@ export class SearchController {
   }
 
   @Post('index/product/:productId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Index a product for search' })
+  @ApiOperation({ summary: 'Index a product for search (Admin only)' })
   @ApiResponse({ status: 201, description: 'Product indexed successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
   async indexProduct(@Param('productId') productId: string) {
     await this.searchService.indexProduct(productId);
     return { message: 'Product indexed successfully', productId };
   }
 
   @Post('index/bulk')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Bulk index products for search' })
+  @ApiOperation({ summary: 'Bulk index products for search (Admin only)' })
   @ApiResponse({ status: 201, description: 'Products indexed successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
   async bulkIndexProducts(@Body('productIds') productIds?: string[]) {
     return this.searchService.bulkIndexProducts(productIds);
   }
 
   @Delete('index/product/:productId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete product from search index' })
+  @ApiOperation({ summary: 'Delete product from search index (Admin only)' })
   @ApiResponse({ status: 200, description: 'Product deleted from index successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
   async deleteProductFromIndex(@Param('productId') productId: string) {
     await this.searchService.deleteProductFromIndex(productId);
     return { message: 'Product deleted from index successfully', productId };
   }
 
   @Put('index/product/:productId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update product in search index' })
+  @ApiOperation({ summary: 'Update product in search index (Admin only)' })
   @ApiResponse({ status: 200, description: 'Product updated in index successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
   async updateProductInIndex(@Param('productId') productId: string) {
     await this.searchService.updateProductInIndex(productId);
     return { message: 'Product updated in index successfully', productId };

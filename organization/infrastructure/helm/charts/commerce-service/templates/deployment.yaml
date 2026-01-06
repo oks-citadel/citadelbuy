@@ -1,0 +1,287 @@
+{{- if .Values.promoEngine.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "commerce-service.fullname" . }}-{{ .Values.promoEngine.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "commerce-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.promoEngine.name }}
+spec:
+  {{- if not .Values.promoEngine.autoscaling.enabled }}
+  replicas: {{ .Values.promoEngine.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "commerce-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.promoEngine.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "commerce-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ .Values.promoEngine.name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "commerce-service.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "commerce-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.promoEngine.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.promoEngine.image.repository }}:{{ .Values.promoEngine.image.tag }}"
+          imagePullPolicy: {{ .Values.promoEngine.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.promoEngine.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.promoEngine.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.promoEngine.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.promoEngine.probes.liveness.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.promoEngine.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.promoEngine.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.promoEngine.probes.readiness.periodSeconds }}
+          resources:
+            {{- toYaml .Values.promoEngine.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "commerce-service.configMapName" . }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+
+{{- if .Values.inAppMessaging.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "commerce-service.fullname" . }}-{{ .Values.inAppMessaging.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "commerce-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.inAppMessaging.name }}
+spec:
+  {{- if not .Values.inAppMessaging.autoscaling.enabled }}
+  replicas: {{ .Values.inAppMessaging.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "commerce-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.inAppMessaging.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "commerce-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ .Values.inAppMessaging.name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "commerce-service.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "commerce-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.inAppMessaging.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.inAppMessaging.image.repository }}:{{ .Values.inAppMessaging.image.tag }}"
+          imagePullPolicy: {{ .Values.inAppMessaging.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.inAppMessaging.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.inAppMessaging.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.inAppMessaging.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.inAppMessaging.probes.liveness.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.inAppMessaging.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.inAppMessaging.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.inAppMessaging.probes.readiness.periodSeconds }}
+          resources:
+            {{- toYaml .Values.inAppMessaging.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "commerce-service.configMapName" . }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+
+{{- if .Values.pricingService.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "commerce-service.fullname" . }}-{{ .Values.pricingService.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "commerce-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.pricingService.name }}
+spec:
+  {{- if not .Values.pricingService.autoscaling.enabled }}
+  replicas: {{ .Values.pricingService.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "commerce-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.pricingService.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "commerce-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ .Values.pricingService.name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "commerce-service.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "commerce-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.pricingService.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.pricingService.image.repository }}:{{ .Values.pricingService.image.tag }}"
+          imagePullPolicy: {{ .Values.pricingService.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.pricingService.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.pricingService.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.pricingService.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.pricingService.probes.liveness.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.pricingService.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.pricingService.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.pricingService.probes.readiness.periodSeconds }}
+          resources:
+            {{- toYaml .Values.pricingService.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "commerce-service.configMapName" . }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+
+{{- if .Values.conversionTracker.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "commerce-service.fullname" . }}-{{ .Values.conversionTracker.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "commerce-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.conversionTracker.name }}
+spec:
+  {{- if not .Values.conversionTracker.autoscaling.enabled }}
+  replicas: {{ .Values.conversionTracker.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "commerce-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.conversionTracker.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "commerce-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ .Values.conversionTracker.name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "commerce-service.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "commerce-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.conversionTracker.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.conversionTracker.image.repository }}:{{ .Values.conversionTracker.image.tag }}"
+          imagePullPolicy: {{ .Values.conversionTracker.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.conversionTracker.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.conversionTracker.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.conversionTracker.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.conversionTracker.probes.liveness.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.conversionTracker.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.conversionTracker.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.conversionTracker.probes.readiness.periodSeconds }}
+          resources:
+            {{- toYaml .Values.conversionTracker.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "commerce-service.configMapName" . }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

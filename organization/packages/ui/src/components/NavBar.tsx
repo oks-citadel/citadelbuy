@@ -73,10 +73,12 @@ const NavBar = React.forwardRef<HTMLElement, NavBarProps>(
               onClick={onLogoClick}
               className={cn(
                 'flex items-center gap-2 font-display text-2xl font-bold transition-colors',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500',
                 isTransparent
                   ? 'text-white'
                   : 'text-neutral-900'
               )}
+              aria-label="Go to homepage"
             >
               {logo}
             </button>
@@ -159,7 +161,11 @@ const NavBar = React.forwardRef<HTMLElement, NavBarProps>(
 
           {/* Mobile menu */}
           {mobileMenuOpen && (
-            <div className="md:hidden pb-6 animate-in slide-in-from-top-4 duration-300">
+            <nav
+              className="md:hidden pb-6 animate-in slide-in-from-top-4 duration-300"
+              aria-label="Mobile navigation"
+              role="navigation"
+            >
               <div className="flex flex-col gap-4">
                 {links.map((link, index) => (
                   <a
@@ -185,7 +191,7 @@ const NavBar = React.forwardRef<HTMLElement, NavBarProps>(
                   {actions}
                 </div>
               </div>
-            </div>
+            </nav>
           )}
         </div>
       </nav>

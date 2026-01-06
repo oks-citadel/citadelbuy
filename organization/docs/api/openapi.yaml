@@ -30,7 +30,7 @@ servers:
     description: Production
   - url: https://api.staging.broxiva.com/v1
     description: Staging
-  - url: http://localhost:3001
+  - url: http://localhost:4000/api
     description: Development
 
 security:

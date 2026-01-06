@@ -19,12 +19,30 @@ spec:
         app: ai-engine
         tier: backend
     spec:
+      serviceAccountName: ai-engine
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: ai-engine
           image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/ai-engine:v2.0.0
           ports:
             - containerPort: 8002
               name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             requests:
               memory: "512Mi"
@@ -59,6 +77,10 @@ spec:
           volumeMounts:
             - name: models-volume
               mountPath: /app/models
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /app/.cache
           livenessProbe:
             httpGet:
               path: /health
@@ -76,6 +98,12 @@ spec:
         - name: models-volume
           persistentVolumeClaim:
             claimName: ai-models-pvc
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: cache
+          emptyDir:
+            sizeLimit: 1Gi
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -88,6 +116,17 @@ spec:
                       values:
                         - ai-engine
                 topologyKey: kubernetes.io/hostname
+
+---
+# ServiceAccount for AI Engine
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ai-engine
+  labels:
+    app: ai-engine
+    component: ai
+automountServiceAccountToken: false
 
 ---
 # Service

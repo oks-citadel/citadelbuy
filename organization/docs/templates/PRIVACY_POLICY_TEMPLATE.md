@@ -1,8 +1,16 @@
 # Privacy Policy Template - Broxiva
 
+> **NOTICE**: This is a TEMPLATE document for reference purposes only.
+>
+> **The finalized, production-ready Privacy Policy is located at:**
+> `organization/docs/legal/PRIVACY_POLICY.md`
+>
+> Please use the finalized version for all production and customer-facing purposes.
+
 **Effective Date**: [INSERT DATE]
 **Last Updated**: [INSERT DATE]
 **Version**: 1.0
+**Status**: TEMPLATE - For Reference Only (See finalized version in docs/legal/)
 
 ---
 

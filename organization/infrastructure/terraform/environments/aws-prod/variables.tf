@@ -157,11 +157,11 @@ variable "alert_email_addresses" {
 variable "github_org" {
   description = "GitHub organization name"
   type        = string
-  default     = "oks-citadel"
+  default     = "broxiva"
 }
 
 variable "github_repo" {
   description = "GitHub repository name"
   type        = string
-  default     = "citadelbuy"
+  default     = "broxiva-platform"
 }

@@ -9,8 +9,9 @@ global:
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: []
-          # - alertmanager:9093
+        - targets:
+            - alertmanager:9093
+      timeout: 10s
 
 # Load rules once and periodically evaluate them
 rule_files:
@@ -52,6 +53,13 @@ scrape_configs:
       - targets: ['redis-exporter:9121']
         labels:
           service: 'redis'
+
+  # Elasticsearch Exporter (if installed)
+  - job_name: 'elasticsearch'
+    static_configs:
+      - targets: ['elasticsearch-exporter:9114']
+        labels:
+          service: 'elasticsearch'
 
   # Backend Application Metrics
   - job_name: 'backend'

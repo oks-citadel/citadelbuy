@@ -844,6 +844,40 @@ export class ReturnsService {
     return returnRequest;
   }
 
+
+  /**
+   * Security-enhanced method to get return by ID with ownership verification
+   * Prevents IDOR vulnerability by ensuring users can only access their own returns
+   * Admins can access any return
+   */
+  async getReturnByIdSecure(returnId: string, userId: string, userRole: string) {
+    const returnRequest = await this.prisma.returnRequest.findUnique({
+      where: { id: returnId },
+      include: {
+        items: { include: { product: true } },
+        order: { include: { items: true } },
+        user: { select: { id: true, email: true, name: true } },
+        refund: true,
+        returnLabel: true,
+        timeline: { orderBy: { createdAt: 'desc' } },
+      },
+    });
+
+    if (!returnRequest) {
+      throw new NotFoundException('Return request not found');
+    }
+
+    // Security: Only allow access if user is admin or owner of the return
+    const isAdmin = userRole === 'ADMIN';
+    const isOwner = returnRequest.userId === userId;
+
+    if (!isAdmin && !isOwner) {
+      throw new ForbiddenException('You can only access your own return requests');
+    }
+
+    return returnRequest;
+  }
+
   // ==================== Cancel Return ====================
 
   async cancelReturn(returnId: string, userId: string, dto: CancelReturnDto) {

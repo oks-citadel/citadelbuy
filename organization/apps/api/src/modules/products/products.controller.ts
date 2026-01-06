@@ -10,13 +10,17 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
 import { ProductCreationGuard } from '../subscriptions/guards/subscription-feature.guard';
 import { ProductsService } from './products.service';
 import { QueryProductsDto } from './dto/query-products.dto';
 import { CreateProductDto } from './dto/create-product.dto';
+import { AuthRequest } from '../../common/types/auth-request.types';
 
 @ApiTags('Products')
 @Controller('products')
@@ -150,18 +154,42 @@ export class ProductsController {
   @ApiResponse({ status: 201, description: 'Product created successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Product limit reached for subscription tier' })
-  async create(@Body() data: CreateProductDto) {
-    return this.productsService.create(data);
+  async create(@Request() req: AuthRequest, @Body() data: CreateProductDto) {
+    // Set vendorId from authenticated user if not provided
+    const productData = {
+      ...data,
+      vendorId: data.vendorId || req.user.id,
+    };
+    return this.productsService.create(productData);
   }
 
   @UseGuards(JwtAuthGuard)
   @Put(':id')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update product' })
+  @ApiOperation({ summary: 'Update product (owner or admin only)' })
   @ApiResponse({ status: 200, description: 'Product updated successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - not product owner' })
   @ApiResponse({ status: 404, description: 'Product not found' })
-  async update(@Param('id') id: string, @Body() data: Partial<CreateProductDto>) {
+  async update(
+    @Request() req: AuthRequest,
+    @Param('id') id: string,
+    @Body() data: Partial<CreateProductDto>,
+  ) {
+    // Verify ownership before update
+    const product = await this.productsService.findOne(id);
+    if (!product) {
+      throw new ForbiddenException('Product not found');
+    }
+
+    // Allow if user is admin or product owner (vendorId matches user id)
+    const isAdmin = req.user.role === 'ADMIN';
+    const isOwner = product.vendorId === req.user.id;
+
+    if (!isAdmin && !isOwner) {
+      throw new ForbiddenException('You can only update your own products');
+    }
+
     return this.productsService.update(id, data);
   }
 
@@ -169,11 +197,26 @@ export class ProductsController {
   @Delete(':id')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete product' })
+  @ApiOperation({ summary: 'Delete product (owner or admin only)' })
   @ApiResponse({ status: 204, description: 'Product deleted successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - not product owner' })
   @ApiResponse({ status: 404, description: 'Product not found' })
-  async delete(@Param('id') id: string) {
+  async delete(@Request() req: AuthRequest, @Param('id') id: string) {
+    // Verify ownership before delete
+    const product = await this.productsService.findOne(id);
+    if (!product) {
+      throw new ForbiddenException('Product not found');
+    }
+
+    // Allow if user is admin or product owner
+    const isAdmin = req.user.role === 'ADMIN';
+    const isOwner = product.vendorId === req.user.id;
+
+    if (!isAdmin && !isOwner) {
+      throw new ForbiddenException('You can only delete your own products');
+    }
+
     await this.productsService.delete(id);
   }
 }

@@ -125,13 +125,14 @@ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
           <button
             type="button"
             onClick={onRemove}
-            className="ml-0.5 hover:opacity-70 transition-opacity"
+            className="ml-0.5 hover:opacity-70 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-current rounded-sm"
             aria-label="Remove badge"
           >
             <svg
               className="h-3 w-3"
               fill="currentColor"
               viewBox="0 0 20 20"
+              aria-hidden="true"
             >
               <path
                 fillRule="evenodd"

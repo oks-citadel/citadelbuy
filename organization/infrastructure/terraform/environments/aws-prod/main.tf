@@ -617,11 +617,12 @@ resource "aws_security_group" "vpc_endpoints" {
   }
 
   egress {
-    description = "Allow all outbound"
+    # SECURITY FIX: Restrict VPC endpoint egress to VPC CIDR only
+    description = "Allow outbound to VPC only - AWS services via VPC endpoints"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.vpc_cidr]
   }
 
   tags = merge(local.common_tags, {
@@ -795,7 +796,7 @@ resource "aws_cloudtrail" "main" {
     # S3 data events for sensitive buckets
     data_resource {
       type   = "AWS::S3::Object"
-      values = ["${aws_s3_bucket.media.arn}/"]
+      values = ["${module.s3_media.s3_bucket_arn}/"]
     }
   }
 

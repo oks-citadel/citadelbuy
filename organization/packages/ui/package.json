@@ -1,6 +1,6 @@
 {
   "name": "@broxiva/ui",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Shared UI components for Broxiva platform",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -39,6 +39,7 @@
     "@types/react-dom": "^18.2.0",
     "@typescript-eslint/eslint-plugin": "^6.18.0",
     "@typescript-eslint/parser": "^6.18.0",
+    "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^1.0.0",
     "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.33.2",

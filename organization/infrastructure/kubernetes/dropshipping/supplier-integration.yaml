@@ -19,12 +19,33 @@ spec:
         app: supplier-integration
         tier: backend
     spec:
+      serviceAccountName: supplier-integration
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: supplier-integration
           image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/supplier-integration:v2.0.0
           ports:
             - containerPort: 8001
               name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           resources:
             requests:
               memory: "256Mi"
@@ -93,6 +114,21 @@ spec:
                       values:
                         - supplier-integration
                 topologyKey: kubernetes.io/hostname
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
+
+---
+# ServiceAccount for Supplier Integration
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: supplier-integration
+  labels:
+    app: supplier-integration
+    component: dropshipping
+automountServiceAccountToken: false
 
 ---
 # Service

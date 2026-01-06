@@ -1,0 +1,65 @@
+{{- if .Values.leadScorer.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ai-marketing-service.fullname" . }}-{{ .Values.leadScorer.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ai-marketing-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.leadScorer.name }}
+spec:
+  type: {{ .Values.leadScorer.service.type }}
+  ports:
+    - port: {{ .Values.leadScorer.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "ai-marketing-service.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.leadScorer.name }}
+{{- end }}
+
+{{- if .Values.churnPredictor.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ai-marketing-service.fullname" . }}-{{ .Values.churnPredictor.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ai-marketing-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.churnPredictor.name }}
+spec:
+  type: {{ .Values.churnPredictor.service.type }}
+  ports:
+    - port: {{ .Values.churnPredictor.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "ai-marketing-service.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.churnPredictor.name }}
+{{- end }}
+
+{{- if .Values.contentGenerator.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ai-marketing-service.fullname" . }}-{{ .Values.contentGenerator.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ai-marketing-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.contentGenerator.name }}
+spec:
+  type: {{ .Values.contentGenerator.service.type }}
+  ports:
+    - port: {{ .Values.contentGenerator.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "ai-marketing-service.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.contentGenerator.name }}
+{{- end }}

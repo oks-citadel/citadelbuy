@@ -1,9 +1,16 @@
 # Terms of Service Template - Broxiva
 
+> **NOTICE**: This is a TEMPLATE document for reference purposes only.
+>
+> **The finalized, production-ready Terms of Service is located at:**
+> `organization/docs/legal/TERMS_OF_SERVICE.md`
+>
+> Please use the finalized version for all production and customer-facing purposes.
+
 **Document Type:** Terms of Service Legal Template
 **Version:** 1.0
 **Last Updated:** December 2025
-**Status:** TEMPLATE - Requires Legal Review Before Publication
+**Status:** TEMPLATE - For Reference Only (See finalized version in docs/legal/)
 **Owner:** Legal Department
 
 ---

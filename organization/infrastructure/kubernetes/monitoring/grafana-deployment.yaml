@@ -307,6 +307,14 @@ spec:
         app: grafana
         tier: monitoring
     spec:
+      serviceAccountName: grafana
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 472
+        runAsGroup: 472
+        fsGroup: 472
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: grafana
           image: grafana/grafana:latest
@@ -330,6 +338,16 @@ spec:
               value: "http://grafana.broxiva.com"
             - name: GF_AUTH_ANONYMOUS_ENABLED
               value: "false"
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 472
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             requests:
               memory: "512Mi"
@@ -410,4 +428,16 @@ metadata:
 type: Opaque
 stringData:
   admin-user: "admin"
-  admin-password: "changeme"  # Change this in production
+  # SECURITY FIX: Use External Secrets or generate secure password
+  admin-password: "REPLACE_WITH_SECURE_PASSWORD_MIN_32_CHARS"
+---
+# ServiceAccount for Grafana
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: grafana
+  namespace: broxiva-monitoring
+  labels:
+    app: grafana
+    tier: monitoring
+automountServiceAccountToken: false

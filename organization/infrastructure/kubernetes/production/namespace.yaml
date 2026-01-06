@@ -7,6 +7,10 @@ metadata:
     environment: production
     team: platform
     app: broxiva
+    # Pod Security Standards - Enforcing restricted profile in production
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
   annotations:
     description: "Production namespace for Broxiva e-commerce platform"
     contact: "devops@broxiva.com"

@@ -1,8 +1,29 @@
 /** @type {import('next').NextConfig} */
+
+/**
+ * Broxiva Next.js Configuration
+ * Optimized for Core Web Vitals and Lighthouse performance
+ *
+ * Performance Targets:
+ * - CLS < 0.1
+ * - LCP < 2.5s
+ * - FID < 100ms
+ */
+
 const nextConfig = {
   // output: 'standalone' disabled for local Windows builds, enable for Docker
   output: process.env.DOCKER_BUILD === 'true' ? 'standalone' : undefined,
   reactStrictMode: true,
+
+  // Enable compression for better performance
+  compress: true,
+
+  // Disable powered by header for security
+  poweredByHeader: false,
+
+  // Generate ETags for caching
+  generateEtags: true,
+
   async redirects() {
     return [
       {
@@ -27,6 +48,8 @@ const nextConfig = {
       },
     ];
   },
+
+  // Enhanced image optimization for performance
   images: {
     remotePatterns: [
       {
@@ -41,12 +64,68 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'cdn.broxiva.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
+      },
     ],
+    // Modern image formats for better compression
+    formats: ['image/avif', 'image/webp'],
+    // Responsive image sizes
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Cache images for 30 days
+    minimumCacheTTL: 60 * 60 * 24 * 30,
   },
+
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',
     },
+    // Optimize package imports for smaller bundles
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-icons',
+      'date-fns',
+      'lodash',
+      'framer-motion',
+    ],
+  },
+
+  // Custom headers for caching and security
+  async headers() {
+    return [
+      // Cache static assets
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // Cache fonts
+      {
+        source: '/fonts/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // Cache images
+      {
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
+          },
+        ],
+      },
+    ];
   },
   env: {
     // API Configuration

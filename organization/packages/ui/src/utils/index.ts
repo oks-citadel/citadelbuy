@@ -45,3 +45,63 @@ export function truncate(text: string, length: number): string {
   if (text.length <= length) return text;
   return text.slice(0, length) + '...';
 }
+
+/**
+ * Create a debounced version of a function
+ * Prevents rapid/double-click issues
+ */
+export function debounce<T extends (...args: unknown[]) => unknown>(
+  fn: T,
+  delay: number = 300
+): (...args: Parameters<T>) => void {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  return (...args: Parameters<T>) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = setTimeout(() => {
+      fn(...args);
+      timeoutId = null;
+    }, delay);
+  };
+}
+
+/**
+ * Create a throttled version of a function
+ * Ensures function only runs once within a time window
+ */
+export function throttle<T extends (...args: unknown[]) => unknown>(
+  fn: T,
+  delay: number = 300
+): (...args: Parameters<T>) => void {
+  let lastCall = 0;
+
+  return (...args: Parameters<T>) => {
+    const now = Date.now();
+    if (now - lastCall >= delay) {
+      lastCall = now;
+      fn(...args);
+    }
+  };
+}
+
+/**
+ * Prevent double-click by locking function calls during execution
+ * Returns a wrapped async function that won't execute again until previous call completes
+ */
+export function preventDoubleClick<T extends (...args: unknown[]) => Promise<unknown>>(
+  fn: T
+): (...args: Parameters<T>) => Promise<ReturnType<T> | undefined> {
+  let isLocked = false;
+
+  return async (...args: Parameters<T>) => {
+    if (isLocked) return undefined;
+    isLocked = true;
+    try {
+      return await fn(...args) as ReturnType<T>;
+    } finally {
+      isLocked = false;
+    }
+  };
+}

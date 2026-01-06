@@ -77,7 +77,7 @@ export default function LoginScreen() {
             )}
 
             <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color="#9ca3af" style={styles.inputIcon} />
+              <Ionicons name="mail-outline" size={20} color="#9ca3af" style={styles.inputIcon} accessibilityElementsHidden={true} />
               <TextInput
                 style={styles.input}
                 placeholder="Email address"
@@ -87,11 +87,15 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                accessibilityLabel="Email address"
+                accessibilityHint="Enter your email address to sign in"
+                textContentType="emailAddress"
+                autoComplete="email"
               />
             </View>
 
             <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color="#9ca3af" style={styles.inputIcon} />
+              <Ionicons name="lock-closed-outline" size={20} color="#9ca3af" style={styles.inputIcon} accessibilityElementsHidden={true} />
               <TextInput
                 style={styles.input}
                 placeholder="Password"
@@ -99,12 +103,21 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
+                accessibilityLabel="Password"
+                accessibilityHint="Enter your password to sign in"
+                textContentType="password"
+                autoComplete="password"
               />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                accessibilityRole="button"
+              >
                 <Ionicons
                   name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={20}
                   color="#9ca3af"
+                  accessibilityElementsHidden={true}
                 />
               </TouchableOpacity>
             </View>
@@ -120,9 +133,12 @@ export default function LoginScreen() {
               style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
               onPress={handleLogin}
               disabled={isLoading}
+              accessibilityLabel={isLoading ? 'Signing in' : 'Sign In'}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isLoading, busy: isLoading }}
             >
               {isLoading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color="#fff" accessibilityLabel="Loading" />
               ) : (
                 <Text style={styles.loginButtonText}>Sign In</Text>
               )}
@@ -134,15 +150,15 @@ export default function LoginScreen() {
               <View style={styles.dividerLine} />
             </View>
 
-            <View style={styles.socialButtons}>
-              <TouchableOpacity style={styles.socialButton}>
-                <Ionicons name="logo-google" size={24} color="#ea4335" />
+            <View style={styles.socialButtons} accessibilityRole="group" accessibilityLabel="Social sign in options">
+              <TouchableOpacity style={styles.socialButton} accessibilityLabel="Sign in with Google" accessibilityRole="button">
+                <Ionicons name="logo-google" size={24} color="#ea4335" accessibilityElementsHidden={true} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton}>
-                <Ionicons name="logo-apple" size={24} color="#000" />
+              <TouchableOpacity style={styles.socialButton} accessibilityLabel="Sign in with Apple" accessibilityRole="button">
+                <Ionicons name="logo-apple" size={24} color="#000" accessibilityElementsHidden={true} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton}>
-                <Ionicons name="logo-facebook" size={24} color="#1877f2" />
+              <TouchableOpacity style={styles.socialButton} accessibilityLabel="Sign in with Facebook" accessibilityRole="button">
+                <Ionicons name="logo-facebook" size={24} color="#1877f2" accessibilityElementsHidden={true} />
               </TouchableOpacity>
             </View>
           </View>

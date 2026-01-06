@@ -84,6 +84,20 @@ export const useAuthStore = create<AuthState>((set, _get) => ({
   },
 
   logout: async () => {
+    // SECURITY: Call API to blacklist the token before clearing local storage
+    // This ensures the token cannot be reused if intercepted
+    try {
+      const token = await SecureStore.getItemAsync(TOKEN_KEY);
+      if (token) {
+        await api.post('/auth/logout', {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+    } catch {
+      // Continue with local logout even if API call fails
+      // Token will eventually expire
+    }
+
     await SecureStore.deleteItemAsync(TOKEN_KEY);
     await SecureStore.deleteItemAsync(USER_KEY);
     set({

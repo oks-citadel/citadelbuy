@@ -1,0 +1,154 @@
+# Staging environment values for seo-service
+
+global:
+  environment: staging
+  imageRegistry: ""
+
+# Sitemap Generator - Staging Settings
+sitemapGenerator:
+  enabled: true
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 75m
+      memory: 192Mi
+    limits:
+      cpu: 350m
+      memory: 384Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 75
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# Robots.txt Server - Staging Settings
+robotsTxtServer:
+  enabled: true
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 35m
+      memory: 96Mi
+    limits:
+      cpu: 150m
+      memory: 192Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 75
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# Schema.org Generator - Staging Settings
+schemaOrgGenerator:
+  enabled: true
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 75m
+      memory: 192Mi
+    limits:
+      cpu: 350m
+      memory: 384Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 75
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# SEO Auditor - Staging Settings
+seoAuditor:
+  enabled: true
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 150m
+      memory: 384Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 75
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# Core Web Vitals Tracker - Staging Settings
+coreWebVitalsTracker:
+  enabled: true
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 75
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# Ingress - Staging Settings
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: seo.staging.broxiva.com
+      paths:
+        - path: /sitemap
+          pathType: Prefix
+          service: sitemap-generator
+        - path: /robots.txt
+          pathType: Exact
+          service: robots-txt-server
+        - path: /schema
+          pathType: Prefix
+          service: schema-org-generator
+        - path: /audit
+          pathType: Prefix
+          service: seo-auditor
+        - path: /vitals
+          pathType: Prefix
+          service: core-web-vitals-tracker
+  tls:
+    - secretName: seo-service-staging-tls
+      hosts:
+        - seo.staging.broxiva.com
+
+# ServiceAccount - Staging Settings
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::STAGING_ACCOUNT_ID:role/broxiva-staging-seo-service
+
+# ConfigMap - Staging Settings
+configMap:
+  LOG_LEVEL: info
+  LOG_FORMAT: json
+  METRICS_ENABLED: "true"
+  TRACING_ENABLED: "true"
+  CACHE_TTL: "1800"

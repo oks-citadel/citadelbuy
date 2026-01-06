@@ -1,0 +1,74 @@
+{{- if .Values.experimentEngine.enabled }}
+{{- if .Values.experimentEngine.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "experimentation-service.fullname" . }}-{{ .Values.experimentEngine.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "experimentation-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.experimentEngine.name }}
+spec:
+  {{- if .Values.experimentEngine.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.experimentEngine.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  {{- if .Values.experimentEngine.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.experimentEngine.podDisruptionBudget.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "experimentation-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.experimentEngine.name }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.featureFlagService.enabled }}
+{{- if .Values.featureFlagService.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "experimentation-service.fullname" . }}-{{ .Values.featureFlagService.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "experimentation-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.featureFlagService.name }}
+spec:
+  {{- if .Values.featureFlagService.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.featureFlagService.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  {{- if .Values.featureFlagService.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.featureFlagService.podDisruptionBudget.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "experimentation-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.featureFlagService.name }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.abTestAnalyzer.enabled }}
+{{- if .Values.abTestAnalyzer.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "experimentation-service.fullname" . }}-{{ .Values.abTestAnalyzer.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "experimentation-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.abTestAnalyzer.name }}
+spec:
+  {{- if .Values.abTestAnalyzer.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.abTestAnalyzer.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  {{- if .Values.abTestAnalyzer.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.abTestAnalyzer.podDisruptionBudget.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "experimentation-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.abTestAnalyzer.name }}
+{{- end }}
+{{- end }}

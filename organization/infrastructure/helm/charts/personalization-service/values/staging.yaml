@@ -1,0 +1,108 @@
+# Staging environment values for personalization-service
+
+global:
+  environment: staging
+  imageRegistry: ""
+
+# User Profiler - Staging Settings
+userProfiler:
+  enabled: true
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 150m
+      memory: 384Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 75
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# Recommendation Engine - Staging Settings
+recommendationEngine:
+  enabled: true
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 75
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# Personalization API - Staging Settings
+personalizationApi:
+  enabled: true
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 75
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# Ingress - Staging Settings
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: personalization.staging.broxiva.com
+      paths:
+        - path: /profile
+          pathType: Prefix
+          service: user-profiler
+        - path: /recommend
+          pathType: Prefix
+          service: recommendation-engine
+        - path: /api
+          pathType: Prefix
+          service: personalization-api
+  tls:
+    - secretName: personalization-service-staging-tls
+      hosts:
+        - personalization.staging.broxiva.com
+
+# ServiceAccount - Staging Settings
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::STAGING_ACCOUNT_ID:role/broxiva-staging-personalization-service
+
+# ConfigMap - Staging Settings
+configMap:
+  LOG_LEVEL: info
+  LOG_FORMAT: json
+  METRICS_ENABLED: "true"
+  TRACING_ENABLED: "true"
+  PROFILE_CACHE_TTL: "120"
+  MODEL_REFRESH_INTERVAL: "1800"
+  RECOMMENDATION_BATCH_SIZE: "50"

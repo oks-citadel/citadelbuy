@@ -629,12 +629,13 @@ resource "aws_security_group" "lambda_rotation" {
   description = "Security group for Lambda secret rotation function"
   vpc_id      = data.aws_vpc.main.id
 
+  # SECURITY FIX: Restrict egress to VPC CIDR - Secrets Manager accessed via VPC endpoint
   egress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "HTTPS for Secrets Manager API"
+    cidr_blocks = [data.aws_vpc.main.cidr_block]
+    description = "HTTPS for Secrets Manager API via VPC endpoint"
   }
 
   egress {
@@ -642,7 +643,7 @@ resource "aws_security_group" "lambda_rotation" {
     to_port     = 5432
     protocol    = "tcp"
     cidr_blocks = [data.aws_vpc.main.cidr_block]
-    description = "PostgreSQL database access"
+    description = "PostgreSQL database access within VPC"
   }
 
   tags = {

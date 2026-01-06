@@ -111,7 +111,7 @@ variable "redis_snapshot_retention_days" {
 variable "database_egress_cidr_blocks" {
   description = "CIDR blocks for database egress. Restrict in production."
   type        = list(string)
-  default     = ["0.0.0.0/0"] # Consider restricting to VPC CIDR only
+  default     = [] # SECURITY FIX: No internet egress by default
 }
 
 variable "log_retention_days" {

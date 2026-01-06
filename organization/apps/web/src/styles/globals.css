@@ -3,8 +3,16 @@
  * Premium luxury e-commerce styling
  */
 
-/* Import premium fonts from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/**
+ * PERFORMANCE NOTE: Google Fonts are now loaded via next/font/google in layout.tsx
+ * This ensures fonts are:
+ * - Preloaded and not render-blocking
+ * - Self-hosted for better performance
+ * - Using font-display: swap to prevent FOIT
+ *
+ * The @import below is removed to prevent render-blocking font requests.
+ * If you need Playfair Display, add it to layout.tsx using next/font/google
+ */
 
 @tailwind base;
 @tailwind components;

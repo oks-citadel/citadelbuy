@@ -1,0 +1,20 @@
+# Terraform Enterprise/Cloud Configuration
+# Copy this file to ~/.terraformrc and update with your credentials
+
+credentials "app.terraform.io" {
+  token = "YOUR_TERRAFORM_CLOUD_TOKEN"
+}
+
+# Plugin cache directory (recommended for CI/CD)
+plugin_cache_dir = "$HOME/.terraform.d/plugin-cache"
+
+# Provider installation settings
+provider_installation {
+  filesystem_mirror {
+    path    = "/path/to/providers"
+    include = ["registry.terraform.io/*/*"]
+  }
+  direct {
+    exclude = []
+  }
+}

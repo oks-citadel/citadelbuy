@@ -126,11 +126,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <p
             id={`${inputId}-error`}
             className="text-sm text-error-600 flex items-center gap-1"
+            role="alert"
+            aria-live="polite"
           >
             <svg
               className="h-4 w-4"
               fill="currentColor"
               viewBox="0 0 20 20"
+              aria-hidden="true"
             >
               <path
                 fillRule="evenodd"
@@ -138,7 +141,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 clipRule="evenodd"
               />
             </svg>
-            {error}
+            <span>{error}</span>
           </p>
         )}
 

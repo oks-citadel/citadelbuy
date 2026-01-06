@@ -206,23 +206,25 @@ export default function CartPage() {
                         {/* Quantity & Actions */}
                         <div className="flex items-center justify-between mt-4">
                           <div className="flex items-center gap-2">
-                            <div className="flex items-center border rounded-md">
+                            <div className="flex items-center border rounded-md" role="group" aria-label="Quantity controls">
                               <button
                                 onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
                                 disabled={item.quantity <= 1 || isLoading}
-                                className="p-2 hover:bg-muted transition-colors disabled:opacity-50"
+                                className="p-2 hover:bg-muted transition-colors disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+                                aria-label="Decrease quantity"
                               >
-                                <Minus className="h-4 w-4" />
+                                <Minus className="h-4 w-4" aria-hidden="true" />
                               </button>
-                              <span className="w-12 text-center font-medium">
+                              <span className="w-12 text-center font-medium" aria-live="polite" aria-atomic="true">
                                 {item.quantity}
                               </span>
                               <button
                                 onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
                                 disabled={isLoading}
-                                className="p-2 hover:bg-muted transition-colors disabled:opacity-50"
+                                className="p-2 hover:bg-muted transition-colors disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+                                aria-label="Increase quantity"
                               >
-                                <Plus className="h-4 w-4" />
+                                <Plus className="h-4 w-4" aria-hidden="true" />
                               </button>
                             </div>
                             <span className="text-sm text-muted-foreground">
@@ -233,17 +235,17 @@ export default function CartPage() {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleSaveForLater(item.id)}
-                              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
-                              title="Save for later"
+                              className="p-2 text-muted-foreground hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary rounded-md"
+                              aria-label={`Save ${item.product.name} for later`}
                             >
-                              <Heart className="h-4 w-4" />
+                              <Heart className="h-4 w-4" aria-hidden="true" />
                             </button>
                             <button
                               onClick={() => handleRemoveItem(item.id)}
-                              className="p-2 text-muted-foreground hover:text-destructive transition-colors"
-                              title="Remove"
+                              className="p-2 text-muted-foreground hover:text-destructive transition-colors focus-visible:ring-2 focus-visible:ring-destructive rounded-md"
+                              aria-label={`Remove ${item.product.name} from cart`}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4" aria-hidden="true" />
                             </button>
                           </div>
                         </div>

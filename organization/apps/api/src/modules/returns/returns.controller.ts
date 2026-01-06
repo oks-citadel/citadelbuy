@@ -57,8 +57,9 @@ export class ReturnsController {
   }
 
   @Get(':id')
-  async getReturnById(@Param('id') id: string) {
-    return this.returnsService.getReturnById(id);
+  async getReturnById(@Request() req: any, @Param('id') id: string) {
+    // Security: Verify user can access this return (owner check performed in service)
+    return this.returnsService.getReturnByIdSecure(id, req.user.id, req.user.role);
   }
 
   @Post(':id/cancel')
