@@ -3,6 +3,7 @@
  * @module @broxiva/utils
  */
 
+import { vi } from 'vitest';
 import { formatDate, formatDateTime, timeAgo } from '../index';
 
 describe('Date Utilities', () => {
@@ -114,16 +115,16 @@ describe('Date Utilities', () => {
 
   describe('timeAgo', () => {
     beforeEach(() => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
     });
 
     afterEach(() => {
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('should return "less than a minute ago" for very recent dates', () => {
       const now = new Date('2024-03-15T10:00:00Z');
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const recentDate = new Date('2024-03-15T09:59:30Z');
       const result = timeAgo(recentDate);
@@ -132,7 +133,7 @@ describe('Date Utilities', () => {
 
     it('should return "X minutes ago" for dates within an hour', () => {
       const now = new Date('2024-03-15T10:30:00Z');
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const thirtyMinAgo = new Date('2024-03-15T10:00:00Z');
       const result = timeAgo(thirtyMinAgo);
@@ -141,7 +142,7 @@ describe('Date Utilities', () => {
 
     it('should return "X hours ago" for dates within a day', () => {
       const now = new Date('2024-03-15T14:00:00Z');
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const fiveHoursAgo = new Date('2024-03-15T09:00:00Z');
       const result = timeAgo(fiveHoursAgo);
@@ -150,7 +151,7 @@ describe('Date Utilities', () => {
 
     it('should return "X days ago" for dates within a month', () => {
       const now = new Date('2024-03-15T10:00:00Z');
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const threeDaysAgo = new Date('2024-03-12T10:00:00Z');
       const result = timeAgo(threeDaysAgo);
@@ -159,7 +160,7 @@ describe('Date Utilities', () => {
 
     it('should return "X months ago" for dates within a year', () => {
       const now = new Date('2024-03-15T10:00:00Z');
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const twoMonthsAgo = new Date('2024-01-15T10:00:00Z');
       const result = timeAgo(twoMonthsAgo);
@@ -168,7 +169,7 @@ describe('Date Utilities', () => {
 
     it('should return "X years ago" for older dates', () => {
       const now = new Date('2024-03-15T10:00:00Z');
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const twoYearsAgo = new Date('2022-03-15T10:00:00Z');
       const result = timeAgo(twoYearsAgo);
@@ -177,7 +178,7 @@ describe('Date Utilities', () => {
 
     it('should handle ISO string input', () => {
       const now = new Date('2024-03-15T10:00:00Z');
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const result = timeAgo('2024-03-14T10:00:00Z');
       expect(result).toContain('ago');
@@ -185,7 +186,7 @@ describe('Date Utilities', () => {
 
     it('should handle Date object input', () => {
       const now = new Date('2024-03-15T10:00:00Z');
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const yesterdayDate = new Date('2024-03-14T10:00:00Z');
       const result = timeAgo(yesterdayDate);
@@ -194,7 +195,7 @@ describe('Date Utilities', () => {
 
     it('should include "ago" suffix', () => {
       const now = new Date('2024-03-15T10:00:00Z');
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const pastDate = new Date('2024-03-14T10:00:00Z');
       const result = timeAgo(pastDate);
@@ -203,7 +204,7 @@ describe('Date Utilities', () => {
 
     it('should handle "in X time" for future dates', () => {
       const now = new Date('2024-03-15T10:00:00Z');
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const futureDate = new Date('2024-03-16T10:00:00Z');
       const result = timeAgo(futureDate);
