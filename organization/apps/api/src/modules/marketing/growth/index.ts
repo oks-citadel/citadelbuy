@@ -31,4 +31,5 @@ export type {
   AffiliateClick,
   TrackClickInput,
   AffiliateStats,
+  CreateAffiliateProgramInput,
 } from './interfaces/growth.interface';

@@ -37,7 +37,7 @@ export class MarketingSeoService implements ISeoService {
     // Add products if enabled
     if (options.includeProducts !== false) {
       const products = await this.prisma.product.findMany({
-        where: options.organizationId ? { organizationId: options.organizationId } : {},
+        // Products don't have organizationId, use vendorId filter if needed
         select: { id: true, slug: true, updatedAt: true },
         take: 50000, // Sitemap limit
       });
@@ -55,7 +55,7 @@ export class MarketingSeoService implements ISeoService {
     // Add categories if enabled
     if (options.includeCategories !== false) {
       const categories = await this.prisma.category.findMany({
-        where: options.organizationId ? { organizationId: options.organizationId } : {},
+        // Categories don't have organizationId
         select: { id: true, slug: true, updatedAt: true },
       });
 
@@ -338,7 +338,6 @@ ${urlEntries}
       case 'Product': {
         const product = await this.prisma.product.findUnique({
           where: { id: entityId },
-          include: { images: true },
         });
         if (!product) return null;
 
@@ -346,8 +345,8 @@ ${urlEntries}
           ...baseSchema,
           name: product.name,
           description: product.description,
-          image: product.images?.[0]?.url,
-          sku: product.sku,
+          image: product.images?.[0], // images is String[], not an object relation
+          // Note: Product doesn't have sku field, variants do
           offers: {
             '@type': 'Offer',
             price: product.price,

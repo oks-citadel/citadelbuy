@@ -313,9 +313,11 @@ backend/.nyc_output/
 # backend/templates/*.html
 
 # ==============================================
-# Session Files
+# Session Files (temp/browser session files, not module folders)
 # ==============================================
-sessions/
+# Only ignore session files at root or in node_modules, not source code modules
+/sessions/
+**/node_modules/**/sessions/
 *.session
 
 # ==============================================

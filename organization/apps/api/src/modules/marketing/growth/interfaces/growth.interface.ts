@@ -229,6 +229,16 @@ export interface AffiliateProgram {
 
 export type CommissionType = 'percentage' | 'fixed';
 
+export interface CreateAffiliateProgramInput {
+  name: string;
+  organizationId?: string;
+  commissionType: CommissionType;
+  commissionValue: number;
+  cookieDuration?: number;
+  minPayoutThreshold?: number;
+  terms?: string;
+}
+
 export interface Affiliate {
   id: string;
   userId: string;
