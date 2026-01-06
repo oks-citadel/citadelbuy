@@ -17,8 +17,11 @@ Agents:
 12. ConversionOptimizationAgent - A/B testing, funnel optimization
 """
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel, Field
 from typing import Dict, List, Any, Optional
 from datetime import datetime
@@ -51,6 +54,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+
 # Initialize FastAPI app
 app = FastAPI(
     title="Broxiva AI Agents Service",
@@ -69,6 +75,10 @@ ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '').split(',') if os.getenv('ALLO
     "https://admin.broxiva.com",
     "https://api.broxiva.com",
 ]
+
+# Add rate limiter to app state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS middleware with secure configuration
 app.add_middleware(
@@ -273,7 +283,8 @@ workflow_engine = WorkflowEngine(coordinator, shared_memory)
 # ============================================
 
 @app.get("/health")
-async def health_check():
+@limiter.limit("100/minute")
+async def health_check(request: Request):
     """Health check endpoint."""
     return {
         "status": "healthy",
@@ -284,7 +295,8 @@ async def health_check():
 
 
 @app.get("/ready")
-async def readiness_check():
+@limiter.limit("100/minute")
+async def readiness_check(request: Request):
     """Readiness check endpoint."""
     agent_status = {name: "ready" for name in agents_registry.keys()}
     return {
@@ -296,7 +308,8 @@ async def readiness_check():
 
 
 @app.get("/agents")
-async def list_agents():
+@limiter.limit("100/minute")
+async def list_agents(request: Request):
     """List all available agents."""
     return {
         "agents": [
@@ -316,18 +329,19 @@ async def list_agents():
 # ============================================
 
 @app.post("/api/v1/agents/invoke", response_model=AgentResponse)
-async def invoke_agent(request: AgentRequest):
+@limiter.limit("30/minute")
+async def invoke_agent(request: Request, agent_request: AgentRequest):
     """Invoke any agent by name with a generic task."""
     try:
-        agent_name = request.agent_name.lower()
+        agent_name = agent_request.agent_name.lower()
         if agent_name not in agents_registry:
             raise HTTPException(status_code=404, detail=f"Agent '{agent_name}' not found")
 
         agent = agents_registry[agent_name]
         result = await agent.execute_task(
-            task=request.task,
-            context=request.context,
-            priority=request.priority,
+            task=agent_request.task,
+            context=agent_request.context,
+            priority=agent_request.priority,
         )
 
         return AgentResponse(
@@ -347,25 +361,26 @@ async def invoke_agent(request: AgentRequest):
 
 
 @app.post("/api/v1/workflow/execute", response_model=WorkflowResponse)
-async def execute_workflow(request: WorkflowRequest):
+@limiter.limit("10/minute")
+async def execute_workflow(request: Request, workflow_request: WorkflowRequest):
     """Execute a multi-agent workflow."""
     try:
         start_time = datetime.utcnow()
 
         result = await workflow_engine.execute(
-            workflow_name=request.workflow_name,
-            input_data=request.input_data,
-            agents=request.agents,
-            execution_mode=request.execution_mode,
+            workflow_name=workflow_request.workflow_name,
+            input_data=workflow_request.input_data,
+            agents=workflow_request.agents,
+            execution_mode=workflow_request.execution_mode,
         )
 
         duration = (datetime.utcnow() - start_time).total_seconds() * 1000
 
         return WorkflowResponse(
             workflow_id=result.get("workflow_id", ""),
-            workflow_name=request.workflow_name,
+            workflow_name=workflow_request.workflow_name,
             status=result.get("status", "completed"),
-            agents_used=request.agents,
+            agents_used=workflow_request.agents,
             results=result.get("results", {}),
             total_duration_ms=duration,
             timestamp=datetime.utcnow(),
@@ -380,16 +395,17 @@ async def execute_workflow(request: WorkflowRequest):
 # ============================================
 
 @app.post("/api/v1/agents/marketing/campaign")
-async def optimize_marketing_campaign(request: MarketingCampaignRequest):
+@limiter.limit("30/minute")
+async def optimize_marketing_campaign(request: Request, campaign_request: MarketingCampaignRequest):
     """Optimize marketing campaign with regional targeting."""
     try:
         result = await marketing_agent.optimize_campaign(
-            campaign_type=request.campaign_type,
-            target_regions=request.target_regions,
-            product_ids=request.product_ids,
-            budget=request.budget,
-            duration_days=request.duration_days,
-            objectives=request.objectives,
+            campaign_type=campaign_request.campaign_type,
+            target_regions=campaign_request.target_regions,
+            product_ids=campaign_request.product_ids,
+            budget=campaign_request.budget,
+            duration_days=campaign_request.duration_days,
+            objectives=campaign_request.objectives,
         )
         return {"success": True, "data": result}
     except Exception as e:
@@ -398,16 +414,17 @@ async def optimize_marketing_campaign(request: MarketingCampaignRequest):
 
 
 @app.post("/api/v1/agents/trade/compliance")
-async def check_trade_compliance(request: TradeComplianceRequest):
+@limiter.limit("30/minute")
+async def check_trade_compliance(request: Request, trade_request: TradeComplianceRequest):
     """Check cross-border trade compliance and documentation requirements."""
     try:
         result = await trade_agent.check_compliance(
-            origin_country=request.origin_country,
-            destination_country=request.destination_country,
-            product_category=request.product_category,
-            hs_code=request.hs_code,
-            value_usd=request.value_usd,
-            quantity=request.quantity,
+            origin_country=trade_request.origin_country,
+            destination_country=trade_request.destination_country,
+            product_category=trade_request.product_category,
+            hs_code=trade_request.hs_code,
+            value_usd=trade_request.value_usd,
+            quantity=trade_request.quantity,
         )
         return {"success": True, "data": result}
     except Exception as e:
@@ -416,16 +433,17 @@ async def check_trade_compliance(request: TradeComplianceRequest):
 
 
 @app.post("/api/v1/agents/pricing/optimize")
-async def optimize_pricing(request: PricingOptimizationRequest):
+@limiter.limit("30/minute")
+async def optimize_pricing(request: Request, pricing_request: PricingOptimizationRequest):
     """Optimize product pricing and margin."""
     try:
         result = await pricing_agent.optimize_price(
-            product_id=request.product_id,
-            current_price=request.current_price,
-            cost=request.cost,
-            market_data=request.market_data,
-            target_margin=request.target_margin,
-            strategy=request.strategy,
+            product_id=pricing_request.product_id,
+            current_price=pricing_request.current_price,
+            cost=pricing_request.cost,
+            market_data=pricing_request.market_data,
+            target_margin=pricing_request.target_margin,
+            strategy=pricing_request.strategy,
         )
         return {"success": True, "data": result}
     except Exception as e:
@@ -434,16 +452,17 @@ async def optimize_pricing(request: PricingOptimizationRequest):
 
 
 @app.post("/api/v1/agents/sales/score-deal")
-async def score_sales_deal(request: SalesDealRequest):
+@limiter.limit("30/minute")
+async def score_sales_deal(request: Request, sales_request: SalesDealRequest):
     """Score enterprise sales deal and forecast probability."""
     try:
         result = await sales_agent.score_deal(
-            deal_id=request.deal_id,
-            customer_id=request.customer_id,
-            products=request.products,
-            total_value=request.total_value,
-            stage=request.stage,
-            interactions=request.interactions,
+            deal_id=sales_request.deal_id,
+            customer_id=sales_request.customer_id,
+            products=sales_request.products,
+            total_value=sales_request.total_value,
+            stage=sales_request.stage,
+            interactions=sales_request.interactions,
         )
         return {"success": True, "data": result}
     except Exception as e:
@@ -452,16 +471,17 @@ async def score_sales_deal(request: SalesDealRequest):
 
 
 @app.post("/api/v1/agents/vendor/verify")
-async def verify_vendor(request: VendorVerificationRequest):
+@limiter.limit("30/minute")
+async def verify_vendor(request: Request, vendor_request: VendorVerificationRequest):
     """Verify vendor through KYB process."""
     try:
         result = await vendor_agent.verify_vendor(
-            vendor_id=request.vendor_id,
-            business_name=request.business_name,
-            country=request.country,
-            business_registration_number=request.business_registration_number,
-            documents=request.documents,
-            trade_history=request.trade_history,
+            vendor_id=vendor_request.vendor_id,
+            business_name=vendor_request.business_name,
+            country=vendor_request.country,
+            business_registration_number=vendor_request.business_registration_number,
+            documents=vendor_request.documents,
+            trade_history=vendor_request.trade_history,
         )
         return {"success": True, "data": result}
     except Exception as e:
@@ -470,14 +490,15 @@ async def verify_vendor(request: VendorVerificationRequest):
 
 
 @app.post("/api/v1/agents/compliance/check")
-async def check_compliance(request: ComplianceCheckRequest):
+@limiter.limit("30/minute")
+async def check_compliance(request: Request, compliance_request: ComplianceCheckRequest):
     """Check regulatory compliance for entity."""
     try:
         result = await compliance_agent.check_compliance(
-            entity_type=request.entity_type,
-            entity_id=request.entity_id,
-            jurisdiction=request.jurisdiction,
-            compliance_areas=request.compliance_areas,
+            entity_type=compliance_request.entity_type,
+            entity_id=compliance_request.entity_id,
+            jurisdiction=compliance_request.jurisdiction,
+            compliance_areas=compliance_request.compliance_areas,
         )
         return {"success": True, "data": result}
     except Exception as e:
@@ -486,16 +507,17 @@ async def check_compliance(request: ComplianceCheckRequest):
 
 
 @app.post("/api/v1/agents/fraud/analyze")
-async def analyze_fraud_risk(request: FraudAnalysisRequest):
+@limiter.limit("30/minute")
+async def analyze_fraud_risk(request: Request, fraud_request: FraudAnalysisRequest):
     """Analyze transaction for fraud risk."""
     try:
         result = await fraud_agent.analyze_transaction(
-            transaction_id=request.transaction_id,
-            user_id=request.user_id,
-            vendor_id=request.vendor_id,
-            amount=request.amount,
-            transaction_type=request.transaction_type,
-            metadata=request.metadata,
+            transaction_id=fraud_request.transaction_id,
+            user_id=fraud_request.user_id,
+            vendor_id=fraud_request.vendor_id,
+            amount=fraud_request.amount,
+            transaction_type=fraud_request.transaction_type,
+            metadata=fraud_request.metadata,
         )
         return {"success": True, "data": result}
     except Exception as e:
@@ -504,16 +526,17 @@ async def analyze_fraud_risk(request: FraudAnalysisRequest):
 
 
 @app.post("/api/v1/agents/logistics/forecast")
-async def forecast_delivery(request: LogisticsRequest):
+@limiter.limit("30/minute")
+async def forecast_delivery(request: Request, logistics_request: LogisticsRequest):
     """Forecast delivery time and optimize route."""
     try:
         result = await logistics_agent.forecast_delivery(
-            order_id=request.order_id,
-            origin=request.origin,
-            destination=request.destination,
-            items=request.items,
-            shipping_method=request.shipping_method,
-            constraints=request.constraints,
+            order_id=logistics_request.order_id,
+            origin=logistics_request.origin,
+            destination=logistics_request.destination,
+            items=logistics_request.items,
+            shipping_method=logistics_request.shipping_method,
+            constraints=logistics_request.constraints,
         )
         return {"success": True, "data": result}
     except Exception as e:
@@ -522,15 +545,16 @@ async def forecast_delivery(request: LogisticsRequest):
 
 
 @app.post("/api/v1/agents/competitor/analyze")
-async def analyze_competitors(request: CompetitorAnalysisRequest):
+@limiter.limit("30/minute")
+async def analyze_competitors(request: Request, competitor_request: CompetitorAnalysisRequest):
     """Analyze competitor pricing and market intelligence."""
     try:
         result = await competitor_agent.analyze(
-            product_id=request.product_id,
-            category=request.category,
-            region=request.region,
-            competitor_urls=request.competitor_urls,
-            analysis_depth=request.analysis_depth,
+            product_id=competitor_request.product_id,
+            category=competitor_request.category,
+            region=competitor_request.region,
+            competitor_urls=competitor_request.competitor_urls,
+            analysis_depth=competitor_request.analysis_depth,
         )
         return {"success": True, "data": result}
     except Exception as e:
@@ -539,16 +563,17 @@ async def analyze_competitors(request: CompetitorAnalysisRequest):
 
 
 @app.post("/api/v1/agents/content/generate")
-async def generate_content(request: ContentGenerationRequest):
+@limiter.limit("30/minute")
+async def generate_content(request: Request, content_request: ContentGenerationRequest):
     """Generate multilingual content."""
     try:
         result = await content_agent.generate_content(
-            content_type=request.content_type,
-            target_languages=request.target_languages,
-            source_content=request.source_content,
-            keywords=request.keywords,
-            tone=request.tone,
-            length=request.length,
+            content_type=content_request.content_type,
+            target_languages=content_request.target_languages,
+            source_content=content_request.source_content,
+            keywords=content_request.keywords,
+            tone=content_request.tone,
+            length=content_request.length,
         )
         return {"success": True, "data": result}
     except Exception as e:
@@ -557,15 +582,16 @@ async def generate_content(request: ContentGenerationRequest):
 
 
 @app.post("/api/v1/agents/localization/translate")
-async def localize_content(request: LocalizationRequest):
+@limiter.limit("30/minute")
+async def localize_content(request: Request, localization_request: LocalizationRequest):
     """Localize content with cultural adaptation."""
     try:
         result = await localization_agent.localize(
-            content=request.content,
-            source_language=request.source_language,
-            target_languages=request.target_languages,
-            domain=request.domain,
-            cultural_adaptation=request.cultural_adaptation,
+            content=localization_request.content,
+            source_language=localization_request.source_language,
+            target_languages=localization_request.target_languages,
+            domain=localization_request.domain,
+            cultural_adaptation=localization_request.cultural_adaptation,
         )
         return {"success": True, "data": result}
     except Exception as e:
@@ -574,14 +600,15 @@ async def localize_content(request: LocalizationRequest):
 
 
 @app.post("/api/v1/agents/conversion/optimize")
-async def optimize_conversion(request: ConversionOptimizationRequest):
+@limiter.limit("30/minute")
+async def optimize_conversion(request: Request, conversion_request: ConversionOptimizationRequest):
     """Optimize conversion rates through A/B testing."""
     try:
         result = await conversion_agent.optimize(
-            page_type=request.page_type,
-            current_metrics=request.current_metrics,
-            traffic_data=request.traffic_data,
-            test_variants=request.test_variants,
+            page_type=conversion_request.page_type,
+            current_metrics=conversion_request.current_metrics,
+            traffic_data=conversion_request.traffic_data,
+            test_variants=conversion_request.test_variants,
         )
         return {"success": True, "data": result}
     except Exception as e:
@@ -594,7 +621,8 @@ async def optimize_conversion(request: ConversionOptimizationRequest):
 # ============================================
 
 @app.get("/api/v1/memory/context/{context_id}")
-async def get_context(context_id: str):
+@limiter.limit("100/minute")
+async def get_context(request: Request, context_id: str):
     """Retrieve context from shared memory."""
     try:
         context = await shared_memory.get_context(context_id)
@@ -607,7 +635,8 @@ async def get_context(context_id: str):
 
 
 @app.post("/api/v1/memory/context")
-async def store_context(context_id: str, data: Dict[str, Any]):
+@limiter.limit("30/minute")
+async def store_context(request: Request, context_id: str, data: Dict[str, Any]):
     """Store context in shared memory."""
     try:
         await shared_memory.store_context(context_id, data)

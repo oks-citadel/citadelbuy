@@ -132,9 +132,16 @@ export default function SearchScreen() {
             onSubmitEditing={handleSearch}
             returnKeyType="search"
             autoFocus
+            accessibilityLabel="Search products"
+            accessibilityHint="Enter keywords to search for products"
           />
           {query.length > 0 && (
-            <TouchableOpacity onPress={handleClearSearch}>
+            <TouchableOpacity
+              onPress={handleClearSearch}
+              accessibilityLabel="Clear search"
+              accessibilityHint="Clear the search text and results"
+              accessibilityRole="button"
+            >
               <Ionicons name="close-circle" size={20} color="#9ca3af" />
             </TouchableOpacity>
           )}
@@ -142,6 +149,10 @@ export default function SearchScreen() {
         <TouchableOpacity
           style={[styles.aiToggle, useAI && styles.aiToggleActive]}
           onPress={() => setUseAI(!useAI)}
+          accessibilityLabel={useAI ? "Disable AI search" : "Enable AI search"}
+          accessibilityHint="Toggle AI-powered search for natural language queries"
+          accessibilityRole="button"
+          accessibilityState={{ selected: useAI }}
         >
           <Ionicons name="sparkles" size={18} color={useAI ? '#fff' : '#6366f1'} />
         </TouchableOpacity>

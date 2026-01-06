@@ -4,8 +4,11 @@ FastAPI microservice for inventory management, stock levels, and low stock alert
 """
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Query, Path, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Query, Path, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
@@ -115,6 +118,9 @@ async def lifespan(app: FastAPI):
     logger.info("Inventory Service shutting down...")
 
 
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+
 # Initialize FastAPI app with lifespan
 app = FastAPI(
     title="Broxiva Inventory Service",
@@ -124,6 +130,10 @@ app = FastAPI(
     redoc_url="/redoc",
     lifespan=lifespan
 )
+
+# Add rate limiter to app state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Add CORS middleware with specific origins
 app.add_middleware(
@@ -221,7 +231,8 @@ class BulkStockUpdate(BaseModel):
 # ============================================
 
 @app.get("/health")
-async def health_check():
+@limiter.limit("100/minute")
+async def health_check(request: Request):
     """Service health check endpoint."""
     return {
         "status": "healthy",
@@ -236,7 +247,9 @@ async def health_check():
 # ============================================
 
 @app.get("/api/v1/inventory", response_model=Dict[str, Any])
+@limiter.limit("100/minute")
 async def list_inventory_items(
+    request: Request,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     warehouse_id: Optional[str] = None,
@@ -276,7 +289,8 @@ async def list_inventory_items(
 
 
 @app.post("/api/v1/inventory", response_model=Dict[str, Any], status_code=201)
-async def create_inventory_item(item: InventoryItemCreate, background_tasks: BackgroundTasks):
+@limiter.limit("30/minute")
+async def create_inventory_item(request: Request, item: InventoryItemCreate, background_tasks: BackgroundTasks):
     """Create a new inventory item."""
     logger.info(f"Creating inventory item: {item.sku}")
 
@@ -322,7 +336,8 @@ async def create_inventory_item(item: InventoryItemCreate, background_tasks: Bac
 
 
 @app.get("/api/v1/inventory/{item_id}", response_model=Dict[str, Any])
-async def get_inventory_item(item_id: str = Path(..., description="Inventory item ID")):
+@limiter.limit("100/minute")
+async def get_inventory_item(request: Request, item_id: str = Path(..., description="Inventory item ID")):
     """Get a single inventory item by ID."""
     if item_id not in inventory_items:
         raise HTTPException(status_code=404, detail="Inventory item not found")
@@ -334,7 +349,9 @@ async def get_inventory_item(item_id: str = Path(..., description="Inventory ite
 
 
 @app.put("/api/v1/inventory/{item_id}", response_model=Dict[str, Any])
+@limiter.limit("30/minute")
 async def update_inventory_item(
+    request: Request,
     item_id: str = Path(..., description="Inventory item ID"),
     update: InventoryItemUpdate = None
 ):
@@ -372,7 +389,8 @@ async def update_inventory_item(
 
 
 @app.delete("/api/v1/inventory/{item_id}", response_model=Dict[str, Any])
-async def delete_inventory_item(item_id: str = Path(..., description="Inventory item ID")):
+@limiter.limit("30/minute")
+async def delete_inventory_item(request: Request, item_id: str = Path(..., description="Inventory item ID")):
     """Delete an inventory item."""
     if item_id not in inventory_items:
         raise HTTPException(status_code=404, detail="Inventory item not found")
@@ -392,7 +410,9 @@ async def delete_inventory_item(item_id: str = Path(..., description="Inventory 
 # ============================================
 
 @app.post("/api/v1/inventory/{item_id}/adjust", response_model=Dict[str, Any])
+@limiter.limit("30/minute")
 async def adjust_stock(
+    request: Request,
     item_id: str = Path(..., description="Inventory item ID"),
     adjustment: StockAdjustment = None,
     background_tasks: BackgroundTasks = None
@@ -445,7 +465,8 @@ async def adjust_stock(
 
 
 @app.post("/api/v1/inventory/bulk-adjust", response_model=Dict[str, Any])
-async def bulk_adjust_stock(bulk_update: BulkStockUpdate, background_tasks: BackgroundTasks):
+@limiter.limit("10/minute")
+async def bulk_adjust_stock(request: Request, bulk_update: BulkStockUpdate, background_tasks: BackgroundTasks):
     """Adjust stock levels for multiple items in one request."""
     results = []
     errors = []
@@ -498,7 +519,9 @@ async def bulk_adjust_stock(bulk_update: BulkStockUpdate, background_tasks: Back
 
 
 @app.post("/api/v1/inventory/{item_id}/reserve", response_model=Dict[str, Any])
+@limiter.limit("30/minute")
 async def reserve_stock(
+    request: Request,
     item_id: str = Path(..., description="Inventory item ID"),
     quantity: int = Query(..., ge=1, description="Quantity to reserve"),
     order_id: Optional[str] = None
@@ -535,7 +558,9 @@ async def reserve_stock(
 
 
 @app.post("/api/v1/inventory/{item_id}/release", response_model=Dict[str, Any])
+@limiter.limit("30/minute")
 async def release_reserved_stock(
+    request: Request,
     item_id: str = Path(..., description="Inventory item ID"),
     quantity: int = Query(..., ge=1, description="Quantity to release"),
     order_id: Optional[str] = None
@@ -575,7 +600,9 @@ async def release_reserved_stock(
 # ============================================
 
 @app.get("/api/v1/alerts", response_model=Dict[str, Any])
+@limiter.limit("100/minute")
 async def list_stock_alerts(
+    request: Request,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     severity: Optional[AlertSeverity] = None,
@@ -612,7 +639,8 @@ async def list_stock_alerts(
 
 
 @app.post("/api/v1/alerts/{alert_id}/acknowledge", response_model=Dict[str, Any])
-async def acknowledge_alert(alert_id: str = Path(..., description="Alert ID")):
+@limiter.limit("30/minute")
+async def acknowledge_alert(request: Request, alert_id: str = Path(..., description="Alert ID")):
     """Acknowledge a stock alert."""
     if alert_id not in stock_alerts:
         raise HTTPException(status_code=404, detail="Alert not found")
@@ -631,7 +659,8 @@ async def acknowledge_alert(alert_id: str = Path(..., description="Alert ID")):
 
 
 @app.get("/api/v1/alerts/summary", response_model=Dict[str, Any])
-async def get_alerts_summary():
+@limiter.limit("100/minute")
+async def get_alerts_summary(request: Request):
     """Get summary of current alerts by severity and type."""
     unacknowledged = [a for a in stock_alerts.values() if not a.get("is_acknowledged")]
 
@@ -662,22 +691,23 @@ async def get_alerts_summary():
 # ============================================
 
 @app.post("/predict-demand", response_model=DemandPrediction)
-async def predict_demand(request: DemandPredictionRequest):
+@limiter.limit("30/minute")
+async def predict_demand(request: Request, demand_request: DemandPredictionRequest):
     """Predict inventory demand using time-series forecasting."""
     try:
-        logger.info(f"Demand prediction request: product={request.product_id}, days={request.forecast_days}")
+        logger.info(f"Demand prediction request: product={demand_request.product_id}, days={demand_request.forecast_days}")
 
-        if not request.historical_data:
-            historical_data = _generate_synthetic_historical_data(request.product_id)
+        if not demand_request.historical_data:
+            historical_data = _generate_synthetic_historical_data(demand_request.product_id)
         else:
-            historical_data = request.historical_data
+            historical_data = demand_request.historical_data
 
         seasonality_detected = _detect_seasonality(historical_data)
 
         predictions = _generate_demand_predictions(
             historical_data=historical_data,
-            forecast_days=request.forecast_days,
-            include_seasonality=request.include_seasonality and seasonality_detected
+            forecast_days=demand_request.forecast_days,
+            include_seasonality=demand_request.include_seasonality and seasonality_detected
         )
 
         confidence_interval = _calculate_confidence_intervals(predictions)
@@ -691,9 +721,9 @@ async def predict_demand(request: DemandPredictionRequest):
         }
 
         return DemandPrediction(
-            product_id=request.product_id,
-            warehouse_id=request.warehouse_id,
-            forecast_period_days=request.forecast_days,
+            product_id=demand_request.product_id,
+            warehouse_id=demand_request.warehouse_id,
+            forecast_period_days=demand_request.forecast_days,
             predictions=predictions,
             confidence_interval=confidence_interval,
             model_metrics=model_metrics,
@@ -708,25 +738,26 @@ async def predict_demand(request: DemandPredictionRequest):
 
 
 @app.post("/optimize-stock", response_model=StockOptimization)
-async def optimize_stock(request: StockOptimizationRequest):
+@limiter.limit("30/minute")
+async def optimize_stock(request: Request, stock_request: StockOptimizationRequest):
     """Optimize stock levels using inventory optimization algorithms."""
     try:
-        logger.info(f"Stock optimization request: product={request.product_id}, stock={request.current_stock}")
+        logger.info(f"Stock optimization request: product={stock_request.product_id}, stock={stock_request.current_stock}")
 
-        if not request.historical_demand:
+        if not stock_request.historical_demand:
             historical_demand = _generate_synthetic_demand_history()
         else:
-            historical_demand = request.historical_demand
+            historical_demand = stock_request.historical_demand
 
         avg_daily_demand = np.mean(historical_demand)
         demand_std = np.std(historical_demand)
 
-        z_score = _get_z_score(request.service_level)
-        safety_stock = int(z_score * demand_std * np.sqrt(request.lead_time_days))
-        reorder_point = int(avg_daily_demand * request.lead_time_days + safety_stock)
+        z_score = _get_z_score(stock_request.service_level)
+        safety_stock = int(z_score * demand_std * np.sqrt(stock_request.lead_time_days))
+        reorder_point = int(avg_daily_demand * stock_request.lead_time_days + safety_stock)
 
-        holding_cost = request.holding_cost_per_unit or 2.5
-        stockout_cost = request.stockout_cost_per_unit or 50.0
+        holding_cost = stock_request.holding_cost_per_unit or 2.5
+        stockout_cost = stock_request.stockout_cost_per_unit or 50.0
 
         annual_demand = avg_daily_demand * 365
         order_cost = 100
@@ -737,16 +768,16 @@ async def optimize_stock(request: StockOptimizationRequest):
             eoq = int(avg_daily_demand * 30)
 
         if avg_daily_demand > 0:
-            days_of_stock = request.current_stock / avg_daily_demand
+            days_of_stock = stock_request.current_stock / avg_daily_demand
         else:
             days_of_stock = 999.0
 
-        if request.current_stock < reorder_point:
-            stockout_risk = min(((reorder_point - request.current_stock) / reorder_point) * 100, 100)
+        if stock_request.current_stock < reorder_point:
+            stockout_risk = min(((reorder_point - stock_request.current_stock) / reorder_point) * 100, 100)
         else:
-            stockout_risk = max((1 - request.service_level) * 100, 0)
+            stockout_risk = max((1 - stock_request.service_level) * 100, 0)
 
-        holding_cost_total = (request.current_stock / 2) * holding_cost * 365 / 365
+        holding_cost_total = (stock_request.current_stock / 2) * holding_cost * 365 / 365
         potential_stockout_cost = stockout_risk / 100 * stockout_cost * avg_daily_demand * 30
 
         cost_analysis = {
@@ -757,7 +788,7 @@ async def optimize_stock(request: StockOptimizationRequest):
         }
 
         recommendations = _generate_stock_recommendations(
-            current_stock=request.current_stock,
+            current_stock=stock_request.current_stock,
             reorder_point=reorder_point,
             eoq=eoq,
             days_of_stock=days_of_stock,
@@ -765,9 +796,9 @@ async def optimize_stock(request: StockOptimizationRequest):
         )
 
         return StockOptimization(
-            product_id=request.product_id,
-            warehouse_id=request.warehouse_id,
-            current_stock=request.current_stock,
+            product_id=stock_request.product_id,
+            warehouse_id=stock_request.warehouse_id,
+            current_stock=stock_request.current_stock,
             recommended_order_quantity=eoq,
             reorder_point=reorder_point,
             safety_stock=safety_stock,
@@ -788,7 +819,8 @@ async def optimize_stock(request: StockOptimizationRequest):
 # ============================================
 
 @app.get("/api/v1/warehouses", response_model=Dict[str, Any])
-async def list_warehouses():
+@limiter.limit("100/minute")
+async def list_warehouses(request: Request):
     """List all warehouses."""
     return {
         "success": True,
@@ -797,7 +829,9 @@ async def list_warehouses():
 
 
 @app.get("/api/v1/warehouses/{warehouse_id}/inventory", response_model=Dict[str, Any])
+@limiter.limit("100/minute")
 async def get_warehouse_inventory(
+    request: Request,
     warehouse_id: str = Path(..., description="Warehouse ID"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100)
@@ -831,7 +865,8 @@ async def get_warehouse_inventory(
 # ============================================
 
 @app.get("/")
-async def root():
+@limiter.limit("100/minute")
+async def root(request: Request):
     """Root endpoint with service information"""
     return {
         "service": "Broxiva Inventory Service",

@@ -59,6 +59,9 @@ export default function ForgotPasswordScreen() {
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.navigate('Login')}
+            accessibilityLabel="Back to Sign In"
+            accessibilityHint="Return to the sign in screen"
+            accessibilityRole="button"
           >
             <Text style={styles.backButtonText}>Back to Sign In</Text>
           </TouchableOpacity>
@@ -77,6 +80,9 @@ export default function ForgotPasswordScreen() {
           <TouchableOpacity
             style={styles.backArrow}
             onPress={() => navigation.goBack()}
+            accessibilityLabel="Go back"
+            accessibilityHint="Navigate to the previous screen"
+            accessibilityRole="button"
           >
             <Ionicons name="arrow-back" size={24} color="#1f2937" />
           </TouchableOpacity>
@@ -101,6 +107,8 @@ export default function ForgotPasswordScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              accessibilityLabel="Email address"
+              accessibilityHint="Enter your email address to receive password reset instructions"
             />
           </View>
 
@@ -108,6 +116,10 @@ export default function ForgotPasswordScreen() {
             style={[styles.resetButton, isLoading && styles.resetButtonDisabled]}
             onPress={handleResetPassword}
             disabled={isLoading}
+            accessibilityLabel="Reset Password"
+            accessibilityHint="Send password reset instructions to your email"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: isLoading }}
           >
             {isLoading ? (
               <ActivityIndicator color="#fff" />
@@ -119,6 +131,9 @@ export default function ForgotPasswordScreen() {
           <TouchableOpacity
             style={styles.backToLogin}
             onPress={() => navigation.navigate('Login')}
+            accessibilityLabel="Back to Sign In"
+            accessibilityHint="Return to the sign in screen"
+            accessibilityRole="button"
           >
             <Ionicons name="arrow-back" size={16} color="#6366f1" />
             <Text style={styles.backToLoginText}>Back to Sign In</Text>

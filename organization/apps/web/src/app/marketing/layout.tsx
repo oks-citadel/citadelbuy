@@ -37,7 +37,21 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
+  // Redirect if not authenticated or not authorized for marketing
+  React.useEffect(() => {
+    if (!user) {
+      router.push('/auth/login?redirect=/marketing');
+    } else if (user.role !== 'ADMIN' && user.role !== 'MARKETING') {
+      router.push('/');
+    }
+  }, [user, router]);
+
   const isActive = (href: string) => href === '/marketing' ? pathname === '/marketing' : pathname.startsWith(href);
+
+  // Show nothing while checking authentication
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'MARKETING')) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-muted/30">

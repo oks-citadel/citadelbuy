@@ -3,8 +3,11 @@ AI Engine Service
 FastAPI microservice for dropshipping AI predictions and optimizations
 """
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel
 from typing import Dict, List, Any, Optional
 import logging
@@ -26,6 +29,9 @@ from src.dropshipping import (
 logging.basicConfig(level=os.getenv('LOG_LEVEL', 'INFO'))
 logger = logging.getLogger(__name__)
 
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+
 # Initialize FastAPI app
 app = FastAPI(
     title="Broxiva AI Engine",
@@ -44,6 +50,10 @@ ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '').split(',') if os.getenv('ALLO
     "https://admin.broxiva.com",
     "https://api.broxiva.com",
 ]
+
+# Add rate limiter to app state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS middleware with secure configuration
 app.add_middleware(
@@ -152,7 +162,8 @@ class FraudAssessmentRequest(BaseModel):
 # ============================================
 
 @app.get("/health")
-async def health_check():
+@limiter.limit("100/minute")
+async def health_check(request: Request):
     """Health check endpoint."""
     return {
         "status": "healthy",
@@ -162,7 +173,8 @@ async def health_check():
 
 
 @app.get("/ready")
-async def readiness_check():
+@limiter.limit("100/minute")
+async def readiness_check(request: Request):
     """Readiness check endpoint."""
     return {
         "status": "ready",
@@ -182,7 +194,8 @@ async def readiness_check():
 # ============================================
 
 @app.post("/api/v1/ai/products/predict")
-async def predict_winning_product(product: ProductData):
+@limiter.limit("30/minute")
+async def predict_winning_product(request: Request, product: ProductData):
     """Predict winning potential for a product."""
     try:
         result = await product_predictor.predict(product.model_dump())
@@ -206,7 +219,8 @@ async def predict_winning_product(product: ProductData):
 
 
 @app.post("/api/v1/ai/products/batch-predict")
-async def batch_predict_products(products: List[ProductData]):
+@limiter.limit("10/minute")
+async def batch_predict_products(request: Request, products: List[ProductData]):
     """Batch predict winning scores for multiple products."""
     try:
         product_dicts = [p.model_dump() for p in products]
@@ -234,7 +248,8 @@ async def batch_predict_products(products: List[ProductData]):
 # ============================================
 
 @app.post("/api/v1/ai/pricing/optimize")
-async def optimize_price(request: PriceOptimizationRequest):
+@limiter.limit("30/minute")
+async def optimize_price(request: Request, price_request: PriceOptimizationRequest):
     """Optimize price for a product."""
     try:
         strategy_map = {
@@ -245,13 +260,13 @@ async def optimize_price(request: PriceOptimizationRequest):
             "psychological": PricingStrategy.PSYCHOLOGICAL,
             "value_based": PricingStrategy.VALUE_BASED,
         }
-        strategy = strategy_map.get(request.strategy, PricingStrategy.DYNAMIC)
+        strategy = strategy_map.get(price_request.strategy, PricingStrategy.DYNAMIC)
 
         result = await price_optimizer.optimize_price(
-            request.product.model_dump(),
+            price_request.product.model_dump(),
             strategy,
-            request.competitor_data,
-            request.demand_data,
+            price_request.competitor_data,
+            price_request.demand_data,
         )
 
         return {
@@ -276,7 +291,8 @@ async def optimize_price(request: PriceOptimizationRequest):
 
 
 @app.post("/api/v1/ai/pricing/batch-optimize")
-async def batch_optimize_prices(products: List[ProductData], strategy: str = "dynamic"):
+@limiter.limit("10/minute")
+async def batch_optimize_prices(request: Request, products: List[ProductData], strategy: str = "dynamic"):
     """Batch optimize prices for multiple products."""
     try:
         strategy_map = {
@@ -312,7 +328,9 @@ async def batch_optimize_prices(products: List[ProductData], strategy: str = "dy
 # ============================================
 
 @app.post("/api/v1/ai/suppliers/score")
+@limiter.limit("30/minute")
 async def score_supplier(
+    request: Request,
     supplier: SupplierData,
     order_history: Optional[List[Dict[str, Any]]] = None,
     reviews: Optional[List[Dict[str, Any]]] = None,
@@ -347,7 +365,9 @@ async def score_supplier(
 
 
 @app.post("/api/v1/ai/suppliers/compare")
+@limiter.limit("10/minute")
 async def compare_suppliers(
+    request: Request,
     suppliers: List[SupplierData],
     order_histories: Optional[Dict[str, List[Dict]]] = None,
 ):
@@ -379,7 +399,9 @@ async def compare_suppliers(
 # ============================================
 
 @app.post("/api/v1/ai/demand/forecast")
+@limiter.limit("30/minute")
 async def forecast_demand(
+    request: Request,
     product: ProductData,
     sales_history: Optional[List[Dict[str, Any]]] = None,
     market_signals: Optional[Dict[str, Any]] = None,
@@ -416,7 +438,9 @@ async def forecast_demand(
 
 
 @app.post("/api/v1/ai/demand/category-trends")
+@limiter.limit("30/minute")
 async def get_category_trends(
+    request: Request,
     category: str,
     market_data: Optional[Dict[str, Any]] = None,
 ):
@@ -437,15 +461,16 @@ async def get_category_trends(
 # ============================================
 
 @app.post("/api/v1/ai/fraud/assess-order")
-async def assess_order_fraud(request: FraudAssessmentRequest):
+@limiter.limit("30/minute")
+async def assess_order_fraud(request: Request, fraud_request: FraudAssessmentRequest):
     """Assess fraud risk for an order."""
     try:
         result = await fraud_detector.assess_order(
-            request.order.model_dump(),
-            request.customer.model_dump(),
-            request.payment.model_dump(),
-            request.device_info,
-            request.order_history,
+            fraud_request.order.model_dump(),
+            fraud_request.customer.model_dump(),
+            fraud_request.payment.model_dump(),
+            fraud_request.device_info,
+            fraud_request.order_history,
         )
 
         return {
@@ -469,7 +494,9 @@ async def assess_order_fraud(request: FraudAssessmentRequest):
 
 
 @app.post("/api/v1/ai/fraud/assess-supplier")
+@limiter.limit("30/minute")
 async def assess_supplier_fraud(
+    request: Request,
     supplier: SupplierData,
     order_history: Optional[List[Dict[str, Any]]] = None,
     reviews: Optional[List[Dict[str, Any]]] = None,
@@ -504,7 +531,9 @@ async def assess_supplier_fraud(
 # ============================================
 
 @app.post("/api/v1/ai/conversion/predict")
+@limiter.limit("30/minute")
 async def predict_conversion(
+    request: Request,
     product: ProductData,
     listing_data: Optional[Dict[str, Any]] = None,
     traffic_data: Optional[Dict[str, Any]] = None,
@@ -539,7 +568,9 @@ async def predict_conversion(
 
 
 @app.post("/api/v1/ai/conversion/analyze-funnel")
+@limiter.limit("30/minute")
 async def analyze_conversion_funnel(
+    request: Request,
     product: ProductData,
     funnel_data: Dict[str, Any],
 ):

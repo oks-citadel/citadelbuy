@@ -164,6 +164,10 @@ export default function ProductDetailScreen() {
           <TouchableOpacity
             style={styles.wishlistButton}
             onPress={() => toggleWishlistMutation.mutate()}
+            accessibilityLabel={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            accessibilityHint={isWishlisted ? "Remove this product from your wishlist" : "Save this product to your wishlist"}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isWishlisted }}
           >
             <Ionicons
               name={isWishlisted ? 'heart' : 'heart-outline'}
@@ -237,6 +241,10 @@ export default function ProductDetailScreen() {
                   ]}
                   onPress={() => variant.available && setSelectedVariant(variant.id)}
                   disabled={!variant.available}
+                  accessibilityLabel={`${variant.name} color${selectedVariant === variant.id ? ', selected' : ''}${!variant.available ? ', unavailable' : ''}`}
+                  accessibilityHint={variant.available ? `Select ${variant.name} color option` : `${variant.name} color is currently unavailable`}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: selectedVariant === variant.id, disabled: !variant.available }}
                 >
                   <View
                     style={[styles.colorSwatch, { backgroundColor: variant.value }]}
@@ -260,13 +268,20 @@ export default function ProductDetailScreen() {
               <TouchableOpacity
                 style={styles.quantityButton}
                 onPress={() => quantity > 1 && setQuantity(quantity - 1)}
+                accessibilityLabel="Decrease quantity"
+                accessibilityHint={quantity > 1 ? `Reduce quantity to ${quantity - 1}` : "Minimum quantity is 1"}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: quantity <= 1 }}
               >
                 <Ionicons name="remove" size={20} color="#1f2937" />
               </TouchableOpacity>
-              <Text style={styles.quantityText}>{quantity}</Text>
+              <Text style={styles.quantityText} accessibilityLabel={`Quantity: ${quantity}`}>{quantity}</Text>
               <TouchableOpacity
                 style={styles.quantityButton}
                 onPress={() => setQuantity(quantity + 1)}
+                accessibilityLabel="Increase quantity"
+                accessibilityHint={`Increase quantity to ${quantity + 1}`}
+                accessibilityRole="button"
               >
                 <Ionicons name="add" size={20} color="#1f2937" />
               </TouchableOpacity>
@@ -308,6 +323,9 @@ export default function ProductDetailScreen() {
         <TouchableOpacity
           style={styles.chatButton}
           onPress={() => navigation.navigate('AIAssistant')}
+          accessibilityLabel="Chat with AI assistant"
+          accessibilityHint="Open AI assistant to ask questions about this product"
+          accessibilityRole="button"
         >
           <Ionicons name="chatbubbles-outline" size={24} color="#6366f1" />
         </TouchableOpacity>
@@ -315,6 +333,10 @@ export default function ProductDetailScreen() {
           style={[styles.addToCartButton, !productData.inStock && styles.disabledButton]}
           onPress={() => addToCartMutation.mutate()}
           disabled={!productData.inStock || addToCartMutation.isPending}
+          accessibilityLabel="Add to Cart"
+          accessibilityHint={productData.inStock ? `Add ${quantity} item${quantity > 1 ? 's' : ''} to your shopping cart` : "This product is out of stock"}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !productData.inStock || addToCartMutation.isPending }}
         >
           {addToCartMutation.isPending ? (
             <ActivityIndicator color="#fff" />
@@ -332,6 +354,10 @@ export default function ProductDetailScreen() {
             navigation.navigate('Checkout');
           }}
           disabled={!productData.inStock}
+          accessibilityLabel="Buy Now"
+          accessibilityHint={productData.inStock ? "Add to cart and proceed to checkout immediately" : "This product is out of stock"}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !productData.inStock }}
         >
           <Text style={styles.buyNowText}>Buy Now</Text>
         </TouchableOpacity>

@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiTags,
   ApiOperation,
@@ -29,6 +30,7 @@ import { TrackingWebhookDto } from './dto/update-tracking.dto';
 export class OrderTrackingController {
   constructor(private readonly trackingService: OrderTrackingService) {}
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('guest')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

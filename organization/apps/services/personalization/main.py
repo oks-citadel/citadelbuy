@@ -18,8 +18,11 @@ from enum import Enum
 from typing import Optional, List, Dict, Any
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Query, Path, BackgroundTasks, status
+from fastapi import FastAPI, HTTPException, Query, Path, BackgroundTasks, status, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel, Field
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
@@ -134,6 +137,9 @@ async def lifespan(app: FastAPI):
     logger.info("Personalization Service shutting down...")
 
 
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+
 # Initialize FastAPI app with lifespan
 app = FastAPI(
     title="Broxiva Personalization Service",
@@ -143,6 +149,10 @@ app = FastAPI(
     redoc_url="/redoc",
     lifespan=lifespan
 )
+
+# Add rate limiter to app state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Add CORS middleware with specific origins
 app.add_middleware(
@@ -215,7 +225,8 @@ class ExperimentCreate(BaseModel):
 # ============================================
 
 @app.get("/health")
-async def health_check():
+@limiter.limit("100/minute")
+async def health_check(request: Request):
     """Service health check endpoint."""
     return {
         "status": "healthy",
@@ -230,7 +241,8 @@ async def health_check():
 # ============================================
 
 @app.post("/api/v1/preferences", response_model=Dict[str, Any], status_code=201)
-async def create_preferences(preferences: UserPreferencesCreate):
+@limiter.limit("30/minute")
+async def create_preferences(request: Request, preferences: UserPreferencesCreate):
     """Create or update user preferences."""
     user_id = preferences.user_id
 
@@ -262,7 +274,8 @@ async def create_preferences(preferences: UserPreferencesCreate):
 
 
 @app.get("/api/v1/preferences/{user_id}", response_model=Dict[str, Any])
-async def get_preferences(user_id: str = Path(..., description="User ID")):
+@limiter.limit("100/minute")
+async def get_preferences(request: Request, user_id: str = Path(..., description="User ID")):
     """Get user preferences."""
     if user_id not in user_preferences:
         # Return default preferences for new users
@@ -287,7 +300,9 @@ async def get_preferences(user_id: str = Path(..., description="User ID")):
 
 
 @app.put("/api/v1/preferences/{user_id}", response_model=Dict[str, Any])
+@limiter.limit("30/minute")
 async def update_preferences(
+    request: Request,
     user_id: str = Path(..., description="User ID"),
     update: UserPreferencesUpdate = None
 ):
@@ -331,7 +346,8 @@ async def update_preferences(
 
 
 @app.delete("/api/v1/preferences/{user_id}", response_model=Dict[str, Any])
-async def delete_preferences(user_id: str = Path(..., description="User ID")):
+@limiter.limit("30/minute")
+async def delete_preferences(request: Request, user_id: str = Path(..., description="User ID")):
     """Delete user preferences (GDPR compliance)."""
     if user_id in user_preferences:
         del user_preferences[user_id]
@@ -356,7 +372,9 @@ async def delete_preferences(user_id: str = Path(..., description="User ID")):
 # ============================================
 
 @app.post("/api/v1/interactions", response_model=Dict[str, Any], status_code=201)
+@limiter.limit("30/minute")
 async def track_interaction(
+    request: Request,
     interaction: UserInteraction,
     background_tasks: BackgroundTasks
 ):
@@ -396,7 +414,9 @@ async def track_interaction(
 
 
 @app.get("/api/v1/interactions/{user_id}", response_model=Dict[str, Any])
+@limiter.limit("100/minute")
 async def get_user_interactions(
+    request: Request,
     user_id: str = Path(..., description="User ID"),
     interaction_type: Optional[InteractionType] = None,
     limit: int = Query(50, ge=1, le=200),
@@ -430,36 +450,37 @@ async def get_user_interactions(
 # ============================================
 
 @app.post("/api/v1/recommendations", response_model=Dict[str, Any])
-async def get_recommendations(request: RecommendationRequest):
+@limiter.limit("30/minute")
+async def get_recommendations(request: Request, rec_request: RecommendationRequest):
     """Get personalized product recommendations."""
-    user_id = request.user_id
+    user_id = rec_request.user_id
 
     # Check cache (valid for 5 minutes)
-    cache_key = f"{user_id}_{request.recommendation_type.value}_{request.product_id}"
+    cache_key = f"{user_id}_{rec_request.recommendation_type.value}_{rec_request.product_id}"
     if cache_key in recommendations_cache:
         cached = recommendations_cache[cache_key]
         if datetime.fromisoformat(cached["cached_at"]) > datetime.utcnow() - timedelta(minutes=5):
             return {
                 "success": True,
                 "data": cached["recommendations"],
-                "recommendation_type": request.recommendation_type.value,
+                "recommendation_type": rec_request.recommendation_type.value,
                 "cached": True
             }
 
     recommendations = []
 
-    if request.recommendation_type == RecommendationType.SIMILAR_PRODUCTS and request.product_id:
-        recommendations = _get_similar_products(request.product_id, request.limit)
-    elif request.recommendation_type == RecommendationType.PERSONALIZED:
-        recommendations = _get_personalized_recommendations(user_id, request.limit)
-    elif request.recommendation_type == RecommendationType.TRENDING:
-        recommendations = _get_trending_products(request.limit)
+    if rec_request.recommendation_type == RecommendationType.SIMILAR_PRODUCTS and rec_request.product_id:
+        recommendations = _get_similar_products(rec_request.product_id, rec_request.limit)
+    elif rec_request.recommendation_type == RecommendationType.PERSONALIZED:
+        recommendations = _get_personalized_recommendations(user_id, rec_request.limit)
+    elif rec_request.recommendation_type == RecommendationType.TRENDING:
+        recommendations = _get_trending_products(rec_request.limit)
     else:
-        recommendations = SAMPLE_PRODUCTS[:request.limit]
+        recommendations = SAMPLE_PRODUCTS[:rec_request.limit]
 
     # Apply category filter if specified
-    if request.category_filter:
-        recommendations = [r for r in recommendations if r.get("category") == request.category_filter]
+    if rec_request.category_filter:
+        recommendations = [r for r in recommendations if r.get("category") == rec_request.category_filter]
 
     # Cache recommendations
     recommendations_cache[cache_key] = {
@@ -467,19 +488,21 @@ async def get_recommendations(request: RecommendationRequest):
         "cached_at": datetime.utcnow().isoformat()
     }
 
-    logger.info(f"Recommendations generated: user={user_id}, type={request.recommendation_type.value}, count={len(recommendations)}")
+    logger.info(f"Recommendations generated: user={user_id}, type={rec_request.recommendation_type.value}, count={len(recommendations)}")
 
     return {
         "success": True,
         "data": recommendations,
-        "recommendation_type": request.recommendation_type.value,
+        "recommendation_type": rec_request.recommendation_type.value,
         "user_id": user_id,
         "cached": False
     }
 
 
 @app.get("/api/v1/recommendations/similar/{product_id}", response_model=Dict[str, Any])
+@limiter.limit("100/minute")
 async def get_similar_products(
+    request: Request,
     product_id: str = Path(..., description="Product ID"),
     limit: int = Query(10, ge=1, le=50)
 ):
@@ -495,7 +518,9 @@ async def get_similar_products(
 
 
 @app.get("/api/v1/recommendations/trending", response_model=Dict[str, Any])
+@limiter.limit("100/minute")
 async def get_trending(
+    request: Request,
     category: Optional[str] = None,
     limit: int = Query(10, ge=1, le=50)
 ):
@@ -518,28 +543,29 @@ async def get_trending(
 # ============================================
 
 @app.post("/api/v1/personalize/content", response_model=Dict[str, Any])
-async def personalize_content(request: ContentPersonalizationRequest):
+@limiter.limit("30/minute")
+async def personalize_content(request: Request, content_request: ContentPersonalizationRequest):
     """Get personalized content for a user."""
-    user_id = request.user_id
+    user_id = content_request.user_id
     prefs = user_preferences.get(user_id, {})
 
     personalized_content = {
         "user_id": user_id,
-        "content_type": request.content_type.value,
+        "content_type": content_request.content_type.value,
         "personalization_applied": prefs.get("personalization_enabled", True),
         "generated_at": datetime.utcnow().isoformat()
     }
 
-    if request.content_type == ContentType.HOMEPAGE_BANNER:
+    if content_request.content_type == ContentType.HOMEPAGE_BANNER:
         personalized_content["content"] = _personalize_homepage(user_id, prefs)
-    elif request.content_type == ContentType.PRODUCT_PAGE:
-        personalized_content["content"] = _personalize_product_page(user_id, prefs, request.context)
-    elif request.content_type == ContentType.EMAIL_CONTENT:
+    elif content_request.content_type == ContentType.PRODUCT_PAGE:
+        personalized_content["content"] = _personalize_product_page(user_id, prefs, content_request.context)
+    elif content_request.content_type == ContentType.EMAIL_CONTENT:
         personalized_content["content"] = _personalize_email(user_id, prefs)
     else:
         personalized_content["content"] = {"message": "Default content"}
 
-    logger.info(f"Content personalized: user={user_id}, type={request.content_type.value}")
+    logger.info(f"Content personalized: user={user_id}, type={content_request.content_type.value}")
 
     return {
         "success": True,
@@ -552,7 +578,8 @@ async def personalize_content(request: ContentPersonalizationRequest):
 # ============================================
 
 @app.post("/api/v1/experiments", response_model=Dict[str, Any], status_code=201)
-async def create_experiment(experiment: ExperimentCreate):
+@limiter.limit("30/minute")
+async def create_experiment(request: Request, experiment: ExperimentCreate):
     """Create a new A/B test experiment."""
     experiment_id = str(uuid4())
 
@@ -581,7 +608,9 @@ async def create_experiment(experiment: ExperimentCreate):
 
 
 @app.get("/api/v1/experiments", response_model=Dict[str, Any])
+@limiter.limit("100/minute")
 async def list_experiments(
+    request: Request,
     status: Optional[str] = None
 ):
     """List all experiments."""
@@ -598,7 +627,9 @@ async def list_experiments(
 
 
 @app.get("/api/v1/experiments/{experiment_id}/assign", response_model=Dict[str, Any])
+@limiter.limit("100/minute")
 async def assign_experiment_variant(
+    request: Request,
     experiment_id: str = Path(..., description="Experiment ID"),
     user_id: str = Query(..., description="User ID")
 ):
@@ -654,7 +685,8 @@ async def assign_experiment_variant(
 # ============================================
 
 @app.get("/api/v1/profile/{user_id}", response_model=Dict[str, Any])
-async def get_user_profile(user_id: str = Path(..., description="User ID")):
+@limiter.limit("100/minute")
+async def get_user_profile(request: Request, user_id: str = Path(..., description="User ID")):
     """Get a comprehensive user profile with inferred preferences."""
     prefs = user_preferences.get(user_id, {})
     interactions = user_interactions.get(user_id, [])
@@ -704,7 +736,8 @@ async def get_user_profile(user_id: str = Path(..., description="User ID")):
 # ============================================
 
 @app.get("/")
-async def root():
+@limiter.limit("100/minute")
+async def root(request: Request):
     """Root endpoint with service information"""
     return {
         "service": "Broxiva Personalization Service",

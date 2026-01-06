@@ -24,8 +24,11 @@ from enum import Enum
 from typing import Optional, List, Dict, Any
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Query, Path, BackgroundTasks, status
+from fastapi import FastAPI, HTTPException, Query, Path, BackgroundTasks, status, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel, Field
 
 
@@ -1382,6 +1385,9 @@ async def lifespan(app: FastAPI):
     logger.info("Notification Service shutting down...")
 
 
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+
 # Initialize FastAPI app with lifespan
 app = FastAPI(
     title="Broxiva Notification Service",
@@ -1391,6 +1397,10 @@ app = FastAPI(
     redoc_url="/redoc",
     lifespan=lifespan
 )
+
+# Add rate limiter to app state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Add CORS middleware with specific origins
 app.add_middleware(
@@ -1487,7 +1497,8 @@ class NotificationPreferences(BaseModel):
 # ============================================
 
 @app.get("/health")
-async def health_check():
+@limiter.limit("100/minute")
+async def health_check(request: Request):
     """Service health check endpoint."""
     return {
         "status": "healthy",
@@ -1503,7 +1514,9 @@ async def health_check():
 # ============================================
 
 @app.post("/api/v1/notifications/email", response_model=Dict[str, Any], status_code=201)
+@limiter.limit("30/minute")
 async def send_email(
+    request: Request,
     notification: EmailNotification,
     background_tasks: BackgroundTasks
 ):
@@ -1565,7 +1578,9 @@ async def send_email(
 # ============================================
 
 @app.post("/api/v1/notifications/sms", response_model=Dict[str, Any], status_code=201)
+@limiter.limit("30/minute")
 async def send_sms(
+    request: Request,
     notification: SMSNotification,
     background_tasks: BackgroundTasks
 ):
@@ -1621,7 +1636,9 @@ async def send_sms(
 # ============================================
 
 @app.post("/api/v1/notifications/push", response_model=Dict[str, Any], status_code=201)
+@limiter.limit("30/minute")
 async def send_push(
+    request: Request,
     notification: PushNotification,
     background_tasks: BackgroundTasks
 ):
@@ -1673,7 +1690,8 @@ async def send_push(
 # ============================================
 
 @app.post("/api/v1/queue/send", response_model=Dict[str, Any], status_code=201)
-async def queue_message(message: QueueMessage):
+@limiter.limit("30/minute")
+async def queue_message(request: Request, message: QueueMessage):
     """Send a message to the notification queue (AWS SQS)."""
     result = await provider_manager.queue_provider.send_message(
         message={
@@ -1699,7 +1717,9 @@ async def queue_message(message: QueueMessage):
 
 
 @app.get("/api/v1/queue/receive", response_model=Dict[str, Any])
+@limiter.limit("100/minute")
 async def receive_messages(
+    request: Request,
     max_messages: int = Query(10, ge=1, le=10),
     wait_time: int = Query(0, ge=0, le=20)
 ):
@@ -1720,7 +1740,8 @@ async def receive_messages(
 
 
 @app.delete("/api/v1/queue/message/{receipt_handle}", response_model=Dict[str, Any])
-async def delete_queue_message(receipt_handle: str = Path(..., description="Receipt handle of the message")):
+@limiter.limit("30/minute")
+async def delete_queue_message(request: Request, receipt_handle: str = Path(..., description="Receipt handle of the message")):
     """Delete a message from the queue after processing."""
     success = await provider_manager.queue_provider.delete_message(receipt_handle)
 
@@ -1734,7 +1755,8 @@ async def delete_queue_message(receipt_handle: str = Path(..., description="Rece
 
 
 @app.get("/api/v1/queue/status", response_model=Dict[str, Any])
-async def get_queue_status():
+@limiter.limit("100/minute")
+async def get_queue_status(request: Request):
     """Get queue status and attributes."""
     if isinstance(provider_manager.queue_provider, AWSSQSProvider):
         attributes = await provider_manager.queue_provider.get_queue_attributes()
@@ -1763,7 +1785,9 @@ async def get_queue_status():
 # ============================================
 
 @app.post("/api/v1/notifications/bulk", response_model=Dict[str, Any], status_code=201)
+@limiter.limit("10/minute")
 async def send_bulk_notifications(
+    request: Request,
     notification: BulkNotification,
     background_tasks: BackgroundTasks
 ):
@@ -1813,7 +1837,9 @@ async def send_bulk_notifications(
 # ============================================
 
 @app.get("/api/v1/notifications", response_model=Dict[str, Any])
+@limiter.limit("100/minute")
 async def list_notifications(
+    request: Request,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     channel: Optional[NotificationChannel] = None,
@@ -1853,7 +1879,8 @@ async def list_notifications(
 
 
 @app.get("/api/v1/notifications/{notification_id}", response_model=Dict[str, Any])
-async def get_notification(notification_id: str = Path(..., description="Notification ID")):
+@limiter.limit("100/minute")
+async def get_notification(request: Request, notification_id: str = Path(..., description="Notification ID")):
     """Get a single notification by ID."""
     if notification_id not in notifications:
         raise HTTPException(status_code=404, detail="Notification not found")
@@ -1865,7 +1892,8 @@ async def get_notification(notification_id: str = Path(..., description="Notific
 
 
 @app.get("/api/v1/notifications/{notification_id}/status", response_model=Dict[str, Any])
-async def get_notification_status(notification_id: str = Path(..., description="Notification ID")):
+@limiter.limit("100/minute")
+async def get_notification_status(request: Request, notification_id: str = Path(..., description="Notification ID")):
     """Get the delivery status of a notification."""
     if notification_id not in notifications:
         raise HTTPException(status_code=404, detail="Notification not found")
@@ -1891,7 +1919,8 @@ async def get_notification_status(notification_id: str = Path(..., description="
 # ============================================
 
 @app.post("/api/v1/templates", response_model=Dict[str, Any], status_code=201)
-async def create_template(template: NotificationTemplate):
+@limiter.limit("30/minute")
+async def create_template(request: Request, template: NotificationTemplate):
     """Create a notification template."""
     template_id = str(uuid4())
 
@@ -1920,7 +1949,9 @@ async def create_template(template: NotificationTemplate):
 
 
 @app.get("/api/v1/templates", response_model=Dict[str, Any])
+@limiter.limit("100/minute")
 async def list_templates(
+    request: Request,
     channel: Optional[NotificationChannel] = None,
     active_only: bool = True
 ):
@@ -1940,7 +1971,8 @@ async def list_templates(
 
 
 @app.get("/api/v1/templates/{template_id}", response_model=Dict[str, Any])
-async def get_template(template_id: str = Path(..., description="Template ID")):
+@limiter.limit("100/minute")
+async def get_template(request: Request, template_id: str = Path(..., description="Template ID")):
     """Get a template by ID."""
     if template_id not in templates:
         raise HTTPException(status_code=404, detail="Template not found")
@@ -1952,7 +1984,9 @@ async def get_template(template_id: str = Path(..., description="Template ID")):
 
 
 @app.put("/api/v1/templates/{template_id}", response_model=Dict[str, Any])
+@limiter.limit("30/minute")
 async def update_template(
+    request: Request,
     template_id: str = Path(..., description="Template ID"),
     template: NotificationTemplate = None
 ):
@@ -1980,7 +2014,8 @@ async def update_template(
 
 
 @app.delete("/api/v1/templates/{template_id}", response_model=Dict[str, Any])
-async def delete_template(template_id: str = Path(..., description="Template ID")):
+@limiter.limit("30/minute")
+async def delete_template(request: Request, template_id: str = Path(..., description="Template ID")):
     """Delete (deactivate) a template."""
     if template_id not in templates:
         raise HTTPException(status_code=404, detail="Template not found")
@@ -2002,7 +2037,8 @@ async def delete_template(template_id: str = Path(..., description="Template ID"
 # ============================================
 
 @app.post("/api/v1/subscriptions", response_model=Dict[str, Any], status_code=201)
-async def create_subscription(preferences: NotificationPreferences):
+@limiter.limit("30/minute")
+async def create_subscription(request: Request, preferences: NotificationPreferences):
     """Create or update notification preferences for a user."""
     subscription_record = {
         "user_id": preferences.user_id,
@@ -2028,7 +2064,8 @@ async def create_subscription(preferences: NotificationPreferences):
 
 
 @app.get("/api/v1/subscriptions/{user_id}", response_model=Dict[str, Any])
-async def get_subscription(user_id: str = Path(..., description="User ID")):
+@limiter.limit("100/minute")
+async def get_subscription(request: Request, user_id: str = Path(..., description="User ID")):
     """Get notification preferences for a user."""
     if user_id not in subscriptions:
         return {
@@ -2052,7 +2089,9 @@ async def get_subscription(user_id: str = Path(..., description="User ID")):
 
 
 @app.post("/api/v1/subscriptions/{user_id}/unsubscribe", response_model=Dict[str, Any])
+@limiter.limit("30/minute")
 async def unsubscribe(
+    request: Request,
     user_id: str = Path(..., description="User ID"),
     channels: Optional[List[NotificationChannel]] = None
 ):
@@ -2098,7 +2137,9 @@ async def unsubscribe(
 # ============================================
 
 @app.get("/api/v1/analytics/summary", response_model=Dict[str, Any])
+@limiter.limit("100/minute")
 async def get_analytics_summary(
+    request: Request,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None
 ):
@@ -2144,7 +2185,8 @@ async def get_analytics_summary(
 # ============================================
 
 @app.get("/")
-async def root():
+@limiter.limit("100/minute")
+async def root(request: Request):
     """Root endpoint with service information"""
     return {
         "service": "Broxiva Notification Service",

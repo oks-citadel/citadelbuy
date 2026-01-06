@@ -21,8 +21,11 @@ from typing import Optional, List, Dict, Any
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, status, Query, Path as PathParam, BackgroundTasks
+from fastapi import FastAPI, File, UploadFile, HTTPException, status, Query, Path as PathParam, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
 from pydantic import BaseModel, Field
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance
@@ -99,6 +102,9 @@ async def lifespan(app: FastAPI):
     logger.info("Media Service shutting down...")
 
 
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+
 # Initialize FastAPI app with lifespan
 app = FastAPI(
     title="Broxiva Media Service",
@@ -108,6 +114,10 @@ app = FastAPI(
     redoc_url="/redoc",
     lifespan=lifespan
 )
+
+# Add rate limiter to app state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Add CORS middleware with specific origins
 app.add_middleware(
@@ -302,7 +312,8 @@ def generate_suggestions(analysis_data: Dict[str, Any]) -> List[str]:
 # ============================================
 
 @app.get("/health", response_model=HealthResponse)
-async def health_check():
+@limiter.limit("100/minute")
+async def health_check(request: Request):
     """Health check endpoint."""
     return HealthResponse(
         status="healthy",
@@ -317,7 +328,9 @@ async def health_check():
 # ============================================
 
 @app.post("/api/v1/media/upload", response_model=Dict[str, Any], status_code=201)
+@limiter.limit("30/minute")
 async def upload_media(
+    request: Request,
     file: UploadFile = File(..., description="Image file to upload"),
     tags: Optional[str] = Query(None, description="Comma-separated tags"),
     folder: Optional[str] = Query("general", description="Storage folder"),
@@ -424,7 +437,9 @@ async def upload_media(
 
 
 @app.get("/api/v1/media", response_model=Dict[str, Any])
+@limiter.limit("100/minute")
 async def list_media(
+    request: Request,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     folder: Optional[str] = None,
@@ -467,7 +482,8 @@ async def list_media(
 
 
 @app.get("/api/v1/media/{media_id}", response_model=Dict[str, Any])
-async def get_media(media_id: str = PathParam(..., description="Media ID")):
+@limiter.limit("100/minute")
+async def get_media(request: Request, media_id: str = PathParam(..., description="Media ID")):
     """Get a single media item by ID."""
     if media_id not in media_store:
         raise HTTPException(status_code=404, detail="Media not found")
@@ -479,7 +495,9 @@ async def get_media(media_id: str = PathParam(..., description="Media ID")):
 
 
 @app.put("/api/v1/media/{media_id}", response_model=Dict[str, Any])
+@limiter.limit("30/minute")
 async def update_media(
+    request: Request,
     media_id: str = PathParam(..., description="Media ID"),
     update: MediaUpdateRequest = None
 ):
@@ -505,7 +523,8 @@ async def update_media(
 
 
 @app.delete("/api/v1/media/{media_id}", response_model=Dict[str, Any])
-async def delete_media(media_id: str = PathParam(..., description="Media ID")):
+@limiter.limit("30/minute")
+async def delete_media(request: Request, media_id: str = PathParam(..., description="Media ID")):
     """Delete a media item (soft delete)."""
     if media_id not in media_store:
         raise HTTPException(status_code=404, detail="Media not found")
@@ -520,15 +539,16 @@ async def delete_media(media_id: str = PathParam(..., description="Media ID")):
 
 
 @app.post("/api/v1/media/cdn-url", response_model=Dict[str, Any])
-async def generate_cdn_url(request: CDNUrlRequest):
+@limiter.limit("30/minute")
+async def generate_cdn_url(request: Request, cdn_request: CDNUrlRequest):
     """Generate a CDN URL with optional transformations."""
-    if request.media_id not in media_store:
+    if cdn_request.media_id not in media_store:
         raise HTTPException(status_code=404, detail="Media not found")
 
-    item = media_store[request.media_id]
+    item = media_store[cdn_request.media_id]
     original_url = item["cdn_url"]
 
-    transformations = request.transformations or {}
+    transformations = cdn_request.transformations or {}
     if transformations:
         params = []
         if "width" in transformations:
@@ -549,7 +569,7 @@ async def generate_cdn_url(request: CDNUrlRequest):
     return {
         "success": True,
         "data": {
-            "media_id": request.media_id,
+            "media_id": cdn_request.media_id,
             "original_url": original_url,
             "transformed_url": transformed_url,
             "transformations": transformations
@@ -562,7 +582,9 @@ async def generate_cdn_url(request: CDNUrlRequest):
 # ============================================
 
 @app.post("/process-image", response_model=ProcessImageResponse)
+@limiter.limit("30/minute")
 async def process_image(
+    request: Request,
     file: UploadFile = File(..., description="Image file to process"),
     max_width: Optional[int] = None,
     max_height: Optional[int] = None,
@@ -635,7 +657,9 @@ async def process_image(
 
 
 @app.post("/generate-thumbnail")
+@limiter.limit("30/minute")
 async def generate_thumbnail(
+    request: Request,
     file: UploadFile = File(..., description="Image file"),
     width: int = 150,
     height: int = 150,
@@ -692,7 +716,8 @@ async def generate_thumbnail(
 
 
 @app.post("/analyze-image", response_model=AnalyzeImageResponse)
-async def analyze_image(file: UploadFile = File(..., description="Image file to analyze")):
+@limiter.limit("30/minute")
+async def analyze_image(request: Request, file: UploadFile = File(..., description="Image file to analyze")):
     """Analyze an image for product categorization."""
     try:
         contents = await file.read()
@@ -761,7 +786,8 @@ async def analyze_image(file: UploadFile = File(..., description="Image file to 
 # ============================================
 
 @app.get("/")
-async def root():
+@limiter.limit("100/minute")
+async def root(request: Request):
     """Root endpoint with service information"""
     return {
         "service": "Broxiva Media Service",

@@ -68,6 +68,9 @@ export default function RegisterScreen() {
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
+            accessibilityLabel="Go back"
+            accessibilityHint="Navigate to the previous screen"
+            accessibilityRole="button"
           >
             <Ionicons name="arrow-back" size={24} color="#1f2937" />
           </TouchableOpacity>
@@ -96,6 +99,8 @@ export default function RegisterScreen() {
                 value={name}
                 onChangeText={setName}
                 autoCorrect={false}
+                accessibilityLabel="Full name"
+                accessibilityHint="Enter your full name"
               />
             </View>
 
@@ -110,6 +115,8 @@ export default function RegisterScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                accessibilityLabel="Email address"
+                accessibilityHint="Enter your email address"
               />
             </View>
 
@@ -122,8 +129,15 @@ export default function RegisterScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
+                accessibilityLabel="Password"
+                accessibilityHint="Enter your password"
               />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                accessibilityHint="Toggle password visibility"
+                accessibilityRole="button"
+              >
                 <Ionicons
                   name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                   size={20}
@@ -141,12 +155,18 @@ export default function RegisterScreen() {
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showPassword}
+                accessibilityLabel="Confirm password"
+                accessibilityHint="Re-enter your password to confirm"
               />
             </View>
 
             <TouchableOpacity
               style={styles.termsContainer}
               onPress={() => setAgreeTerms(!agreeTerms)}
+              accessibilityLabel={agreeTerms ? "Terms and conditions accepted" : "Accept terms and conditions"}
+              accessibilityHint="Tap to agree to the Terms of Service and Privacy Policy"
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: agreeTerms }}
             >
               <View style={[styles.checkbox, agreeTerms && styles.checkboxChecked]}>
                 {agreeTerms && <Ionicons name="checkmark" size={14} color="#fff" />}
@@ -162,6 +182,10 @@ export default function RegisterScreen() {
               style={[styles.registerButton, isLoading && styles.registerButtonDisabled]}
               onPress={handleRegister}
               disabled={isLoading}
+              accessibilityLabel="Create Account"
+              accessibilityHint="Submit your registration information to create a new account"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isLoading }}
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
@@ -177,13 +201,28 @@ export default function RegisterScreen() {
             </View>
 
             <View style={styles.socialButtons}>
-              <TouchableOpacity style={styles.socialButton}>
+              <TouchableOpacity
+                style={styles.socialButton}
+                accessibilityLabel="Sign up with Google"
+                accessibilityHint="Create an account using your Google account"
+                accessibilityRole="button"
+              >
                 <Ionicons name="logo-google" size={24} color="#ea4335" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton}>
+              <TouchableOpacity
+                style={styles.socialButton}
+                accessibilityLabel="Sign up with Apple"
+                accessibilityHint="Create an account using your Apple account"
+                accessibilityRole="button"
+              >
                 <Ionicons name="logo-apple" size={24} color="#000" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton}>
+              <TouchableOpacity
+                style={styles.socialButton}
+                accessibilityLabel="Sign up with Facebook"
+                accessibilityHint="Create an account using your Facebook account"
+                accessibilityRole="button"
+              >
                 <Ionicons name="logo-facebook" size={24} color="#1877f2" />
               </TouchableOpacity>
             </View>
@@ -192,7 +231,12 @@ export default function RegisterScreen() {
           {/* Footer */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account?</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Login')}
+              accessibilityLabel="Sign In"
+              accessibilityHint="Navigate to the sign in screen if you already have an account"
+              accessibilityRole="button"
+            >
               <Text style={styles.footerLink}>Sign In</Text>
             </TouchableOpacity>
           </View>

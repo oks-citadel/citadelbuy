@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CouponsService } from './coupons.service';
 import { CreateCouponDto } from './dto/create-coupon.dto';
@@ -118,6 +119,7 @@ export class CouponsController {
     return this.couponsService.deleteCoupon(id);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('validate')
   @ApiOperation({ summary: 'Validate a coupon code (Public)' })
   @ApiResponse({ status: 200, description: 'Coupon validation result' })

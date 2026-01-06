@@ -29,6 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useAuthStore } from '@/stores/auth-store';
 
 interface NavItem {
   href: string;
@@ -45,10 +46,23 @@ export default function OrganizationLayout({
   const pathname = usePathname();
   const params = useParams();
   const router = useRouter();
+  const { user, logout } = useAuthStore();
   const slug = params.slug as string;
 
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+
+  // Redirect if not authenticated
+  React.useEffect(() => {
+    if (!user) {
+      router.push(`/auth/login?redirect=/org/${slug}`);
+    }
+  }, [user, router, slug]);
+
+  // Show nothing while checking authentication
+  if (!user) {
+    return null;
+  }
 
   const navItems: NavItem[] = [
     {
@@ -101,7 +115,7 @@ export default function OrganizationLayout({
   };
 
   const handleLogout = () => {
-    // Implement logout logic
+    logout();
     router.push('/');
   };
 

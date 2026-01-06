@@ -108,6 +108,9 @@ export default function CartScreen() {
         <TouchableOpacity
           style={styles.shopButton}
           onPress={() => navigation.navigate('Main')}
+          accessibilityLabel="Start Shopping"
+          accessibilityHint="Navigate to the main store to browse products"
+          accessibilityRole="button"
         >
           <Text style={styles.shopButtonText}>Start Shopping</Text>
         </TouchableOpacity>
@@ -122,7 +125,12 @@ export default function CartScreen() {
         <View style={styles.itemsContainer}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{cartItems.length} Items</Text>
-            <TouchableOpacity onPress={handleClearCart}>
+            <TouchableOpacity
+              onPress={handleClearCart}
+              accessibilityLabel="Clear All"
+              accessibilityHint="Remove all items from your cart"
+              accessibilityRole="button"
+            >
               <Text style={styles.clearText}>Clear All</Text>
             </TouchableOpacity>
           </View>
@@ -150,13 +158,20 @@ export default function CartScreen() {
                           updateQuantityMutation.mutate({ itemId: item.id, quantity: item.quantity - 1 });
                         }
                       }}
+                      accessibilityLabel={`Decrease quantity for ${item.name}`}
+                      accessibilityHint={item.quantity > 1 ? `Reduce quantity to ${item.quantity - 1}` : "Minimum quantity is 1"}
+                      accessibilityRole="button"
+                      accessibilityState={{ disabled: item.quantity <= 1 }}
                     >
                       <Ionicons name="remove" size={16} color="#4b5563" />
                     </TouchableOpacity>
-                    <Text style={styles.quantityText}>{item.quantity}</Text>
+                    <Text style={styles.quantityText} accessibilityLabel={`Quantity: ${item.quantity}`}>{item.quantity}</Text>
                     <TouchableOpacity
                       style={styles.quantityButton}
                       onPress={() => updateQuantityMutation.mutate({ itemId: item.id, quantity: item.quantity + 1 })}
+                      accessibilityLabel={`Increase quantity for ${item.name}`}
+                      accessibilityHint={`Increase quantity to ${item.quantity + 1}`}
+                      accessibilityRole="button"
                     >
                       <Ionicons name="add" size={16} color="#4b5563" />
                     </TouchableOpacity>
@@ -164,6 +179,9 @@ export default function CartScreen() {
                   <TouchableOpacity
                     style={styles.removeButton}
                     onPress={() => handleRemoveItem(item.id)}
+                    accessibilityLabel={`Remove ${item.name} from cart`}
+                    accessibilityHint="Remove this item from your shopping cart"
+                    accessibilityRole="button"
                   >
                     <Ionicons name="trash-outline" size={18} color="#ef4444" />
                   </TouchableOpacity>
@@ -179,7 +197,12 @@ export default function CartScreen() {
             <Ionicons name="ticket-outline" size={20} color="#9ca3af" />
             <Text style={styles.couponPlaceholder}>Enter coupon code</Text>
           </View>
-          <TouchableOpacity style={styles.applyButton}>
+          <TouchableOpacity
+            style={styles.applyButton}
+            accessibilityLabel="Apply coupon"
+            accessibilityHint="Apply the entered coupon code to your order"
+            accessibilityRole="button"
+          >
             <Text style={styles.applyButtonText}>Apply</Text>
           </TouchableOpacity>
         </View>
@@ -235,6 +258,9 @@ export default function CartScreen() {
         <TouchableOpacity
           style={styles.checkoutButton}
           onPress={() => navigation.navigate('Checkout')}
+          accessibilityLabel="Checkout"
+          accessibilityHint={`Proceed to checkout with ${cartItems.length} item${cartItems.length > 1 ? 's' : ''} totaling $${total.toFixed(2)}`}
+          accessibilityRole="button"
         >
           <Text style={styles.checkoutButtonText}>Checkout</Text>
           <Ionicons name="arrow-forward" size={20} color="#fff" />

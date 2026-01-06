@@ -88,6 +88,14 @@ services:
     labels:
       - "com.broxiva.service=nginx"
       - "com.broxiva.description=API Gateway and Load Balancer"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
   # ==================================
   # Frontend (Next.js)
@@ -451,8 +459,10 @@ services:
     image: prom/prometheus:v2.54.1
     container_name: broxiva-prometheus
     restart: unless-stopped
-    ports:
-      - '9090:9090'
+    # SECURITY: Monitoring ports should not be exposed externally in production
+    # Access via VPN or SSH tunnel if needed
+    expose:
+      - '9090'
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
@@ -464,6 +474,11 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     labels:
       - "com.broxiva.service=prometheus"
       - "com.broxiva.description=Prometheus Metrics"
@@ -480,8 +495,10 @@ services:
     image: grafana/grafana:11.3.0
     container_name: broxiva-grafana
     restart: unless-stopped
-    ports:
-      - '3001:3000'
+    # SECURITY: Monitoring ports should not be exposed externally in production
+    # Access via VPN or SSH tunnel if needed
+    expose:
+      - '3000'
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
@@ -494,6 +511,11 @@ services:
       - monitoring-network
     depends_on:
       - prometheus
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     labels:
       - "com.broxiva.service=grafana"
       - "com.broxiva.description=Grafana Monitoring Dashboard"

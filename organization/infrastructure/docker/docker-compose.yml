@@ -50,16 +50,19 @@ services:
     restart: unless-stopped
     ports:
       - '6379:6379'
+    environment:
+      # Set REDIS_PASSWORD in .env file for basic security even in development
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-dev_redis_password}
     volumes:
       - redis-data:/data
     networks:
       - broxiva-network
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-dev_redis_password}', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-dev_redis_password}
 
   # Optional: pgAdmin for database management
   pgadmin:

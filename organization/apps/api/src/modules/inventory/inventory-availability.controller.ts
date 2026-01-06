@@ -7,6 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { InventoryService } from './inventory.service';
 import { RolesGuard } from '@/common/guards/roles.guard';
@@ -62,6 +63,7 @@ export class InventoryAvailabilityController {
     );
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('subscribe')
   @ApiOperation({ summary: 'Subscribe to stock availability notifications' })
   async subscribeToStockNotification(

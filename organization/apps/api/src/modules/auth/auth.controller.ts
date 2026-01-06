@@ -150,6 +150,7 @@ export class AuthController {
     return this.authService.forgotPassword(forgotPasswordDto.email);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('reset-password')
   @ApiOperation({
     summary: 'Reset password with token',
