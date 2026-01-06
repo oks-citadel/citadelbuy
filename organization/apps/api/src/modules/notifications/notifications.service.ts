@@ -261,36 +261,40 @@ export class NotificationsService {
     let userIds: string[] = [];
 
     switch (segment) {
-      case 'all':
+      case 'all': {
         const allUsers = await this.prisma.user.findMany({
           select: { id: true },
         });
         userIds = allUsers.map((u) => u.id);
         break;
+      }
 
-      case 'promotions':
+      case 'promotions': {
         const promoUsers = await this.prisma.notificationPreference.findMany({
           where: { promotionalEmails: true },
           select: { userId: true },
         });
         userIds = promoUsers.map((u) => u.userId);
         break;
+      }
 
-      case 'orders':
+      case 'orders': {
         const orderUsers = await this.prisma.notificationPreference.findMany({
           where: { orderConfirmation: true },
           select: { userId: true },
         });
         userIds = orderUsers.map((u) => u.userId);
         break;
+      }
 
-      case 'deals':
+      case 'deals': {
         const dealUsers = await this.prisma.notificationPreference.findMany({
           where: { priceDropAlerts: true },
           select: { userId: true },
         });
         userIds = dealUsers.map((u) => u.userId);
         break;
+      }
     }
 
     return this.sendBulkNotification(userIds, notification);

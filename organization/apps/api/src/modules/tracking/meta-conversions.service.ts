@@ -140,7 +140,7 @@ export class MetaConversionsService {
         userData.setStates([this.hashData(params.state)]);
       }
       if (params.zipCode) {
-        // @ts-ignore - Facebook SDK type definitions may be outdated
+        // @ts-expect-error - Facebook SDK type definitions may be outdated
         userData.setZipCode([this.hashData(params.zipCode)]);
       }
       if (params.country) {

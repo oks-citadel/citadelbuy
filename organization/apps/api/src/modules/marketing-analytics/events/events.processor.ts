@@ -96,13 +96,14 @@ export class EventsProcessor {
           startDate.setHours(0, 0, 0, 0);
           endDate.setHours(23, 59, 59, 999);
           break;
-        case 'WEEKLY':
+        case 'WEEKLY': {
           const day = startDate.getDay();
           startDate.setDate(startDate.getDate() - day);
           startDate.setHours(0, 0, 0, 0);
           endDate.setDate(startDate.getDate() + 6);
           endDate.setHours(23, 59, 59, 999);
           break;
+        }
       }
 
       // Calculate event counts

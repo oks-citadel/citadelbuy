@@ -27,7 +27,8 @@ describe('Date Utilities', () => {
     });
 
     it('should handle different date formats', () => {
-      const date = new Date('2024-12-25T00:00:00Z');
+      // Use local date to avoid timezone conversion issues
+      const date = new Date(2024, 11, 25, 12, 0, 0); // Dec 25, 2024 noon local time
 
       expect(formatDate(date, 'dd/MM/yyyy')).toBe('25/12/2024');
       expect(formatDate(date, 'MMMM d, yyyy')).toBe('December 25, 2024');
@@ -35,8 +36,9 @@ describe('Date Utilities', () => {
     });
 
     it('should handle dates at year boundaries', () => {
-      const newYearEve = new Date('2024-12-31T23:59:59Z');
-      const newYearDay = new Date('2025-01-01T00:00:00Z');
+      // Use local dates to avoid timezone conversion issues
+      const newYearEve = new Date(2024, 11, 31, 23, 59, 59); // Dec 31, 2024 local
+      const newYearDay = new Date(2025, 0, 1, 12, 0, 0); // Jan 1, 2025 local
 
       expect(formatDate(newYearEve, 'yyyy')).toBe('2024');
       expect(formatDate(newYearDay, 'yyyy')).toBe('2025');
@@ -55,7 +57,8 @@ describe('Date Utilities', () => {
     });
 
     it('should handle beginning of Unix epoch', () => {
-      const epoch = new Date('1970-01-01T00:00:00Z');
+      // Use local date to avoid timezone conversion issues
+      const epoch = new Date(1970, 0, 1, 12, 0, 0); // Jan 1, 1970 noon local time
       expect(formatDate(epoch, 'yyyy-MM-dd')).toBe('1970-01-01');
     });
 

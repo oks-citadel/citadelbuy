@@ -635,7 +635,7 @@ export class KycProviderService {
           );
           break;
 
-        case 'REJECTED':
+        case 'REJECTED': {
           // Extract rejection reasons from verification data if available
           const verificationData = kycApplication.verificationData as any;
           const rejectionReasons: string[] = [];
@@ -661,6 +661,7 @@ export class KycProviderService {
             `KYC rejected email sent to ${organization.primaryEmail} for organization ${organization.name}`,
           );
           break;
+        }
 
         case 'DOCUMENTS_SUBMITTED':
         case 'UNDER_REVIEW':

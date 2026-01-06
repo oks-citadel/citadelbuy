@@ -636,9 +636,10 @@ export class CohortsService {
     switch (granularity) {
       case 'day':
         return `${year}-${month}-${day}`;
-      case 'week':
+      case 'week': {
         const weekNum = this.getWeekNumber(date);
         return `${year}-W${String(weekNum).padStart(2, '0')}`;
+      }
       case 'month':
         return `${year}-${month}`;
       default:

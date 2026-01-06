@@ -230,15 +230,15 @@ describe('Array Utilities', () => {
 
     it('should keep first occurrence when duplicates exist', () => {
       const items = [
-        { id: 1, name: 'First Alice', email: 'alice@first.com' },
+        { id: 1, name: 'Alice', email: 'alice@first.com' },
         { id: 2, name: 'Bob', email: 'bob@example.com' },
-        { id: 3, name: 'Second Alice', email: 'alice@second.com' },
+        { id: 3, name: 'Alice', email: 'alice@second.com' },
       ];
 
       const result = uniqueBy(items, 'name');
 
       expect(result).toHaveLength(2);
-      expect(result.find((item) => item.name.includes('Alice'))?.id).toBe(1);
+      expect(result.find((item) => item.name === 'Alice')?.id).toBe(1);
     });
 
     it('should handle all unique items', () => {
