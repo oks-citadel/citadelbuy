@@ -1041,27 +1041,26 @@ export class BillingAuditService {
           items: {
             include: {
               product: true,
-              variant: true,
             },
           },
         },
       });
 
       if (order?.items) {
-        return order.items.map((item: any) => ({
+        return order.items.map((item) => ({
           id: item.id,
-          productId: item.productId,
+          productId: item.productId || '',
           name: item.product?.name || 'Unknown Product',
-          sku: item.variant?.sku || item.product?.sku,
+          sku: undefined, // SKU is on ProductVariant, not on Product directly
           quantity: item.quantity,
           unitPrice: Number(item.price),
           subtotal: Number(item.price) * item.quantity,
-          discountAmount: Number(item.discount || 0),
-          taxAmount: Number(item.tax || 0),
-          total: Number(item.price) * item.quantity - Number(item.discount || 0) + Number(item.tax || 0),
+          discountAmount: 0,
+          taxAmount: 0,
+          total: Number(item.price) * item.quantity,
           taxable: true,
-          category: item.product?.category,
-          variant: item.variant?.attributes,
+          category: item.product?.categoryId || undefined,
+          variant: undefined,
         }));
       }
     } catch {

@@ -128,14 +128,13 @@ export class EventSummaryDto {
 
   @ApiProperty({
     description: 'Event counts by name',
-    type: 'object',
-    additionalProperties: { type: 'number' },
+    example: { 'purchase': 100, 'add_to_cart': 250 },
   })
   eventCounts: Record<string, number>;
 
   @ApiProperty({
     description: 'Event counts by variant',
-    type: 'object',
+    example: { 'variant-1': { variantName: 'Control', eventCounts: { 'purchase': 50 }, totalEvents: 100, uniqueUsers: 80 } },
   })
   byVariant: Record<string, {
     variantName: string;
