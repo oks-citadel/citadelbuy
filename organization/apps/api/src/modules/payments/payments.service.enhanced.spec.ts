@@ -4,72 +4,71 @@ import { PaymentsService } from './payments.service';
 import { BadRequestException } from '@nestjs/common';
 import Stripe from 'stripe';
 
-// Mock Stripe
+// Mock Stripe module
 jest.mock('stripe');
+
+// Create shared mock object that will be returned by Stripe constructor
+const mockStripeInstance = {
+  paymentIntents: {
+    create: jest.fn(),
+    retrieve: jest.fn(),
+  },
+  refunds: {
+    create: jest.fn(),
+    retrieve: jest.fn(),
+  },
+  webhooks: {
+    constructEvent: jest.fn(),
+  },
+  applePayDomains: {
+    create: jest.fn(),
+    list: jest.fn(),
+  },
+};
 
 describe('PaymentsService - Enhanced Tests', () => {
   let service: PaymentsService;
   let configService: ConfigService;
 
-  const mockStripePaymentIntents = {
-    create: jest.fn(),
-    retrieve: jest.fn(),
+  // Config values to return from mock
+  const configValues: Record<string, any> = {
+    STRIPE_SECRET_KEY: 'sk_test_mock_key',
+    STRIPE_WEBHOOK_SECRET: 'whsec_test_secret',
+    PAYPAL_CLIENT_ID: 'paypal_client_id',
+    PAYPAL_CLIENT_SECRET: 'paypal_client_secret',
+    PAYPAL_MODE: 'sandbox',
+    APPLE_MERCHANT_ID: 'merchant.com.broxiva',
+    GOOGLE_MERCHANT_ID: 'google_merchant_123',
+    APP_NAME: 'Broxiva',
+    NODE_ENV: 'test',
   };
 
-  const mockStripeRefunds = {
-    create: jest.fn(),
-    retrieve: jest.fn(),
-  };
-
-  const mockStripeWebhooks = {
-    constructEvent: jest.fn(),
-  };
-
-  const mockStripeApplePayDomains = {
-    create: jest.fn(),
-    list: jest.fn(),
-  };
-
+  // Mock config service - will be reset in beforeEach
   const mockConfigService = {
-    get: jest.fn((key: string) => {
-      const config: Record<string, any> = {
-        STRIPE_SECRET_KEY: 'sk_test_mock_key',
-        STRIPE_WEBHOOK_SECRET: 'whsec_test_secret',
-        PAYPAL_CLIENT_ID: 'paypal_client_id',
-        PAYPAL_CLIENT_SECRET: 'paypal_client_secret',
-        PAYPAL_MODE: 'sandbox',
-        APPLE_MERCHANT_ID: 'merchant.com.broxiva',
-        GOOGLE_MERCHANT_ID: 'google_merchant_123',
-        APP_NAME: 'Broxiva',
-        NODE_ENV: 'test',
-      };
-      return config[key];
-    }),
+    get: jest.fn(),
   };
 
   beforeEach(async () => {
-    // Reset Stripe mock
-    (Stripe as any).mockImplementation(() => ({
-      paymentIntents: mockStripePaymentIntents,
-      refunds: mockStripeRefunds,
-      webhooks: mockStripeWebhooks,
-      applePayDomains: mockStripeApplePayDomains,
-    }));
+    // Reset mock call history for Stripe sub-methods
+    mockStripeInstance.paymentIntents.create.mockReset();
+    mockStripeInstance.paymentIntents.retrieve.mockReset();
+    mockStripeInstance.refunds.create.mockReset();
+    mockStripeInstance.refunds.retrieve.mockReset();
+    mockStripeInstance.webhooks.constructEvent.mockReset();
+    mockStripeInstance.applePayDomains.create.mockReset();
+    mockStripeInstance.applePayDomains.list.mockReset();
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        PaymentsService,
-        {
-          provide: ConfigService,
-          useValue: mockConfigService,
-        },
-      ],
-    }).compile();
+    // Setup Stripe mock implementation BEFORE service instantiation
+    // This is critical because Jest's resetMocks/restoreMocks options reset implementations
+    (Stripe as unknown as jest.Mock).mockImplementation(() => mockStripeInstance);
 
-    service = module.get<PaymentsService>(PaymentsService);
-    configService = module.get<ConfigService>(ConfigService);
+    // Setup ConfigService mock - must be done in beforeEach because Jest resets mocks
+    mockConfigService.get.mockImplementation((key: string) => configValues[key]);
 
-    jest.clearAllMocks();
+    // Create service directly instead of using TestingModule
+    // This ensures the mock is in place when the service constructor runs
+    service = new PaymentsService(mockConfigService as any);
+    configService = mockConfigService as any;
   });
 
   describe('Refund Operations', () => {
@@ -82,7 +81,7 @@ describe('PaymentsService - Enhanced Tests', () => {
           status: 'succeeded',
           amount: 10000,
         };
-        mockStripeRefunds.create.mockResolvedValue(mockRefund);
+        mockStripeInstance.refunds.create.mockResolvedValue(mockRefund);
 
         // Act
         const result = await service.createStripeRefund(paymentIntentId);
@@ -93,7 +92,7 @@ describe('PaymentsService - Enhanced Tests', () => {
           status: 'succeeded',
           amount: 100,
         });
-        expect(mockStripeRefunds.create).toHaveBeenCalledWith({
+        expect(mockStripeInstance.refunds.create).toHaveBeenCalledWith({
           payment_intent: paymentIntentId,
           amount: undefined,
           reason: 'requested_by_customer',
@@ -110,7 +109,7 @@ describe('PaymentsService - Enhanced Tests', () => {
           status: 'succeeded',
           amount: 5000,
         };
-        mockStripeRefunds.create.mockResolvedValue(mockRefund);
+        mockStripeInstance.refunds.create.mockResolvedValue(mockRefund);
 
         // Act
         const result = await service.createStripeRefund(paymentIntentId, amount);
@@ -121,7 +120,7 @@ describe('PaymentsService - Enhanced Tests', () => {
           status: 'succeeded',
           amount: 50,
         });
-        expect(mockStripeRefunds.create).toHaveBeenCalledWith({
+        expect(mockStripeInstance.refunds.create).toHaveBeenCalledWith({
           payment_intent: paymentIntentId,
           amount: 5000,
           reason: 'requested_by_customer',
@@ -139,13 +138,13 @@ describe('PaymentsService - Enhanced Tests', () => {
           status: 'succeeded',
           amount: 10000,
         };
-        mockStripeRefunds.create.mockResolvedValue(mockRefund);
+        mockStripeInstance.refunds.create.mockResolvedValue(mockRefund);
 
         // Act
         await service.createStripeRefund(paymentIntentId, amount, reason);
 
         // Assert
-        expect(mockStripeRefunds.create).toHaveBeenCalledWith({
+        expect(mockStripeInstance.refunds.create).toHaveBeenCalledWith({
           payment_intent: paymentIntentId,
           amount: 10000,
           reason: 'fraudulent',
@@ -162,7 +161,7 @@ describe('PaymentsService - Enhanced Tests', () => {
           status: 'succeeded',
           amount: 10000,
         };
-        mockStripeRefunds.create.mockResolvedValue(mockRefund);
+        mockStripeInstance.refunds.create.mockResolvedValue(mockRefund);
 
         // Act
         await service.createStripeRefund(
@@ -173,7 +172,7 @@ describe('PaymentsService - Enhanced Tests', () => {
         );
 
         // Assert
-        expect(mockStripeRefunds.create).toHaveBeenCalledWith({
+        expect(mockStripeInstance.refunds.create).toHaveBeenCalledWith({
           payment_intent: paymentIntentId,
           amount: undefined,
           reason: 'requested_by_customer',
@@ -185,7 +184,7 @@ describe('PaymentsService - Enhanced Tests', () => {
         // Arrange
         const paymentIntentId = 'pi_invalid';
         const stripeError = new Error('Insufficient funds for refund');
-        mockStripeRefunds.create.mockRejectedValue(stripeError);
+        mockStripeInstance.refunds.create.mockRejectedValue(stripeError);
 
         // Act & Assert
         await expect(service.createStripeRefund(paymentIntentId)).rejects.toThrow(
@@ -201,7 +200,7 @@ describe('PaymentsService - Enhanced Tests', () => {
           status: null,
           amount: 10000,
         };
-        mockStripeRefunds.create.mockResolvedValue(mockRefund);
+        mockStripeInstance.refunds.create.mockResolvedValue(mockRefund);
 
         // Act
         const result = await service.createStripeRefund(paymentIntentId);
@@ -220,21 +219,21 @@ describe('PaymentsService - Enhanced Tests', () => {
           amount: 10000,
           status: 'succeeded',
         } as Stripe.Refund;
-        mockStripeRefunds.retrieve.mockResolvedValue(mockRefund);
+        mockStripeInstance.refunds.retrieve.mockResolvedValue(mockRefund);
 
         // Act
         const result = await service.retrieveStripeRefund(refundId);
 
         // Assert
         expect(result).toEqual(mockRefund);
-        expect(mockStripeRefunds.retrieve).toHaveBeenCalledWith(refundId);
+        expect(mockStripeInstance.refunds.retrieve).toHaveBeenCalledWith(refundId);
       });
 
       it('should handle retrieval errors', async () => {
         // Arrange
         const refundId = 're_invalid';
         const stripeError = new Error('No such refund');
-        mockStripeRefunds.retrieve.mockRejectedValue(stripeError);
+        mockStripeInstance.refunds.retrieve.mockRejectedValue(stripeError);
 
         // Act & Assert
         await expect(service.retrieveStripeRefund(refundId)).rejects.toThrow(
@@ -257,7 +256,7 @@ describe('PaymentsService - Enhanced Tests', () => {
           status: 'succeeded',
           amount: 9999,
         };
-        mockStripeRefunds.create.mockResolvedValue(mockRefund);
+        mockStripeInstance.refunds.create.mockResolvedValue(mockRefund);
 
         // Act
         const result = await service.processRefund(
@@ -274,7 +273,7 @@ describe('PaymentsService - Enhanced Tests', () => {
           status: 'succeeded',
           amount: 99.99,
         });
-        expect(mockStripeRefunds.create).toHaveBeenCalledWith({
+        expect(mockStripeInstance.refunds.create).toHaveBeenCalledWith({
           payment_intent: transactionId,
           amount: 9999,
           reason: 'requested_by_customer',
@@ -484,7 +483,7 @@ describe('PaymentsService - Enhanced Tests', () => {
           id: 'pi_applepay',
           client_secret: 'pi_applepay_secret',
         };
-        mockStripePaymentIntents.create.mockResolvedValue(mockPaymentIntent);
+        mockStripeInstance.paymentIntents.create.mockResolvedValue(mockPaymentIntent);
 
         // Act
         const result = await service.createApplePayIntent(amount, currency, metadata);
@@ -499,7 +498,7 @@ describe('PaymentsService - Enhanced Tests', () => {
             countryCode: 'US',
           },
         });
-        expect(mockStripePaymentIntents.create).toHaveBeenCalledWith({
+        expect(mockStripeInstance.paymentIntents.create).toHaveBeenCalledWith({
           amount: 9999,
           currency: 'usd',
           payment_method_types: ['card'],
@@ -528,7 +527,7 @@ describe('PaymentsService - Enhanced Tests', () => {
           id: 'pi_googlepay',
           client_secret: 'pi_googlepay_secret',
         };
-        mockStripePaymentIntents.create.mockResolvedValue(mockPaymentIntent);
+        mockStripeInstance.paymentIntents.create.mockResolvedValue(mockPaymentIntent);
 
         // Act
         const result = await service.createGooglePayIntent(amount, currency, metadata);
@@ -545,7 +544,7 @@ describe('PaymentsService - Enhanced Tests', () => {
             allowedCardAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS'],
           },
         });
-        expect(mockStripePaymentIntents.create).toHaveBeenCalledWith({
+        expect(mockStripeInstance.paymentIntents.create).toHaveBeenCalledWith({
           amount: 9999,
           currency: 'usd',
           payment_method_types: ['card'],
@@ -567,7 +566,7 @@ describe('PaymentsService - Enhanced Tests', () => {
           id: 'pi_wallet',
           status: 'succeeded',
         };
-        mockStripePaymentIntents.create.mockResolvedValue(mockPaymentIntent);
+        mockStripeInstance.paymentIntents.create.mockResolvedValue(mockPaymentIntent);
 
         // Act
         const result = await service.processWalletPayment(
@@ -593,7 +592,7 @@ describe('PaymentsService - Enhanced Tests', () => {
           id: 'pi_wallet',
           status: 'succeeded',
         };
-        mockStripePaymentIntents.create.mockResolvedValue(mockPaymentIntent);
+        mockStripeInstance.paymentIntents.create.mockResolvedValue(mockPaymentIntent);
 
         // Act
         const result = await service.processWalletPayment(
@@ -616,7 +615,7 @@ describe('PaymentsService - Enhanced Tests', () => {
         const paymentMethodId = 'pm_invalid';
         const amount = 99.99;
         const stripeError = new Error('Payment method declined');
-        mockStripePaymentIntents.create.mockRejectedValue(stripeError);
+        mockStripeInstance.paymentIntents.create.mockRejectedValue(stripeError);
 
         // Act & Assert
         await expect(
@@ -632,7 +631,7 @@ describe('PaymentsService - Enhanced Tests', () => {
         const mockApplePayDomain = {
           domain_name: domain,
         };
-        mockStripeApplePayDomains.create.mockResolvedValue(mockApplePayDomain);
+        mockStripeInstance.applePayDomains.create.mockResolvedValue(mockApplePayDomain);
 
         // Act
         const result = await service.verifyApplePayDomain(domain);
@@ -642,7 +641,7 @@ describe('PaymentsService - Enhanced Tests', () => {
           success: true,
           domain: domain,
         });
-        expect(mockStripeApplePayDomains.create).toHaveBeenCalledWith({
+        expect(mockStripeInstance.applePayDomains.create).toHaveBeenCalledWith({
           domain_name: domain,
         });
       });
@@ -651,7 +650,7 @@ describe('PaymentsService - Enhanced Tests', () => {
         // Arrange
         const domain = 'invalid-domain.com';
         const stripeError = new Error('Domain verification failed');
-        mockStripeApplePayDomains.create.mockRejectedValue(stripeError);
+        mockStripeInstance.applePayDomains.create.mockRejectedValue(stripeError);
 
         // Act & Assert
         await expect(service.verifyApplePayDomain(domain)).rejects.toThrow();
@@ -667,7 +666,7 @@ describe('PaymentsService - Enhanced Tests', () => {
             { domain_name: 'shop.example.com' },
           ],
         };
-        mockStripeApplePayDomains.list.mockResolvedValue(mockDomains);
+        mockStripeInstance.applePayDomains.list.mockResolvedValue(mockDomains);
 
         // Act
         const result = await service.listApplePayDomains();
@@ -678,7 +677,7 @@ describe('PaymentsService - Enhanced Tests', () => {
 
       it('should return empty array on error', async () => {
         // Arrange
-        mockStripeApplePayDomains.list.mockRejectedValue(new Error('API error'));
+        mockStripeInstance.applePayDomains.list.mockRejectedValue(new Error('API error'));
 
         // Act
         const result = await service.listApplePayDomains();
@@ -723,22 +722,44 @@ describe('PaymentsService - Enhanced Tests', () => {
 
   describe('Error Scenarios', () => {
     it('should handle network errors in PayPal operations', async () => {
-      // Arrange
+      // Arrange - Create a service with PayPal credentials configured
+      const configWithPayPal = {
+        get: jest.fn((key: string) => {
+          const config: Record<string, any> = {
+            PAYPAL_CLIENT_ID: 'paypal_client_id',
+            PAYPAL_CLIENT_SECRET: 'paypal_client_secret',
+            PAYPAL_MODE: 'sandbox',
+          };
+          return config[key];
+        }),
+      };
+      const serviceWithPayPal = new PaymentsService(configWithPayPal as any);
       global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
 
       // Act & Assert
-      await expect(service.createPayPalOrder(99.99)).rejects.toThrow();
+      await expect(serviceWithPayPal.createPayPalOrder(99.99)).rejects.toThrow('Network error');
     });
 
     it('should handle invalid PayPal responses', async () => {
-      // Arrange
+      // Arrange - Create a service with PayPal credentials configured
+      const configWithPayPal = {
+        get: jest.fn((key: string) => {
+          const config: Record<string, any> = {
+            PAYPAL_CLIENT_ID: 'paypal_client_id',
+            PAYPAL_CLIENT_SECRET: 'paypal_client_secret',
+            PAYPAL_MODE: 'sandbox',
+          };
+          return config[key];
+        }),
+      };
+      const serviceWithPayPal = new PaymentsService(configWithPayPal as any);
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: async () => ({ access_token: 'token', expires_in: 3600 }),
       }) as any;
 
-      // Act & Assert - Should handle missing order creation response
-      await expect(service.createPayPalOrder(99.99)).rejects.toThrow();
+      // Act & Assert - Should handle missing order creation response (links is undefined)
+      await expect(serviceWithPayPal.createPayPalOrder(99.99)).rejects.toThrow();
     });
   });
 });
