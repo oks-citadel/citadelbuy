@@ -9,7 +9,7 @@ export default defineConfig({
     setupFiles: ['./src/__tests__/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
-      provider: 'v8',
+      provider: 'istanbul',
       reporter: ['text', 'json', 'html'],
       include: ['src/components/**/*.tsx'],
       exclude: ['src/**/*.test.tsx', 'src/__tests__/**'],

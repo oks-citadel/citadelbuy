@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import Input from '../components/Input';
 
 describe('Input', () => {
@@ -381,7 +382,7 @@ describe('Input', () => {
 
     it('works as controlled input', () => {
       const TestComponent = () => {
-        const [value, setValue] = vi.importActual<typeof import('react')>('react').useState('controlled');
+        const [value, setValue] = useState('controlled');
         return (
           <Input
             value={value}
