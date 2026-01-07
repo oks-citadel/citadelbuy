@@ -85,6 +85,7 @@ playwright-report/
 htmlcov/
 *.spec.js.snap
 *.spec.ts.snap
+.jest-cache/
 
 # ==============================================
 # Production Builds
