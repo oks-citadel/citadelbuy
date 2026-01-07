@@ -4,6 +4,7 @@ import { PrismaService } from '@/common/prisma/prisma.service';
 import { AuditService } from '../../organization-audit/services/audit.service';
 import { KycVerificationProcessor } from '../processors/kyc-verification.processor';
 import { ConfigService } from '@nestjs/config';
+import { DocumentStorageService } from '../services/document-storage.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { KycStatus } from '@prisma/client';
 import { KycReviewDecision } from '../dto/review-kyc.dto';
@@ -60,6 +61,14 @@ describe('KycService', () => {
         {
           provide: ConfigService,
           useValue: mockConfigService,
+        },
+        {
+          provide: DocumentStorageService,
+          useValue: {
+            uploadDocument: jest.fn().mockResolvedValue({ url: 'https://example.com/doc.pdf', key: 'doc-key' }),
+            deleteDocument: jest.fn().mockResolvedValue(undefined),
+            getSignedUrl: jest.fn().mockResolvedValue('https://signed-url.com'),
+          },
         },
       ],
     }).compile();

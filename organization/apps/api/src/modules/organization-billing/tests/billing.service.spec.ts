@@ -16,6 +16,7 @@ describe('BillingService', () => {
   const mockPrismaService = {
     organization: {
       findUnique: jest.fn(),
+      update: jest.fn(),
     },
     organizationBilling: {
       findUnique: jest.fn(),
@@ -486,6 +487,7 @@ describe('BillingService', () => {
         ...existingBilling,
         status: 'cancelled',
       } as any);
+      mockPrismaService.organization.update.mockResolvedValue({} as any);
       mockRedisService.del.mockResolvedValue(1);
 
       const result = await service.cancelSubscription(organizationId);
@@ -532,6 +534,7 @@ describe('BillingService', () => {
       mockPrismaService.organizationBilling.findUnique.mockResolvedValue(existingBilling as any);
       mockStripeService.cancelSubscription.mockResolvedValue({} as any);
       mockPrismaService.organizationBilling.update.mockResolvedValue({} as any);
+      mockPrismaService.organization.update.mockResolvedValue({} as any);
       mockRedisService.del.mockResolvedValue(1);
 
       await service.cancelSubscription(organizationId);

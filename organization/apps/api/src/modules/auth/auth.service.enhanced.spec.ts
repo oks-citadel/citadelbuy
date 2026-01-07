@@ -8,6 +8,8 @@ import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { ServerTrackingService } from '../tracking/server-tracking.service';
+import { AccountLockoutService } from './account-lockout.service';
+import { TokenBlacklistService } from './token-blacklist.service';
 
 jest.mock('bcryptjs');
 
@@ -72,6 +74,17 @@ describe('AuthService - Enhanced Tests', () => {
     trackRegistration: jest.fn().mockResolvedValue(undefined),
   };
 
+  const mockAccountLockoutService = {
+    checkLockout: jest.fn().mockResolvedValue(false),
+    recordFailedAttempt: jest.fn().mockResolvedValue(undefined),
+    clearFailedAttempts: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockTokenBlacklistService = {
+    isBlacklisted: jest.fn().mockResolvedValue(false),
+    blacklistToken: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -99,6 +112,14 @@ describe('AuthService - Enhanced Tests', () => {
         {
           provide: ServerTrackingService,
           useValue: mockTrackingService,
+        },
+        {
+          provide: AccountLockoutService,
+          useValue: mockAccountLockoutService,
+        },
+        {
+          provide: TokenBlacklistService,
+          useValue: mockTokenBlacklistService,
         },
       ],
     }).compile();

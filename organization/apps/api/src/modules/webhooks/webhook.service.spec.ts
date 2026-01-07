@@ -1,10 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { WebhookService, WEBHOOK_QUEUE } from './webhook.service';
+import { WebhookService, WEBHOOK_QUEUE, WebhookDeliveryStatus } from './webhook.service';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { Queue } from 'bull';
 import { getQueueToken } from '@nestjs/bull';
 import { NotFoundException } from '@nestjs/common';
-import { WebhookDeliveryStatus } from '@prisma/client';
 import { generateWebhookSecret } from './utils/webhook-signature.util';
 
 jest.mock('./utils/webhook-signature.util');
@@ -496,7 +495,7 @@ describe('WebhookService', () => {
     it('should throw error when retrying successful delivery', async () => {
       const successfulDelivery = {
         ...mockDelivery,
-        status: WebhookDeliveryStatus.DELIVERED,
+        status: WebhookDeliveryStatus.SUCCESS,
         webhook: mockWebhook,
       };
 
@@ -621,7 +620,7 @@ describe('WebhookService', () => {
       expect(prisma.webhookDelivery.update).toHaveBeenCalledWith({
         where: { id: 'delivery_123' },
         data: {
-          status: WebhookDeliveryStatus.DELIVERED,
+          status: WebhookDeliveryStatus.SUCCESS,
           statusCode: 200,
           responseBody: 'Success response',
           deliveredAt: expect.any(Date),
@@ -659,7 +658,7 @@ describe('WebhookService', () => {
   describe('getDeliveryStats', () => {
     it('should return delivery statistics', async () => {
       const stats = [
-        { status: WebhookDeliveryStatus.DELIVERED, _count: 10 },
+        { status: WebhookDeliveryStatus.SUCCESS, _count: 10 },
         { status: WebhookDeliveryStatus.FAILED, _count: 2 },
         { status: WebhookDeliveryStatus.PENDING, _count: 1 },
       ];
@@ -670,7 +669,7 @@ describe('WebhookService', () => {
 
       expect(result).toEqual({
         PENDING: 1,
-        DELIVERED: 10,
+        SUCCESS: 10,
         FAILED: 2,
         RETRYING: 0,
       });
