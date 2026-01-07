@@ -22,12 +22,16 @@ export default tseslint.config(
       '**/.nest/**',
       '**/prisma/migrations/**',
       '**/*.js',
+      '**/*.spec.ts',
+      '**/*.e2e-spec.ts',
+      '**/test/**/*.ts',
     ],
   },
 
-  // Main configuration for TypeScript files
+  // Main configuration for TypeScript files (excluding test files)
   {
     files: ['**/*.ts'],
+    ignores: ['**/*.spec.ts', '**/*.e2e-spec.ts', '**/test/**/*.ts'],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
@@ -66,26 +70,6 @@ export default tseslint.config(
     },
   },
 
-  // Test files configuration - no project-based parsing to avoid tsconfig inclusion issues
-  {
-    files: ['**/*.spec.ts', '**/*.e2e-spec.ts', '**/test/**/*.ts'],
-    languageOptions: {
-      parser: tseslint.parser,
-      parserOptions: {
-        ecmaVersion: 2022,
-        sourceType: 'module',
-        // Explicitly not using project to avoid "file not in tsconfig" errors
-      },
-      globals: {
-        node: true,
-        es2022: true,
-        jest: true,
-      },
-    },
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': 'off',
-      'no-console': 'off',
-    },
-  },
+  // Test files are globally ignored (see ignores above)
+  // They are excluded from tsconfig.json and don't need to be linted
 );
