@@ -39,7 +39,10 @@ describe('GiftCardsService', () => {
       create: jest.fn(),
       findMany: jest.fn(),
     },
-    $transaction: jest.fn().mockImplementation((callback) => callback(mockPrismaService)),
+    $transaction: jest.fn().mockImplementation(async (callback) => {
+      const result = await callback(mockPrismaService);
+      return result;
+    }),
   };
 
   const mockEmailService = {
