@@ -9,9 +9,12 @@ import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
 
 jest.mock('bcryptjs');
-jest.mock('crypto');
 jest.mock('speakeasy');
 jest.mock('qrcode');
+
+// Mock only specific crypto functions, not the entire module
+// This is necessary because NestJS uses crypto.createHash internally for module token hashing
+const mockRandomBytes = jest.fn();
 
 describe('SecurityService', () => {
   let service: SecurityService;
@@ -75,6 +78,9 @@ describe('SecurityService', () => {
   };
 
   beforeEach(async () => {
+    // Spy on crypto.randomBytes to mock it without breaking NestJS internals
+    jest.spyOn(crypto, 'randomBytes').mockImplementation(mockRandomBytes as any);
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SecurityService,
@@ -89,6 +95,12 @@ describe('SecurityService', () => {
     prismaService = module.get<PrismaService>(PrismaService);
 
     jest.clearAllMocks();
+    // Re-apply the randomBytes mock after clearAllMocks
+    jest.spyOn(crypto, 'randomBytes').mockImplementation(mockRandomBytes as any);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('should be defined', () => {
@@ -246,7 +258,7 @@ describe('SecurityService', () => {
       const mockKey = 'a'.repeat(64);
       const mockHashedKey = 'hashedKey123';
 
-      (crypto.randomBytes as jest.Mock).mockReturnValue({
+      mockRandomBytes.mockReturnValue({
         toString: () => mockKey,
       });
       (bcrypt.hash as jest.Mock).mockResolvedValue(mockHashedKey);
@@ -273,7 +285,7 @@ describe('SecurityService', () => {
 
     it('should create API key with expiration', async () => {
       const mockKey = 'b'.repeat(64);
-      (crypto.randomBytes as jest.Mock).mockReturnValue({
+      mockRandomBytes.mockReturnValue({
         toString: () => mockKey,
       });
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedKey');
@@ -295,7 +307,7 @@ describe('SecurityService', () => {
 
     it('should log API key creation activity', async () => {
       const mockKey = 'c'.repeat(64);
-      (crypto.randomBytes as jest.Mock).mockReturnValue({
+      mockRandomBytes.mockReturnValue({
         toString: () => mockKey,
       });
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedKey');
@@ -465,7 +477,7 @@ describe('SecurityService', () => {
       };
 
       (speakeasy.generateSecret as jest.Mock).mockReturnValue(mockSecret);
-      (crypto.randomBytes as jest.Mock).mockReturnValue({
+      mockRandomBytes.mockReturnValue({
         toString: () => 'ABC12345',
       });
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedBackupCode');
@@ -484,7 +496,7 @@ describe('SecurityService', () => {
         base32: 'SECRET',
         otpauth_url: 'otpauth://url',
       });
-      (crypto.randomBytes as jest.Mock).mockReturnValue({
+      mockRandomBytes.mockReturnValue({
         toString: () => 'BACKUP12',
       });
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedCode');
@@ -501,7 +513,7 @@ describe('SecurityService', () => {
         base32: 'SECRET',
         otpauth_url: 'otpauth://url',
       });
-      (crypto.randomBytes as jest.Mock).mockReturnValue({
+      mockRandomBytes.mockReturnValue({
         toString: () => 'CODE1234',
       });
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedCode');
@@ -695,7 +707,7 @@ describe('SecurityService', () => {
   describe('createSession', () => {
     it('should create a new session', async () => {
       const mockToken = 'sessionToken123';
-      (crypto.randomBytes as jest.Mock).mockReturnValue({
+      mockRandomBytes.mockReturnValue({
         toString: () => mockToken,
       });
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedToken');
@@ -718,7 +730,7 @@ describe('SecurityService', () => {
     });
 
     it('should set session expiration to 7 days', async () => {
-      (crypto.randomBytes as jest.Mock).mockReturnValue({
+      mockRandomBytes.mockReturnValue({
         toString: () => 'token',
       });
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedToken');

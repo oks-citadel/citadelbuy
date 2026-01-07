@@ -1004,7 +1004,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./organization
-          file: ./organization/apps/${{ matrix.service }}/Dockerfile
+          file: ./organization/apps/services/${{ matrix.service }}/Dockerfile
           push: true
           tags: |
             ${{ env.ECR_REGISTRY }}/broxiva/${{ matrix.service }}:${{ github.sha }}
