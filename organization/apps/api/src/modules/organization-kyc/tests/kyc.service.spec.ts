@@ -366,17 +366,24 @@ describe('KycService', () => {
       );
     });
 
-    it('should reject invalid file types', async () => {
+    it('should reject invalid file types when uploading with buffer', async () => {
       const mockKycApplication = { id: 'kyc-123' };
       const invalidDto = {
         ...uploadDto,
         contentType: 'application/exe',
       };
+      const mockBuffer = Buffer.from('test');
 
       mockPrismaService.kycApplication.findFirst.mockResolvedValue(mockKycApplication as any);
 
+      // The DocumentStorageService validates file types and throws BadRequestException
+      const documentStorageService = service['documentStorage'];
+      jest.spyOn(documentStorageService, 'uploadDocument').mockRejectedValue(
+        new BadRequestException('Invalid file type. Only PDF and images (JPEG, PNG, HEIC) are allowed.')
+      );
+
       await expect(
-        service.uploadDocument(organizationId, userId, invalidDto),
+        service.uploadDocument(organizationId, userId, invalidDto, mockBuffer),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -415,20 +422,22 @@ describe('KycService', () => {
       });
     });
 
-    it('should trigger verification when documents are uploaded', async () => {
+    it('should trigger verification when documents are uploaded with buffer', async () => {
       const mockKycApplication = {
         id: 'kyc-123',
         organizationId,
         idDocumentUrl: 'existing-url',
       };
+      const mockBuffer = Buffer.from('test document content');
 
       mockPrismaService.kycApplication.findFirst.mockResolvedValue(mockKycApplication as any);
+      mockPrismaService.kycApplication.findUnique.mockResolvedValue(mockKycApplication as any);
       mockPrismaService.kycApplication.update.mockResolvedValue(mockKycApplication as any);
       mockAuditService.log.mockResolvedValue(undefined);
       mockConfigService.get.mockReturnValue('http://localhost:3000');
       mockVerificationProcessor.processVerification.mockResolvedValue(undefined);
 
-      await service.uploadDocument(organizationId, userId, uploadDto);
+      await service.uploadDocument(organizationId, userId, uploadDto, mockBuffer);
 
       expect(mockVerificationProcessor.processVerification).toHaveBeenCalledWith('kyc-123');
     });

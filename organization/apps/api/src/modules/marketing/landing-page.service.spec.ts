@@ -175,6 +175,17 @@ describe('LandingPageService', () => {
       mockPrismaService.landingPage.findUnique.mockResolvedValue(mockLandingPage);
 
       await expect(service.createLandingPage(createDto)).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw ConflictException with correct message when slug already exists', async () => {
+      const createDto = {
+        name: 'Test Page',
+        slug: 'summer-sale-2024',
+        template: LandingPageTemplate.PROMOTIONAL,
+      };
+
+      mockPrismaService.landingPage.findUnique.mockResolvedValue(mockLandingPage);
+
       await expect(service.createLandingPage(createDto)).rejects.toThrow(
         "Landing page with slug 'summer-sale-2024' already exists"
       );
@@ -332,6 +343,11 @@ describe('LandingPageService', () => {
       mockPrismaService.landingPage.findUnique.mockResolvedValue(null);
 
       await expect(service.getLandingPageById('non-existent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException with correct message when page not found', async () => {
+      mockPrismaService.landingPage.findUnique.mockResolvedValue(null);
+
       await expect(service.getLandingPageById('non-existent')).rejects.toThrow('Landing page non-existent not found');
     });
   });
@@ -368,6 +384,11 @@ describe('LandingPageService', () => {
       mockPrismaService.landingPage.findUnique.mockResolvedValue(null);
 
       await expect(service.getLandingPageBySlug('non-existent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException with correct message when slug not found', async () => {
+      mockPrismaService.landingPage.findUnique.mockResolvedValue(null);
+
       await expect(service.getLandingPageBySlug('non-existent')).rejects.toThrow(
         "Landing page with slug 'non-existent' not found"
       );
@@ -496,6 +517,12 @@ describe('LandingPageService', () => {
       mockPrismaService.landingPage.findUnique.mockResolvedValue(publishedPage);
 
       await expect(service.publishLandingPage('page-123')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException with correct message when page is already published', async () => {
+      const publishedPage = { ...mockLandingPage, status: LandingPageStatus.PUBLISHED };
+      mockPrismaService.landingPage.findUnique.mockResolvedValue(publishedPage);
+
       await expect(service.publishLandingPage('page-123')).rejects.toThrow('Page is already published');
     });
 
@@ -746,6 +773,13 @@ describe('LandingPageService', () => {
         .mockResolvedValueOnce({ id: 'existing-page' }); // check slug uniqueness
 
       await expect(service.duplicateLandingPage('page-123', 'existing-slug')).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw ConflictException with correct message when new slug already exists', async () => {
+      mockPrismaService.landingPage.findUnique
+        .mockResolvedValueOnce(mockLandingPage) // getLandingPageById
+        .mockResolvedValueOnce({ id: 'existing-page' }); // check slug uniqueness
+
       await expect(service.duplicateLandingPage('page-123', 'existing-slug')).rejects.toThrow(
         "Landing page with slug 'existing-slug' already exists"
       );

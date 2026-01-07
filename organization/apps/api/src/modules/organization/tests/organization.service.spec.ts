@@ -50,9 +50,12 @@ describe('OrganizationService', () => {
   };
 
   const mockRedisService = {
-    get: jest.fn(),
-    set: jest.fn(),
-    del: jest.fn(),
+    get: jest.fn().mockImplementation(async (key: string) => {
+      // Return null by default - tests can override this
+      return null;
+    }),
+    set: jest.fn().mockResolvedValue('OK'),
+    del: jest.fn().mockResolvedValue(1),
   };
 
   const mockEventEmitter = {
@@ -372,8 +375,8 @@ describe('OrganizationService', () => {
     });
 
     it('should return cached organization if available', async () => {
-      const cachedOrg = JSON.stringify(mockOrganization);
-      mockRedisService.get.mockResolvedValue(cachedOrg);
+      // Redis.get returns parsed JSON, not string
+      mockRedisService.get.mockResolvedValue(mockOrganization);
 
       const result = await service.findOne(mockOrgId);
 

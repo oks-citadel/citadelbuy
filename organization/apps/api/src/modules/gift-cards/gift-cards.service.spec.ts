@@ -39,7 +39,11 @@ describe('GiftCardsService', () => {
       create: jest.fn(),
       findMany: jest.fn(),
     },
+    user: {
+      findUnique: jest.fn(),
+    },
     $transaction: jest.fn().mockImplementation(async (callback) => {
+      // Pass the mock itself as the transaction client
       const result = await callback(mockPrismaService);
       return result;
     }),
@@ -112,6 +116,10 @@ describe('GiftCardsService', () => {
     emailService = module.get<EmailService>(EmailService);
 
     jest.clearAllMocks();
+
+    // Set default mock implementations that tests can override
+    mockPrismaService.giftCardTransaction.create.mockResolvedValue({});
+    mockPrismaService.storeCreditTransaction.create.mockResolvedValue({});
   });
 
   it('should be defined', () => {

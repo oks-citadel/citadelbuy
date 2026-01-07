@@ -591,9 +591,11 @@ describe('LoyaltyService', () => {
     it('should redeem reward and deduct points', async () => {
       const loyaltyWithPoints = { ...mockLoyalty, currentPoints: 1500 };
 
-      mockPrismaService.customerLoyalty.findUnique
-        .mockResolvedValueOnce(loyaltyWithPoints)
-        .mockResolvedValueOnce(loyaltyWithPoints);
+      // Use mockImplementation to consistently return loyaltyWithPoints
+      // ensureLoyaltyAccount calls findUnique, addPoints also calls findUnique
+      mockPrismaService.customerLoyalty.findUnique.mockImplementation(() => {
+        return Promise.resolve(loyaltyWithPoints);
+      });
       mockPrismaService.reward.findUnique.mockResolvedValue(mockReward);
       mockPrismaService.pointTransaction.create.mockResolvedValue({});
       mockPrismaService.customerLoyalty.update.mockResolvedValue(loyaltyWithPoints);

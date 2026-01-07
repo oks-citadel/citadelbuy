@@ -309,7 +309,7 @@ describe('OrdersService - Enhanced Tests', () => {
           statusHistory: [
             {
               status: 'SHIPPED',
-              timestamp: expect.any(String),
+              timestamp: new Date().toISOString(),
               note: 'Shipped via UPS',
             },
           ],
@@ -356,7 +356,7 @@ describe('OrdersService - Enhanced Tests', () => {
         mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
         mockPrismaService.order.update.mockResolvedValue({
           ...mockOrder,
-          trackingNumber: expect.stringContaining('FED'),
+          trackingNumber: 'FED12345678ABCD',
           carrier: 'FedEx',
           status: 'SHIPPED',
         });
@@ -405,11 +405,11 @@ describe('OrdersService - Enhanced Tests', () => {
         const mockUpdatedOrder = {
           ...mockOrder,
           status: 'DELIVERED',
-          actualDeliveryDate: expect.any(Date),
+          actualDeliveryDate: new Date(),
           statusHistory: [
             {
               status: 'DELIVERED',
-              timestamp: expect.any(String),
+              timestamp: new Date().toISOString(),
               note: 'Package delivered',
             },
           ],

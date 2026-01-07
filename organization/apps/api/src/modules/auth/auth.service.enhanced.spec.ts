@@ -78,11 +78,15 @@ describe('AuthService - Enhanced Tests', () => {
     checkLockout: jest.fn().mockResolvedValue(false),
     recordFailedAttempt: jest.fn().mockResolvedValue(undefined),
     clearFailedAttempts: jest.fn().mockResolvedValue(undefined),
+    clearLockout: jest.fn().mockResolvedValue(undefined),
+    getLockoutStatus: jest.fn().mockResolvedValue({ attempts: 0, lockedUntil: null }),
   };
 
   const mockTokenBlacklistService = {
     isBlacklisted: jest.fn().mockResolvedValue(false),
+    isTokenBlacklisted: jest.fn().mockResolvedValue(false),
     blacklistToken: jest.fn().mockResolvedValue(undefined),
+    invalidateAllUserTokens: jest.fn().mockResolvedValue(true),
   };
 
   beforeEach(async () => {
@@ -606,7 +610,20 @@ describe('AuthService - Enhanced Tests', () => {
           name: 'Test User',
           password: 'hashed-password',
           role: 'CUSTOMER',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         };
+
+        // Make GOOGLE_CLIENT_ID undefined so it uses fetch fallback
+        mockConfigService.get = jest.fn((key: string) => {
+          if (key === 'GOOGLE_CLIENT_ID') return undefined;
+          const config: Record<string, any> = {
+            JWT_SECRET: 'test-secret',
+            JWT_REFRESH_SECRET: 'test-refresh-secret',
+            JWT_REFRESH_EXPIRES_IN: '30d',
+          };
+          return config[key];
+        });
 
         global.fetch = jest.fn().mockResolvedValue({
           ok: true,
@@ -652,7 +669,20 @@ describe('AuthService - Enhanced Tests', () => {
           name: 'New User',
           password: 'random-hashed-password',
           role: 'CUSTOMER',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         };
+
+        // Make GOOGLE_CLIENT_ID undefined so it uses fetch fallback
+        mockConfigService.get = jest.fn((key: string) => {
+          if (key === 'GOOGLE_CLIENT_ID') return undefined;
+          const config: Record<string, any> = {
+            JWT_SECRET: 'test-secret',
+            JWT_REFRESH_SECRET: 'test-refresh-secret',
+            JWT_REFRESH_EXPIRES_IN: '30d',
+          };
+          return config[key];
+        });
 
         global.fetch = jest.fn().mockResolvedValue({
           ok: true,
@@ -701,6 +731,17 @@ describe('AuthService - Enhanced Tests', () => {
           accessToken: 'invalid-token',
         };
 
+        // Make GOOGLE_CLIENT_ID undefined so it uses fetch fallback
+        mockConfigService.get = jest.fn((key: string) => {
+          if (key === 'GOOGLE_CLIENT_ID') return undefined;
+          const config: Record<string, any> = {
+            JWT_SECRET: 'test-secret',
+            JWT_REFRESH_SECRET: 'test-refresh-secret',
+            JWT_REFRESH_EXPIRES_IN: '30d',
+          };
+          return config[key];
+        });
+
         global.fetch = jest.fn().mockResolvedValue({
           ok: false,
           status: 401,
@@ -718,6 +759,17 @@ describe('AuthService - Enhanced Tests', () => {
           provider: 'google' as const,
           accessToken: 'token-without-email',
         };
+
+        // Make GOOGLE_CLIENT_ID undefined so it uses fetch fallback
+        mockConfigService.get = jest.fn((key: string) => {
+          if (key === 'GOOGLE_CLIENT_ID') return undefined;
+          const config: Record<string, any> = {
+            JWT_SECRET: 'test-secret',
+            JWT_REFRESH_SECRET: 'test-refresh-secret',
+            JWT_REFRESH_EXPIRES_IN: '30d',
+          };
+          return config[key];
+        });
 
         global.fetch = jest.fn().mockResolvedValue({
           ok: true,
@@ -747,6 +799,8 @@ describe('AuthService - Enhanced Tests', () => {
           name: 'New User',
           password: 'random-hashed-password',
           role: 'CUSTOMER',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         };
 
         global.fetch = jest.fn()

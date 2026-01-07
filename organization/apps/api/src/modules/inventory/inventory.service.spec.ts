@@ -70,7 +70,7 @@ describe('InventoryService', () => {
       findUnique: jest.fn(),
       findMany: jest.fn(),
     },
-    $transaction: jest.fn(),
+    $transaction: jest.fn(async (callback) => await callback(mockPrismaService)),
     $queryRaw: jest.fn(),
   };
 
@@ -496,6 +496,8 @@ describe('InventoryService', () => {
             findUnique: jest.fn().mockResolvedValue({
               id: 'item-123',
               availableQty: 100,
+              reservedQty: 10,
+              quantity: 110,
             }),
             update: jest.fn().mockResolvedValue({}),
           },
@@ -555,8 +557,8 @@ describe('InventoryService', () => {
             findUnique: jest.fn()
               .mockResolvedValueOnce({ id: 'source-item', quantity: 100, reservedQty: 20 })
               .mockResolvedValueOnce({ id: 'dest-item', quantity: 50, availableQty: 50 }),
-            create: jest.fn().mockResolvedValue({ id: 'new-item', quantity: 20 }),
-            update: jest.fn().mockResolvedValue({}),
+            create: jest.fn().mockResolvedValue({ id: 'new-item', quantity: 20, availableQty: 20 }),
+            update: jest.fn().mockResolvedValue({ id: 'dest-item', quantity: 70, availableQty: 70 }),
           },
           stockTransfer: {
             update: jest.fn().mockResolvedValue({

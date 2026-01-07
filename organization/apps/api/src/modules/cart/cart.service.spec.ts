@@ -549,6 +549,8 @@ describe('CartService', () => {
       mockPrismaService.cart.findFirst
         .mockResolvedValueOnce(userCart)
         .mockResolvedValueOnce(emptyGuestCart);
+      mockPrismaService.cart.findUnique.mockResolvedValue(userCart);
+      mockPrismaService.cart.update.mockResolvedValue(userCart);
 
       const result = await service.mergeCart('user-123', { guestSessionId: 'session-123' });
 
@@ -560,6 +562,8 @@ describe('CartService', () => {
       mockPrismaService.cart.findFirst
         .mockResolvedValueOnce(userCart)
         .mockResolvedValueOnce(null);
+      mockPrismaService.cart.findUnique.mockResolvedValue(userCart);
+      mockPrismaService.cart.update.mockResolvedValue(userCart);
 
       const result = await service.mergeCart('user-123', { guestSessionId: 'session-123' });
 

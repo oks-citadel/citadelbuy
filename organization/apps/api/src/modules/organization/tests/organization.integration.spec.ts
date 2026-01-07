@@ -14,6 +14,7 @@ describe('OrganizationService - Integration Tests', () => {
   const mockPrismaService = {
     organization: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
@@ -21,6 +22,7 @@ describe('OrganizationService - Integration Tests', () => {
       count: jest.fn(),
     },
     organizationMember: {
+      findUnique: jest.fn(),
       findFirst: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
@@ -34,16 +36,27 @@ describe('OrganizationService - Integration Tests', () => {
       create: jest.fn(),
       update: jest.fn(),
     },
+    organizationInvitation: {
+      count: jest.fn(),
+    },
+    organizationAuditLog: {
+      findMany: jest.fn(),
+    },
+    team: {
+      count: jest.fn(),
+    },
     user: {
       findUnique: jest.fn(),
     },
-    $transaction: jest.fn(),
+    $transaction: jest.fn().mockImplementation(async (callback) => {
+      return await callback(mockPrismaService);
+    }),
   };
 
   const mockRedisService = {
-    get: jest.fn(),
-    set: jest.fn(),
-    del: jest.fn(),
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue('OK'),
+    del: jest.fn().mockResolvedValue(1),
   };
 
   const mockEventEmitter = {

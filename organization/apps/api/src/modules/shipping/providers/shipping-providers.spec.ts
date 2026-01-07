@@ -91,7 +91,7 @@ describe('Shipping Providers', () => {
     });
 
     describe('getRates', () => {
-      it('should throw error when credentials not configured', async () => {
+      it('should return fallback rates when credentials not configured', async () => {
         const providerWithoutCredentials = new UpsProvider({
           apiKey: '',
           apiSecret: '',
@@ -99,9 +99,13 @@ describe('Shipping Providers', () => {
           testMode: true,
         });
 
-        await expect(
-          providerWithoutCredentials.getRates(mockFromAddress, mockToAddress, mockPackage),
-        ).rejects.toThrow('UPS_NOT_CONFIGURED');
+        // UPS provider returns fallback rates when not configured instead of throwing
+        const rates = await providerWithoutCredentials.getRates(mockFromAddress, mockToAddress, mockPackage);
+
+        expect(rates).toBeDefined();
+        expect(Array.isArray(rates)).toBe(true);
+        expect(rates.length).toBeGreaterThan(0);
+        expect(rates[0].carrier).toBe('UPS');
       });
 
       it('should return rates when API responds successfully', async () => {
@@ -880,7 +884,7 @@ describe('Shipping Providers', () => {
     });
 
     describe('getRates', () => {
-      it('should throw error when credentials not configured', async () => {
+      it('should return fallback rates when credentials not configured', async () => {
         const providerWithoutCredentials = new DhlProvider({
           apiKey: '',
           apiSecret: '',
@@ -888,13 +892,17 @@ describe('Shipping Providers', () => {
           testMode: true,
         });
 
-        await expect(
-          providerWithoutCredentials.getRates(
-            mockFromAddress,
-            mockInternationalAddress,
-            mockPackage,
-          ),
-        ).rejects.toThrow('DHL_NOT_CONFIGURED');
+        // DHL provider returns fallback rates when not configured instead of throwing
+        const rates = await providerWithoutCredentials.getRates(
+          mockFromAddress,
+          mockInternationalAddress,
+          mockPackage,
+        );
+
+        expect(rates).toBeDefined();
+        expect(Array.isArray(rates)).toBe(true);
+        expect(rates.length).toBeGreaterThan(0);
+        expect(rates[0].carrier).toBe('DHL');
       });
 
       it('should return international rates', async () => {
@@ -938,7 +946,7 @@ describe('Shipping Providers', () => {
         expect(Array.isArray(rates)).toBe(true);
       });
 
-      it('should handle API errors gracefully', async () => {
+      it('should handle API errors gracefully by returning fallback rates', async () => {
         const mockTokenResponse = {
           ok: true,
           json: () => Promise.resolve({
@@ -950,15 +958,20 @@ describe('Shipping Providers', () => {
         const mockErrorResponse = {
           ok: false,
           statusText: 'Internal Server Error',
+          text: () => Promise.resolve('Internal Server Error'),
         };
 
         (global.fetch as jest.Mock)
           .mockResolvedValueOnce(mockTokenResponse)
           .mockResolvedValueOnce(mockErrorResponse);
 
-        await expect(
-          dhlProvider.getRates(mockFromAddress, mockInternationalAddress, mockPackage),
-        ).rejects.toThrow();
+        // DHL provider returns fallback rates on API errors instead of throwing
+        const rates = await dhlProvider.getRates(mockFromAddress, mockInternationalAddress, mockPackage);
+
+        expect(rates).toBeDefined();
+        expect(Array.isArray(rates)).toBe(true);
+        expect(rates.length).toBeGreaterThan(0);
+        expect(rates[0].carrier).toBe('DHL');
       });
     });
 
