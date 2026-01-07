@@ -67,7 +67,7 @@ output "redis_endpoint" {
 
 output "redis_port" {
   description = "ElastiCache Redis port"
-  value       = module.elasticache.port
+  value       = 6379 # Standard Redis port
 }
 
 # S3 Outputs
@@ -146,7 +146,7 @@ output "database_connection_string" {
 
 output "redis_connection_string" {
   description = "Redis connection string template"
-  value       = "redis://${module.elasticache.cluster_address}:${module.elasticache.port}"
+  value       = "redis://${module.elasticache.cluster_address}:6379"
   sensitive   = true
 }
 
