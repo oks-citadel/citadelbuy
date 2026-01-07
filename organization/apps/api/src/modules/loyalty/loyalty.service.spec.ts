@@ -161,11 +161,24 @@ describe('LoyaltyService', () => {
 
   describe('createLoyaltyAccount', () => {
     it('should create loyalty account with signup bonus', async () => {
-      mockPrismaService.customerLoyalty.findUnique
-        .mockResolvedValueOnce(null) // No existing account
-        .mockResolvedValueOnce(null) // Referral code check
-        .mockResolvedValueOnce(mockLoyalty) // addPoints findUnique
-        .mockResolvedValueOnce(mockLoyalty); // getCustomerLoyalty
+      // Use mockImplementation to handle different queries properly
+      let findUniqueCallCount = 0;
+      mockPrismaService.customerLoyalty.findUnique.mockImplementation((args) => {
+        findUniqueCallCount++;
+        // First call: Check if user has existing account (by userId)
+        if (args.where.userId) {
+          if (findUniqueCallCount === 1) {
+            return Promise.resolve(null); // No existing account
+          }
+          // Later calls for getCustomerLoyalty
+          return Promise.resolve(mockLoyalty);
+        }
+        // Referral code check (by referralCode)
+        if (args.where.referralCode) {
+          return Promise.resolve(null); // Code doesn't exist, so it's unique
+        }
+        return Promise.resolve(null);
+      });
       mockPrismaService.loyaltyProgram.findFirst.mockResolvedValue(mockLoyaltyProgram);
       mockPrismaService.customerLoyalty.create.mockResolvedValue(mockLoyalty);
       mockPrismaService.pointTransaction.create.mockResolvedValue({});
@@ -225,7 +238,10 @@ describe('LoyaltyService', () => {
         status: OrderStatus.DELIVERED,
       };
 
-      mockPrismaService.customerLoyalty.findUnique.mockResolvedValue(mockLoyalty);
+      // Use mockImplementation to consistently return mockLoyalty for all findUnique calls
+      mockPrismaService.customerLoyalty.findUnique.mockImplementation(() => {
+        return Promise.resolve(mockLoyalty);
+      });
       mockPrismaService.loyaltyProgram.findFirst.mockResolvedValue(mockLoyaltyProgram);
       mockPrismaService.order.findUnique.mockResolvedValue(order);
       mockPrismaService.pointTransaction.findFirst.mockResolvedValue(null);
@@ -297,10 +313,11 @@ describe('LoyaltyService', () => {
 
   describe('earnPointsFromReview', () => {
     it('should earn points for product review', async () => {
-      mockPrismaService.customerLoyalty.findUnique
-        .mockResolvedValueOnce(mockLoyalty)  // ensureLoyaltyAccount
-        .mockResolvedValueOnce(mockLoyalty)  // addPoints
-        .mockResolvedValueOnce(mockLoyalty); // getCustomerLoyalty
+      // Use mockImplementation to handle different queries by userId vs id
+      mockPrismaService.customerLoyalty.findUnique.mockImplementation((args) => {
+        // All queries should return mockLoyalty
+        return Promise.resolve(mockLoyalty);
+      });
       mockPrismaService.loyaltyProgram.findFirst.mockResolvedValue(mockLoyaltyProgram);
       mockPrismaService.pointTransaction.findFirst.mockResolvedValue(null);
       mockPrismaService.pointTransaction.create.mockResolvedValue({});
@@ -331,9 +348,10 @@ describe('LoyaltyService', () => {
 
   describe('awardBirthdayPoints', () => {
     it('should award birthday points', async () => {
-      mockPrismaService.customerLoyalty.findUnique
-        .mockResolvedValueOnce(mockLoyalty)
-        .mockResolvedValueOnce(mockLoyalty);
+      // Use mockImplementation to handle different queries
+      mockPrismaService.customerLoyalty.findUnique.mockImplementation(() => {
+        return Promise.resolve(mockLoyalty);
+      });
       mockPrismaService.loyaltyProgram.findFirst.mockResolvedValue(mockLoyaltyProgram);
       mockPrismaService.pointTransaction.findFirst.mockResolvedValue(null);
       mockPrismaService.pointTransaction.create.mockResolvedValue({});
@@ -365,10 +383,10 @@ describe('LoyaltyService', () => {
 
   describe('adjustPoints', () => {
     it('should manually adjust points', async () => {
-      mockPrismaService.customerLoyalty.findUnique
-        .mockResolvedValueOnce(mockLoyalty)
-        .mockResolvedValueOnce(mockLoyalty)
-        .mockResolvedValueOnce(mockLoyalty);
+      // Use mockImplementation to handle all findUnique queries
+      mockPrismaService.customerLoyalty.findUnique.mockImplementation(() => {
+        return Promise.resolve(mockLoyalty);
+      });
       mockPrismaService.pointTransaction.create.mockResolvedValue({});
       mockPrismaService.customerLoyalty.update.mockResolvedValue(mockLoyalty);
       mockPrismaService.loyaltyTierBenefit.findUnique.mockResolvedValue(mockTierBenefit);

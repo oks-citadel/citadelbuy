@@ -29,7 +29,7 @@ describe('OrdersService - Enhanced Tests', () => {
       findUnique: jest.fn(),
       update: jest.fn(),
     },
-    $transaction: jest.fn((callback) => callback(mockPrismaService)),
+    $transaction: jest.fn(async (callback) => await callback(mockPrismaService)),
   };
 
   const mockEmailService = {

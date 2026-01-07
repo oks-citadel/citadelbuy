@@ -65,7 +65,7 @@ describe('ShippingService', () => {
     product: {
       findMany: jest.fn(),
     },
-    $transaction: jest.fn((callback) => callback(mockPrismaService)),
+    $transaction: jest.fn(async (callback) => await callback(mockPrismaService)),
   };
 
   const mockRedisService = {

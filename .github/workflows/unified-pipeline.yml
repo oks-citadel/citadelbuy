@@ -252,7 +252,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           queries: security-and-quality
@@ -277,7 +277,7 @@ jobs:
         working-directory: organization
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{ matrix.language }}"
           upload: true
@@ -1015,7 +1015,7 @@ jobs:
       - name: Build and Push ${{ matrix.service }} Image
         uses: docker/build-push-action@v6
         with:
-          context: ./organization
+          context: ./organization/apps/services/${{ matrix.service }}
           file: ./organization/apps/services/${{ matrix.service }}/Dockerfile
           push: true
           tags: |
