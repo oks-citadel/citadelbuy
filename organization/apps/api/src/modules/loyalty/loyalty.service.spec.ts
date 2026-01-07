@@ -177,6 +177,10 @@ describe('LoyaltyService', () => {
         if (args.where.referralCode) {
           return Promise.resolve(null); // Code doesn't exist, so it's unique
         }
+        // addPoints calls findUnique with id
+        if (args.where.id) {
+          return Promise.resolve(mockLoyalty);
+        }
         return Promise.resolve(null);
       });
       mockPrismaService.loyaltyProgram.findFirst.mockResolvedValue(mockLoyaltyProgram);

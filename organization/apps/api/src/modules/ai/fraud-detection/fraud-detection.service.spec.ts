@@ -185,6 +185,8 @@ describe('FraudDetectionService', () => {
     });
 
     it('should handle database errors gracefully', async () => {
+      // Reset and set up the rejected mock
+      mockPrismaService.review.count.mockReset();
       mockPrismaService.review.count.mockRejectedValue(new Error('Database error'));
 
       // The service catches errors and returns velocity as 0
@@ -299,18 +301,20 @@ describe('FraudDetectionService', () => {
 
     it('should recommend additional verification for medium risk', async () => {
       mockPrismaService.order.count.mockResolvedValue(10);
-      mockPrismaService.returnRequest.findMany.mockResolvedValue([
-        { createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), items: [{ refundAmount: 50 }] },
-      ]);
+      // Set up 4 recent returns to trigger "Multiple recent returns" (+25 points)
+      const recentDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+      mockPrismaService.returnRequest.findMany.mockResolvedValue(
+        Array(4).fill({ createdAt: recentDate, items: [{ refundAmount: 50 }] })
+      );
 
       const result = await service.detectReturnFraud({
         ...baseReturnData,
-        returnReason: 'changed mind',
-        items: [{ productId: 'prod-1', quantity: 1, price: 600 }],
+        returnReason: 'changed mind', // +10 for vague reason
+        items: [{ productId: 'prod-1', quantity: 1, price: 100 }], // No high-value bonus (< 500)
       });
 
-      // With vague reason (10) + high value (15) = 25, which is less than 50 but > 30
-      expect(result.riskScore).toBeGreaterThan(20);
+      // With vague reason (10) + multiple recent returns (25) = 35, which is > 30 but < 50
+      expect(result.riskScore).toBeGreaterThan(30);
       expect(result.riskScore).toBeLessThan(50);
       expect(result.recommendation).toBe('additional_verification');
     });
@@ -890,6 +894,8 @@ describe('FraudDetectionService', () => {
     });
 
     it('should handle database errors in review velocity check', async () => {
+      // Reset and set up the rejected mock
+      mockPrismaService.review.count.mockReset();
       mockPrismaService.review.count.mockRejectedValue(new Error('DB Error'));
 
       const result = await service.analyzeFakeReview({

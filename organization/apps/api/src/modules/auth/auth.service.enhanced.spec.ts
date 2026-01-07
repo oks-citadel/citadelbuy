@@ -137,6 +137,34 @@ describe('AuthService - Enhanced Tests', () => {
     trackingService = module.get<ServerTrackingService>(ServerTrackingService);
 
     jest.clearAllMocks();
+
+    // Re-apply default mock implementations after clearAllMocks
+    mockAccountLockoutService.getLockoutStatus.mockResolvedValue({ attempts: 0, lockedUntil: null });
+    mockAccountLockoutService.checkLockout.mockResolvedValue(false);
+    mockAccountLockoutService.recordFailedAttempt.mockResolvedValue(undefined);
+    mockAccountLockoutService.clearFailedAttempts.mockResolvedValue(undefined);
+    mockAccountLockoutService.clearLockout.mockResolvedValue(undefined);
+    mockEmailService.sendWelcomeEmail.mockResolvedValue(undefined);
+    mockEmailService.sendPasswordResetEmail.mockResolvedValue(undefined);
+    mockEmailService.sendEmail.mockResolvedValue(undefined);
+    mockTokenBlacklistService.isBlacklisted.mockResolvedValue(false);
+    mockTokenBlacklistService.isTokenBlacklisted.mockResolvedValue(false);
+    mockTokenBlacklistService.blacklistToken.mockResolvedValue(undefined);
+    mockTokenBlacklistService.invalidateAllUserTokens.mockResolvedValue(true);
+    mockTrackingService.isEnabled.mockReturnValue(false);
+    mockTrackingService.trackRegistration.mockResolvedValue(undefined);
+    mockConfigService.get.mockImplementation((key: string) => {
+      const config: Record<string, any> = {
+        JWT_SECRET: 'test-secret',
+        JWT_REFRESH_SECRET: 'test-refresh-secret',
+        JWT_REFRESH_EXPIRES_IN: '30d',
+        GOOGLE_CLIENT_ID: 'google-client-id',
+        FACEBOOK_APP_ID: 'facebook-app-id',
+        FACEBOOK_APP_SECRET: 'facebook-app-secret',
+        APPLE_CLIENT_ID: 'com.broxiva.app',
+      };
+      return config[key];
+    });
   });
 
   it('should be defined', () => {

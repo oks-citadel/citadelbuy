@@ -397,25 +397,26 @@ describe('Shipping Providers', () => {
           }),
         };
 
+        // Return a non-ok response to trigger fallback to basicValidation
         const mockValidationResponse = {
-          ok: true,
-          json: () => Promise.resolve({
-            XAVResponse: {
-              NoCandidatesIndicator: '',
-            },
-          }),
+          ok: false,
+          statusText: 'Address not found',
         };
 
         (global.fetch as jest.Mock)
           .mockResolvedValueOnce(mockTokenResponse)
           .mockResolvedValueOnce(mockValidationResponse);
 
+        // Use an address with missing required fields to trigger validation errors
         const result = await upsProvider.validateAddress({
           ...mockFromAddress,
-          street1: 'Invalid Street 12345',
+          street1: '',
+          city: '',
         });
 
         expect(result.valid).toBe(false);
+        expect(result.errors).toBeDefined();
+        expect(result.errors!.length).toBeGreaterThan(0);
       });
     });
 

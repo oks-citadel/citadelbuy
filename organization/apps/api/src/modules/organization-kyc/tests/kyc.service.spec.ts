@@ -68,6 +68,7 @@ describe('KycService', () => {
             uploadDocument: jest.fn().mockResolvedValue({ url: 'https://example.com/doc.pdf', key: 'doc-key' }),
             deleteDocument: jest.fn().mockResolvedValue(undefined),
             getSignedUrl: jest.fn().mockResolvedValue('https://signed-url.com'),
+            getDocumentUrl: jest.fn().mockResolvedValue('https://presigned-url.com/doc.pdf'),
           },
         },
       ],

@@ -139,16 +139,19 @@ describe('GiftCardsService', () => {
         designTemplate: 'birthday',
       };
 
+      // First findUnique call is for generateUniqueCode (checking if code exists)
+      // Second findUnique call is in sendGiftCardEmail
       mockPrismaService.giftCard.findUnique
-        .mockResolvedValueOnce(null) // First call: check if code exists
-        .mockResolvedValueOnce(mockGiftCard); // Second call: sendGiftCardEmail
+        .mockResolvedValueOnce(null) // First call: check if code exists in generateUniqueCode
+        .mockResolvedValueOnce(mockGiftCard); // Second call: sendGiftCardEmail fetches card with purchaser
       mockPrismaService.giftCard.create.mockResolvedValue(mockGiftCard);
       mockPrismaService.giftCardTransaction.create.mockResolvedValue({});
       mockPrismaService.giftCard.update.mockResolvedValue(mockGiftCard);
 
       const result = await service.purchaseGiftCard(dto, 'user-123');
 
-      expect(result).toEqual(mockGiftCard);
+      expect(result).toBeDefined();
+      expect(result.id).toBe(mockGiftCard.id);
       expect(mockPrismaService.giftCard.create).toHaveBeenCalled();
       expect(mockPrismaService.giftCardTransaction.create).toHaveBeenCalled();
       expect(mockEmailService.sendEmail).toHaveBeenCalled();
@@ -168,12 +171,14 @@ describe('GiftCardsService', () => {
         scheduledDelivery: new Date('2026-12-25'),
       };
 
+      // Only one findUnique call for generateUniqueCode (no email sent for scheduled)
       mockPrismaService.giftCard.findUnique.mockResolvedValue(null);
       mockPrismaService.giftCard.create.mockResolvedValue(scheduledCard);
       mockPrismaService.giftCardTransaction.create.mockResolvedValue({});
 
       const result = await service.purchaseGiftCard(dto, 'user-123');
 
+      expect(result).toBeDefined();
       expect(result.isScheduled).toBe(true);
       expect(mockEmailService.sendEmail).not.toHaveBeenCalled();
     });

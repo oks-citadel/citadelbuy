@@ -716,8 +716,26 @@ describe('InventoryService', () => {
     });
 
     it('should suggest alternative products when unavailable', async () => {
+      // First call: Original product query returns empty inventory with product category
       mockPrismaService.inventoryItem.findMany
-        .mockResolvedValueOnce([]) // Original product query
+        .mockResolvedValueOnce([
+          {
+            id: 'item-empty',
+            productId: 'product-123',
+            warehouseId: 'warehouse-1',
+            quantity: 0,
+            availableQty: 0,
+            reservedQty: 0,
+            warehouse: {
+              id: 'warehouse-1',
+              name: 'Main Warehouse',
+              isActive: true,
+            },
+            product: {
+              categoryId: 'category-1',
+            },
+          },
+        ])
         .mockResolvedValueOnce([ // Alternatives query
           {
             productId: 'alt-product-1',
@@ -889,6 +907,12 @@ describe('InventoryService', () => {
     it('should create reorder requests for low stock items', async () => {
       mockPrismaService.inventoryItem.findMany.mockResolvedValue(mockLowStockItems);
       mockPrismaService.reorderRequest.findFirst.mockResolvedValue(null);
+      // Mock inventoryItem.findUnique for createReorderRequest calls
+      mockPrismaService.inventoryItem.findUnique.mockImplementation((args) => {
+        const itemId = args.where.id;
+        const item = mockLowStockItems.find(i => i.id === itemId);
+        return Promise.resolve(item || null);
+      });
       mockPrismaService.reorderRequest.count.mockResolvedValue(0);
       mockPrismaService.reorderRequest.create.mockResolvedValue({
         id: 'reorder-123',

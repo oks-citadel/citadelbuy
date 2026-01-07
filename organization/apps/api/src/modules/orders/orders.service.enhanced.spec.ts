@@ -69,6 +69,12 @@ describe('OrdersService - Enhanced Tests', () => {
 
     // Clear all mocks before each test
     jest.clearAllMocks();
+
+    // Re-apply default mock implementations after clearAllMocks
+    mockEmailService.sendOrderConfirmation.mockResolvedValue(undefined);
+    mockEmailService.sendOrderStatusUpdate.mockResolvedValue(undefined);
+    mockEmailService.sendEmail.mockResolvedValue(undefined);
+    mockPrismaService.$transaction.mockImplementation(async (callback) => await callback(mockPrismaService));
   });
 
   it('should be defined', () => {
