@@ -199,12 +199,18 @@ describe('ShippingForm', () => {
       const user = userEvent.setup();
       render(<ShippingForm {...defaultProps} />);
 
-      await user.type(screen.getByLabelText(/email/i), 'invalid-email');
-      await user.click(screen.getByRole('button', { name: /continue to payment/i }));
+      const emailInput = screen.getByLabelText(/email/i);
+      const submitButton = screen.getByRole('button', { name: /continue to payment/i });
 
-      await waitFor(() => {
-        expect(screen.getByText('Please enter a valid email address')).toBeInTheDocument();
-      });
+      // Clear any existing value and type invalid email
+      await user.clear(emailInput);
+      await user.type(emailInput, 'invalid-email');
+
+      // Click submit to trigger validation
+      fireEvent.submit(submitButton.closest('form')!);
+
+      // Wait for validation errors to appear
+      expect(await screen.findByText('Please enter a valid email address')).toBeInTheDocument();
     });
 
     it('accepts valid email format', async () => {
