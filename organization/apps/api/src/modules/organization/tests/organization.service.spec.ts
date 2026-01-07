@@ -315,7 +315,7 @@ describe('OrganizationService', () => {
         'organization.created',
         expect.objectContaining({
           organizationId: mockOrgId,
-          userId: mockUserId,
+          ownerId: mockUserId,
         }),
       );
     });

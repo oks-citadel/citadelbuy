@@ -29,7 +29,7 @@ describe('OrdersService - Enhanced Tests', () => {
       findUnique: jest.fn(),
       update: jest.fn(),
     },
-    $transaction: jest.fn(),
+    $transaction: jest.fn((callback) => callback(mockPrismaService)),
   };
 
   const mockEmailService = {
@@ -99,7 +99,7 @@ describe('OrdersService - Enhanced Tests', () => {
       };
 
       const mockProducts = [
-        { id: 'product-1', categoryId: 'category-1' },
+        { id: 'product-1', categoryId: 'category-1', stock: 10, name: 'Test Product' },
       ];
 
       const mockTaxCalculation = {
@@ -125,6 +125,8 @@ describe('OrdersService - Enhanced Tests', () => {
       };
 
       mockPrismaService.product.findMany.mockResolvedValue(mockProducts);
+      mockPrismaService.product.findUnique.mockResolvedValue({ stock: 10, name: 'Test Product' });
+      mockPrismaService.product.update.mockResolvedValue({});
       mockTaxService.calculateTax.mockResolvedValue(mockTaxCalculation);
       mockTaxService.calculateOrderTax.mockResolvedValue(mockTaxCalculation);
       mockPrismaService.order.create.mockResolvedValue(mockOrder);
@@ -171,7 +173,7 @@ describe('OrdersService - Enhanced Tests', () => {
       };
 
       const mockProducts = [
-        { id: 'product-1', categoryId: 'category-1' },
+        { id: 'product-1', categoryId: 'category-1', stock: 10, name: 'Test Product' },
       ];
 
       const mockOrder = {
@@ -192,6 +194,8 @@ describe('OrdersService - Enhanced Tests', () => {
       };
 
       mockPrismaService.product.findMany.mockResolvedValue(mockProducts);
+      mockPrismaService.product.findUnique.mockResolvedValue({ stock: 10, name: 'Test Product' });
+      mockPrismaService.product.update.mockResolvedValue({});
       mockTaxService.calculateTax.mockRejectedValue(new Error('Tax service unavailable'));
       mockPrismaService.order.create.mockResolvedValue(mockOrder);
 
@@ -227,7 +231,7 @@ describe('OrdersService - Enhanced Tests', () => {
       };
 
       const mockProducts = [
-        { id: 'product-1', categoryId: null },
+        { id: 'product-1', categoryId: null, stock: 10, name: 'Test Product' },
       ];
 
       const mockTaxCalculation = {
@@ -253,6 +257,8 @@ describe('OrdersService - Enhanced Tests', () => {
       };
 
       mockPrismaService.product.findMany.mockResolvedValue(mockProducts);
+      mockPrismaService.product.findUnique.mockResolvedValue({ stock: 10, name: 'Test Product' });
+      mockPrismaService.product.update.mockResolvedValue({});
       mockTaxService.calculateTax.mockResolvedValue(mockTaxCalculation);
       mockTaxService.calculateOrderTax.mockResolvedValue(mockTaxCalculation);
       mockPrismaService.order.create.mockResolvedValue(mockOrder);
@@ -569,7 +575,7 @@ describe('OrdersService - Enhanced Tests', () => {
       };
 
       const mockProducts = [
-        { id: 'product-1', categoryId: 'category-1' },
+        { id: 'product-1', categoryId: 'category-1', stock: 10, name: 'Test Product' },
       ];
 
       const mockOrder = {
@@ -600,6 +606,8 @@ describe('OrdersService - Enhanced Tests', () => {
       };
 
       mockPrismaService.product.findMany.mockResolvedValue(mockProducts);
+      mockPrismaService.product.findUnique.mockResolvedValue({ stock: 10, name: 'Test Product' });
+      mockPrismaService.product.update.mockResolvedValue({});
       mockTaxService.calculateTax.mockResolvedValue({ taxAmount: 0 });
       mockPrismaService.order.create.mockResolvedValue(mockOrder);
 
@@ -646,7 +654,7 @@ describe('OrdersService - Enhanced Tests', () => {
       };
 
       const mockProducts = [
-        { id: 'product-1', categoryId: null },
+        { id: 'product-1', categoryId: null, stock: 10, name: 'Test Product' },
       ];
 
       const mockOrder = {
@@ -667,6 +675,8 @@ describe('OrdersService - Enhanced Tests', () => {
       };
 
       mockPrismaService.product.findMany.mockResolvedValue(mockProducts);
+      mockPrismaService.product.findUnique.mockResolvedValue({ stock: 10, name: 'Test Product' });
+      mockPrismaService.product.update.mockResolvedValue({});
       mockTaxService.calculateTax.mockResolvedValue({ taxAmount: 0 });
       mockPrismaService.order.create.mockResolvedValue(mockOrder);
       mockEmailService.sendOrderConfirmation.mockRejectedValue(
@@ -703,6 +713,7 @@ describe('OrdersService - Enhanced Tests', () => {
         status: newStatus,
         paymentIntentId: paymentData.paymentIntentId,
         paymentMethod: paymentData.paymentMethod,
+        createdAt: new Date(),
         updatedAt: new Date(),
         user: {
           email: 'user@example.com',
@@ -760,7 +771,7 @@ describe('OrdersService - Enhanced Tests', () => {
       };
 
       const mockProducts = [
-        { id: 'product-1', categoryId: 'category-1' },
+        { id: 'product-1', categoryId: 'category-1', stock: 10, name: 'Test Product' },
       ];
 
       const mockOrder = {
@@ -781,6 +792,8 @@ describe('OrdersService - Enhanced Tests', () => {
       };
 
       mockPrismaService.product.findMany.mockResolvedValue(mockProducts);
+      mockPrismaService.product.findUnique.mockResolvedValue({ stock: 10, name: 'Test Product' });
+      mockPrismaService.product.update.mockResolvedValue({});
       mockTaxService.calculateTax.mockResolvedValue({ taxAmount: 0 });
       mockPrismaService.order.create.mockResolvedValue(mockOrder);
 
@@ -822,9 +835,9 @@ describe('OrdersService - Enhanced Tests', () => {
       };
 
       const mockProducts = [
-        { id: 'product-1', categoryId: 'category-1' },
-        { id: 'product-2', categoryId: 'category-2' },
-        { id: 'product-3', categoryId: 'category-1' },
+        { id: 'product-1', categoryId: 'category-1', stock: 10, name: 'Product 1' },
+        { id: 'product-2', categoryId: 'category-2', stock: 10, name: 'Product 2' },
+        { id: 'product-3', categoryId: 'category-1', stock: 10, name: 'Product 3' },
       ];
 
       const mockOrder = {
@@ -845,6 +858,8 @@ describe('OrdersService - Enhanced Tests', () => {
       };
 
       mockPrismaService.product.findMany.mockResolvedValue(mockProducts);
+      mockPrismaService.product.findUnique.mockResolvedValue({ stock: 10, name: 'Test Product' });
+      mockPrismaService.product.update.mockResolvedValue({});
       mockTaxService.calculateTax.mockResolvedValue({ taxAmount: 0 });
       mockPrismaService.order.create.mockResolvedValue(mockOrder);
 
@@ -884,7 +899,7 @@ describe('OrdersService - Enhanced Tests', () => {
       };
 
       const mockProducts = [
-        { id: 'product-1', categoryId: 'category-1' },
+        { id: 'product-1', categoryId: 'category-1', stock: 10, name: 'Test Product' },
       ];
 
       const mockOrder = {
@@ -905,6 +920,8 @@ describe('OrdersService - Enhanced Tests', () => {
       };
 
       mockPrismaService.product.findMany.mockResolvedValue(mockProducts);
+      mockPrismaService.product.findUnique.mockResolvedValue({ stock: 10, name: 'Test Product' });
+      mockPrismaService.product.update.mockResolvedValue({});
       mockTaxService.calculateTax.mockResolvedValue({ taxAmount: 0 });
       mockPrismaService.order.create.mockResolvedValue(mockOrder);
 

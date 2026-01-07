@@ -533,8 +533,18 @@ describe('LandingPageService', () => {
 
   describe('trackPageView', () => {
     it('should track page view without visitor id', async () => {
-      mockPrismaService.landingPage.findUnique.mockResolvedValue(mockLandingPage);
-      mockPrismaService.landingPage.update.mockResolvedValue(mockLandingPage);
+      const pageWithZeroViews = {
+        ...mockLandingPage,
+        analytics: {
+          views: 0,
+          uniqueVisitors: 0,
+          conversions: 0,
+          bounceRate: 0,
+          avgTimeOnPage: 0,
+        },
+      };
+      mockPrismaService.landingPage.findUnique.mockResolvedValue(pageWithZeroViews);
+      mockPrismaService.landingPage.update.mockResolvedValue(pageWithZeroViews);
 
       await service.trackPageView('page-123');
 
@@ -549,8 +559,18 @@ describe('LandingPageService', () => {
     });
 
     it('should track page view with visitor id', async () => {
-      mockPrismaService.landingPage.findUnique.mockResolvedValue(mockLandingPage);
-      mockPrismaService.landingPage.update.mockResolvedValue(mockLandingPage);
+      const pageWithZeroViews = {
+        ...mockLandingPage,
+        analytics: {
+          views: 0,
+          uniqueVisitors: 0,
+          conversions: 0,
+          bounceRate: 0,
+          avgTimeOnPage: 0,
+        },
+      };
+      mockPrismaService.landingPage.findUnique.mockResolvedValue(pageWithZeroViews);
+      mockPrismaService.landingPage.update.mockResolvedValue(pageWithZeroViews);
 
       await service.trackPageView('page-123', 'visitor-123');
 

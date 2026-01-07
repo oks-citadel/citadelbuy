@@ -178,6 +178,21 @@ describe('ShippingService', () => {
         priority: 1,
       };
 
+      // Add a mock provider so the rate calculation loop executes
+      const mockProvider = {
+        getRates: jest.fn().mockResolvedValue([
+          {
+            carrier: 'MOCK',
+            serviceName: 'Mock Ground',
+            serviceLevel: ServiceLevelEnum.GROUND,
+            baseRate: 10.00,
+            totalRate: 12.00,
+            guaranteedDelivery: false,
+          },
+        ]),
+      };
+      (service as any).providers.set('MOCK', mockProvider);
+
       mockRedisService.get.mockResolvedValue(null);
       mockPrismaService.shippingZone.findMany.mockResolvedValue([mockZone]);
       mockPrismaService.shippingRule.findMany.mockResolvedValue([mockRule]);

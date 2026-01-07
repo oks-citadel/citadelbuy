@@ -298,8 +298,9 @@ describe('LoyaltyService', () => {
   describe('earnPointsFromReview', () => {
     it('should earn points for product review', async () => {
       mockPrismaService.customerLoyalty.findUnique
-        .mockResolvedValueOnce(mockLoyalty)
-        .mockResolvedValueOnce(mockLoyalty);
+        .mockResolvedValueOnce(mockLoyalty)  // ensureLoyaltyAccount
+        .mockResolvedValueOnce(mockLoyalty)  // addPoints
+        .mockResolvedValueOnce(mockLoyalty); // getCustomerLoyalty
       mockPrismaService.loyaltyProgram.findFirst.mockResolvedValue(mockLoyaltyProgram);
       mockPrismaService.pointTransaction.findFirst.mockResolvedValue(null);
       mockPrismaService.pointTransaction.create.mockResolvedValue({});
