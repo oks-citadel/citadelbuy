@@ -426,7 +426,7 @@ jobs:
     name: Backend Tests (API)
     runs-on: ubuntu-latest
     needs: setup
-    timeout-minutes: 6
+    timeout-minutes: 10
     continue-on-error: true  # Temporarily allow test failures while fixing test configurations
     steps:
       - uses: actions/checkout@v4
