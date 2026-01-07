@@ -202,7 +202,9 @@ describe('ShippingForm', () => {
       await user.type(screen.getByLabelText(/email/i), 'invalid-email');
       await user.click(screen.getByRole('button', { name: /continue to payment/i }));
 
-      expect(screen.getByText('Please enter a valid email address')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Please enter a valid email address')).toBeInTheDocument();
+      });
     });
 
     it('accepts valid email format', async () => {
