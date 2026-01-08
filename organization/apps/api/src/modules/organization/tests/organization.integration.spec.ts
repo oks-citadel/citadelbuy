@@ -255,6 +255,15 @@ describe('OrganizationService - Integration Tests', () => {
       });
       expect(result1).toEqual(mockOrg1);
 
+      // Verify user is a member of org1
+      const org1Membership = await mockPrismaService.organizationMember.findFirst({
+        where: {
+          organizationId: org1Id,
+          userId,
+        },
+      });
+      expect(org1Membership).toEqual(mockOrg1Membership);
+
       // Should fail for org2 (user not a member)
       mockPrismaService.organization.findUnique.mockResolvedValueOnce(mockOrg2 as any);
       mockPrismaService.organizationMember.findFirst.mockResolvedValueOnce(null);

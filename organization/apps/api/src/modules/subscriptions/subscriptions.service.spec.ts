@@ -205,9 +205,15 @@ describe('SubscriptionsService', () => {
         where: {
           type: {
             in: [
+              SubscriptionPlanType.VENDOR_FREE,
+              SubscriptionPlanType.VENDOR_SILVER,
+              SubscriptionPlanType.VENDOR_GOLD,
+              SubscriptionPlanType.VENDOR_PLATINUM,
+              SubscriptionPlanType.VENDOR_DIAMOND,
+              SubscriptionPlanType.VENDOR_ENTERPRISE,
+              // Legacy types for backwards compatibility
               SubscriptionPlanType.VENDOR_STARTER,
               SubscriptionPlanType.VENDOR_PROFESSIONAL,
-              SubscriptionPlanType.VENDOR_ENTERPRISE,
             ],
           },
           isActive: true,

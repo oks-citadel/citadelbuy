@@ -63,10 +63,10 @@ describe('StripeService', () => {
   });
 
   describe('initialization', () => {
-    it('should initialize with valid API key', () => {
+    it('should initialize with valid API key', async () => {
       mockConfigService.get.mockReturnValue('sk_test_validkey123');
 
-      const module = Test.createTestingModule({
+      const module = await Test.createTestingModule({
         providers: [
           StripeService,
           {
@@ -75,6 +75,9 @@ describe('StripeService', () => {
           },
         ],
       }).compile();
+
+      // Get the service to trigger the constructor
+      module.get<StripeService>(StripeService);
 
       expect(Stripe).toHaveBeenCalledWith('sk_test_validkey123', {
         apiVersion: '2024-12-18.acacia',
