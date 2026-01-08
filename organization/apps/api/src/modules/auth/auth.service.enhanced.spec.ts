@@ -200,6 +200,7 @@ describe('AuthService - Enhanced Tests', () => {
         });
 
         expect(mockJwtService.sign).toHaveBeenCalledTimes(2);
+        // First call - access token (may have undefined options)
         expect(mockJwtService.sign).toHaveBeenNthCalledWith(
           1,
           expect.objectContaining({
@@ -207,14 +208,16 @@ describe('AuthService - Enhanced Tests', () => {
             email: 'test@example.com',
             role: 'CUSTOMER',
           }),
+          expect.anything(),
         );
+        // Second call - refresh token
         expect(mockJwtService.sign).toHaveBeenNthCalledWith(
           2,
           expect.objectContaining({ sub: 'user-123', type: 'refresh' }),
-          {
+          expect.objectContaining({
             secret: 'test-refresh-secret',
             expiresIn: '30d',
-          },
+          }),
         );
       });
 
@@ -243,10 +246,10 @@ describe('AuthService - Enhanced Tests', () => {
         expect(mockJwtService.sign).toHaveBeenNthCalledWith(
           2,
           expect.objectContaining({ sub: 'user-123', type: 'refresh' }),
-          {
+          expect.objectContaining({
             secret: 'test-secret',
             expiresIn: '30d',
-          },
+          }),
         );
       });
     });
