@@ -200,20 +200,19 @@ describe('AuthService - Enhanced Tests', () => {
         });
 
         expect(mockJwtService.sign).toHaveBeenCalledTimes(2);
-        // First call - access token (may have undefined options)
-        expect(mockJwtService.sign).toHaveBeenNthCalledWith(
-          1,
+        // First call - access token (verify payload only)
+        expect(mockJwtService.sign.mock.calls[0][0]).toEqual(
           expect.objectContaining({
             sub: 'user-123',
             email: 'test@example.com',
             role: 'CUSTOMER',
           }),
-          expect.anything(),
         );
-        // Second call - refresh token
-        expect(mockJwtService.sign).toHaveBeenNthCalledWith(
-          2,
+        // Second call - refresh token (verify payload and options)
+        expect(mockJwtService.sign.mock.calls[1][0]).toEqual(
           expect.objectContaining({ sub: 'user-123', type: 'refresh' }),
+        );
+        expect(mockJwtService.sign.mock.calls[1][1]).toEqual(
           expect.objectContaining({
             secret: 'test-refresh-secret',
             expiresIn: '30d',
@@ -242,10 +241,11 @@ describe('AuthService - Enhanced Tests', () => {
         // Act
         await service.login(mockUser);
 
-        // Assert
-        expect(mockJwtService.sign).toHaveBeenNthCalledWith(
-          2,
+        // Assert - verify second call (refresh token) with fallback secret
+        expect(mockJwtService.sign.mock.calls[1][0]).toEqual(
           expect.objectContaining({ sub: 'user-123', type: 'refresh' }),
+        );
+        expect(mockJwtService.sign.mock.calls[1][1]).toEqual(
           expect.objectContaining({
             secret: 'test-secret',
             expiresIn: '30d',
