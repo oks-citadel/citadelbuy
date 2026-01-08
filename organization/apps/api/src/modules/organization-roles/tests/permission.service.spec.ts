@@ -263,13 +263,13 @@ describe('PermissionService', () => {
 
       expect(mockRedisService.set).toHaveBeenCalledWith(
         `perms:${mockOrgId}:${mockUserId}`,
-        JSON.stringify(mockMember.role.permissions),
+        mockMember.role.permissions,
         30, // CACHE_TTL
       );
     });
 
     it('should return cached permissions when available', async () => {
-      const cachedPermissions = JSON.stringify(['org:read', 'org:update']);
+      const cachedPermissions = ['org:read', 'org:update'];
       mockRedisService.get.mockResolvedValue(cachedPermissions);
 
       const result = await service.getUserPermissions(mockUserId, mockOrgId);
@@ -344,7 +344,7 @@ describe('PermissionService', () => {
 
       expect(mockRedisService.set).toHaveBeenCalledWith(
         expect.any(String),
-        expect.any(String),
+        expect.any(Array),
         30,
       );
     });

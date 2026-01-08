@@ -11,6 +11,7 @@ describe('VendorAnalyticsService', () => {
     orderItem: {
       findMany: jest.fn(),
       groupBy: jest.fn(),
+      aggregate: jest.fn(),
     },
     product: {
       count: jest.fn(),

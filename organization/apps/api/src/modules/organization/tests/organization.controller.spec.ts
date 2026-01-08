@@ -2,6 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { OrganizationController } from '../controllers/organization.controller';
 import { OrganizationService } from '../services/organization.service';
+import { OrganizationPermissionGuard } from '../../organization-roles/guards/permission.guard';
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
+import { IdempotencyInterceptor } from '@/common/interceptors/idempotency.interceptor';
 import {
   CreateOrganizationDto,
   UpdateOrganizationDto,
@@ -49,7 +52,14 @@ describe('OrganizationController', () => {
           useValue: mockOrganizationService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(OrganizationPermissionGuard)
+      .useValue({ canActivate: () => true })
+      .overrideInterceptor(IdempotencyInterceptor)
+      .useValue({ intercept: (context, next) => next.handle() })
+      .compile();
 
     controller = module.get<OrganizationController>(OrganizationController);
     service = module.get<OrganizationService>(OrganizationService);

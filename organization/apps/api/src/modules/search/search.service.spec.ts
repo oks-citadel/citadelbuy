@@ -105,6 +105,21 @@ describe('SearchService', () => {
     prisma = module.get<PrismaService>(PrismaService);
 
     jest.clearAllMocks();
+
+    // Re-setup mocks after clearAllMocks
+    mockSearchProviderFactory.getProvider.mockResolvedValue(mockSearchProvider);
+    mockSearchProvider.searchProducts.mockResolvedValue({
+      products: [],
+      total: 0,
+      page: 1,
+      limit: 20,
+      facets: {},
+    });
+    mockSearchProvider.getAutocomplete.mockResolvedValue({
+      suggestions: [],
+      products: [],
+    });
+    mockSearchProvider.getProviderName.mockReturnValue('internal');
   });
 
   it('should be defined', () => {
@@ -119,8 +134,21 @@ describe('SearchService', () => {
         page: 1,
         limit: 20,
       };
-      mockPrismaService.product.findMany.mockResolvedValue([mockProduct]);
-      mockPrismaService.product.count.mockResolvedValue(1);
+      const mockSearchResult = {
+        products: [
+          {
+            id: 'product-123',
+            name: 'Laptop Computer',
+            avgRating: 4.5,
+            reviewCount: 2,
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 20,
+        facets: {},
+      };
+      mockSearchProvider.searchProducts.mockResolvedValue(mockSearchResult);
 
       // Act
       const result = await service.searchProducts(searchDto);
@@ -128,41 +156,34 @@ describe('SearchService', () => {
       // Assert
       expect(result.products).toHaveLength(1);
       expect(result.products[0].name).toBe('Laptop Computer');
-      expect(result.products[0].avgRating).toBe(4.5); // (5+4)/2
+      expect(result.products[0].avgRating).toBe(4.5);
       expect(result.products[0].reviewCount).toBe(2);
-      expect(mockPrismaService.product.findMany).toHaveBeenCalledWith({
-        where: {
-          OR: [
-            { name: { contains: 'laptop', mode: 'insensitive' } },
-            { description: { contains: 'laptop', mode: 'insensitive' } },
-          ],
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: 0,
-        take: 20,
-        include: expect.any(Object),
-      });
+      expect(mockSearchProvider.searchProducts).toHaveBeenCalledWith(
+        expect.objectContaining({
+          query: 'laptop',
+          page: 1,
+          limit: 20,
+        }),
+      );
     });
 
     it('should filter by category', async () => {
       // Arrange
       const searchDto = {
         query: 'laptop',
-        categoryId: 'cat-electronics',
+        categoryIds: ['cat-electronics'],
         page: 1,
         limit: 20,
       };
-      mockPrismaService.product.findMany.mockResolvedValue([]);
-      mockPrismaService.product.count.mockResolvedValue(0);
 
       // Act
       await service.searchProducts(searchDto);
 
       // Assert
-      expect(mockPrismaService.product.findMany).toHaveBeenCalledWith(
+      expect(mockSearchProvider.searchProducts).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({
-            categoryId: 'cat-electronics',
+          filters: expect.objectContaining({
+            categoryIds: ['cat-electronics'],
           }),
         }),
       );
@@ -172,22 +193,21 @@ describe('SearchService', () => {
       // Arrange
       const searchDto = {
         query: 'laptop',
-        minPrice: 500,
-        maxPrice: 1500,
+        priceMin: 500,
+        priceMax: 1500,
         page: 1,
         limit: 20,
       };
-      mockPrismaService.product.findMany.mockResolvedValue([]);
-      mockPrismaService.product.count.mockResolvedValue(0);
 
       // Act
       await service.searchProducts(searchDto);
 
       // Assert
-      expect(mockPrismaService.product.findMany).toHaveBeenCalledWith(
+      expect(mockSearchProvider.searchProducts).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({
-            price: { gte: 500, lte: 1500 },
+          filters: expect.objectContaining({
+            priceMin: 500,
+            priceMax: 1500,
           }),
         }),
       );
@@ -201,17 +221,15 @@ describe('SearchService', () => {
         page: 1,
         limit: 20,
       };
-      mockPrismaService.product.findMany.mockResolvedValue([]);
-      mockPrismaService.product.count.mockResolvedValue(0);
 
       // Act
       await service.searchProducts(searchDto);
 
       // Assert
-      expect(mockPrismaService.product.findMany).toHaveBeenCalledWith(
+      expect(mockSearchProvider.searchProducts).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({
-            stock: { gt: 0 },
+          filters: expect.objectContaining({
+            inStock: true,
           }),
         }),
       );
@@ -226,16 +244,14 @@ describe('SearchService', () => {
         page: 1,
         limit: 20,
       };
-      mockPrismaService.product.findMany.mockResolvedValue([]);
-      mockPrismaService.product.count.mockResolvedValue(0);
 
       // Act
       await service.searchProducts(searchDto);
 
       // Assert
-      expect(mockPrismaService.product.findMany).toHaveBeenCalledWith(
+      expect(mockSearchProvider.searchProducts).toHaveBeenCalledWith(
         expect.objectContaining({
-          orderBy: { price: 'asc' },
+          sort: { field: 'price', order: 'asc' },
         }),
       );
     });
@@ -249,16 +265,14 @@ describe('SearchService', () => {
         page: 1,
         limit: 20,
       };
-      mockPrismaService.product.findMany.mockResolvedValue([]);
-      mockPrismaService.product.count.mockResolvedValue(0);
 
       // Act
       await service.searchProducts(searchDto);
 
       // Assert
-      expect(mockPrismaService.product.findMany).toHaveBeenCalledWith(
+      expect(mockSearchProvider.searchProducts).toHaveBeenCalledWith(
         expect.objectContaining({
-          orderBy: { createdAt: 'desc' },
+          sort: { field: 'newest', order: 'desc' },
         }),
       );
     });
@@ -271,10 +285,16 @@ describe('SearchService', () => {
         page: 1,
         limit: 20,
       };
-      const highRatedProduct = { ...mockProduct, reviews: [{ rating: 5 }, { rating: 5 }] };
-      const lowRatedProduct = { ...mockProduct, id: 'product-456', reviews: [{ rating: 2 }] };
-      mockPrismaService.product.findMany.mockResolvedValue([highRatedProduct, lowRatedProduct]);
-      mockPrismaService.product.count.mockResolvedValue(2);
+      const mockSearchResult = {
+        products: [
+          { id: 'product-123', name: 'High Rated Laptop', avgRating: 5 },
+        ],
+        total: 1,
+        page: 1,
+        limit: 20,
+        facets: {},
+      };
+      mockSearchProvider.searchProducts.mockResolvedValue(mockSearchResult);
 
       // Act
       const result = await service.searchProducts(searchDto);
@@ -282,6 +302,13 @@ describe('SearchService', () => {
       // Assert
       expect(result.products).toHaveLength(1);
       expect(result.products[0].avgRating).toBe(5);
+      expect(mockSearchProvider.searchProducts).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filters: expect.objectContaining({
+            minRating: 4,
+          }),
+        }),
+      );
     });
 
     it('should handle pagination correctly', async () => {
@@ -291,56 +318,43 @@ describe('SearchService', () => {
         page: 2,
         limit: 10,
       };
-      mockPrismaService.product.findMany.mockResolvedValue([]);
-      mockPrismaService.product.count.mockResolvedValue(25);
+      const mockSearchResult = {
+        products: [],
+        total: 25,
+        page: 2,
+        limit: 10,
+        facets: {},
+      };
+      mockSearchProvider.searchProducts.mockResolvedValue(mockSearchResult);
 
       // Act
       const result = await service.searchProducts(searchDto);
 
       // Assert
-      expect(mockPrismaService.product.findMany).toHaveBeenCalledWith(
+      expect(mockSearchProvider.searchProducts).toHaveBeenCalledWith(
         expect.objectContaining({
-          skip: 10, // (2-1) * 10
-          take: 10,
+          page: 2,
+          limit: 10,
         }),
       );
-      expect(result.pagination).toEqual({
-        page: 2,
-        limit: 10,
-        total: 25,
-        totalPages: 3,
-      });
+      expect(result.page).toBe(2);
+      expect(result.limit).toBe(10);
+      expect(result.total).toBe(25);
     });
 
-    it('should return filters in response', async () => {
+    it('should return provider name in response', async () => {
       // Arrange
       const searchDto = {
         query: 'laptop',
-        categoryId: 'cat-1',
-        minPrice: 500,
-        maxPrice: 1500,
         page: 1,
         limit: 20,
       };
-      mockPrismaService.product.findMany.mockResolvedValue([]);
-      mockPrismaService.product.count.mockResolvedValue(0);
 
       // Act
       const result = await service.searchProducts(searchDto);
 
       // Assert
-      expect(result.filters).toEqual({
-        query: 'laptop',
-        categoryId: 'cat-1',
-        minPrice: 500,
-        maxPrice: 1500,
-        minRating: undefined,
-        inStock: undefined,
-        vendorId: undefined,
-        tags: undefined,
-        sortBy: 'relevance',
-        sortOrder: 'desc',
-      });
+      expect(result.provider).toBe('internal');
     });
   });
 
@@ -359,21 +373,24 @@ describe('SearchService', () => {
     it('should return suggestions and products for valid query', async () => {
       // Arrange
       const dto = { query: 'laptop', limit: 10 };
-      const mockSuggestions = [
+      const mockDbSuggestions = [
         { keyword: 'laptop gaming', searchCount: 100, priority: 1, enabled: true, category: null },
         { keyword: 'laptop dell', searchCount: 80, priority: 1, enabled: true, category: null },
       ];
-      const mockProducts = [
+      const mockProviderProducts = [
         {
           id: 'prod-1',
           name: 'Laptop HP',
           slug: 'laptop-hp',
-          images: ['image1.jpg'],
+          image: 'image1.jpg',
           price: 799.99,
         },
       ];
-      mockPrismaService.searchSuggestion.findMany.mockResolvedValue(mockSuggestions);
-      mockPrismaService.product.findMany.mockResolvedValue(mockProducts);
+      mockPrismaService.searchSuggestion.findMany.mockResolvedValue(mockDbSuggestions);
+      mockSearchProvider.getAutocomplete.mockResolvedValue({
+        suggestions: [],
+        products: mockProviderProducts,
+      });
 
       // Act
       const result = await service.getAutocomplete(dto);
@@ -381,9 +398,9 @@ describe('SearchService', () => {
       // Assert
       expect(result.suggestions).toHaveLength(2);
       expect(result.suggestions[0]).toEqual({
-        keyword: 'laptop gaming',
+        text: 'laptop gaming',
         type: 'keyword',
-        searchCount: 100,
+        count: 100,
       });
       expect(result.products).toHaveLength(1);
       expect(result.products[0]).toEqual({
@@ -392,34 +409,19 @@ describe('SearchService', () => {
         slug: 'laptop-hp',
         image: 'image1.jpg',
         price: 799.99,
-        type: 'product',
       });
     });
 
-    it('should filter by category when provided', async () => {
+    it('should call provider getAutocomplete', async () => {
       // Arrange
-      const dto = { query: 'laptop', limit: 10, categoryId: 'cat-electronics' };
+      const dto = { query: 'laptop', limit: 10 };
       mockPrismaService.searchSuggestion.findMany.mockResolvedValue([]);
-      mockPrismaService.product.findMany.mockResolvedValue([]);
 
       // Act
       await service.getAutocomplete(dto);
 
       // Assert
-      expect(mockPrismaService.searchSuggestion.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            category: 'cat-electronics',
-          }),
-        }),
-      );
-      expect(mockPrismaService.product.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            categoryId: 'cat-electronics',
-          }),
-        }),
-      );
+      expect(mockSearchProvider.getAutocomplete).toHaveBeenCalledWith('laptop', 10);
     });
   });
 

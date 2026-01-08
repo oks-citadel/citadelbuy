@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReturnsController } from './returns.controller';
 import { ReturnsService } from './returns.service';
+import { PrismaService } from '../../common/prisma/prisma.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ReturnStatus, ReturnReason, ReturnType, RefundMethod } from '@prisma/client';
@@ -13,6 +14,7 @@ describe('ReturnsController', () => {
     createReturnRequest: jest.fn(),
     getReturns: jest.fn(),
     getReturnById: jest.fn(),
+    getReturnByIdSecure: jest.fn(),
     cancelReturn: jest.fn(),
     approveReturn: jest.fn(),
     generateReturnLabel: jest.fn(),
@@ -23,6 +25,12 @@ describe('ReturnsController', () => {
     issueStoreCredit: jest.fn(),
     restockItems: jest.fn(),
     getReturnAnalytics: jest.fn(),
+  };
+
+  const mockPrismaService = {
+    returnRequest: {
+      update: jest.fn(),
+    },
   };
 
   const mockUser = {
@@ -60,6 +68,10 @@ describe('ReturnsController', () => {
         {
           provide: ReturnsService,
           useValue: mockReturnsService,
+        },
+        {
+          provide: PrismaService,
+          useValue: mockPrismaService,
         },
       ],
     })
@@ -159,21 +171,21 @@ describe('ReturnsController', () => {
 
   describe('getReturnById', () => {
     it('should return a single return request', async () => {
-      mockReturnsService.getReturnById.mockResolvedValue(mockReturnRequest);
+      mockReturnsService.getReturnByIdSecure.mockResolvedValue(mockReturnRequest);
 
-      const result = await controller.getReturnById('return-123');
+      const result = await controller.getReturnById({ user: mockUser }, 'return-123');
 
       expect(result).toEqual(mockReturnRequest);
-      expect(mockReturnsService.getReturnById).toHaveBeenCalledWith('return-123');
+      expect(mockReturnsService.getReturnByIdSecure).toHaveBeenCalledWith('return-123', 'user-123', 'CUSTOMER');
     });
 
     it('should handle different return IDs', async () => {
       const differentReturn = { ...mockReturnRequest, id: 'return-456' };
-      mockReturnsService.getReturnById.mockResolvedValue(differentReturn);
+      mockReturnsService.getReturnByIdSecure.mockResolvedValue(differentReturn);
 
-      await controller.getReturnById('return-456');
+      await controller.getReturnById({ user: mockAdminUser }, 'return-456');
 
-      expect(mockReturnsService.getReturnById).toHaveBeenCalledWith('return-456');
+      expect(mockReturnsService.getReturnByIdSecure).toHaveBeenCalledWith('return-456', 'admin-123', 'ADMIN');
     });
   });
 
@@ -632,20 +644,15 @@ describe('ReturnsController', () => {
         comments: 'Updated comments',
       };
 
-      // Mock prisma on controller instance
-      controller['prisma'] = {
-        returnRequest: {
-          update: jest.fn().mockResolvedValue({
-            ...mockReturnRequest,
-            ...updateDto,
-          }),
-        },
-      };
+      mockPrismaService.returnRequest.update.mockResolvedValue({
+        ...mockReturnRequest,
+        ...updateDto,
+      });
 
       const result = await controller.updateReturn('return-123', updateDto);
 
       expect(result.status).toBe(ReturnStatus.APPROVED);
-      expect(controller['prisma'].returnRequest.update).toHaveBeenCalledWith({
+      expect(mockPrismaService.returnRequest.update).toHaveBeenCalledWith({
         where: { id: 'return-123' },
         data: updateDto,
       });
@@ -656,18 +663,14 @@ describe('ReturnsController', () => {
         comments: 'New comment only',
       };
 
-      controller['prisma'] = {
-        returnRequest: {
-          update: jest.fn().mockResolvedValue({
-            ...mockReturnRequest,
-            comments: 'New comment only',
-          }),
-        },
-      };
+      mockPrismaService.returnRequest.update.mockResolvedValue({
+        ...mockReturnRequest,
+        comments: 'New comment only',
+      });
 
       await controller.updateReturn('return-123', updateDto);
 
-      expect(controller['prisma'].returnRequest.update).toHaveBeenCalledWith({
+      expect(mockPrismaService.returnRequest.update).toHaveBeenCalledWith({
         where: { id: 'return-123' },
         data: updateDto,
       });

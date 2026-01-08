@@ -5,6 +5,7 @@ import { PaymentsService } from '../payments/payments.service';
 import { OrdersService } from '../orders/orders.service';
 import { CouponsService } from '../coupons/coupons.service';
 import { CartAbandonmentService } from '../cart/cart-abandonment.service';
+import { ShippingService } from '../shipping/shipping.service';
 import { ConfigService } from '@nestjs/config';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
@@ -66,6 +67,11 @@ describe('CheckoutService', () => {
     markCartRecovered: jest.fn(),
   };
 
+  const mockShippingService = {
+    calculateShipping: jest.fn(),
+    getShippingOptions: jest.fn(),
+  };
+
   const mockConfigService = {
     get: jest.fn().mockReturnValue('sk_test_dummy'),
   };
@@ -93,6 +99,10 @@ describe('CheckoutService', () => {
         {
           provide: CartAbandonmentService,
           useValue: mockCartAbandonmentService,
+        },
+        {
+          provide: ShippingService,
+          useValue: mockShippingService,
         },
         {
           provide: ConfigService,

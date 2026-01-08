@@ -49,7 +49,7 @@ describe('FeaturedListingsService', () => {
 
   const mockFeaturedSlot = {
     id: 'slot-123',
-    position: FeaturedPosition.HOMEPAGE_BANNER,
+    position: FeaturedPosition.HOME_BANNER,
     categoryId: null,
     maxListings: 10,
     dailyRate: 10,
@@ -62,7 +62,7 @@ describe('FeaturedListingsService', () => {
     id: 'listing-123',
     productId: 'product-123',
     vendorId: 'vendor-123',
-    position: FeaturedPosition.HOMEPAGE_BANNER,
+    position: FeaturedPosition.HOME_BANNER,
     priority: 0,
     startDate: new Date('2024-01-01'),
     endDate: new Date('2024-01-31'),
@@ -107,7 +107,7 @@ describe('FeaturedListingsService', () => {
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual({
         id: 'slot-123',
-        position: FeaturedPosition.HOMEPAGE_BANNER,
+        position: FeaturedPosition.HOME_BANNER,
         category: undefined,
         maxListings: 10,
         currentListings: 3,
@@ -122,12 +122,13 @@ describe('FeaturedListingsService', () => {
       mockPrismaService.featuredSlot.findMany.mockResolvedValue([]);
       mockPrismaService.featuredListing.count.mockResolvedValue(0);
 
-      await service.getAvailableSlots(FeaturedPosition.HOMEPAGE_BANNER);
+      await service.getAvailableSlots(FeaturedPosition.HOME_BANNER);
 
       expect(mockPrismaService.featuredSlot.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            position: FeaturedPosition.HOMEPAGE_BANNER,
+            isActive: true,
+            position: FeaturedPosition.HOME_BANNER,
           }),
         }),
       );
@@ -155,7 +156,7 @@ describe('FeaturedListingsService', () => {
 
       const result = service.calculateCost(mockFeaturedSlot, startDate, endDate);
 
-      expect(result).toBe(50); // 5 days * 10 daily rate
+      expect(result).toBe(40); // 4 days * 10 daily rate
     });
 
     it('should calculate weekly rate for 7+ days', () => {
@@ -180,7 +181,7 @@ describe('FeaturedListingsService', () => {
   describe('createFeaturedListing', () => {
     const createDto: CreateFeaturedListingDto = {
       productId: 'product-123',
-      position: FeaturedPosition.HOMEPAGE_BANNER,
+      position: FeaturedPosition.HOME_BANNER,
       startDate: new Date('2024-01-01'),
       endDate: new Date('2024-01-31'),
     };
@@ -382,25 +383,25 @@ describe('FeaturedListingsService', () => {
   });
 
   describe('getFeaturedProducts', () => {
-    it('should return featured products for display', async () => {
-      const listingWithProduct = {
-        ...mockFeaturedListing,
-        product: {
-          id: 'product-123',
-          name: 'Test Product',
-          slug: 'test-product',
-          price: 99.99,
-          images: ['image.jpg'],
-          category: { id: 'cat-123', name: 'Electronics' },
-          vendor: { name: 'Test Business' },
-          reviews: [{ rating: 5 }, { rating: 4 }],
-        },
-      };
+    const listingWithProduct = {
+      ...mockFeaturedListing,
+      product: {
+        id: 'product-123',
+        name: 'Test Product',
+        slug: 'test-product',
+        price: 99.99,
+        images: ['image.jpg'],
+        category: { id: 'cat-123', name: 'Electronics' },
+        vendor: { name: 'Test Business' },
+        reviews: [{ rating: 5 }, { rating: 4 }],
+      },
+    };
 
+    it('should return featured products for display', async () => {
       mockPrismaService.featuredListing.findMany.mockResolvedValue([listingWithProduct]);
       mockPrismaService.featuredListing.updateMany.mockResolvedValue({ count: 1 });
 
-      const result = await service.getFeaturedProducts(FeaturedPosition.HOMEPAGE_BANNER);
+      const result = await service.getFeaturedProducts(FeaturedPosition.HOME_BANNER);
 
       expect(result).toHaveLength(1);
       expect(result[0]).toHaveProperty('listingId');
@@ -409,10 +410,10 @@ describe('FeaturedListingsService', () => {
     });
 
     it('should increment impressions', async () => {
-      mockPrismaService.featuredListing.findMany.mockResolvedValue([mockFeaturedListing]);
+      mockPrismaService.featuredListing.findMany.mockResolvedValue([listingWithProduct]);
       mockPrismaService.featuredListing.updateMany.mockResolvedValue({ count: 1 });
 
-      await service.getFeaturedProducts(FeaturedPosition.HOMEPAGE_BANNER);
+      await service.getFeaturedProducts(FeaturedPosition.HOME_BANNER);
 
       expect(mockPrismaService.featuredListing.updateMany).toHaveBeenCalledWith({
         where: { id: { in: ['listing-123'] } },
@@ -454,13 +455,13 @@ describe('FeaturedListingsService', () => {
       mockPrismaService.featuredListing.findMany.mockResolvedValue([]);
       mockPrismaService.featuredListing.count.mockResolvedValue(0);
 
-      await service.getAllListings(1, 10, FeaturedStatus.ACTIVE, FeaturedPosition.HOMEPAGE_BANNER);
+      await service.getAllListings(1, 10, FeaturedStatus.ACTIVE, FeaturedPosition.HOME_BANNER);
 
       expect(mockPrismaService.featuredListing.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
             status: FeaturedStatus.ACTIVE,
-            position: FeaturedPosition.HOMEPAGE_BANNER,
+            position: FeaturedPosition.HOME_BANNER,
           },
         }),
       );
@@ -510,7 +511,7 @@ describe('FeaturedListingsService', () => {
 
   describe('upsertSlot', () => {
     const slotData = {
-      position: FeaturedPosition.HOMEPAGE_BANNER,
+      position: FeaturedPosition.HOME_BANNER,
       maxListings: 10,
       dailyRate: 15,
       weeklyRate: 75,

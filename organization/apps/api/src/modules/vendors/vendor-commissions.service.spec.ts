@@ -491,7 +491,7 @@ describe('VendorCommissionsService', () => {
       await service.getCommissionStats('vendor-123');
 
       expect(mockPrismaService.vendorCommissionRule.count).toHaveBeenCalledWith({
-        vendorProfileId: 'vendor-123',
+        where: { vendorProfileId: 'vendor-123' },
       });
     });
   });

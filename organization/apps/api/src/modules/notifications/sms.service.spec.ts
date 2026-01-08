@@ -21,9 +21,12 @@ describe('SmsService', () => {
   const mockConfigService = {
     get: jest.fn((key: string, defaultValue?: string) => {
       const config: Record<string, string | undefined> = {
-        TWILIO_ACCOUNT_SID: undefined,
-        TWILIO_AUTH_TOKEN: undefined,
-        TWILIO_PHONE_NUMBER: undefined,
+        AWS_SNS_ACCESS_KEY_ID: undefined,
+        AWS_SNS_SECRET_ACCESS_KEY: undefined,
+        AWS_SNS_REGION: undefined,
+        AWS_ACCESS_KEY_ID: undefined,
+        AWS_SECRET_ACCESS_KEY: undefined,
+        AWS_REGION: undefined,
         NODE_ENV: 'test',
       };
       return config[key] ?? defaultValue;
@@ -60,17 +63,19 @@ describe('SmsService', () => {
   });
 
   describe('initialization', () => {
-    it('should log warning when Twilio is not configured', () => {
-      expect(mockConfigService.get).toHaveBeenCalledWith('TWILIO_ACCOUNT_SID');
-      expect(mockConfigService.get).toHaveBeenCalledWith('TWILIO_AUTH_TOKEN');
-      expect(mockConfigService.get).toHaveBeenCalledWith('TWILIO_PHONE_NUMBER');
+    it('should log warning when AWS SNS is not configured', () => {
+      // Verify that the service is initialized without AWS SNS
+      // (config service is called during construction before jest.clearAllMocks)
+      expect(service).toBeDefined();
+      // Service should be in a non-initialized state (no AWS credentials provided)
+      expect((service as any).isInitialized).toBe(false);
     });
 
-    it('should not throw error in test environment when Twilio not configured', () => {
+    it('should not throw error in test environment when AWS SNS not configured', () => {
       expect(() => service.onModuleInit()).not.toThrow();
     });
 
-    it('should log error in production when Twilio not configured', async () => {
+    it('should log error in production when AWS SNS not configured', async () => {
       const prodConfigService = {
         get: jest.fn((key: string) => {
           if (key === 'NODE_ENV') return 'production';
@@ -98,13 +103,13 @@ describe('SmsService', () => {
       prodService.onModuleInit();
 
       expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Twilio SMS is not configured in production')
+        expect.stringContaining('AWS SNS SMS is not configured in production')
       );
     });
   });
 
   describe('sendSms', () => {
-    it('should return failure when Twilio not initialized', async () => {
+    it('should return failure when AWS SNS not initialized', async () => {
       const payload: SmsPayload = {
         to: mockPhoneNumber,
         message: 'Test message',
@@ -113,7 +118,7 @@ describe('SmsService', () => {
       const result = await service.sendSms(payload);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Twilio not initialized');
+      expect(result.error).toBe('AWS SNS not initialized');
     });
 
     it('should return failure for invalid phone number format', async () => {
@@ -140,7 +145,7 @@ describe('SmsService', () => {
       expect(result.error).toBe('Invalid phone number format');
     });
 
-    it('should log warning when sending SMS without Twilio', async () => {
+    it('should log warning when sending SMS without AWS SNS', async () => {
       const warnSpy = jest.spyOn(service['logger'], 'warn');
       const payload: SmsPayload = {
         to: mockPhoneNumber,
@@ -150,7 +155,7 @@ describe('SmsService', () => {
       await service.sendSms(payload);
 
       expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Twilio is not initialized')
+        expect.stringContaining('AWS SNS is not initialized')
       );
     });
   });
@@ -413,6 +418,7 @@ describe('SmsService', () => {
       mockPrismaService.notificationPreference.findUnique.mockResolvedValue({
         userId: mockUserId,
         smsEnabled: true,
+        shippingUpdates: true, // Required for order_updates type
       });
       mockPrismaService.user.findUnique.mockResolvedValue({
         id: mockUserId,
@@ -423,7 +429,7 @@ describe('SmsService', () => {
       await service.sendSmsToUser(mockUserId, 'Test message', 'order_updates');
 
       expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('phone number not verified')
+        expect.stringContaining('not verified, sending anyway')
       );
     });
 
@@ -440,12 +446,12 @@ describe('SmsService', () => {
 
       const result = await service.sendSmsToUser(mockUserId, 'Test message');
 
-      expect(result.error).toBe('Twilio not initialized');
+      expect(result.error).toBe('AWS SNS not initialized');
     });
   });
 
   describe('getSmsStatus', () => {
-    it('should return null when Twilio not initialized', async () => {
+    it('should return null when AWS SNS not initialized', async () => {
       const result = await service.getSmsStatus('msg-123');
 
       expect(result).toBeNull();
@@ -498,7 +504,7 @@ describe('SmsService', () => {
       expect(result.error).toBe('Invalid phone number format');
     });
 
-    it('should return valid with formatted number when Twilio not available', async () => {
+    it('should return valid with formatted number when AWS SNS not available', async () => {
       const result = await service.validatePhoneNumber('+1234567890');
 
       expect(result.valid).toBe(true);
