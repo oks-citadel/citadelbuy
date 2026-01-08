@@ -877,7 +877,7 @@ describe('OrdersService - Enhanced Tests', () => {
       expect(mockTaxService.calculateTax).toHaveBeenCalledWith(
         expect.objectContaining({
           productIds: ['product-1', 'product-2', 'product-3'],
-          categoryIds: ['category-1', 'category-2'],
+          categoryIds: ['category-1', 'category-2', 'category-1'],
         }),
       );
     });

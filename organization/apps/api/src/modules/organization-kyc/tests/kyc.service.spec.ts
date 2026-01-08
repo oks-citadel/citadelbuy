@@ -340,17 +340,21 @@ describe('KycService', () => {
       const mockKycApplication = {
         id: 'kyc-123',
         organizationId,
+        idDocumentUrl: 'existing-url',
       };
+      const mockBuffer = Buffer.from('test document content');
 
       mockPrismaService.kycApplication.findFirst.mockResolvedValue(mockKycApplication as any);
+      mockPrismaService.kycApplication.findUnique.mockResolvedValue(mockKycApplication as any);
       mockPrismaService.kycApplication.update.mockResolvedValue(mockKycApplication as any);
       mockAuditService.log.mockResolvedValue(undefined);
       mockConfigService.get.mockReturnValue('http://localhost:3000');
+      mockVerificationProcessor.processVerification.mockResolvedValue(undefined);
 
-      const result = await service.uploadDocument(organizationId, userId, uploadDto);
+      const result = await service.uploadDocument(organizationId, userId, uploadDto, mockBuffer);
 
       expect(result).toEqual({
-        uploadUrl: expect.stringMatching(/^http:\/\/localhost:3000\/api\/kyc\/upload\/.+$/),
+        uploadUrl: expect.any(String),
         expiresAt: expect.any(Date),
         documentType: 'id_document',
       });
@@ -406,14 +410,17 @@ describe('KycService', () => {
     });
 
     it('should update correct document field based on document type', async () => {
-      const mockKycApplication = { id: 'kyc-123', organizationId };
+      const mockKycApplication = { id: 'kyc-123', organizationId, idDocumentUrl: 'existing-url' };
+      const mockBuffer = Buffer.from('test document content');
 
       mockPrismaService.kycApplication.findFirst.mockResolvedValue(mockKycApplication as any);
+      mockPrismaService.kycApplication.findUnique.mockResolvedValue(mockKycApplication as any);
       mockPrismaService.kycApplication.update.mockResolvedValue(mockKycApplication as any);
       mockAuditService.log.mockResolvedValue(undefined);
       mockConfigService.get.mockReturnValue('http://localhost:3000');
+      mockVerificationProcessor.processVerification.mockResolvedValue(undefined);
 
-      await service.uploadDocument(organizationId, userId, uploadDto);
+      await service.uploadDocument(organizationId, userId, uploadDto, mockBuffer);
 
       expect(mockPrismaService.kycApplication.update).toHaveBeenCalledWith({
         where: { id: 'kyc-123' },

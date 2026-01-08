@@ -721,7 +721,17 @@ describe('LandingPageService', () => {
     });
 
     it('should return zero conversion rate for zero views', async () => {
-      mockPrismaService.landingPage.findUnique.mockResolvedValue(mockLandingPage);
+      const pageWithZeroViews = {
+        ...mockLandingPage,
+        analytics: {
+          views: 0,
+          uniqueVisitors: 0,
+          conversions: 0,
+          bounceRate: 0,
+          avgTimeOnPage: 0,
+        },
+      };
+      mockPrismaService.landingPage.findUnique.mockResolvedValue(pageWithZeroViews);
 
       const result = await service.getPageAnalytics('page-123');
 

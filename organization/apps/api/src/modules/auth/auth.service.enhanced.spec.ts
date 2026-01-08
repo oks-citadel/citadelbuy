@@ -304,7 +304,7 @@ describe('AuthService - Enhanced Tests', () => {
           UnauthorizedException,
         );
         await expect(service.refreshToken(refreshToken)).rejects.toThrow(
-          'Invalid token type',
+          'Invalid or expired refresh token',
         );
       });
 
@@ -324,7 +324,7 @@ describe('AuthService - Enhanced Tests', () => {
           UnauthorizedException,
         );
         await expect(service.refreshToken(refreshToken)).rejects.toThrow(
-          'User not found',
+          'Invalid or expired refresh token',
         );
       });
 
