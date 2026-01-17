@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import {
@@ -29,6 +30,7 @@ export class DealsService {
   constructor(
     private prisma: PrismaService,
     private emailService: EmailService,
+    private configService: ConfigService,
   ) {}
 
   // ==================== DEAL MANAGEMENT ====================
@@ -1368,7 +1370,7 @@ export class DealsService {
                 ${deal.limitPerCustomer ? `<p style="margin: 5px 0; color: #666666;"><strong>Limit per customer:</strong> ${deal.limitPerCustomer}</p>` : ''}
               </div>
               <div style="text-align: center; margin: 30px 0;">
-                <a href="http://localhost:3000/deals/${deal.id}" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 5px; font-size: 16px; font-weight: bold;">
+                <a href="${this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000')}/deals/${deal.id}" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 5px; font-size: 16px; font-weight: bold;">
                   View Deal
                 </a>
               </div>

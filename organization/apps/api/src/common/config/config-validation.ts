@@ -129,6 +129,17 @@ export class EnvironmentVariables {
   @IsNotEmpty()
   FRONTEND_URL: string = 'http://localhost:3000';
 
+  /**
+   * API Base URL
+   * Used for email tracking pixels, webhooks callbacks, and external links
+   * Example: https://api.broxiva.com or http://localhost:4000 in development
+   */
+  @IsUrl({ require_tld: false }, {
+    message: 'API_URL must be a valid URL'
+  })
+  @IsOptional()
+  API_URL?: string;
+
   // ==================== PAYMENT PROVIDERS ====================
 
   /**
@@ -520,6 +531,15 @@ function performProductionValidation(config: EnvironmentVariables): void {
       '❌ FRONTEND_URL must use HTTPS in production\n' +
       `   Current value: ${config.FRONTEND_URL}\n` +
       '   Example: FRONTEND_URL=https://broxiva.com'
+    );
+  }
+
+  // 5b. API URL validation - must be HTTPS in production if set
+  if (config.API_URL && !config.API_URL.startsWith('https://')) {
+    errors.push(
+      '❌ API_URL must use HTTPS in production\n' +
+      `   Current value: ${config.API_URL}\n` +
+      '   Example: API_URL=https://api.broxiva.com'
     );
   }
 

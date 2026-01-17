@@ -116,6 +116,10 @@ async function bootstrap() {
     'Content-Disposition',
   ];
 
+  // Vercel preview deployment pattern (e.g., https://broxiva-xyz123.vercel.app)
+  // This regex matches Vercel preview URLs for the broxiva project
+  const vercelPreviewPattern = /^https:\/\/broxiva(-[a-z0-9]+)?\.vercel\.app$/;
+
   app.enableCors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, Postman, curl, server-to-server)
@@ -125,6 +129,13 @@ async function bootstrap() {
 
       // Check if origin is in allowed list
       if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // Check for Vercel preview deployments (production only)
+      // This allows preview deployments like https://broxiva-abc123.vercel.app
+      if (isProduction && vercelPreviewPattern.test(origin)) {
+        logger.log(`CORS: Allowing Vercel preview deployment: ${origin}`);
         return callback(null, true);
       }
 
@@ -158,7 +169,12 @@ async function bootstrap() {
     if (req.method === 'OPTIONS') {
       // Set CORS headers explicitly for OPTIONS requests
       const origin = req.headers.origin;
-      if (origin && (allowedOrigins.includes(origin) || !isProduction)) {
+      const isAllowedOrigin = origin && (
+        allowedOrigins.includes(origin) ||
+        vercelPreviewPattern.test(origin) ||
+        !isProduction
+      );
+      if (isAllowedOrigin) {
         res.setHeader('Access-Control-Allow-Origin', origin);
         res.setHeader('Access-Control-Allow-Credentials', 'true');
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD');

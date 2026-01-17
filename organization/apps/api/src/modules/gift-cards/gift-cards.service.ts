@@ -5,6 +5,7 @@ import {
   ConflictException,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import {
@@ -41,6 +42,7 @@ export class GiftCardsService {
   constructor(
     private prisma: PrismaService,
     private emailService: EmailService,
+    private configService: ConfigService,
   ) {}
 
   // ==================== GIFT CARD MANAGEMENT ====================
@@ -1338,7 +1340,7 @@ export class GiftCardsService {
               ${giftCard.expirationDate ? `<p style="font-size: 14px; color: #ef4444; margin: 20px 0;"><strong>⚠️ Expires:</strong> ${new Date(giftCard.expirationDate).toLocaleDateString()}</p>` : ''}
               ${giftCard.minimumPurchase ? `<p style="font-size: 14px; color: #666666; margin: 10px 0;"><strong>Minimum Purchase:</strong> $${giftCard.minimumPurchase.toFixed(2)}</p>` : ''}
               <div style="text-align: center; margin: 30px 0;">
-                <a href="http://localhost:3000/gift-cards/redeem?code=${giftCard.code}" style="display: inline-block; background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 5px; font-size: 16px; font-weight: bold;">
+                <a href="${this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000')}/gift-cards/redeem?code=${giftCard.code}" style="display: inline-block; background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 5px; font-size: 16px; font-weight: bold;">
                   Redeem Now
                 </a>
               </div>
