@@ -1,42 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "version": 2,
-  "framework": "nextjs",
-  "installCommand": "cd organization && pnpm install",
-  "buildCommand": "cd organization/apps/web && pnpm build",
-  "outputDirectory": "organization/apps/web/.next",
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@api_url",
-    "NEXT_PUBLIC_SITE_URL": "https://broxiva.com"
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
   },
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/$1"
-    }
-  ],
-  "regions": ["iad1"]
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- organization/apps/web"
 }
