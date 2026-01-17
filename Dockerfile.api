@@ -1,16 +1,16 @@
 # Broxiva API - Production Dockerfile for Railway
-FROM node:20-alpine AS base
+FROM node:20-alpine AS builder
 
 # Install dependencies needed for Prisma and native modules
-RUN apk add --no-cache openssl libc6-compat
+RUN apk add --no-cache openssl libc6-compat python3 make g++
 
 WORKDIR /app
 
 # Copy package files from the API directory
-COPY organization/apps/api/package*.json ./
+COPY organization/apps/api/package.json ./
 
-# Install dependencies
-RUN npm ci --only=production=false
+# Install ALL dependencies (including dev for build)
+RUN npm install --legacy-peer-deps
 
 # Copy Prisma schema and generate client
 COPY organization/apps/api/prisma ./prisma
@@ -32,17 +32,17 @@ RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
 
 # Copy package files
-COPY organization/apps/api/package*.json ./
+COPY organization/apps/api/package.json ./
 
 # Install only production dependencies
-RUN npm ci --only=production
+RUN npm install --omit=dev --legacy-peer-deps
 
 # Copy Prisma files and generate client
 COPY organization/apps/api/prisma ./prisma
 RUN npx prisma generate
 
 # Copy built application from builder stage
-COPY --from=base /app/dist ./dist
+COPY --from=builder /app/dist ./dist
 
 # Set environment
 ENV NODE_ENV=production
