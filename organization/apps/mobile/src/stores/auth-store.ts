@@ -26,6 +26,7 @@ export interface AuthState {
   // Actions
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  socialLogin: (provider: 'google' | 'facebook' | 'apple', token: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   refreshAccessToken: () => Promise<boolean>;
@@ -117,6 +118,42 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error: any) {
       set({
         error: error.response?.data?.message || 'Registration failed',
+        isLoading: false,
+        isAuthReady: true,
+      });
+      throw error;
+    }
+  },
+
+  socialLogin: async (provider: 'google' | 'facebook' | 'apple', token: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.post(`/auth/${provider}`, { token });
+      const { user, access_token, refresh_token } = response.data;
+
+      // Store tokens securely
+      await SecureStore.setItemAsync(TOKEN_KEY, access_token);
+      if (refresh_token) {
+        await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refresh_token);
+      }
+      await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
+
+      // Calculate token expiry from JWT (typically 7 days)
+      const tokenExpiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
+      await SecureStore.setItemAsync(TOKEN_EXPIRY_KEY, tokenExpiry.toString());
+
+      set({
+        user,
+        token: access_token,
+        refreshToken: refresh_token || null,
+        isAuthenticated: true,
+        isLoading: false,
+        isAuthReady: true,
+      });
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || `${provider.charAt(0).toUpperCase() + provider.slice(1)} login failed`;
+      set({
+        error: errorMessage,
         isLoading: false,
         isAuthReady: true,
       });

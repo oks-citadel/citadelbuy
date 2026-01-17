@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,19 +15,156 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import * as Facebook from 'expo-auth-session/providers/facebook';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import Constants from 'expo-constants';
 import { useAuthStore } from '../../stores/auth-store';
 import { AuthStackParamList } from '../../navigation/RootNavigator';
 import TestCredentials from '../../components/dev/TestCredentials';
+
+// Complete auth session for web browser redirects
+WebBrowser.maybeCompleteAuthSession();
+
+// Environment variables for OAuth
+const GOOGLE_CLIENT_ID = Constants.expoConfig?.extra?.googleClientId || process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '';
+const FACEBOOK_APP_ID = Constants.expoConfig?.extra?.facebookAppId || process.env.EXPO_PUBLIC_FACEBOOK_APP_ID || '';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
 export default function LoginScreen() {
   const navigation = useNavigation<LoginScreenNavigationProp>();
-  const { login, isLoading, error, clearError } = useAuthStore();
+  const { login, socialLogin, isLoading, error, clearError } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<'google' | 'facebook' | 'apple' | null>(null);
+  const [isAppleAvailable, setIsAppleAvailable] = useState(false);
+
+  // Google Auth setup
+  const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest({
+    clientId: GOOGLE_CLIENT_ID,
+    scopes: ['openid', 'profile', 'email'],
+  });
+
+  // Facebook Auth setup
+  const [facebookRequest, facebookResponse, facebookPromptAsync] = Facebook.useAuthRequest({
+    clientId: FACEBOOK_APP_ID,
+  });
+
+  // Check Apple Sign In availability (iOS only)
+  useEffect(() => {
+    if (Platform.OS === 'ios') {
+      AppleAuthentication.isAvailableAsync().then(setIsAppleAvailable);
+    }
+  }, []);
+
+  // Handle Google auth response
+  useEffect(() => {
+    if (googleResponse?.type === 'success') {
+      const { authentication } = googleResponse;
+      if (authentication?.idToken) {
+        handleSocialLogin('google', authentication.idToken);
+      } else if (authentication?.accessToken) {
+        // Fallback to access token if ID token not available
+        handleSocialLogin('google', authentication.accessToken);
+      }
+    } else if (googleResponse?.type === 'error') {
+      setSocialLoading(null);
+      Alert.alert('Google Sign In Error', 'Failed to sign in with Google. Please try again.');
+    } else if (googleResponse?.type === 'dismiss') {
+      setSocialLoading(null);
+    }
+  }, [googleResponse]);
+
+  // Handle Facebook auth response
+  useEffect(() => {
+    if (facebookResponse?.type === 'success') {
+      const { authentication } = facebookResponse;
+      if (authentication?.accessToken) {
+        handleSocialLogin('facebook', authentication.accessToken);
+      }
+    } else if (facebookResponse?.type === 'error') {
+      setSocialLoading(null);
+      Alert.alert('Facebook Sign In Error', 'Failed to sign in with Facebook. Please try again.');
+    } else if (facebookResponse?.type === 'dismiss') {
+      setSocialLoading(null);
+    }
+  }, [facebookResponse]);
+
+  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple', token: string) => {
+    try {
+      await socialLogin(provider, token);
+      // Navigation is handled automatically by auth state change
+    } catch (err: any) {
+      Alert.alert(
+        'Login Failed',
+        err.response?.data?.message || `Failed to sign in with ${provider}. Please try again.`
+      );
+    } finally {
+      setSocialLoading(null);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    if (!GOOGLE_CLIENT_ID) {
+      Alert.alert('Configuration Error', 'Google Sign In is not configured.');
+      return;
+    }
+    setSocialLoading('google');
+    try {
+      await googlePromptAsync();
+    } catch (err) {
+      setSocialLoading(null);
+      Alert.alert('Error', 'Failed to initiate Google Sign In');
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    if (!FACEBOOK_APP_ID) {
+      Alert.alert('Configuration Error', 'Facebook Login is not configured.');
+      return;
+    }
+    setSocialLoading('facebook');
+    try {
+      await facebookPromptAsync();
+    } catch (err) {
+      setSocialLoading(null);
+      Alert.alert('Error', 'Failed to initiate Facebook Login');
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    if (Platform.OS !== 'ios') {
+      Alert.alert('Not Available', 'Apple Sign In is only available on iOS devices.');
+      return;
+    }
+
+    setSocialLoading('apple');
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      if (credential.identityToken) {
+        await handleSocialLogin('apple', credential.identityToken);
+      } else {
+        throw new Error('No identity token received from Apple');
+      }
+    } catch (err: any) {
+      setSocialLoading(null);
+      if (err.code === 'ERR_REQUEST_CANCELED') {
+        // User cancelled, no need to show error
+        return;
+      }
+      Alert.alert('Apple Sign In Error', 'Failed to sign in with Apple. Please try again.');
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -37,10 +174,12 @@ export default function LoginScreen() {
 
     try {
       await login(email, password);
-    } catch (error) {
+    } catch (err) {
       // Error is handled by store
     }
   };
+
+  const isSocialLoading = socialLoading !== null;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -151,14 +290,50 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.socialButtons} accessibilityRole="none" accessibilityLabel="Social sign in options">
-              <TouchableOpacity style={styles.socialButton} accessibilityLabel="Sign in with Google" accessibilityRole="button">
-                <Ionicons name="logo-google" size={24} color="#ea4335" accessibilityElementsHidden={true} />
+              <TouchableOpacity
+                style={[styles.socialButton, (isSocialLoading || isLoading) && styles.socialButtonDisabled]}
+                onPress={handleGoogleSignIn}
+                disabled={isSocialLoading || isLoading}
+                accessibilityLabel="Sign in with Google"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: isSocialLoading || isLoading, busy: socialLoading === 'google' }}
+              >
+                {socialLoading === 'google' ? (
+                  <ActivityIndicator size="small" color="#ea4335" />
+                ) : (
+                  <Ionicons name="logo-google" size={24} color="#ea4335" accessibilityElementsHidden={true} />
+                )}
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton} accessibilityLabel="Sign in with Apple" accessibilityRole="button">
-                <Ionicons name="logo-apple" size={24} color="#000" accessibilityElementsHidden={true} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton} accessibilityLabel="Sign in with Facebook" accessibilityRole="button">
-                <Ionicons name="logo-facebook" size={24} color="#1877f2" accessibilityElementsHidden={true} />
+              {/* Apple Sign In - only show on iOS when available */}
+              {(Platform.OS === 'ios' && isAppleAvailable) && (
+                <TouchableOpacity
+                  style={[styles.socialButton, (isSocialLoading || isLoading) && styles.socialButtonDisabled]}
+                  onPress={handleAppleSignIn}
+                  disabled={isSocialLoading || isLoading}
+                  accessibilityLabel="Sign in with Apple"
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: isSocialLoading || isLoading, busy: socialLoading === 'apple' }}
+                >
+                  {socialLoading === 'apple' ? (
+                    <ActivityIndicator size="small" color="#000" />
+                  ) : (
+                    <Ionicons name="logo-apple" size={24} color="#000" accessibilityElementsHidden={true} />
+                  )}
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[styles.socialButton, (isSocialLoading || isLoading) && styles.socialButtonDisabled]}
+                onPress={handleFacebookSignIn}
+                disabled={isSocialLoading || isLoading}
+                accessibilityLabel="Sign in with Facebook"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: isSocialLoading || isLoading, busy: socialLoading === 'facebook' }}
+              >
+                {socialLoading === 'facebook' ? (
+                  <ActivityIndicator size="small" color="#1877f2" />
+                ) : (
+                  <Ionicons name="logo-facebook" size={24} color="#1877f2" accessibilityElementsHidden={true} />
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -314,6 +489,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#e5e7eb',
+  },
+  socialButtonDisabled: {
+    opacity: 0.5,
   },
   footer: {
     flexDirection: 'row',
