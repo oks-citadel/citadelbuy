@@ -37,9 +37,12 @@ COPY organization/apps/api/package.json ./
 # Install only production dependencies
 RUN npm install --omit=dev --legacy-peer-deps
 
-# Copy Prisma files and generate client
+# Copy Prisma schema (for migrations)
 COPY organization/apps/api/prisma ./prisma
-RUN npx prisma generate
+
+# Copy generated Prisma client from builder (avoids version mismatch)
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
