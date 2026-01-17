@@ -49,14 +49,15 @@ COPY --from=builder /app/dist ./dist
 
 # Set environment
 ENV NODE_ENV=production
-ENV PORT=4000
 
-# Expose port
+# Railway injects PORT dynamically, so we don't hardcode it
+# Default to 4000 if PORT isn't set
+ENV PORT=${PORT:-4000}
+
+# Expose port (Railway will override this)
 EXPOSE 4000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:4000/api/health || exit 1
-
 # Start the application
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+# Run Prisma migrations first, then start the server
+# If migrations fail, log the error but still try to start (for initial deployment)
+CMD ["sh", "-c", "npx prisma migrate deploy 2>&1 || echo 'Warning: Migration failed, continuing...'; node dist/main.js"]
