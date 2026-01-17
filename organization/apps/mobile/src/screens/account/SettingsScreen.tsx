@@ -9,7 +9,12 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuthStore } from '../../stores/auth-store';
+import { AccountStackParamList } from '../../navigation/RootNavigator';
+
+type SettingsScreenNavigationProp = NativeStackNavigationProp<AccountStackParamList, 'Settings'>;
 
 interface SettingItem {
   id: string;
@@ -21,6 +26,7 @@ interface SettingItem {
 }
 
 export default function SettingsScreen() {
+  const navigation = useNavigation<SettingsScreenNavigationProp>();
   const { logout } = useAuthStore();
   const [notifications, setNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(true);
@@ -64,8 +70,8 @@ export default function SettingsScreen() {
     </View>
   );
 
-  const renderNavigationSetting = (icon: string, label: string, sublabel?: string) => (
-    <TouchableOpacity style={styles.settingItem}>
+  const renderNavigationSetting = (icon: string, label: string, sublabel?: string, onPress?: () => void) => (
+    <TouchableOpacity style={styles.settingItem} onPress={onPress}>
       <View style={styles.settingIcon}>
         <Ionicons name={icon as any} size={20} color="#6366f1" />
       </View>
@@ -143,6 +149,12 @@ export default function SettingsScreen() {
           )}
           {renderNavigationSetting('lock-closed-outline', 'Change Password')}
           {renderNavigationSetting('shield-checkmark-outline', 'Two-Factor Auth', 'Enabled')}
+          {renderNavigationSetting(
+            'phone-portrait-outline',
+            'Active Sessions',
+            'Manage devices logged into your account',
+            () => navigation.navigate('SessionManagement')
+          )}
           {renderNavigationSetting('key-outline', 'Security Keys')}
         </View>
       </View>

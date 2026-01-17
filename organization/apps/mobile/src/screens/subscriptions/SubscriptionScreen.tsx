@@ -1,7 +1,7 @@
 /**
- * Example Subscription Screen
+ * Subscription Screen
  *
- * Demonstrates how to use IAP hooks for subscription purchases
+ * Uses IAP hooks for subscription purchases with proper error handling
  */
 
 import React, { useState } from 'react';
@@ -14,21 +14,31 @@ import {
   Alert,
   StyleSheet,
   Platform,
+  Linking,
 } from 'react-native';
 import { useIAP } from '../../hooks/useIAP';
 import { SUBSCRIPTION_PRODUCTS } from '../../config/iap-products';
 
+// URLs for legal documents
+const TERMS_OF_SERVICE_URL = 'https://broxiva.com/terms';
+const PRIVACY_POLICY_URL = 'https://broxiva.com/privacy';
+
 export default function SubscriptionScreen() {
   const {
     isInitialized,
+    isInitializing,
     isAvailable,
+    initError,
+    retryInitialization,
     products,
     productsLoading,
     productsError,
+    reloadProducts,
     purchasing,
     purchaseSubscription,
     lastPurchaseResult,
     clearLastPurchaseResult,
+    isDeferred,
     restoring,
     restorePurchases,
   } = useIAP();
@@ -51,13 +61,27 @@ export default function SubscriptionScreen() {
           'Your subscription is now active. Enjoy premium features!',
           [{ text: 'OK', onPress: () => clearLastPurchaseResult() }]
         );
+      } else if (result.deferred) {
+        // iOS "Ask to Buy" - purchase pending parental approval
+        Alert.alert(
+          'Approval Required',
+          'Your subscription request has been sent for approval. Your subscription will be activated once the purchase is approved.',
+          [{ text: 'OK', onPress: () => clearLastPurchaseResult() }]
+        );
       } else if (result.cancelled) {
         // User cancelled - no alert needed
         clearLastPurchaseResult();
+      } else if (result.error?.networkError) {
+        // Network error - suggest checking connection
+        Alert.alert(
+          'Connection Error',
+          'Unable to complete subscription. Please check your internet connection and try again.',
+          [{ text: 'OK', onPress: () => clearLastPurchaseResult() }]
+        );
       } else {
         Alert.alert(
           'Purchase Failed',
-          result.error?.message || result.error || 'Something went wrong. Please try again.',
+          result.error?.message || 'Something went wrong. Please try again.',
           [{ text: 'OK', onPress: () => clearLastPurchaseResult() }]
         );
       }
@@ -100,8 +124,48 @@ export default function SubscriptionScreen() {
     return products.find(p => p.productId === platformProductId);
   };
 
-  // Render loading state
-  if (!isInitialized || productsLoading) {
+  // Handle opening URLs
+  const openURL = async (url: string) => {
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', 'Unable to open this link');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to open link');
+    }
+  };
+
+  // Render loading state (initializing IAP)
+  if (isInitializing || (!isInitialized && !initError)) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Initializing store...</Text>
+      </View>
+    );
+  }
+
+  // Render initialization error state with retry button
+  if (initError) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>Failed to Initialize Store</Text>
+        <Text style={styles.errorDetail}>{initError}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={retryInitialization}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Render products loading state
+  if (productsLoading) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
@@ -110,17 +174,23 @@ export default function SubscriptionScreen() {
     );
   }
 
-  // Render error state
+  // Render error state with retry button
   if (productsError) {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>Failed to load subscriptions</Text>
         <Text style={styles.errorDetail}>{productsError}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={reloadProducts}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
-  // Render unavailable state
+  // Render unavailable state with retry button
   if (!isAvailable) {
     return (
       <View style={styles.centerContainer}>
@@ -128,6 +198,12 @@ export default function SubscriptionScreen() {
         <Text style={styles.errorDetail}>
           Please check your device settings or try again later
         </Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={retryInitialization}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -164,14 +240,21 @@ export default function SubscriptionScreen() {
               <Text style={styles.planDescription}>{plan.description}</Text>
 
               {/* Price */}
-              {product && (
-                <View style={styles.priceContainer}>
-                  <Text style={styles.price}>{product.price}</Text>
-                  <Text style={styles.priceInterval}>
-                    /{plan.interval === 'month' ? 'month' : 'year'}
-                  </Text>
-                </View>
-              )}
+              <View style={styles.priceContainer}>
+                {product ? (
+                  <>
+                    <Text style={styles.price}>{product.price}</Text>
+                    <Text style={styles.priceInterval}>
+                      /{plan.interval === 'month' ? 'month' : 'year'}
+                    </Text>
+                  </>
+                ) : (
+                  <View style={styles.priceLoading}>
+                    <ActivityIndicator size="small" color="#007AFF" />
+                    <Text style={styles.priceLoadingText}>Loading price...</Text>
+                  </View>
+                )}
+              </View>
 
               {/* Trial Period */}
               {plan.trialPeriod && (
@@ -230,11 +313,11 @@ export default function SubscriptionScreen() {
 
       {/* Terms & Privacy */}
       <View style={styles.legalContainer}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => openURL(TERMS_OF_SERVICE_URL)}>
           <Text style={styles.legalLink}>Terms of Service</Text>
         </TouchableOpacity>
-        <Text style={styles.legalSeparator}>•</Text>
-        <TouchableOpacity>
+        <Text style={styles.legalSeparator}>|</Text>
+        <TouchableOpacity onPress={() => openURL(PRIVACY_POLICY_URL)}>
           <Text style={styles.legalLink}>Privacy Policy</Text>
         </TouchableOpacity>
       </View>
@@ -268,6 +351,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   header: {
     padding: 24,
@@ -329,6 +425,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     marginBottom: 8,
+    minHeight: 38,
   },
   price: {
     fontSize: 32,
@@ -339,6 +436,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginLeft: 4,
+  },
+  priceLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  priceLoadingText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#666',
   },
   trialText: {
     fontSize: 14,

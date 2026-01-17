@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { WebhookController } from './webhook.controller';
 import { WebhookService } from './webhook.service';
 import { NotFoundException } from '@nestjs/common';
-import { WebhookDeliveryStatus } from '@prisma/client';
+import { WebhookDeliveryStatus } from './webhook.service';
 
 describe('WebhookController', () => {
   let controller: WebhookController;
@@ -239,7 +239,7 @@ describe('WebhookController', () => {
           {
             id: 'delivery_123',
             webhookId: 'webhook_123',
-            status: WebhookDeliveryStatus.DELIVERED,
+            status: WebhookDeliveryStatus.SUCCESS,
           },
         ],
         total: 1,

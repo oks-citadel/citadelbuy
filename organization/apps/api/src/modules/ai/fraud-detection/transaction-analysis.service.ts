@@ -1,9 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { DeviceFingerprintService, DeviceFingerprintData } from './device-fingerprint.service';
 
 @Injectable()
 export class TransactionAnalysisService {
   private readonly logger = new Logger(TransactionAnalysisService.name);
   private transactionHistory: Map<string, any[]> = new Map();
+
+  constructor(
+    private readonly deviceFingerprintService: DeviceFingerprintService,
+  ) {}
 
   async analyzeTransaction(data: {
     transactionId: string;
@@ -280,12 +285,172 @@ export class TransactionAnalysisService {
   }
 
   private async analyzeDeviceFingerprint(fingerprint: string) {
-    // In production: Use device intelligence services
-    // Check for: device reputation, emulator, automation tools
+    // Use the device fingerprint service for comprehensive analysis
+    // Note: In production, the fingerprint string would contain serialized fingerprint data
+    // For now, we treat it as a pre-computed hash and check if it's known
+    try {
+      const deviceTrust = await this.deviceFingerprintService.getDeviceTrustForUser(
+        '', // No specific user context
+        fingerprint,
+      );
+
+      return {
+        fingerprint,
+        suspicious: deviceTrust.trustScore < 40 || !deviceTrust.isKnownDevice,
+        reason: !deviceTrust.isKnownDevice
+          ? 'Unknown device fingerprint'
+          : deviceTrust.trustScore < 40
+            ? 'Low device trust score'
+            : null,
+        trustScore: deviceTrust.trustScore,
+        isKnown: deviceTrust.isKnownDevice,
+      };
+    } catch (error) {
+      this.logger.warn('Failed to analyze device fingerprint', error);
+      return {
+        fingerprint,
+        suspicious: false,
+        reason: null,
+      };
+    }
+  }
+
+  /**
+   * Analyze a transaction with full device fingerprint data
+   */
+  async analyzeTransactionWithFingerprint(data: {
+    transactionId: string;
+    userId: string;
+    amount: number;
+    paymentMethod: string;
+    ipAddress: string;
+    deviceFingerprint?: DeviceFingerprintData;
+    billingAddress?: any;
+    shippingAddress?: any;
+  }) {
+    this.logger.log(`Analyzing transaction ${data.transactionId} with device fingerprint`);
+
+    const riskSignals = [];
+    let riskScore = 0;
+
+    // Validate device fingerprint if provided
+    let deviceValidation = null;
+    if (data.deviceFingerprint) {
+      deviceValidation = await this.deviceFingerprintService.validateFingerprint(
+        data.deviceFingerprint,
+        data.userId,
+        data.ipAddress,
+      );
+
+      // Add device-related risk signals
+      if (deviceValidation.isBot) {
+        riskSignals.push('Bot activity detected on device');
+        riskScore += 50;
+      }
+      if (deviceValidation.isEmulator) {
+        riskSignals.push('Emulator detected');
+        riskScore += 30;
+      }
+      if (deviceValidation.isNewDevice) {
+        riskSignals.push('Transaction from new device');
+        riskScore += 15;
+      }
+      if (deviceValidation.isBlocked) {
+        riskSignals.push('Blocked device');
+        riskScore += 100;
+      }
+      if (deviceValidation.trustScore < 40) {
+        riskSignals.push(`Low device trust score: ${deviceValidation.trustScore}`);
+        riskScore += 20;
+      }
+    }
+
+    // Check for IP address risk
+    const ipRisk = await this.checkIPRisk(data.ipAddress);
+    if (ipRisk.isProxy || ipRisk.isTor) {
+      riskSignals.push('Suspicious IP address (proxy/VPN detected)');
+      riskScore += 30;
+    }
+
+    // Check for high-value transaction
+    if (data.amount > 1000) {
+      riskSignals.push('High-value transaction');
+      riskScore += 15;
+    }
+
+    // Check billing vs shipping address mismatch
+    if (data.billingAddress && data.shippingAddress) {
+      const addressMatch = this.compareAddresses(data.billingAddress, data.shippingAddress);
+      if (!addressMatch) {
+        riskSignals.push('Billing and shipping address mismatch');
+        riskScore += 20;
+      }
+    }
+
+    // Check user's transaction velocity
+    const velocityRisk = await this.checkTransactionVelocity(data.userId);
+    if (velocityRisk.isHigh) {
+      riskSignals.push(`High transaction velocity: ${velocityRisk.count} in ${velocityRisk.timeframe}`);
+      riskScore += 25;
+    }
+
+    // Check payment method risk
+    const paymentRisk = this.assessPaymentMethodRisk(data.paymentMethod);
+    if (paymentRisk > 0) {
+      riskSignals.push('Payment method has elevated risk');
+      riskScore += paymentRisk;
+    }
+
+    // Store transaction for velocity checks
+    this.recordTransaction(data.userId, {
+      transactionId: data.transactionId,
+      amount: data.amount,
+      timestamp: new Date().toISOString(),
+    });
+
+    // Update device transaction count if fingerprint provided
+    if (deviceValidation) {
+      await this.deviceFingerprintService.recordSuccessfulLogin(
+        deviceValidation.fingerprintHash,
+        data.userId,
+        data.ipAddress,
+      );
+    }
+
+    const decision =
+      riskScore >= 70
+        ? 'decline'
+        : riskScore >= 40
+        ? '3ds_challenge'
+        : riskScore >= 20
+        ? 'additional_verification'
+        : 'approve';
+
     return {
-      fingerprint,
-      suspicious: false,
-      reason: null,
+      success: true,
+      transactionId: data.transactionId,
+      riskScore,
+      decision,
+      riskSignals,
+      deviceValidation: deviceValidation ? {
+        fingerprintHash: deviceValidation.fingerprintHash,
+        trustScore: deviceValidation.trustScore,
+        riskLevel: deviceValidation.riskLevel,
+        isNewDevice: deviceValidation.isNewDevice,
+        isBot: deviceValidation.isBot,
+        isEmulator: deviceValidation.isEmulator,
+        isTrusted: deviceValidation.isTrusted,
+      } : null,
+      recommendations:
+        decision === 'decline'
+          ? ['Block transaction', 'Contact customer', 'Alert security team']
+          : decision === '3ds_challenge'
+          ? ['Require 3D Secure authentication', 'Send SMS verification']
+          : decision === 'additional_verification'
+          ? ['Request CVV', 'Verify billing address']
+          : ['Process normally'],
+      fraudProbability: riskScore / 100,
+      estimatedLoss: decision === 'decline' ? data.amount : 0,
     };
   }
 

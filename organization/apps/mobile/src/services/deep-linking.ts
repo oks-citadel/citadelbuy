@@ -21,14 +21,14 @@ export type DeepLinkRoute =
   | 'wallet';
 
 export interface DeepLinkParams {
-  [key: string]: string | number | boolean | undefined;
+  [key: string]: string | string[] | number | boolean | undefined;
 }
 
 export interface ParsedDeepLink {
   route: DeepLinkRoute | null;
   params: DeepLinkParams;
   path: string;
-  queryParams: { [key: string]: string };
+  queryParams: { [key: string]: string | string[] | undefined };
 }
 
 export type DeepLinkHandler = (link: ParsedDeepLink) => void;

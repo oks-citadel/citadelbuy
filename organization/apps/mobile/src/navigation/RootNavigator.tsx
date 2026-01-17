@@ -43,6 +43,7 @@ import SettingsScreen from '../screens/account/SettingsScreen';
 import NotificationsScreen from '../screens/account/NotificationsScreen';
 import ProfileEditScreen from '../screens/account/ProfileEditScreen';
 import TrackOrderScreen from '../screens/account/TrackOrderScreen';
+import SessionManagementScreen from '../screens/account/SessionManagementScreen';
 
 
 // AI Features
@@ -115,6 +116,11 @@ function AccountNavigator() {
         name="TrackOrder"
         component={TrackOrderScreen}
         options={{ title: 'Track Order' }}
+      />
+      <AccountStack.Screen
+        name="SessionManagement"
+        component={SessionManagementScreen}
+        options={{ title: 'Active Sessions' }}
       />
     </AccountStack.Navigator>
   );

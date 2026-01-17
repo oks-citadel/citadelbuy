@@ -70,7 +70,7 @@ export default function WalletScreen() {
         // Reload after a delay to check for updates
         setTimeout(loadData, 2000);
       } else {
-        Alert.alert('Purchase Failed', result.error || 'Unable to process purchase');
+        Alert.alert('Purchase Failed', result.error?.message || 'Unable to process purchase');
       }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Purchase failed');
@@ -229,7 +229,7 @@ export default function WalletScreen() {
                   {purchasingPackageId === pkg.id ? (
                     <ActivityIndicator color="#6366f1" />
                   ) : (
-                    <Text style={styles.priceText}>${pkg.price.toFixed(2)}</Text>
+                    <Text style={styles.priceText}>${(pkg.price ?? 0).toFixed(2)}</Text>
                   )}
                 </View>
               </TouchableOpacity>

@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ThrottlerConfigModule } from './common/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CommonModule } from './common/common.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { RedisModule } from './common/redis/redis.module';
 import { LoggerModule } from './common/logger/logger.module';
+import { ObservabilityModule } from './common/observability/observability.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
@@ -81,12 +83,7 @@ import { validate } from './common/config/config-validation';
         abortEarly: false, // Show all validation errors, not just first one
       },
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000, // 1 minute
-        limit: 100, // 100 requests per minute
-      },
-    ]),
+    ThrottlerConfigModule, // Comprehensive tiered rate limiting
     ScheduleModule.forRoot(),
     // EventEmitterModule must be initialized globally BEFORE any modules that use EventEmitter2
     EventEmitterModule.forRoot({
@@ -99,6 +96,8 @@ import { validate } from './common/config/config-validation';
       ignoreErrors: false,
     }),
     LoggerModule,
+    CommonModule, // Provides SchemaValidationService and other utilities
+    ObservabilityModule, // Adds correlation IDs, structured logging, and metrics
     PrismaModule,
     RedisModule,
     AuthModule,

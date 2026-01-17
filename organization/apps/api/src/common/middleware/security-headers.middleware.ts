@@ -20,12 +20,21 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
 
   constructor(private readonly configService: ConfigService) {
     this.isDevelopment = this.configService.get('NODE_ENV') !== 'production';
-    this.allowedOrigins = this.configService
-      .get('ALLOWED_ORIGINS', 'http://localhost:3000')
-      .split(',');
+    // Support both CORS_ALLOWED_ORIGINS (preferred) and ALLOWED_ORIGINS/CORS_ORIGIN (legacy)
+    const corsOrigins = this.configService.get('CORS_ALLOWED_ORIGINS') ||
+                       this.configService.get('CORS_ORIGIN') ||
+                       this.configService.get('ALLOWED_ORIGINS', 'http://localhost:3000');
+    this.allowedOrigins = corsOrigins.split(',').map((origin: string) => origin.trim()).filter(Boolean);
   }
 
   use(req: Request, res: Response, next: NextFunction): void {
+    // Skip heavy security headers for OPTIONS (preflight) requests
+    // CORS preflight requests should be handled quickly without interference
+    // The CORS middleware in main.ts handles the actual CORS headers
+    if (req.method === 'OPTIONS') {
+      return next();
+    }
+
     // Content Security Policy (CSP)
     // Prevents XSS attacks by controlling resource loading
     res.setHeader(

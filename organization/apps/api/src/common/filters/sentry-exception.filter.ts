@@ -7,8 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Request, Response } from 'express';
-import * as crypto from 'crypto';
+import { Request } from 'express';
 
 interface SentryEvent {
   event_id?: string;
@@ -65,7 +64,6 @@ export class SentryExceptionFilter implements ExceptionFilter {
 
   async catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
     const status =
@@ -73,44 +71,18 @@ export class SentryExceptionFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const message =
-      exception instanceof HttpException
-        ? exception.message
-        : exception instanceof Error
-        ? exception.message
-        : 'Internal server error';
-
-    // Get request ID for correlation
-    const requestId =
-      (request.headers['x-request-id'] as string) ||
-      (request.headers['x-correlation-id'] as string) ||
-      crypto.randomUUID();
-
-    // Build error response with requestId for correlation
-    const errorResponse = {
-      statusCode: status,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-      method: request.method,
-      message,
-      requestId,
-      code: this.getErrorCode(exception, status),
-    };
-
-    // Log the error
+    // Only report server errors (5xx) to Sentry
+    // Client errors (4xx) are expected and should not be reported
     if (status >= 500) {
-      this.logger.error(
-        `${request.method} ${request.url} - ${status} - ${message}`,
-        exception instanceof Error ? exception.stack : undefined,
-      );
-
-      // Report to Sentry for server errors
-      await this.reportToSentry(exception, request, status);
-    } else {
-      this.logger.warn(`${request.method} ${request.url} - ${status} - ${message}`);
+      // Report to Sentry for server errors (async, don't block)
+      this.reportToSentry(exception, request, status).catch(err => {
+        this.logger.error('Failed to report error to Sentry', err);
+      });
     }
 
-    response.status(status).json(errorResponse);
+    // Re-throw the exception so the next filter (HttpExceptionFilter) can handle the response
+    // This allows for separation of concerns: Sentry reporting vs response handling
+    throw exception;
   }
 
   private async reportToSentry(
@@ -277,35 +249,5 @@ export class SentryExceptionFilter implements ExceptionFilter {
       request.socket.remoteAddress ||
       'unknown'
     );
-  }
-
-  private getErrorCode(exception: unknown, status: number): string {
-    // Extract error code from HttpException if available
-    if (exception instanceof HttpException) {
-      const response = exception.getResponse();
-      if (typeof response === 'object' && response !== null) {
-        const responseObj = response as Record<string, any>;
-        if (responseObj.code) {
-          return responseObj.code;
-        }
-      }
-    }
-
-    // Map HTTP status codes to error codes
-    const statusCodeMap: Record<number, string> = {
-      400: 'BAD_REQUEST',
-      401: 'UNAUTHORIZED',
-      403: 'FORBIDDEN',
-      404: 'NOT_FOUND',
-      409: 'CONFLICT',
-      422: 'UNPROCESSABLE_ENTITY',
-      429: 'TOO_MANY_REQUESTS',
-      500: 'INTERNAL_SERVER_ERROR',
-      502: 'BAD_GATEWAY',
-      503: 'SERVICE_UNAVAILABLE',
-      504: 'GATEWAY_TIMEOUT',
-    };
-
-    return statusCodeMap[status] || `HTTP_${status}`;
   }
 }

@@ -39,6 +39,9 @@ export interface PurchaseResult {
   purchase?: InAppPurchase;
   error?: PurchaseError;
   cancelled?: boolean;
+  deferred?: boolean; // iOS "Ask to Buy" - purchase pending approval
+  provider?: 'STRIPE' | 'PAYPAL' | 'FLUTTERWAVE' | 'PAYSTACK' | 'APPLE_IAP' | 'GOOGLE_IAP';
+  transactionId?: string;
 }
 
 // ==================== Subscription Status ====================
@@ -160,6 +163,7 @@ export enum IAPErrorCode {
   // User errors
   USER_CANCELLED = 'USER_CANCELLED',
   PAYMENT_INVALID = 'PAYMENT_INVALID',
+  DEFERRED = 'DEFERRED', // iOS "Ask to Buy" - purchase pending approval
 
   // Product errors
   PRODUCT_NOT_AVAILABLE = 'PRODUCT_NOT_AVAILABLE',

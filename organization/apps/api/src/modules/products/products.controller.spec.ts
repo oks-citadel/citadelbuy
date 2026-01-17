@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ProductCreationGuard } from '../subscriptions/guards/subscription-feature.guard';
+import { SubscriptionTierService } from '../subscriptions/services/subscription-tier.service';
 
 describe('ProductsController', () => {
   let controller: ProductsController;
@@ -15,6 +17,13 @@ describe('ProductsController', () => {
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+  };
+
+  const mockRequest = {
+    user: {
+      id: 'vendor-1',
+      role: 'VENDOR',
+    },
   };
 
   const mockProduct = {
@@ -39,9 +48,17 @@ describe('ProductsController', () => {
           provide: ProductsService,
           useValue: mockProductsService,
         },
+        {
+          provide: SubscriptionTierService,
+          useValue: { enforceProductLimit: jest.fn() },
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)
+      .useValue({
+        canActivate: () => true,
+      })
+      .overrideGuard(ProductCreationGuard)
       .useValue({
         canActivate: () => true,
       })
@@ -293,7 +310,7 @@ describe('ProductsController', () => {
       const createdProduct = { ...mockProduct, ...createDto };
       mockProductsService.create.mockResolvedValue(createdProduct);
 
-      const result = await controller.create(createDto);
+      const result = await controller.create(mockRequest as any, createDto);
 
       expect(result).toEqual(createdProduct);
       expect(mockProductsService.create).toHaveBeenCalledWith(createDto);
@@ -308,9 +325,10 @@ describe('ProductsController', () => {
       };
 
       const updatedProduct = { ...mockProduct, ...updateDto };
+      mockProductsService.findOne.mockResolvedValue(mockProduct);
       mockProductsService.update.mockResolvedValue(updatedProduct);
 
-      const result = await controller.update('product-1', updateDto);
+      const result = await controller.update(mockRequest as any, 'product-1', updateDto);
 
       expect(result).toEqual(updatedProduct);
       expect(mockProductsService.update).toHaveBeenCalledWith('product-1', updateDto);
@@ -319,9 +337,10 @@ describe('ProductsController', () => {
 
   describe('delete', () => {
     it('should delete a product', async () => {
+      mockProductsService.findOne.mockResolvedValue(mockProduct);
       mockProductsService.delete.mockResolvedValue(undefined);
 
-      await controller.delete('product-1');
+      await controller.delete(mockRequest as any, 'product-1');
 
       expect(mockProductsService.delete).toHaveBeenCalledWith('product-1');
     });

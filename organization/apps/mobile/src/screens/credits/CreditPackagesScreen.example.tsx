@@ -62,7 +62,7 @@ export default function CreditPackagesScreen() {
       } else {
         Alert.alert(
           'Purchase Failed',
-          result.error || 'Something went wrong. Please try again.',
+          result.error?.message || 'Something went wrong. Please try again.',
           [{ text: 'OK', onPress: () => clearLastPurchaseResult() }]
         );
       }

@@ -13,6 +13,7 @@
 import { Platform, Linking } from 'react-native';
 import * as _SecureStore from 'expo-secure-store';
 import * as InAppPurchases from 'expo-in-app-purchases';
+import NetInfo from '@react-native-community/netinfo';
 import type {
   IAPItemDetails,
   InAppPurchase,
@@ -28,7 +29,7 @@ import type {
   EnrichedProduct,
   IAPLogEntry,
 } from '../types/iap.types';
-import { IAPErrorCode } from '../types/iap.types';
+import { IAPErrorCode, PurchaseState } from '../types/iap.types';
 
 // ==================== Types ====================
 
@@ -45,7 +46,7 @@ export interface PaymentResult {
 
 export interface CheckoutRequest {
   amount: number;
-  currency: string;
+  currency?: string;
   provider?: PaymentProvider;
   items?: Array<{
     id: string;
@@ -62,10 +63,10 @@ export interface SubscriptionPlan {
   id: string;
   name: string;
   description: string;
-  price: number;
-  currency: string;
+  price?: number;
+  currency?: string;
   interval: 'month' | 'year';
-  features: string[];
+  features?: string[];
   // Platform-specific product IDs
   stripeProductId?: string;
   appleProductId?: string;
@@ -81,8 +82,8 @@ export interface CreditPackage {
   id: string;
   name: string;
   credits: number;
-  price: number;
-  currency: string;
+  price?: number;
+  currency?: string;
   bonus?: number;
   // Platform-specific product IDs
   appleProductId?: string;
@@ -296,6 +297,103 @@ class IAPLogger {
 
 const iapLogger = new IAPLogger();
 
+// ==================== Network Connectivity ====================
+
+/**
+ * Check if the device has network connectivity
+ */
+async function checkNetworkConnectivity(): Promise<{ isConnected: boolean; isInternetReachable: boolean | null }> {
+  try {
+    const state = await NetInfo.fetch();
+    return {
+      isConnected: state.isConnected ?? false,
+      isInternetReachable: state.isInternetReachable,
+    };
+  } catch (error) {
+    iapLogger.log('warn', 'Failed to check network connectivity', 'purchase', { error });
+    // Assume connected if we can't check
+    return { isConnected: true, isInternetReachable: true };
+  }
+}
+
+/**
+ * Verify network is available before purchase
+ * Throws if network is not available
+ */
+async function ensureNetworkConnected(): Promise<void> {
+  const { isConnected, isInternetReachable } = await checkNetworkConnectivity();
+
+  if (!isConnected) {
+    throw createPurchaseError(
+      IAPErrorCode.NETWORK_ERROR,
+      'No network connection. Please check your internet connection and try again.'
+    );
+  }
+
+  if (isInternetReachable === false) {
+    throw createPurchaseError(
+      IAPErrorCode.NETWORK_ERROR,
+      'Internet is not reachable. Please check your connection and try again.'
+    );
+  }
+}
+
+// ==================== Retry Logic ====================
+
+interface RetryOptions {
+  maxRetries: number;
+  baseDelayMs: number;
+  maxDelayMs: number;
+}
+
+const DEFAULT_RETRY_OPTIONS: RetryOptions = {
+  maxRetries: 3,
+  baseDelayMs: 1000,
+  maxDelayMs: 10000,
+};
+
+/**
+ * Retry a function with exponential backoff
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: Partial<RetryOptions> = {},
+  context: string = 'operation'
+): Promise<T> {
+  const { maxRetries, baseDelayMs, maxDelayMs } = { ...DEFAULT_RETRY_OPTIONS, ...options };
+
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+
+      // Don't retry on user cancellation or certain errors
+      if (
+        error.code === IAPErrorCode.USER_CANCELLED ||
+        error.code === IAPErrorCode.PRODUCT_ALREADY_OWNED ||
+        error.code === IAPErrorCode.PRODUCT_NOT_AVAILABLE
+      ) {
+        throw error;
+      }
+
+      if (attempt < maxRetries) {
+        const delay = Math.min(baseDelayMs * Math.pow(2, attempt), maxDelayMs);
+        iapLogger.log('warn', `${context} failed, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`, 'validation', {
+          error: error.message,
+          attempt: attempt + 1,
+          delay,
+        });
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 // ==================== IAP Error Handler ====================
 
 function createPurchaseError(
@@ -342,12 +440,17 @@ class BillingService {
   private products: IAPItemDetails[] = [];
   private purchaseListener: any = null;
   private pendingPurchases: Map<string, (result: PurchaseResult) => void> = new Map();
+  private deferredPurchaseCallbacks: Map<string, (state: PurchaseState) => void> = new Map();
+  private initializationError: Error | null = null;
 
   /**
    * Initialize the billing service
    * Must be called on app start
    */
   async initialize(): Promise<void> {
+    // Reset initialization error
+    this.initializationError = null;
+
     // Initialize native IAP SDK based on platform
     try {
       if (Platform.OS === 'ios' || Platform.OS === 'android') {
@@ -387,9 +490,18 @@ class BillingService {
         iapLogger.log('info', 'IAP initialization complete', 'initialization');
       }
     } catch (error: any) {
+      this.initializationError = error;
       iapLogger.log('error', 'Failed to initialize IAP', 'initialization', { error: error.message });
       console.error('Failed to initialize billing:', error);
+      throw error; // Re-throw so callers can handle
     }
+  }
+
+  /**
+   * Get the last initialization error
+   */
+  getInitializationError(): Error | null {
+    return this.initializationError;
   }
 
   /**
@@ -419,6 +531,31 @@ class BillingService {
             });
           });
           this.pendingPurchases.clear();
+        } else if (responseCode === InAppPurchases.IAPResponseCode.DEFERRED) {
+          // iOS "Ask to Buy" - purchase requires parental approval
+          iapLogger.log('info', 'Purchase deferred (Ask to Buy)', 'purchase');
+
+          for (const purchase of results || []) {
+            // Notify deferred purchase callbacks
+            const callback = this.deferredPurchaseCallbacks.get(purchase.productId);
+            if (callback) {
+              callback(PurchaseState.DEFERRED);
+            }
+
+            // Resolve pending purchase with deferred state
+            const resolver = this.pendingPurchases.get(purchase.productId);
+            if (resolver) {
+              resolver({
+                success: false,
+                deferred: true,
+                error: createPurchaseError(
+                  'DEFERRED',
+                  'Purchase requires approval. The request has been sent for approval.'
+                ),
+              });
+              this.pendingPurchases.delete(purchase.productId);
+            }
+          }
         } else {
           iapLogger.log('error', 'Purchase error', 'purchase', { responseCode, errorCode });
           const error = createPurchaseError(
@@ -432,6 +569,17 @@ class BillingService {
         }
       }
     );
+  }
+
+  /**
+   * Register a callback for deferred purchase state changes
+   * Useful for iOS "Ask to Buy" feature
+   */
+  onDeferredPurchaseStateChange(productId: string, callback: (state: PurchaseState) => void): () => void {
+    this.deferredPurchaseCallbacks.set(productId, callback);
+    return () => {
+      this.deferredPurchaseCallbacks.delete(productId);
+    };
   }
 
   /**
@@ -455,13 +603,22 @@ class BillingService {
 
       iapLogger.log('debug', 'Validating receipt with backend', 'validation');
 
-      const validation = await iapApi.validateReceipt(platform, receipt, purchase.productId);
+      // Use retry logic for receipt validation (3 retries with exponential backoff)
+      const validation = await withRetry(
+        () => iapApi.validateReceipt(platform, receipt, purchase.productId),
+        { maxRetries: 3, baseDelayMs: 1000, maxDelayMs: 10000 },
+        'Receipt validation'
+      );
 
       if (validation.valid) {
         iapLogger.log('info', 'Receipt validated successfully', 'validation');
 
-        // Sync purchase with backend to grant entitlements
-        await iapApi.syncPurchase(platform, receipt, purchase.productId);
+        // Sync purchase with backend to grant entitlements (also with retry)
+        await withRetry(
+          () => iapApi.syncPurchase(platform, receipt, purchase.productId),
+          { maxRetries: 3, baseDelayMs: 1000, maxDelayMs: 10000 },
+          'Purchase sync'
+        );
 
         // Finish the transaction
         await InAppPurchases.finishTransactionAsync(purchase, true);
@@ -553,7 +710,7 @@ class BillingService {
         title: product.title || configProduct?.name || '',
         description: product.description || configProduct?.description || '',
         price: product.price || '',
-        priceAmountMicros: parseInt(product.priceAmountMicros || '0'),
+        priceAmountMicros: Number(product.priceAmountMicros) || 0,
         priceCurrencyCode: product.priceCurrencyCode || 'USD',
         type: configProduct?.type || 'consumable',
         subscriptionPeriod: (product as any).subscriptionPeriod,
@@ -669,6 +826,9 @@ class BillingService {
         throw createPurchaseError('NOT_INITIALIZED', 'IAP not initialized');
       }
 
+      // Check network connectivity before initiating purchase
+      await ensureNetworkConnected();
+
       iapLogger.log('info', 'Starting Apple IAP purchase', 'purchase', { productId });
 
       // Create a promise that will be resolved by the purchase listener
@@ -697,6 +857,15 @@ class BillingService {
       iapLogger.log('error', 'Apple IAP purchase failed', 'purchase', { error: error.message });
       this.pendingPurchases.delete(productId);
 
+      // Return appropriate error based on error type
+      if (error.code === IAPErrorCode.NETWORK_ERROR) {
+        return {
+          success: false,
+          provider: 'APPLE_IAP',
+          error: error,
+        };
+      }
+
       return {
         success: false,
         provider: 'APPLE_IAP',
@@ -713,6 +882,9 @@ class BillingService {
       if (!this.iapInitialized) {
         throw createPurchaseError('NOT_INITIALIZED', 'IAP not initialized');
       }
+
+      // Check network connectivity before initiating purchase
+      await ensureNetworkConnected();
 
       iapLogger.log('info', 'Starting Google Play purchase', 'purchase', { productId });
 
@@ -741,6 +913,15 @@ class BillingService {
     } catch (error: any) {
       iapLogger.log('error', 'Google Play purchase failed', 'purchase', { error: error.message });
       this.pendingPurchases.delete(productId);
+
+      // Return appropriate error based on error type
+      if (error.code === IAPErrorCode.NETWORK_ERROR) {
+        return {
+          success: false,
+          provider: 'GOOGLE_IAP',
+          error: error,
+        };
+      }
 
       return {
         success: false,

@@ -9,6 +9,47 @@ import { ShippingService } from '../shipping/shipping.service';
 import { ConfigService } from '@nestjs/config';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
+// Mock Stripe to prevent real API calls
+jest.mock('stripe', () => {
+  const mockStripeInstance = {
+    paymentIntents: {
+      create: jest.fn().mockResolvedValue({
+        id: 'pi_mock_123',
+        client_secret: 'pi_mock_secret',
+        status: 'requires_payment_method',
+      }),
+      retrieve: jest.fn().mockResolvedValue({
+        id: 'pi_mock_123',
+        status: 'succeeded',
+      }),
+    },
+    paymentMethods: {
+      list: jest.fn().mockResolvedValue({ data: [] }),
+      attach: jest.fn().mockResolvedValue({}),
+      retrieve: jest.fn().mockResolvedValue({ customer: 'cus_mock' }),
+      detach: jest.fn().mockResolvedValue({}),
+    },
+    customers: {
+      list: jest.fn().mockResolvedValue({ data: [] }),
+      create: jest.fn().mockResolvedValue({ id: 'cus_mock_123' }),
+      retrieve: jest.fn().mockResolvedValue({
+        id: 'cus_mock_123',
+        invoice_settings: { default_payment_method: null },
+      }),
+      update: jest.fn().mockResolvedValue({}),
+    },
+    setupIntents: {
+      create: jest.fn().mockResolvedValue({
+        client_secret: 'seti_mock_secret',
+      }),
+    },
+  };
+  const MockStripe = jest.fn().mockImplementation(() => mockStripeInstance);
+  // Support both ES module default import and CommonJS require
+  MockStripe.default = MockStripe;
+  return MockStripe;
+});
+
 describe('CheckoutService', () => {
   let service: CheckoutService;
   let prisma: PrismaService;
@@ -63,13 +104,30 @@ describe('CheckoutService', () => {
   };
 
   const mockCartAbandonmentService = {
-    validateRecoveryDiscount: jest.fn(),
+    validateRecoveryDiscount: jest.fn().mockResolvedValue({ valid: false }),
     markCartRecovered: jest.fn(),
   };
 
   const mockShippingService = {
     calculateShipping: jest.fn(),
     getShippingOptions: jest.fn(),
+    calculatePackageDimensions: jest.fn().mockResolvedValue({
+      weight: 2,
+      length: 10,
+      width: 8,
+      height: 4,
+    }),
+    compareRates: jest.fn().mockResolvedValue({
+      freeShippingEligible: false,
+      rates: [
+        {
+          carrier: 'USPS',
+          service: 'Priority',
+          totalRate: 7.99,
+          estimatedDays: 3,
+        },
+      ],
+    }),
   };
 
   const mockConfigService = {
@@ -119,6 +177,29 @@ describe('CheckoutService', () => {
     cartAbandonmentService = module.get<CartAbandonmentService>(CartAbandonmentService);
 
     jest.clearAllMocks();
+
+    // Mock getSavedPaymentMethods to avoid Stripe API calls (after clearAllMocks)
+    jest.spyOn(service, 'getSavedPaymentMethods').mockResolvedValue([]);
+
+    // Reset mock return values that are cleared by clearAllMocks
+    mockCartAbandonmentService.validateRecoveryDiscount.mockResolvedValue({ valid: false });
+    mockShippingService.calculatePackageDimensions.mockResolvedValue({
+      weight: 2,
+      length: 10,
+      width: 8,
+      height: 4,
+    });
+    mockShippingService.compareRates.mockResolvedValue({
+      freeShippingEligible: false,
+      rates: [
+        {
+          carrier: 'USPS',
+          service: 'Priority',
+          totalRate: 7.99,
+          estimatedDays: 3,
+        },
+      ],
+    });
   });
 
   it('should be defined', () => {
@@ -442,10 +523,12 @@ describe('CheckoutService', () => {
 
       const subtotal = 2 * 29.99 + 1 * 49.99;
       const expectedTax = Math.round(subtotal * 0.08 * 100) / 100;
+      const expectedShipping = 7.99; // From mock shipping service
 
       expect(result.subtotal).toBe(subtotal);
       expect(result.tax).toBe(expectedTax);
-      expect(result.total).toBe(subtotal + expectedTax);
+      expect(result.shipping).toBe(expectedShipping);
+      expect(result.total).toBe(subtotal + expectedTax + expectedShipping);
     });
 
     it('should allow authenticated users to use guest checkout', async () => {

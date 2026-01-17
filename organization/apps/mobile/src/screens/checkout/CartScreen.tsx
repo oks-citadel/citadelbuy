@@ -107,7 +107,7 @@ export default function CartScreen() {
         <Text style={styles.emptyText}>Add items to your cart to get started</Text>
         <TouchableOpacity
           style={styles.shopButton}
-          onPress={() => navigation.navigate('Main')}
+          onPress={() => navigation.navigate('Main', { screen: 'Home' })}
           accessibilityLabel="Start Shopping"
           accessibilityHint="Navigate to the main store to browse products"
           accessibilityRole="button"

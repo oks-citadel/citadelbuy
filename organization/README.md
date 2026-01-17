@@ -33,7 +33,7 @@ A next-generation AI-powered premium global e-commerce platform built with moder
 - **Fraud Detection** - ML-based transaction risk scoring
 - **Dynamic Pricing** - Competitive pricing engine
 - **Demand Forecasting** - Inventory optimization
-- **Visual Search** - Image-based product discovery (planned)
+- **Visual Search** - Image-based product discovery with Google Vision, AWS Rekognition, and Clarifai integration
 
 ### Marketing Platform (11 Modules, 150+ Endpoints)
 Self-hosted marketing automation with no external dependencies:

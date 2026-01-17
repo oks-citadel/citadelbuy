@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ProductsService } from './products.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { QueryProductsDto, SortBy } from './dto/query-products.dto';
@@ -23,6 +24,10 @@ describe('ProductsService', () => {
     },
   };
 
+  const mockEventEmitter = {
+    emit: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -30,6 +35,10 @@ describe('ProductsService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: EventEmitter2,
+          useValue: mockEventEmitter,
         },
       ],
     }).compile();
@@ -76,7 +85,7 @@ describe('ProductsService', () => {
       });
 
       expect(mockPrismaService.product.findMany).toHaveBeenCalledWith({
-        where: {},
+        where: { isActive: true },
         orderBy: { createdAt: 'desc' },
         skip: 0,
         take: 12,
@@ -102,6 +111,7 @@ describe('ProductsService', () => {
 
       expect(mockPrismaService.product.findMany).toHaveBeenCalledWith({
         where: {
+          isActive: true,
           OR: [
             { name: { contains: 'laptop', mode: 'insensitive' } },
             { description: { contains: 'laptop', mode: 'insensitive' } },
@@ -129,7 +139,7 @@ describe('ProductsService', () => {
 
       expect(mockPrismaService.product.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { categoryId },
+          where: { isActive: true, categoryId },
         }),
       );
     });
@@ -149,6 +159,7 @@ describe('ProductsService', () => {
       expect(mockPrismaService.product.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
+            isActive: true,
             price: {
               gte: 25,
               lte: 100,
@@ -243,6 +254,7 @@ describe('ProductsService', () => {
 
       expect(mockPrismaService.product.findMany).toHaveBeenCalledWith({
         where: {
+          isActive: true,
           OR: [
             { name: { contains: 'laptop', mode: 'insensitive' } },
             { description: { contains: 'laptop', mode: 'insensitive' } },

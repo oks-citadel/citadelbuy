@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Alert,
   StyleSheet,
+  Platform,
 } from 'react-native';
 import { useIAP } from '../../hooks/useIAP';
 import { SUBSCRIPTION_PRODUCTS } from '../../config/iap-products';
@@ -56,7 +57,7 @@ export default function SubscriptionScreen() {
       } else {
         Alert.alert(
           'Purchase Failed',
-          result.error || 'Something went wrong. Please try again.',
+          result.error?.message || 'Something went wrong. Please try again.',
           [{ text: 'OK', onPress: () => clearLastPurchaseResult() }]
         );
       }

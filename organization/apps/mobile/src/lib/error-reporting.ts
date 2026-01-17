@@ -397,11 +397,11 @@ class ErrorReportingService {
     }
 
     try {
-      Sentry.captureUserFeedback({
-        event_id: eventId,
+      Sentry.captureFeedback({
+        associatedEventId: eventId,
         name,
         email,
-        comments,
+        message: comments,
       });
     } catch (err) {
       console.error('[ErrorReporting] Failed to capture user feedback:', err);
@@ -499,7 +499,8 @@ class ErrorReportingService {
     }
 
     try {
-      return await Sentry.close(timeout);
+      await Sentry.close();
+      return true;
     } catch (err) {
       console.error('[ErrorReporting] Failed to close:', err);
       return false;
@@ -515,7 +516,8 @@ class ErrorReportingService {
     }
 
     try {
-      return await Sentry.flush(timeout);
+      await Sentry.flush();
+      return true;
     } catch (err) {
       console.error('[ErrorReporting] Failed to flush:', err);
       return false;

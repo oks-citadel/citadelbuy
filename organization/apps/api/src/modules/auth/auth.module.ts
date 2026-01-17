@@ -1,4 +1,4 @@
-import { Module, Logger } from '@nestjs/common';
+import { Module, Logger, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
@@ -7,13 +7,16 @@ import { AdminAuthController } from './admin-auth.controller';
 import { AuthService } from './auth.service';
 import { AccountLockoutService } from './account-lockout.service';
 import { TokenBlacklistService } from './token-blacklist.service';
+import { MfaEnforcementService } from './mfa-enforcement.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
+import { MfaEnforcementGuard } from './guards/mfa-enforcement.guard';
 import { UsersModule } from '../users/users.module';
 import { EmailModule } from '../email/email.module';
 import { PrismaModule } from '../../common/prisma/prisma.module';
 import { RedisModule } from '../../common/redis/redis.module';
 import { TrackingModule } from '../tracking/tracking.module';
+import { SecurityModule } from '../security/security.module';
 
 @Module({
   imports: [
@@ -22,6 +25,7 @@ import { TrackingModule } from '../tracking/tracking.module';
     PrismaModule,
     RedisModule,
     TrackingModule,
+    forwardRef(() => SecurityModule),
     PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -113,7 +117,15 @@ import { TrackingModule } from '../tracking/tracking.module';
     }),
   ],
   controllers: [AuthController, AdminAuthController],
-  providers: [AuthService, AccountLockoutService, TokenBlacklistService, JwtStrategy, LocalStrategy],
-  exports: [AuthService, AccountLockoutService],
+  providers: [
+    AuthService,
+    AccountLockoutService,
+    TokenBlacklistService,
+    MfaEnforcementService,
+    MfaEnforcementGuard,
+    JwtStrategy,
+    LocalStrategy,
+  ],
+  exports: [AuthService, AccountLockoutService, MfaEnforcementService, MfaEnforcementGuard],
 })
 export class AuthModule {}

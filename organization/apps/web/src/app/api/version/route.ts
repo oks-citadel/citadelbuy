@@ -36,7 +36,7 @@ export async function GET() {
       environment: process.env.NODE_ENV || 'development',
       // Additional metadata
       imageTag: process.env.IMAGE_TAG || 'local',
-      region: process.env.AZURE_REGION || process.env.REGION || 'unknown',
+      region: process.env.AWS_REGION || process.env.REGION || 'unknown',
     };
 
     return NextResponse.json(buildInfo, {

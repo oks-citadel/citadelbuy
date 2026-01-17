@@ -128,6 +128,7 @@ model User {
 
   // MFA settings
   userMfa UserMfa?
+  trustedDevices TrustedDevice[]
 
   // Email verification
   emailVerificationTokens EmailVerificationToken[]
@@ -135,6 +136,9 @@ model User {
   // Impersonation relations
   impersonationSessionsAsTarget       ImpersonationSession[] @relation("ImpersonationTarget")
   impersonationSessionsAsImpersonator ImpersonationSession[] @relation("Impersonator")
+
+  // Device fingerprinting relations
+  deviceAssociations UserDeviceAssociation[]
 
   @@map("users")
 }
@@ -4715,13 +4719,19 @@ model UserSession {
   token  String @unique // Hashed session token
 
   // Session metadata
-  ipAddress  String
-  userAgent  String?
-  deviceInfo Json? // Browser, OS, device type
+  ipAddress    String
+  userAgent    String?
+  deviceInfo   Json? // Browser, OS, device type
+  deviceType   DevicePlatform @default(WEB)
+  deviceId     String? // Device fingerprint hash
+  deviceName   String? // User-assigned friendly name
+  location     Json? // Geolocation data { city, country, lat, lng }
 
   // Status
-  isActive  Boolean @default(true)
-  isRevoked Boolean @default(false)
+  isActive      Boolean   @default(true)
+  isRevoked     Boolean   @default(false)
+  revokedReason String?   // Why session was terminated (e.g., "session_limit", "user_logout", "admin_action")
+  revokedAt     DateTime?
 
   expiresAt      DateTime
   lastActivityAt DateTime @default(now())
@@ -4734,7 +4744,31 @@ model UserSession {
   @@index([token])
   @@index([isActive])
   @@index([expiresAt])
+  @@index([userId, isActive])
+  @@index([deviceId])
   @@map("user_sessions")
+}
+
+/// Session settings for concurrent session limits
+model SessionSettings {
+  id             String @id @default(uuid())
+  organizationId String? @unique // null = global settings
+
+  // Session limits
+  maxConcurrentSessions Int    @default(5)
+  maxMobileSessions     Int    @default(3)
+  maxWebSessions        Int    @default(3)
+  enforcementMode       String @default("evict_oldest") // "block", "evict_oldest", "evict_idle"
+  idleTimeoutMinutes    Int    @default(30)
+
+  // Notifications
+  notifyOnNewSession Boolean @default(true)
+  notifyOnEviction   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("session_settings")
 }
 
 /// Multi-Factor Authentication settings
@@ -5506,6 +5540,7 @@ enum DevicePlatform {
   IOS
   ANDROID
   WEB
+  DESKTOP
 }
 
 enum NotificationCategory {
@@ -7865,4 +7900,215 @@ model UserSegment {
 
   @@index([key])
   @@map("user_segments")
+}
+
+// ============================================
+// DEVICE FINGERPRINTING & FRAUD DETECTION
+// ============================================
+
+/// Stores device fingerprints for fraud detection and trust scoring
+model DeviceFingerprint {
+  id                String   @id @default(uuid())
+
+  // Fingerprint hash - unique identifier for the device
+  fingerprintHash   String   @unique
+
+  // Raw fingerprint components (encrypted/hashed for privacy)
+  components        Json     // Canvas, WebGL, audio, fonts, etc.
+
+  // Device characteristics
+  platform          DevicePlatform
+  browserFamily     String?  // Chrome, Firefox, Safari, etc.
+  browserVersion    String?
+  osFamily          String?  // Windows, macOS, iOS, Android, Linux
+  osVersion         String?
+  deviceType        String?  // desktop, mobile, tablet
+  screenResolution  String?  // e.g., "1920x1080"
+  timezone          String?
+  language          String?
+
+  // Trust and risk scoring
+  trustScore        Int      @default(50) // 0-100, higher is more trusted
+  riskLevel         String   @default("unknown") // low, medium, high, critical
+  isTrusted         Boolean  @default(false)
+  isBlocked         Boolean  @default(false)
+  blockReason       String?
+
+  // Bot/emulator detection
+  isBot             Boolean  @default(false)
+  isEmulator        Boolean  @default(false)
+  botConfidence     Float    @default(0) // 0-1 confidence score
+  detectionSignals  Json?    // Array of detected bot/emulator signals
+
+  // Association tracking
+  associatedUserIds String[] // Users who have used this device
+  ipAddresses       String[] // IP addresses seen with this device
+
+  // Activity metrics
+  firstSeenAt       DateTime @default(now())
+  lastSeenAt        DateTime @default(now())
+  loginCount        Int      @default(0)
+  transactionCount  Int      @default(0)
+  failedLoginCount  Int      @default(0)
+  suspiciousActivityCount Int @default(0)
+
+  // Fraud incidents
+  fraudIncidents    DeviceFraudIncident[]
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([fingerprintHash])
+  @@index([trustScore])
+  @@index([riskLevel])
+  @@index([isBot])
+  @@index([isBlocked])
+  @@index([lastSeenAt])
+  @@map("device_fingerprints")
+}
+
+/// Links users to their known devices for trust building
+model UserDeviceAssociation {
+  id                String   @id @default(uuid())
+
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fingerprintHash   String
+
+  // Trust status for this user-device pair
+  trustLevel        String   @default("new") // new, recognized, trusted, suspicious, blocked
+  deviceNickname    String?  // User-assigned friendly name
+
+  // Verification status
+  isVerified        Boolean  @default(false)
+  verifiedAt        DateTime?
+  verificationMethod String? // email, sms, 2fa
+
+  // Usage statistics
+  firstUsedAt       DateTime @default(now())
+  lastUsedAt        DateTime @default(now())
+  useCount          Int      @default(1)
+  successfulLogins  Int      @default(0)
+  failedLogins      Int      @default(0)
+
+  // Location data (last known)
+  lastIpAddress     String?
+  lastLocation      Json?    // { city, country, lat, lng }
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([userId, fingerprintHash])
+  @@index([userId])
+  @@index([fingerprintHash])
+  @@index([trustLevel])
+  @@map("user_device_associations")
+}
+
+/// Tracks fraud incidents associated with devices
+model DeviceFraudIncident {
+  id                String   @id @default(uuid())
+
+  fingerprintHash   String
+  deviceFingerprint DeviceFingerprint @relation(fields: [fingerprintHash], references: [fingerprintHash], onDelete: Cascade)
+
+  userId            String?  // User involved (if known)
+
+  // Incident details
+  incidentType      String   // account_takeover, payment_fraud, bot_activity, credential_stuffing, etc.
+  severity          String   // low, medium, high, critical
+  description       String
+
+  // Evidence
+  evidence          Json?    // Supporting data for the incident
+  ipAddress         String?
+  userAgent         String?
+
+  // Resolution
+  status            String   @default("open") // open, investigating, resolved, false_positive
+  resolvedAt        DateTime?
+  resolvedBy        String?
+  resolution        String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([fingerprintHash])
+  @@index([userId])
+  @@index([incidentType])
+  @@index([severity])
+  @@index([status])
+  @@index([createdAt])
+  @@map("device_fraud_incidents")
+}
+
+// ==================== MFA Enforcement ====================
+
+/// MFA enforcement settings - configures which roles require MFA
+model MfaEnforcementSettings {
+  id                    String   @id @default(uuid())
+  organizationId        String?  @unique // null = global settings
+
+  // Enforcement policies
+  enforceForAllUsers    Boolean  @default(false)
+  enforceForRoles       String[] @default(["ADMIN", "VENDOR"]) // UserRole values
+  enforceForLogin       Boolean  @default(true)
+  enforceForPayment     Boolean  @default(true)
+  paymentThreshold      Float    @default(100.00) // Amount in default currency
+
+  // Grace period for new users/role changes
+  gracePeriodEnabled    Boolean  @default(true)
+  gracePeriodDays       Int      @default(7)
+  gracePeriodMaxLogins  Int      @default(10) // Max logins without MFA
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([organizationId])
+  @@map("mfa_enforcement_settings")
+}
+
+/// Trusted devices for MFA - allows skipping MFA on recognized devices
+model TrustedDevice {
+  id              String   @id @default(uuid())
+  userId          String
+
+  // Device identification
+  deviceId        String   // Device fingerprint hash
+  deviceName      String?  // User-friendly name (e.g., "John's MacBook Pro")
+
+  // Device metadata
+  userAgent       String?
+  ipAddress       String?  // IP at time of trust
+  platform        String?  // web, ios, android
+  browserInfo     Json?    // Browser details
+
+  // Trust settings
+  trustLevel      String   @default("trusted") // trusted, temporary
+  trustDurationDays Int    @default(30) // How long to trust this device
+
+  // Activity tracking
+  lastUsedAt      DateTime @default(now())
+  lastIpAddress   String?  // Last IP used with this device
+  useCount        Int      @default(1)
+
+  // Expiration
+  expiresAt       DateTime
+  isActive        Boolean  @default(true)
+  revokedAt       DateTime?
+  revokeReason    String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relation
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+  @@index([deviceId])
+  @@index([expiresAt])
+  @@index([isActive])
+  @@map("trusted_devices")
 }

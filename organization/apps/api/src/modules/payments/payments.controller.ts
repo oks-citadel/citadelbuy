@@ -3,7 +3,6 @@ import {
   Post,
   Body,
   UseGuards,
-  UseInterceptors,
   Request,
   Headers,
   RawBodyRequest,
@@ -17,9 +16,8 @@ import {
   ApiOperation,
   ApiBearerAuth,
   ApiResponse,
-  ApiHeader,
 } from '@nestjs/swagger';
-import { IdempotencyInterceptor } from '@/common/interceptors/idempotency.interceptor';
+import { IdempotentPayment } from '@/common/idempotency';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SkipCsrf } from '../../common/decorators/skip-csrf.decorator';
 import { PaymentsService } from './payments.service';
@@ -40,14 +38,9 @@ export class PaymentsController {
 
   @Post('create-intent')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(IdempotencyInterceptor)
+  @IdempotentPayment('payment-intent')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a Stripe payment intent' })
-  @ApiHeader({
-    name: 'Idempotency-Key',
-    description: 'Unique key for idempotent request (prevents duplicate charges)',
-    required: false,
-  })
   @ApiResponse({
     status: 201,
     description: 'Payment intent created successfully',

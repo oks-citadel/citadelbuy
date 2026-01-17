@@ -267,7 +267,7 @@ export default function TrackOrderScreen() {
         <View style={styles.timelineSection}>
           <Text style={styles.timelineTitle}>Tracking History</Text>
           <View style={styles.timeline}>
-            {trackingData.events.map((event, index) => (
+            {trackingData.events.map((event: TrackingEvent, index: number) => (
               <View key={event.id} style={styles.timelineItem}>
                 <View style={styles.timelineIndicator}>
                   <View

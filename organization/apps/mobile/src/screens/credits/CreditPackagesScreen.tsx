@@ -1,7 +1,7 @@
 /**
- * Example Credit Packages Screen
+ * Credit Packages Screen
  *
- * Demonstrates how to use IAP hooks for purchasing credit packages
+ * Uses IAP hooks for purchasing credit packages with proper error handling
  */
 
 import React, { useState } from 'react';
@@ -14,21 +14,31 @@ import {
   Alert,
   StyleSheet,
   Platform,
+  Linking,
 } from 'react-native';
 import { useIAP } from '../../hooks/useIAP';
 import { CREDIT_PACKAGES } from '../../config/iap-products';
 
+// URLs for legal documents
+const TERMS_OF_SERVICE_URL = 'https://broxiva.com/terms';
+const PRIVACY_POLICY_URL = 'https://broxiva.com/privacy';
+
 export default function CreditPackagesScreen() {
   const {
     isInitialized,
+    isInitializing,
     isAvailable,
+    initError,
+    retryInitialization,
     products,
     productsLoading,
     productsError,
+    reloadProducts,
     purchasing,
     purchaseCreditPackage,
     lastPurchaseResult,
     clearLastPurchaseResult,
+    isDeferred,
     walletBalance,
     walletCurrency,
     walletLoading,
@@ -56,13 +66,27 @@ export default function CreditPackagesScreen() {
           `${pkg.credits}${pkg.bonus ? ` + ${pkg.bonus} bonus` : ''} credits added to your account`,
           [{ text: 'OK', onPress: () => clearLastPurchaseResult() }]
         );
+      } else if (result.deferred) {
+        // iOS "Ask to Buy" - purchase pending parental approval
+        Alert.alert(
+          'Approval Required',
+          'Your purchase request has been sent for approval. You will receive the credits once the purchase is approved.',
+          [{ text: 'OK', onPress: () => clearLastPurchaseResult() }]
+        );
       } else if (result.cancelled) {
         // User cancelled - no alert needed
         clearLastPurchaseResult();
+      } else if (result.error?.networkError) {
+        // Network error - suggest checking connection
+        Alert.alert(
+          'Connection Error',
+          'Unable to complete purchase. Please check your internet connection and try again.',
+          [{ text: 'OK', onPress: () => clearLastPurchaseResult() }]
+        );
       } else {
         Alert.alert(
           'Purchase Failed',
-          result.error?.message || result.error || 'Something went wrong. Please try again.',
+          result.error?.message || 'Something went wrong. Please try again.',
           [{ text: 'OK', onPress: () => clearLastPurchaseResult() }]
         );
       }
@@ -95,8 +119,48 @@ export default function CreditPackagesScreen() {
     return Math.round((pkg.bonus / pkg.credits) * 100);
   };
 
-  // Render loading state
-  if (!isInitialized || productsLoading) {
+  // Handle opening URLs
+  const openURL = async (url: string) => {
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', 'Unable to open this link');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to open link');
+    }
+  };
+
+  // Render loading state (initializing IAP)
+  if (isInitializing || (!isInitialized && !initError)) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Initializing store...</Text>
+      </View>
+    );
+  }
+
+  // Render initialization error state with retry button
+  if (initError) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>Failed to Initialize Store</Text>
+        <Text style={styles.errorDetail}>{initError}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={retryInitialization}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Render products loading state
+  if (productsLoading) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
@@ -105,17 +169,23 @@ export default function CreditPackagesScreen() {
     );
   }
 
-  // Render error state
+  // Render error state with retry button
   if (productsError) {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>Failed to load credit packages</Text>
         <Text style={styles.errorDetail}>{productsError}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={reloadProducts}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
-  // Render unavailable state
+  // Render unavailable state with retry button
   if (!isAvailable) {
     return (
       <View style={styles.centerContainer}>
@@ -123,6 +193,12 @@ export default function CreditPackagesScreen() {
         <Text style={styles.errorDetail}>
           Please check your device settings or try again later
         </Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={retryInitialization}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -182,11 +258,16 @@ export default function CreditPackagesScreen() {
               )}
 
               {/* Price */}
-              {product && (
-                <View style={styles.priceContainer}>
+              <View style={styles.priceContainer}>
+                {product ? (
                   <Text style={styles.price}>{product.price}</Text>
-                </View>
-              )}
+                ) : (
+                  <View style={styles.priceLoading}>
+                    <ActivityIndicator size="small" color="#007AFF" />
+                    <Text style={styles.priceLoadingText}>Loading price...</Text>
+                  </View>
+                )}
+              </View>
 
               {/* Price per Credit */}
               {product && (
@@ -253,6 +334,17 @@ export default function CreditPackagesScreen() {
           Payment will be charged to your {Platform.OS === 'ios' ? 'Apple ID' : 'Google Play'} account
         </Text>
       </View>
+
+      {/* Terms & Privacy */}
+      <View style={styles.legalContainer}>
+        <TouchableOpacity onPress={() => openURL(TERMS_OF_SERVICE_URL)}>
+          <Text style={styles.legalLink}>Terms of Service</Text>
+        </TouchableOpacity>
+        <Text style={styles.legalSeparator}>|</Text>
+        <TouchableOpacity onPress={() => openURL(PRIVACY_POLICY_URL)}>
+          <Text style={styles.legalLink}>Privacy Policy</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -283,6 +375,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   header: {
     padding: 24,
@@ -377,11 +482,21 @@ const styles = StyleSheet.create({
   },
   priceContainer: {
     marginBottom: 4,
+    minHeight: 30,
   },
   price: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
+  },
+  priceLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  priceLoadingText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#666',
   },
   pricePerCredit: {
     fontSize: 12,
@@ -437,5 +552,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
     textAlign: 'center',
+  },
+  legalContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: 24,
+  },
+  legalLink: {
+    color: '#007AFF',
+    fontSize: 12,
+  },
+  legalSeparator: {
+    color: '#999',
+    marginHorizontal: 8,
+    fontSize: 12,
   },
 });

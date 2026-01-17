@@ -1,4 +1,10 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import * as sharp from 'sharp';
@@ -10,8 +16,20 @@ import {
   ImageFeaturesDto,
   SearchMetadata,
 } from './dto/visual-search.dto';
+import {
+  IVisionProvider,
+  ImageFeatures,
+  GoogleVisionProvider,
+  AwsRekognitionProvider,
+  ClarifaiProvider,
+  MockVisionProvider,
+  VISION_PROVIDER_CONFIG,
+} from './providers';
 
-// Color name mapping for common colors
+// Supported vision provider types
+export type VisionProviderType = 'google' | 'aws' | 'clarifai' | 'mock' | 'auto';
+
+// Color name mapping for local color analysis
 const COLOR_NAMES: Record<string, string> = {
   '#FF0000': 'Red',
   '#00FF00': 'Green',
@@ -41,102 +59,236 @@ interface ProductImageIndex {
   averageHash: string;
   colorHistogram: number[];
   dominantColors: DominantColor[];
+  labels: ImageLabel[];
   indexedAt: Date;
 }
 
 @Injectable()
-export class VisualSearchService {
+export class VisualSearchService implements OnModuleInit {
   private readonly logger = new Logger(VisualSearchService.name);
 
   // In-memory index for product images (use Redis/PostgreSQL in production)
   private productImageIndex: Map<string, ProductImageIndex> = new Map();
 
-  // AWS Rekognition client (optional)
-  private rekognitionClient: any = null;
-  private useCloudVision: boolean = false;
+  // Vision providers
+  private providers: Map<VisionProviderType, IVisionProvider> = new Map();
+  private activeProvider: IVisionProvider | null = null;
+  private activeProviderName: VisionProviderType = 'mock';
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
-  ) {
-    this.initializeCloudVision();
+  ) {}
+
+  async onModuleInit() {
+    await this.initializeProviders();
   }
 
   /**
-   * Initialize cloud vision service if credentials are available
+   * Initialize all configured vision providers
    */
-  private async initializeCloudVision() {
-    try {
-      const awsAccessKey = this.configService.get<string>('AWS_ACCESS_KEY_ID');
-      const awsSecretKey = this.configService.get<string>('AWS_SECRET_ACCESS_KEY');
-      const awsRegion = this.configService.get<string>('AWS_REGION', 'us-east-1');
+  private async initializeProviders(): Promise<void> {
+    this.logger.log('Initializing vision providers...');
 
-      if (awsAccessKey && awsSecretKey) {
-        const AWS = await import('aws-sdk');
-        this.rekognitionClient = new AWS.Rekognition({
-          region: awsRegion,
-          accessKeyId: awsAccessKey,
-          secretAccessKey: awsSecretKey,
-        });
-        this.useCloudVision = true;
-        this.logger.log('AWS Rekognition initialized for visual search');
-      } else {
-        this.logger.log('Cloud vision not configured - using perceptual hashing only');
+    // Initialize Google Cloud Vision
+    const googleApiKey = this.configService.get<string>('GOOGLE_CLOUD_VISION_API_KEY');
+    if (googleApiKey) {
+      const googleProvider = new GoogleVisionProvider(googleApiKey);
+      if (googleProvider.isAvailable()) {
+        this.providers.set('google', googleProvider);
+        this.logger.log('Google Cloud Vision provider initialized');
       }
-    } catch (error) {
-      this.logger.warn('Failed to initialize cloud vision, falling back to perceptual hashing', error);
-      this.useCloudVision = false;
     }
+
+    // Initialize AWS Rekognition
+    const awsAccessKey = this.configService.get<string>('AWS_ACCESS_KEY_ID');
+    const awsSecretKey = this.configService.get<string>('AWS_SECRET_ACCESS_KEY');
+    const awsRegion = this.configService.get<string>('AWS_REGION', 'us-east-1');
+    if (awsAccessKey && awsSecretKey) {
+      const awsProvider = new AwsRekognitionProvider(awsAccessKey, awsSecretKey, awsRegion);
+      // Give it a moment to initialize
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      if (awsProvider.isAvailable()) {
+        this.providers.set('aws', awsProvider);
+        this.logger.log('AWS Rekognition provider initialized');
+      }
+    }
+
+    // Initialize Clarifai
+    const clarifaiApiKey = this.configService.get<string>('CLARIFAI_API_KEY');
+    const clarifaiModelId = this.configService.get<string>('CLARIFAI_MODEL_ID');
+    if (clarifaiApiKey) {
+      const clarifaiProvider = new ClarifaiProvider(clarifaiApiKey, clarifaiModelId);
+      if (clarifaiProvider.isAvailable()) {
+        this.providers.set('clarifai', clarifaiProvider);
+        this.logger.log('Clarifai provider initialized');
+      }
+    }
+
+    // Always add mock provider as fallback
+    this.providers.set('mock', new MockVisionProvider());
+
+    // Select the active provider based on configuration or availability
+    this.selectActiveProvider();
+  }
+
+  /**
+   * Select the active provider based on configuration or availability
+   */
+  private selectActiveProvider(): void {
+    const preferredProvider = this.configService.get<VisionProviderType>(
+      'VISUAL_SEARCH_PROVIDER',
+      'auto',
+    );
+
+    if (preferredProvider !== 'auto' && this.providers.has(preferredProvider)) {
+      this.activeProvider = this.providers.get(preferredProvider)!;
+      this.activeProviderName = preferredProvider;
+      this.logger.log(`Using configured provider: ${this.activeProvider.name}`);
+      return;
+    }
+
+    // Auto-select based on priority: Google > AWS > Clarifai > Mock
+    const priority: VisionProviderType[] = ['google', 'aws', 'clarifai', 'mock'];
+    for (const providerType of priority) {
+      const provider = this.providers.get(providerType);
+      if (provider?.isAvailable()) {
+        this.activeProvider = provider;
+        this.activeProviderName = providerType;
+        this.logger.log(`Auto-selected provider: ${provider.name}`);
+        return;
+      }
+    }
+
+    // Fallback to mock
+    this.activeProvider = this.providers.get('mock')!;
+    this.activeProviderName = 'mock';
+    this.logger.warn('No external vision provider available, using mock provider');
+  }
+
+  /**
+   * Get the currently active provider info
+   */
+  getActiveProvider(): { name: string; type: VisionProviderType } {
+    return {
+      name: this.activeProvider?.name || 'none',
+      type: this.activeProviderName,
+    };
+  }
+
+  /**
+   * Get all available providers
+   */
+  getAvailableProviders(): { type: VisionProviderType; name: string; available: boolean }[] {
+    return Array.from(this.providers.entries()).map(([type, provider]) => ({
+      type,
+      name: provider.name,
+      available: provider.isAvailable(),
+    }));
+  }
+
+  /**
+   * Switch to a different provider
+   */
+  switchProvider(providerType: VisionProviderType): boolean {
+    const provider = this.providers.get(providerType);
+    if (!provider || !provider.isAvailable()) {
+      this.logger.warn(`Provider ${providerType} is not available`);
+      return false;
+    }
+
+    this.activeProvider = provider;
+    this.activeProviderName = providerType;
+    this.logger.log(`Switched to provider: ${provider.name}`);
+    return true;
   }
 
   /**
    * Search for products by uploaded image
    */
-  async searchByImage(file: Express.Multer.File, options?: {
-    limit?: number;
-    minSimilarity?: number;
-    categoryId?: string;
-  }) {
+  async searchByImage(
+    file: Express.Multer.File,
+    options?: {
+      limit?: number;
+      minSimilarity?: number;
+      categoryId?: string;
+      useProvider?: VisionProviderType;
+    },
+  ) {
     const startTime = Date.now();
-    const { limit = 10, minSimilarity = 0.5, categoryId } = options || {};
+    const { limit = 10, minSimilarity = 0.5, categoryId, useProvider } = options || {};
 
     try {
       if (!file || !file.buffer) {
         throw new BadRequestException('No valid image file provided');
       }
 
-      // Extract features from uploaded image
-      const features = await this.extractFeaturesFromBuffer(file.buffer);
+      // Validate image
+      this.validateImage(file);
 
-      // Get labels (either from cloud or local analysis)
-      let labels: ImageLabel[] = [];
-      if (this.useCloudVision && this.rekognitionClient) {
-        labels = await this.getCloudLabels(file.buffer);
-      } else {
-        labels = this.getLocalLabels(features);
+      // Use specified provider or active provider
+      const provider = useProvider
+        ? this.providers.get(useProvider) || this.activeProvider
+        : this.activeProvider;
+
+      if (!provider) {
+        throw new BadRequestException('No vision provider available');
       }
 
-      // Find similar products
-      const similarProducts = await this.findSimilarProducts(features, {
-        limit,
-        minSimilarity,
-        categoryId,
-        searchLabels: labels,
-      });
+      // Get labels and features from the vision API
+      let apiFeatures: ImageFeatures | null = null;
+      try {
+        apiFeatures = await provider.analyzeImage(file.buffer);
+      } catch (error: any) {
+        this.logger.warn(`Vision API analysis failed: ${error.message}, using local analysis`);
+      }
+
+      // Extract local image features (hashes, colors, etc.)
+      const localFeatures = await this.extractFeaturesFromBuffer(file.buffer);
+
+      // Combine API labels with local analysis
+      const labels: ImageLabel[] = apiFeatures?.labels
+        ? apiFeatures.labels.map((l) => ({
+            name: l.name,
+            confidence: l.confidence,
+          }))
+        : this.getLocalLabels(localFeatures);
+
+      // Use API colors if available, otherwise use local extraction
+      const dominantColors: DominantColor[] = apiFeatures?.dominantColors?.length
+        ? apiFeatures.dominantColors.map((c) => ({
+            hex: c.hex,
+            name: c.name,
+            percentage: c.pixelFraction * 100,
+          }))
+        : localFeatures.dominantColors;
+
+      // Find similar products using combined features
+      const similarProducts = await this.findSimilarProducts(
+        { ...localFeatures, labels },
+        {
+          limit,
+          minSimilarity,
+          categoryId,
+          searchLabels: labels,
+        },
+      );
 
       const processingTimeMs = Date.now() - startTime;
 
       return {
         success: true,
         labels,
-        dominantColors: features.dominantColors,
+        dominantColors,
+        objects: apiFeatures?.objects || [],
         similarProducts,
         metadata: {
-          imageDimensions: features.dimensions,
+          imageDimensions: localFeatures.dimensions,
           processingTimeMs,
-          searchMethod: this.useCloudVision ? 'cloud_vision' : 'perceptual_hash',
+          searchMethod: provider.name as SearchMetadata['searchMethod'],
+          provider: provider.name,
           processedAt: new Date().toISOString(),
-        } as SearchMetadata,
+        } as SearchMetadata & { provider: string },
       };
     } catch (error) {
       this.logger.error('Visual search by image failed', error);
@@ -147,11 +299,15 @@ export class VisualSearchService {
   /**
    * Search for products by image URL
    */
-  async searchByImageUrl(imageUrl: string, options?: {
-    limit?: number;
-    minSimilarity?: number;
-    categoryId?: string;
-  }) {
+  async searchByImageUrl(
+    imageUrl: string,
+    options?: {
+      limit?: number;
+      minSimilarity?: number;
+      categoryId?: string;
+      useProvider?: VisionProviderType;
+    },
+  ) {
     const startTime = Date.now();
 
     try {
@@ -159,7 +315,7 @@ export class VisualSearchService {
       const response = await axios.get(imageUrl, {
         responseType: 'arraybuffer',
         timeout: 10000,
-        maxContentLength: 10 * 1024 * 1024, // 10MB max
+        maxContentLength: VISION_PROVIDER_CONFIG.maxImageSize,
       });
 
       const imageBuffer = Buffer.from(response.data);
@@ -168,15 +324,17 @@ export class VisualSearchService {
       const mockFile = {
         buffer: imageBuffer,
         mimetype: response.headers['content-type'] || 'image/jpeg',
+        size: imageBuffer.length,
       } as Express.Multer.File;
 
       const result = await this.searchByImage(mockFile, options);
 
       // Update metadata with URL info
+      (result.metadata as any).imageUrl = imageUrl;
       result.metadata.processingTimeMs = Date.now() - startTime;
 
       return result;
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Visual search by URL failed: ${imageUrl}`, error);
       throw new BadRequestException('Failed to fetch or process image from URL');
     }
@@ -185,10 +343,13 @@ export class VisualSearchService {
   /**
    * Find products similar to a given product
    */
-  async findSimilarByProductId(productId: string, options?: {
-    limit?: number;
-    sameCategoryOnly?: boolean;
-  }) {
+  async findSimilarByProductId(
+    productId: string,
+    options?: {
+      limit?: number;
+      sameCategoryOnly?: boolean;
+    },
+  ) {
     const startTime = Date.now();
     const { limit = 10, sameCategoryOnly = false } = options || {};
 
@@ -211,7 +372,7 @@ export class VisualSearchService {
       }
 
       // Check if we have indexed features for this product
-      let features: ImageFeaturesDto | null = null;
+      let features: (ImageFeaturesDto & { labels?: ImageLabel[] }) | null = null;
       const indexedData = this.productImageIndex.get(productId);
 
       if (indexedData) {
@@ -222,6 +383,7 @@ export class VisualSearchService {
           dominantColors: indexedData.dominantColors,
           dimensions: { width: 0, height: 0 },
           aspectRatio: 1,
+          labels: indexedData.labels,
         };
       } else {
         // Download and extract features
@@ -259,7 +421,8 @@ export class VisualSearchService {
         },
         similarProducts: similarProducts.slice(0, limit),
         metadata: {
-          algorithm: 'perceptual_hash_similarity',
+          algorithm: 'visual_similarity',
+          provider: this.activeProvider?.name || 'local',
           processingTimeMs,
           processedAt: new Date().toISOString(),
         },
@@ -357,7 +520,24 @@ export class VisualSearchService {
           timeout: 10000,
         });
 
-        const features = await this.extractFeaturesFromBuffer(Buffer.from(response.data));
+        const imageBuffer = Buffer.from(response.data);
+        const features = await this.extractFeaturesFromBuffer(imageBuffer);
+
+        // Get labels from vision API if available
+        let labels: ImageLabel[] = [];
+        if (this.activeProvider && this.activeProviderName !== 'mock') {
+          try {
+            const apiLabels = await this.activeProvider.getLabels(imageBuffer);
+            labels = apiLabels.map((l) => ({
+              name: l.name,
+              confidence: l.confidence,
+            }));
+          } catch {
+            labels = this.getLocalLabels(features);
+          }
+        } else {
+          labels = this.getLocalLabels(features);
+        }
 
         this.productImageIndex.set(productId, {
           productId,
@@ -366,13 +546,14 @@ export class VisualSearchService {
           averageHash: features.averageHash,
           colorHistogram: features.colorHistogram,
           dominantColors: features.dominantColors,
+          labels,
           indexedAt: new Date(),
         });
 
         this.logger.debug(`Indexed product image: ${productId}`);
         return true;
-      } catch (error) {
-        this.logger.warn(`Failed to index image for product ${productId}:`, error);
+      } catch (error: any) {
+        this.logger.warn(`Failed to index image for product ${productId}:`, error.message);
         return false;
       }
     } catch (error) {
@@ -421,6 +602,57 @@ export class VisualSearchService {
   }
 
   /**
+   * Analyze an image and return detailed features
+   */
+  async analyzeImage(file: Express.Multer.File): Promise<ImageFeatures & { localFeatures: ImageFeaturesDto }> {
+    if (!file || !file.buffer) {
+      throw new BadRequestException('No valid image file provided');
+    }
+
+    this.validateImage(file);
+
+    const provider = this.activeProvider;
+    if (!provider) {
+      throw new BadRequestException('No vision provider available');
+    }
+
+    const [apiFeatures, localFeatures] = await Promise.all([
+      provider.analyzeImage(file.buffer).catch((error) => {
+        this.logger.warn(`API analysis failed: ${error.message}`);
+        return null;
+      }),
+      this.extractFeaturesFromBuffer(file.buffer),
+    ]);
+
+    return {
+      labels: apiFeatures?.labels || [],
+      objects: apiFeatures?.objects || [],
+      dominantColors: apiFeatures?.dominantColors || [],
+      safeSearch: apiFeatures?.safeSearch,
+      textAnnotations: apiFeatures?.textAnnotations || [],
+      webEntities: apiFeatures?.webEntities || [],
+      localFeatures,
+    };
+  }
+
+  /**
+   * Validate image file
+   */
+  private validateImage(file: Express.Multer.File): void {
+    if (file.size > VISION_PROVIDER_CONFIG.maxImageSize) {
+      throw new BadRequestException(
+        `Image size exceeds maximum allowed (${VISION_PROVIDER_CONFIG.maxImageSize / 1024 / 1024}MB)`,
+      );
+    }
+
+    if (!VISION_PROVIDER_CONFIG.supportedFormats.includes(file.mimetype)) {
+      throw new BadRequestException(
+        `Unsupported image format. Supported formats: ${VISION_PROVIDER_CONFIG.supportedFormats.join(', ')}`,
+      );
+    }
+  }
+
+  /**
    * Calculate perceptual hash using DCT (Discrete Cosine Transform approximation)
    */
   private async calculatePerceptualHash(imageBuffer: Buffer): Promise<string> {
@@ -466,8 +698,9 @@ export class VisualSearchService {
       }
 
       // Convert binary to hex
-      const hexHash = parseInt(hash.slice(0, 32), 2).toString(16).padStart(8, '0') +
-                      parseInt(hash.slice(32, 64) || '0', 2).toString(16).padStart(8, '0');
+      const hexHash =
+        parseInt(hash.slice(0, 32), 2).toString(16).padStart(8, '0') +
+        parseInt(hash.slice(32, 64) || '0', 2).toString(16).padStart(8, '0');
 
       return hexHash;
     } catch (error) {
@@ -536,7 +769,7 @@ export class VisualSearchService {
 
       // Normalize
       const total = 64 * 64;
-      return histogram.map(count => count / total);
+      return histogram.map((count) => count / total);
     } catch (error) {
       this.logger.warn('Color histogram calculation failed', error);
       return new Array(4096).fill(0);
@@ -549,9 +782,7 @@ export class VisualSearchService {
   private async extractDominantColors(imageBuffer: Buffer): Promise<DominantColor[]> {
     try {
       // Use sharp's stats to get dominant colors
-      const { dominant, channels } = await sharp(imageBuffer)
-        .resize(64, 64, { fit: 'fill' })
-        .stats();
+      const { dominant } = await sharp(imageBuffer).resize(64, 64, { fit: 'fill' }).stats();
 
       const dominantColor = {
         r: dominant.r,
@@ -566,7 +797,8 @@ export class VisualSearchService {
         .toBuffer({ resolveWithObject: true });
 
       const pixels = new Uint8Array(data);
-      const colorCounts: Map<string, { count: number; r: number; g: number; b: number }> = new Map();
+      const colorCounts: Map<string, { count: number; r: number; g: number; b: number }> =
+        new Map();
 
       for (let i = 0; i < pixels.length; i += info.channels) {
         // Quantize colors to reduce palette
@@ -589,7 +821,7 @@ export class VisualSearchService {
         .slice(0, 5);
 
       const totalPixels = 32 * 32;
-      const dominantColors: DominantColor[] = sortedColors.map(([key, value]) => {
+      const dominantColors: DominantColor[] = sortedColors.map(([, value]) => {
         const hex = this.rgbToHex(value.r, value.g, value.b);
         return {
           hex,
@@ -609,10 +841,16 @@ export class VisualSearchService {
    * Convert RGB to hex
    */
   private rgbToHex(r: number, g: number, b: number): string {
-    return '#' + [r, g, b].map(x => {
-      const hex = x.toString(16);
-      return hex.length === 1 ? '0' + hex : hex;
-    }).join('').toUpperCase();
+    return (
+      '#' +
+      [r, g, b]
+        .map((x) => {
+          const hex = x.toString(16);
+          return hex.length === 1 ? '0' + hex : hex;
+        })
+        .join('')
+        .toUpperCase()
+    );
   }
 
   /**
@@ -638,7 +876,7 @@ export class VisualSearchService {
       const cb = parseInt(colorHex.slice(5, 7), 16);
 
       const distance = Math.sqrt(
-        Math.pow(r - cr, 2) + Math.pow(g - cg, 2) + Math.pow(b - cb, 2)
+        Math.pow(r - cr, 2) + Math.pow(g - cg, 2) + Math.pow(b - cb, 2),
       );
 
       if (distance < closestDistance) {
@@ -698,10 +936,27 @@ export class VisualSearchService {
   }
 
   /**
+   * Calculate label similarity using Jaccard index
+   */
+  private labelSimilarity(labels1: ImageLabel[], labels2: ImageLabel[]): number {
+    if (!labels1.length || !labels2.length) {
+      return 0;
+    }
+
+    const set1 = new Set(labels1.map((l) => l.name.toLowerCase()));
+    const set2 = new Set(labels2.map((l) => l.name.toLowerCase()));
+
+    const intersection = [...set1].filter((x) => set2.has(x)).length;
+    const union = new Set([...set1, ...set2]).size;
+
+    return union > 0 ? intersection / union : 0;
+  }
+
+  /**
    * Find similar products based on image features
    */
   private async findSimilarProducts(
-    queryFeatures: ImageFeaturesDto,
+    queryFeatures: ImageFeaturesDto & { labels?: ImageLabel[] },
     options: {
       limit: number;
       minSimilarity: number;
@@ -739,7 +994,8 @@ export class VisualSearchService {
 
     for (const product of products) {
       // Check if we have indexed features
-      let productFeatures: ProductImageIndex | null = this.productImageIndex.get(product.id) || null;
+      let productFeatures: ProductImageIndex | null =
+        this.productImageIndex.get(product.id) || null;
 
       if (!productFeatures && product.images.length > 0) {
         // Try to index on-the-fly (with timeout)
@@ -750,6 +1006,8 @@ export class VisualSearchService {
           });
 
           const features = await this.extractFeaturesFromBuffer(Buffer.from(response.data));
+          const labels = this.getLocalLabels(features);
+
           productFeatures = {
             productId: product.id,
             imageUrl: product.images[0],
@@ -757,6 +1015,7 @@ export class VisualSearchService {
             averageHash: features.averageHash,
             colorHistogram: features.colorHistogram,
             dominantColors: features.dominantColors,
+            labels,
             indexedAt: new Date(),
           };
 
@@ -771,29 +1030,43 @@ export class VisualSearchService {
       }
 
       // Calculate similarity scores
-      const pHashDistance = this.hammingDistance(queryFeatures.perceptualHash, productFeatures.perceptualHash);
-      const aHashDistance = this.hammingDistance(queryFeatures.averageHash, productFeatures.averageHash);
-      const histSimilarity = this.histogramSimilarity(queryFeatures.colorHistogram, productFeatures.colorHistogram);
+      const pHashDistance = this.hammingDistance(
+        queryFeatures.perceptualHash,
+        productFeatures.perceptualHash,
+      );
+      const aHashDistance = this.hammingDistance(
+        queryFeatures.averageHash,
+        productFeatures.averageHash,
+      );
+      const histSimilarity = this.histogramSimilarity(
+        queryFeatures.colorHistogram,
+        productFeatures.colorHistogram,
+      );
 
       // Convert hash distances to similarity (max distance is 64 bits)
-      const pHashSimilarity = 1 - (pHashDistance / 64);
-      const aHashSimilarity = 1 - (aHashDistance / 64);
+      const pHashSimilarity = 1 - pHashDistance / 64;
+      const aHashSimilarity = 1 - aHashDistance / 64;
 
       // Calculate color similarity from dominant colors
       let colorSimilarity = 0;
       if (queryFeatures.dominantColors.length > 0 && productFeatures.dominantColors.length > 0) {
-        const queryColors = new Set(queryFeatures.dominantColors.map(c => c.name));
-        const productColors = new Set(productFeatures.dominantColors.map(c => c.name));
-        const intersection = [...queryColors].filter(c => productColors.has(c)).length;
+        const queryColors = new Set(queryFeatures.dominantColors.map((c) => c.name));
+        const productColors = new Set(productFeatures.dominantColors.map((c) => c.name));
+        const intersection = [...queryColors].filter((c) => productColors.has(c)).length;
         colorSimilarity = intersection / Math.max(queryColors.size, productColors.size);
       }
 
+      // Calculate label similarity
+      const queryLabels = searchLabels || queryFeatures.labels || [];
+      const labelSim = this.labelSimilarity(queryLabels, productFeatures.labels);
+
       // Combined similarity score (weighted average)
       const combinedScore =
-        (pHashSimilarity * 0.35) +
-        (aHashSimilarity * 0.25) +
-        (histSimilarity * 0.25) +
-        (colorSimilarity * 0.15);
+        pHashSimilarity * 0.25 +
+        aHashSimilarity * 0.15 +
+        histSimilarity * 0.2 +
+        colorSimilarity * 0.15 +
+        labelSim * 0.25;
 
       if (combinedScore >= minSimilarity) {
         similarProducts.push({
@@ -802,10 +1075,12 @@ export class VisualSearchService {
           price: product.price,
           images: product.images,
           similarity: Math.round(combinedScore * 100) / 100,
-          category: product.category ? {
-            id: product.category.id,
-            name: product.category.name,
-          } : undefined,
+          category: product.category
+            ? {
+                id: product.category.id,
+                name: product.category.name,
+              }
+            : undefined,
           combinedScore,
         });
       }
@@ -815,35 +1090,6 @@ export class VisualSearchService {
     similarProducts.sort((a, b) => b.combinedScore - a.combinedScore);
 
     return similarProducts.slice(0, limit).map(({ combinedScore, ...product }) => product);
-  }
-
-  /**
-   * Get labels using AWS Rekognition
-   */
-  private async getCloudLabels(imageBuffer: Buffer): Promise<ImageLabel[]> {
-    if (!this.rekognitionClient) {
-      return [];
-    }
-
-    try {
-      const params = {
-        Image: {
-          Bytes: imageBuffer,
-        },
-        MaxLabels: 20,
-        MinConfidence: 50,
-      };
-
-      const result = await this.rekognitionClient.detectLabels(params).promise();
-
-      return (result.Labels || []).map((label: any) => ({
-        name: label.Name,
-        confidence: label.Confidence / 100,
-      }));
-    } catch (error) {
-      this.logger.warn('AWS Rekognition label detection failed', error);
-      return [];
-    }
   }
 
   /**
@@ -900,16 +1146,18 @@ export class VisualSearchService {
         images: product.images,
         category: product.category,
       },
-      similarProducts: similarProducts.map(p => ({
+      similarProducts: similarProducts.map((p) => ({
         id: p.id,
         name: p.name,
         price: p.price,
         images: p.images,
         similarity: 0.5, // Default similarity for category-based
-        category: p.category ? {
-          id: p.category.id,
-          name: p.category.name,
-        } : undefined,
+        category: p.category
+          ? {
+              id: p.category.id,
+              name: p.category.name,
+            }
+          : undefined,
       })),
       metadata: {
         algorithm: 'category_based',

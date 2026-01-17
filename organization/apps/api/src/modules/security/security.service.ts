@@ -1,14 +1,49 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { ActivityType } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ActivityType, DevicePlatform } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
 
+// Default configuration for session limits
+const DEFAULT_MAX_CONCURRENT_SESSIONS = 5;
+const DEFAULT_MAX_MOBILE_SESSIONS = 3;
+const DEFAULT_MAX_WEB_SESSIONS = 3;
+const DEFAULT_ENFORCEMENT_MODE = 'evict_oldest'; // 'block' | 'evict_oldest' | 'evict_idle'
+const DEFAULT_IDLE_TIMEOUT_MINUTES = 30;
+
+export interface SessionLimitConfig {
+  maxConcurrentSessions: number;
+  maxMobileSessions: number;
+  maxWebSessions: number;
+  enforcementMode: 'block' | 'evict_oldest' | 'evict_idle';
+  idleTimeoutMinutes: number;
+  notifyOnNewSession: boolean;
+  notifyOnEviction: boolean;
+}
+
+export interface ActiveSessionInfo {
+  id: string;
+  ipAddress: string;
+  userAgent: string | null;
+  deviceType: DevicePlatform;
+  deviceName: string | null;
+  location: any;
+  lastActivityAt: Date;
+  createdAt: Date;
+  isCurrent: boolean;
+}
+
 @Injectable()
 export class SecurityService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(SecurityService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
 
   // ==================== Audit Logging ====================
 
@@ -280,7 +315,193 @@ export class SecurityService {
 
   // ==================== Session Management ====================
 
-  async createSession(userId: string, ipAddress: string, userAgent?: string) {
+  /**
+   * Get session limit configuration (from database or defaults)
+   */
+  async getSessionLimitConfig(organizationId?: string): Promise<SessionLimitConfig> {
+    const settings = await this.prisma.sessionSettings.findFirst({
+      where: organizationId ? { organizationId } : { organizationId: null },
+    });
+
+    if (settings) {
+      return {
+        maxConcurrentSessions: settings.maxConcurrentSessions,
+        maxMobileSessions: settings.maxMobileSessions,
+        maxWebSessions: settings.maxWebSessions,
+        enforcementMode: settings.enforcementMode as SessionLimitConfig['enforcementMode'],
+        idleTimeoutMinutes: settings.idleTimeoutMinutes,
+        notifyOnNewSession: settings.notifyOnNewSession,
+        notifyOnEviction: settings.notifyOnEviction,
+      };
+    }
+
+    // Return defaults from environment or hardcoded
+    return {
+      maxConcurrentSessions: parseInt(process.env.MAX_CONCURRENT_SESSIONS || '', 10) || DEFAULT_MAX_CONCURRENT_SESSIONS,
+      maxMobileSessions: parseInt(process.env.MAX_MOBILE_SESSIONS || '', 10) || DEFAULT_MAX_MOBILE_SESSIONS,
+      maxWebSessions: parseInt(process.env.MAX_WEB_SESSIONS || '', 10) || DEFAULT_MAX_WEB_SESSIONS,
+      enforcementMode: (process.env.SESSION_ENFORCEMENT_MODE as SessionLimitConfig['enforcementMode']) || DEFAULT_ENFORCEMENT_MODE,
+      idleTimeoutMinutes: parseInt(process.env.SESSION_IDLE_TIMEOUT_MINUTES || '', 10) || DEFAULT_IDLE_TIMEOUT_MINUTES,
+      notifyOnNewSession: process.env.NOTIFY_ON_NEW_SESSION !== 'false',
+      notifyOnEviction: process.env.NOTIFY_ON_EVICTION !== 'false',
+    };
+  }
+
+  /**
+   * Count active sessions for a user
+   */
+  async getActiveSessionCount(userId: string, deviceType?: DevicePlatform): Promise<number> {
+    return this.prisma.userSession.count({
+      where: {
+        userId,
+        isActive: true,
+        isRevoked: false,
+        expiresAt: { gt: new Date() },
+        ...(deviceType && { deviceType }),
+      },
+    });
+  }
+
+  /**
+   * Get active sessions for a user with details
+   */
+  async getUserActiveSessions(userId: string, currentSessionId?: string): Promise<ActiveSessionInfo[]> {
+    const sessions = await this.prisma.userSession.findMany({
+      where: {
+        userId,
+        isActive: true,
+        isRevoked: false,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { lastActivityAt: 'desc' },
+      select: {
+        id: true,
+        ipAddress: true,
+        userAgent: true,
+        deviceType: true,
+        deviceName: true,
+        location: true,
+        lastActivityAt: true,
+        createdAt: true,
+      },
+    });
+
+    return sessions.map((session) => ({
+      ...session,
+      isCurrent: session.id === currentSessionId,
+    }));
+  }
+
+  /**
+   * Find the oldest or most idle session based on enforcement mode
+   */
+  private async findSessionToEvict(userId: string, enforcementMode: string): Promise<string | null> {
+    let orderBy: { [key: string]: 'asc' | 'desc' };
+
+    if (enforcementMode === 'evict_idle') {
+      // Evict the session with the oldest lastActivityAt (most idle)
+      orderBy = { lastActivityAt: 'asc' };
+    } else {
+      // Default: evict_oldest - evict the session with the oldest createdAt
+      orderBy = { createdAt: 'asc' };
+    }
+
+    const sessionToEvict = await this.prisma.userSession.findFirst({
+      where: {
+        userId,
+        isActive: true,
+        isRevoked: false,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy,
+      select: { id: true },
+    });
+
+    return sessionToEvict?.id || null;
+  }
+
+  /**
+   * Enforce session limits by evicting sessions if necessary
+   * Returns the session that was evicted, if any
+   */
+  async enforceSessionLimit(
+    userId: string,
+    deviceType: DevicePlatform = DevicePlatform.WEB,
+  ): Promise<{ evictedSessionId: string | null; shouldBlock: boolean }> {
+    const config = await this.getSessionLimitConfig();
+
+    // Check total concurrent sessions
+    const totalCount = await this.getActiveSessionCount(userId);
+
+    // Check device-specific limits
+    const deviceCount = await this.getActiveSessionCount(userId, deviceType);
+    const deviceLimit = deviceType === DevicePlatform.WEB ? config.maxWebSessions :
+      (deviceType === DevicePlatform.IOS || deviceType === DevicePlatform.ANDROID) ? config.maxMobileSessions :
+        config.maxConcurrentSessions;
+
+    // Determine if we've exceeded any limit
+    const exceedsTotal = totalCount >= config.maxConcurrentSessions;
+    const exceedsDevice = deviceCount >= deviceLimit;
+
+    if (!exceedsTotal && !exceedsDevice) {
+      return { evictedSessionId: null, shouldBlock: false };
+    }
+
+    // Handle enforcement mode
+    if (config.enforcementMode === 'block') {
+      return { evictedSessionId: null, shouldBlock: true };
+    }
+
+    // Evict a session
+    const sessionIdToEvict = await this.findSessionToEvict(userId, config.enforcementMode);
+
+    if (sessionIdToEvict) {
+      await this.revokeSessionById(userId, sessionIdToEvict, 'session_limit');
+
+      await this.logActivity({
+        userId,
+        activityType: ActivityType.LOGOUT,
+        action: 'Session terminated due to concurrent session limit',
+        resource: `session:${sessionIdToEvict}`,
+        metadata: {
+          reason: 'session_limit',
+          enforcementMode: config.enforcementMode,
+          totalSessions: totalCount,
+          maxAllowed: config.maxConcurrentSessions,
+        },
+      });
+    }
+
+    return { evictedSessionId: sessionIdToEvict, shouldBlock: false };
+  }
+
+  /**
+   * Create a new session with concurrent session limit enforcement
+   */
+  async createSession(
+    userId: string,
+    ipAddress: string,
+    userAgent?: string,
+    options?: {
+      deviceType?: DevicePlatform;
+      deviceId?: string;
+      deviceName?: string;
+      location?: { city?: string; country?: string; lat?: number; lng?: number };
+    },
+  ) {
+    const deviceType = options?.deviceType || DevicePlatform.WEB;
+
+    // Enforce session limits before creating a new session
+    const { shouldBlock, evictedSessionId } = await this.enforceSessionLimit(userId, deviceType);
+
+    if (shouldBlock) {
+      throw new ConflictException({
+        message: 'Maximum concurrent sessions reached. Please logout from another device to continue.',
+        code: 'SESSION_LIMIT_REACHED',
+        maxSessions: (await this.getSessionLimitConfig()).maxConcurrentSessions,
+      });
+    }
+
     const token = crypto.randomBytes(32).toString('hex');
     const hashedToken = await bcrypt.hash(token, 10);
 
@@ -290,11 +511,56 @@ export class SecurityService {
         token: hashedToken,
         ipAddress,
         userAgent,
+        deviceType,
+        deviceId: options?.deviceId,
+        deviceName: options?.deviceName,
+        location: options?.location,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       },
     });
 
-    return { session, plainToken: token };
+    await this.logActivity({
+      userId,
+      activityType: ActivityType.LOGIN,
+      action: 'New session created',
+      resource: `session:${session.id}`,
+      ipAddress,
+      userAgent,
+      metadata: {
+        deviceType,
+        evictedSession: evictedSessionId,
+      },
+    });
+
+    // Emit notification events
+    const config = await this.getSessionLimitConfig();
+
+    if (config.notifyOnNewSession) {
+      this.eventEmitter.emit('session.created', {
+        userId,
+        sessionId: session.id,
+        ipAddress,
+        userAgent,
+        deviceType,
+        deviceName: options?.deviceName,
+        location: options?.location,
+        evictedSessionId,
+      });
+      this.logger.log(`New session notification emitted for user ${userId}`);
+    }
+
+    if (evictedSessionId && config.notifyOnEviction) {
+      this.eventEmitter.emit('session.evicted', {
+        userId,
+        evictedSessionId,
+        reason: 'session_limit_exceeded',
+        newSessionId: session.id,
+        newDeviceType: deviceType,
+      });
+      this.logger.log(`Session eviction notification emitted for user ${userId}, evicted session ${evictedSessionId}`);
+    }
+
+    return { session, plainToken: token, evictedSessionId };
   }
 
   async validateSession(token: string) {
@@ -325,16 +591,127 @@ export class SecurityService {
     throw new UnauthorizedException('Invalid session');
   }
 
-  async revokeSessions(userId: string, exceptSessionId?: string) {
-    await this.prisma.userSession.updateMany({
+  /**
+   * Revoke a specific session by ID (for remote logout)
+   */
+  async revokeSessionById(
+    userId: string,
+    sessionId: string,
+    reason: string = 'user_logout',
+  ): Promise<{ message: string; sessionId: string }> {
+    // Verify the session belongs to the user
+    const session = await this.prisma.userSession.findFirst({
       where: {
+        id: sessionId,
         userId,
-        id: exceptSessionId ? { not: exceptSessionId } : undefined,
+        isActive: true,
+        isRevoked: false,
       },
-      data: { isRevoked: true, isActive: false },
     });
 
-    return { message: 'Sessions revoked successfully' };
+    if (!session) {
+      throw new BadRequestException('Session not found or already revoked');
+    }
+
+    await this.prisma.userSession.update({
+      where: { id: sessionId },
+      data: {
+        isRevoked: true,
+        isActive: false,
+        revokedReason: reason,
+        revokedAt: new Date(),
+      },
+    });
+
+    await this.logActivity({
+      userId,
+      activityType: ActivityType.LOGOUT,
+      action: `Session revoked: ${reason}`,
+      resource: `session:${sessionId}`,
+      metadata: { reason, sessionId },
+    });
+
+    return { message: 'Session revoked successfully', sessionId };
+  }
+
+  /**
+   * Revoke all sessions except optionally the current one
+   */
+  async revokeSessions(
+    userId: string,
+    exceptSessionId?: string,
+    reason: string = 'user_logout_all',
+  ) {
+    const updateResult = await this.prisma.userSession.updateMany({
+      where: {
+        userId,
+        isActive: true,
+        isRevoked: false,
+        ...(exceptSessionId && { id: { not: exceptSessionId } }),
+      },
+      data: {
+        isRevoked: true,
+        isActive: false,
+        revokedReason: reason,
+        revokedAt: new Date(),
+      },
+    });
+
+    await this.logActivity({
+      userId,
+      activityType: ActivityType.LOGOUT,
+      action: exceptSessionId ? 'All other sessions revoked' : 'All sessions revoked',
+      metadata: {
+        reason,
+        sessionsRevoked: updateResult.count,
+        exceptSessionId,
+      },
+    });
+
+    return {
+      message: 'Sessions revoked successfully',
+      count: updateResult.count,
+    };
+  }
+
+  /**
+   * Update session settings (admin only)
+   */
+  async updateSessionSettings(
+    settings: Partial<SessionLimitConfig>,
+    organizationId?: string,
+  ) {
+    const existingSettings = await this.prisma.sessionSettings.findFirst({
+      where: organizationId ? { organizationId } : { organizationId: null },
+    });
+
+    if (existingSettings) {
+      return this.prisma.sessionSettings.update({
+        where: { id: existingSettings.id },
+        data: {
+          ...(settings.maxConcurrentSessions !== undefined && { maxConcurrentSessions: settings.maxConcurrentSessions }),
+          ...(settings.maxMobileSessions !== undefined && { maxMobileSessions: settings.maxMobileSessions }),
+          ...(settings.maxWebSessions !== undefined && { maxWebSessions: settings.maxWebSessions }),
+          ...(settings.enforcementMode !== undefined && { enforcementMode: settings.enforcementMode }),
+          ...(settings.idleTimeoutMinutes !== undefined && { idleTimeoutMinutes: settings.idleTimeoutMinutes }),
+          ...(settings.notifyOnNewSession !== undefined && { notifyOnNewSession: settings.notifyOnNewSession }),
+          ...(settings.notifyOnEviction !== undefined && { notifyOnEviction: settings.notifyOnEviction }),
+        },
+      });
+    }
+
+    return this.prisma.sessionSettings.create({
+      data: {
+        organizationId,
+        maxConcurrentSessions: settings.maxConcurrentSessions ?? DEFAULT_MAX_CONCURRENT_SESSIONS,
+        maxMobileSessions: settings.maxMobileSessions ?? DEFAULT_MAX_MOBILE_SESSIONS,
+        maxWebSessions: settings.maxWebSessions ?? DEFAULT_MAX_WEB_SESSIONS,
+        enforcementMode: settings.enforcementMode ?? DEFAULT_ENFORCEMENT_MODE,
+        idleTimeoutMinutes: settings.idleTimeoutMinutes ?? DEFAULT_IDLE_TIMEOUT_MINUTES,
+        notifyOnNewSession: settings.notifyOnNewSession ?? true,
+        notifyOnEviction: settings.notifyOnEviction ?? true,
+      },
+    });
   }
 
   // ==================== Brute Force Protection ====================

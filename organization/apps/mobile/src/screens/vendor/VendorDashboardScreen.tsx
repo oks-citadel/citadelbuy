@@ -14,11 +14,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useVendorStore } from '../../stores/vendor-store';
-import { VendorTabParamList } from '../../navigation/VendorNavigator';
+import { VendorTabParamList, VendorStackParamList } from '../../navigation/VendorNavigator';
 
 const { width } = Dimensions.get('window');
 
-type DashboardNavigationProp = NativeStackNavigationProp<VendorTabParamList, 'Dashboard'>;
+type DashboardNavigationProp = NativeStackNavigationProp<VendorStackParamList & VendorTabParamList>;
 
 export default function VendorDashboardScreen() {
   const navigation = useNavigation<DashboardNavigationProp>();

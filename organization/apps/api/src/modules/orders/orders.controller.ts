@@ -5,11 +5,10 @@ import {
   Body,
   Param,
   UseGuards,
-  UseInterceptors,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam, ApiHeader } from '@nestjs/swagger';
-import { IdempotencyInterceptor } from '@/common/interceptors/idempotency.interceptor';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { IdempotentOrder, Idempotent } from '@/common/idempotency';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -146,15 +145,10 @@ export class OrdersController {
   }
 
   @Post()
-  @UseInterceptors(IdempotencyInterceptor)
+  @IdempotentOrder()
   @ApiOperation({
     summary: 'Create a new order',
     description: 'Creates a new order with the provided items and shipping address. Validates inventory availability and calculates totals.',
-  })
-  @ApiHeader({
-    name: 'Idempotency-Key',
-    description: 'Unique key for idempotent request (prevents duplicate orders)',
-    required: false,
   })
   @ApiResponse({
     status: 201,
@@ -218,6 +212,7 @@ export class OrdersController {
   }
 
   @Post(':id/cancel')
+  @Idempotent({ scope: 'order-cancel', ttlSeconds: 3600 })
   @ApiOperation({
     summary: 'Cancel an order',
     description: 'Cancels an order if it has not been shipped yet. Only the order owner can cancel their order.',

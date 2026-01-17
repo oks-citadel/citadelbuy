@@ -16,6 +16,7 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '@/common/guards/optional-jwt-auth.guard';
 import { AuthRequest } from '@/common/types/auth-request.types';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { IdempotentPayment, Idempotent } from '@/common/idempotency';
 import {
   CreateCheckoutAddressDto,
   UpdateCheckoutAddressDto,
@@ -158,20 +159,24 @@ export class CheckoutController {
 
   @Post('express')
   @UseGuards(JwtAuthGuard)
+  @IdempotentPayment('express-checkout')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Express checkout - one-click purchase with saved details' })
   @ApiResponse({ status: 200, description: 'Order placed successfully' })
   @ApiResponse({ status: 400, description: 'Invalid request or payment failed' })
+  @ApiResponse({ status: 409, description: 'Request with this idempotency key is being processed' })
   async expressCheckout(@Request() req: AuthRequest, @Body() dto: ExpressCheckoutDto) {
     return this.checkoutService.expressCheckout(req.user.id, dto);
   }
 
   @Post('guest')
   @UseGuards(OptionalJwtAuthGuard, ThrottlerGuard)
+  @Idempotent({ scope: 'guest-checkout', required: false, ttlSeconds: 86400 })
   @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 guest checkouts per minute per IP
   @ApiOperation({ summary: 'Guest checkout - checkout without an account' })
   @ApiResponse({ status: 200, description: 'Guest order created, payment intent ready' })
   @ApiResponse({ status: 400, description: 'Invalid request' })
+  @ApiResponse({ status: 409, description: 'Request with this idempotency key is being processed' })
   @ApiResponse({ status: 429, description: 'Too many requests - rate limit exceeded' })
   async guestCheckout(@Request() req: AuthRequest, @Body() dto: GuestCheckoutDto) {
     // OptionalJwtAuthGuard allows both authenticated and guest users

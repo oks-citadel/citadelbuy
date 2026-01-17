@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SecurityController } from './security.controller';
 import { SecurityService } from './security.service';
+import { SessionManagerService } from './session-manager.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { ActivityType, UserRole } from '@prisma/client';
@@ -9,6 +10,7 @@ import { AuthRequest } from '@/common/types/auth-request.types';
 describe('SecurityController', () => {
   let controller: SecurityController;
   let securityService: SecurityService;
+  let sessionManagerService: SessionManagerService;
 
   const mockSecurityService = {
     getAuditLogs: jest.fn(),
@@ -20,6 +22,22 @@ describe('SecurityController', () => {
     revokeSessions: jest.fn(),
     requestDataExport: jest.fn(),
     getSecurityEvents: jest.fn(),
+    getUserActiveSessions: jest.fn(),
+    getActiveSessionCount: jest.fn(),
+    getSessionLimitConfig: jest.fn(),
+    revokeSessionById: jest.fn(),
+    updateSessionSettings: jest.fn(),
+  };
+
+  const mockSessionManagerService = {
+    getActiveSessionCount: jest.fn(),
+    getUserActiveSessions: jest.fn(),
+    terminateSession: jest.fn(),
+    terminateUserSession: jest.fn(),
+    terminateAllSessions: jest.fn(),
+    getSessionStats: jest.fn(),
+    getSessionSettings: jest.fn(),
+    updateSessionSettings: jest.fn(),
   };
 
   const mockAdminUser = {
@@ -42,6 +60,10 @@ describe('SecurityController', () => {
           provide: SecurityService,
           useValue: mockSecurityService,
         },
+        {
+          provide: SessionManagerService,
+          useValue: mockSessionManagerService,
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -60,6 +82,7 @@ describe('SecurityController', () => {
 
     controller = module.get<SecurityController>(SecurityController);
     securityService = module.get<SecurityService>(SecurityService);
+    sessionManagerService = module.get<SessionManagerService>(SessionManagerService);
 
     jest.clearAllMocks();
   });

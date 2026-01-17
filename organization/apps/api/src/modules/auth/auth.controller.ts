@@ -2,8 +2,10 @@ import { Throttle } from '@nestjs/throttler';
 import { Controller, Post, Body, UseGuards, Request, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
+import { MfaEnforcementService } from './mfa-enforcement.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { SkipMfaEnforcement } from './guards/mfa-enforcement.guard';
 import {
   ForgotPasswordDto,
   ResetPasswordDto,
@@ -13,6 +15,8 @@ import {
   RefreshTokenDto,
   MfaSetupDto,
   MfaVerifyDto,
+  MfaChallengeDto,
+  RevokeTrustedDeviceDto,
   VerifyEmailDto,
   ResendVerificationDto,
 } from './dto';
@@ -21,7 +25,10 @@ import { SocialProvider } from './dto/social-login.dto';
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private mfaEnforcementService: MfaEnforcementService,
+  ) {}
 
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('register')
@@ -309,6 +316,7 @@ export class AuthController {
 
   @Post('mfa/setup')
   @UseGuards(JwtAuthGuard)
+  @SkipMfaEnforcement() // Allow access even if MFA grace period expired - user needs to set up MFA
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Setup MFA for user account',
@@ -334,6 +342,7 @@ export class AuthController {
 
   @Post('mfa/verify')
   @UseGuards(JwtAuthGuard)
+  @SkipMfaEnforcement() // Allow access even if MFA grace period expired - user needs to complete setup
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -359,6 +368,7 @@ export class AuthController {
 
   @Get('mfa/status')
   @UseGuards(JwtAuthGuard)
+  @SkipMfaEnforcement() // Allow access to check status even if MFA grace period expired
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get MFA status for current user',
@@ -376,6 +386,34 @@ export class AuthController {
   })
   async getMfaStatus(@Request() req: any) {
     return this.authService.getMfaStatus(req.user.id);
+  }
+
+  @Get('mfa/enforcement-status')
+  @UseGuards(JwtAuthGuard)
+  @SkipMfaEnforcement() // Allow access to check enforcement status
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get MFA enforcement status for current user',
+    description: 'Returns detailed MFA enforcement status including whether MFA is required, grace period information, and required actions.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'MFA enforcement status retrieved',
+    schema: {
+      example: {
+        mfaRequired: true,
+        mfaEnabled: false,
+        withinGracePeriod: true,
+        gracePeriodDaysRemaining: 5,
+        canProceed: true,
+        actionRequired: 'setup_mfa',
+        message: 'Please set up MFA within 5 days. MFA is required for ADMIN accounts.',
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - invalid or missing token' })
+  async getMfaEnforcementStatus(@Request() req: any) {
+    return this.mfaEnforcementService.checkMfaStatus(req.user.id);
   }
 
   @Post('mfa/disable')
@@ -401,6 +439,168 @@ export class AuthController {
   @ApiBody({ type: MfaVerifyDto })
   async disableMfa(@Request() req: any, @Body() mfaVerifyDto: MfaVerifyDto) {
     return this.authService.disableMfa(req.user.id, mfaVerifyDto.code);
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post('mfa/challenge')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Verify MFA challenge during login',
+    description: 'Completes the MFA verification step after initial login. Returns full authentication tokens upon successful verification. Optionally registers the device as trusted for future logins.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'MFA verification successful - returns authentication tokens',
+    schema: {
+      example: {
+        user: {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          email: 'john.doe@example.com',
+          name: 'John Doe',
+          role: 'ADMIN',
+        },
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        refresh_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        trustedDevice: {
+          deviceId: 'a1b2c3d4e5f6g7h8i9j0',
+          expiresAt: '2024-02-15T10:00:00.000Z',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Invalid MFA code' })
+  @ApiResponse({ status: 400, description: 'MFA not enabled for this account' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 429, description: 'Too many MFA attempts' })
+  @ApiBody({ type: MfaChallengeDto })
+  async verifyMfaChallenge(@Body() mfaChallengeDto: MfaChallengeDto, @Request() req: any) {
+    const deviceInfo = {
+      deviceId: mfaChallengeDto.deviceId,
+      deviceName: mfaChallengeDto.deviceName,
+      userAgent: req.headers?.['user-agent'],
+      ipAddress: this.getClientIp(req),
+      platform: mfaChallengeDto.platform,
+    };
+
+    return this.authService.verifyMfaChallenge(
+      mfaChallengeDto.userId,
+      mfaChallengeDto.code,
+      deviceInfo,
+      mfaChallengeDto.trustDevice || false,
+    );
+  }
+
+  // ==================== Trusted Device Endpoints ====================
+
+  @Get('mfa/trusted-devices')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get list of trusted devices',
+    description: 'Returns all trusted devices for the authenticated user that can skip MFA verification.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of trusted devices',
+    schema: {
+      example: {
+        devices: [
+          {
+            id: '123e4567-e89b-12d3-a456-426614174000',
+            deviceId: 'a1b2c3d4e5f6g7h8i9j0',
+            deviceName: 'Chrome on MacBook Pro',
+            platform: 'web',
+            lastUsedAt: '2024-01-15T10:00:00.000Z',
+            expiresAt: '2024-02-15T10:00:00.000Z',
+            isActive: true,
+          },
+        ],
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - invalid or missing token' })
+  async getTrustedDevices(@Request() req: any) {
+    const devices = await this.authService.getTrustedDevices(req.user.id);
+    return { devices };
+  }
+
+  @Post('mfa/trusted-devices/revoke')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Revoke a trusted device',
+    description: 'Removes trust from a specific device. The device will require MFA verification on next login.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Device trust revoked successfully',
+    schema: {
+      example: {
+        message: 'Device trust revoked successfully',
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - invalid or missing token' })
+  @ApiResponse({ status: 404, description: 'Trusted device not found' })
+  @ApiBody({ type: RevokeTrustedDeviceDto })
+  async revokeTrustedDevice(@Request() req: any, @Body() revokeDto: RevokeTrustedDeviceDto) {
+    return this.authService.revokeTrustedDevice(
+      req.user.id,
+      revokeDto.deviceId,
+      revokeDto.reason,
+    );
+  }
+
+  @Post('mfa/trusted-devices/revoke-all')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Revoke all trusted devices',
+    description: 'Removes trust from all devices. All devices will require MFA verification on next login.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'All device trusts revoked successfully',
+    schema: {
+      example: {
+        message: 'All trusted devices revoked successfully',
+        count: 3,
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - invalid or missing token' })
+  async revokeAllTrustedDevices(@Request() req: any) {
+    return this.authService.revokeAllTrustedDevices(req.user.id, 'User requested revocation of all devices');
+  }
+
+  /**
+   * Extract client IP address from request
+   */
+  private getClientIp(request: any): string {
+    if (!request) {
+      return 'unknown';
+    }
+
+    const ipHeaders = [
+      'x-forwarded-for',
+      'x-real-ip',
+      'cf-connecting-ip',
+      'x-client-ip',
+    ];
+
+    for (const header of ipHeaders) {
+      const value = request.headers?.[header];
+      if (value) {
+        return value.split(',')[0].trim();
+      }
+    }
+
+    return request.connection?.remoteAddress ||
+           request.socket?.remoteAddress ||
+           request.ip ||
+           'unknown';
   }
 
   // ==================== Email Verification Endpoints ====================

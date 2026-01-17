@@ -1,10 +1,12 @@
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
+import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { SentryExceptionFilter } from './common/filters/sentry-exception.filter';
+import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor';
 import { validateStartupConfiguration } from './common/config/config-validation';
 import { CustomLoggerService } from './common/logger/logger.service';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
@@ -33,8 +35,14 @@ async function bootstrap() {
   // Determine if running in production environment
   const isProduction = process.env.NODE_ENV === 'production';
 
-  // Global exception filter with Sentry reporting
-  app.useGlobalFilters(new SentryExceptionFilter(configService));
+  // Global exception filters
+  // 1. HttpExceptionFilter - Comprehensive error handling with CORS headers, structured responses
+  // 2. SentryExceptionFilter - Error reporting to Sentry (for 5xx errors)
+  // Note: Filters are executed in reverse order, so HttpExceptionFilter runs last and handles the response
+  app.useGlobalFilters(
+    new SentryExceptionFilter(configService),
+    new HttpExceptionFilter(configService),
+  );
 
   // Security Headers Middleware (PCI DSS compliant)
   // This replaces the previous helmet configuration with more comprehensive security headers
@@ -42,42 +50,75 @@ async function bootstrap() {
   app.use((req: Request, res: Response, next: NextFunction) => securityHeadersMiddleware.use(req, res, next));
 
   // CORS Configuration with Production Hardening
-  // SECURITY: In production, CORS_ORIGIN environment variable is REQUIRED
+  // SECURITY: In production, CORS_ALLOWED_ORIGINS environment variable is REQUIRED
   // This validation was already performed in validateStartupConfiguration()
-  const corsOrigin = process.env.CORS_ORIGIN;
+  // Supports both CORS_ALLOWED_ORIGINS (preferred) and CORS_ORIGIN (legacy) for backward compatibility
+  const corsOrigins = process.env.CORS_ALLOWED_ORIGINS || process.env.CORS_ORIGIN;
 
   let allowedOrigins: string[];
 
   if (isProduction) {
-    // Production: Use strict CORS_ORIGIN from environment (validated at startup)
+    // Production: Use strict CORS_ALLOWED_ORIGINS from environment (validated at startup)
     // This should never be empty due to validateStartupConfiguration() checks
-    if (!corsOrigin) {
+    if (!corsOrigins) {
       throw new Error(
-        'CRITICAL: CORS_ORIGIN is required in production environment. ' +
+        'CRITICAL: CORS_ALLOWED_ORIGINS is required in production environment. ' +
         'This should have been caught by startup validation.'
       );
     }
 
     // Parse comma-separated origins and trim whitespace
-    allowedOrigins = corsOrigin.split(',').map(origin => origin.trim()).filter(Boolean);
+    allowedOrigins = corsOrigins.split(',').map(origin => origin.trim()).filter(Boolean);
 
-    logger.log('🔒 CORS Configuration (Production):');
+    logger.log('CORS Configuration (Production):');
     logger.log(`   Allowed Origins: ${allowedOrigins.join(', ')}`);
     logger.log(`   Credentials: enabled`);
     logger.log(`   HTTPS-only cookies: enabled`);
   } else {
     // Development: Allow localhost origins for testing
-    allowedOrigins = corsOrigin
-      ? corsOrigin.split(',').map(origin => origin.trim()).filter(Boolean)
-      : ['http://localhost:3000', 'http://localhost:3001'];
+    allowedOrigins = corsOrigins
+      ? corsOrigins.split(',').map(origin => origin.trim()).filter(Boolean)
+      : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:4200', 'http://127.0.0.1:3000'];
 
-    logger.log('🔧 CORS Configuration (Development):');
+    logger.log('CORS Configuration (Development):');
     logger.log(`   Allowed Origins: ${allowedOrigins.join(', ')}`);
   }
 
+  // CORS allowed headers - includes standard and custom headers for mobile/web clients
+  const corsAllowedHeaders = [
+    'Content-Type',
+    'Authorization',
+    'X-CSRF-Token',
+    'X-Requested-With',
+    'Accept',
+    'Accept-Language',
+    'Origin',
+    // Custom device/session tracking headers
+    'x-device-type',
+    'x-device-id',
+    'x-session-id',
+    // Additional common headers
+    'x-api-key',
+    'x-request-id',
+    'x-correlation-id',
+    'Cache-Control',
+    'Pragma',
+  ];
+
+  // CORS exposed headers - headers the client can access from the response
+  const corsExposedHeaders = [
+    'X-Total-Count',
+    'X-Page-Count',
+    'X-Request-Id',
+    'X-RateLimit-Limit',
+    'X-RateLimit-Remaining',
+    'X-RateLimit-Reset',
+    'Content-Disposition',
+  ];
+
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, Postman, curl)
+      // Allow requests with no origin (like mobile apps, Postman, curl, server-to-server)
       if (!origin) {
         return callback(null, true);
       }
@@ -89,7 +130,7 @@ async function bootstrap() {
 
       // In production, strictly reject unauthorized origins
       if (isProduction) {
-        logger.warn(`🚫 CORS blocked request from unauthorized origin: ${origin}`);
+        logger.warn(`CORS blocked request from unauthorized origin: ${origin}`);
         return callback(
           new Error(
             `Access denied: Origin '${origin}' is not allowed by CORS policy. ` +
@@ -99,14 +140,36 @@ async function bootstrap() {
       }
 
       // In development, log warning but allow (for debugging)
-      logger.warn(`⚠️  CORS: Unexpected origin in development: ${origin}`);
+      logger.warn(`CORS: Unexpected origin in development: ${origin}`);
       return callback(null, true);
     },
     credentials: true, // Allow cookies and authorization headers
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
-    exposedHeaders: ['X-Total-Count'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+    allowedHeaders: corsAllowedHeaders,
+    exposedHeaders: corsExposedHeaders,
     maxAge: 86400, // 24 hours - how long browsers can cache preflight requests
+    preflightContinue: false, // Pass the CORS preflight response to the next handler
+    optionsSuccessStatus: 204, // Return 204 for OPTIONS requests (some legacy browsers choke on 204)
+  });
+
+  // Explicit OPTIONS handler for all routes to ensure preflight requests succeed
+  // This catches any OPTIONS requests that might be blocked by other middleware
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (req.method === 'OPTIONS') {
+      // Set CORS headers explicitly for OPTIONS requests
+      const origin = req.headers.origin;
+      if (origin && (allowedOrigins.includes(origin) || !isProduction)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD');
+        res.setHeader('Access-Control-Allow-Headers', corsAllowedHeaders.join(', '));
+        res.setHeader('Access-Control-Expose-Headers', corsExposedHeaders.join(', '));
+        res.setHeader('Access-Control-Max-Age', '86400');
+      }
+      // Return 204 No Content for preflight requests
+      return res.status(204).end();
+    }
+    next();
   });
 
   // Compression
@@ -221,6 +284,18 @@ async function bootstrap() {
         enableImplicitConversion: true,
       },
     }),
+  );
+
+  // Global Interceptors
+  // 1. ClassSerializerInterceptor - Handles @Exclude() and @Transform() decorators from class-transformer
+  // 2. ResponseTransformInterceptor - Wraps all responses in standardized format
+  const reflector = app.get(Reflector);
+  app.useGlobalInterceptors(
+    new ClassSerializerInterceptor(reflector, {
+      excludeExtraneousValues: false, // Don't require @Expose() on every field
+      enableImplicitConversion: true,
+    }),
+    new ResponseTransformInterceptor(reflector),
   );
 
   // Swagger documentation (disabled in production for security)

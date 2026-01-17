@@ -68,7 +68,7 @@ export default function CheckoutScreen() {
       Alert.alert(
         'Order Placed!',
         'Your order has been placed successfully.',
-        [{ text: 'OK', onPress: () => navigation.navigate('Main') }]
+        [{ text: 'OK', onPress: () => navigation.navigate('Main', { screen: 'Home' }) }]
       );
     },
     onError: () => {

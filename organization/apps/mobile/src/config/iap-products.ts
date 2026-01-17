@@ -15,6 +15,9 @@ export interface IAPProduct {
 }
 
 export interface IAPSubscriptionProduct extends IAPProduct {
+  price?: number;
+  currency?: string;
+  features?: string[];
   type: 'subscription';
   interval: 'month' | 'year';
   trialPeriod?: {
@@ -24,6 +27,8 @@ export interface IAPSubscriptionProduct extends IAPProduct {
 }
 
 export interface IAPCreditPackage extends IAPProduct {
+  price?: number;
+  currency?: string;
   type: 'consumable';
   credits: number;
   bonus?: number;

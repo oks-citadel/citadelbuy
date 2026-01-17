@@ -10,6 +10,7 @@ import type {
   EnrichedProduct,
   PurchaseResult,
   SubscriptionStatus,
+  PurchaseState,
 } from '../types/iap.types';
 import type { SubscriptionPlan, CreditPackage } from '../services/billing';
 
@@ -17,32 +18,52 @@ import type { SubscriptionPlan, CreditPackage } from '../services/billing';
 
 /**
  * Hook to check if IAP is initialized and available
+ * Includes retry functionality for failed initialization
  */
 export function useIAPInitialization() {
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [isAvailable, setIsAvailable] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
+
+  const initialize = useCallback(async () => {
+    setIsInitializing(true);
+    setInitError(null);
+    try {
+      await billingService.initialize();
+      setIsInitialized(true);
+      setIsAvailable(billingService.isIAPAvailable());
+    } catch (error: any) {
+      console.error('Failed to initialize IAP:', error);
+      setIsInitialized(true); // Mark as initialized even if failed
+      setIsAvailable(false);
+      setInitError(error?.message || 'Failed to initialize in-app purchases');
+    } finally {
+      setIsInitializing(false);
+    }
+  }, []);
+
+  const retry = useCallback(async () => {
+    setIsInitialized(false);
+    setIsAvailable(false);
+    await initialize();
+  }, [initialize]);
 
   useEffect(() => {
-    const checkInitialization = async () => {
-      try {
-        await billingService.initialize();
-        setIsInitialized(true);
-        setIsAvailable(billingService.isIAPAvailable());
-      } catch (error) {
-        console.error('Failed to initialize IAP:', error);
-        setIsInitialized(true); // Mark as initialized even if failed
-        setIsAvailable(false);
-      }
-    };
-
-    checkInitialization();
+    initialize();
 
     return () => {
       billingService.disconnect();
     };
-  }, []);
+  }, [initialize]);
 
-  return { isInitialized, isAvailable };
+  return {
+    isInitialized,
+    isInitializing,
+    isAvailable,
+    initError,
+    retry,
+  };
 }
 
 // ==================== useIAPProducts ====================
@@ -85,17 +106,27 @@ export function useIAPProducts() {
 
 /**
  * Hook to handle purchase flow
+ * Includes support for deferred purchases (iOS "Ask to Buy")
  */
 export function usePurchase() {
   const [purchasing, setPurchasing] = useState(false);
   const [lastResult, setLastResult] = useState<PurchaseResult | null>(null);
+  const [deferredProductId, setDeferredProductId] = useState<string | null>(null);
 
   const purchaseSubscription = useCallback(
     async (plan: SubscriptionPlan, useNativeIAP: boolean = true): Promise<PurchaseResult> => {
       setPurchasing(true);
+      setDeferredProductId(null);
       try {
         const result = await billingService.purchaseSubscription(plan, useNativeIAP);
         setLastResult(result);
+
+        // Track deferred purchases
+        if (result.deferred) {
+          const productId = plan.appleProductId || plan.googleProductId || plan.id;
+          setDeferredProductId(productId);
+        }
+
         return result;
       } finally {
         setPurchasing(false);
@@ -107,9 +138,17 @@ export function usePurchase() {
   const purchaseCreditPackage = useCallback(
     async (pkg: CreditPackage, useNativeIAP: boolean = true): Promise<PurchaseResult> => {
       setPurchasing(true);
+      setDeferredProductId(null);
       try {
         const result = await billingService.purchaseCreditPackage(pkg, useNativeIAP);
         setLastResult(result);
+
+        // Track deferred purchases
+        if (result.deferred) {
+          const productId = pkg.appleProductId || pkg.googleProductId || pkg.id;
+          setDeferredProductId(productId);
+        }
+
         return result;
       } finally {
         setPurchasing(false);
@@ -120,11 +159,14 @@ export function usePurchase() {
 
   const clearLastResult = useCallback(() => {
     setLastResult(null);
+    setDeferredProductId(null);
   }, []);
 
   return {
     purchasing,
     lastResult,
+    deferredProductId,
+    isDeferred: lastResult?.deferred ?? false,
     purchaseSubscription,
     purchaseCreditPackage,
     clearLastResult,
@@ -245,7 +287,10 @@ export function useIAP() {
   return {
     // Initialization
     isInitialized: initialization.isInitialized,
+    isInitializing: initialization.isInitializing,
     isAvailable: initialization.isAvailable,
+    initError: initialization.initError,
+    retryInitialization: initialization.retry,
 
     // Products
     products: productsState.products,
@@ -256,6 +301,8 @@ export function useIAP() {
     // Purchase
     purchasing: purchaseState.purchasing,
     lastPurchaseResult: purchaseState.lastResult,
+    deferredProductId: purchaseState.deferredProductId,
+    isDeferred: purchaseState.isDeferred,
     purchaseSubscription: purchaseState.purchaseSubscription,
     purchaseCreditPackage: purchaseState.purchaseCreditPackage,
     clearLastPurchaseResult: purchaseState.clearLastResult,

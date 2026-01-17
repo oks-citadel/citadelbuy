@@ -150,7 +150,7 @@ export default function LoginScreen() {
               <View style={styles.dividerLine} />
             </View>
 
-            <View style={styles.socialButtons} accessibilityRole="group" accessibilityLabel="Social sign in options">
+            <View style={styles.socialButtons} accessibilityRole="none" accessibilityLabel="Social sign in options">
               <TouchableOpacity style={styles.socialButton} accessibilityLabel="Sign in with Google" accessibilityRole="button">
                 <Ionicons name="logo-google" size={24} color="#ea4335" accessibilityElementsHidden={true} />
               </TouchableOpacity>

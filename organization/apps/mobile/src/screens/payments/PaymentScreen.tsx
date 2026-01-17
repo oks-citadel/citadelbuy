@@ -165,7 +165,7 @@ export default function PaymentScreen() {
           [{ text: 'OK' }]
         );
       } else {
-        Alert.alert('Payment Failed', result.error || 'Unable to process payment');
+        Alert.alert('Payment Failed', result.error?.message || 'Unable to process payment');
       }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Payment failed');

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
+import { MfaEnforcementService } from './mfa-enforcement.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -26,6 +27,12 @@ describe('AuthController', () => {
     user: mockUser,
   };
 
+  const mockMfaEnforcementService = {
+    checkLoginMfaRequirements: jest.fn().mockResolvedValue({ mfaRequired: false, mfaConfigured: false, canLogin: true }),
+    checkMfaStatus: jest.fn().mockResolvedValue({ required: false, enabled: false }),
+    roleRequiresMfa: jest.fn().mockReturnValue(false),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -33,6 +40,10 @@ describe('AuthController', () => {
         {
           provide: AuthService,
           useValue: mockAuthService,
+        },
+        {
+          provide: MfaEnforcementService,
+          useValue: mockMfaEnforcementService,
         },
       ],
     })

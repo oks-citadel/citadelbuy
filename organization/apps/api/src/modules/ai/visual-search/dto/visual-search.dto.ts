@@ -121,10 +121,16 @@ export class SearchMetadata {
   processingTimeMs: number;
 
   @ApiProperty({ description: 'Search method used' })
-  searchMethod: 'perceptual_hash' | 'color_histogram' | 'cloud_vision' | 'combined';
+  searchMethod: 'perceptual_hash' | 'color_histogram' | 'cloud_vision' | 'combined' | 'google-cloud-vision' | 'aws-rekognition' | 'clarifai' | 'mock';
+
+  @ApiProperty({ description: 'Vision provider used' })
+  provider?: string;
 
   @ApiProperty({ description: 'Timestamp of the search' })
   processedAt: string;
+
+  @ApiPropertyOptional({ description: 'Image URL if searched by URL' })
+  imageUrl?: string;
 }
 
 export class ImageFeaturesDto {

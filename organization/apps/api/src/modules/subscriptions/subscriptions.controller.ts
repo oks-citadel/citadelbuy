@@ -7,13 +7,12 @@ import {
   Param,
   Delete,
   UseGuards,
-  UseInterceptors,
   Request,
   Query,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
-import { IdempotencyInterceptor } from '@/common/interceptors/idempotency.interceptor';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { IdempotentPayment, Idempotent } from '@/common/idempotency';
 import { SubscriptionsService } from './subscriptions.service';
 import { SubscriptionTierService } from './services/subscription-tier.service';
 import { CreateSubscriptionPlanDto } from './dto/create-subscription-plan.dto';
@@ -93,14 +92,9 @@ export class SubscriptionsController {
 
   @Post('subscribe')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(IdempotencyInterceptor)
+  @IdempotentPayment('subscriptions')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Subscribe to a plan' })
-  @ApiHeader({
-    name: 'Idempotency-Key',
-    description: 'Unique key for idempotent request (prevents duplicate subscriptions)',
-    required: false,
-  })
   @ApiResponse({ status: 201, description: 'Subscription created successfully' })
   @ApiResponse({ status: 409, description: 'Request with this idempotency key is being processed' })
   subscribe(@Request() req: AuthRequest, @Body() dto: SubscribeDto) {
@@ -127,15 +121,18 @@ export class SubscriptionsController {
 
   @Post(':id/cancel')
   @UseGuards(JwtAuthGuard)
+  @Idempotent({ scope: 'subscription-cancel', ttlSeconds: 3600 })
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cancel subscription' })
   @ApiResponse({ status: 200, description: 'Subscription cancelled successfully' })
+  @ApiResponse({ status: 409, description: 'Request with this idempotency key is being processed' })
   cancelSubscription(@Request() req: AuthRequest, @Param('id') id: string) {
     return this.subscriptionsService.cancelSubscription(req.user.id, id);
   }
 
   @Post(':id/reactivate')
   @UseGuards(JwtAuthGuard)
+  @Idempotent({ scope: 'subscription-reactivate', ttlSeconds: 3600 })
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Reactivate cancelled subscription' })
   @ApiResponse({ status: 200, description: 'Subscription reactivated successfully' })

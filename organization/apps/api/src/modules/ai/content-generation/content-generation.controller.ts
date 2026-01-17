@@ -145,4 +145,11 @@ export class ContentGenerationController {
   }) {
     return this.contentGenerationService.generateCategoryDescription(data);
   }
+
+  @Get('llm-status')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get LLM provider status and availability' })
+  getLLMStatus() {
+    return this.contentGenerationService.getLLMStatus();
+  }
 }

@@ -13,8 +13,8 @@ import { PricingEngineModule } from './pricing-engine/pricing-engine.module';
 import { RevenueOptimizationModule } from './revenue-optimization/revenue-optimization.module';
 import { SmartSearchModule } from './smart-search/smart-search.module';
 import { SubscriptionIntelligenceModule } from './subscription/subscription-intelligence.module';
-// VisualSearchModule disabled - requires TensorFlow dependencies
-// import { VisualSearchModule } from './visual-search/visual-search.module';
+// VisualSearchModule - Now uses external APIs instead of TensorFlow
+import { VisualSearchModule } from './visual-search/visual-search.module';
 
 @Module({
   imports: [
@@ -30,7 +30,7 @@ import { SubscriptionIntelligenceModule } from './subscription/subscription-inte
     RevenueOptimizationModule,
     SmartSearchModule,
     SubscriptionIntelligenceModule,
-    // VisualSearchModule - disabled
+    VisualSearchModule,
   ],
   exports: [
     ArTryonModule,
@@ -45,7 +45,7 @@ import { SubscriptionIntelligenceModule } from './subscription/subscription-inte
     RevenueOptimizationModule,
     SmartSearchModule,
     SubscriptionIntelligenceModule,
-    // VisualSearchModule - disabled
+    VisualSearchModule,
   ],
 })
 export class AiModule {}

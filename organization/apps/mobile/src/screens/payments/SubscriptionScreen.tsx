@@ -86,7 +86,7 @@ export default function SubscriptionScreen() {
 
     Alert.alert(
       'Subscribe to ' + plan.name,
-      `You will be charged ${formatCurrency(isYearly ? plan.price * 10 : plan.price, plan.currency)} ${isYearly ? 'per year' : 'per month'}.`,
+      `You will be charged ${formatCurrency(isYearly ? (plan.price ?? 0) * 10 : plan.price ?? 0, plan.currency ?? "USD")} ${isYearly ? 'per year' : 'per month'}.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -99,7 +99,7 @@ export default function SubscriptionScreen() {
                 Alert.alert('Success', 'Subscription activated!');
                 await loadData();
               } else {
-                Alert.alert('Failed', result.error || 'Unable to process subscription');
+                Alert.alert('Failed', result.error?.message || 'Unable to process subscription');
               }
             } catch (error: any) {
               Alert.alert('Error', error.message || 'Subscription failed');
@@ -243,7 +243,7 @@ export default function SubscriptionScreen() {
         {/* Plans */}
         {plans.map((plan) => {
           const isCurrentPlan = currentSubscription?.planId === plan.id;
-          const price = isYearly ? plan.price * 10 : plan.price;
+          const price = isYearly ? (plan.price ?? 0) * 10 : (plan.price ?? 0);
           const features = PLAN_FEATURES[plan.id.toLowerCase()] || plan.features;
 
           return (
@@ -266,7 +266,7 @@ export default function SubscriptionScreen() {
 
               <View style={styles.priceContainer}>
                 <Text style={styles.price}>
-                  {formatCurrency(price, plan.currency)}
+                  {formatCurrency(price, plan.currency ?? 'USD')}
                 </Text>
                 <Text style={styles.pricePeriod}>/{isYearly ? 'year' : 'month'}</Text>
               </View>

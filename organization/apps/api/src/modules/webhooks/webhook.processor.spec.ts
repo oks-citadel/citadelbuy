@@ -514,7 +514,6 @@ describe('WebhookProcessor', () => {
 
       expect(loggerSpy).toHaveBeenCalledWith(
         expect.stringContaining('attempt 5'),
-        expect.any(String),
       );
     });
   });

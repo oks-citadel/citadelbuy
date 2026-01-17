@@ -102,9 +102,18 @@ export class EnvironmentVariables {
   // ==================== CORS ====================
 
   /**
-   * CORS Allowed Origins
+   * CORS Allowed Origins (preferred)
    * CRITICAL: Required in production. Comma-separated list of allowed origins.
-   * Example: https://broxiva.com,https://www.broxiva.com
+   * Example: https://broxiva.com,https://www.broxiva.com,https://app.broxiva.com
+   */
+  @IsOptional()
+  @IsString()
+  CORS_ALLOWED_ORIGINS?: string;
+
+  /**
+   * CORS Allowed Origins (legacy - for backward compatibility)
+   * Use CORS_ALLOWED_ORIGINS instead for new deployments
+   * @deprecated Use CORS_ALLOWED_ORIGINS instead
    */
   @IsOptional()
   @IsString()
@@ -209,6 +218,192 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsString()
   SENTRY_DSN?: string;
+
+  // ==================== LLM PROVIDERS ====================
+
+  /**
+   * OpenAI API Key
+   * Required for GPT-4 content generation
+   * Get from: https://platform.openai.com/api-keys
+   */
+  @IsOptional()
+  @IsString()
+  OPENAI_API_KEY?: string;
+
+  /**
+   * OpenAI Organization ID (optional)
+   */
+  @IsOptional()
+  @IsString()
+  OPENAI_ORGANIZATION?: string;
+
+  /**
+   * OpenAI Model to use
+   * Default: gpt-4-turbo-preview
+   */
+  @IsOptional()
+  @IsString()
+  OPENAI_MODEL?: string;
+
+  /**
+   * Anthropic API Key
+   * Required for Claude content generation
+   * Get from: https://console.anthropic.com/
+   */
+  @IsOptional()
+  @IsString()
+  ANTHROPIC_API_KEY?: string;
+
+  /**
+   * Anthropic Model to use
+   * Default: claude-3-5-sonnet-20241022
+   */
+  @IsOptional()
+  @IsString()
+  ANTHROPIC_MODEL?: string;
+
+  /**
+   * Primary LLM Provider
+   * Options: openai, anthropic
+   * Default: openai
+   */
+  @IsOptional()
+  @IsIn(['openai', 'anthropic'])
+  LLM_PRIMARY_PROVIDER?: 'openai' | 'anthropic';
+
+  /**
+   * Fallback LLM Provider
+   * Used if primary provider fails
+   * Options: openai, anthropic
+   */
+  @IsOptional()
+  @IsIn(['openai', 'anthropic'])
+  LLM_FALLBACK_PROVIDER?: 'openai' | 'anthropic';
+
+  /**
+   * Enable template fallback when LLM fails
+   * Default: true
+   */
+  @IsOptional()
+  @IsString()
+  LLM_ENABLE_TEMPLATE_FALLBACK?: string;
+
+  // ==================== RATE LIMITING ====================
+
+  /**
+   * Default rate limit time window (in seconds)
+   * Default: 60 (1 minute)
+   */
+  @IsOptional()
+  @IsString()
+  THROTTLE_TTL?: string;
+
+  /**
+   * Default rate limit (requests per TTL window)
+   * Default: 100
+   */
+  @IsOptional()
+  @IsString()
+  THROTTLE_LIMIT?: string;
+
+  /**
+   * Rate limit TTL for anonymous users (in seconds)
+   * Default: 60
+   */
+  @IsOptional()
+  @IsString()
+  THROTTLE_ANONYMOUS_TTL?: string;
+
+  /**
+   * Rate limit for anonymous users
+   * Default: 30
+   */
+  @IsOptional()
+  @IsString()
+  THROTTLE_ANONYMOUS_LIMIT?: string;
+
+  /**
+   * Rate limit TTL for auth endpoints (in seconds)
+   * Default: 60
+   */
+  @IsOptional()
+  @IsString()
+  THROTTLE_AUTH_TTL?: string;
+
+  /**
+   * Rate limit for auth endpoints (login, register, etc.)
+   * Default: 10
+   */
+  @IsOptional()
+  @IsString()
+  THROTTLE_AUTH_LIMIT?: string;
+
+  /**
+   * Rate limit TTL for webhook endpoints (in seconds)
+   * Default: 60
+   */
+  @IsOptional()
+  @IsString()
+  THROTTLE_WEBHOOK_TTL?: string;
+
+  /**
+   * Rate limit for webhook endpoints
+   * Default: 100
+   */
+  @IsOptional()
+  @IsString()
+  THROTTLE_WEBHOOK_LIMIT?: string;
+
+  /**
+   * Rate limit TTL for AI endpoints (in seconds)
+   * Default: 60
+   */
+  @IsOptional()
+  @IsString()
+  THROTTLE_AI_TTL?: string;
+
+  /**
+   * Rate limit for AI endpoints (content generation, visual search, etc.)
+   * Default: 5 for anonymous, varies by plan for authenticated
+   */
+  @IsOptional()
+  @IsString()
+  THROTTLE_AI_LIMIT?: string;
+
+  // ==================== MFA ENFORCEMENT ====================
+
+  /**
+   * Roles that require mandatory MFA (comma-separated)
+   * Default: ADMIN,VENDOR
+   * Example: ADMIN,VENDOR,SUPPORT
+   */
+  @IsOptional()
+  @IsString()
+  MFA_REQUIRED_ROLES?: string;
+
+  /**
+   * Grace period in days for new users to set up MFA
+   * Default: 7
+   */
+  @IsOptional()
+  @IsString()
+  MFA_GRACE_PERIOD_DAYS?: string;
+
+  /**
+   * Number of days to remember trusted devices
+   * Default: 30
+   */
+  @IsOptional()
+  @IsString()
+  MFA_TRUSTED_DEVICE_DAYS?: string;
+
+  /**
+   * Enable trusted device feature (remember this device)
+   * Default: true
+   */
+  @IsOptional()
+  @IsString()
+  MFA_ENABLE_TRUSTED_DEVICES?: string;
 }
 
 /**
@@ -258,25 +453,35 @@ export function validate(config: Record<string, unknown>) {
 function performProductionValidation(config: EnvironmentVariables): void {
   const errors: string[] = [];
 
-  // 1. CORS Origin validation
-  if (!config.CORS_ORIGIN || config.CORS_ORIGIN.trim() === '') {
+  // 1. CORS Origin validation - supports both CORS_ALLOWED_ORIGINS (preferred) and CORS_ORIGIN (legacy)
+  const corsOrigins = config.CORS_ALLOWED_ORIGINS || config.CORS_ORIGIN;
+  if (!corsOrigins || corsOrigins.trim() === '') {
     errors.push(
-      '❌ CORS_ORIGIN is required in production\n' +
+      '❌ CORS_ALLOWED_ORIGINS is required in production\n' +
       '   Set it to a comma-separated list of allowed origins.\n' +
-      '   Example: CORS_ORIGIN=https://broxiva.com,https://www.broxiva.com'
+      '   Example: CORS_ALLOWED_ORIGINS=https://broxiva.com,https://www.broxiva.com,https://app.broxiva.com\n' +
+      '   Note: CORS_ORIGIN is also supported for backward compatibility.'
     );
   } else {
     // Validate each CORS origin is HTTPS in production
-    const origins = config.CORS_ORIGIN.split(',').map(o => o.trim());
+    const origins = corsOrigins.split(',').map(o => o.trim());
     const invalidOrigins = origins.filter(origin => {
       return !origin.startsWith('https://') && origin !== 'http://localhost:3000';
     });
 
     if (invalidOrigins.length > 0) {
       errors.push(
-        `❌ CORS_ORIGIN must use HTTPS in production\n` +
+        `❌ CORS_ALLOWED_ORIGINS must use HTTPS in production\n` +
         `   Invalid origins: ${invalidOrigins.join(', ')}\n` +
         `   All production origins must start with https://`
+      );
+    }
+
+    // Log deprecation warning if using legacy CORS_ORIGIN
+    if (config.CORS_ORIGIN && !config.CORS_ALLOWED_ORIGINS) {
+      console.warn(
+        '⚠️  DEPRECATION WARNING: CORS_ORIGIN is deprecated.\n' +
+        '   Please migrate to CORS_ALLOWED_ORIGINS for future compatibility.'
       );
     }
   }

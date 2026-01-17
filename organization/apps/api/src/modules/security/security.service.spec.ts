@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SecurityService } from './security.service';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { ActivityType } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
@@ -19,6 +20,11 @@ const mockRandomBytes = jest.fn();
 describe('SecurityService', () => {
   let service: SecurityService;
   let prismaService: PrismaService;
+  let eventEmitter: EventEmitter2;
+
+  const mockEventEmitter = {
+    emit: jest.fn(),
+  };
 
   const mockPrismaService = {
     auditLog: {
@@ -40,8 +46,10 @@ describe('SecurityService', () => {
     userSession: {
       create: jest.fn(),
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       update: jest.fn(),
       updateMany: jest.fn(),
+      count: jest.fn(),
     },
     loginAttempt: {
       create: jest.fn(),
@@ -75,6 +83,9 @@ describe('SecurityService', () => {
     cart: {
       findMany: jest.fn(),
     },
+    sessionSettings: {
+      findFirst: jest.fn().mockResolvedValue(null),
+    },
   };
 
   beforeEach(async () => {
@@ -88,11 +99,16 @@ describe('SecurityService', () => {
           provide: PrismaService,
           useValue: mockPrismaService,
         },
+        {
+          provide: EventEmitter2,
+          useValue: mockEventEmitter,
+        },
       ],
     }).compile();
 
     service = module.get<SecurityService>(SecurityService);
     prismaService = module.get<PrismaService>(PrismaService);
+    eventEmitter = module.get<EventEmitter2>(EventEmitter2);
 
     jest.clearAllMocks();
     // Re-apply the randomBytes mock after clearAllMocks
@@ -705,6 +721,13 @@ describe('SecurityService', () => {
   // ==================== Session Management ====================
 
   describe('createSession', () => {
+    beforeEach(() => {
+      // Mock session limit config - no limits by default
+      mockPrismaService.sessionSettings.findFirst.mockResolvedValue(null);
+      mockPrismaService.userSession.count.mockResolvedValue(0);
+      mockPrismaService.auditLog.create.mockResolvedValue({});
+    });
+
     it('should create a new session', async () => {
       const mockToken = 'sessionToken123';
       mockRandomBytes.mockReturnValue({
@@ -810,31 +833,42 @@ describe('SecurityService', () => {
   describe('revokeSessions', () => {
     it('should revoke all sessions for a user', async () => {
       mockPrismaService.userSession.updateMany.mockResolvedValue({ count: 3 });
+      mockPrismaService.auditLog.create.mockResolvedValue({});
 
       const result = await service.revokeSessions('user-123');
 
-      expect(result).toEqual({ message: 'Sessions revoked successfully' });
-      expect(mockPrismaService.userSession.updateMany).toHaveBeenCalledWith({
-        where: {
-          userId: 'user-123',
-          id: undefined,
-        },
-        data: { isRevoked: true, isActive: false },
-      });
+      expect(result.message).toEqual('Sessions revoked successfully');
+      expect(mockPrismaService.userSession.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: 'user-123',
+          }),
+          data: expect.objectContaining({
+            isRevoked: true,
+            isActive: false,
+          }),
+        })
+      );
     });
 
     it('should revoke sessions except current session', async () => {
       mockPrismaService.userSession.updateMany.mockResolvedValue({ count: 2 });
+      mockPrismaService.auditLog.create.mockResolvedValue({});
 
       await service.revokeSessions('user-123', 'current-session-id');
 
-      expect(mockPrismaService.userSession.updateMany).toHaveBeenCalledWith({
-        where: {
-          userId: 'user-123',
-          id: { not: 'current-session-id' },
-        },
-        data: { isRevoked: true, isActive: false },
-      });
+      expect(mockPrismaService.userSession.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: 'user-123',
+            id: { not: 'current-session-id' },
+          }),
+          data: expect.objectContaining({
+            isRevoked: true,
+            isActive: false,
+          }),
+        })
+      );
     });
   });
 

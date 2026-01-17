@@ -1,13 +1,15 @@
-# Broxiva Azure Infrastructure Architecture
+# Broxiva Infrastructure Architecture
 
 ## Document Information
 
 **Project:** Broxiva E-commerce Platform
 **Environment:** Multi-Environment (Development, Staging, Production)
-**Cloud Provider:** Microsoft Azure
+**Cloud Provider:** AWS (Primary) with Azure (Secondary) - Hybrid Cloud Architecture
 **Infrastructure as Code:** Terraform 1.5+
-**Last Updated:** December 13, 2025
+**Last Updated:** January 17, 2026
 **Status:** Production Ready
+
+> **Note:** This document focuses on Azure infrastructure. For AWS-specific deployments, see the `infrastructure/terraform/environments/aws-prod/` and `infrastructure/terraform/environments/aws-staging/` directories. AWS is used for messaging services (SES, SNS, SQS) across all deployments.
 
 ---
 

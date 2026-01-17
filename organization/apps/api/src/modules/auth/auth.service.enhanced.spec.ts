@@ -10,6 +10,7 @@ import { EmailService } from '../email/email.service';
 import { ServerTrackingService } from '../tracking/server-tracking.service';
 import { AccountLockoutService } from './account-lockout.service';
 import { TokenBlacklistService } from './token-blacklist.service';
+import { MfaEnforcementService } from './mfa-enforcement.service';
 
 jest.mock('bcryptjs');
 
@@ -89,6 +90,14 @@ describe('AuthService - Enhanced Tests', () => {
     invalidateAllUserTokens: jest.fn().mockResolvedValue(true),
   };
 
+  const mockMfaEnforcementService = {
+    checkLoginMfaRequirements: jest.fn().mockResolvedValue({ mfaRequired: false, mfaConfigured: false, canLogin: true, message: null }),
+    checkMfaStatus: jest.fn().mockResolvedValue({ required: false, enabled: false, verified: false }),
+    roleRequiresMfa: jest.fn().mockReturnValue(false),
+    isMfaRequired: jest.fn().mockResolvedValue(false),
+    getMfaStatus: jest.fn().mockResolvedValue({ required: false, enabled: false }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -125,6 +134,10 @@ describe('AuthService - Enhanced Tests', () => {
           provide: TokenBlacklistService,
           useValue: mockTokenBlacklistService,
         },
+        {
+          provide: MfaEnforcementService,
+          useValue: mockMfaEnforcementService,
+        },
       ],
     }).compile();
 
@@ -153,6 +166,9 @@ describe('AuthService - Enhanced Tests', () => {
     mockTokenBlacklistService.invalidateAllUserTokens.mockResolvedValue(true);
     mockTrackingService.isEnabled.mockReturnValue(false);
     mockTrackingService.trackRegistration.mockResolvedValue(undefined);
+    mockMfaEnforcementService.checkLoginMfaRequirements.mockResolvedValue({ mfaRequired: false, mfaConfigured: false, canLogin: true, message: null });
+    mockMfaEnforcementService.checkMfaStatus.mockResolvedValue({ required: false, enabled: false, verified: false });
+    mockMfaEnforcementService.roleRequiresMfa.mockReturnValue(false);
     mockConfigService.get.mockImplementation((key: string) => {
       const config: Record<string, any> = {
         JWT_SECRET: 'test-secret',

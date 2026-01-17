@@ -50,6 +50,7 @@ export type AccountStackParamList = {
   Notifications: undefined;
   MyReviews: undefined;
   ProfileEdit: undefined;
+  SessionManagement: undefined;
 };
 
 // Screen Props Types

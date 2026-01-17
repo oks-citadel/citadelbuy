@@ -109,7 +109,7 @@ The following must be configured before production deployment:
 | Categories | WORKING | Hierarchical |
 | Search (Basic) | WORKING | Database queries |
 | Search (AI Semantic) | PLACEHOLDER | No embeddings |
-| Visual Search | PLACEHOLDER | No ML models |
+| Visual Search | WORKING | Google Vision, AWS Rekognition, Clarifai |
 | Voice Search | WORKING | Web Speech API |
 | Product Reviews | WORKING | Rating + comments |
 | Inventory Tracking | PARTIAL | No reservation on order |
@@ -184,7 +184,7 @@ The following must be configured before production deployment:
 | Demand Forecasting | PLACEHOLDER | Simulated data |
 | Content Generation | PLACEHOLDER | Template-based |
 | AR/Virtual Try-On | NOT IMPLEMENTED | Stub only |
-| Visual Search | NOT IMPLEMENTED | No models |
+| Visual Search | WORKING | Multi-provider ML integration |
 
 ### 8. NOTIFICATIONS
 

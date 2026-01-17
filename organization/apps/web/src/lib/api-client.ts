@@ -1,9 +1,35 @@
 /**
  * API Client - Handles all HTTP communication with the backend
  * Implements authentication, error handling, and request/response interceptors
+ *
+ * This module provides both axios-based (legacy) and fetch-based (enhanced) API clients.
+ * The enhanced fetch client provides:
+ * - Better network error diagnostics for "Failed to fetch" errors
+ * - AbortController-based timeouts
+ * - CORS error detection
+ * - Automatic retry with exponential backoff
+ * - Comprehensive error categorization
+ *
+ * For new code, consider using fetchClient from './fetch-client' for better error handling.
  */
 
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
+
+// Re-export enhanced fetch client and network error utilities
+export {
+  fetchClient,
+  EnhancedFetchClient,
+  NetworkError,
+  NetworkErrorCategory,
+  NetworkErrorMessages,
+  NetworkErrorDescriptions,
+  isNetworkError,
+  isRetryableError,
+  isOnline,
+} from './fetch-client';
+
+// Import for internal use
+import { NetworkError, NetworkErrorCategory, NetworkErrorMessages } from './fetch-client';
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
@@ -172,6 +198,7 @@ const createApiClient = (): AxiosInstance => {
         }
       }
 
+      // Enhanced error handling with network error categorization
       const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
       return Promise.reject(new Error(errorMessage));
     }
@@ -181,6 +208,94 @@ const createApiClient = (): AxiosInstance => {
 };
 
 export const apiClient = createApiClient();
+
+/**
+ * Helper to get user-friendly error message from any error
+ */
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof NetworkError) {
+    return error.userMessage;
+  }
+
+  if (axios.isAxiosError(error)) {
+    // Handle Axios errors with response
+    if (error.response?.data?.message) {
+      return error.response.data.message;
+    }
+    if (error.response?.status === 401) {
+      return NetworkErrorMessages[NetworkErrorCategory.AUTH_ERROR];
+    }
+    if (error.response?.status === 403) {
+      return NetworkErrorMessages[NetworkErrorCategory.FORBIDDEN_ERROR];
+    }
+    if (error.response?.status === 404) {
+      return NetworkErrorMessages[NetworkErrorCategory.NOT_FOUND_ERROR];
+    }
+    if (error.response?.status === 429) {
+      return NetworkErrorMessages[NetworkErrorCategory.RATE_LIMITED];
+    }
+    if (error.response && error.response.status >= 500) {
+      return NetworkErrorMessages[NetworkErrorCategory.SERVER_ERROR];
+    }
+
+    // Network errors without response (Failed to fetch)
+    if (!error.response) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes('timeout') || error.code === 'ECONNABORTED') {
+        return NetworkErrorMessages[NetworkErrorCategory.TIMEOUT];
+      }
+      if (msg.includes('cors') || msg.includes('cross-origin')) {
+        return NetworkErrorMessages[NetworkErrorCategory.CORS_ERROR];
+      }
+      if (msg.includes('network') || msg.includes('failed to fetch')) {
+        // Check browser online status
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          return NetworkErrorMessages[NetworkErrorCategory.NO_CONNECTIVITY];
+        }
+        return NetworkErrorMessages[NetworkErrorCategory.CONNECTION_REFUSED];
+      }
+    }
+  }
+
+  if (error instanceof Error) {
+    // Check for common fetch error patterns
+    const msg = error.message.toLowerCase();
+    if (msg.includes('failed to fetch')) {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        return NetworkErrorMessages[NetworkErrorCategory.NO_CONNECTIVITY];
+      }
+      return 'Unable to reach the server. Please check your connection and try again.';
+    }
+    return error.message;
+  }
+
+  return NetworkErrorMessages[NetworkErrorCategory.UNKNOWN];
+}
+
+/**
+ * Check if error is a network connectivity issue
+ */
+export function isNetworkConnectivityError(error: unknown): boolean {
+  if (error instanceof NetworkError) {
+    return [
+      NetworkErrorCategory.NO_CONNECTIVITY,
+      NetworkErrorCategory.DNS_FAILURE,
+      NetworkErrorCategory.CONNECTION_REFUSED,
+      NetworkErrorCategory.TIMEOUT,
+    ].includes(error.category);
+  }
+
+  if (axios.isAxiosError(error) && !error.response) {
+    return true;
+  }
+
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
+    return msg.includes('failed to fetch') || msg.includes('network');
+  }
+
+  return false;
+}
 
 // ============================================
 // API Endpoints

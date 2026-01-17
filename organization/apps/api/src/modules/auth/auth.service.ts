@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException, NotFoundException, Logger, NotImplementedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, NotFoundException, Logger, NotImplementedException, Inject, forwardRef } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -6,13 +6,17 @@ import * as crypto from 'crypto';
 import * as jwt from 'jsonwebtoken';
 import * as jwksClient from 'jwks-rsa';
 import { OAuth2Client } from 'google-auth-library';
+import { DevicePlatform } from '@prisma/client';
 import { UsersService } from '../users/users.service';
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ServerTrackingService } from '../tracking/server-tracking.service';
+import { SessionManagerService } from '../security/session-manager.service';
 import { SocialProvider, SocialLoginDto } from './dto/social-login.dto';
 import { AccountLockoutService } from './account-lockout.service';
 import { TokenBlacklistService } from './token-blacklist.service';
+import { MfaEnforcementService } from './mfa-enforcement.service';
+import { MFA_ENFORCEMENT } from '../../common/constants';
 
 interface SocialUserProfile {
   email: string;
@@ -45,6 +49,9 @@ export class AuthService {
     private serverTrackingService: ServerTrackingService,
     private accountLockoutService: AccountLockoutService,
     private tokenBlacklistService: TokenBlacklistService,
+    private mfaEnforcementService: MfaEnforcementService,
+    @Inject(forwardRef(() => SessionManagerService))
+    private sessionManagerService: SessionManagerService,
   ) {
     // Initialize Google OAuth2 client for token verification
     const googleClientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
@@ -233,6 +240,7 @@ export class AuthService {
   async login(user: any, request?: any) {
     // Log successful login after previous failures if any
     const ipAddress = this.getClientIp(request);
+    const userAgent = request?.headers?.['user-agent'];
     const status = await this.accountLockoutService.getLockoutStatus(user.email);
 
     if (status.attempts > 0) {
@@ -241,10 +249,54 @@ export class AuthService {
       );
     }
 
+    // Check MFA enforcement requirements
+    const mfaCheck = await this.mfaEnforcementService.checkLoginMfaRequirements(
+      user.id,
+      user.role,
+      user.createdAt,
+    );
+
+    // If grace period has expired and MFA not set up, block login
+    if (!mfaCheck.canLogin) {
+      this.logger.warn(`Login blocked for user ${user.id} - MFA grace period expired`);
+      throw new UnauthorizedException({
+        message: mfaCheck.message,
+        errorCode: mfaCheck.errorCode,
+        mfaRequired: true,
+        requiresMfaSetup: true,
+        gracePeriodExpired: true,
+      });
+    }
+
+    // Determine device type from request headers or body
+    const deviceType = this.detectDeviceType(request);
+    const deviceId = request?.body?.deviceId || request?.headers?.['x-device-id'];
+    const deviceName = request?.body?.deviceName || request?.headers?.['x-device-name'];
+
+    // Enforce session limits and create a new session
+    let sessionInfo: { session: any; plainToken: string; evictedSessionId: string | null } | null = null;
+    try {
+      sessionInfo = await this.sessionManagerService.createSession(user.id, {
+        ipAddress,
+        userAgent,
+        deviceType,
+        deviceId,
+        deviceName,
+      });
+    } catch (error) {
+      // If session limit is reached in 'block' mode, propagate the error
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      // For other errors, log and continue without session management
+      this.logger.error(`Failed to create session for user ${user.id}:`, error);
+    }
+
     const payload = { sub: user.id, email: user.email, role: user.role };
     const refreshPayload = { sub: user.id, type: 'refresh' };
 
-    return {
+    // Build the response with MFA status information
+    const response: any = {
       user,
       access_token: this.generateToken(payload),
       refresh_token: this.generateToken(refreshPayload, {
@@ -252,6 +304,84 @@ export class AuthService {
         expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '30d',
       }),
     };
+
+    // Add session info to response if created
+    if (sessionInfo) {
+      response.sessionId = sessionInfo.session.id;
+      response.sessionToken = sessionInfo.plainToken;
+      if (sessionInfo.evictedSessionId) {
+        response.evictedSessionId = sessionInfo.evictedSessionId;
+        response.sessionEvicted = true;
+        this.logger.log(`Session ${sessionInfo.evictedSessionId} evicted for user ${user.id} due to session limit`);
+      }
+    }
+
+    // Add MFA status information to the response
+    if (mfaCheck.requiresMfaVerification) {
+      // User has MFA enabled - they need to verify with TOTP code
+      response.mfaRequired = true;
+      response.requiresMfaVerification = true;
+      response.message = mfaCheck.message;
+    } else if (mfaCheck.requiresMfaSetup) {
+      // User needs to set up MFA (within grace period)
+      const mfaStatus = await this.mfaEnforcementService.checkMfaStatus(user.id);
+      response.mfaRequired = true;
+      response.requiresMfaSetup = true;
+      response.mfaGracePeriodDaysRemaining = mfaStatus.gracePeriodDaysRemaining;
+      response.mfaMessage = mfaStatus.message;
+    }
+
+    return response;
+  }
+
+  /**
+   * Detect device type from request headers or user agent
+   * Supports: IOS, ANDROID, WEB, DESKTOP
+   */
+  private detectDeviceType(request?: any): DevicePlatform {
+    if (!request) {
+      return DevicePlatform.WEB;
+    }
+
+    // Check explicit device type header
+    const explicitType = request.headers?.['x-device-type']?.toUpperCase();
+    if (explicitType === 'IOS') return DevicePlatform.IOS;
+    if (explicitType === 'ANDROID') return DevicePlatform.ANDROID;
+    if (explicitType === 'WEB') return DevicePlatform.WEB;
+    if (explicitType === 'DESKTOP') return DevicePlatform.DESKTOP;
+
+    // Check body for device type (mobile apps may send this)
+    const bodyDeviceType = request.body?.deviceType?.toUpperCase();
+    if (bodyDeviceType === 'IOS') return DevicePlatform.IOS;
+    if (bodyDeviceType === 'ANDROID') return DevicePlatform.ANDROID;
+    if (bodyDeviceType === 'DESKTOP') return DevicePlatform.DESKTOP;
+
+    // Infer from user agent
+    const userAgent = request.headers?.['user-agent']?.toLowerCase() || '';
+
+    // Check for mobile app specific identifiers first
+    if (userAgent.includes('broxiva-ios') || userAgent.includes('darwin') && userAgent.includes('mobile')) {
+      return DevicePlatform.IOS;
+    }
+    if (userAgent.includes('broxiva-android') || userAgent.includes('android') && userAgent.includes('mobile')) {
+      return DevicePlatform.ANDROID;
+    }
+
+    // Check for desktop app specific identifiers
+    if (userAgent.includes('broxiva-desktop') || userAgent.includes('electron')) {
+      return DevicePlatform.DESKTOP;
+    }
+
+    // Check for generic mobile patterns
+    if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
+      return DevicePlatform.IOS;
+    }
+    if (userAgent.includes('android')) {
+      return DevicePlatform.ANDROID;
+    }
+
+    // Default to web
+    return DevicePlatform.WEB;
   }
 
   async refreshToken(refreshToken: string): Promise<{ user: any; access_token: string; refresh_token: string }> {
@@ -363,7 +493,28 @@ export class AuthService {
       }
     }
 
-    // Step 3: Generate JWT tokens
+    // Step 3: Check MFA requirements (skip for new users)
+    if (!isNewUser) {
+      const mfaCheck = await this.mfaEnforcementService.checkLoginMfaRequirements(
+        user!.id,
+        user!.role,
+        user!.createdAt,
+      );
+
+      // If grace period has expired and MFA not set up, block login
+      if (!mfaCheck.canLogin) {
+        this.logger.warn(`Social login blocked for user ${user!.id} - MFA grace period expired`);
+        throw new UnauthorizedException({
+          message: mfaCheck.message,
+          errorCode: mfaCheck.errorCode,
+          mfaRequired: true,
+          requiresMfaSetup: true,
+          gracePeriodExpired: true,
+        });
+      }
+    }
+
+    // Step 4: Generate JWT tokens
     // User from create() is already sanitized (no password in select)
     // User from findByEmail() includes password but we can safely spread
     const safeUser = { id: user!.id, email: user!.email, name: user!.name, role: user!.role, createdAt: user!.createdAt, updatedAt: user!.updatedAt };
@@ -371,7 +522,7 @@ export class AuthService {
     const payload = { sub: user!.id, email: user!.email, role: user!.role };
     const refreshPayload = { sub: user!.id, type: 'refresh' };
 
-    return {
+    const response: any = {
       user: safeUser,
       access_token: this.generateToken(payload),
       refresh_token: this.generateToken(refreshPayload, {
@@ -379,6 +530,23 @@ export class AuthService {
         expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '30d',
       }),
     };
+
+    // Add MFA status for existing users with MFA-required roles
+    if (!isNewUser && this.mfaEnforcementService.roleRequiresMfa(user!.role)) {
+      const mfaStatus = await this.mfaEnforcementService.checkMfaStatus(user!.id);
+      if (mfaStatus.mfaEnabled) {
+        response.mfaRequired = true;
+        response.requiresMfaVerification = true;
+        response.message = 'MFA verification required';
+      } else if (mfaStatus.withinGracePeriod && mfaStatus.gracePeriodDaysRemaining > 0) {
+        response.mfaRequired = true;
+        response.requiresMfaSetup = true;
+        response.mfaGracePeriodDaysRemaining = mfaStatus.gracePeriodDaysRemaining;
+        response.mfaMessage = mfaStatus.message;
+      }
+    }
+
+    return response;
   }
 
   private async verifySocialToken(provider: SocialProvider, accessToken: string): Promise<SocialUserProfile | null> {
@@ -981,11 +1149,25 @@ export class AuthService {
 
   /**
    * Disable MFA for a user
+   * Note: Users with roles that require MFA cannot disable it
    */
   async disableMfa(userId: string, code: string): Promise<{
     message: string;
     mfaEnabled: boolean;
   }> {
+    // First check if user's role requires MFA
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if user's role requires MFA - if so, prevent disabling
+    if (this.mfaEnforcementService.roleRequiresMfa(user.role)) {
+      throw new BadRequestException(
+        `MFA cannot be disabled for ${user.role} accounts. MFA is required for your role for security purposes.`
+      );
+    }
+
     const mfa = await this.prisma.userMfa.findUnique({
       where: { userId },
     });
@@ -1029,6 +1211,312 @@ export class AuthService {
     return {
       message: 'MFA disabled successfully',
       mfaEnabled: false,
+    };
+  }
+
+  /**
+   * Verify MFA challenge during login
+   * This is called after initial login when user has MFA enabled
+   *
+   * @param userId - The user ID from the initial login
+   * @param code - The TOTP code or backup code
+   * @param deviceInfo - Optional device information for trusted device feature
+   * @param trustDevice - Whether to trust this device for future logins
+   * @returns Full login response with tokens if verification succeeds
+   */
+  async verifyMfaChallenge(
+    userId: string,
+    code: string,
+    deviceInfo?: {
+      deviceId?: string;
+      deviceName?: string;
+      userAgent?: string;
+      ipAddress?: string;
+      platform?: string;
+    },
+    trustDevice: boolean = false,
+  ): Promise<{
+    user: any;
+    access_token: string;
+    refresh_token: string;
+    trustedDevice?: {
+      deviceId: string;
+      expiresAt: Date;
+    };
+  }> {
+    // Get user with MFA info
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { userMfa: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const mfa = user.userMfa;
+    if (!mfa || !mfa.enabled || !mfa.secret) {
+      throw new BadRequestException('MFA is not enabled for this account');
+    }
+
+    // Verify the code (TOTP or backup code)
+    const isValidTotp = this.verifyTotpCode(mfa.secret, code);
+    let usedBackupCode = false;
+
+    if (!isValidTotp && mfa.backupCodes) {
+      // Check backup codes
+      const backupCodes = mfa.backupCodes as string[];
+      const updatedBackupCodes: string[] = [];
+      let foundMatch = false;
+
+      for (const hashedCode of backupCodes) {
+        if (!foundMatch && await bcrypt.compare(code.toUpperCase(), hashedCode)) {
+          foundMatch = true;
+          usedBackupCode = true;
+          // Don't add this code to updated list (consuming it)
+          this.logger.log(`Backup code used for user ${userId}`);
+        } else {
+          updatedBackupCodes.push(hashedCode);
+        }
+      }
+
+      if (foundMatch) {
+        // Update backup codes to remove the used one
+        await this.prisma.userMfa.update({
+          where: { userId },
+          data: { backupCodes: updatedBackupCodes },
+        });
+      }
+
+      if (!foundMatch) {
+        throw new UnauthorizedException('Invalid MFA code');
+      }
+    } else if (!isValidTotp) {
+      throw new UnauthorizedException('Invalid MFA code');
+    }
+
+    // Handle trusted device registration
+    let trustedDeviceResponse: { deviceId: string; expiresAt: Date } | undefined;
+    if (trustDevice && deviceInfo?.deviceId) {
+      const trustedDeviceDays = this.configService.get<number>('MFA_TRUSTED_DEVICE_DAYS') || 30;
+      const enableTrustedDevices = this.configService.get<string>('MFA_ENABLE_TRUSTED_DEVICES') !== 'false';
+
+      if (enableTrustedDevices) {
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + trustedDeviceDays);
+
+        await this.prisma.trustedDevice.upsert({
+          where: {
+            userId_deviceId: {
+              userId,
+              deviceId: deviceInfo.deviceId,
+            },
+          },
+          update: {
+            lastUsedAt: new Date(),
+            useCount: { increment: 1 },
+            lastIpAddress: deviceInfo.ipAddress,
+            expiresAt,
+            isActive: true,
+            revokedAt: null,
+            revokeReason: null,
+          },
+          create: {
+            userId,
+            deviceId: deviceInfo.deviceId,
+            deviceName: deviceInfo.deviceName,
+            userAgent: deviceInfo.userAgent,
+            ipAddress: deviceInfo.ipAddress,
+            platform: deviceInfo.platform,
+            expiresAt,
+          },
+        });
+
+        trustedDeviceResponse = {
+          deviceId: deviceInfo.deviceId,
+          expiresAt,
+        };
+
+        this.logger.log(`Trusted device registered for user ${userId}: ${deviceInfo.deviceId}`);
+      }
+    }
+
+    // Generate tokens
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const refreshPayload = { sub: user.id, type: 'refresh' };
+
+    // Prepare safe user object (no password)
+    const safeUser = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+
+    this.logger.log(`MFA verification successful for user ${userId}${usedBackupCode ? ' (backup code used)' : ''}`);
+
+    const response: {
+      user: typeof safeUser;
+      access_token: string;
+      refresh_token: string;
+      trustedDevice?: { deviceId: string; expiresAt: Date };
+      backupCodesRemaining?: number;
+    } = {
+      user: safeUser,
+      access_token: this.generateToken(payload),
+      refresh_token: this.generateToken(refreshPayload, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET') || this.configService.get<string>('JWT_SECRET'),
+        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '30d',
+      }),
+    };
+
+    if (trustedDeviceResponse) {
+      response.trustedDevice = trustedDeviceResponse;
+    }
+
+    // If backup code was used, include remaining count as a warning
+    if (usedBackupCode && mfa.backupCodes) {
+      const remainingCodes = (mfa.backupCodes as string[]).length - 1;
+      response.backupCodesRemaining = remainingCodes;
+      this.logger.warn(`User ${userId} has ${remainingCodes} backup codes remaining`);
+    }
+
+    return response;
+  }
+
+  /**
+   * Check if a device is trusted for MFA bypass
+   * @param userId - User ID
+   * @param deviceId - Device fingerprint hash
+   * @returns Whether the device is trusted and can skip MFA
+   */
+  async isTrustedDevice(userId: string, deviceId: string): Promise<boolean> {
+    const enableTrustedDevices = this.configService.get<string>('MFA_ENABLE_TRUSTED_DEVICES') !== 'false';
+    if (!enableTrustedDevices) {
+      return false;
+    }
+
+    const trustedDevice = await this.prisma.trustedDevice.findUnique({
+      where: {
+        userId_deviceId: {
+          userId,
+          deviceId,
+        },
+      },
+    });
+
+    if (!trustedDevice) {
+      return false;
+    }
+
+    // Check if device is active and not expired
+    if (!trustedDevice.isActive || trustedDevice.expiresAt < new Date()) {
+      return false;
+    }
+
+    // Update last used timestamp
+    await this.prisma.trustedDevice.update({
+      where: { id: trustedDevice.id },
+      data: {
+        lastUsedAt: new Date(),
+        useCount: { increment: 1 },
+      },
+    });
+
+    return true;
+  }
+
+  /**
+   * Get list of trusted devices for a user
+   */
+  async getTrustedDevices(userId: string): Promise<Array<{
+    id: string;
+    deviceId: string;
+    deviceName: string | null;
+    platform: string | null;
+    lastUsedAt: Date;
+    expiresAt: Date;
+    isActive: boolean;
+  }>> {
+    const devices = await this.prisma.trustedDevice.findMany({
+      where: {
+        userId,
+        isActive: true,
+        expiresAt: { gt: new Date() },
+      },
+      select: {
+        id: true,
+        deviceId: true,
+        deviceName: true,
+        platform: true,
+        lastUsedAt: true,
+        expiresAt: true,
+        isActive: true,
+      },
+      orderBy: { lastUsedAt: 'desc' },
+    });
+
+    return devices;
+  }
+
+  /**
+   * Revoke a trusted device
+   */
+  async revokeTrustedDevice(
+    userId: string,
+    deviceId: string,
+    reason?: string,
+  ): Promise<{ message: string }> {
+    const device = await this.prisma.trustedDevice.findUnique({
+      where: {
+        userId_deviceId: {
+          userId,
+          deviceId,
+        },
+      },
+    });
+
+    if (!device) {
+      throw new NotFoundException('Trusted device not found');
+    }
+
+    await this.prisma.trustedDevice.update({
+      where: { id: device.id },
+      data: {
+        isActive: false,
+        revokedAt: new Date(),
+        revokeReason: reason || 'User revoked',
+      },
+    });
+
+    this.logger.log(`Trusted device revoked for user ${userId}: ${deviceId}`);
+
+    return { message: 'Device trust revoked successfully' };
+  }
+
+  /**
+   * Revoke all trusted devices for a user
+   */
+  async revokeAllTrustedDevices(userId: string, reason?: string): Promise<{ message: string; count: number }> {
+    const result = await this.prisma.trustedDevice.updateMany({
+      where: {
+        userId,
+        isActive: true,
+      },
+      data: {
+        isActive: false,
+        revokedAt: new Date(),
+        revokeReason: reason || 'User revoked all devices',
+      },
+    });
+
+    this.logger.log(`All trusted devices revoked for user ${userId}: ${result.count} devices`);
+
+    return {
+      message: 'All trusted devices revoked successfully',
+      count: result.count,
     };
   }
 
