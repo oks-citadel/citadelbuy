@@ -1,14 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "pnpm run build",
-  "installCommand": "pnpm install",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install --legacy-peer-deps",
   "outputDirectory": ".next",
   "regions": ["iad1"],
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@api_url",
-    "NEXT_PUBLIC_SITE_URL": "https://broxiva.com"
-  },
   "headers": [
     {
       "source": "/(.*)",
