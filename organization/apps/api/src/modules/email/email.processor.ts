@@ -1,5 +1,6 @@
 import { Process, Processor, OnQueueActive, OnQueueCompleted, OnQueueFailed } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Job } from 'bull';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { EmailService } from './email.service';
@@ -19,6 +20,7 @@ export class EmailProcessor {
     private prisma: PrismaService,
     private emailService: EmailService,
     private alertService: AlertService,
+    private configService: ConfigService,
   ) {
     this.registerHandlebarsHelpers();
   }
@@ -94,7 +96,7 @@ export class EmailProcessor {
    * Generate tracking pixel HTML
    */
   private generateTrackingPixel(trackingId: string): string {
-    const baseUrl = process.env.API_URL || 'http://localhost:3000';
+    const baseUrl = this.configService.get<string>('API_URL') || this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
     return `<img src="${baseUrl}/email/track/open/${trackingId}" alt="" width="1" height="1" style="display:block;width:1px;height:1px;" />`;
   }
 
@@ -102,7 +104,7 @@ export class EmailProcessor {
    * Wrap links with tracking
    */
   private wrapLinksWithTracking(html: string, trackingId: string): string {
-    const baseUrl = process.env.API_URL || 'http://localhost:3000';
+    const baseUrl = this.configService.get<string>('API_URL') || this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
 
     // Replace all href attributes with tracked links
     return html.replace(

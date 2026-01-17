@@ -296,7 +296,7 @@ export class KycService {
       expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
       // Store the upload token temporarily (you might want to cache this)
-      const baseUrl = this.config.get<string>('APP_URL') || 'http://localhost:3000';
+      const baseUrl = this.config.get<string>('API_URL') || this.config.get<string>('FRONTEND_URL', 'http://localhost:3000');
       secureUrl = `${baseUrl}/api/kyc/upload/${uploadToken}`;
     }
 
