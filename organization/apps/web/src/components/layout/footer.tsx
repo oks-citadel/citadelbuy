@@ -56,7 +56,7 @@ const footerLinks = {
     { name: 'Vendor Guidelines', href: '/vendor/guidelines' },
     { name: 'Advertising', href: '/advertising' },
     { name: 'Affiliate Program', href: '/affiliates' },
-    { name: 'Partner API', href: '/api' },
+    { name: 'Partner API', href: '/api-docs' },
   ],
 };
 
