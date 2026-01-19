@@ -264,11 +264,31 @@ async function bootstrap() {
     if (!expectedToken) {
       const crypto = require('crypto');
       const newToken = crypto.randomBytes(32).toString('hex');
+
+      // Get cookie domain from environment or extract from FRONTEND_URL
+      // Using domain with leading dot allows both www and non-www subdomains
+      const frontendUrl = process.env.FRONTEND_URL || '';
+      let cookieDomain: string | undefined;
+      if (isProduction && frontendUrl) {
+        try {
+          const url = new URL(frontendUrl);
+          // Extract the root domain (e.g., 'broxiva.com' from 'www.broxiva.com')
+          const hostParts = url.hostname.split('.');
+          if (hostParts.length >= 2) {
+            // Use last two parts for domain (handles .com, .co.uk, etc.)
+            cookieDomain = '.' + hostParts.slice(-2).join('.');
+          }
+        } catch {
+          // Fall back to no explicit domain if URL parsing fails
+        }
+      }
+
       res.cookie('csrf-token', newToken, {
         httpOnly: false, // Client needs to read this to send in headers
         secure: isProduction, // HTTPS only in production
         sameSite: isProduction ? 'strict' : 'lax', // Strict in production for maximum security
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        ...(cookieDomain && { domain: cookieDomain }), // Set domain for cross-subdomain cookies
       });
       // For first request without token, allow it but set the cookie
       // This enables the client to get the token for subsequent requests
