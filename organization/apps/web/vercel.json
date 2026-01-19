@@ -2,9 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "buildCommand": "next build",
-  "installCommand": "corepack enable && pnpm install --no-frozen-lockfile",
+  "installCommand": "npm install --legacy-peer-deps",
   "outputDirectory": ".next",
-  "regions": ["iad1"],
+  "regions": ["sfo1"],
   "headers": [
     {
       "source": "/(.*)",
