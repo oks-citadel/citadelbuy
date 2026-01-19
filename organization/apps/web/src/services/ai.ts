@@ -11,7 +11,10 @@ import {
   AISearchSuggestion,
 } from '@/types';
 
-const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || '/ai';
+// AI service URL - defaults to main API's /api/ai endpoint
+// Can be overridden with NEXT_PUBLIC_AI_SERVICE_URL for separate AI microservice
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
+const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || `${API_BASE}/ai`;
 
 // ============================================================================
 // AI SERVICE RESPONSE TYPES
@@ -165,6 +168,7 @@ export const visualSearchService = {
     const response = await fetch(`${AI_SERVICE_URL}/visual-search/image`, {
       method: 'POST',
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -202,6 +206,7 @@ export const visualSearchService = {
     const response = await fetch(`${AI_SERVICE_URL}/visual-search/colors`, {
       method: 'POST',
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -219,6 +224,7 @@ export const visualSearchService = {
     const response = await fetch(`${AI_SERVICE_URL}/visual-search/patterns`, {
       method: 'POST',
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -334,6 +340,7 @@ export const voiceSearchService = {
     const response = await fetch(`${AI_SERVICE_URL}/voice/transcribe`, {
       method: 'POST',
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -367,6 +374,7 @@ export const voiceSearchService = {
     const response = await fetch(`${AI_SERVICE_URL}/voice/command`, {
       method: 'POST',
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -478,6 +486,7 @@ export const virtualTryOnService = {
     const response = await fetch(`${AI_SERVICE_URL}/virtual-tryon/try`, {
       method: 'POST',
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -505,6 +514,7 @@ export const virtualTryOnService = {
     const response = await fetch(`${AI_SERVICE_URL}/virtual-tryon/create-avatar`, {
       method: 'POST',
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -543,6 +553,7 @@ export const virtualTryOnService = {
     const response = await fetch(`${AI_SERVICE_URL}/virtual-tryon/analyze-fit`, {
       method: 'POST',
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -563,6 +574,7 @@ export const virtualTryOnService = {
     const response = await fetch(`${AI_SERVICE_URL}/virtual-tryon/furniture`, {
       method: 'POST',
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {
