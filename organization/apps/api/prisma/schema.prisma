@@ -5040,6 +5040,7 @@ model LiveChatSession {
   user         User?         @relation(fields: [userId], references: [id])
   guestName    String?
   guestEmail   String?
+  sessionToken String?       @unique // Token for anonymous session ownership verification
   assignedToId String?
   assignedTo   User?         @relation("AssignedChats", fields: [assignedToId], references: [id])
   status       ChatStatus    @default(WAITING)

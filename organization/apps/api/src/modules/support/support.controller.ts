@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   Query,
+  Headers,
   UseGuards,
   Request,
 } from '@nestjs/common';
@@ -267,17 +268,28 @@ export class SupportController {
   @Post('chat/sessions/:id/messages')
   @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Send chat message' })
-  async sendChatMessage(@Request() req: AuthRequest, @Param('id') id: string, @Body() dto: SendChatMessageDto) {
+  async sendChatMessage(
+    @Request() req: AuthRequest,
+    @Param('id') id: string,
+    @Body() dto: SendChatMessageDto,
+    @Headers('x-chat-session-token') sessionToken?: string,
+  ) {
     const userId = req.user?.id || null;
     const isStaff = req.user?.role === UserRole.ADMIN;
-    return this.supportService.sendChatMessage(id, userId, dto, isStaff);
+    return this.supportService.sendChatMessage(id, userId, dto, isStaff, sessionToken);
   }
 
   @Get('chat/sessions/:id/messages')
   @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Get chat messages' })
-  async getChatMessages(@Param('id') id: string) {
-    return this.supportService.getChatMessages(id);
+  async getChatMessages(
+    @Request() req: AuthRequest,
+    @Param('id') id: string,
+    @Headers('x-chat-session-token') sessionToken?: string,
+  ) {
+    const userId = req.user?.id || null;
+    const isStaff = req.user?.role === UserRole.ADMIN;
+    return this.supportService.getChatMessages(id, userId, isStaff, sessionToken);
   }
 
   @Post('chat/sessions/:id/end')

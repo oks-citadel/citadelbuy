@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
@@ -8,6 +8,7 @@ import { CreateCannedResponseDto } from './dto/create-canned-response.dto';
 import { StartChatDto } from './dto/start-chat.dto';
 import { SendChatMessageDto } from './dto/send-chat-message.dto';
 import { TicketStatus, TicketPriority, ChatStatus } from '@prisma/client';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class SupportService {
@@ -437,20 +438,29 @@ export class SupportService {
   // ==================== Live Chat ====================
 
   async startChatSession(userId: string | null, dto: StartChatDto) {
+    // Generate a session token for anonymous users to prove ownership
+    const sessionToken = userId ? null : randomBytes(32).toString('hex');
+
     const session = await this.prisma.liveChatSession.create({
       data: {
         userId,
         guestName: dto.guestName,
         guestEmail: dto.guestEmail,
+        sessionToken,
         status: ChatStatus.WAITING,
       },
     });
 
     if (dto.initialMessage) {
-      await this.sendChatMessage(session.id, userId, { message: dto.initialMessage }, false);
+      await this.sendChatMessage(session.id, userId, { message: dto.initialMessage }, false, sessionToken);
     }
 
-    return session;
+    // Return session with token for anonymous users (they need it for subsequent requests)
+    return {
+      ...session,
+      // Only return token for anonymous users - they need it to access the session
+      sessionToken: userId ? undefined : sessionToken,
+    };
   }
 
   async assignChat(sessionId: string, assignedToId: string) {
@@ -471,7 +481,13 @@ export class SupportService {
     });
   }
 
-  async sendChatMessage(sessionId: string, senderId: string | null, dto: SendChatMessageDto, isStaff: boolean = false) {
+  async sendChatMessage(
+    sessionId: string,
+    senderId: string | null,
+    dto: SendChatMessageDto,
+    isStaff: boolean = false,
+    sessionToken?: string | null,
+  ) {
     const session = await this.prisma.liveChatSession.findUnique({
       where: { id: sessionId },
     });
@@ -482,6 +498,11 @@ export class SupportService {
 
     if (session.status === ChatStatus.ENDED) {
       throw new BadRequestException('Chat session has ended');
+    }
+
+    // Ownership validation - staff (admins) can access any session
+    if (!isStaff) {
+      this.validateChatSessionOwnership(session, senderId, sessionToken);
     }
 
     return this.prisma.chatMessage.create({
@@ -500,7 +521,25 @@ export class SupportService {
     });
   }
 
-  async getChatMessages(sessionId: string) {
+  async getChatMessages(
+    sessionId: string,
+    requesterId: string | null,
+    isStaff: boolean = false,
+    sessionToken?: string | null,
+  ) {
+    const session = await this.prisma.liveChatSession.findUnique({
+      where: { id: sessionId },
+    });
+
+    if (!session) {
+      throw new NotFoundException('Chat session not found');
+    }
+
+    // Ownership validation - staff (admins) can access any session
+    if (!isStaff) {
+      this.validateChatSessionOwnership(session, requesterId, sessionToken);
+    }
+
     return this.prisma.chatMessage.findMany({
       where: { sessionId },
       orderBy: { createdAt: 'asc' },
@@ -557,6 +596,36 @@ export class SupportService {
   }
 
   // ==================== Helper Methods ====================
+
+  /**
+   * Validates that the requester has ownership of the chat session.
+   * - For authenticated users: checks if their userId matches the session's userId
+   * - For anonymous users: checks if their sessionToken matches the session's sessionToken
+   * @throws ForbiddenException if ownership validation fails
+   */
+  private validateChatSessionOwnership(
+    session: { userId: string | null; sessionToken: string | null },
+    requesterId: string | null,
+    sessionToken?: string | null,
+  ): void {
+    // For authenticated users, check userId match
+    if (requesterId) {
+      if (session.userId !== requesterId) {
+        throw new ForbiddenException('You do not have access to this chat session');
+      }
+      return;
+    }
+
+    // For anonymous users, validate session token
+    if (!sessionToken || !session.sessionToken) {
+      throw new ForbiddenException('Session token required for anonymous access');
+    }
+
+    // Use timing-safe comparison to prevent timing attacks
+    if (sessionToken.length !== session.sessionToken.length || sessionToken !== session.sessionToken) {
+      throw new ForbiddenException('Invalid session token');
+    }
+  }
 
   private async generateTicketNumber(): Promise<string> {
     const prefix = 'TKT';
