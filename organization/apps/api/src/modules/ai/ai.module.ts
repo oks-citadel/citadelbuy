@@ -8,6 +8,7 @@ import { ContentGenerationModule } from './content-generation/content-generation
 import { ConversationalModule } from './conversational/conversational.module';
 import { DemandForecastingModule } from './demand-forecasting/demand-forecasting.module';
 import { FraudDetectionModule } from './fraud-detection/fraud-detection.module';
+import { AIOrchestratorModule } from './orchestrator/ai-orchestrator.module';
 import { PersonalizationModule } from './personalization/personalization.module';
 import { PricingEngineModule } from './pricing-engine/pricing-engine.module';
 import { RevenueOptimizationModule } from './revenue-optimization/revenue-optimization.module';
@@ -18,6 +19,7 @@ import { VisualSearchModule } from './visual-search/visual-search.module';
 
 @Module({
   imports: [
+    AIOrchestratorModule,
     ArTryonModule,
     CartAbandonmentModule,
     ChatbotModule,
@@ -33,6 +35,7 @@ import { VisualSearchModule } from './visual-search/visual-search.module';
     VisualSearchModule,
   ],
   exports: [
+    AIOrchestratorModule,
     ArTryonModule,
     CartAbandonmentModule,
     ChatbotModule,
