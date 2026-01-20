@@ -522,7 +522,7 @@ export class CohortsService {
     metric: RetentionMetric,
     eventType?: string,
   ): Promise<number> {
-    let where: any = {
+    const where: any = {
       userId: { in: userIds },
       timestamp: { gte: periodStart, lt: periodEnd },
     };

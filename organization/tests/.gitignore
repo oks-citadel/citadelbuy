@@ -1,0 +1,46 @@
+# Test Results and Artifacts
+**/results/
+**/coverage/
+**/allure-results/
+**/allure-report/
+
+# Playwright
+**/playwright-report/
+**/test-results/
+**/blob-report/
+*.webm
+*.png
+*.zip
+
+# Jest
+.jest-cache/
+junit.xml
+junit-results.xml
+
+# k6 Performance Results
+**/perf/results/
+*.json
+
+# Environment Files
+.env
+.env.local
+.env.test
+
+# IDE
+.idea/
+.vscode/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary Files
+*.tmp
+*.temp

@@ -178,7 +178,7 @@ export class DeviceFingerprintService {
     const recommendations: string[] = [];
 
     // Look up existing device fingerprint
-    let existingDevice = await this.prisma.deviceFingerprint.findUnique({
+    const existingDevice = await this.prisma.deviceFingerprint.findUnique({
       where: { fingerprintHash },
       include: {
         fraudIncidents: {
