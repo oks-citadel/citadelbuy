@@ -4,6 +4,7 @@ import {
   ISeoService,
   GenerateSitemapOptions,
   GenerateRobotsOptions,
+  RobotsRule,
   WebAppManifest,
   ReindexRequest,
   ReindexJob,
@@ -119,7 +120,7 @@ ${urlEntries}
     const rules = options.rules || defaultRules;
     const lines: string[] = [];
 
-    rules.forEach((rule) => {
+    rules.forEach((rule: RobotsRule) => {
       lines.push(`User-agent: ${rule.userAgent}`);
       if (rule.allow) {
         rule.allow.forEach((path) => lines.push(`Allow: ${path}`));

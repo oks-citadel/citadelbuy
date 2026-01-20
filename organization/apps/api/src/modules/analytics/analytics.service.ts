@@ -182,10 +182,11 @@ export class AnalyticsService {
     // Aggregate product performance
     const productStats = orderItems.reduce((acc, item) => {
       const productId = item.productId;
+      if (!productId) return acc;
       if (!acc[productId]) {
         acc[productId] = {
           productId,
-          productName: item.product.name,
+          productName: item.product?.name || 'Unknown Product',
           quantitySold: 0,
           revenue: 0,
           timesOrdered: 0,

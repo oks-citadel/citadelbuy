@@ -226,8 +226,8 @@ export class OrdersService {
           orderNumber: order.id.slice(-8).toUpperCase(), // Use last 8 chars of ID as order number
           orderDate: order.createdAt.toLocaleDateString(),
           items: order.items.map((item) => ({
-            name: item.product.name,
-            image: item.product.images?.[0] || '',
+            name: item.product?.name || 'Unknown Product',
+            image: item.product?.images?.[0] || '',
             quantity: item.quantity,
             price: item.price,
           })),
@@ -349,8 +349,8 @@ export class OrdersService {
               trackingNumber: updateData.trackingNumber,
               carrier: updateData.carrier,
               items: updatedOrder.items.map((item) => ({
-                name: item.product.name,
-                image: item.product.images?.[0],
+                name: item.product?.name || 'Unknown Product',
+                image: item.product?.images?.[0],
                 quantity: item.quantity,
               })),
             })
@@ -855,6 +855,7 @@ export class OrdersService {
 
       // Restore inventory for each item
       for (const item of orderWithItems.items) {
+        if (!item.productId) continue;
         await tx.product.update({
           where: { id: item.productId },
           data: {

@@ -155,7 +155,7 @@ export class VendorPayoutsService {
     const orderIds: string[] = [];
 
     for (const order of orders) {
-      const vendorItems = order.items.filter((item) => item.product.vendorId === vendor.userId);
+      const vendorItems = order.items.filter((item) => item.product?.vendorId === vendor.userId);
       const vendorTotal = vendorItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
       grossAmount += vendorTotal;
       orderIds.push(order.id);

@@ -189,8 +189,10 @@ export class AnalyticsAdvancedService {
     const categoryFrequency: Record<string, number> = {};
     orders.forEach((order) => {
       order.items.forEach((item) => {
-        const categoryName = item.product.category.name;
-        categoryFrequency[categoryName] = (categoryFrequency[categoryName] || 0) + 1;
+        const categoryName = item.product?.category?.name;
+        if (categoryName) {
+          categoryFrequency[categoryName] = (categoryFrequency[categoryName] || 0) + 1;
+        }
       });
     });
     const favoriteCategory = Object.keys(categoryFrequency).reduce(

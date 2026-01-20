@@ -322,7 +322,7 @@ export class VendorCommissionsService {
 
     for (const order of orders) {
       for (const item of order.items) {
-        if (item.product.vendorId !== vendorId) continue;
+        if (item.product?.vendorId !== vendorId) continue;
 
         const itemValue = item.price * item.quantity;
         totalOrderValue += itemValue;
@@ -330,13 +330,13 @@ export class VendorCommissionsService {
         const commissionCalc = await this.calculateCommissionForOrder(
           vendorId,
           itemValue,
-          item.product.categoryId,
+          item.product?.categoryId,
         );
 
         totalCommission += commissionCalc.commissionAmount;
 
         // Track by category
-        const categoryId = item.product.categoryId || 'uncategorized';
+        const categoryId = item.product?.categoryId || 'uncategorized';
         if (!categoryBreakdown[categoryId]) {
           categoryBreakdown[categoryId] = { orders: 0, value: 0, commission: 0 };
         }

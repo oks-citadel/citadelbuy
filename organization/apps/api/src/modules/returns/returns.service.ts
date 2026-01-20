@@ -528,16 +528,18 @@ export class ReturnsService {
         });
 
         // Send refund processed email
-        await this.sendEmailSafely(() =>
-          this.emailService.sendRefundProcessed({
-            email: refund.user.email,
-            customerName: refund.user.name,
-            rmaNumber: refund.returnRequest.rmaNumber,
-            refundAmount: refund.totalAmount,
-            refundMethod: 'Original Payment Method',
-            estimatedDays: 5,
-          }),
-        );
+        if (refund.user) {
+          await this.sendEmailSafely(() =>
+            this.emailService.sendRefundProcessed({
+              email: refund.user!.email,
+              customerName: refund.user!.name,
+              rmaNumber: refund.returnRequest.rmaNumber,
+              refundAmount: refund.totalAmount,
+              refundMethod: 'Original Payment Method',
+              estimatedDays: 5,
+            }),
+          );
+        }
 
         return updated;
       } else {
@@ -568,16 +570,18 @@ export class ReturnsService {
         });
 
         // Send refund processed email
-        await this.sendEmailSafely(() =>
-          this.emailService.sendRefundProcessed({
-            email: refund.user.email,
-            customerName: refund.user.name,
-            rmaNumber: refund.returnRequest.rmaNumber,
-            refundAmount: refund.totalAmount,
-            refundMethod: refund.method,
-            estimatedDays: 3,
-          }),
-        );
+        if (refund.user) {
+          await this.sendEmailSafely(() =>
+            this.emailService.sendRefundProcessed({
+              email: refund.user!.email,
+              customerName: refund.user!.name,
+              rmaNumber: refund.returnRequest.rmaNumber,
+              refundAmount: refund.totalAmount,
+              refundMethod: refund.method,
+              estimatedDays: 3,
+            }),
+          );
+        }
 
         return updated;
       }

@@ -259,7 +259,7 @@ export class AdminDashboardController {
     });
 
     // Get product details
-    const productIds = topProductSales.map((item) => item.productId);
+    const productIds = topProductSales.map((item) => item.productId).filter((id): id is string => id !== null);
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds } },
       select: {

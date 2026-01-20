@@ -19,12 +19,10 @@ export const ALLOW_IMPERSONATION_WRITE_KEY = 'allowImpersonationWrite';
  * By default, impersonation in VIEW_ONLY mode blocks all mutating requests
  */
 export const AllowImpersonationWrite = () =>
-  Reflector.createDecorator<boolean>()[0]
-    ? Reflect.metadata(ALLOW_IMPERSONATION_WRITE_KEY, true)
-    : (target: any, key?: string, descriptor?: PropertyDescriptor) => {
-        Reflect.defineMetadata(ALLOW_IMPERSONATION_WRITE_KEY, true, descriptor?.value || target);
-        return descriptor || target;
-      };
+  (target: any, key?: string, descriptor?: PropertyDescriptor) => {
+    Reflect.defineMetadata(ALLOW_IMPERSONATION_WRITE_KEY, true, descriptor?.value || target);
+    return descriptor || target;
+  };
 
 /**
  * HTTP methods considered as "write" operations

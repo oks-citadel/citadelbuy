@@ -249,7 +249,7 @@ export class VendorAnalyticsService {
       take: limit,
     });
 
-    const productIds = topProducts.map((p) => p.productId);
+    const productIds = topProducts.map((p) => p.productId).filter((id): id is string => id !== null);
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds } },
       select: {
@@ -662,8 +662,9 @@ export class VendorAnalyticsService {
     const categoryData = new Map<string, { name: string; revenue: number; units: number }>();
 
     orderItems.forEach((item) => {
-      const categoryId = item.product.categoryId;
-      const categoryName = item.product.category.name;
+      const categoryId = item.product?.categoryId;
+      const categoryName = item.product?.category?.name;
+      if (!categoryId || !categoryName) return;
       const existing = categoryData.get(categoryId) || { name: categoryName, revenue: 0, units: 0 };
       existing.revenue += item.price * item.quantity;
       existing.units += item.quantity;

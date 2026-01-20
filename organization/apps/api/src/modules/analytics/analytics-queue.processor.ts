@@ -427,10 +427,11 @@ export class AnalyticsQueueProcessor {
     const productStats = orderItems.reduce(
       (acc, item) => {
         const productId = item.productId;
+        if (!productId) return acc;
         if (!acc[productId]) {
           acc[productId] = {
             productId,
-            productName: item.product.name,
+            productName: item.product?.name || 'Unknown Product',
             quantity: 0,
             revenue: 0,
           };

@@ -467,7 +467,7 @@ export class AnalyticsDashboardService {
     });
 
     const vendorOrders = orders.filter((order) =>
-      order.items.some((item) => item.product.vendorId === vendorId)
+      order.items.some((item) => item.product?.vendorId === vendorId)
     );
 
     const totalRevenue = vendorOrders.reduce((sum, order) => sum + order.total, 0);

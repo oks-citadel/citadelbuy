@@ -200,7 +200,7 @@ export class RecommendationsService {
       take: limit,
     });
 
-    const productIds = coOccurringProducts.map((item) => item.productId);
+    const productIds = coOccurringProducts.map((item) => item.productId).filter((id): id is string => id !== null);
 
     return this.prisma.product.findMany({
       where: { id: { in: productIds } },
@@ -347,10 +347,12 @@ export class RecommendationsService {
     // Calculate similarity score
     const maxCount = coOccurring[0]?._count.productId || 1;
 
-    return coOccurring.map((item) => ({
-      id: item.productId,
-      score: item._count.productId / maxCount,
-    }));
+    return coOccurring
+      .filter((item) => item.productId !== null)
+      .map((item) => ({
+        id: item.productId as string,
+        score: item._count.productId / maxCount,
+      }));
   }
 
   private async getSimilarProductIds(productIds: string[], limit: number): Promise<string[]> {
@@ -747,7 +749,7 @@ export class RecommendationsService {
       take: limit,
     });
 
-    const productIds = topSelling.map((item) => item.productId);
+    const productIds = topSelling.map((item) => item.productId).filter((id): id is string => id !== null);
 
     return this.prisma.product.findMany({
       where: { id: { in: productIds } },
@@ -845,7 +847,7 @@ export class RecommendationsService {
       take: limit,
     });
 
-    const productIds = complementary.map((item) => item.productId);
+    const productIds = complementary.map((item) => item.productId).filter((id): id is string => id !== null);
 
     return this.prisma.product.findMany({
       where: { id: { in: productIds } },
