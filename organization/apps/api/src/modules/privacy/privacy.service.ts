@@ -1,28 +1,27 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, NotImplementedException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { DataExportService } from '../users/data-export.service';
-import { DataDeletionService, DeletionStrategy } from '../users/data-deletion.service';
+// GDPR services disabled - need schema updates before enabling
+// import { DataExportService } from '../users/data-export.service';
+// import { DataDeletionService, DeletionStrategy } from '../users/data-deletion.service';
 import { ConsentDto, DataDeletionRequestDto } from './dto/consent.dto';
 
 @Injectable()
 export class PrivacyService {
   constructor(
     private prisma: PrismaService,
-    private dataExportService: DataExportService,
-    private dataDeletionService: DataDeletionService,
+    // GDPR services disabled - need schema updates before enabling
+    // private dataExportService: DataExportService,
+    // private dataDeletionService: DataDeletionService,
   ) {}
 
   /**
    * Get overview of all stored data
+   * GDPR service disabled - need schema updates before enabling
    */
   async getStoredDataOverview(userId: string) {
-    const report = await this.dataExportService.generateExportReport(userId);
-    const consent = await this.getConsent(userId);
-
-    return {
-      ...report,
-      consentStatus: consent.consent,
-    };
+    throw new NotImplementedException(
+      'GDPR data overview is currently being updated. Please try again later.',
+    );
   }
 
   /**
@@ -49,57 +48,32 @@ export class PrivacyService {
 
   /**
    * Generate and return data export
+   * GDPR service disabled - need schema updates before enabling
    */
   async generateDataExport(userId: string, format: 'json' | 'csv') {
-    return this.dataExportService.exportUserData(userId, format);
+    throw new NotImplementedException(
+      'GDPR data export is currently being updated. Please try again later.',
+    );
   }
 
   /**
    * Request account deletion
+   * GDPR service disabled - need schema updates before enabling
    */
   async requestDeletion(userId: string, request: DataDeletionRequestDto) {
-    // Get retention info first
-    const retentionInfo = await this.dataDeletionService.getDataRetentionInfo(userId);
-
-    // Check if hard delete is available
-    if (request.strategy === 'HARD_DELETE' && !retentionInfo.deletionOptions.hardDelete) {
-      return {
-        success: false,
-        message: 'Hard delete is not available due to active payment plans or other obligations',
-        retentionInfo,
-        suggestedStrategy: 'ANONYMIZE',
-      };
-    }
-
-    // Schedule deletion with grace period
-    const schedule = await this.dataDeletionService.scheduleDeletion({
-      userId,
-      strategy: request.strategy as DeletionStrategy,
-      reason: request.reason,
-      scheduledDate: request.scheduledDate,
-    });
-
-    return {
-      message: 'Account deletion request has been received',
-      userId,
-      strategy: request.strategy,
-      scheduledDate: schedule.scheduledDate.toISOString(),
-      cancellationDeadline: schedule.cancellationDeadline.toISOString(),
-      dataRetentionInfo: {
-        ordersRetained: true,
-        retentionPeriod: '7 years',
-        reason: 'Legal and tax compliance',
-      },
-      note:
-        'You can cancel this request at any time before the cancellation deadline. After the deadline, deletion will proceed automatically.',
-    };
+    throw new NotImplementedException(
+      'GDPR data deletion is currently being updated. Please try again later.',
+    );
   }
 
   /**
    * Get data retention information
+   * GDPR service disabled - need schema updates before enabling
    */
   async getRetentionInfo(userId: string) {
-    return this.dataDeletionService.getDataRetentionInfo(userId);
+    throw new NotImplementedException(
+      'GDPR data retention info is currently being updated. Please try again later.',
+    );
   }
 
   /**

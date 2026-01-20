@@ -128,7 +128,9 @@ export class SupportGateway
 
     try {
       // Verify session exists
-      const messages = await this.supportService.getChatMessages(sessionId);
+      // For WebSocket connections, staff role allows access to any session
+      const isStaff = client.userRole === 'ADMIN' || client.userRole === 'SUPPORT';
+      const messages = await this.supportService.getChatMessages(sessionId, client.userId || null, isStaff);
 
       // Join the socket room
       client.join(sessionId);
