@@ -41,17 +41,12 @@ export class KycService {
     private readonly verificationProcessor: KycVerificationProcessor,
     private readonly documentStorage: DocumentStorageService,
   ) {
-    // Generate encryption key from environment variable or create a secure one
-    const keyString = this.config.get<string>('KYC_ENCRYPTION_KEY');
-    if (!keyString) {
-      this.logger.warn(
-        'KYC_ENCRYPTION_KEY not set in environment. Using fallback (NOT for production!)',
-      );
-      // In production, this should always come from environment
-      this.encryptionKey = crypto.scryptSync('fallback-key-change-in-prod', 'salt', 32);
-    } else {
-      this.encryptionKey = Buffer.from(keyString, 'hex');
+    // Encryption key MUST be provided via environment variable
+    const encryptionKeyEnv = this.config.get<string>('KYC_ENCRYPTION_KEY');
+    if (!encryptionKeyEnv) {
+      throw new Error('CRITICAL: KYC_ENCRYPTION_KEY environment variable is required for KYC data encryption');
     }
+    this.encryptionKey = crypto.scryptSync(encryptionKeyEnv, 'broxiva-kyc-salt', 32);
   }
 
   /**
