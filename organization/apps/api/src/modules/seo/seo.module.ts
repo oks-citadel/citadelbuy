@@ -35,6 +35,30 @@ import { TechnicalController } from './technical/technical.controller';
 import { ContentSeoService } from './content-seo/content-seo.service';
 import { ContentSeoController } from './content-seo/content-seo.controller';
 
+// Redirects Module
+import { RedirectsService } from './redirects/redirects.service';
+import { RedirectsController } from './redirects/redirects.controller';
+
+// Google Search Console Module
+import { SearchConsoleService } from './search-console/search-console.service';
+import { SearchConsoleController } from './search-console/search-console.controller';
+
+// Meta Tags Module
+import { MetaTagsService } from './meta-tags/meta-tags.service';
+import { MetaTagsController } from './meta-tags/meta-tags.controller';
+
+// Local SEO Module
+import { LocalSeoService } from './local-seo/local-seo.service';
+import { LocalSeoController } from './local-seo/local-seo.controller';
+
+// AI SEO Module
+import { AiSeoService } from './ai-seo/ai-seo.service';
+import { AiSeoController } from './ai-seo/ai-seo.controller';
+
+// Dashboard Module
+import { DashboardService } from './dashboard/dashboard.service';
+import { DashboardController } from './dashboard/dashboard.controller';
+
 // Scheduled Jobs
 import { SeoSchedulerService } from './seo-scheduler.service';
 
@@ -53,6 +77,12 @@ import { SeoSchedulerService } from './seo-scheduler.service';
     VitalsController,
     TechnicalController,
     ContentSeoController,
+    RedirectsController,
+    SearchConsoleController,
+    MetaTagsController,
+    LocalSeoController,
+    AiSeoController,
+    DashboardController,
   ],
   providers: [
     // Core Services
@@ -64,6 +94,12 @@ import { SeoSchedulerService } from './seo-scheduler.service';
     VitalsService,
     TechnicalService,
     ContentSeoService,
+    RedirectsService,
+    SearchConsoleService,
+    MetaTagsService,
+    LocalSeoService,
+    AiSeoService,
+    DashboardService,
 
     // Scheduler
     SeoSchedulerService,
@@ -77,6 +113,12 @@ import { SeoSchedulerService } from './seo-scheduler.service';
     VitalsService,
     TechnicalService,
     ContentSeoService,
+    RedirectsService,
+    SearchConsoleService,
+    MetaTagsService,
+    LocalSeoService,
+    AiSeoService,
+    DashboardService,
     SeoSchedulerService,
   ],
 })

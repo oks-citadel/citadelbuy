@@ -5,7 +5,10 @@ import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ChatWidget } from '@/components/ai/chatbot/chat-widget';
+import { BroxivaOrganizationJsonLd, BroxivaWebSiteJsonLd } from '@/lib/marketing';
 import '@/styles/globals.css';
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://broxiva.com';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -106,6 +109,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <BroxivaOrganizationJsonLd baseUrl={BASE_URL} />
+        <BroxivaWebSiteJsonLd baseUrl={BASE_URL} />
+      </head>
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >

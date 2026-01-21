@@ -37,6 +37,8 @@ import {
 import { ProductCard } from '@/components/product/product-card';
 import { productsApi } from '@/lib/api-client';
 import { useCartStore } from '@/stores/cart-store';
+import { useAnalytics } from '@/lib/marketing';
+import { ProductJsonLd } from '@/lib/seo';
 import { Product, ProductVariant, Review } from '@/types';
 import {
   cn,
@@ -64,6 +66,7 @@ export default function ProductDetailPage() {
   const [reviewsTotal, setReviewsTotal] = React.useState(0);
 
   const { addItem, isLoading: isAddingToCart } = useCartStore();
+  const { trackProductView, trackCartAdd, trackWishlistAdd } = useAnalytics();
 
   // Fetch product data
   React.useEffect(() => {
@@ -72,6 +75,15 @@ export default function ProductDetailPage() {
       try {
         const data = await productsApi.getBySlug(slug);
         setProduct(data);
+
+        // Track product view for analytics
+        trackProductView({
+          id: data.id,
+          name: data.name,
+          price: data.price,
+          brand: data.brand?.name,
+          category: data.category?.name,
+        });
 
         // Load related products
         if (data.id) {
@@ -94,7 +106,7 @@ export default function ProductDetailPage() {
     };
 
     loadProduct();
-  }, [slug]);
+  }, [slug, trackProductView]);
 
   if (isLoading) {
     return null; // Loading state handled by loading.tsx
@@ -115,6 +127,17 @@ export default function ProductDetailPage() {
   const handleAddToCart = async () => {
     try {
       await addItem(product, selectedVariant || undefined, quantity);
+
+      // Track add to cart event
+      trackCartAdd({
+        id: product.id,
+        name: product.name,
+        price: currentPrice,
+        brand: product.brand?.name,
+        category: product.category?.name,
+        variant: selectedVariant?.name,
+      }, quantity);
+
       toast.success(`${product.name} added to cart`, {
         action: {
           label: 'View Cart',
@@ -128,6 +151,18 @@ export default function ProductDetailPage() {
 
   const handleWishlist = () => {
     setIsWishlisted(!isWishlisted);
+
+    // Track wishlist add event
+    if (!isWishlisted) {
+      trackWishlistAdd({
+        id: product.id,
+        name: product.name,
+        price: currentPrice,
+        brand: product.brand?.name,
+        category: product.category?.name,
+      });
+    }
+
     toast.success(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist');
   };
 
@@ -185,6 +220,28 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* SEO Structured Data */}
+      <ProductJsonLd
+        data={{
+          name: product.name,
+          description: product.description,
+          image: product.images.map((img) => img.url),
+          sku: product.sku,
+          brand: product.brand?.name,
+          category: product.category?.name,
+          offers: {
+            price: currentPrice,
+            priceCurrency: product.currency || 'USD',
+            availability: stockStatus.status === 'out_of_stock' ? 'OutOfStock' : 'InStock',
+            itemCondition: 'NewCondition',
+          },
+          aggregateRating: product.reviewCount > 0 ? {
+            ratingValue: product.rating,
+            reviewCount: product.reviewCount,
+          } : undefined,
+        }}
+      />
+
       {/* Breadcrumb */}
       <div className="border-b bg-muted/30">
         <div className="container py-3">
