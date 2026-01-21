@@ -112,7 +112,7 @@ export class SecurityService {
 
   async createApiKey(userId: string, name: string, scopes: string[], expiresInDays?: number) {
     const key = crypto.randomBytes(32).toString('hex');
-    const hashedKey = await bcrypt.hash(key, 10);
+    const hashedKey = await bcrypt.hash(key, 12);
     const keyPrefix = key.substring(0, 8);
 
     const apiKey = await this.prisma.apiKey.create({
@@ -206,7 +206,7 @@ export class SecurityService {
       crypto.randomBytes(4).toString('hex').toUpperCase(),
     );
     const hashedBackupCodes = await Promise.all(
-      backupCodes.map((code) => bcrypt.hash(code, 10)),
+      backupCodes.map((code) => bcrypt.hash(code, 12)),
     );
 
     await this.prisma.twoFactorAuth.upsert({
@@ -503,7 +503,7 @@ export class SecurityService {
     }
 
     const token = crypto.randomBytes(32).toString('hex');
-    const hashedToken = await bcrypt.hash(token, 10);
+    const hashedToken = await bcrypt.hash(token, 12);
 
     const session = await this.prisma.userSession.create({
       data: {

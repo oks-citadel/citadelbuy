@@ -182,7 +182,7 @@ export class AuthService {
       throw new ConflictException('User already exists');
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
     const user = await this.usersService.create({
       email,
       password: hashedPassword,
@@ -448,7 +448,7 @@ export class AuthService {
       isNewUser = true;
       // Generate secure random password (user won't use it for social login)
       const randomPassword = crypto.randomBytes(32).toString('hex');
-      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+      const hashedPassword = await bcrypt.hash(randomPassword, 12);
 
       const createdUser = await this.usersService.create({
         email: profile.email,
@@ -941,7 +941,7 @@ export class AuthService {
 
     // Hash the token before storing in database
     // This prevents token theft if database is compromised
-    const hashedToken = await bcrypt.hash(plainToken, 10);
+    const hashedToken = await bcrypt.hash(plainToken, 12);
 
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1); // Token expires in 1 hour
@@ -997,7 +997,7 @@ export class AuthService {
     }
 
     // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
 
     // Update user password
     await this.prisma.user.update({
@@ -1053,7 +1053,7 @@ export class AuthService {
 
     // Hash backup codes for storage
     const hashedBackupCodes = await Promise.all(
-      backupCodes.map((code) => bcrypt.hash(code, 10))
+      backupCodes.map((code) => bcrypt.hash(code, 12))
     );
 
     // Store or update MFA setup (not enabled yet)

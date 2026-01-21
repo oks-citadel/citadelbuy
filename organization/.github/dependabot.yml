@@ -1,0 +1,631 @@
+# Dependabot Configuration for Broxiva Platform
+# Automates dependency updates for npm, Docker, GitHub Actions, and Terraform
+# See: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+
+# Registries configuration (if needed for private registries)
+# registries:
+#   npm-registry:
+#     type: npm-registry
+#     url: https://registry.npmjs.org
+
+updates:
+  # ============================================================
+  # NPM DEPENDENCIES
+  # ============================================================
+
+  # Root workspace package.json
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    versioning-strategy: "increase"
+    groups:
+      production-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "@types/*"
+          - "eslint*"
+          - "prettier"
+      development-dependencies:
+        dependency-type: "development"
+        patterns:
+          - "*"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "automerge"
+    reviewers:
+      - "broxiva/platform-team"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    # Security updates are opened immediately regardless of schedule
+    # Dependabot automatically prioritizes security updates
+
+  # API application
+  - package-ecosystem: "npm"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    versioning-strategy: "increase"
+    groups:
+      nestjs-dependencies:
+        patterns:
+          - "@nestjs/*"
+          - "nestjs-*"
+      prisma-dependencies:
+        patterns:
+          - "prisma"
+          - "@prisma/*"
+      security-dependencies:
+        patterns:
+          - "helmet"
+          - "bcrypt*"
+          - "jsonwebtoken"
+          - "@types/jsonwebtoken"
+          - "passport*"
+          - "@types/passport*"
+      testing-dependencies:
+        dependency-type: "development"
+        patterns:
+          - "jest*"
+          - "@types/jest"
+          - "supertest"
+          - "@types/supertest"
+      production-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "@nestjs/*"
+          - "@prisma/*"
+          - "prisma"
+          - "@types/*"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "api"
+    reviewers:
+      - "broxiva/backend-team"
+    commit-message:
+      prefix: "chore(api)"
+      include: "scope"
+
+  # Web application (Next.js)
+  - package-ecosystem: "npm"
+    directory: "/apps/web"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    versioning-strategy: "increase"
+    groups:
+      nextjs-dependencies:
+        patterns:
+          - "next"
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      ui-dependencies:
+        patterns:
+          - "@radix-ui/*"
+          - "tailwindcss"
+          - "tailwind*"
+          - "class-variance-authority"
+          - "clsx"
+          - "lucide-react"
+      state-management:
+        patterns:
+          - "zustand"
+          - "@tanstack/*"
+      testing-dependencies:
+        dependency-type: "development"
+        patterns:
+          - "playwright"
+          - "@playwright/*"
+          - "jest*"
+          - "@testing-library/*"
+      production-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "next"
+          - "react*"
+          - "@radix-ui/*"
+          - "tailwind*"
+          - "@types/*"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "web"
+      - "frontend"
+    reviewers:
+      - "broxiva/frontend-team"
+    commit-message:
+      prefix: "chore(web)"
+      include: "scope"
+
+  # Mobile application (React Native)
+  - package-ecosystem: "npm"
+    directory: "/apps/mobile"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    versioning-strategy: "increase"
+    groups:
+      react-native-dependencies:
+        patterns:
+          - "react-native"
+          - "@react-native/*"
+          - "react-native-*"
+          - "expo*"
+          - "@expo/*"
+      navigation-dependencies:
+        patterns:
+          - "@react-navigation/*"
+      testing-dependencies:
+        dependency-type: "development"
+        patterns:
+          - "jest*"
+          - "@testing-library/*"
+          - "detox"
+      production-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "react-native*"
+          - "@react-native/*"
+          - "expo*"
+          - "@types/*"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "mobile"
+    reviewers:
+      - "broxiva/mobile-team"
+    commit-message:
+      prefix: "chore(mobile)"
+      include: "scope"
+
+  # N8N Workflows
+  - package-ecosystem: "npm"
+    directory: "/n8n-workflows"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "npm"
+      - "automation"
+    commit-message:
+      prefix: "chore(n8n)"
+      include: "scope"
+
+  # Load Testing
+  - package-ecosystem: "npm"
+    directory: "/tests/load"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "npm"
+      - "testing"
+    commit-message:
+      prefix: "chore(tests)"
+      include: "scope"
+
+  # ============================================================
+  # DOCKER DEPENDENCIES
+  # ============================================================
+
+  # API Dockerfile
+  - package-ecosystem: "docker"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+      - "api"
+    reviewers:
+      - "broxiva/devops-team"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # Web Dockerfile
+  - package-ecosystem: "docker"
+    directory: "/apps/web"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+      - "web"
+    reviewers:
+      - "broxiva/devops-team"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # AI Engine Service
+  - package-ecosystem: "docker"
+    directory: "/apps/services/ai-engine"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+      - "ai-services"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # Analytics Service
+  - package-ecosystem: "docker"
+    directory: "/apps/services/analytics"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+      - "services"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # Chatbot Service
+  - package-ecosystem: "docker"
+    directory: "/apps/services/chatbot"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+      - "ai-services"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # Fraud Detection Service
+  - package-ecosystem: "docker"
+    directory: "/apps/services/fraud-detection"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+      - "security"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # Pricing Service
+  - package-ecosystem: "docker"
+    directory: "/apps/services/pricing"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+      - "services"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # Recommendation Service
+  - package-ecosystem: "docker"
+    directory: "/apps/services/recommendation"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+      - "ai-services"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # Search Service
+  - package-ecosystem: "docker"
+    directory: "/apps/services/search"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+      - "services"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # Supplier Integration Service
+  - package-ecosystem: "docker"
+    directory: "/apps/services/supplier-integration"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+      - "integrations"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # Infrastructure Docker files
+  - package-ecosystem: "docker"
+    directory: "/infrastructure/docker"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+      - "infrastructure"
+    reviewers:
+      - "broxiva/devops-team"
+    commit-message:
+      prefix: "chore(infra)"
+      include: "scope"
+
+  # Root docker-compose.yml
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+      - "docker-compose"
+    reviewers:
+      - "broxiva/devops-team"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # ============================================================
+  # GITHUB ACTIONS
+  # ============================================================
+
+  # Note: GitHub Actions are in .github/workflows directory
+  # Dependabot will check this automatically if workflows exist
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci-cd"
+    reviewers:
+      - "broxiva/devops-team"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+
+  # ============================================================
+  # TERRAFORM
+  # ============================================================
+
+  # Main Terraform environment
+  - package-ecosystem: "terraform"
+    directory: "/infrastructure/terraform/environments"
+    schedule:
+      interval: "monthly"
+      day: "first monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "terraform"
+      - "infrastructure"
+    reviewers:
+      - "broxiva/devops-team"
+      - "broxiva/platform-team"
+    commit-message:
+      prefix: "chore(terraform)"
+      include: "scope"
+
+  # Production Terraform environment
+  - package-ecosystem: "terraform"
+    directory: "/infrastructure/terraform/environments/prod"
+    schedule:
+      interval: "monthly"
+      day: "first monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "terraform"
+      - "infrastructure"
+      - "production"
+    reviewers:
+      - "broxiva/devops-team"
+      - "broxiva/platform-team"
+    commit-message:
+      prefix: "chore(terraform)"
+      include: "scope"
+
+  # Monitoring Terraform module
+  - package-ecosystem: "terraform"
+    directory: "/infrastructure/terraform/modules/monitoring"
+    schedule:
+      interval: "monthly"
+      day: "first monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "terraform"
+      - "monitoring"
+    commit-message:
+      prefix: "chore(terraform)"
+      include: "scope"
+
+  # Networking Terraform module
+  - package-ecosystem: "terraform"
+    directory: "/infrastructure/terraform/modules/networking"
+    schedule:
+      interval: "monthly"
+      day: "first monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "terraform"
+      - "networking"
+    commit-message:
+      prefix: "chore(terraform)"
+      include: "scope"
+
+  # Security Terraform module
+  - package-ecosystem: "terraform"
+    directory: "/infrastructure/terraform/modules/security"
+    schedule:
+      interval: "monthly"
+      day: "first monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "terraform"
+      - "security"
+    reviewers:
+      - "broxiva/security-team"
+    commit-message:
+      prefix: "chore(terraform)"
+      include: "scope"
+
+  # Organization Terraform module
+  - package-ecosystem: "terraform"
+    directory: "/infrastructure/terraform/modules/organization"
+    schedule:
+      interval: "monthly"
+      day: "first monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "terraform"
+      - "organization"
+    commit-message:
+      prefix: "chore(terraform)"
+      include: "scope"
+
+  # AWS Infrastructure
+  - package-ecosystem: "terraform"
+    directory: "/infrastructure/aws"
+    schedule:
+      interval: "monthly"
+      day: "first monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "terraform"
+      - "aws"
+    reviewers:
+      - "broxiva/devops-team"
+    commit-message:
+      prefix: "chore(aws)"
+      include: "scope"
+
+  # Azure Infrastructure
+  - package-ecosystem: "terraform"
+    directory: "/infrastructure/azure"
+    schedule:
+      interval: "monthly"
+      day: "first monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "terraform"
+      - "azure"
+    reviewers:
+      - "broxiva/devops-team"
+    commit-message:
+      prefix: "chore(azure)"
+      include: "scope"

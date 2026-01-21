@@ -23,10 +23,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
    * Handle request authentication result
    * Override to provide better error messages and logging
    */
-  handleRequest<TUser = any>(
-    err: any,
+  handleRequest<TUser = unknown>(
+    err: Error | null,
     user: TUser,
-    info: any,
+    info: Error | { message?: string } | null,
     context: ExecutionContext,
   ): TUser {
     // Log authentication attempts for security monitoring

@@ -11,6 +11,7 @@ import { ServerTrackingService } from '../tracking/server-tracking.service';
 import { AccountLockoutService } from './account-lockout.service';
 import { TokenBlacklistService } from './token-blacklist.service';
 import { MfaEnforcementService } from './mfa-enforcement.service';
+import { SessionManagerService } from '../security/session-manager.service';
 
 jest.mock('bcryptjs');
 
@@ -75,6 +76,15 @@ describe('AuthService', () => {
     roleRequiresMfa: jest.fn().mockReturnValue(false),
   };
 
+  const mockSessionManagerService = {
+    createSession: jest.fn().mockResolvedValue({ id: 'session-123', token: 'session-token' }),
+    validateSession: jest.fn().mockResolvedValue(true),
+    invalidateSession: jest.fn().mockResolvedValue(undefined),
+    invalidateAllUserSessions: jest.fn().mockResolvedValue(undefined),
+    getUserSessions: jest.fn().mockResolvedValue([]),
+    refreshSession: jest.fn().mockResolvedValue({ id: 'session-123', token: 'new-token' }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -114,6 +124,10 @@ describe('AuthService', () => {
         {
           provide: MfaEnforcementService,
           useValue: mockMfaEnforcementService,
+        },
+        {
+          provide: SessionManagerService,
+          useValue: mockSessionManagerService,
         },
       ],
     }).compile();

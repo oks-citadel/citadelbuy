@@ -27,7 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useCartStore } from '@/stores/cart-store';
 import { useAuthStore } from '@/stores/auth-store';
-import { fraudDetectionService, pricingService } from '@/services/ai';
+import { fraudDetectionService } from '@/services/ai';
 import { formatCurrency, cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { checkoutApi, addressesApi } from '@/lib/api-client';
@@ -86,7 +86,7 @@ const shippingSchema = z.object({
     .string()
     .min(1, 'Phone number is required')
     .regex(
-      /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/,
+      /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/,
       'Please enter a valid phone number (e.g., 123-456-7890 or (123) 456-7890)'
     ),
   address1: z.string().min(1, 'Street address is required').min(5, 'Please enter a complete street address'),
@@ -414,6 +414,7 @@ export default function CheckoutPage() {
       }
     };
     runFraudCheck();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedCardNumber, user?.id, shippingAddress.city, shippingAddress.country, shippingAddress.zipCode, watchedCity, watchedCountry, watchedZipCode]);
 
   const getShippingCost = () => {

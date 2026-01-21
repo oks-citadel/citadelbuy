@@ -1,0 +1,67 @@
+# CODEOWNERS - Code ownership and review requirements
+# Each line is a file pattern followed by one or more owners.
+# Teams must be prefixed with @org-name/
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the repo
+* @broxiva/engineering-leads
+
+# CI/CD and Infrastructure - Requires Platform Team Review
+/.github/ @broxiva/platform-team @broxiva/security-team
+/.github/workflows/ @broxiva/platform-team @broxiva/security-team
+/organization/infrastructure/ @broxiva/platform-team @broxiva/security-team
+
+# Terraform and AWS Configuration - Requires Security Review
+/organization/infrastructure/terraform/ @broxiva/platform-team @broxiva/security-team
+/organization/infrastructure/aws/ @broxiva/platform-team @broxiva/security-team
+/organization/infrastructure/kubernetes/ @broxiva/platform-team @broxiva/security-team
+
+# API Backend - Backend Team
+/organization/apps/api/ @broxiva/backend-team
+/organization/apps/api/src/modules/auth/ @broxiva/backend-team @broxiva/security-team
+/organization/apps/api/src/modules/payments/ @broxiva/backend-team @broxiva/security-team
+/organization/apps/api/src/modules/webhooks/ @broxiva/backend-team @broxiva/security-team
+/organization/apps/api/src/modules/organization/ @broxiva/backend-team
+
+# Frontend Web Application
+/organization/apps/web/ @broxiva/frontend-team
+/organization/apps/web/src/components/checkout/ @broxiva/frontend-team @broxiva/security-team
+
+# Mobile Application
+/organization/apps/mobile/ @broxiva/mobile-team
+
+# Python Microservices
+/organization/apps/services/ @broxiva/backend-team @broxiva/data-team
+/organization/apps/services/ai-engine/ @broxiva/data-team
+/organization/apps/services/analytics/ @broxiva/data-team
+/organization/apps/services/fraud-detection/ @broxiva/data-team @broxiva/security-team
+/organization/apps/services/recommendation/ @broxiva/data-team
+
+# Shared Packages
+/organization/packages/ @broxiva/backend-team @broxiva/frontend-team
+/organization/packages/shared/ @broxiva/backend-team @broxiva/frontend-team
+/organization/packages/ai-sdk/ @broxiva/data-team
+
+# Database Schema Changes - Requires DBA Review
+/organization/apps/api/prisma/ @broxiva/backend-team @broxiva/dba-team
+
+# Security-Sensitive Files - Requires Security Team Review
+*.env* @broxiva/security-team
+**/secrets* @broxiva/security-team
+**/credentials* @broxiva/security-team
+*.pem @broxiva/security-team
+*.key @broxiva/security-team
+
+# Documentation
+/organization/docs/ @broxiva/engineering-leads
+*.md @broxiva/engineering-leads
+
+# Package Dependencies - Requires Review
+package.json @broxiva/engineering-leads
+package-lock.json @broxiva/engineering-leads
+requirements.txt @broxiva/engineering-leads
+poetry.lock @broxiva/engineering-leads
+
+# Docker Configuration
+Dockerfile* @broxiva/platform-team
+docker-compose* @broxiva/platform-team

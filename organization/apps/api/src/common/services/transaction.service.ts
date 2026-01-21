@@ -219,9 +219,28 @@ export class TransactionService {
   }
 
   /**
+   * Allowlist of valid Prisma model names
+   * SECURITY: Prevents SQL injection by validating entity names against known models
+   */
+  private readonly VALID_ENTITY_NAMES = [
+    'User', 'Organization', 'Order', 'Product', 'Cart', 'CartItem',
+    'Payment', 'Inventory', 'InventoryReservation', 'Subscription',
+    'Coupon', 'GiftCard', 'Review', 'Category', 'Address', 'Session',
+    'Vendor', 'Deal', 'Wishlist', 'WishlistItem', 'Notification',
+    'OrganizationMember', 'OrganizationInvitation', 'OrganizationAuditLog',
+  ] as const;
+
+  /**
    * Convert entity name to table name
+   * SECURITY: Validates entity name against allowlist to prevent SQL injection
    */
   private getTableName(entityName: string): string {
+    // SECURITY: Validate entity name against allowlist
+    if (!this.VALID_ENTITY_NAMES.includes(entityName as any)) {
+      this.logger.error(`Invalid entity name attempted: ${entityName}`);
+      throw new Error(`Invalid entity name: ${entityName}. Entity must be one of the allowed values.`);
+    }
+
     // Convert PascalCase to snake_case
     return entityName
       .replace(/([A-Z])/g, '_$1')

@@ -1,0 +1,624 @@
+# Sample Azure Pipeline for Broxiva
+# This is a reference implementation for converting GitHub Actions to Azure Pipelines
+# Use this as a template when creating your pipelines
+
+name: Broxiva-CI-CD-$(Date:yyyyMMdd)$(Rev:.r)
+
+# Triggers
+trigger:
+  branches:
+    include:
+      - main
+      - master
+      - develop
+      - feature/*
+  paths:
+    exclude:
+      - docs/**
+      - README.md
+      - '*.md'
+
+# Pull request triggers
+pr:
+  branches:
+    include:
+      - main
+      - master
+      - develop
+  paths:
+    exclude:
+      - docs/**
+      - README.md
+
+# Pipeline variables
+variables:
+  # Common variables from variable group
+  - group: broxiva-common
+
+  # Inline variables
+  - name: vmImage
+    value: 'ubuntu-latest'
+  - name: buildConfiguration
+    value: 'Release'
+  - name: isMain
+    value: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
+  - name: isMaster
+    value: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
+  - name: isDevelop
+    value: $[eq(variables['Build.SourceBranch'], 'refs/heads/develop')]
+  - name: isPR
+    value: $[eq(variables['Build.Reason'], 'PullRequest')]
+
+# Stages
+stages:
+  # =========================================
+  # Stage 1: Code Quality
+  # =========================================
+  - stage: CodeQuality
+    displayName: 'Code Quality Checks'
+    jobs:
+      - job: Lint
+        displayName: 'Linting and Type Checking'
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: self
+            fetchDepth: 1
+            clean: true
+
+          - task: NodeTool@0
+            displayName: 'Install Node.js'
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - script: |
+              npm install -g pnpm@$(PNPM_VERSION)
+              pnpm --version
+            displayName: 'Install pnpm'
+
+          - task: Cache@2
+            displayName: 'Cache pnpm dependencies'
+            inputs:
+              key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
+              path: $(PNPM_HOME)/store
+              restoreKeys: |
+                pnpm | "$(Agent.OS)"
+
+          - script: |
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+            env:
+              NODE_ENV: development
+
+          - script: |
+              pnpm lint
+            displayName: 'Run ESLint'
+            continueOnError: false
+
+          - script: |
+              pnpm type-check
+            displayName: 'Run TypeScript Type Checking'
+            continueOnError: false
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Publish Lint Results'
+            condition: succeededOrFailed()
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml'
+              failIfCoverageEmpty: false
+
+  # =========================================
+  # Stage 2: Unit Tests
+  # =========================================
+  - stage: Test
+    displayName: 'Unit Tests'
+    dependsOn: CodeQuality
+    condition: succeeded()
+    jobs:
+      - job: UnitTests
+        displayName: 'Run Unit Tests'
+        pool:
+          vmImage: $(vmImage)
+
+        # Service containers
+        services:
+          postgres:
+            image: postgres:16-alpine
+            env:
+              POSTGRES_USER: test
+              POSTGRES_PASSWORD: test
+              POSTGRES_DB: test
+            ports:
+              - 5432:5432
+            options: >-
+              --health-cmd pg_isready
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
+
+          redis:
+            image: redis:7-alpine
+            ports:
+              - 6379:6379
+            options: >-
+              --health-cmd "redis-cli ping"
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
+
+        steps:
+          - checkout: self
+            fetchDepth: 1
+
+          - task: NodeTool@0
+            displayName: 'Install Node.js'
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - script: |
+              npm install -g pnpm@$(PNPM_VERSION)
+            displayName: 'Install pnpm'
+
+          - task: Cache@2
+            displayName: 'Cache pnpm dependencies'
+            inputs:
+              key: 'pnpm | "$(Agent.OS)" | pnpm-lock.yaml'
+              path: $(PNPM_HOME)/store
+
+          - script: |
+              pnpm install --frozen-lockfile
+            displayName: 'Install dependencies'
+
+          # API Tests
+          - script: |
+              cd apps/api
+              npx prisma migrate deploy
+              pnpm test:cov
+            displayName: 'Run API Tests'
+            env:
+              DATABASE_URL: 'postgresql://test:test@localhost:5432/test?schema=public'
+              REDIS_URL: 'redis://localhost:6379'
+              JWT_SECRET: 'test-jwt-secret'
+              NODE_ENV: 'test'
+
+          # Web Tests
+          - script: |
+              cd apps/web
+              pnpm test
+            displayName: 'Run Web Tests'
+            env:
+              NODE_ENV: 'test'
+
+          - task: PublishTestResults@2
+            displayName: 'Publish Test Results'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/junit.xml'
+              mergeTestResults: true
+              failTaskOnFailedTests: true
+              testRunTitle: 'Unit Tests - $(Build.SourceBranchName)'
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Publish Code Coverage'
+            condition: succeededOrFailed()
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/apps/*/coverage/cobertura-coverage.xml'
+              reportDirectory: '$(System.DefaultWorkingDirectory)/coverage'
+              failIfCoverageEmpty: false
+
+          - script: |
+              echo "##vso[task.setVariable variable=coveragePercentage]$(cat coverage/coverage-summary.json | jq '.total.lines.pct')"
+            displayName: 'Extract Coverage Percentage'
+            condition: succeededOrFailed()
+
+          - script: |
+              if (( $(echo "$(coveragePercentage) < 80" | bc -l) )); then
+                echo "##vso[task.logissue type=warning]Code coverage is below 80%: $(coveragePercentage)%"
+              fi
+            displayName: 'Check Coverage Threshold'
+            condition: succeededOrFailed()
+
+  # =========================================
+  # Stage 3: Security Scan
+  # =========================================
+  - stage: SecurityScan
+    displayName: 'Security Scanning'
+    dependsOn: Test
+    condition: and(succeeded(), eq(variables.isPR, false))
+    jobs:
+      - job: SecurityCheck
+        displayName: 'Security Vulnerability Scan'
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: self
+
+          - script: |
+              pnpm audit --audit-level=high
+            displayName: 'npm Security Audit'
+            continueOnError: true
+
+          - script: |
+              npm install -g snyk
+              snyk test --severity-threshold=high
+            displayName: 'Snyk Security Scan'
+            continueOnError: true
+            env:
+              SNYK_TOKEN: $(SNYK_TOKEN)
+
+  # =========================================
+  # Stage 4: Build Docker Images
+  # =========================================
+  - stage: Build
+    displayName: 'Build Docker Images'
+    dependsOn: Test
+    condition: and(succeeded(), or(eq(variables.isMain, true), eq(variables.isMaster, true), eq(variables.isDevelop, true)))
+    jobs:
+      - job: BuildImages
+        displayName: 'Build and Push Docker Images'
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: self
+
+          - task: Docker@2
+            displayName: 'Login to Azure Container Registry'
+            inputs:
+              command: 'login'
+              containerRegistry: 'ACR-Connection'
+
+          # Build API Image
+          - task: Docker@2
+            displayName: 'Build and Push API Image'
+            inputs:
+              command: 'buildAndPush'
+              repository: 'broxiva-api'
+              dockerfile: 'apps/api/Dockerfile'
+              buildContext: 'apps/api'
+              tags: |
+                $(Build.BuildId)
+                $(Build.SourceBranchName)
+                latest
+              arguments: |
+                --build-arg NODE_ENV=production
+                --build-arg BUILD_DATE=$(Build.BuildNumber)
+                --build-arg VERSION=$(Build.BuildId)
+                --cache-from=$(AZURE_CONTAINER_REGISTRY)/broxiva-api:latest
+
+          # Build Web Image
+          - task: Docker@2
+            displayName: 'Build and Push Web Image'
+            inputs:
+              command: 'buildAndPush'
+              repository: 'broxiva-web'
+              dockerfile: 'apps/web/Dockerfile'
+              buildContext: 'apps/web'
+              tags: |
+                $(Build.BuildId)
+                $(Build.SourceBranchName)
+                latest
+              arguments: |
+                --build-arg NODE_ENV=production
+                --build-arg NEXT_PUBLIC_API_URL=$(API_URL)
+                --build-arg BUILD_DATE=$(Build.BuildNumber)
+                --cache-from=$(AZURE_CONTAINER_REGISTRY)/broxiva-web:latest
+
+          # Scan Docker images for vulnerabilities
+          - script: |
+              docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                aquasec/trivy:latest image \
+                --severity HIGH,CRITICAL \
+                $(AZURE_CONTAINER_REGISTRY)/broxiva-api:$(Build.BuildId)
+            displayName: 'Scan API Image with Trivy'
+            continueOnError: true
+
+          - script: |
+              docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                aquasec/trivy:latest image \
+                --severity HIGH,CRITICAL \
+                $(AZURE_CONTAINER_REGISTRY)/broxiva-web:$(Build.BuildId)
+            displayName: 'Scan Web Image with Trivy'
+            continueOnError: true
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Image Tags'
+            inputs:
+              pathToPublish: '$(Build.ArtifactStagingDirectory)'
+              artifactName: 'image-tags'
+
+  # =========================================
+  # Stage 5: Deploy to Staging
+  # =========================================
+  - stage: DeployStaging
+    displayName: 'Deploy to Staging'
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables.isDevelop, true))
+    variables:
+      - group: broxiva-staging
+    jobs:
+      - deployment: DeployToStaging
+        displayName: 'Deploy to AKS Staging'
+        pool:
+          vmImage: $(vmImage)
+        environment: 'staging'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: AzureCLI@2
+                  displayName: 'Get AKS Credentials'
+                  inputs:
+                    azureSubscription: 'AKS-Staging-Connection'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      az aks get-credentials \
+                        --resource-group broxiva-staging-rg \
+                        --name broxiva-staging-aks \
+                        --overwrite-existing
+
+                - task: Kubernetes@1
+                  displayName: 'Apply Kubernetes Manifests'
+                  inputs:
+                    connectionType: 'Azure Resource Manager'
+                    azureSubscription: 'AKS-Staging-Connection'
+                    azureResourceGroup: 'broxiva-staging-rg'
+                    kubernetesCluster: 'broxiva-staging-aks'
+                    namespace: 'broxiva-staging'
+                    command: 'apply'
+                    useConfigurationFile: true
+                    configuration: 'infrastructure/kubernetes/staging/'
+
+                - task: Kubernetes@1
+                  displayName: 'Update API Deployment'
+                  inputs:
+                    connectionType: 'Azure Resource Manager'
+                    azureSubscription: 'AKS-Staging-Connection'
+                    azureResourceGroup: 'broxiva-staging-rg'
+                    kubernetesCluster: 'broxiva-staging-aks'
+                    namespace: 'broxiva-staging'
+                    command: 'set'
+                    arguments: 'image deployment/api api=$(AZURE_CONTAINER_REGISTRY)/broxiva-api:$(Build.BuildId)'
+
+                - task: Kubernetes@1
+                  displayName: 'Update Web Deployment'
+                  inputs:
+                    connectionType: 'Azure Resource Manager'
+                    azureSubscription: 'AKS-Staging-Connection'
+                    azureResourceGroup: 'broxiva-staging-rg'
+                    kubernetesCluster: 'broxiva-staging-aks'
+                    namespace: 'broxiva-staging'
+                    command: 'set'
+                    arguments: 'image deployment/web web=$(AZURE_CONTAINER_REGISTRY)/broxiva-web:$(Build.BuildId)'
+
+                - task: Kubernetes@1
+                  displayName: 'Wait for API Rollout'
+                  inputs:
+                    connectionType: 'Azure Resource Manager'
+                    azureSubscription: 'AKS-Staging-Connection'
+                    azureResourceGroup: 'broxiva-staging-rg'
+                    kubernetesCluster: 'broxiva-staging-aks'
+                    namespace: 'broxiva-staging'
+                    command: 'rollout'
+                    arguments: 'status deployment/api --timeout=300s'
+
+                - task: Kubernetes@1
+                  displayName: 'Wait for Web Rollout'
+                  inputs:
+                    connectionType: 'Azure Resource Manager'
+                    azureSubscription: 'AKS-Staging-Connection'
+                    azureResourceGroup: 'broxiva-staging-rg'
+                    kubernetesCluster: 'broxiva-staging-aks'
+                    namespace: 'broxiva-staging'
+                    command: 'rollout'
+                    arguments: 'status deployment/web --timeout=300s'
+
+                - script: |
+                    # Wait for deployment to stabilize
+                    sleep 30
+
+                    # Health check
+                    response=$(curl -s -o /dev/null -w "%{http_code}" https://staging.broxiva.com/api/health)
+                    if [ $response != "200" ]; then
+                      echo "Health check failed with status: $response"
+                      exit 1
+                    fi
+                    echo "Health check passed!"
+                  displayName: 'Health Check'
+
+                - task: PowerShell@2
+                  displayName: 'Send Slack Notification'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      $payload = @{
+                        text = "🚀 Staging Deployment Successful"
+                        blocks = @(
+                          @{
+                            type = "section"
+                            text = @{
+                              type = "mrkdwn"
+                              text = "*Broxiva Staging Deployed*`nBuild: $(Build.BuildNumber)`nBranch: $(Build.SourceBranchName)`nCommit: $(Build.SourceVersion)"
+                            }
+                          }
+                        )
+                      } | ConvertTo-Json -Depth 10
+
+                      Invoke-RestMethod -Uri "$(SLACK_WEBHOOK_URL)" -Method Post -Body $payload -ContentType 'application/json'
+                  continueOnError: true
+
+  # =========================================
+  # Stage 6: E2E Tests (Staging)
+  # =========================================
+  - stage: E2ETests
+    displayName: 'E2E Tests'
+    dependsOn: DeployStaging
+    condition: succeeded()
+    jobs:
+      - job: RunE2ETests
+        displayName: 'Run Playwright E2E Tests'
+        pool:
+          vmImage: $(vmImage)
+        steps:
+          - checkout: self
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - script: |
+              pnpm install --frozen-lockfile
+              npx playwright install --with-deps
+            displayName: 'Install Dependencies and Playwright'
+
+          - script: |
+              cd tests/e2e
+              pnpm test:e2e
+            displayName: 'Run E2E Tests'
+            env:
+              BASE_URL: 'https://staging.broxiva.com'
+              TEST_USER_EMAIL: $(TEST_USER_EMAIL)
+              TEST_USER_PASSWORD: $(TEST_USER_PASSWORD)
+
+          - task: PublishTestResults@2
+            displayName: 'Publish E2E Test Results'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'tests/e2e/results/junit.xml'
+              testRunTitle: 'E2E Tests - Staging'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Playwright Report'
+            condition: succeededOrFailed()
+            inputs:
+              pathToPublish: 'tests/e2e/playwright-report'
+              artifactName: 'playwright-report'
+
+  # =========================================
+  # Stage 7: Deploy to Production
+  # =========================================
+  - stage: DeployProduction
+    displayName: 'Deploy to Production'
+    dependsOn:
+      - Build
+      - E2ETests
+    condition: and(succeeded(), eq(variables.isMain, true))
+    variables:
+      - group: broxiva-prod
+    jobs:
+      - deployment: DeployToProduction
+        displayName: 'Deploy to AKS Production'
+        pool:
+          vmImage: $(vmImage)
+        environment: 'production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: AzureCLI@2
+                  displayName: 'Get AKS Credentials'
+                  inputs:
+                    azureSubscription: 'AKS-Production-Connection'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      az aks get-credentials \
+                        --resource-group broxiva-prod-rg \
+                        --name broxiva-prod-aks \
+                        --overwrite-existing
+
+                # Blue-Green Deployment Strategy
+                - script: |
+                    echo "Deploying to GREEN slot..."
+
+                    # Apply manifests
+                    kubectl apply -f infrastructure/kubernetes/production/
+
+                    # Update green deployment
+                    kubectl set image deployment/api-green \
+                      api=$(AZURE_CONTAINER_REGISTRY)/broxiva-api:$(Build.BuildId) \
+                      -n broxiva-prod
+
+                    kubectl set image deployment/web-green \
+                      web=$(AZURE_CONTAINER_REGISTRY)/broxiva-web:$(Build.BuildId) \
+                      -n broxiva-prod
+
+                    # Wait for rollout
+                    kubectl rollout status deployment/api-green -n broxiva-prod --timeout=300s
+                    kubectl rollout status deployment/web-green -n broxiva-prod --timeout=300s
+                  displayName: 'Deploy to Green Slot'
+
+                - script: |
+                    # Smoke tests on green
+                    sleep 30
+                    response=$(curl -s -o /dev/null -w "%{http_code}" https://green.broxiva.com/api/health)
+                    if [ $response != "200" ]; then
+                      echo "Smoke test failed on green slot"
+                      exit 1
+                    fi
+                    echo "Smoke tests passed on green slot"
+                  displayName: 'Smoke Tests on Green'
+
+                - script: |
+                    # Switch traffic to green
+                    kubectl patch service api-service -n broxiva-prod \
+                      -p '{"spec":{"selector":{"app":"api-green"}}}'
+
+                    kubectl patch service web-service -n broxiva-prod \
+                      -p '{"spec":{"selector":{"app":"web-green"}}}'
+
+                    echo "Traffic switched to green slot"
+                  displayName: 'Switch Traffic to Green'
+
+                - script: |
+                    # Final verification
+                    sleep 30
+                    response=$(curl -s -o /dev/null -w "%{http_code}" https://broxiva.com/api/health)
+                    if [ $response != "200" ]; then
+                      echo "Production health check failed"
+                      exit 1
+                    fi
+                    echo "Production deployment verified!"
+                  displayName: 'Verify Production'
+
+                - task: PowerShell@2
+                  displayName: 'Send Success Notification'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      $payload = @{
+                        text = "✅ Production Deployment Successful"
+                        blocks = @(
+                          @{
+                            type = "section"
+                            text = @{
+                              type = "mrkdwn"
+                              text = "*Broxiva Production Deployed*`n`n✅ API: Healthy`n✅ Web: Healthy`n`nBuild: $(Build.BuildNumber)`nCommit: $(Build.SourceVersion)"
+                            }
+                          },
+                          @{
+                            type = "actions"
+                            elements = @(
+                              @{
+                                type = "button"
+                                text = @{
+                                  type = "plain_text"
+                                  text = "View Application"
+                                }
+                                url = "https://broxiva.com"
+                              }
+                            )
+                          }
+                        )
+                      } | ConvertTo-Json -Depth 10
+
+                      Invoke-RestMethod -Uri "$(SLACK_WEBHOOK_URL)" -Method Post -Body $payload -ContentType 'application/json'
+                  continueOnError: true

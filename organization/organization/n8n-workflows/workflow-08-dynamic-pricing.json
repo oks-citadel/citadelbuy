@@ -1,0 +1,923 @@
+{
+  "name": "Broxiva Dynamic Pricing & Competitor Monitoring",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * *"
+            }
+          ],
+          "timezone": "America/New_York"
+        }
+      },
+      "id": "scheduled-trigger",
+      "name": "Daily 6 AM EST",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  p.id,\n  p.sku,\n  p.name,\n  p.current_price,\n  p.cost_price,\n  p.category_id,\n  p.brand,\n  p.upc,\n  p.competitor_tracking_enabled,\n  p.min_price,\n  p.max_price,\n  p.target_margin,\n  c.name as category_name\nFROM products p\nLEFT JOIN categories c ON p.category_id = c.id\nWHERE p.status = 'active'\n  AND p.competitor_tracking_enabled = true\n  AND p.stock_quantity > 0\nORDER BY p.category_id, p.id",
+        "additionalFields": {}
+      },
+      "id": "get-trackable-products",
+      "name": "Get Trackable Products",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [450, 300],
+      "credentials": {
+        "postgres": {
+          "id": "broxiva_postgres",
+          "name": "Broxiva PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {}
+      },
+      "id": "split-products-batch",
+      "name": "Split Products (Batch 10)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "product_id",
+              "name": "product_id",
+              "value": "={{ $json.id }}",
+              "type": "number"
+            },
+            {
+              "id": "sku",
+              "name": "sku",
+              "value": "={{ $json.sku }}",
+              "type": "string"
+            },
+            {
+              "id": "product_name",
+              "name": "product_name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "current_price",
+              "name": "current_price",
+              "value": "={{ $json.current_price }}",
+              "type": "number"
+            },
+            {
+              "id": "cost_price",
+              "name": "cost_price",
+              "value": "={{ $json.cost_price }}",
+              "type": "number"
+            },
+            {
+              "id": "upc",
+              "name": "upc",
+              "value": "={{ $json.upc }}",
+              "type": "string"
+            },
+            {
+              "id": "brand",
+              "name": "brand",
+              "value": "={{ $json.brand }}",
+              "type": "string"
+            },
+            {
+              "id": "category",
+              "name": "category",
+              "value": "={{ $json.category_name }}",
+              "type": "string"
+            },
+            {
+              "id": "min_price",
+              "name": "min_price",
+              "value": "={{ $json.min_price || $json.cost_price * 1.1 }}",
+              "type": "number"
+            },
+            {
+              "id": "max_price",
+              "name": "max_price",
+              "value": "={{ $json.max_price || $json.current_price * 1.5 }}",
+              "type": "number"
+            },
+            {
+              "id": "target_margin",
+              "name": "target_margin",
+              "value": "={{ $json.target_margin || 0.25 }}",
+              "type": "number"
+            },
+            {
+              "id": "search_query",
+              "name": "search_query",
+              "value": "={{ $json.brand }} {{ $json.name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepare-product-data",
+      "name": "Prepare Product Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.rainforestapi.com/request",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "rainforestApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "={{ $credentials.apiKey }}"
+            },
+            {
+              "name": "type",
+              "value": "search"
+            },
+            {
+              "name": "amazon_domain",
+              "value": "amazon.com"
+            },
+            {
+              "name": "search_term",
+              "value": "={{ $json.search_query }}"
+            },
+            {
+              "name": "max_page",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "amazon-price-check",
+      "name": "Amazon Price Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1050, 200],
+      "continueOnFail": true,
+      "credentials": {
+        "rainforestApi": {
+          "id": "rainforest_api",
+          "name": "Rainforest API (Amazon)"
+        }
+      },
+      "notes": "Using Rainforest API for Amazon pricing"
+    },
+    {
+      "parameters": {
+        "url": "https://api.walmartlabs.com/v1/search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "walmartApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "apiKey",
+              "value": "={{ $credentials.apiKey }}"
+            },
+            {
+              "name": "query",
+              "value": "={{ $json.search_query }}"
+            },
+            {
+              "name": "numItems",
+              "value": "5"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "walmart-price-check",
+      "name": "Walmart Price Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1050, 300],
+      "continueOnFail": true,
+      "credentials": {
+        "walmartApi": {
+          "id": "walmart_api",
+          "name": "Walmart API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://redsky.target.com/redsky_aggregations/v1/web/plp_search_v2",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "9f36aeafbe60771e321a7cc95a78140772ab3e96"
+            },
+            {
+              "name": "keyword",
+              "value": "={{ $json.search_query }}"
+            },
+            {
+              "name": "pricing_store_id",
+              "value": "3991"
+            },
+            {
+              "name": "count",
+              "value": "5"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "target-price-check",
+      "name": "Target Price Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1050, 400],
+      "continueOnFail": true,
+      "notes": "Target's public API endpoint"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.scraperapi.com/",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "scraperApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "={{ $credentials.apiKey }}"
+            },
+            {
+              "name": "url",
+              "value": "={{ $('Get Competitor URLs').item.json.competitor_url }}"
+            },
+            {
+              "name": "render",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 45000
+        }
+      },
+      "id": "scrape-direct-competitors",
+      "name": "Scrape Direct Competitors",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1050, 500],
+      "continueOnFail": true,
+      "credentials": {
+        "scraperApi": {
+          "id": "scraper_api",
+          "name": "ScraperAPI"
+        }
+      },
+      "notes": "For competitors without APIs"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  competitor_name,\n  competitor_url_template\nFROM competitor_configs\nWHERE enabled = true\n  AND requires_scraping = true\nORDER BY priority DESC",
+        "additionalFields": {}
+      },
+      "id": "get-competitor-urls",
+      "name": "Get Competitor URLs",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [850, 500],
+      "credentials": {
+        "postgres": {
+          "id": "broxiva_postgres",
+          "name": "Broxiva PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Amazon API Response\nconst items = [];\n\nfor (const item of $input.all()) {\n  const productData = item.json.product_data || {};\n  const amazonResponse = item.json.amazon_response;\n  const walmartResponse = item.json.walmart_response;\n  const targetResponse = item.json.target_response;\n  const scrapedData = item.json.scraped_data || [];\n  \n  const competitorPrices = [];\n  \n  // Parse Amazon\n  if (amazonResponse && amazonResponse.search_results) {\n    const results = amazonResponse.search_results.slice(0, 3);\n    for (const result of results) {\n      if (result.price && result.price.value) {\n        competitorPrices.push({\n          competitor: 'Amazon',\n          price: parseFloat(result.price.value),\n          currency: result.price.currency || 'USD',\n          url: result.link,\n          title: result.title,\n          in_stock: result.is_prime || true,\n          rating: result.rating || null,\n          reviews: result.ratings_total || 0,\n          match_score: calculateMatchScore(productData.product_name, result.title)\n        });\n      }\n    }\n  }\n  \n  // Parse Walmart\n  if (walmartResponse && walmartResponse.items) {\n    const results = walmartResponse.items.slice(0, 3);\n    for (const result of results) {\n      if (result.salePrice) {\n        competitorPrices.push({\n          competitor: 'Walmart',\n          price: parseFloat(result.salePrice),\n          currency: 'USD',\n          url: result.productUrl,\n          title: result.name,\n          in_stock: result.stock === 'Available',\n          rating: result.customerRating || null,\n          reviews: result.numReviews || 0,\n          match_score: calculateMatchScore(productData.product_name, result.name)\n        });\n      }\n    }\n  }\n  \n  // Parse Target\n  if (targetResponse && targetResponse.data && targetResponse.data.search) {\n    const products = targetResponse.data.search.products || [];\n    for (const result of products.slice(0, 3)) {\n      if (result.price && result.price.current_retail) {\n        competitorPrices.push({\n          competitor: 'Target',\n          price: parseFloat(result.price.current_retail),\n          currency: 'USD',\n          url: `https://www.target.com${result.url}`,\n          title: result.title,\n          in_stock: result.available_to_promise_network?.is_out_of_stock_in_all_store_locations === false,\n          rating: result.ratings_and_reviews?.statistics?.rating?.average || null,\n          reviews: result.ratings_and_reviews?.statistics?.rating?.count || 0,\n          match_score: calculateMatchScore(productData.product_name, result.title)\n        });\n      }\n    }\n  }\n  \n  // Parse Scraped Data\n  for (const scraped of scrapedData) {\n    if (scraped.price) {\n      competitorPrices.push({\n        competitor: scraped.competitor_name,\n        price: parseFloat(scraped.price),\n        currency: scraped.currency || 'USD',\n        url: scraped.url,\n        title: scraped.title,\n        in_stock: scraped.in_stock !== false,\n        rating: scraped.rating || null,\n        reviews: scraped.reviews || 0,\n        match_score: scraped.match_score || 0.5\n      });\n    }\n  }\n  \n  // Filter by match score (only include likely matches)\n  const filteredPrices = competitorPrices.filter(cp => cp.match_score >= 0.6);\n  \n  // Calculate statistics\n  const prices = filteredPrices.map(cp => cp.price);\n  const avgCompetitorPrice = prices.length > 0 \n    ? prices.reduce((a, b) => a + b, 0) / prices.length \n    : null;\n  const minCompetitorPrice = prices.length > 0 ? Math.min(...prices) : null;\n  const maxCompetitorPrice = prices.length > 0 ? Math.max(...prices) : null;\n  \n  const currentPrice = parseFloat(productData.current_price || 0);\n  const costPrice = parseFloat(productData.cost_price || 0);\n  const currentMargin = currentPrice > 0 ? ((currentPrice - costPrice) / currentPrice) : 0;\n  \n  // Price position analysis\n  let pricePosition = 'unknown';\n  if (minCompetitorPrice) {\n    const priceDiff = ((currentPrice - minCompetitorPrice) / minCompetitorPrice) * 100;\n    if (priceDiff < -5) pricePosition = 'significantly_lower';\n    else if (priceDiff < 5) pricePosition = 'competitive';\n    else if (priceDiff < 15) pricePosition = 'slightly_higher';\n    else pricePosition = 'significantly_higher';\n  }\n  \n  items.push({\n    json: {\n      product_id: productData.product_id,\n      sku: productData.sku,\n      product_name: productData.product_name,\n      current_price: currentPrice,\n      cost_price: costPrice,\n      current_margin: currentMargin,\n      min_price: productData.min_price,\n      max_price: productData.max_price,\n      target_margin: productData.target_margin,\n      competitor_prices: filteredPrices,\n      competitor_count: filteredPrices.length,\n      avg_competitor_price: avgCompetitorPrice,\n      min_competitor_price: minCompetitorPrice,\n      max_competitor_price: maxCompetitorPrice,\n      price_position: pricePosition,\n      price_diff_percent: minCompetitorPrice \n        ? ((currentPrice - minCompetitorPrice) / minCompetitorPrice * 100).toFixed(2)\n        : null,\n      out_of_stock_competitors: filteredPrices.filter(cp => !cp.in_stock).length,\n      timestamp: new Date().toISOString()\n    }\n  });\n}\n\n// Helper function to calculate match score\nfunction calculateMatchScore(productName, competitorTitle) {\n  if (!productName || !competitorTitle) return 0;\n  \n  const normalize = str => str.toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();\n  const pName = normalize(productName);\n  const cTitle = normalize(competitorTitle);\n  \n  const pWords = new Set(pName.split(/\\s+/));\n  const cWords = new Set(cTitle.split(/\\s+/));\n  \n  let matches = 0;\n  for (const word of pWords) {\n    if (word.length > 2 && cWords.has(word)) {\n      matches++;\n    }\n  }\n  \n  return Math.min(matches / Math.max(pWords.size, 1), 1);\n}\n\nreturn items;"
+      },
+      "id": "parse-competitor-data",
+      "name": "Parse Competitor Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 300],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO competitor_price_history (\n  product_id,\n  competitor,\n  price,\n  currency,\n  url,\n  in_stock,\n  match_score,\n  scraped_at,\n  created_at\n)\nVALUES\n{{ $json.competitor_prices.map(cp => \n  `(${$json.product_id}, '${cp.competitor}', ${cp.price}, '${cp.currency}', '${cp.url}', ${cp.in_stock}, ${cp.match_score}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`\n).join(',\\n') }}\nON CONFLICT (product_id, competitor, scraped_at::date) \nDO UPDATE SET\n  price = EXCLUDED.price,\n  in_stock = EXCLUDED.in_stock,\n  updated_at = CURRENT_TIMESTAMP",
+        "additionalFields": {}
+      },
+      "id": "save-price-history",
+      "name": "Save Price History",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [1450, 200],
+      "credentials": {
+        "postgres": {
+          "id": "broxiva_postgres",
+          "name": "Broxiva PostgreSQL"
+        }
+      },
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate Pricing Recommendations\nconst items = [];\n\nfor (const item of $input.all()) {\n  const data = item.json;\n  const recommendations = [];\n  const alerts = [];\n  \n  // Skip if no competitor data\n  if (!data.min_competitor_price || data.competitor_count === 0) {\n    items.push({\n      json: {\n        ...data,\n        recommendations: [],\n        alerts: [{\n          type: 'info',\n          severity: 'low',\n          message: 'No competitor pricing data available',\n          action_required: false\n        }],\n        recommended_action: 'monitor'\n      }\n    });\n    continue;\n  }\n  \n  const currentPrice = data.current_price;\n  const costPrice = data.cost_price;\n  const minCompPrice = data.min_competitor_price;\n  const avgCompPrice = data.avg_competitor_price;\n  const currentMargin = data.current_margin;\n  const targetMargin = data.target_margin || 0.25;\n  const minPrice = data.min_price;\n  const maxPrice = data.max_price;\n  \n  // Calculate price differences\n  const priceDiffPercent = ((currentPrice - minCompPrice) / minCompPrice) * 100;\n  const priceDiffAmount = currentPrice - minCompPrice;\n  \n  // Rule 1: Price Match when competitor 10%+ lower\n  if (priceDiffPercent > 10) {\n    const matchPrice = minCompPrice;\n    const newMargin = (matchPrice - costPrice) / matchPrice;\n    \n    if (newMargin >= 0.15 && matchPrice >= minPrice) {\n      recommendations.push({\n        type: 'price_match',\n        priority: 'high',\n        current_price: currentPrice,\n        recommended_price: matchPrice.toFixed(2),\n        price_change: (matchPrice - currentPrice).toFixed(2),\n        price_change_percent: (((matchPrice - currentPrice) / currentPrice) * 100).toFixed(2),\n        new_margin: (newMargin * 100).toFixed(2),\n        reason: `Competitor pricing ${priceDiffPercent.toFixed(1)}% lower. Price match recommended.`,\n        expected_impact: 'Increase competitiveness and sales volume',\n        requires_approval: newMargin < 0.20,\n        competitor_reference: data.competitor_prices.find(cp => cp.price === minCompPrice)?.competitor\n      });\n      \n      if (priceDiffPercent > 15) {\n        alerts.push({\n          type: 'price_undercut',\n          severity: 'urgent',\n          message: `URGENT: Competitor pricing ${priceDiffPercent.toFixed(1)}% lower (${data.competitor_prices.find(cp => cp.price === minCompPrice)?.competitor})`,\n          action_required: true,\n          recommended_action: 'Immediate price review required'\n        });\n      }\n    } else if (newMargin < 0.15) {\n      alerts.push({\n        type: 'margin_protection',\n        severity: 'high',\n        message: `Cannot match competitor price - margin would drop to ${(newMargin * 100).toFixed(1)}%`,\n        action_required: true,\n        recommended_action: 'Review cost structure or consider de-listing'\n      });\n    }\n  }\n  \n  // Rule 2: Margin Protection (below 20%)\n  if (currentMargin < 0.20) {\n    const minProfitablePrice = costPrice / (1 - 0.20);\n    \n    if (currentPrice < minProfitablePrice) {\n      recommendations.push({\n        type: 'margin_protection',\n        priority: 'critical',\n        current_price: currentPrice,\n        recommended_price: minProfitablePrice.toFixed(2),\n        price_change: (minProfitablePrice - currentPrice).toFixed(2),\n        price_change_percent: (((minProfitablePrice - currentPrice) / currentPrice) * 100).toFixed(2),\n        new_margin: '20.00',\n        reason: `Current margin ${(currentMargin * 100).toFixed(1)}% below minimum threshold of 20%`,\n        expected_impact: 'Restore profitability (may reduce sales volume)',\n        requires_approval: true\n      });\n      \n      alerts.push({\n        type: 'low_margin',\n        severity: 'critical',\n        message: `CRITICAL: Margin at ${(currentMargin * 100).toFixed(1)}% - below 20% threshold`,\n        action_required: true,\n        recommended_action: 'Immediate price increase or cost reduction required'\n      });\n    }\n  }\n  \n  // Rule 3: Opportunity Alerts (competitor out of stock)\n  if (data.out_of_stock_competitors > 0) {\n    const inStockCompetitors = data.competitor_prices.filter(cp => cp.in_stock);\n    const outOfStockCompetitors = data.competitor_prices.filter(cp => !cp.in_stock);\n    \n    if (outOfStockCompetitors.length >= data.competitor_count * 0.5) {\n      // Majority out of stock - opportunity for price increase\n      const opportunityPrice = Math.min(\n        avgCompPrice * 1.05,\n        maxPrice\n      );\n      \n      if (opportunityPrice > currentPrice) {\n        const newMargin = (opportunityPrice - costPrice) / opportunityPrice;\n        \n        recommendations.push({\n          type: 'opportunity_pricing',\n          priority: 'medium',\n          current_price: currentPrice,\n          recommended_price: opportunityPrice.toFixed(2),\n          price_change: (opportunityPrice - currentPrice).toFixed(2),\n          price_change_percent: (((opportunityPrice - currentPrice) / currentPrice) * 100).toFixed(2),\n          new_margin: (newMargin * 100).toFixed(2),\n          reason: `${outOfStockCompetitors.length} of ${data.competitor_count} competitors out of stock`,\n          expected_impact: 'Capture market demand and increase margins',\n          requires_approval: false,\n          out_of_stock_competitors: outOfStockCompetitors.map(c => c.competitor)\n        });\n        \n        alerts.push({\n          type: 'opportunity',\n          severity: 'medium',\n          message: `OPPORTUNITY: ${outOfStockCompetitors.length} competitors out of stock`,\n          action_required: false,\n          recommended_action: 'Consider price increase to capitalize on demand'\n        });\n      }\n    }\n  }\n  \n  // Rule 4: Competitive Positioning (slight adjustments)\n  if (priceDiffPercent > 5 && priceDiffPercent <= 10) {\n    const competitivePrice = avgCompPrice * 0.99; // Slightly below average\n    const newMargin = (competitivePrice - costPrice) / competitivePrice;\n    \n    if (newMargin >= targetMargin && competitivePrice >= minPrice) {\n      recommendations.push({\n        type: 'competitive_adjustment',\n        priority: 'low',\n        current_price: currentPrice,\n        recommended_price: competitivePrice.toFixed(2),\n        price_change: (competitivePrice - currentPrice).toFixed(2),\n        price_change_percent: (((competitivePrice - currentPrice) / currentPrice) * 100).toFixed(2),\n        new_margin: (newMargin * 100).toFixed(2),\n        reason: 'Optimize competitive position while maintaining target margin',\n        expected_impact: 'Improve price competitiveness',\n        requires_approval: false\n      });\n    }\n  }\n  \n  // Rule 5: Premium Pricing (significantly below competitors)\n  if (priceDiffPercent < -10) {\n    const premiumPrice = Math.min(\n      avgCompPrice * 0.95,\n      maxPrice\n    );\n    const newMargin = (premiumPrice - costPrice) / premiumPrice;\n    \n    if (premiumPrice > currentPrice && newMargin <= 0.40) {\n      recommendations.push({\n        type: 'premium_opportunity',\n        priority: 'low',\n        current_price: currentPrice,\n        recommended_price: premiumPrice.toFixed(2),\n        price_change: (premiumPrice - currentPrice).toFixed(2),\n        price_change_percent: (((premiumPrice - currentPrice) / currentPrice) * 100).toFixed(2),\n        new_margin: (newMargin * 100).toFixed(2),\n        reason: `Current price ${Math.abs(priceDiffPercent).toFixed(1)}% below market - opportunity to increase margins`,\n        expected_impact: 'Increase profitability without sacrificing competitiveness',\n        requires_approval: false\n      });\n    }\n  }\n  \n  // Determine recommended action\n  let recommendedAction = 'monitor';\n  if (recommendations.length > 0) {\n    const highestPriority = recommendations.reduce((max, rec) => {\n      const priorities = { critical: 4, high: 3, medium: 2, low: 1 };\n      return priorities[rec.priority] > priorities[max.priority] ? rec : max;\n    });\n    \n    if (highestPriority.requires_approval) {\n      recommendedAction = 'review_and_approve';\n    } else if (highestPriority.priority === 'high' || highestPriority.priority === 'critical') {\n      recommendedAction = 'immediate_action';\n    } else {\n      recommendedAction = 'consider_change';\n    }\n  }\n  \n  items.push({\n    json: {\n      ...data,\n      recommendations,\n      alerts,\n      recommended_action: recommendedAction,\n      total_recommendations: recommendations.length,\n      requires_approval: recommendations.some(r => r.requires_approval)\n    }\n  });\n}\n\nreturn items;"
+      },
+      "id": "generate-pricing-recommendations",
+      "name": "Generate Pricing Recommendations",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1450, 300],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO pricing_recommendations (\n  product_id,\n  recommendation_type,\n  priority,\n  current_price,\n  recommended_price,\n  price_change_amount,\n  price_change_percent,\n  new_margin,\n  reason,\n  expected_impact,\n  requires_approval,\n  status,\n  competitor_data,\n  created_at\n)\nVALUES\n{{ $json.recommendations.map(rec => \n  `(\n    ${$json.product_id},\n    '${rec.type}',\n    '${rec.priority}',\n    ${rec.current_price},\n    ${rec.recommended_price},\n    ${rec.price_change},\n    ${rec.price_change_percent},\n    ${rec.new_margin},\n    '${rec.reason.replace(/'/g, \"''\")}',\n    '${rec.expected_impact.replace(/'/g, \"''\")}',\n    ${rec.requires_approval},\n    'pending',\n    '${JSON.stringify($json.competitor_prices).replace(/'/g, \"''\")}',\n    CURRENT_TIMESTAMP\n  )`\n).join(',\\n') }}",
+        "additionalFields": {}
+      },
+      "id": "save-recommendations",
+      "name": "Save Recommendations",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [1650, 300],
+      "credentials": {
+        "postgres": {
+          "id": "broxiva_postgres",
+          "name": "Broxiva PostgreSQL"
+        }
+      },
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "combineOperation": "any"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.alerts && $json.alerts.length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{ $json.requires_approval }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "filter-urgent-alerts",
+      "name": "Filter Urgent Alerts",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1650, 450]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C12345PRICING",
+          "mode": "id"
+        },
+        "text": "=:rotating_light: *URGENT PRICING ALERT*\n\n*Product:* {{ $json.product_name }}\n*SKU:* {{ $json.sku }}\n*Current Price:* ${{ $json.current_price }}\n*Current Margin:* {{ ($json.current_margin * 100).toFixed(1) }}%\n\n{{ $json.alerts.filter(a => a.severity === 'urgent' || a.severity === 'critical').map(alert => \n  `*${alert.type.toUpperCase()}:* ${alert.message}\\n*Action:* ${alert.recommended_action}`\n).join('\\n\\n') }}\n\n*Recommendations:*\n{{ $json.recommendations.slice(0, 2).map(rec => \n  `• *${rec.type}*: ${rec.current_price} → $${rec.recommended_price} (${rec.price_change_percent}%)\\n  Reason: ${rec.reason}\\n  ${rec.requires_approval ? '⚠️ Requires approval' : '✅ Auto-eligible'}`\n).join('\\n\\n') }}\n\n*Competitor Pricing:*\n{{ $json.competitor_prices.slice(0, 3).map(cp => \n  `• ${cp.competitor}: $${cp.price} ${cp.in_stock ? '✓' : '(Out of stock)'}`\n).join('\\n') }}\n\n<https://admin.broxiva.com/pricing/review/{{ $json.product_id }}|Review & Take Action>",
+        "otherOptions": {}
+      },
+      "id": "send-urgent-slack-alert",
+      "name": "Send Urgent Slack Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1850, 450],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "slack_oauth",
+          "name": "Slack OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "aggregate"
+      },
+      "id": "aggregate-all-results",
+      "name": "Aggregate All Results",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1850, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate Daily Summary Report\nconst allProducts = $input.all().map(item => item.json);\n\nconst summary = {\n  report_date: new Date().toISOString().split('T')[0],\n  total_products_tracked: allProducts.length,\n  products_with_data: allProducts.filter(p => p.competitor_count > 0).length,\n  total_recommendations: allProducts.reduce((sum, p) => sum + (p.recommendations?.length || 0), 0),\n  urgent_alerts: allProducts.filter(p => \n    p.alerts?.some(a => a.severity === 'urgent' || a.severity === 'critical')\n  ).length,\n  \n  // Price position breakdown\n  price_positions: {\n    significantly_lower: allProducts.filter(p => p.price_position === 'significantly_lower').length,\n    competitive: allProducts.filter(p => p.price_position === 'competitive').length,\n    slightly_higher: allProducts.filter(p => p.price_position === 'slightly_higher').length,\n    significantly_higher: allProducts.filter(p => p.price_position === 'significantly_higher').length,\n    unknown: allProducts.filter(p => p.price_position === 'unknown').length\n  },\n  \n  // Recommendation breakdown\n  recommendations_by_type: {\n    price_match: allProducts.reduce((sum, p) => \n      sum + (p.recommendations?.filter(r => r.type === 'price_match').length || 0), 0),\n    margin_protection: allProducts.reduce((sum, p) => \n      sum + (p.recommendations?.filter(r => r.type === 'margin_protection').length || 0), 0),\n    opportunity_pricing: allProducts.reduce((sum, p) => \n      sum + (p.recommendations?.filter(r => r.type === 'opportunity_pricing').length || 0), 0),\n    competitive_adjustment: allProducts.reduce((sum, p) => \n      sum + (p.recommendations?.filter(r => r.type === 'competitive_adjustment').length || 0), 0),\n    premium_opportunity: allProducts.reduce((sum, p) => \n      sum + (p.recommendations?.filter(r => r.type === 'premium_opportunity').length || 0), 0)\n  },\n  \n  // Alert breakdown\n  alerts_by_severity: {\n    critical: allProducts.reduce((sum, p) => \n      sum + (p.alerts?.filter(a => a.severity === 'critical').length || 0), 0),\n    urgent: allProducts.reduce((sum, p) => \n      sum + (p.alerts?.filter(a => a.severity === 'urgent').length || 0), 0),\n    high: allProducts.reduce((sum, p) => \n      sum + (p.alerts?.filter(a => a.severity === 'high').length || 0), 0),\n    medium: allProducts.reduce((sum, p) => \n      sum + (p.alerts?.filter(a => a.severity === 'medium').length || 0), 0)\n  },\n  \n  // Top opportunities\n  top_price_match_opportunities: allProducts\n    .filter(p => p.recommendations?.some(r => r.type === 'price_match'))\n    .sort((a, b) => \n      Math.abs(parseFloat(b.price_diff_percent || 0)) - Math.abs(parseFloat(a.price_diff_percent || 0))\n    )\n    .slice(0, 5)\n    .map(p => ({\n      product_name: p.product_name,\n      sku: p.sku,\n      current_price: p.current_price,\n      min_competitor_price: p.min_competitor_price,\n      price_diff_percent: p.price_diff_percent\n    })),\n  \n  // Low margin warnings\n  low_margin_products: allProducts\n    .filter(p => p.current_margin < 0.20)\n    .sort((a, b) => a.current_margin - b.current_margin)\n    .slice(0, 5)\n    .map(p => ({\n      product_name: p.product_name,\n      sku: p.sku,\n      current_price: p.current_price,\n      current_margin: (p.current_margin * 100).toFixed(1)\n    })),\n  \n  // Out of stock opportunities\n  out_of_stock_opportunities: allProducts\n    .filter(p => p.out_of_stock_competitors >= 2)\n    .sort((a, b) => b.out_of_stock_competitors - a.out_of_stock_competitors)\n    .slice(0, 5)\n    .map(p => ({\n      product_name: p.product_name,\n      sku: p.sku,\n      out_of_stock_count: p.out_of_stock_competitors,\n      total_competitors: p.competitor_count\n    })),\n  \n  // Competitor coverage\n  avg_competitors_per_product: allProducts.length > 0\n    ? (allProducts.reduce((sum, p) => sum + p.competitor_count, 0) / allProducts.length).toFixed(1)\n    : 0,\n  \n  // Approval queue\n  pending_approvals: allProducts.filter(p => p.requires_approval).length,\n  \n  // Market insights\n  avg_price_difference: allProducts.filter(p => p.price_diff_percent).length > 0\n    ? (allProducts\n        .filter(p => p.price_diff_percent)\n        .reduce((sum, p) => sum + parseFloat(p.price_diff_percent), 0) / \n       allProducts.filter(p => p.price_diff_percent).length\n      ).toFixed(2)\n    : 0\n};\n\nreturn [{ json: summary }];"
+      },
+      "id": "generate-daily-summary",
+      "name": "Generate Daily Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2050, 300],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C12345PRICING",
+          "mode": "id"
+        },
+        "text": "=:chart_with_upwards_trend: *Daily Pricing Summary - {{ $json.report_date }}*\n\n*Overview*\n• Products Tracked: {{ $json.total_products_tracked }}\n• With Competitor Data: {{ $json.products_with_data }}\n• Total Recommendations: {{ $json.total_recommendations }}\n• Urgent Alerts: {{ $json.urgent_alerts }}\n• Pending Approvals: {{ $json.pending_approvals }}\n\n*Price Positioning*\n• Significantly Lower: {{ $json.price_positions.significantly_lower }}\n• Competitive: {{ $json.price_positions.competitive }}\n• Slightly Higher: {{ $json.price_positions.slightly_higher }}\n• Significantly Higher: {{ $json.price_positions.significantly_higher }}\n\n*Recommendations*\n• Price Match: {{ $json.recommendations_by_type.price_match }}\n• Margin Protection: {{ $json.recommendations_by_type.margin_protection }}\n• Opportunity Pricing: {{ $json.recommendations_by_type.opportunity_pricing }}\n• Competitive Adjustments: {{ $json.recommendations_by_type.competitive_adjustment }}\n• Premium Opportunities: {{ $json.recommendations_by_type.premium_opportunity }}\n\n*Alerts by Severity*\n• Critical: {{ $json.alerts_by_severity.critical }}\n• Urgent: {{ $json.alerts_by_severity.urgent }}\n• High: {{ $json.alerts_by_severity.high }}\n• Medium: {{ $json.alerts_by_severity.medium }}\n\n{{ $json.top_price_match_opportunities.length > 0 ? '*Top Price Match Opportunities:*\\n' + $json.top_price_match_opportunities.map(p => `• ${p.product_name} (${p.sku}): $${p.current_price} vs $${p.min_competitor_price} (${p.price_diff_percent}% diff)`).join('\\n') : '' }}\n\n{{ $json.low_margin_products.length > 0 ? '*Low Margin Warnings:*\\n' + $json.low_margin_products.map(p => `• ${p.product_name}: ${p.current_margin}% margin`).join('\\n') : '' }}\n\n{{ $json.out_of_stock_opportunities.length > 0 ? '*Out of Stock Opportunities:*\\n' + $json.out_of_stock_opportunities.map(p => `• ${p.product_name}: ${p.out_of_stock_count}/${p.total_competitors} competitors OOS`).join('\\n') : '' }}\n\n*Market Insights*\n• Avg Competitors/Product: {{ $json.avg_competitors_per_product }}\n• Avg Price Difference: {{ $json.avg_price_difference }}%\n\n<https://admin.broxiva.com/pricing/dashboard|View Full Dashboard> | <https://admin.broxiva.com/pricing/approvals|Review Approvals>",
+        "otherOptions": {}
+      },
+      "id": "send-daily-summary-slack",
+      "name": "Send Daily Summary (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [2250, 300],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "slack_oauth",
+          "name": "Slack OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mixpanel.com/import",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "mixpanelApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "strict",
+              "value": "1"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "data",
+              "value": "={{ JSON.stringify([{\n  event: 'Daily Pricing Analysis',\n  properties: {\n    distinct_id: 'pricing_system',\n    time: Date.now(),\n    report_date: $json.report_date,\n    total_products_tracked: $json.total_products_tracked,\n    products_with_data: $json.products_with_data,\n    total_recommendations: $json.total_recommendations,\n    urgent_alerts: $json.urgent_alerts,\n    pending_approvals: $json.pending_approvals,\n    competitive_products: $json.price_positions.competitive,\n    overpriced_products: $json.price_positions.significantly_higher,\n    underpriced_products: $json.price_positions.significantly_lower,\n    price_match_recommendations: $json.recommendations_by_type.price_match,\n    margin_warnings: $json.recommendations_by_type.margin_protection,\n    opportunities: $json.recommendations_by_type.opportunity_pricing,\n    avg_competitors_per_product: parseFloat($json.avg_competitors_per_product),\n    avg_price_difference: parseFloat($json.avg_price_difference)\n  }\n}]) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "push-to-mixpanel",
+      "name": "Push to Mixpanel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2250, 400],
+      "credentials": {
+        "mixpanelApi": {
+          "id": "mixpanel_api",
+          "name": "Mixpanel API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.looker.com/api/4.0/queries/run/json",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "lookerApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"broxiva\",\n  \"view\": \"pricing_metrics\",\n  \"fields\": [\"pricing_metrics.date\", \"pricing_metrics.total_products\", \"pricing_metrics.competitive_position\", \"pricing_metrics.avg_margin\"],\n  \"filters\": {\n    \"pricing_metrics.date\": \"{{ $json.report_date }}\"\n  },\n  \"limit\": 1,\n  \"cache\": false\n}",
+        "options": {}
+      },
+      "id": "push-to-looker",
+      "name": "Push to Looker",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2250, 500],
+      "continueOnFail": true,
+      "credentials": {
+        "lookerApi": {
+          "id": "looker_api",
+          "name": "Looker API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO pricing_analysis_summary (\n  report_date,\n  total_products_tracked,\n  products_with_competitor_data,\n  total_recommendations,\n  urgent_alerts,\n  pending_approvals,\n  price_positions,\n  recommendations_by_type,\n  alerts_by_severity,\n  market_insights,\n  created_at\n)\nVALUES (\n  '{{ $json.report_date }}',\n  {{ $json.total_products_tracked }},\n  {{ $json.products_with_data }},\n  {{ $json.total_recommendations }},\n  {{ $json.urgent_alerts }},\n  {{ $json.pending_approvals }},\n  '{{ JSON.stringify($json.price_positions) }}',\n  '{{ JSON.stringify($json.recommendations_by_type) }}',\n  '{{ JSON.stringify($json.alerts_by_severity) }}',\n  '{{ JSON.stringify({\n    avg_competitors_per_product: $json.avg_competitors_per_product,\n    avg_price_difference: $json.avg_price_difference,\n    top_opportunities: $json.top_price_match_opportunities,\n    low_margin_products: $json.low_margin_products,\n    out_of_stock_opportunities: $json.out_of_stock_opportunities\n  }) }}',\n  CURRENT_TIMESTAMP\n)\nON CONFLICT (report_date) \nDO UPDATE SET\n  total_products_tracked = EXCLUDED.total_products_tracked,\n  products_with_competitor_data = EXCLUDED.products_with_competitor_data,\n  total_recommendations = EXCLUDED.total_recommendations,\n  urgent_alerts = EXCLUDED.urgent_alerts,\n  pending_approvals = EXCLUDED.pending_approvals,\n  price_positions = EXCLUDED.price_positions,\n  recommendations_by_type = EXCLUDED.recommendations_by_type,\n  alerts_by_severity = EXCLUDED.alerts_by_severity,\n  market_insights = EXCLUDED.market_insights,\n  updated_at = CURRENT_TIMESTAMP",
+        "additionalFields": {}
+      },
+      "id": "save-analysis-summary",
+      "name": "Save Analysis Summary",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [2250, 200],
+      "credentials": {
+        "postgres": {
+          "id": "broxiva_postgres",
+          "name": "Broxiva PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge competitor data from all sources\nconst items = [];\n\nfor (const item of $input.all()) {\n  const productData = item.json;\n  \n  // Get responses from different branches\n  const amazonData = $('Amazon Price Check').item?.json;\n  const walmartData = $('Walmart Price Check').item?.json;\n  const targetData = $('Target Price Check').item?.json;\n  const scrapedData = $('Parse Scraped Data').all().map(i => i.json);\n  \n  items.push({\n    json: {\n      product_data: productData,\n      amazon_response: amazonData,\n      walmart_response: walmartData,\n      target_response: targetData,\n      scraped_data: scrapedData\n    }\n  });\n}\n\nreturn items;"
+      },
+      "id": "merge-competitor-responses",
+      "name": "Merge Competitor Responses",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 600],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse scraped HTML data\nconst items = [];\n\nfor (const item of $input.all()) {\n  const html = item.json.body || item.json;\n  const competitorConfig = $('Get Competitor URLs').item.json;\n  \n  // This is a simplified parser - in production, use proper selectors per competitor\n  const priceRegex = /\\$(\\d+\\.\\d{2})/g;\n  const prices = [];\n  let match;\n  \n  while ((match = priceRegex.exec(html)) !== null) {\n    prices.push(parseFloat(match[1]));\n  }\n  \n  if (prices.length > 0) {\n    // Use median price to avoid outliers\n    prices.sort((a, b) => a - b);\n    const medianPrice = prices[Math.floor(prices.length / 2)];\n    \n    items.push({\n      json: {\n        competitor_name: competitorConfig.competitor_name,\n        price: medianPrice,\n        currency: 'USD',\n        url: competitorConfig.competitor_url,\n        title: 'Product from ' + competitorConfig.competitor_name,\n        in_stock: html.includes('In Stock') || html.includes('Available'),\n        match_score: 0.7, // Default score for scraped data\n        scraped_at: new Date().toISOString()\n      }\n    });\n  }\n}\n\nreturn items;"
+      },
+      "id": "parse-scraped-data",
+      "name": "Parse Scraped Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 500],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {},
+      "id": "no-operation",
+      "name": "Workflow Complete",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2450, 300]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily 6 AM EST": {
+      "main": [
+        [
+          {
+            "node": "Get Trackable Products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Trackable Products": {
+      "main": [
+        [
+          {
+            "node": "Split Products (Batch 10)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Products (Batch 10)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Product Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Product Data": {
+      "main": [
+        [
+          {
+            "node": "Amazon Price Check",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Walmart Price Check",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Target Price Check",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Competitor URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Amazon Price Check": {
+      "main": [
+        [
+          {
+            "node": "Merge Competitor Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Walmart Price Check": {
+      "main": [
+        [
+          {
+            "node": "Merge Competitor Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Target Price Check": {
+      "main": [
+        [
+          {
+            "node": "Merge Competitor Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Competitor URLs": {
+      "main": [
+        [
+          {
+            "node": "Scrape Direct Competitors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Direct Competitors": {
+      "main": [
+        [
+          {
+            "node": "Parse Scraped Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Scraped Data": {
+      "main": [
+        [
+          {
+            "node": "Merge Competitor Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Competitor Responses": {
+      "main": [
+        [
+          {
+            "node": "Parse Competitor Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Competitor Data": {
+      "main": [
+        [
+          {
+            "node": "Save Price History",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Pricing Recommendations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Pricing Recommendations": {
+      "main": [
+        [
+          {
+            "node": "Save Recommendations",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Filter Urgent Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Recommendations": {
+      "main": [
+        [
+          {
+            "node": "Aggregate All Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Urgent Alerts": {
+      "main": [
+        [
+          {
+            "node": "Send Urgent Slack Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Urgent Slack Alert": {
+      "main": [
+        [
+          {
+            "node": "Aggregate All Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate All Results": {
+      "main": [
+        [
+          {
+            "node": "Generate Daily Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Daily Summary": {
+      "main": [
+        [
+          {
+            "node": "Save Analysis Summary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Daily Summary (Slack)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Push to Mixpanel",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Push to Looker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Daily Summary (Slack)": {
+      "main": [
+        [
+          {
+            "node": "Workflow Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push to Mixpanel": {
+      "main": [
+        [
+          {
+            "node": "Workflow Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push to Looker": {
+      "main": [
+        [
+          {
+            "node": "Workflow Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Analysis Summary": {
+      "main": [
+        [
+          {
+            "node": "Workflow Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "error_handler_workflow"
+  },
+  "versionId": "1.0.0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "broxiva_production"
+  },
+  "id": "workflow-08-dynamic-pricing",
+  "tags": [
+    {
+      "createdAt": "2025-12-03T06:00:00.000Z",
+      "updatedAt": "2025-12-03T06:00:00.000Z",
+      "id": "pricing",
+      "name": "pricing"
+    },
+    {
+      "createdAt": "2025-12-03T06:00:00.000Z",
+      "updatedAt": "2025-12-03T06:00:00.000Z",
+      "id": "competitor-monitoring",
+      "name": "competitor-monitoring"
+    },
+    {
+      "createdAt": "2025-12-03T06:00:00.000Z",
+      "updatedAt": "2025-12-03T06:00:00.000Z",
+      "id": "automation",
+      "name": "automation"
+    }
+  ]
+}

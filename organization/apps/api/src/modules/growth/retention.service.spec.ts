@@ -102,7 +102,9 @@ describe('RetentionService', () => {
     });
 
     it('should predict MEDIUM churn risk for moderately inactive user', async () => {
-      const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);
+      // User was last active 35 days ago (>30 days = +30 score)
+      const thirtyFiveDaysAgo = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000);
+      // Last order was 30 days ago (doesn't trigger 60+ day factor, so no extra points)
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
       const mockUser = {
@@ -111,8 +113,9 @@ describe('RetentionService', () => {
       };
 
       mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+      // Last activity was 35 days ago - triggers ">30 days inactive" = +30 score
       mockPrismaService.analyticsEvent.findFirst.mockResolvedValue({
-        timestamp: fifteenDaysAgo,
+        timestamp: thirtyFiveDaysAgo,
       });
       mockPrismaService.order.findMany.mockResolvedValue([
         { createdAt: thirtyDaysAgo },
@@ -124,6 +127,7 @@ describe('RetentionService', () => {
 
       const result = await service.predictChurnRisk('user-medium');
 
+      // With >30 days inactivity, we get exactly 30 points = MEDIUM risk
       expect(result.riskLevel).toBe('MEDIUM');
       expect(result.riskScore).toBeGreaterThanOrEqual(30);
       expect(result.riskScore).toBeLessThan(60);

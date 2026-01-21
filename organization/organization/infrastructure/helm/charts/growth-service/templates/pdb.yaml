@@ -1,0 +1,79 @@
+{{- if .Values.growthApi.enabled }}
+{{- if .Values.growthApi.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "growth-service.fullname" . }}-{{ .Values.growthApi.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "growth-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.growthApi.name }}
+spec:
+  minAvailable: {{ .Values.growthApi.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "growth-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.growthApi.name }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.referralEngine.enabled }}
+{{- if .Values.referralEngine.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "growth-service.fullname" . }}-{{ .Values.referralEngine.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "growth-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.referralEngine.name }}
+spec:
+  minAvailable: {{ .Values.referralEngine.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "growth-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.referralEngine.name }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.affiliateTracker.enabled }}
+{{- if .Values.affiliateTracker.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "growth-service.fullname" . }}-{{ .Values.affiliateTracker.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "growth-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.affiliateTracker.name }}
+spec:
+  minAvailable: {{ .Values.affiliateTracker.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "growth-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.affiliateTracker.name }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.landingBuilder.enabled }}
+{{- if .Values.landingBuilder.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "growth-service.fullname" . }}-{{ .Values.landingBuilder.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "growth-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.landingBuilder.name }}
+spec:
+  minAvailable: {{ .Values.landingBuilder.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "growth-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.landingBuilder.name }}
+{{- end }}
+{{- end }}

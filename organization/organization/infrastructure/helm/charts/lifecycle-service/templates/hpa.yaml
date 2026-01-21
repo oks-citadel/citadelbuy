@@ -1,0 +1,151 @@
+{{- if .Values.emailDispatcher.enabled }}
+{{- if .Values.emailDispatcher.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "lifecycle-service.fullname" . }}-{{ .Values.emailDispatcher.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "lifecycle-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.emailDispatcher.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "lifecycle-service.fullname" . }}-{{ .Values.emailDispatcher.name }}
+  minReplicas: {{ .Values.emailDispatcher.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.emailDispatcher.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.emailDispatcher.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.emailDispatcher.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.emailDispatcher.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.emailDispatcher.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.lifecycleOrchestrator.enabled }}
+{{- if .Values.lifecycleOrchestrator.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "lifecycle-service.fullname" . }}-{{ .Values.lifecycleOrchestrator.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "lifecycle-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.lifecycleOrchestrator.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "lifecycle-service.fullname" . }}-{{ .Values.lifecycleOrchestrator.name }}
+  minReplicas: {{ .Values.lifecycleOrchestrator.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.lifecycleOrchestrator.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.lifecycleOrchestrator.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.lifecycleOrchestrator.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.lifecycleOrchestrator.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.lifecycleOrchestrator.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.triggerProcessor.enabled }}
+{{- if .Values.triggerProcessor.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "lifecycle-service.fullname" . }}-{{ .Values.triggerProcessor.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "lifecycle-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.triggerProcessor.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "lifecycle-service.fullname" . }}-{{ .Values.triggerProcessor.name }}
+  minReplicas: {{ .Values.triggerProcessor.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.triggerProcessor.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.triggerProcessor.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.triggerProcessor.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.triggerProcessor.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.triggerProcessor.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.templateRenderer.enabled }}
+{{- if .Values.templateRenderer.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "lifecycle-service.fullname" . }}-{{ .Values.templateRenderer.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "lifecycle-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.templateRenderer.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "lifecycle-service.fullname" . }}-{{ .Values.templateRenderer.name }}
+  minReplicas: {{ .Values.templateRenderer.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.templateRenderer.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.templateRenderer.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.templateRenderer.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.templateRenderer.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.templateRenderer.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}

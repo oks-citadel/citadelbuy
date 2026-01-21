@@ -1,0 +1,95 @@
+# Development environment values for commerce-service
+
+global:
+  environment: development
+
+promoEngine:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+
+inAppMessaging:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 75m
+      memory: 192Mi
+    limits:
+      cpu: 350m
+      memory: 384Mi
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+
+pricingService:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+
+conversionTracker:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 75m
+      memory: 192Mi
+    limits:
+      cpu: 350m
+      memory: 384Mi
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/tls-acme: "false"
+  hosts:
+    - host: commerce.dev.broxiva.local
+      paths:
+        - path: /promo
+          pathType: Prefix
+          service: promo-engine
+        - path: /messaging
+          pathType: Prefix
+          service: in-app-messaging
+        - path: /pricing
+          pathType: Prefix
+          service: pricing-service
+        - path: /conversion
+          pathType: Prefix
+          service: conversion-tracker
+  tls: []
+
+serviceAccount:
+  create: true
+  annotations: {}
+
+configMap:
+  LOG_LEVEL: debug
+  LOG_FORMAT: text
+  METRICS_ENABLED: "true"
+  TRACING_ENABLED: "false"
+  PROMO_CACHE_TTL: "30"
+  PRICING_CACHE_TTL: "10"
+  CONVERSION_BATCH_SIZE: "10"

@@ -1,0 +1,178 @@
+name: 'Publish Report'
+description: 'Standardized report publishing - uploads artifacts and creates PR summaries'
+
+inputs:
+  name:
+    description: 'Report name (e.g., sast-report, compliance-report)'
+    required: true
+  path:
+    description: 'Path to report files (can include patterns)'
+    required: true
+  format:
+    description: 'Primary report format (json, markdown, sarif, html)'
+    required: false
+    default: 'json'
+  retention-days:
+    description: 'Artifact retention in days'
+    required: false
+    default: '30'
+  add-pr-comment:
+    description: 'Add summary comment to PR'
+    required: false
+    default: 'true'
+  add-step-summary:
+    description: 'Add to GitHub Step Summary'
+    required: false
+    default: 'true'
+  summary-title:
+    description: 'Title for the summary section'
+    required: false
+    default: ''
+  summary-content:
+    description: 'Content for the summary (markdown)'
+    required: false
+    default: ''
+  status:
+    description: 'Overall status (success, warning, failure, skipped)'
+    required: false
+    default: 'success'
+  workflow-name:
+    description: 'Name of the parent workflow'
+    required: false
+    default: ''
+  job-name:
+    description: 'Name of the current job'
+    required: false
+    default: ''
+
+outputs:
+  artifact-id:
+    description: 'ID of the uploaded artifact'
+    value: ${{ steps.upload.outputs.artifact-id }}
+  artifact-url:
+    description: 'URL to download the artifact'
+    value: ${{ steps.upload.outputs.artifact-url }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Prepare report directory
+      id: prepare
+      shell: bash
+      run: |
+        REPORT_DIR="./published-reports/${{ inputs.name }}"
+        mkdir -p "$REPORT_DIR"
+
+        # Copy report files to standard location
+        if [ -f "${{ inputs.path }}" ]; then
+          cp "${{ inputs.path }}" "$REPORT_DIR/"
+        elif [ -d "${{ inputs.path }}" ]; then
+          cp -r "${{ inputs.path }}"/* "$REPORT_DIR/" 2>/dev/null || true
+        fi
+
+        # Generate metadata
+        cat > "$REPORT_DIR/_metadata.json" << EOF
+        {
+          "report_name": "${{ inputs.name }}",
+          "format": "${{ inputs.format }}",
+          "status": "${{ inputs.status }}",
+          "workflow": "${{ inputs.workflow-name || github.workflow }}",
+          "job": "${{ inputs.job-name || github.job }}",
+          "run_id": "${{ github.run_id }}",
+          "run_number": "${{ github.run_number }}",
+          "actor": "${{ github.actor }}",
+          "ref": "${{ github.ref }}",
+          "sha": "${{ github.sha }}",
+          "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "repository": "${{ github.repository }}"
+        }
+        EOF
+
+        echo "report-dir=$REPORT_DIR" >> $GITHUB_OUTPUT
+
+    - name: Upload artifact
+      id: upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.name }}-${{ github.run_id }}
+        path: ./published-reports/${{ inputs.name }}/
+        retention-days: ${{ inputs.retention-days }}
+        if-no-files-found: warn
+
+    - name: Add to Step Summary
+      if: inputs.add-step-summary == 'true'
+      shell: bash
+      run: |
+        STATUS_EMOJI=""
+        case "${{ inputs.status }}" in
+          success) STATUS_EMOJI="white_check_mark" ;;
+          warning) STATUS_EMOJI="warning" ;;
+          failure) STATUS_EMOJI="x" ;;
+          skipped) STATUS_EMOJI="fast_forward" ;;
+          *) STATUS_EMOJI="information_source" ;;
+        esac
+
+        TITLE="${{ inputs.summary-title }}"
+        if [ -z "$TITLE" ]; then
+          TITLE="${{ inputs.name }}"
+        fi
+
+        {
+          echo "## :$STATUS_EMOJI: $TITLE"
+          echo ""
+          echo "| Property | Value |"
+          echo "|----------|-------|"
+          echo "| **Status** | ${{ inputs.status }} |"
+          echo "| **Workflow** | ${{ github.workflow }} |"
+          echo "| **Job** | ${{ github.job }} |"
+          echo "| **Run** | [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |"
+          echo "| **Commit** | \`${{ github.sha }}\` |"
+          echo ""
+
+          if [ -n "${{ inputs.summary-content }}" ]; then
+            echo "${{ inputs.summary-content }}"
+            echo ""
+          fi
+
+          echo "**Artifact:** \`${{ inputs.name }}-${{ github.run_id }}\`"
+          echo ""
+        } >> $GITHUB_STEP_SUMMARY
+
+    - name: Add PR Comment
+      if: inputs.add-pr-comment == 'true' && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const status = '${{ inputs.status }}';
+          const emoji = {
+            'success': ':white_check_mark:',
+            'warning': ':warning:',
+            'failure': ':x:',
+            'skipped': ':fast_forward:'
+          }[status] || ':information_source:';
+
+          const title = '${{ inputs.summary-title }}' || '${{ inputs.name }}';
+
+          let body = `## ${emoji} ${title}\n\n`;
+          body += `| Property | Value |\n`;
+          body += `|----------|-------|\n`;
+          body += `| **Status** | ${status} |\n`;
+          body += `| **Run** | [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |\n`;
+          body += `| **Artifact** | \`${{ inputs.name }}-${{ github.run_id }}\` |\n`;
+          body += `\n`;
+
+          const summaryContent = '${{ inputs.summary-content }}';
+          if (summaryContent) {
+            body += summaryContent + '\n\n';
+          }
+
+          body += `---\n`;
+          body += `*Generated by CI/CD Pipeline*`;
+
+          await github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });
+      continue-on-error: true

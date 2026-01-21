@@ -5,7 +5,6 @@ import {
   IsOptional,
   IsString,
   IsNumber,
-  IsObject,
   ValidateNested,
 } from 'class-validator';
 
@@ -64,7 +63,7 @@ export class ErrorDetail {
     example: 'invalid-email',
   })
   @IsOptional()
-  value?: any;
+  value?: unknown;
 
   @ApiPropertyOptional({
     description: 'Validation constraint that failed',

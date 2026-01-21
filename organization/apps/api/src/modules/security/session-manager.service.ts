@@ -525,7 +525,7 @@ export class SessionManagerService {
 
     // Generate session token if not provided
     const plainToken = sessionToken || crypto.randomBytes(32).toString('hex');
-    const hashedToken = await bcrypt.hash(plainToken, 10);
+    const hashedToken = await bcrypt.hash(plainToken, 12);
 
     // Create the session
     const session = await this.prisma.userSession.create({

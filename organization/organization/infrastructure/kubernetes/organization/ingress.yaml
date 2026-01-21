@@ -1,0 +1,255 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: organization-ingress
+  namespace: broxiva
+  labels:
+    app: organization-service
+    tier: backend
+  annotations:
+    # Nginx Ingress Controller annotations
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+    # TLS/SSL Configuration
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    cert-manager.io/acme-challenge-type: http01
+
+    # Rate Limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
+    nginx.ingress.kubernetes.io/limit-connections: "50"
+    nginx.ingress.kubernetes.io/limit-whitelist: "10.0.0.0/8"
+
+    # Request/Response Configuration
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/client-body-buffer-size: "1m"
+
+    # CORS Configuration
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://broxiva.com, https://www.broxiva.com"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization"
+
+    # Security Headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
+      more_set_headers "Permissions-Policy: geolocation=(), microphone=(), camera=()";
+      more_set_headers "Content-Security-Policy: default-src 'self'";
+
+    # Load balancing
+    nginx.ingress.kubernetes.io/load-balance: "ewma"
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$binary_remote_addr"
+
+    # Connection settings
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "8k"
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "4"
+
+    # Monitoring & Logging
+    nginx.ingress.kubernetes.io/enable-access-log: "true"
+    nginx.ingress.kubernetes.io/enable-rewrite-log: "true"
+
+    # Custom error pages
+    nginx.ingress.kubernetes.io/default-backend: default-http-backend
+
+    # Health checks
+    nginx.ingress.kubernetes.io/health-check-path: "/health"
+    nginx.ingress.kubernetes.io/health-check-interval: "30"
+
+spec:
+  tls:
+    - hosts:
+        - broxiva.com
+        - www.broxiva.com
+        - api.broxiva.com
+      secretName: broxiva-tls-cert
+    - hosts:
+        - staging.broxiva.com
+        - api-staging.broxiva.com
+      secretName: broxiva-staging-tls-cert
+
+  rules:
+    # Production domain
+    - host: broxiva.com
+      http:
+        paths:
+          - path: /api/organizations
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+          - path: /api/banking
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+          - path: /api/escrow
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+          - path: /api/compliance
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+
+    # API subdomain
+    - host: api.broxiva.com
+      http:
+        paths:
+          - path: /organizations
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+          - path: /banking
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+          - path: /escrow
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+          - path: /compliance
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+
+    # Staging environment
+    - host: staging.broxiva.com
+      http:
+        paths:
+          - path: /api/organizations
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+          - path: /api/banking
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+          - path: /api/escrow
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+          - path: /api/compliance
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+
+    # Staging API subdomain
+    - host: api-staging.broxiva.com
+      http:
+        paths:
+          - path: /organizations
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+          - path: /banking
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+          - path: /escrow
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+          - path: /compliance
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+
+---
+# Ingress for internal services (cluster-only access)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: organization-internal-ingress
+  namespace: broxiva
+  labels:
+    app: organization-service
+    tier: backend
+    access: internal
+  annotations:
+    kubernetes.io/ingress.class: nginx-internal
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+    nginx.ingress.kubernetes.io/limit-rps: "1000"
+
+spec:
+  rules:
+    - host: organization-service.broxiva.svc.cluster.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+          - path: /metrics
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: organization-service
+                port:
+                  number: 80

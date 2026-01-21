@@ -1,0 +1,19 @@
+apiVersion: v2
+name: content-service
+description: A Helm chart for Broxiva Content Service - provides content API, rendering, scheduling, and search indexing capabilities
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - content
+  - cms
+  - headless
+  - search
+  - marketing
+maintainers:
+  - name: Broxiva Platform Team
+    email: platform@broxiva.com
+home: https://github.com/broxiva/e-commerce
+sources:
+  - https://github.com/broxiva/e-commerce
+dependencies: []

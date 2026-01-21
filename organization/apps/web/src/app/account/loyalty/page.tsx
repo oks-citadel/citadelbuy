@@ -9,7 +9,6 @@ import {
   TrendingUp,
   Star,
   Crown,
-  ChevronRight,
   Copy,
   Check,
   Clock,

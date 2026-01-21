@@ -4,7 +4,6 @@ import {
   Query,
   UseGuards,
   Request,
-  Param,
   Res,
 } from '@nestjs/common';
 import {
@@ -18,8 +17,6 @@ import { Response } from 'express';
 import { VendorAnalyticsService } from './vendor-analytics.service';
 import { VendorsService } from './vendors.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
-import { RolesGuard } from '@/common/guards/roles.guard';
-import { Roles } from '@/common/decorators/roles.decorator';
 import { AuthRequest } from '@/common/types/auth-request.types';
 
 @ApiTags('Vendor Analytics')

@@ -1,0 +1,20 @@
+apiVersion: v2
+name: ai-marketing-service
+description: A Helm chart for Broxiva AI Marketing Service - provides lead scoring, churn prediction, and AI content generation
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - ai
+  - ml
+  - lead-scoring
+  - churn-prediction
+  - content-generation
+  - marketing
+maintainers:
+  - name: Broxiva Platform Team
+    email: platform@broxiva.com
+home: https://github.com/broxiva/e-commerce
+sources:
+  - https://github.com/broxiva/e-commerce
+dependencies: []

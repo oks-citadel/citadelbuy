@@ -10,7 +10,6 @@ import {
   Heart,
   Menu,
   X,
-  ChevronDown,
   Mic,
   Camera,
   Bell,
@@ -98,6 +97,8 @@ export function Header() {
             size="icon"
             className="md:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={isMenuOpen}
           >
             {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
@@ -125,15 +126,16 @@ export function Header() {
                   size="icon-sm"
                   onClick={handleVoiceSearch}
                   className={cn(isListening && 'text-destructive')}
+                  aria-label={isListening ? 'Stop voice search' : 'Start voice search'}
                 >
                   <Mic className={cn('h-4 w-4', isListening && 'animate-pulse')} />
                 </Button>
                 <Link href="/visual-search">
-                  <Button type="button" variant="ghost" size="icon-sm">
+                  <Button type="button" variant="ghost" size="icon-sm" aria-label="Visual search">
                     <Camera className="h-4 w-4" />
                   </Button>
                 </Link>
-                <Button type="submit" variant="ghost" size="icon-sm">
+                <Button type="submit" variant="ghost" size="icon-sm" aria-label="Search">
                   <Search className="h-4 w-4" />
                 </Button>
               </div>
@@ -146,6 +148,8 @@ export function Header() {
             size="icon"
             className="md:hidden ml-auto"
             onClick={() => setIsSearchOpen(!isSearchOpen)}
+            aria-label={isSearchOpen ? 'Close search' : 'Open search'}
+            aria-expanded={isSearchOpen}
           >
             <Search className="h-5 w-5" />
           </Button>
@@ -154,9 +158,9 @@ export function Header() {
           <div className="flex items-center gap-2">
             {/* Notifications */}
             {isAuthenticated && (
-              <Button variant="ghost" size="icon" className="hidden sm:flex relative">
+              <Button variant="ghost" size="icon" className="hidden sm:flex relative" aria-label="View notifications (3 unread)">
                 <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground flex items-center justify-center" aria-hidden="true">
                   3
                 </span>
               </Button>
@@ -164,7 +168,7 @@ export function Header() {
 
             {/* Wishlist */}
             <Link href="/wishlist">
-              <Button variant="ghost" size="icon" className="hidden sm:flex">
+              <Button variant="ghost" size="icon" className="hidden sm:flex" aria-label="View wishlist">
                 <Heart className="h-5 w-5" />
               </Button>
             </Link>
@@ -175,12 +179,14 @@ export function Header() {
               size="icon"
               className="relative"
               onClick={() => setCartOpen(true)}
+              aria-label={`View cart${cartItemCount > 0 ? ` (${cartItemCount} items)` : ''}`}
             >
               <ShoppingCart className="h-5 w-5" />
               {cartItemCount > 0 && (
                 <Badge
                   variant="destructive"
                   className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]"
+                  aria-hidden="true"
                 >
                   {cartItemCount > 99 ? '99+' : cartItemCount}
                 </Badge>
@@ -194,6 +200,9 @@ export function Header() {
                 size="icon"
                 className="hidden sm:flex"
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                aria-label={isAuthenticated ? 'User menu' : 'Sign in options'}
+                aria-expanded={isUserMenuOpen}
+                aria-haspopup="menu"
               >
                 <User className="h-5 w-5" />
               </Button>
@@ -345,10 +354,10 @@ export function Header() {
                   autoFocus
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <Button type="button" variant="ghost" size="icon-sm" onClick={handleVoiceSearch}>
+                  <Button type="button" variant="ghost" size="icon-sm" onClick={handleVoiceSearch} aria-label="Voice search">
                     <Mic className="h-4 w-4" />
                   </Button>
-                  <Button type="submit" variant="ghost" size="icon-sm">
+                  <Button type="submit" variant="ghost" size="icon-sm" aria-label="Search">
                     <Search className="h-4 w-4" />
                   </Button>
                 </div>

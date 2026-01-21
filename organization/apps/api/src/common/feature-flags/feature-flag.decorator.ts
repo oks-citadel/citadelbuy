@@ -21,8 +21,10 @@
 import { SetMetadata, applyDecorators, UseGuards } from '@nestjs/common';
 import { FeatureFlagGuard } from './feature-flag.guard';
 import { FeatureFlagKey } from './feature-flags.interface';
+import { FEATURE_FLAG_KEY, FeatureFlagOptions } from './feature-flag.constants';
 
-export const FEATURE_FLAG_KEY = 'feature_flag';
+// Re-export for backward compatibility
+export { FEATURE_FLAG_KEY, FeatureFlagOptions } from './feature-flag.constants';
 
 /**
  * Decorator to gate a controller or method behind a feature flag
@@ -41,26 +43,6 @@ export function UseFeatureFlag(
 
 // Alias for backward compatibility
 export const FeatureFlagDecorator = UseFeatureFlag;
-
-export interface FeatureFlagOptions {
-  /**
-   * What to do when flag is disabled
-   * - 'throw': Throw 404 Not Found (default)
-   * - 'empty': Return empty response
-   * - 'fallback': Call fallback handler
-   */
-  onDisabled?: 'throw' | 'empty' | 'fallback';
-
-  /**
-   * Custom error message when flag is disabled
-   */
-  errorMessage?: string;
-
-  /**
-   * HTTP status code when flag is disabled (default: 404)
-   */
-  statusCode?: number;
-}
 
 /**
  * Mark a method as the fallback when a feature flag is disabled

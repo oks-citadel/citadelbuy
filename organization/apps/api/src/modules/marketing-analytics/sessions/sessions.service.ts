@@ -471,10 +471,11 @@ export class SessionsService {
 
     const ua = userAgent.toLowerCase();
     if (ua.includes('windows')) return 'Windows';
+    // Check for iOS devices before macOS since iOS user agents contain "Mac OS X"
+    if (ua.includes('iphone') || ua.includes('ipad')) return 'iOS';
     if (ua.includes('mac os')) return 'macOS';
     if (ua.includes('linux') && !ua.includes('android')) return 'Linux';
     if (ua.includes('android')) return 'Android';
-    if (ua.includes('iphone') || ua.includes('ipad')) return 'iOS';
     return 'Other';
   }
 

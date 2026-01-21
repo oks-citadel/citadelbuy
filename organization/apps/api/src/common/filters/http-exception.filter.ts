@@ -5,16 +5,6 @@ import {
   HttpException,
   HttpStatus,
   Logger,
-  BadRequestException,
-  UnauthorizedException,
-  ForbiddenException,
-  NotFoundException,
-  ConflictException,
-  PayloadTooLargeException,
-  RequestTimeoutException,
-  ServiceUnavailableException,
-  BadGatewayException,
-  GatewayTimeoutException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
@@ -29,6 +19,25 @@ interface RateLimitDetails {
   ttl: number;
   retryAfter: number;
   resetAt: string;
+}
+
+/**
+ * Validation error object structure from class-validator
+ */
+interface ValidationErrorObject {
+  property?: string;
+  constraints?: Record<string, string>;
+  value?: unknown;
+}
+
+/**
+ * Prisma error object structure
+ */
+interface PrismaErrorObject {
+  code?: string;
+  name?: string;
+  message?: string;
+  meta?: Record<string, unknown>;
 }
 
 /**
@@ -64,7 +73,7 @@ export interface ErrorResponse {
   /** Human-readable error message */
   message: string;
   /** Detailed error information (validation errors, etc.) */
-  details?: ErrorDetail[] | Record<string, any>;
+  details?: ErrorDetail[] | Record<string, unknown>;
   /** ISO timestamp of when the error occurred */
   timestamp: string;
   /** Unique request identifier for tracing */
@@ -90,7 +99,7 @@ export interface ErrorDetail {
   /** Error message for this field */
   message: string;
   /** The value that failed validation */
-  value?: any;
+  value?: unknown;
   /** Validation constraint that failed */
   constraint?: string;
 }
@@ -206,7 +215,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     status: number;
     code: string;
     message: string;
-    details?: ErrorDetail[] | Record<string, any> | RateLimitDetails;
+    details?: ErrorDetail[] | Record<string, unknown>;
     errorName: string;
     retryAfter?: number;
   } {
@@ -222,7 +231,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
           ttl: exception.ttl,
           retryAfter,
           resetAt: new Date(exception.resetAt).toISOString(),
-        },
+        } as Record<string, unknown>,
         errorName: 'RateLimitExceededException',
         retryAfter,
       };
@@ -245,25 +254,25 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const exceptionResponse = exception.getResponse();
 
       let message: string;
-      let details: ErrorDetail[] | Record<string, any> | undefined;
+      let details: ErrorDetail[] | Record<string, unknown> | undefined;
       let code: string;
 
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
         code = this.getErrorCode(status, exception);
       } else if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
-        const responseObj = exceptionResponse as Record<string, any>;
-        message = responseObj.message || exception.message;
-        code = responseObj.code || this.getErrorCode(status, exception);
+        const responseObj = exceptionResponse as Record<string, unknown>;
+        message = (responseObj.message as string) || exception.message;
+        code = (responseObj.code as string) || this.getErrorCode(status, exception);
 
         // Handle validation errors from class-validator
         if (Array.isArray(responseObj.message)) {
           message = 'Validation failed';
-          details = this.formatValidationErrors(responseObj.message);
+          details = this.formatValidationErrors(responseObj.message as (string | ValidationErrorObject)[]);
         } else if (responseObj.details) {
-          details = responseObj.details;
+          details = responseObj.details as Record<string, unknown>;
         } else if (responseObj.metadata) {
-          details = responseObj.metadata;
+          details = responseObj.metadata as Record<string, unknown>;
         }
       } else {
         message = exception.message;
@@ -332,8 +341,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (exception) {
       const response = exception.getResponse();
       if (typeof response === 'object' && response !== null) {
-        const responseObj = response as Record<string, any>;
-        if (responseObj.code) {
+        const responseObj = response as Record<string, unknown>;
+        if (typeof responseObj.code === 'string') {
           return responseObj.code;
         }
       }
@@ -368,7 +377,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
   /**
    * Format class-validator validation errors
    */
-  private formatValidationErrors(errors: string[] | any[]): ErrorDetail[] {
+  private formatValidationErrors(errors: (string | ValidationErrorObject)[]): ErrorDetail[] {
     if (typeof errors[0] === 'string') {
       return (errors as string[]).map(msg => ({
         field: 'unknown',
@@ -379,12 +388,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
     // Handle ValidationError objects from class-validator
     const result: ErrorDetail[] = [];
     for (const error of errors) {
-      if (typeof error === 'object' && error.constraints) {
-        for (const [constraint, message] of Object.entries(error.constraints)) {
+      if (typeof error === 'object' && error !== null && 'constraints' in error) {
+        const validationError = error as ValidationErrorObject;
+        for (const [constraint, message] of Object.entries(validationError.constraints || {})) {
           result.push({
-            field: error.property || 'unknown',
+            field: validationError.property || 'unknown',
             message: message as string,
-            value: error.value,
+            value: validationError.value,
             constraint,
           });
         }
@@ -403,7 +413,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
    */
   private isPrismaError(exception: unknown): boolean {
     if (exception && typeof exception === 'object') {
-      const errorObj = exception as Record<string, any>;
+      const errorObj = exception as PrismaErrorObject;
       return (
         errorObj.code?.startsWith('P') ||
         errorObj.name === 'PrismaClientKnownRequestError' ||
@@ -421,11 +431,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
     status: number;
     code: string;
     message: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
     errorName: string;
   } {
-    const error = exception as Record<string, any>;
+    const error = exception as PrismaErrorObject;
     const prismaCode = error.code;
+    const errorMessage = error.message || 'Unknown database error';
 
     // Map Prisma error codes to HTTP responses
     const prismaErrorMap: Record<string, { status: number; code: string; message: string }> = {
@@ -443,12 +454,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
       P2025: { status: 404, code: 'RECORD_NOT_FOUND', message: 'The record was not found' },
     };
 
-    const mapped = prismaErrorMap[prismaCode];
+    const mapped = prismaCode ? prismaErrorMap[prismaCode] : undefined;
     if (mapped) {
       return {
         status: mapped.status,
         code: mapped.code,
-        message: this.isProduction ? mapped.message : `${mapped.message}: ${error.message}`,
+        message: this.isProduction ? mapped.message : `${mapped.message}: ${errorMessage}`,
         details: this.isProduction ? undefined : { prismaCode, meta: error.meta },
         errorName: error.name || 'PrismaError',
       };
@@ -458,7 +469,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     return {
       status: HttpStatus.INTERNAL_SERVER_ERROR,
       code: 'DATABASE_ERROR',
-      message: this.isProduction ? 'A database error occurred' : error.message,
+      message: this.isProduction ? 'A database error occurred' : errorMessage,
       details: this.isProduction ? undefined : { prismaCode, meta: error.meta },
       errorName: error.name || 'PrismaError',
     };

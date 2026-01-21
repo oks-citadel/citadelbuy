@@ -11,6 +11,7 @@ import { ServerTrackingService } from '../tracking/server-tracking.service';
 import { AccountLockoutService } from './account-lockout.service';
 import { TokenBlacklistService } from './token-blacklist.service';
 import { MfaEnforcementService } from './mfa-enforcement.service';
+import { SessionManagerService } from '../security/session-manager.service';
 
 jest.mock('bcryptjs');
 
@@ -98,6 +99,15 @@ describe('AuthService - Enhanced Tests', () => {
     getMfaStatus: jest.fn().mockResolvedValue({ required: false, enabled: false }),
   };
 
+  const mockSessionManagerService = {
+    createSession: jest.fn().mockResolvedValue({ id: 'session-123', token: 'session-token' }),
+    validateSession: jest.fn().mockResolvedValue(true),
+    invalidateSession: jest.fn().mockResolvedValue(undefined),
+    invalidateAllUserSessions: jest.fn().mockResolvedValue(undefined),
+    getUserSessions: jest.fn().mockResolvedValue([]),
+    refreshSession: jest.fn().mockResolvedValue({ id: 'session-123', token: 'new-token' }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -137,6 +147,10 @@ describe('AuthService - Enhanced Tests', () => {
         {
           provide: MfaEnforcementService,
           useValue: mockMfaEnforcementService,
+        },
+        {
+          provide: SessionManagerService,
+          useValue: mockSessionManagerService,
         },
       ],
     }).compile();
@@ -576,7 +590,7 @@ describe('AuthService - Enhanced Tests', () => {
         );
       });
 
-      it('should hash new password with bcrypt salt rounds of 10', async () => {
+      it('should hash new password with bcrypt salt rounds of 12', async () => {
         // Arrange
         const token = 'plain-token';
         const newPassword = 'newPassword123';
@@ -605,7 +619,7 @@ describe('AuthService - Enhanced Tests', () => {
         await service.resetPassword(token, newPassword);
 
         // Assert
-        expect(bcrypt.hash).toHaveBeenCalledWith(newPassword, 10);
+        expect(bcrypt.hash).toHaveBeenCalledWith(newPassword, 12);
       });
 
       it('should mark reset token as used', async () => {

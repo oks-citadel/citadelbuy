@@ -1,0 +1,87 @@
+{{- if .Values.promoEngine.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "commerce-service.fullname" . }}-{{ .Values.promoEngine.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "commerce-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.promoEngine.name }}
+spec:
+  type: {{ .Values.promoEngine.service.type }}
+  ports:
+    - port: {{ .Values.promoEngine.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "commerce-service.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.promoEngine.name }}
+{{- end }}
+
+{{- if .Values.inAppMessaging.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "commerce-service.fullname" . }}-{{ .Values.inAppMessaging.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "commerce-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.inAppMessaging.name }}
+spec:
+  type: {{ .Values.inAppMessaging.service.type }}
+  ports:
+    - port: {{ .Values.inAppMessaging.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "commerce-service.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.inAppMessaging.name }}
+{{- end }}
+
+{{- if .Values.pricingService.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "commerce-service.fullname" . }}-{{ .Values.pricingService.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "commerce-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.pricingService.name }}
+spec:
+  type: {{ .Values.pricingService.service.type }}
+  ports:
+    - port: {{ .Values.pricingService.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "commerce-service.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.pricingService.name }}
+{{- end }}
+
+{{- if .Values.conversionTracker.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "commerce-service.fullname" . }}-{{ .Values.conversionTracker.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "commerce-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.conversionTracker.name }}
+spec:
+  type: {{ .Values.conversionTracker.service.type }}
+  ports:
+    - port: {{ .Values.conversionTracker.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "commerce-service.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.conversionTracker.name }}
+{{- end }}

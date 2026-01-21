@@ -88,7 +88,7 @@ export class AuthService {
       throw new ConflictException('User already exists');
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
     const user = await this.usersService.create({
       email,
       password: hashedPassword,
@@ -263,7 +263,7 @@ export class AuthService {
       isNewUser = true;
       // Generate secure random password (user won't use it for social login)
       const randomPassword = crypto.randomBytes(32).toString('hex');
-      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+      const hashedPassword = await bcrypt.hash(randomPassword, 12);
 
       const createdUser = await this.usersService.create({
         email: profile.email,
@@ -656,7 +656,7 @@ export class AuthService {
 
     const plainToken = crypto.randomBytes(32).toString('hex');
 
-    const hashedToken = await bcrypt.hash(plainToken, 10);
+    const hashedToken = await bcrypt.hash(plainToken, 12);
 
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1);
@@ -705,7 +705,7 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
 
     await this.prisma.user.update({
       where: { id: user.id },

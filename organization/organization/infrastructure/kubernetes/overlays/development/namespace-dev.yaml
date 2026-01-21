@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: broxiva-development
+  labels:
+    name: broxiva-development
+    environment: development
+    app: broxiva
+    managed-by: kustomize
+  annotations:
+    description: "Broxiva development environment"
+    contact: "devops@broxiva.com"

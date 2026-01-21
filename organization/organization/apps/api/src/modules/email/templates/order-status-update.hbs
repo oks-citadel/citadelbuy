@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Update - Broxiva</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
+    .header { padding: 30px 20px; text-align: center; }
+    .header.shipped { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); }
+    .header.delivered { background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); }
+    .header.processing { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); }
+    .header.cancelled { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+    .header h1 { color: #ffffff; margin: 0; font-size: 24px; }
+    .header .icon { font-size: 48px; margin-bottom: 10px; }
+    .content { padding: 30px; }
+    .order-info { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 25px; }
+    .order-info .label { font-size: 13px; color: #666; }
+    .order-info .value { font-weight: 600; font-size: 16px; }
+    .greeting { font-size: 18px; margin-bottom: 15px; }
+    .status-message { background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 25px; }
+    .status-message p { margin: 0; color: #666; }
+    .status-message strong { color: #333; }
+    .tracking-box { background: #e3f2fd; border: 1px solid #2196f3; border-radius: 8px; padding: 20px; margin-bottom: 25px; }
+    .tracking-box h4 { margin: 0 0 10px; color: #1976d2; }
+    .tracking-box .tracking-number { font-family: monospace; font-size: 18px; font-weight: bold; color: #1976d2; letter-spacing: 1px; }
+    .tracking-box .carrier { font-size: 14px; color: #666; margin-top: 8px; }
+    .progress-tracker { margin: 30px 0; }
+    .progress-step { display: flex; align-items: flex-start; position: relative; padding-left: 40px; padding-bottom: 25px; }
+    .progress-step:last-child { padding-bottom: 0; }
+    .progress-step::before { content: ''; position: absolute; left: 14px; top: 30px; bottom: 0; width: 2px; background: #e0e0e0; }
+    .progress-step:last-child::before { display: none; }
+    .progress-step.completed::before { background: #27ae60; }
+    .progress-step .step-icon { position: absolute; left: 0; width: 30px; height: 30px; border-radius: 50%; background: #e0e0e0; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #999; }
+    .progress-step.completed .step-icon { background: #27ae60; color: white; }
+    .progress-step.current .step-icon { background: #2196f3; color: white; animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(33, 150, 243, 0); } 100% { box-shadow: 0 0 0 0 rgba(33, 150, 243, 0); } }
+    .progress-step .step-content { flex: 1; }
+    .progress-step .step-title { font-weight: 600; margin-bottom: 4px; }
+    .progress-step .step-date { font-size: 13px; color: #888; }
+    .progress-step .step-description { font-size: 14px; color: #666; margin-top: 5px; }
+    .delivery-estimate { background: #e8f5e9; border-radius: 8px; padding: 20px; margin-bottom: 25px; text-align: center; }
+    .delivery-estimate h4 { margin: 0 0 5px; color: #27ae60; }
+    .delivery-estimate .date { font-size: 20px; font-weight: bold; color: #2e7d32; }
+    .order-items { margin-bottom: 25px; }
+    .order-items h3 { font-size: 16px; margin-bottom: 15px; }
+    .item { display: flex; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 6px; margin-bottom: 10px; }
+    .item-image { width: 50px; height: 50px; border-radius: 4px; object-fit: cover; margin-right: 12px; }
+    .item-details { flex: 1; }
+    .item-name { font-weight: 500; font-size: 14px; }
+    .item-qty { font-size: 13px; color: #888; }
+    .cta-button { display: inline-block; background: #667eea; color: #ffffff; padding: 14px 30px; border-radius: 6px; text-decoration: none; font-weight: 600; }
+    .help-links { margin-top: 25px; padding-top: 20px; border-top: 1px solid #e0e0e0; }
+    .help-links a { color: #667eea; text-decoration: none; margin-right: 20px; font-size: 14px; }
+    .footer { background: #f8f9fa; padding: 25px; text-align: center; color: #666; font-size: 14px; }
+    .footer a { color: #667eea; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header {{statusClass}}">
+      <div class="icon">{{statusIcon}}</div>
+      <h1>{{statusTitle}}</h1>
+    </div>
+
+    <div class="content">
+      <div class="order-info">
+        <div>
+          <div class="label">Order Number</div>
+          <div class="value">#{{orderNumber}}</div>
+        </div>
+        <div>
+          <div class="label">Order Date</div>
+          <div class="value">{{orderDate}}</div>
+        </div>
+      </div>
+
+      <div class="greeting">Hi {{customerName}},</div>
+
+      <div class="status-message">
+        <p>{{statusMessage}}</p>
+      </div>
+
+      {{#if trackingNumber}}
+      <div class="tracking-box">
+        <h4>&#128230; Tracking Information</h4>
+        <div class="tracking-number">{{trackingNumber}}</div>
+        <div class="carrier">Shipped via {{carrier}}</div>
+        {{#if trackingUrl}}
+        <a href="{{trackingUrl}}" style="display: inline-block; margin-top: 10px; color: #1976d2; text-decoration: none; font-weight: 500;">Track Package &rarr;</a>
+        {{/if}}
+      </div>
+      {{/if}}
+
+      <div class="progress-tracker">
+        {{#each progressSteps}}
+        <div class="progress-step {{#if completed}}completed{{/if}} {{#if current}}current{{/if}}">
+          <div class="step-icon">{{#if completed}}&#10003;{{else}}{{stepNumber}}{{/if}}</div>
+          <div class="step-content">
+            <div class="step-title">{{title}}</div>
+            {{#if date}}<div class="step-date">{{date}}</div>{{/if}}
+            {{#if description}}<div class="step-description">{{description}}</div>{{/if}}
+          </div>
+        </div>
+        {{/each}}
+      </div>
+
+      {{#if estimatedDelivery}}
+      <div class="delivery-estimate">
+        <h4>Estimated Delivery</h4>
+        <div class="date">{{estimatedDelivery}}</div>
+      </div>
+      {{/if}}
+
+      <div class="order-items">
+        <h3>Items in this shipment</h3>
+        {{#each items}}
+        <div class="item">
+          <img src="{{image}}" alt="{{name}}" class="item-image">
+          <div class="item-details">
+            <div class="item-name">{{name}}</div>
+            <div class="item-qty">Qty: {{quantity}}</div>
+          </div>
+        </div>
+        {{/each}}
+      </div>
+
+      <div style="text-align: center;">
+        <a href="{{orderUrl}}" class="cta-button">View Order Details</a>
+      </div>
+
+      <div class="help-links">
+        <a href="{{helpUrl}}">Help Center</a>
+        <a href="{{returnUrl}}">Start a Return</a>
+        <a href="{{contactUrl}}">Contact Support</a>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p><strong>Broxiva</strong></p>
+      <p>Thank you for shopping with us!</p>
+      <p style="font-size: 12px; margin-top: 15px;">
+        <a href="{{unsubscribeUrl}}">Manage email preferences</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

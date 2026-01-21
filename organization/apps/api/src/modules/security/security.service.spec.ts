@@ -296,7 +296,7 @@ describe('SecurityService', () => {
 
       expect(result.apiKey).toBeDefined();
       expect(result.plainKey).toBeDefined();
-      expect(bcrypt.hash).toHaveBeenCalledWith(mockKey, 10);
+      expect(bcrypt.hash).toHaveBeenCalledWith(mockKey, 12);
     });
 
     it('should create API key with expiration', async () => {

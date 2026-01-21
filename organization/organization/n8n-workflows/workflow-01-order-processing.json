@@ -1,0 +1,776 @@
+{
+  "name": "Broxiva Order Processing & Fulfillment",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "broxiva-order-webhook",
+        "options": {
+          "rawBody": true
+        },
+        "responseMode": "responseNode"
+      },
+      "id": "e8c63f3e-7f9f-4b58-a3f1-2c9d0e1a5b4c",
+      "name": "Webhook - Order Created",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "broxiva-order-webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "hmac-validation",
+              "leftValue": "={{ $json.validSignature }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-1234567890ab",
+      "name": "HMAC Signature Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        690,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// HMAC-SHA256 Signature Verification\nconst crypto = require('crypto');\n\n// Get webhook data\nconst webhookData = $input.item.json;\nconst headers = $input.item.headers;\n\n// Get signature from header\nconst receivedSignature = headers['x-broxiva-signature'] || '';\n\n// Reconstruct raw body for signature verification\nconst rawBody = JSON.stringify(webhookData);\n\n// Get secret from credentials (in production, use environment variable)\nconst webhookSecret = $env.BROXIVA_WEBHOOK_SECRET || 'your-webhook-secret-key';\n\n// Calculate expected signature\nconst expectedSignature = crypto\n  .createHmac('sha256', webhookSecret)\n  .update(rawBody)\n  .digest('hex');\n\n// Compare signatures (timing-safe comparison)\nconst validSignature = crypto.timingSafeEqual(\n  Buffer.from(receivedSignature),\n  Buffer.from(expectedSignature)\n);\n\n// Return data with validation result\nreturn {\n  ...webhookData,\n  validSignature,\n  receivedSignature,\n  expectedSignature: expectedSignature.substring(0, 10) + '...' // truncated for security\n};"
+      },
+      "id": "b2c3d4e5-f6a7-8901-bcde-234567890bcd",
+      "name": "Verify HMAC Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        470,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate Order Data Structure\nconst orderData = $input.item.json.data;\n\n// Required fields validation\nconst requiredFields = [\n  'order_id',\n  'order_number',\n  'customer',\n  'shipping_address',\n  'line_items',\n  'total',\n  'payment_status'\n];\n\nconst errors = [];\n\n// Check required fields\nfor (const field of requiredFields) {\n  if (!orderData[field]) {\n    errors.push(`Missing required field: ${field}`);\n  }\n}\n\n// Validate customer data\nif (orderData.customer) {\n  if (!orderData.customer.email) {\n    errors.push('Missing customer email');\n  }\n  if (!orderData.customer.id) {\n    errors.push('Missing customer ID');\n  }\n}\n\n// Validate shipping address\nif (orderData.shipping_address) {\n  const requiredAddressFields = ['address1', 'city', 'state', 'zip', 'country'];\n  for (const field of requiredAddressFields) {\n    if (!orderData.shipping_address[field]) {\n      errors.push(`Missing shipping address field: ${field}`);\n    }\n  }\n}\n\n// Validate line items\nif (!Array.isArray(orderData.line_items) || orderData.line_items.length === 0) {\n  errors.push('Order must have at least one line item');\n}\n\n// Validate total is positive number\nif (typeof orderData.total !== 'number' || orderData.total <= 0) {\n  errors.push('Invalid order total');\n}\n\nconst isValid = errors.length === 0;\n\nreturn {\n  ...orderData,\n  validation: {\n    isValid,\n    errors,\n    timestamp: new Date().toISOString()\n  },\n  // Extract useful data for routing\n  isHighValue: orderData.total > 500,\n  isVIP: ['gold', 'platinum'].includes(orderData.customer?.tier?.toLowerCase()),\n  isInternational: orderData.shipping_address?.country !== 'US',\n  isExpressShipping: orderData.shipping_method === 'express'\n};"
+      },
+      "id": "c3d4e5f6-a7b8-9012-cdef-34567890cdef",
+      "name": "Validate Order Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        910,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "validation-check",
+              "leftValue": "={{ $json.validation.isValid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d4e5f6a7-b8c9-0123-def0-4567890def01",
+      "name": "Data Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1130,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.broxiva.com/v1/inventory/check",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "order_id",
+              "value": "={{ $json.order_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "e5f6a7b8-c9d0-1234-ef01-567890ef0123",
+      "name": "Check Inventory Availability",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1350,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Determine Order Routing Based on Business Rules\nconst orderData = $input.item.json;\n\nconst routing = {\n  queue: 'standard',\n  priority: 'normal',\n  slackChannels: ['#fulfillment'],\n  notifications: [],\n  tags: []\n};\n\n// High-value orders (>$500)\nif (orderData.isHighValue) {\n  routing.queue = 'priority';\n  routing.priority = 'high';\n  routing.slackChannels.push('#priority-orders');\n  routing.notifications.push('High-value order detected');\n  routing.tags.push('high-value');\n}\n\n// VIP customers (Gold/Platinum tier)\nif (orderData.isVIP) {\n  routing.queue = 'vip';\n  routing.priority = 'high';\n  routing.notifications.push(`VIP customer: ${orderData.customer.tier}`);\n  routing.tags.push('vip', orderData.customer.tier.toLowerCase());\n}\n\n// International orders\nif (orderData.isInternational) {\n  routing.slackChannels.push('#international-fulfillment');\n  routing.notifications.push('International shipping required');\n  routing.tags.push('international', orderData.shipping_address.country);\n}\n\n// Express shipping\nif (orderData.isExpressShipping) {\n  routing.queue = 'expedited';\n  routing.priority = 'urgent';\n  routing.notifications.push('Express shipping requested');\n  routing.tags.push('express-shipping');\n}\n\n// Calculate SLA based on priority\nconst slaHours = {\n  'urgent': 4,\n  'high': 12,\n  'normal': 24\n};\n\nconst slaDeadline = new Date();\nslaDeadline.setHours(slaDeadline.getHours() + slaHours[routing.priority]);\n\nreturn {\n  ...orderData,\n  routing: {\n    ...routing,\n    slaDeadline: slaDeadline.toISOString(),\n    slaHours: slaHours[routing.priority]\n  }\n};"
+      },
+      "id": "f6a7b8c9-d0e1-2345-f012-67890f012345",
+      "name": "Route Order",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1570,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/pages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "parent",
+              "value": "={{ { \"database_id\": $env.NOTION_FULFILLMENT_DB_ID } }}"
+            },
+            {
+              "name": "properties",
+              "value": "={{ {\n  \"Order ID\": {\n    \"title\": [\n      {\n        \"text\": {\n          \"content\": $json.order_number\n        }\n      }\n    ]\n  },\n  \"Customer\": {\n    \"rich_text\": [\n      {\n        \"text\": {\n          \"content\": $json.customer.first_name + ' ' + $json.customer.last_name\n        }\n      }\n    ]\n  },\n  \"Email\": {\n    \"email\": $json.customer.email\n  },\n  \"Total\": {\n    \"number\": $json.total\n  },\n  \"Priority\": {\n    \"select\": {\n      \"name\": $json.routing.priority\n    }\n  },\n  \"Queue\": {\n    \"select\": {\n      \"name\": $json.routing.queue\n    }\n  },\n  \"Status\": {\n    \"select\": {\n      \"name\": \"Pending\"\n    }\n  },\n  \"SLA Deadline\": {\n    \"date\": {\n      \"start\": $json.routing.slaDeadline\n    }\n  },\n  \"Tags\": {\n    \"multi_select\": $json.routing.tags.map(tag => ({ name: tag }))\n  }\n} }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a7b8c9d0-e1f2-3456-0123-7890a0123456",
+      "name": "Create Notion Fulfillment Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1790,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.sendgrid.com/v3/mail/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "sendGridApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "personalizations",
+              "value": "={{ [\n  {\n    \"to\": [\n      {\n        \"email\": $json.customer.email,\n        \"name\": $json.customer.first_name + ' ' + $json.customer.last_name\n      }\n    ],\n    \"dynamic_template_data\": {\n      \"order_number\": $json.order_number,\n      \"order_id\": $json.order_id,\n      \"customer_name\": $json.customer.first_name,\n      \"total\": $json.total.toFixed(2),\n      \"items\": $json.line_items,\n      \"shipping_address\": $json.shipping_address,\n      \"estimated_delivery\": new Date(Date.now() + (5 * 24 * 60 * 60 * 1000)).toLocaleDateString(),\n      \"tracking_link\": 'https://broxiva.com/track-order?id=' + $json.order_id\n    }\n  }\n] }}"
+            },
+            {
+              "name": "from",
+              "value": "={{ { \"email\": \"orders@broxiva.com\", \"name\": \"Broxiva Orders\" } }}"
+            },
+            {
+              "name": "template_id",
+              "value": "={{ $env.SENDGRID_ORDER_CONFIRMATION_TEMPLATE_ID }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b8c9d0e1-f2a3-4567-1234-890b12345678",
+      "name": "Send Order Confirmation Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2010,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.broxiva.com/v1/orders/{{ $json.order_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "processing"
+            },
+            {
+              "name": "fulfillment_queue",
+              "value": "={{ $json.routing.queue }}"
+            },
+            {
+              "name": "priority",
+              "value": "={{ $json.routing.priority }}"
+            },
+            {
+              "name": "sla_deadline",
+              "value": "={{ $json.routing.slaDeadline }}"
+            },
+            {
+              "name": "updated_at",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c9d0e1f2-a3b4-5678-2345-901c23456789",
+      "name": "Update Order Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2230,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $json.routing.slackChannels[0] || '#fulfillment' }}",
+          "mode": "name"
+        },
+        "text": "=:package: **New Order Received**\n\n*Order:* {{ $json.order_number }}\n*Customer:* {{ $json.customer.first_name }} {{ $json.customer.last_name }} ({{ $json.customer.email }})\n*Total:* ${{ $json.total.toFixed(2) }}\n*Priority:* {{ $json.routing.priority.toUpperCase() }}\n*Queue:* {{ $json.routing.queue }}\n*SLA Deadline:* {{ new Date($json.routing.slaDeadline).toLocaleString() }}\n\n{{ $json.routing.notifications.length > 0 ? ':warning: *Alerts:*\\n' + $json.routing.notifications.map(n => '• ' + n).join('\\n') : '' }}\n\n*Shipping:* {{ $json.shipping_address.city }}, {{ $json.shipping_address.state }}, {{ $json.shipping_address.country }}\n\n<https://broxiva.com/admin/orders/{{ $json.order_id }}|View Order Details>",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "d0e1f2a3-b4c5-6789-3456-012d34567890",
+      "name": "Send Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        2450,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.broxiva.com/v1/audit-log",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "event_type",
+              "value": "order.processed"
+            },
+            {
+              "name": "order_id",
+              "value": "={{ $json.order_id }}"
+            },
+            {
+              "name": "user_id",
+              "value": "={{ $json.customer.id }}"
+            },
+            {
+              "name": "metadata",
+              "value": "={{ {\n  order_number: $json.order_number,\n  total: $json.total,\n  priority: $json.routing.priority,\n  queue: $json.routing.queue,\n  notifications_sent: true,\n  notion_task_created: true,\n  email_sent: true,\n  slack_notified: true\n} }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "ip_address",
+              "value": "={{ $json.webhook_source_ip || 'n8n-automation' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e1f2a3b4-c5d6-7890-4567-123e45678901",
+      "name": "Log to Audit Trail",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2670,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  success: true,\n  order_id: $json.order_id,\n  message: 'Order processed successfully',\n  timestamp: new Date().toISOString()\n} }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "f2a3b4c5-d6e7-8901-5678-234f56789012",
+      "name": "Webhook Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2890,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  success: false,\n  error: 'Invalid HMAC signature',\n  timestamp: new Date().toISOString()\n} }}",
+        "options": {
+          "responseCode": 401,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "a3b4c5d6-e7f8-9012-6789-345a67890123",
+      "name": "Webhook Invalid Signature Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        910,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  success: false,\n  error: 'Invalid order data',\n  validation_errors: $json.validation.errors,\n  timestamp: new Date().toISOString()\n} }}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "b4c5d6e7-f8a9-0123-7890-456b78901234",
+      "name": "Webhook Invalid Data Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1350,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#alerts",
+          "mode": "name"
+        },
+        "text": "=:x: **Order Processing Error**\n\n*Error Type:* {{ $json.error_type || 'Unknown' }}\n*Order ID:* {{ $json.order_id || 'N/A' }}\n*Message:* {{ $json.error_message || $json.error || 'No message' }}\n*Timestamp:* {{ new Date().toISOString() }}\n\n*Stack Trace:*\n```\n{{ $json.error_stack || 'No stack trace available' }}\n```\n\n*Workflow:* Broxiva Order Processing\n*Node:* {{ $node.name }}\n\n@channel Please investigate immediately!",
+        "otherOptions": {
+          "includeLinkToWorkflow": true
+        }
+      },
+      "id": "c5d6e7f8-a9b0-1234-8901-567c89012345",
+      "name": "Send Error Alert to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        2450,
+        520
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Error Handler and Logger\nconst error = $input.item.error;\nconst json = $input.item.json;\n\nconst errorDetails = {\n  error_type: error?.name || 'UnknownError',\n  error_message: error?.message || 'An unknown error occurred',\n  error_stack: error?.stack || '',\n  order_id: json?.order_id || json?.data?.order_id || 'unknown',\n  order_number: json?.order_number || json?.data?.order_number || 'unknown',\n  customer_email: json?.customer?.email || json?.data?.customer?.email || 'unknown',\n  node_name: $node.name,\n  workflow_name: $workflow.name,\n  execution_id: $execution.id,\n  timestamp: new Date().toISOString(),\n  // Include original data for debugging\n  original_data: json\n};\n\nconsole.error('Order Processing Error:', errorDetails);\n\nreturn errorDetails;"
+      },
+      "id": "d6e7f8a9-b0c1-2345-9012-678d90123456",
+      "name": "Handle Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2230,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "high-value-check",
+              "leftValue": "={{ $json.isHighValue }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "e7f8a9b0-c1d2-3456-0123-789e01234567",
+      "name": "Route to Priority Channels",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2670,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#priority-orders",
+          "mode": "name"
+        },
+        "text": "=:star2: **Priority Order Alert**\n\n*Order:* {{ $json.order_number }}\n*Customer:* {{ $json.customer.first_name }} {{ $json.customer.last_name }}\n*Total:* ${{ $json.total.toFixed(2) }}\n*Tier:* {{ $json.customer.tier || 'Standard' }}\n\n{{ $json.isHighValue ? ':moneybag: High-value order (>$500)\\n' : '' }}\n{{ $json.isVIP ? ':crown: VIP Customer\\n' : '' }}\n{{ $json.isExpressShipping ? ':rocket: Express Shipping Required\\n' : '' }}\n\n*Immediate attention required!*\n\n<https://broxiva.com/admin/orders/{{ $json.order_id }}|Process Now>",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "f8a9b0c1-d2e3-4567-1234-890f12345678",
+      "name": "Send Priority Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        2890,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "international-check",
+              "leftValue": "={{ $json.isInternational }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a9b0c1d2-e3f4-5678-2345-901a23456789",
+      "name": "International Order?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2670,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#international-fulfillment",
+          "mode": "name"
+        },
+        "text": "=:globe_with_meridians: **International Order**\n\n*Order:* {{ $json.order_number }}\n*Destination:* {{ $json.shipping_address.city }}, {{ $json.shipping_address.country }}\n*Customer:* {{ $json.customer.email }}\n*Total:* ${{ $json.total.toFixed(2) }}\n\n*Address:*\n{{ $json.shipping_address.address1 }}\n{{ $json.shipping_address.city }}, {{ $json.shipping_address.state }} {{ $json.shipping_address.zip }}\n{{ $json.shipping_address.country }}\n\n:warning: *Check customs requirements and international shipping regulations*\n\n<https://broxiva.com/admin/orders/{{ $json.order_id }}|View Order>",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "b0c1d2e3-f4a5-6789-3456-012b34567890",
+      "name": "Send International Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        2890,
+        240
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - Order Created": {
+      "main": [
+        [
+          {
+            "node": "Verify HMAC Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify HMAC Signature": {
+      "main": [
+        [
+          {
+            "node": "HMAC Signature Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HMAC Signature Valid?": {
+      "main": [
+        [
+          {
+            "node": "Validate Order Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Webhook Invalid Signature Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Order Data": {
+      "main": [
+        [
+          {
+            "node": "Data Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Valid?": {
+      "main": [
+        [
+          {
+            "node": "Check Inventory Availability",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Webhook Invalid Data Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Inventory Availability": {
+      "main": [
+        [
+          {
+            "node": "Route Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Order": {
+      "main": [
+        [
+          {
+            "node": "Create Notion Fulfillment Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Notion Fulfillment Task": {
+      "main": [
+        [
+          {
+            "node": "Send Order Confirmation Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Order Confirmation Email": {
+      "main": [
+        [
+          {
+            "node": "Update Order Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Order Status": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Slack Notification": {
+      "main": [
+        [
+          {
+            "node": "Log to Audit Trail",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route to Priority Channels",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "International Order?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log to Audit Trail": {
+      "main": [
+        [
+          {
+            "node": "Webhook Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route to Priority Channels": {
+      "main": [
+        [
+          {
+            "node": "Send Priority Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "International Order?": {
+      "main": [
+        [
+          {
+            "node": "Send International Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "",
+    "timezone": "America/New_York",
+    "saveExecutionProgress": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "versionId": "1.0.0",
+  "meta": {
+    "instanceId": "broxiva-production"
+  },
+  "id": "broxiva-order-processing-v1",
+  "tags": [
+    {
+      "name": "broxiva",
+      "id": "tag-broxiva"
+    },
+    {
+      "name": "order-processing",
+      "id": "tag-order-processing"
+    },
+    {
+      "name": "fulfillment",
+      "id": "tag-fulfillment"
+    },
+    {
+      "name": "production",
+      "id": "tag-production"
+    }
+  ]
+}

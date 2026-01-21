@@ -16,7 +16,7 @@ import { Roles } from '@/common/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 import { AuthRequest } from '@/common/types/auth-request.types';
 import { VendorsService } from './vendors.service';
-import { IsString, IsDateString, IsOptional } from 'class-validator';
+import { IsString, IsDateString } from 'class-validator';
 
 // ==================== DTOs ====================
 
@@ -109,8 +109,8 @@ export class VendorPayoutsController {
   @ApiResponse({ status: 200, description: 'Payout details' })
   @ApiResponse({ status: 404, description: 'Payout not found' })
   async getPayoutDetails(@Request() req: AuthRequest, @Param('id') payoutId: string) {
-    // Verify ownership through the vendor profile
-    const profile = await this.vendorsService.getVendorProfile(req.user.id);
+    // Verify ownership through the vendor profile (throws if not authorized)
+    await this.vendorsService.getVendorProfile(req.user.id);
     const payout = await this.payoutsService.getPayoutDetails(payoutId);
 
     // Note: In production, verify the payout belongs to this vendor

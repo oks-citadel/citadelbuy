@@ -1,0 +1,1123 @@
+openapi: 3.1.0
+info:
+  title: Broxiva E-commerce Platform API
+  description: |
+    Comprehensive API for the Broxiva multi-tenant SaaS e-commerce platform.
+
+    ## Authentication
+    All authenticated endpoints require a Bearer JWT token in the Authorization header.
+
+    ## Multi-tenant Isolation
+    Most endpoints are scoped to the authenticated user's organization (tenant).
+    Cross-tenant access is prevented at the API layer.
+
+    ## Idempotency
+    Mutation endpoints that create resources or process payments support
+    the `Idempotency-Key` header to ensure exactly-once semantics.
+
+    ## Request Correlation
+    All requests return `X-Request-Id` and `X-Correlation-Id` headers for tracing.
+  version: 2.0.0
+  contact:
+    name: Broxiva Platform Team
+    email: platform@broxiva.com
+  license:
+    name: Proprietary
+    url: https://broxiva.com/terms
+
+servers:
+  - url: https://api.broxiva.com/v1
+    description: Production
+  - url: https://api.staging.broxiva.com/v1
+    description: Staging
+  - url: http://localhost:4000/api
+    description: Development
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: System
+    description: Health checks and system information
+  - name: Auth
+    description: Authentication and authorization
+  - name: Users
+    description: User profile management
+  - name: Tenants
+    description: Organization/tenant management
+  - name: Billing
+    description: Subscription and payment management
+  - name: Products
+    description: Product catalog management
+  - name: Orders
+    description: Order processing and management
+  - name: Payments
+    description: Payment processing
+  - name: Files
+    description: File upload and management
+  - name: Notifications
+    description: User notifications
+  - name: Analytics
+    description: Business analytics and metrics
+  - name: Admin
+    description: Administrative operations
+  - name: Webhooks
+    description: Webhook management and events
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /auth/login
+
+  headers:
+    X-Request-Id:
+      description: Unique request identifier for tracing
+      schema:
+        type: string
+        format: uuid
+    X-Correlation-Id:
+      description: Correlation ID for distributed tracing
+      schema:
+        type: string
+        format: uuid
+    Idempotency-Key:
+      description: Idempotency key for mutation operations
+      schema:
+        type: string
+        maxLength: 255
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      description: Unique key for idempotent requests (required for mutations)
+      schema:
+        type: string
+        maxLength: 255
+    Limit:
+      name: limit
+      in: query
+      description: Number of items to return (pagination)
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Cursor:
+      name: cursor
+      in: query
+      description: Cursor for pagination (opaque string)
+      schema:
+        type: string
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - code
+        - message
+        - requestId
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          description: Human-readable error message
+          example: Email is required
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+        requestId:
+          type: string
+          format: uuid
+          description: Request ID for support reference
+
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        pagination:
+          type: object
+          properties:
+            total:
+              type: integer
+            limit:
+              type: integer
+            cursor:
+              type: string
+              nullable: true
+            hasMore:
+              type: boolean
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: string
+          enum: [CUSTOMER, VENDOR, ADMIN, SUPER_ADMIN]
+        emailVerified:
+          type: boolean
+        mfaEnabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        features:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        plan:
+          type: string
+          enum: [FREE, STARTER, PROFESSIONAL, ENTERPRISE]
+        status:
+          type: string
+          enum: [active, past_due, cancelled, trialing]
+        currentPeriodStart:
+          type: string
+          format: date-time
+        currentPeriodEnd:
+          type: string
+          format: date-time
+
+    WebhookEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        data:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+
+paths:
+  # ==================== SYSTEM ENDPOINTS ====================
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      security: []
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /version:
+    get:
+      tags: [System]
+      summary: API version information
+      security: []
+      operationId: getVersion
+      responses:
+        '200':
+          description: Version information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                  build:
+                    type: string
+                  environment:
+                    type: string
+
+  /config/public:
+    get:
+      tags: [System]
+      summary: Public configuration for frontend
+      security: []
+      operationId: getPublicConfig
+      responses:
+        '200':
+          description: Public configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  features:
+                    type: object
+                  regions:
+                    type: array
+                    items:
+                      type: string
+                  supportedCurrencies:
+                    type: array
+                    items:
+                      type: string
+
+  # ==================== AUTH ENDPOINTS ====================
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      security: []
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                name:
+                  type: string
+      responses:
+        '201':
+          description: User registered successfully
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+        '400':
+          description: Invalid input or email exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with email and password
+      security: []
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successfully authenticated
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      security: []
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+        '401':
+          description: Invalid refresh token
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout and invalidate token
+      operationId: logout
+      responses:
+        '200':
+          description: Successfully logged out
+        '401':
+          description: Unauthorized
+
+  /auth/password/reset:
+    post:
+      tags: [Auth]
+      summary: Request password reset
+      security: []
+      operationId: requestPasswordReset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Reset email sent if account exists
+
+  /auth/password/reset/{token}:
+    post:
+      tags: [Auth]
+      summary: Reset password with token
+      security: []
+      operationId: resetPassword
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+                  minLength: 8
+      responses:
+        '200':
+          description: Password reset successfully
+        '400':
+          description: Invalid or expired token
+
+  # ==================== USER ENDPOINTS ====================
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    patch:
+      tags: [Users]
+      summary: Update current user profile
+      operationId: updateCurrentUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                avatar:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /profile:
+    get:
+      tags: [Users]
+      summary: Get user profile (alias for /users/me)
+      operationId: getProfile
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  # ==================== TENANT ENDPOINTS ====================
+  /tenants:
+    get:
+      tags: [Tenants]
+      summary: List user's organizations
+      operationId: listOrganizations
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: List of organizations
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Organization'
+    post:
+      tags: [Tenants]
+      summary: Create a new organization
+      operationId: createOrganization
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                slug:
+                  type: string
+      responses:
+        '201':
+          description: Organization created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+
+  /tenants/{id}:
+    get:
+      tags: [Tenants]
+      summary: Get organization by ID
+      operationId: getOrganization
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Organization details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '404':
+          description: Organization not found
+
+  /tenants/{id}/members:
+    get:
+      tags: [Tenants]
+      summary: List organization members
+      operationId: listOrganizationMembers
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: List of members
+    post:
+      tags: [Tenants]
+      summary: Invite member to organization
+      operationId: inviteOrganizationMember
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, role]
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [MEMBER, ADMIN, OWNER]
+      responses:
+        '201':
+          description: Invitation sent
+
+  # ==================== BILLING ENDPOINTS ====================
+  /plans:
+    get:
+      tags: [Billing]
+      summary: List available subscription plans
+      security: []
+      operationId: listPlans
+      responses:
+        '200':
+          description: List of plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    price:
+                      type: number
+                    currency:
+                      type: string
+                    features:
+                      type: array
+                      items:
+                        type: string
+
+  /subscriptions:
+    get:
+      tags: [Billing]
+      summary: Get current subscription
+      operationId: getSubscription
+      responses:
+        '200':
+          description: Current subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+    post:
+      tags: [Billing]
+      summary: Create or upgrade subscription
+      operationId: createSubscription
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [planId]
+              properties:
+                planId:
+                  type: string
+                paymentMethodId:
+                  type: string
+      responses:
+        '201':
+          description: Subscription created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+
+  /subscriptions/cancel:
+    post:
+      tags: [Billing]
+      summary: Cancel subscription
+      operationId: cancelSubscription
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                immediate:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Subscription cancelled
+
+  /payments/methods:
+    get:
+      tags: [Payments]
+      summary: List payment methods
+      operationId: listPaymentMethods
+      responses:
+        '200':
+          description: List of payment methods
+    post:
+      tags: [Payments]
+      summary: Add payment method
+      operationId: addPaymentMethod
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+                  description: Payment token from payment provider
+                setDefault:
+                  type: boolean
+      responses:
+        '201':
+          description: Payment method added
+
+  /payments/invoices:
+    get:
+      tags: [Payments]
+      summary: List invoices
+      operationId: listInvoices
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: List of invoices
+
+  # ==================== FILE ENDPOINTS ====================
+  /files/presign:
+    post:
+      tags: [Files]
+      summary: Get presigned URL for file upload
+      operationId: getPresignedUploadUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [filename, contentType]
+              properties:
+                filename:
+                  type: string
+                contentType:
+                  type: string
+                folder:
+                  type: string
+      responses:
+        '200':
+          description: Presigned URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uploadUrl:
+                    type: string
+                    format: uri
+                  fileUrl:
+                    type: string
+                    format: uri
+                  expiresAt:
+                    type: string
+                    format: date-time
+
+  /files/{id}:
+    get:
+      tags: [Files]
+      summary: Get file metadata
+      operationId: getFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File metadata
+    delete:
+      tags: [Files]
+      summary: Delete file
+      operationId: deleteFile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: File deleted
+
+  # ==================== NOTIFICATION ENDPOINTS ====================
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: List user notifications
+      operationId: listNotifications
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of notifications
+
+  /notifications/{id}/read:
+    post:
+      tags: [Notifications]
+      summary: Mark notification as read
+      operationId: markNotificationRead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification marked as read
+
+  /notifications/read-all:
+    post:
+      tags: [Notifications]
+      summary: Mark all notifications as read
+      operationId: markAllNotificationsRead
+      responses:
+        '200':
+          description: All notifications marked as read
+
+  # ==================== AUDIT LOG ENDPOINTS ====================
+  /audit/logs:
+    get:
+      tags: [Admin]
+      summary: Query audit logs
+      operationId: queryAuditLogs
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: resource
+          in: query
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Audit log entries
+
+  # ==================== WEBHOOK ENDPOINTS ====================
+  /webhooks:
+    get:
+      tags: [Webhooks]
+      summary: List configured webhooks
+      operationId: listWebhooks
+      responses:
+        '200':
+          description: List of webhooks
+    post:
+      tags: [Webhooks]
+      summary: Create webhook endpoint
+      operationId: createWebhook
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url, events]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                events:
+                  type: array
+                  items:
+                    type: string
+                secret:
+                  type: string
+      responses:
+        '201':
+          description: Webhook created
+
+  /webhooks/{id}:
+    get:
+      tags: [Webhooks]
+      summary: Get webhook details
+      operationId: getWebhook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Webhook details
+    delete:
+      tags: [Webhooks]
+      summary: Delete webhook
+      operationId: deleteWebhook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Webhook deleted
+
+  # ==================== PAYMENT PROVIDER WEBHOOKS ====================
+  /webhooks/stripe:
+    post:
+      tags: [Webhooks]
+      summary: Stripe webhook handler
+      security: []
+      operationId: handleStripeWebhook
+      parameters:
+        - name: stripe-signature
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Stripe webhook signature header
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook processed
+        '400':
+          description: Invalid signature
+
+  /webhooks/paystack:
+    post:
+      tags: [Webhooks]
+      summary: Paystack webhook handler
+      security: []
+      operationId: handlePaystackWebhook
+      parameters:
+        - name: x-paystack-signature
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Paystack webhook signature
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook processed
+
+  /webhooks/flutterwave:
+    post:
+      tags: [Webhooks]
+      summary: Flutterwave webhook handler
+      security: []
+      operationId: handleFlutterwaveWebhook
+      parameters:
+        - name: verif-hash
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Flutterwave verification hash
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook processed
+
+  /webhooks/paypal:
+    post:
+      tags: [Webhooks]
+      summary: PayPal webhook handler
+      security: []
+      operationId: handlePayPalWebhook
+      parameters:
+        - name: paypal-transmission-sig
+          in: header
+          required: true
+          schema:
+            type: string
+          description: PayPal transmission signature
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook processed
+
+  /webhooks/apple:
+    post:
+      tags: [Webhooks]
+      summary: Apple App Store webhook handler
+      security: []
+      operationId: handleAppleWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook processed
+
+  /webhooks/google:
+    post:
+      tags: [Webhooks]
+      summary: Google Play webhook handler
+      security: []
+      operationId: handleGoogleWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook processed

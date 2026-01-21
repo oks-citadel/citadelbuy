@@ -1,7 +1,7 @@
 # Broxiva Development Setup Guide
 
 **Version**: 1.0.0
-**Last Updated**: 2025-12-06
+**Last Updated**: 2026-01-20
 **Audience**: Developers, DevOps Engineers
 
 ---
@@ -25,7 +25,7 @@
 | Software | Minimum Version | Recommended | Installation |
 |----------|----------------|-------------|--------------|
 | Node.js | 20.0.0 | 20.11.0+ | https://nodejs.org/ |
-| pnpm | 8.0.0 | 8.15.0+ | `npm install -g pnpm` |
+| pnpm | 10.0.0 | 10.23.0+ | `npm install -g pnpm` |
 | Docker Desktop | 24.0.0 | Latest | https://www.docker.com/products/docker-desktop |
 | Docker Compose | 2.20.0 | Latest | Included with Docker Desktop |
 | Git | 2.40.0 | Latest | https://git-scm.com/ |
@@ -86,7 +86,7 @@ npm install -g pnpm@latest
 pnpm install
 
 # Verify installation
-pnpm --version  # Should be 8.15.0 or higher
+pnpm --version  # Should be 10.23.0 or higher
 node --version  # Should be 20.11.0 or higher
 ```
 
@@ -169,15 +169,19 @@ PAYPAL_CLIENT_ID=your_paypal_client_id
 PAYPAL_CLIENT_SECRET=your_paypal_client_secret
 PAYPAL_MODE=sandbox
 
-# Email (SendGrid)
-SENDGRID_API_KEY=your_sendgrid_api_key
-FROM_EMAIL=noreply@broxiva.com
-FROM_NAME=Broxiva
+# AWS SES (Email) - NOTE: External email providers (SendGrid, Twilio) are NOT supported.
+# All messaging must use AWS services (SES, SNS, SQS) per infrastructure policy.
+AWS_SES_ACCESS_KEY_ID=your_aws_ses_access_key
+AWS_SES_SECRET_ACCESS_KEY=your_aws_ses_secret_key
+AWS_SES_REGION=us-east-1
+AWS_SES_FROM_EMAIL=noreply@broxiva.com
+AWS_SES_FROM_NAME=Broxiva
 
-# SMS (Twilio)
-TWILIO_ACCOUNT_SID=your_twilio_account_sid
-TWILIO_AUTH_TOKEN=your_twilio_auth_token
-TWILIO_PHONE_NUMBER=+1234567890
+# AWS SNS (SMS)
+AWS_SNS_ACCESS_KEY_ID=your_aws_sns_access_key
+AWS_SNS_SECRET_ACCESS_KEY=your_aws_sns_secret_key
+AWS_SNS_REGION=us-east-1
+AWS_SNS_SENDER_ID=Broxiva
 
 # AWS S3 (Optional - use local storage for dev)
 AWS_ACCESS_KEY_ID=your_aws_access_key
@@ -825,6 +829,6 @@ When reporting issues, include:
 
 ---
 
-**Last Updated**: 2025-12-06
+**Last Updated**: 2026-01-20
 **Maintained By**: Platform Engineering Team
 **Version**: 1.0.0

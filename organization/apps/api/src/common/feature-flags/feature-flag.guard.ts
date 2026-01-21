@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { FeatureFlagsService } from './feature-flags.service';
-import { FEATURE_FLAG_KEY, FeatureFlagOptions } from './feature-flag.decorator';
+import { FEATURE_FLAG_KEY, FeatureFlagOptions } from './feature-flag.constants';
 import { FlagContext } from './feature-flags.interface';
 
 @Injectable()

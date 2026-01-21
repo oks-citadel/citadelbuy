@@ -1,0 +1,165 @@
+# ==========================================
+# Broxiva Next.js Web - Production Dockerfile
+# Multi-stage build with standalone output
+# ENCODING-HARDENED: UTF-8 safe across all environments
+# ==========================================
+
+# ==========================================
+# Stage 1: Dependencies
+# Install all dependencies including dev dependencies
+# ==========================================
+FROM node:20-alpine AS deps
+
+# ENCODING FIX: Set UTF-8 locale for Alpine
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install libc6-compat for compatibility and bash for consistent shell
+RUN apk add --no-cache libc6-compat bash && rm -rf /var/cache/apk/*
+
+# ENCODING FIX: Use bash shell for consistent behavior
+SHELL ["/bin/bash", "-c"]
+
+WORKDIR /app
+
+# Copy package manager files
+COPY package.json pnpm-lock.yaml* package-lock.json* ./
+
+# ENCODING FIX: Normalize CRLF line endings from Windows
+RUN find . -type f \( -name "*.json" -o -name "*.yaml" -o -name "*.yml" \) -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
+
+# Install pnpm globally
+RUN npm install -g pnpm@10.23.0
+
+# Install dependencies
+RUN pnpm install || npm install
+
+# ==========================================
+# Stage 2: Builder
+# Build Next.js application with standalone output
+# ==========================================
+FROM node:20-alpine AS builder
+
+# ENCODING FIX: Set UTF-8 locale
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install bash for consistent shell behavior
+RUN apk add --no-cache bash && rm -rf /var/cache/apk/*
+
+# ENCODING FIX: Use bash shell
+SHELL ["/bin/bash", "-c"]
+
+WORKDIR /app
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy application source
+COPY . .
+
+# ENCODING FIX: Normalize source files (exclude node_modules to preserve binary permissions)
+RUN find . -path ./node_modules -prune -o -type f \( -name "*.js" -o -name "*.ts" -o -name "*.tsx" -o -name "*.json" -o -name "*.css" -o -name "*.sh" \) -print -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
+
+# Set build environment variables
+# DOCKER_BUILD=true enables standalone output mode
+ENV DOCKER_BUILD=true
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Build arguments for client-side environment variables
+# These are embedded in the JavaScript bundle at build time
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_WS_URL
+ARG NEXT_PUBLIC_AI_SERVICE_URL
+ARG NEXT_PUBLIC_APP_NAME
+ARG NEXT_PUBLIC_APP_URL
+ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
+ARG NEXT_PUBLIC_GITHUB_CLIENT_ID
+ARG NEXT_PUBLIC_FACEBOOK_APP_ID
+ARG NEXT_PUBLIC_APPLE_CLIENT_ID
+ARG NEXT_PUBLIC_GA_TRACKING_ID
+ARG NEXT_PUBLIC_FB_PIXEL_ID
+ARG NEXT_PUBLIC_TIKTOK_PIXEL_ID
+ARG NEXT_PUBLIC_ENABLE_AI_FEATURES
+ARG NEXT_PUBLIC_ENABLE_AR_TRYON
+ARG NEXT_PUBLIC_ENABLE_VOICE_SEARCH
+ARG NEXT_PUBLIC_ENABLE_CHATBOT
+ARG NEXT_PUBLIC_CDN_URL
+ARG NEXT_PUBLIC_IMAGE_OPTIMIZATION
+ARG NEXT_PUBLIC_VAPID_PUBLIC_KEY
+ARG NEXT_PUBLIC_SENTRY_DSN
+
+# Build Next.js application
+# Standalone output includes only necessary files
+RUN npm run build
+
+# ==========================================
+# Stage 3: Production Runner
+# Minimal image with Next.js standalone output
+# ==========================================
+FROM node:20-alpine AS runner
+
+# ENCODING FIX: Set UTF-8 locale for runtime
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install dumb-init for signal handling, curl for health checks, and bash
+RUN apk add --no-cache \
+    dumb-init \
+    curl \
+    bash \
+    && rm -rf /var/cache/apk/*
+
+# ENCODING FIX: Use bash shell
+SHELL ["/bin/bash", "-c"]
+
+WORKDIR /app
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001 -G nodejs
+
+# Set to production environment
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Copy Next.js standalone output
+# Standalone mode includes minimal Node.js server and dependencies
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+# Runtime environment variables
+# These are server-side only and not embedded in bundles
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Expose Next.js port
+EXPOSE 3000
+
+# Switch to non-root user
+USER nextjs
+
+# Health check endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:3000/api/health || curl -f http://localhost:3000/ || exit 1
+
+# Use dumb-init for proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start Next.js server
+CMD ["node", "server.js"]
+
+# ==========================================
+# ENCODING HARDENING APPLIED:
+# ==========================================
+# - LANG=C.UTF-8, LC_ALL=C.UTF-8 in all stages
+# - SHELL ["/bin/bash", "-c"] for consistent behavior
+# - CRLF normalization (sed 's/\r$//') for Windows compatibility
+# - bash installed in Alpine for reliable scripting
+# ==========================================

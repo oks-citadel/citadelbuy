@@ -1,68 +1,60 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
-  title: Broxiva E-commerce Platform API
+  title: Broxiva E-Commerce Platform API
   description: |
-    Comprehensive API for the Broxiva multi-tenant SaaS e-commerce platform.
+    RESTful API for the Broxiva E-Commerce Platform. This API provides endpoints for managing
+    users, products, orders, shopping carts, checkout processes, and payments.
 
     ## Authentication
-    All authenticated endpoints require a Bearer JWT token in the Authorization header.
+    Most endpoints require authentication using JWT Bearer tokens. After logging in or registering,
+    include the access token in the Authorization header:
+    ```
+    Authorization: Bearer <access_token>
+    ```
 
-    ## Multi-tenant Isolation
-    Most endpoints are scoped to the authenticated user's organization (tenant).
-    Cross-tenant access is prevented at the API layer.
+    ## Rate Limiting
+    The API implements rate limiting to prevent abuse. Limits vary by endpoint:
+    - Authentication endpoints: 3-5 requests per minute
+    - General endpoints: 100 requests per minute
 
-    ## Idempotency
-    Mutation endpoints that create resources or process payments support
-    the `Idempotency-Key` header to ensure exactly-once semantics.
+    ## Pagination
+    List endpoints support pagination using `page` and `limit` query parameters.
+    Responses include `total`, `page`, `limit`, and `totalPages` fields.
 
-    ## Request Correlation
-    All requests return `X-Request-Id` and `X-Correlation-Id` headers for tracing.
-  version: 2.0.0
+  version: 1.0.0
   contact:
-    name: Broxiva Platform Team
-    email: platform@broxiva.com
+    name: Broxiva API Support
+    email: support@broxiva.com
   license:
     name: Proprietary
     url: https://broxiva.com/terms
 
 servers:
   - url: https://api.broxiva.com/v1
-    description: Production
-  - url: https://api.staging.broxiva.com/v1
-    description: Staging
-  - url: http://localhost:4000/api
-    description: Development
+    description: Production server
+  - url: https://staging-api.broxiva.com/v1
+    description: Staging server
+  - url: http://localhost:3000
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: User authentication and account management
+  - name: Users
+    description: User profile and address management
+  - name: Products
+    description: Product catalog and search
+  - name: Orders
+    description: Order management and tracking
+  - name: Shopping Cart
+    description: Cart operations for authenticated and guest users
+  - name: Checkout
+    description: Checkout process and payment methods
+  - name: Payments
+    description: Payment processing and webhooks
 
 security:
   - BearerAuth: []
-
-tags:
-  - name: System
-    description: Health checks and system information
-  - name: Auth
-    description: Authentication and authorization
-  - name: Users
-    description: User profile management
-  - name: Tenants
-    description: Organization/tenant management
-  - name: Billing
-    description: Subscription and payment management
-  - name: Products
-    description: Product catalog management
-  - name: Orders
-    description: Order processing and management
-  - name: Payments
-    description: Payment processing
-  - name: Files
-    description: File upload and management
-  - name: Notifications
-    description: User notifications
-  - name: Analytics
-    description: Business analytics and metrics
-  - name: Admin
-    description: Administrative operations
-  - name: Webhooks
-    description: Webhook management and events
 
 components:
   securitySchemes:
@@ -70,355 +62,1035 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT token obtained from /auth/login
-
-  headers:
-    X-Request-Id:
-      description: Unique request identifier for tracing
-      schema:
-        type: string
-        format: uuid
-    X-Correlation-Id:
-      description: Correlation ID for distributed tracing
-      schema:
-        type: string
-        format: uuid
-    Idempotency-Key:
-      description: Idempotency key for mutation operations
-      schema:
-        type: string
-        maxLength: 255
-
-  parameters:
-    IdempotencyKey:
-      name: Idempotency-Key
-      in: header
-      description: Unique key for idempotent requests (required for mutations)
-      schema:
-        type: string
-        maxLength: 255
-    Limit:
-      name: limit
-      in: query
-      description: Number of items to return (pagination)
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 100
-        default: 20
-    Cursor:
-      name: cursor
-      in: query
-      description: Cursor for pagination (opaque string)
-      schema:
-        type: string
+      description: JWT access token obtained from login or register endpoints
 
   schemas:
-    Error:
+    # ==================== Authentication Schemas ====================
+    LoginRequest:
       type: object
       required:
-        - code
-        - message
-        - requestId
+        - email
+        - password
       properties:
-        code:
-          type: string
-          description: Machine-readable error code
-          example: VALIDATION_ERROR
-        message:
-          type: string
-          description: Human-readable error message
-          example: Email is required
-        details:
-          type: array
-          items:
-            type: object
-            properties:
-              field:
-                type: string
-              message:
-                type: string
-        requestId:
-          type: string
-          format: uuid
-          description: Request ID for support reference
-
-    PaginatedResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items: {}
-        pagination:
-          type: object
-          properties:
-            total:
-              type: integer
-            limit:
-              type: integer
-            cursor:
-              type: string
-              nullable: true
-            hasMore:
-              type: boolean
-
-    User:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
         email:
           type: string
           format: email
+          example: john.doe@example.com
+          description: User email address
+        password:
+          type: string
+          minLength: 8
+          example: SecurePass123!
+          description: User password
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - name
+      properties:
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+          description: User email address
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+          example: SecurePass123!
+          description: Password (must contain uppercase, lowercase, number, and special character)
         name:
           type: string
-        role:
-          type: string
-          enum: [CUSTOMER, VENDOR, ADMIN, SUPER_ADMIN]
-        emailVerified:
-          type: boolean
-        mfaEnabled:
-          type: boolean
-        createdAt:
-          type: string
-          format: date-time
+          minLength: 2
+          maxLength: 100
+          example: John Doe
+          description: User full name
 
-    Organization:
+    AuthResponse:
       type: object
       properties:
-        id:
+        user:
+          $ref: '#/components/schemas/UserBasic'
+        accessToken:
           type: string
-          format: uuid
-        name:
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          description: JWT access token
+        refreshToken:
           type: string
-        slug:
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          description: JWT refresh token
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
           type: string
-        features:
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          description: Valid refresh token
+
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+
+    ResetPasswordRequest:
+      type: object
+      required:
+        - token
+        - newPassword
+      properties:
+        token:
+          type: string
+          description: Password reset token from email
+        newPassword:
+          type: string
+          minLength: 8
+          example: NewSecurePass123!
+
+    SocialLoginRequest:
+      type: object
+      required:
+        - provider
+        - accessToken
+      properties:
+        provider:
+          type: string
+          enum: [google, facebook, apple, github]
+          example: google
+        accessToken:
+          type: string
+          description: OAuth access token from the provider
+
+    MfaSetupResponse:
+      type: object
+      properties:
+        secret:
+          type: string
+          example: JBSWY3DPEHPK3PXP
+        qrCode:
+          type: string
+          description: Base64 encoded QR code image
+        backupCodes:
           type: array
           items:
             type: string
-        createdAt:
-          type: string
-          format: date-time
+          example: [ABC123, DEF456, GHI789]
 
-    Subscription:
+    MfaVerifyRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          example: "123456"
+          description: TOTP code from authenticator app
+
+    # ==================== User Schemas ====================
+    UserBasic:
       type: object
       properties:
         id:
           type: string
           format: uuid
-        plan:
+          example: 123e4567-e89b-12d3-a456-426614174000
+        email:
           type: string
-          enum: [FREE, STARTER, PROFESSIONAL, ENTERPRISE]
-        status:
+          format: email
+          example: john.doe@example.com
+        name:
           type: string
-          enum: [active, past_due, cancelled, trialing]
-        currentPeriodStart:
+          example: John Doe
+        role:
           type: string
-          format: date-time
-        currentPeriodEnd:
-          type: string
-          format: date-time
+          enum: [CUSTOMER, VENDOR, ADMIN]
+          example: CUSTOMER
 
-    WebhookEvent:
+    UserProfile:
+      allOf:
+        - $ref: '#/components/schemas/UserBasic'
+        - type: object
+          properties:
+            phone:
+              type: string
+              example: "+1 (555) 123-4567"
+            emailVerified:
+              type: boolean
+              example: true
+            avatar:
+              type: string
+              format: uri
+              example: https://cdn.broxiva.com/avatars/user-123.jpg
+            preferences:
+              $ref: '#/components/schemas/UserPreferences'
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    UserPreferences:
+      type: object
+      properties:
+        newsletter:
+          type: boolean
+          example: true
+        notifications:
+          type: boolean
+          example: true
+        emailNotifications:
+          type: boolean
+          example: true
+        smsNotifications:
+          type: boolean
+          example: false
+        language:
+          type: string
+          example: en
+        currency:
+          type: string
+          example: USD
+        timezone:
+          type: string
+          example: America/New_York
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: John Doe
+        phone:
+          type: string
+          example: "+1 (555) 123-4567"
+        avatar:
+          type: string
+          format: uri
+
+    # ==================== Address Schemas ====================
+    Address:
       type: object
       properties:
         id:
           type: string
-          format: uuid
+          example: addr_123
+        fullName:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        phone:
+          type: string
+          example: "+1 555-1234"
+        street:
+          type: string
+          example: 123 Main St, Apt 4B
+        city:
+          type: string
+          example: New York
+        state:
+          type: string
+          example: NY
+        postalCode:
+          type: string
+          example: "10001"
+        country:
+          type: string
+          example: United States
+        label:
+          type: string
+          example: Home
         type:
           type: string
-        data:
-          type: object
+          enum: [SHIPPING, BILLING]
+          example: SHIPPING
+        isDefault:
+          type: boolean
+          example: true
+
+    CreateAddressRequest:
+      type: object
+      required:
+        - fullName
+        - street
+        - city
+        - state
+        - postalCode
+        - country
+      properties:
+        fullName:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        street:
+          type: string
+          example: 123 Main St, Apt 4B
+        city:
+          type: string
+          example: New York
+        state:
+          type: string
+          example: NY
+        postalCode:
+          type: string
+          example: "10001"
+        country:
+          type: string
+          example: United States
+        isDefault:
+          type: boolean
+          default: false
+
+    # ==================== Product Schemas ====================
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        name:
+          type: string
+          example: Wireless Bluetooth Headphones
+        description:
+          type: string
+          example: Premium wireless headphones with active noise cancellation
+        price:
+          type: number
+          format: decimal
+          example: 149.99
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+          example:
+            - https://cdn.broxiva.com/products/headphones-main.jpg
+            - https://cdn.broxiva.com/products/headphones-side.jpg
+        stock:
+          type: integer
+          example: 150
+        sku:
+          type: string
+          example: WBH-2024-BLK
+        weight:
+          type: number
+          example: 0.25
+        dimensions:
+          type: string
+          example: "20 x 15 x 8"
+        brand:
+          type: string
+          example: AudioTech Pro
+        category:
+          $ref: '#/components/schemas/Category'
+        vendor:
+          $ref: '#/components/schemas/VendorBasic'
+        averageRating:
+          type: number
+          example: 4.5
+        reviewCount:
+          type: integer
+          example: 128
         createdAt:
           type: string
           format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateProductRequest:
+      type: object
+      required:
+        - name
+        - description
+        - price
+        - stock
+        - categoryId
+        - vendorId
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 200
+          example: Wireless Bluetooth Headphones
+        description:
+          type: string
+          minLength: 10
+          maxLength: 5000
+          example: Premium wireless headphones with active noise cancellation
+        price:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 149.99
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+        stock:
+          type: integer
+          minimum: 0
+          example: 150
+        categoryId:
+          type: string
+          format: uuid
+        vendorId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+          example: WBH-2024-BLK
+        weight:
+          type: number
+          minimum: 0
+        dimensions:
+          type: string
+        brand:
+          type: string
+        isActive:
+          type: boolean
+          default: true
+
+    ProductList:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        total:
+          type: integer
+          example: 100
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 12
+        totalPages:
+          type: integer
+          example: 9
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Electronics
+        slug:
+          type: string
+          example: electronics
+
+    VendorBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: AudioTech Pro
+        rating:
+          type: number
+          example: 4.8
+
+    # ==================== Cart Schemas ====================
+    Cart:
+      type: object
+      properties:
+        id:
+          type: string
+          example: cart_123
+        userId:
+          type: string
+          format: uuid
+          nullable: true
+        sessionId:
+          type: string
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        subtotal:
+          type: number
+          example: 299.98
+        itemCount:
+          type: integer
+          example: 2
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: item_123
+        productId:
+          type: string
+          format: uuid
+        variantId:
+          type: string
+          nullable: true
+        product:
+          $ref: '#/components/schemas/Product'
+        quantity:
+          type: integer
+          example: 2
+        price:
+          type: number
+          example: 149.99
+        subtotal:
+          type: number
+          example: 299.98
+
+    AddToCartRequest:
+      type: object
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          type: string
+          example: product-123
+        variantId:
+          type: string
+          description: Variant ID if product has variants
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+        sessionId:
+          type: string
+          description: Session ID for guest carts
+
+    UpdateCartItemRequest:
+      type: object
+      required:
+        - quantity
+      properties:
+        quantity:
+          type: integer
+          minimum: 0
+          example: 3
+
+    MergeCartRequest:
+      type: object
+      required:
+        - sessionId
+      properties:
+        sessionId:
+          type: string
+          description: Guest session ID to merge from
+        strategy:
+          type: string
+          enum: [add, replace, max]
+          default: add
+          description: How to handle duplicate items
+
+    # ==================== Order Schemas ====================
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        orderNumber:
+          type: string
+          example: ORD-2024-001234
+        status:
+          type: string
+          enum: [PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED, REFUNDED]
+          example: DELIVERED
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        subtotal:
+          type: number
+          example: 145.43
+        tax:
+          type: number
+          example: 14.54
+        shipping:
+          type: number
+          example: 0
+        total:
+          type: number
+          example: 159.97
+        shippingAddress:
+          $ref: '#/components/schemas/Address'
+        paymentMethod:
+          type: string
+          example: card
+        paymentStatus:
+          type: string
+          enum: [PENDING, PAID, FAILED, REFUNDED]
+          example: PAID
+        trackingNumber:
+          type: string
+          example: TRK123456789
+        estimatedDelivery:
+          type: string
+          format: date-time
+        statusHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderStatusHistory'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: item-1
+        productId:
+          type: string
+          format: uuid
+        productName:
+          type: string
+          example: Wireless Bluetooth Headphones
+        productImage:
+          type: string
+          format: uri
+        quantity:
+          type: integer
+          example: 2
+        price:
+          type: number
+          example: 49.99
+        subtotal:
+          type: number
+          example: 99.98
+
+    OrderStatusHistory:
+      type: object
+      properties:
+        status:
+          type: string
+          example: PROCESSING
+        timestamp:
+          type: string
+          format: date-time
+
+    CreateOrderRequest:
+      type: object
+      required:
+        - items
+        - shippingAddress
+        - subtotal
+        - tax
+        - shipping
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - productId
+              - quantity
+              - price
+            properties:
+              productId:
+                type: string
+                format: uuid
+              quantity:
+                type: integer
+                minimum: 1
+              price:
+                type: number
+                minimum: 0
+        shippingAddress:
+          $ref: '#/components/schemas/CreateAddressRequest'
+        subtotal:
+          type: number
+          minimum: 0
+          example: 145.43
+        tax:
+          type: number
+          minimum: 0
+          example: 14.54
+        shipping:
+          type: number
+          minimum: 0
+          example: 0
+        total:
+          type: number
+          minimum: 0
+          example: 159.97
+
+    # ==================== Checkout Schemas ====================
+    CheckoutInitializeRequest:
+      type: object
+      properties:
+        cartId:
+          type: string
+        productId:
+          type: string
+          description: For quick buy - direct product purchase
+        quantity:
+          type: integer
+          minimum: 1
+        shippingAddressId:
+          type: string
+        couponCode:
+          type: string
+
+    CheckoutSession:
+      type: object
+      properties:
+        cartId:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        subtotal:
+          type: number
+        tax:
+          type: number
+        shipping:
+          type: number
+        discount:
+          type: number
+        total:
+          type: number
+        savedAddresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/Address'
+        savedPaymentMethods:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMethod'
+
+    ExpressCheckoutRequest:
+      type: object
+      properties:
+        cartId:
+          type: string
+        productId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        shippingAddressId:
+          type: string
+        paymentMethodId:
+          type: string
+        couponCode:
+          type: string
+        useGiftCard:
+          type: boolean
+        giftCardCode:
+          type: string
+
+    GuestCheckoutRequest:
+      type: object
+      required:
+        - items
+        - shippingAddress
+        - guestEmail
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - productId
+              - quantity
+              - price
+            properties:
+              productId:
+                type: string
+              quantity:
+                type: integer
+                minimum: 1
+              price:
+                type: number
+                minimum: 0
+        shippingAddress:
+          $ref: '#/components/schemas/CreateAddressRequest'
+        billingAddress:
+          $ref: '#/components/schemas/CreateAddressRequest'
+        couponCode:
+          type: string
+        guestEmail:
+          type: string
+          format: email
+
+    # ==================== Payment Schemas ====================
+    PaymentMethod:
+      type: object
+      properties:
+        id:
+          type: string
+          example: pm_123
+        type:
+          type: string
+          enum: [card, paypal, bank_transfer]
+          example: card
+        card:
+          type: object
+          properties:
+            brand:
+              type: string
+              example: visa
+            last4:
+              type: string
+              example: "4242"
+            expMonth:
+              type: integer
+              example: 12
+            expYear:
+              type: integer
+              example: 2025
+        isDefault:
+          type: boolean
+
+    CreatePaymentIntentRequest:
+      type: object
+      required:
+        - amount
+      properties:
+        amount:
+          type: number
+          minimum: 0.5
+          example: 109.97
+          description: Amount in dollars
+        currency:
+          type: string
+          default: usd
+          example: usd
+        orderId:
+          type: string
+          description: Order ID to associate with payment
+
+    PaymentIntentResponse:
+      type: object
+      properties:
+        clientSecret:
+          type: string
+          description: Client secret for Stripe.js
+        paymentIntentId:
+          type: string
+          example: pi_123
+
+    # ==================== Common Schemas ====================
+    Error:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: Invalid input data
+        error:
+          type: string
+          example: Bad Request
+        timestamp:
+          type: string
+          format: date-time
+
+    ValidationError:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 400
+        message:
+          type: array
+          items:
+            type: string
+          example:
+            - email must be a valid email
+            - password must be at least 8 characters
+        error:
+          type: string
+          example: Bad Request
+
+    SuccessMessage:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Operation completed successfully
+
+  responses:
+    UnauthorizedError:
+      description: Unauthorized - invalid or missing authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 401
+            message: Unauthorized
+            error: Unauthorized
+
+    ForbiddenError:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 403
+            message: Forbidden resource
+            error: Forbidden
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 404
+            message: Resource not found
+            error: Not Found
+
+    ValidationErrorResponse:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+
+    TooManyRequestsError:
+      description: Too many requests - rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 429
+            message: Too many requests
+            error: Too Many Requests
 
 paths:
-  # ==================== SYSTEM ENDPOINTS ====================
-  /health:
-    get:
-      tags: [System]
-      summary: Health check
-      security: []
-      operationId: healthCheck
-      responses:
-        '200':
-          description: Service is healthy
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: healthy
-                  timestamp:
-                    type: string
-                    format: date-time
-
-  /version:
-    get:
-      tags: [System]
-      summary: API version information
-      security: []
-      operationId: getVersion
-      responses:
-        '200':
-          description: Version information
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  version:
-                    type: string
-                  build:
-                    type: string
-                  environment:
-                    type: string
-
-  /config/public:
-    get:
-      tags: [System]
-      summary: Public configuration for frontend
-      security: []
-      operationId: getPublicConfig
-      responses:
-        '200':
-          description: Public configuration
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  features:
-                    type: object
-                  regions:
-                    type: array
-                    items:
-                      type: string
-                  supportedCurrencies:
-                    type: array
-                    items:
-                      type: string
-
-  # ==================== AUTH ENDPOINTS ====================
+  # ==================== Authentication Endpoints ====================
   /auth/register:
     post:
-      tags: [Auth]
-      summary: Register a new user
+      tags:
+        - Authentication
+      summary: Register a new user account
+      description: Creates a new user account with email, password, and name. Returns JWT tokens upon successful registration.
       security: []
-      operationId: register
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [email, password, name]
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                  minLength: 8
-                name:
-                  type: string
+              $ref: '#/components/schemas/RegisterRequest'
       responses:
         '201':
-          description: User registered successfully
-          headers:
-            X-Request-Id:
-              $ref: '#/components/headers/X-Request-Id'
+          description: User successfully registered
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  user:
-                    $ref: '#/components/schemas/User'
-                  accessToken:
-                    type: string
-                  refreshToken:
-                    type: string
+                $ref: '#/components/schemas/AuthResponse'
         '400':
-          description: Invalid input or email exists
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/ValidationErrorResponse'
         '429':
-          description: Too many requests
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/TooManyRequestsError'
 
   /auth/login:
     post:
-      tags: [Auth]
+      tags:
+        - Authentication
       summary: Login with email and password
+      description: Authenticates user with email and password. Returns JWT access and refresh tokens.
       security: []
-      operationId: login
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [email, password]
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
+              $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
           description: Successfully authenticated
-          headers:
-            X-Request-Id:
-              $ref: '#/components/headers/X-Request-Id'
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  user:
-                    $ref: '#/components/schemas/User'
-                  accessToken:
-                    type: string
-                  refreshToken:
-                    type: string
+                $ref: '#/components/schemas/AuthResponse'
         '401':
           description: Invalid credentials
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequestsError'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout current user
+      description: Invalidates the current session. Client should clear stored tokens.
+      responses:
+        '200':
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
 
   /auth/refresh:
     post:
-      tags: [Auth]
+      tags:
+        - Authentication
       summary: Refresh access token
+      description: Generates a new access token using a valid refresh token.
       security: []
-      operationId: refreshToken
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [refreshToken]
-              properties:
-                refreshToken:
-                  type: string
+              $ref: '#/components/schemas/RefreshTokenRequest'
       responses:
         '200':
-          description: Token refreshed
+          description: Token refreshed successfully
           content:
             application/json:
               schema:
@@ -429,689 +1101,1048 @@ paths:
                   refreshToken:
                     type: string
         '401':
-          description: Invalid refresh token
+          description: Invalid or expired refresh token
 
-  /auth/logout:
+  /auth/forgot-password:
     post:
-      tags: [Auth]
-      summary: Logout and invalidate token
-      operationId: logout
-      responses:
-        '200':
-          description: Successfully logged out
-        '401':
-          description: Unauthorized
-
-  /auth/password/reset:
-    post:
-      tags: [Auth]
+      tags:
+        - Authentication
       summary: Request password reset
+      description: Sends a password reset email to the provided address if it exists in the system.
       security: []
-      operationId: requestPasswordReset
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [email]
-              properties:
-                email:
-                  type: string
-                  format: email
+              $ref: '#/components/schemas/ForgotPasswordRequest'
       responses:
         '200':
-          description: Reset email sent if account exists
+          description: Password reset email sent if email exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '429':
+          $ref: '#/components/responses/TooManyRequestsError'
 
-  /auth/password/reset/{token}:
+  /auth/reset-password:
     post:
-      tags: [Auth]
+      tags:
+        - Authentication
       summary: Reset password with token
+      description: Resets user password using the token received via email.
       security: []
-      operationId: resetPassword
-      parameters:
-        - name: token
-          in: path
-          required: true
-          schema:
-            type: string
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [password]
-              properties:
-                password:
-                  type: string
-                  minLength: 8
+              $ref: '#/components/schemas/ResetPasswordRequest'
       responses:
         '200':
           description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
         '400':
           description: Invalid or expired token
 
-  # ==================== USER ENDPOINTS ====================
-  /users/me:
-    get:
-      tags: [Users]
-      summary: Get current user profile
-      operationId: getCurrentUser
-      responses:
-        '200':
-          description: User profile
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-    patch:
-      tags: [Users]
-      summary: Update current user profile
-      operationId: updateCurrentUser
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                avatar:
-                  type: string
-                  format: uri
-      responses:
-        '200':
-          description: Profile updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-
-  /profile:
-    get:
-      tags: [Users]
-      summary: Get user profile (alias for /users/me)
-      operationId: getProfile
-      responses:
-        '200':
-          description: User profile
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-
-  # ==================== TENANT ENDPOINTS ====================
-  /tenants:
-    get:
-      tags: [Tenants]
-      summary: List user's organizations
-      operationId: listOrganizations
-      parameters:
-        - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Cursor'
-      responses:
-        '200':
-          description: List of organizations
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/PaginatedResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Organization'
+  /auth/social-login:
     post:
-      tags: [Tenants]
-      summary: Create a new organization
-      operationId: createOrganization
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name]
-              properties:
-                name:
-                  type: string
-                slug:
-                  type: string
-      responses:
-        '201':
-          description: Organization created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-
-  /tenants/{id}:
-    get:
-      tags: [Tenants]
-      summary: Get organization by ID
-      operationId: getOrganization
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Organization details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-        '404':
-          description: Organization not found
-
-  /tenants/{id}/members:
-    get:
-      tags: [Tenants]
-      summary: List organization members
-      operationId: listOrganizationMembers
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Cursor'
-      responses:
-        '200':
-          description: List of members
-    post:
-      tags: [Tenants]
-      summary: Invite member to organization
-      operationId: inviteOrganizationMember
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - $ref: '#/components/parameters/IdempotencyKey'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, role]
-              properties:
-                email:
-                  type: string
-                  format: email
-                role:
-                  type: string
-                  enum: [MEMBER, ADMIN, OWNER]
-      responses:
-        '201':
-          description: Invitation sent
-
-  # ==================== BILLING ENDPOINTS ====================
-  /plans:
-    get:
-      tags: [Billing]
-      summary: List available subscription plans
+      tags:
+        - Authentication
+      summary: Login with social provider
+      description: Authenticates user using OAuth tokens from Google, Facebook, Apple, or GitHub.
       security: []
-      operationId: listPlans
-      responses:
-        '200':
-          description: List of plans
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    name:
-                      type: string
-                    price:
-                      type: number
-                    currency:
-                      type: string
-                    features:
-                      type: array
-                      items:
-                        type: string
-
-  /subscriptions:
-    get:
-      tags: [Billing]
-      summary: Get current subscription
-      operationId: getSubscription
-      responses:
-        '200':
-          description: Current subscription
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Subscription'
-    post:
-      tags: [Billing]
-      summary: Create or upgrade subscription
-      operationId: createSubscription
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [planId]
-              properties:
-                planId:
-                  type: string
-                paymentMethodId:
-                  type: string
+              $ref: '#/components/schemas/SocialLoginRequest'
       responses:
-        '201':
-          description: Subscription created
+        '200':
+          description: Successfully authenticated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Subscription'
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid social login credentials
+        '429':
+          $ref: '#/components/responses/TooManyRequestsError'
 
-  /subscriptions/cancel:
+  /auth/mfa/setup:
     post:
-      tags: [Billing]
-      summary: Cancel subscription
-      operationId: cancelSubscription
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                reason:
-                  type: string
-                immediate:
-                  type: boolean
-                  default: false
+      tags:
+        - Authentication
+      summary: Setup MFA for user account
+      description: Generates a TOTP secret and QR code for setting up multi-factor authentication.
       responses:
         '200':
-          description: Subscription cancelled
+          description: MFA setup initiated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaSetupResponse'
+        '400':
+          description: MFA is already enabled for this account
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
 
-  /payments/methods:
-    get:
-      tags: [Payments]
-      summary: List payment methods
-      operationId: listPaymentMethods
-      responses:
-        '200':
-          description: List of payment methods
+  /auth/mfa/verify:
     post:
-      tags: [Payments]
-      summary: Add payment method
-      operationId: addPaymentMethod
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
+      tags:
+        - Authentication
+      summary: Verify and enable MFA
+      description: Verifies the TOTP code from authenticator app and enables MFA for the account.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [token]
-              properties:
-                token:
-                  type: string
-                  description: Payment token from payment provider
-                setDefault:
-                  type: boolean
-      responses:
-        '201':
-          description: Payment method added
-
-  /payments/invoices:
-    get:
-      tags: [Payments]
-      summary: List invoices
-      operationId: listInvoices
-      parameters:
-        - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Cursor'
+              $ref: '#/components/schemas/MfaVerifyRequest'
       responses:
         '200':
-          description: List of invoices
-
-  # ==================== FILE ENDPOINTS ====================
-  /files/presign:
-    post:
-      tags: [Files]
-      summary: Get presigned URL for file upload
-      operationId: getPresignedUploadUrl
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [filename, contentType]
-              properties:
-                filename:
-                  type: string
-                contentType:
-                  type: string
-                folder:
-                  type: string
-      responses:
-        '200':
-          description: Presigned URL
+          description: MFA enabled successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  uploadUrl:
+                  message:
                     type: string
-                    format: uri
-                  fileUrl:
+                  mfaEnabled:
+                    type: boolean
+        '400':
+          description: Invalid verification code
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/mfa/status:
+    get:
+      tags:
+        - Authentication
+      summary: Get MFA status for current user
+      description: Returns whether MFA is enabled for the authenticated user.
+      responses:
+        '200':
+          description: MFA status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mfaEnabled:
+                    type: boolean
+                  mfaMethod:
                     type: string
-                    format: uri
-                  expiresAt:
-                    type: string
-                    format: date-time
+                    example: totp
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
 
-  /files/{id}:
-    get:
-      tags: [Files]
-      summary: Get file metadata
-      operationId: getFile
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: File metadata
-    delete:
-      tags: [Files]
-      summary: Delete file
-      operationId: deleteFile
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '204':
-          description: File deleted
-
-  # ==================== NOTIFICATION ENDPOINTS ====================
-  /notifications:
-    get:
-      tags: [Notifications]
-      summary: List user notifications
-      operationId: listNotifications
-      parameters:
-        - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Cursor'
-        - name: unreadOnly
-          in: query
-          schema:
-            type: boolean
-      responses:
-        '200':
-          description: List of notifications
-
-  /notifications/{id}/read:
+  /auth/mfa/disable:
     post:
-      tags: [Notifications]
-      summary: Mark notification as read
-      operationId: markNotificationRead
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Notification marked as read
-
-  /notifications/read-all:
-    post:
-      tags: [Notifications]
-      summary: Mark all notifications as read
-      operationId: markAllNotificationsRead
-      responses:
-        '200':
-          description: All notifications marked as read
-
-  # ==================== AUDIT LOG ENDPOINTS ====================
-  /audit/logs:
-    get:
-      tags: [Admin]
-      summary: Query audit logs
-      operationId: queryAuditLogs
-      parameters:
-        - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Cursor'
-        - name: action
-          in: query
-          schema:
-            type: string
-        - name: resource
-          in: query
-          schema:
-            type: string
-        - name: startDate
-          in: query
-          schema:
-            type: string
-            format: date-time
-        - name: endDate
-          in: query
-          schema:
-            type: string
-            format: date-time
-      responses:
-        '200':
-          description: Audit log entries
-
-  # ==================== WEBHOOK ENDPOINTS ====================
-  /webhooks:
-    get:
-      tags: [Webhooks]
-      summary: List configured webhooks
-      operationId: listWebhooks
-      responses:
-        '200':
-          description: List of webhooks
-    post:
-      tags: [Webhooks]
-      summary: Create webhook endpoint
-      operationId: createWebhook
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
+      tags:
+        - Authentication
+      summary: Disable MFA for user account
+      description: Disables multi-factor authentication. Requires valid TOTP code or backup code.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [url, events]
-              properties:
-                url:
-                  type: string
-                  format: uri
-                events:
-                  type: array
-                  items:
-                    type: string
-                secret:
-                  type: string
+              $ref: '#/components/schemas/MfaVerifyRequest'
+      responses:
+        '200':
+          description: MFA disabled successfully
+        '400':
+          description: Invalid verification code
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==================== User Endpoints ====================
+  /users/profile:
+    get:
+      tags:
+        - Users
+      summary: Get current user profile
+      description: Retrieves the profile information of the currently authenticated user.
+      responses:
+        '200':
+          description: Successfully retrieved user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    patch:
+      tags:
+        - Users
+      summary: Update current user profile
+      description: Updates profile information for the authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/ValidationErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags:
+        - Users
+      summary: Delete current user account
+      description: Deletes the authenticated user account (soft delete - anonymizes data).
+      responses:
+        '200':
+          description: Account deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/preferences:
+    get:
+      tags:
+        - Users
+      summary: Get user preferences
+      description: Retrieve the current user preferences including notification settings, language, currency.
+      responses:
+        '200':
+          description: User preferences retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    patch:
+      tags:
+        - Users
+      summary: Update user preferences
+      description: Update user preferences for notifications, language, currency, timezone.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferences'
+      responses:
+        '200':
+          description: Preferences updated successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/addresses:
+    get:
+      tags:
+        - Users
+      summary: Get all user addresses
+      description: Retrieve all saved addresses for the authenticated user.
+      responses:
+        '200':
+          description: Addresses retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Users
+      summary: Create new address
+      description: Add a new shipping or billing address for the authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAddressRequest'
       responses:
         '201':
-          description: Webhook created
+          description: Address created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '400':
+          $ref: '#/components/responses/ValidationErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
 
-  /webhooks/{id}:
+  /users/addresses/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Address ID
+
     get:
-      tags: [Webhooks]
-      summary: Get webhook details
-      operationId: getWebhook
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+      tags:
+        - Users
+      summary: Get address by ID
+      description: Retrieve a specific address by its ID.
       responses:
         '200':
-          description: Webhook details
+          description: Address retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    patch:
+      tags:
+        - Users
+      summary: Update address
+      description: Update an existing address.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAddressRequest'
+      responses:
+        '200':
+          description: Address updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
     delete:
-      tags: [Webhooks]
-      summary: Delete webhook
-      operationId: deleteWebhook
+      tags:
+        - Users
+      summary: Delete address
+      description: Delete an address from the user account.
+      responses:
+        '200':
+          description: Address deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # ==================== Product Endpoints ====================
+  /products:
+    get:
+      tags:
+        - Products
+      summary: Get all products with filtering and pagination
+      description: Retrieves a paginated list of products with optional filtering.
+      security: []
       parameters:
-        - name: id
-          in: path
-          required: true
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 12
+          description: Items per page
+        - name: category
+          in: query
           schema:
             type: string
+          description: Category ID to filter by
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+          description: Minimum price
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+          description: Maximum price
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [price-asc, price-desc, name-asc, name-desc, date-desc]
+          description: Sort order
+      responses:
+        '200':
+          description: Successfully retrieved paginated products
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductList'
+
+    post:
+      tags:
+        - Products
+      summary: Create new product
+      description: Create a new product (vendor/admin only). Checks subscription product limits.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Product limit reached for subscription tier
+
+  /products/search:
+    get:
+      tags:
+        - Products
+      summary: Search products with filters
+      description: Search products by name or description with advanced filtering options.
+      security: []
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search query
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Category ID
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [price-asc, price-desc, name-asc, name-desc, date-desc, relevance]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Returns search results with pagination
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductList'
+
+  /products/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Product ID
+
+    get:
+      tags:
+        - Products
+      summary: Get product by ID
+      description: Retrieves detailed information about a specific product.
+      security: []
+      responses:
+        '200':
+          description: Successfully retrieved product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Products
+      summary: Update product
+      description: Update product information.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Products
+      summary: Delete product
+      description: Delete a product from the catalog.
       responses:
         '204':
-          description: Webhook deleted
+          description: Product deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
 
-  # ==================== PAYMENT PROVIDER WEBHOOKS ====================
-  /webhooks/stripe:
-    post:
-      tags: [Webhooks]
-      summary: Stripe webhook handler
+  /products/{id}/related:
+    get:
+      tags:
+        - Products
+      summary: Get related products
+      description: Get products related to the specified product.
       security: []
-      operationId: handleStripeWebhook
       parameters:
-        - name: stripe-signature
-          in: header
+        - name: id
+          in: path
           required: true
           schema:
             type: string
-          description: Stripe webhook signature header
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 4
+          description: Number of related products
+      responses:
+        '200':
+          description: Returns related products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+  # ==================== Cart Endpoints ====================
+  /cart:
+    get:
+      tags:
+        - Shopping Cart
+      summary: Get current cart
+      description: Get current cart for authenticated user or guest (by session ID).
+      security:
+        - BearerAuth: []
+        - {}
+      parameters:
+        - name: sessionId
+          in: query
+          schema:
+            type: string
+          description: Session ID for guest cart
+      responses:
+        '200':
+          description: Cart retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+
+    delete:
+      tags:
+        - Shopping Cart
+      summary: Clear entire cart
+      description: Remove all items from the cart.
+      security:
+        - BearerAuth: []
+        - {}
+      parameters:
+        - name: sessionId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cart cleared successfully
+
+  /cart/items:
+    post:
+      tags:
+        - Shopping Cart
+      summary: Add item to cart
+      description: Add a product to the shopping cart.
+      security:
+        - BearerAuth: []
+        - {}
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
+              $ref: '#/components/schemas/AddToCartRequest'
+      responses:
+        '201':
+          description: Item added to cart successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '404':
+          description: Product not found
+
+  /cart/items/{itemId}:
+    parameters:
+      - name: itemId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Cart item ID
+
+    put:
+      tags:
+        - Shopping Cart
+      summary: Update cart item quantity
+      description: Update the quantity of an item in the cart.
+      security:
+        - BearerAuth: []
+        - {}
+      parameters:
+        - name: sessionId
+          in: query
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCartItemRequest'
       responses:
         '200':
-          description: Webhook processed
+          description: Cart item updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '404':
+          description: Cart item not found
+
+    delete:
+      tags:
+        - Shopping Cart
+      summary: Remove item from cart
+      description: Remove an item from the shopping cart.
+      security:
+        - BearerAuth: []
+        - {}
+      parameters:
+        - name: sessionId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item removed successfully
+        '404':
+          description: Cart item not found
+
+  /cart/merge:
+    post:
+      tags:
+        - Shopping Cart
+      summary: Merge guest cart into user cart
+      description: Merge a guest cart into the authenticated user's cart (typically called after login).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeCartRequest'
+      responses:
+        '200':
+          description: Carts merged successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==================== Order Endpoints ====================
+  /orders:
+    get:
+      tags:
+        - Orders
+      summary: Get all orders for current user
+      description: Retrieves a complete list of orders placed by the authenticated user.
+      responses:
+        '200':
+          description: Successfully retrieved user orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Orders
+      summary: Create a new order
+      description: Creates a new order with the provided items and shipping address.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
         '400':
-          description: Invalid signature
+          description: Invalid order data or insufficient inventory
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
 
-  /webhooks/paystack:
-    post:
-      tags: [Webhooks]
-      summary: Paystack webhook handler
-      security: []
-      operationId: handlePaystackWebhook
+  /orders/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Order UUID
+
+    get:
+      tags:
+        - Orders
+      summary: Get order by ID
+      description: Retrieves detailed information about a specific order.
+      responses:
+        '200':
+          description: Successfully retrieved order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Order belongs to another user
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /orders/{id}/tracking:
+    get:
+      tags:
+        - Orders
+      summary: Get order tracking information
+      description: Retrieves detailed tracking information for a specific order.
       parameters:
-        - name: x-paystack-signature
-          in: header
+        - name: id
+          in: path
           required: true
           schema:
             type: string
-          description: Paystack webhook signature
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
+            format: uuid
       responses:
         '200':
-          description: Webhook processed
+          description: Successfully retrieved tracking information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderId:
+                    type: string
+                  trackingNumber:
+                    type: string
+                  carrier:
+                    type: string
+                  status:
+                    type: string
+                  history:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrderStatusHistory'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
 
-  /webhooks/flutterwave:
+  /orders/{id}/cancel:
     post:
-      tags: [Webhooks]
-      summary: Flutterwave webhook handler
-      security: []
-      operationId: handleFlutterwaveWebhook
+      tags:
+        - Orders
+      summary: Cancel an order
+      description: Cancels an order if it has not been shipped yet.
       parameters:
-        - name: verif-hash
-          in: header
+        - name: id
+          in: path
           required: true
           schema:
             type: string
-          description: Flutterwave verification hash
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
+            format: uuid
       responses:
         '200':
-          description: Webhook processed
+          description: Order cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  orderNumber:
+                    type: string
+                  status:
+                    type: string
+                    example: CANCELLED
+                  message:
+                    type: string
+        '400':
+          description: Order cannot be cancelled (already shipped/delivered)
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
 
-  /webhooks/paypal:
-    post:
-      tags: [Webhooks]
-      summary: PayPal webhook handler
-      security: []
-      operationId: handlePayPalWebhook
-      parameters:
-        - name: paypal-transmission-sig
-          in: header
-          required: true
-          schema:
-            type: string
-          description: PayPal transmission signature
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
+  # ==================== Checkout Endpoints ====================
+  /checkout/addresses:
+    get:
+      tags:
+        - Checkout
+      summary: Get saved addresses
+      description: Get saved addresses for checkout.
       responses:
         '200':
-          description: Webhook processed
+          description: List of saved addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
 
-  /webhooks/apple:
     post:
-      tags: [Webhooks]
-      summary: Apple App Store webhook handler
-      security: []
-      operationId: handleAppleWebhook
+      tags:
+        - Checkout
+      summary: Save a new address
+      description: Save a new address during checkout.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
+              $ref: '#/components/schemas/CreateAddressRequest'
       responses:
-        '200':
-          description: Webhook processed
+        '201':
+          description: Address saved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
 
-  /webhooks/google:
+  /checkout/payment-methods:
+    get:
+      tags:
+        - Checkout
+      summary: Get saved payment methods
+      description: Get saved payment methods for checkout.
+      responses:
+        '200':
+          description: List of saved payment methods
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentMethod'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /checkout/payment-methods/setup:
     post:
-      tags: [Webhooks]
-      summary: Google Play webhook handler
+      tags:
+        - Checkout
+      summary: Get setup intent for adding a new payment method
+      description: Creates a Stripe SetupIntent for securely saving a payment method.
+      responses:
+        '200':
+          description: Setup intent client secret
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clientSecret:
+                    type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /checkout/initialize:
+    post:
+      tags:
+        - Checkout
+      summary: Initialize checkout session
+      description: Initialize checkout session with calculated totals.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutInitializeRequest'
+      responses:
+        '200':
+          description: Checkout session initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutSession'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /checkout/express:
+    post:
+      tags:
+        - Checkout
+      summary: Express checkout
+      description: One-click purchase with saved payment and shipping details.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpressCheckoutRequest'
+      responses:
+        '200':
+          description: Order placed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Invalid request or payment failed
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /checkout/guest:
+    post:
+      tags:
+        - Checkout
+      summary: Guest checkout
+      description: Checkout without an account.
+      security:
+        - BearerAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuestCheckoutRequest'
+      responses:
+        '200':
+          description: Guest order created, payment intent ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order:
+                    $ref: '#/components/schemas/Order'
+                  clientSecret:
+                    type: string
+                    description: Stripe client secret for payment
+        '400':
+          description: Invalid request
+        '429':
+          $ref: '#/components/responses/TooManyRequestsError'
+
+  # ==================== Payment Endpoints ====================
+  /payments/create-intent:
+    post:
+      tags:
+        - Payments
+      summary: Create a Stripe payment intent
+      description: Creates a payment intent for processing a payment.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentIntentRequest'
+      responses:
+        '201':
+          description: Payment intent created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentIntentResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /payments/webhook:
+    post:
+      tags:
+        - Payments
+      summary: Handle Stripe webhook events
+      description: Endpoint for receiving Stripe webhook events. Do not call directly.
       security: []
-      operationId: handleGoogleWebhook
       requestBody:
         required: true
         content:
@@ -1120,4 +2151,35 @@ paths:
               type: object
       responses:
         '200':
-          description: Webhook processed
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+
+  /payments/paypal/webhook:
+    post:
+      tags:
+        - Payments
+      summary: Handle PayPal webhook events
+      description: Endpoint for receiving PayPal webhook events. Do not call directly.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean

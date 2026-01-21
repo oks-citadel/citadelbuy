@@ -1,10 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { OrganizationController } from '../controllers/organization.controller';
 import { OrganizationService } from '../services/organization.service';
 import { OrganizationPermissionGuard } from '../../organization-roles/guards/permission.guard';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
-import { IdempotencyInterceptor } from '@/common/interceptors/idempotency.interceptor';
+import { IdempotencyInterceptor } from '@/common/idempotency/idempotency.interceptor';
+import { IdempotencyService } from '@/common/idempotency/idempotency.service';
 import {
   CreateOrganizationDto,
   UpdateOrganizationDto,
@@ -43,6 +45,13 @@ describe('OrganizationController', () => {
     updatedAt: new Date('2024-01-01'),
   };
 
+  const mockIdempotencyService = {
+    acquire: jest.fn().mockResolvedValue({ status: 'new', lockId: 'lock-123' }),
+    getCachedResponse: jest.fn().mockResolvedValue(null),
+    cacheResponse: jest.fn().mockResolvedValue(undefined),
+    release: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrganizationController],
@@ -51,6 +60,11 @@ describe('OrganizationController', () => {
           provide: OrganizationService,
           useValue: mockOrganizationService,
         },
+        {
+          provide: IdempotencyService,
+          useValue: mockIdempotencyService,
+        },
+        Reflector,
       ],
     })
       .overrideGuard(JwtAuthGuard)

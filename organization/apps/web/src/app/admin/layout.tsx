@@ -11,15 +11,11 @@ import {
   BarChart3,
   Settings,
   Store,
-  Tag,
   Percent,
   Shield,
   Brain,
-  Mail,
   CreditCard,
   MessageSquare,
-  Gift,
-  Star,
   Bell,
   Search,
   Menu,
@@ -27,8 +23,8 @@ import {
   LogOut,
   ChevronDown,
   Truck,
-  FileText,
   Globe,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';

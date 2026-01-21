@@ -1,6 +1,6 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { AnalyticsPeriod, OrderStatus } from '@prisma/client';
+import { OrderStatus } from '@prisma/client';
 
 export interface DateRange {
   startDate: Date;
@@ -22,7 +22,7 @@ export interface ProductMetrics {
   outOfStock: number;
   lowStock: number;
   averagePrice: number;
-  topSellingProducts: any[];
+  topSellingProducts: TopSellingProduct[];
 }
 
 export interface TrafficMetrics {
@@ -32,12 +32,35 @@ export interface TrafficMetrics {
   averageTimeOnPage: number;
 }
 
+export interface TopCustomer {
+  id: string;
+  name: string;
+  email: string;
+  totalSpent: number;
+  orderCount: number;
+}
+
+export interface TopSellingProduct {
+  id: string;
+  name: string;
+  unitsSold: number;
+  revenue: number;
+}
+
+export interface RecentOrder {
+  id: string;
+  orderNumber: string;
+  total: number;
+  status: string;
+  createdAt: Date;
+}
+
 export interface CustomerMetrics {
   totalCustomers: number;
   newCustomers: number;
   returningCustomers: number;
   averageLifetimeValue: number;
-  topCustomers: any[];
+  topCustomers: TopCustomer[];
 }
 
 export interface PerformanceMetrics {
@@ -57,7 +80,7 @@ export interface DashboardOverview {
   traffic: TrafficMetrics;
   customers: CustomerMetrics;
   performance: PerformanceMetrics;
-  recentOrders: any[];
+  recentOrders: RecentOrder[];
   salesTrend: { date: string; revenue: number; orders: number }[];
   topCategories: { category: string; revenue: number; units: number }[];
 }
@@ -262,15 +285,18 @@ export class VendorAnalyticsService {
       },
     });
 
-    return topProducts.map((item) => {
-      const product = products.find((p) => p.id === item.productId);
-      return {
-        ...product,
-        unitsSold: item._sum.quantity,
-        revenue: (item._sum.price || 0) * (item._sum.quantity || 0),
-        orderCount: item._count.productId,
-      };
-    });
+    return topProducts
+      .map((item) => {
+        const product = products.find((p) => p.id === item.productId);
+        if (!product) return null;
+        return {
+          id: product.id,
+          name: product.name,
+          unitsSold: item._sum.quantity || 0,
+          revenue: (item._sum.price || 0) * (item._sum.quantity || 0),
+        };
+      })
+      .filter((item): item is TopSellingProduct => item !== null);
   }
 
   // ==================== TRAFFIC METRICS ====================
@@ -401,7 +427,7 @@ export class VendorAnalyticsService {
     };
   }
 
-  async getTopCustomers(vendorId: string, dateRange: DateRange, limit = 10) {
+  async getTopCustomers(vendorId: string, dateRange: DateRange, limit = 10): Promise<TopCustomer[]> {
     const customerSpending = await this.prisma.orderItem.groupBy({
       by: ['orderId'],
       where: {
@@ -432,14 +458,16 @@ export class VendorAnalyticsService {
     });
 
     // Aggregate by user
-    const userSpending = new Map<string, { user: any; totalSpent: number; orderCount: number }>();
+    const userSpending = new Map<string, { id: string; name: string; email: string; totalSpent: number; orderCount: number }>();
 
     customerSpending.forEach((spending) => {
       const order = orders.find((o) => o.id === spending.orderId);
-      if (!order || !order.userId) return;
+      if (!order || !order.userId || !order.user) return;
 
       const existing = userSpending.get(order.userId) || {
-        user: order.user,
+        id: order.user.id,
+        name: order.user.name || '',
+        email: order.user.email,
         totalSpent: 0,
         orderCount: 0,
       };
@@ -532,7 +560,7 @@ export class VendorAnalyticsService {
 
   // ==================== RECENT ORDERS ====================
 
-  async getRecentOrders(vendorId: string, limit = 10) {
+  async getRecentOrders(vendorId: string, limit = 10): Promise<RecentOrder[]> {
     const orders = await this.prisma.orderItem.findMany({
       where: {
         product: { vendorId },
@@ -566,14 +594,11 @@ export class VendorAnalyticsService {
     });
 
     return orders.map((item) => ({
-      orderId: item.orderId,
-      orderDate: item.order.createdAt,
-      status: item.order.status,
-      customer: item.order.user,
-      product: item.product,
-      quantity: item.quantity,
-      price: item.price,
+      id: item.orderId,
+      orderNumber: item.orderId,
       total: item.price * item.quantity,
+      status: item.order.status,
+      createdAt: item.order.createdAt,
     }));
   }
 

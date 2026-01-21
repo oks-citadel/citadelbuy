@@ -1,0 +1,202 @@
+%% Payment Processing Flow
+%% E-commerce Platform - Payment System
+%% Shows Stripe, PayPal, Apple Pay, Google Pay, and BNPL flows
+
+sequenceDiagram
+    autonumber
+
+    participant Client as Client App
+    participant API as API Server
+    participant PayService as PaymentsService
+    participant Stripe as Stripe API
+    participant PayPal as PayPal API
+    participant DB as Database
+    participant Webhook as Webhook Handler
+
+    %% ==========================================
+    %% STRIPE PAYMENT FLOW
+    %% ==========================================
+
+    rect rgb(240, 248, 255)
+        Note over Client, Webhook: Stripe Card Payment Flow
+
+        Client->>API: POST /payments/create-intent
+        Note right of Client: { amount, currency, metadata }
+
+        API->>PayService: createPaymentIntent()
+        PayService->>PayService: ensureStripeConfigured()
+        PayService->>PayService: Validate amount > 0
+
+        PayService->>Stripe: paymentIntents.create()
+        Note right of PayService: amount (cents), currency,<br/>automatic_payment_methods
+
+        Stripe-->>PayService: PaymentIntent
+        Note left of Stripe: { id, client_secret, status }
+
+        PayService-->>API: { clientSecret, paymentIntentId }
+        API-->>Client: Payment Intent Created
+
+        Client->>Client: Display Stripe Elements
+        Client->>Stripe: confirmCardPayment(clientSecret)
+        Note right of Client: User enters card details
+
+        Stripe->>Stripe: Process Payment
+        Stripe-->>Client: Payment Result
+
+        alt Payment Succeeded
+            Stripe->>Webhook: POST /payments/webhook
+            Note right of Stripe: payment_intent.succeeded
+
+            Webhook->>PayService: constructWebhookEvent()
+            PayService->>PayService: Verify signature
+            Webhook->>DB: Update Order Status
+            Webhook-->>Stripe: 200 OK
+        else Payment Failed
+            Client->>Client: Show Error Message
+        end
+    end
+
+    %% ==========================================
+    %% PAYPAL PAYMENT FLOW
+    %% ==========================================
+
+    rect rgb(255, 248, 240)
+        Note over Client, Webhook: PayPal Payment Flow
+
+        Client->>API: POST /payments/paypal/create-order
+        Note right of Client: { amount, currency, returnUrl }
+
+        API->>PayService: createPayPalOrder()
+        PayService->>PayService: getPayPalAccessToken()
+
+        PayService->>PayPal: POST /v2/checkout/orders
+        Note right of PayService: intent: CAPTURE,<br/>purchase_units, application_context
+
+        PayPal-->>PayService: Order Created
+        Note left of PayPal: { id, status, links[] }
+
+        PayService-->>API: { orderId, approvalUrl }
+        API-->>Client: Redirect to PayPal
+
+        Client->>PayPal: User approves payment
+        PayPal-->>Client: Redirect to returnUrl
+
+        Client->>API: POST /payments/paypal/capture
+        Note right of Client: { paypalOrderId }
+
+        API->>PayService: capturePayPalOrder()
+        PayService->>PayPal: POST /v2/checkout/orders/{id}/capture
+
+        PayPal-->>PayService: Capture Result
+        Note left of PayPal: { captureId, status, amount }
+
+        PayService->>DB: Update Order Status
+        PayService-->>API: Capture Success
+        API-->>Client: Payment Complete
+
+        Note over PayPal, Webhook: PayPal Webhook (optional)
+        PayPal->>Webhook: POST /payments/paypal/webhook
+        Webhook->>PayService: verifyPayPalWebhook()
+        Webhook->>DB: Update Transaction Status
+    end
+
+    %% ==========================================
+    %% APPLE PAY / GOOGLE PAY FLOW
+    %% ==========================================
+
+    rect rgb(240, 255, 240)
+        Note over Client, Webhook: Apple Pay / Google Pay Flow
+
+        Client->>API: POST /payments/apple-pay/intent
+        Note right of Client: OR /payments/google-pay/intent
+
+        API->>PayService: createApplePayIntent()
+        Note right of API: OR createGooglePayIntent()
+
+        PayService->>Stripe: paymentIntents.create()
+        Note right of PayService: payment_method_types: ['card'],<br/>metadata: { payment_method: 'apple_pay' }
+
+        Stripe-->>PayService: PaymentIntent
+
+        PayService-->>API: { clientSecret, walletConfig }
+        Note left of PayService: applePay: { merchantId, merchantName }<br/>OR googlePay: { merchantId, environment }
+
+        API-->>Client: Wallet Payment Ready
+
+        Client->>Client: Show Wallet Button
+        Client->>Client: User authenticates (FaceID/Fingerprint)
+        Client->>Stripe: Create PaymentMethod from wallet
+
+        Client->>API: POST /payments/wallet/process
+        Note right of Client: { walletType, paymentMethodId, amount }
+
+        API->>PayService: processWalletPayment()
+        PayService->>Stripe: paymentIntents.create() + confirm
+
+        Stripe-->>PayService: { status: 'succeeded' }
+        PayService->>DB: Update Order
+        PayService-->>API: Payment Success
+        API-->>Client: Transaction Complete
+    end
+
+    %% ==========================================
+    %% REFUND FLOW
+    %% ==========================================
+
+    rect rgb(255, 240, 240)
+        Note over Client, Webhook: Refund Processing Flow
+
+        Client->>API: POST /payments/refund
+        Note right of Client: { paymentMethod, transactionId, amount }
+
+        API->>PayService: processRefund()
+
+        alt Stripe Refund
+            PayService->>Stripe: refunds.create()
+            Note right of PayService: payment_intent, amount,<br/>reason: 'requested_by_customer'
+            Stripe-->>PayService: Refund Object
+        else PayPal Refund
+            PayService->>PayService: getPayPalAccessToken()
+            PayService->>PayPal: POST /v2/payments/captures/{id}/refund
+            PayPal-->>PayService: Refund Response
+        end
+
+        PayService->>DB: Create Refund Record
+        PayService-->>API: { refundId, status, amount }
+        API-->>Client: Refund Initiated
+    end
+
+    %% ==========================================
+    %% BNPL (BUY NOW PAY LATER) FLOW
+    %% ==========================================
+
+    rect rgb(248, 240, 255)
+        Note over Client, DB: BNPL Payment Flow (Klarna/Affirm/Afterpay)
+
+        Client->>API: POST /payments/bnpl/init
+        Note right of Client: { provider, orderId, amount }
+
+        API->>PayService: Initialize BNPL Session
+        PayService->>DB: Create BnplPaymentPlan (PENDING)
+        PayService-->>API: { redirectUrl, sessionId }
+
+        API-->>Client: Redirect to BNPL Provider
+        Client->>Client: Complete BNPL Application
+
+        Note over Client: Provider processes application
+
+        Client->>API: POST /payments/bnpl/confirm
+        API->>PayService: Confirm BNPL Plan
+        PayService->>DB: Update BnplPaymentPlan (ACTIVE)
+        PayService->>DB: Create BnplInstallments
+
+        PayService-->>API: Plan Confirmed
+        API-->>Client: BNPL Setup Complete
+
+        Note over DB: Scheduled installment processing
+        loop Each Installment Due Date
+            DB->>PayService: Process Due Installment
+            PayService->>PayService: Charge via BNPL Provider
+            PayService->>DB: Update BnplInstallment Status
+        end
+    end

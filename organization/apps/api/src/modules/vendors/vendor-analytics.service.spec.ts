@@ -351,9 +351,12 @@ describe('VendorAnalyticsService', () => {
       const result = await service.getRecentOrders('vendor-123', 10);
 
       expect(result).toHaveLength(1);
-      expect(result[0]).toHaveProperty('orderId');
-      expect(result[0]).toHaveProperty('customer');
-      expect(result[0]).toHaveProperty('product');
+      // The service returns: id, orderNumber, total, status, createdAt
+      expect(result[0]).toHaveProperty('id');
+      expect(result[0]).toHaveProperty('orderNumber');
+      expect(result[0]).toHaveProperty('total');
+      expect(result[0]).toHaveProperty('status');
+      expect(result[0]).toHaveProperty('createdAt');
     });
   });
 

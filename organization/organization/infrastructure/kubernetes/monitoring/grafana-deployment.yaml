@@ -1,0 +1,443 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-pvc
+  namespace: broxiva-monitoring
+  labels:
+    app: grafana
+    tier: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: broxiva-monitoring
+  labels:
+    app: grafana
+    tier: monitoring
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus:9090
+        isDefault: true
+        editable: true
+        jsonData:
+          timeInterval: "15s"
+          queryTimeout: "60s"
+          httpMethod: POST
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-config
+  namespace: broxiva-monitoring
+  labels:
+    app: grafana
+    tier: monitoring
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: 'Broxiva Dashboards'
+        orgId: 1
+        folder: 'Broxiva'
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        options:
+          path: /var/lib/grafana/dashboards
+          foldersFromFilesStructure: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-api-dashboard
+  namespace: broxiva-monitoring
+  labels:
+    app: grafana
+    tier: monitoring
+data:
+  api-dashboard.json: |
+    {
+      "dashboard": {
+        "title": "Broxiva API Metrics",
+        "tags": ["broxiva", "api"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Request Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{job=\"broxiva-api\"}[5m])",
+                "legendFormat": "{{method}} {{path}}"
+              }
+            ],
+            "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8}
+          },
+          {
+            "id": 2,
+            "title": "Error Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{job=\"broxiva-api\",status=~\"5..\"}[5m])",
+                "legendFormat": "{{status}}"
+              }
+            ],
+            "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8}
+          },
+          {
+            "id": 3,
+            "title": "Response Time (95th percentile)",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"broxiva-api\"}[5m]))",
+                "legendFormat": "{{method}} {{path}}"
+              }
+            ],
+            "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8}
+          },
+          {
+            "id": 4,
+            "title": "Response Time (50th percentile)",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=\"broxiva-api\"}[5m]))",
+                "legendFormat": "{{method}} {{path}}"
+              }
+            ],
+            "gridPos": {"x": 12, "y": 8, "w": 12, "h": 8}
+          },
+          {
+            "id": 5,
+            "title": "Active Connections",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "sum(http_server_active_connections{job=\"broxiva-api\"})",
+                "legendFormat": "Active Connections"
+              }
+            ],
+            "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8}
+          },
+          {
+            "id": 6,
+            "title": "CPU Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(container_cpu_usage_seconds_total{pod=~\"broxiva-api.*\"}[5m]) * 100",
+                "legendFormat": "{{pod}}"
+              }
+            ],
+            "gridPos": {"x": 12, "y": 16, "w": 12, "h": 8}
+          },
+          {
+            "id": 7,
+            "title": "Memory Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "container_memory_usage_bytes{pod=~\"broxiva-api.*\"} / 1024 / 1024",
+                "legendFormat": "{{pod}}"
+              }
+            ],
+            "gridPos": {"x": 0, "y": 24, "w": 12, "h": 8}
+          }
+        ],
+        "refresh": "30s",
+        "time": {"from": "now-1h", "to": "now"}
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-database-dashboard
+  namespace: broxiva-monitoring
+  labels:
+    app: grafana
+    tier: monitoring
+data:
+  database-dashboard.json: |
+    {
+      "dashboard": {
+        "title": "Broxiva Database Metrics",
+        "tags": ["broxiva", "database", "postgres", "redis", "elasticsearch"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "PostgreSQL Connections",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "pg_stat_activity_count",
+                "legendFormat": "Active Connections"
+              }
+            ],
+            "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8}
+          },
+          {
+            "id": 2,
+            "title": "PostgreSQL Query Duration",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(pg_stat_statements_mean_time_seconds[5m])",
+                "legendFormat": "Average Query Time"
+              }
+            ],
+            "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8}
+          },
+          {
+            "id": 3,
+            "title": "Redis Memory Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "redis_memory_used_bytes / 1024 / 1024",
+                "legendFormat": "Memory Used (MB)"
+              }
+            ],
+            "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8}
+          },
+          {
+            "id": 4,
+            "title": "Redis Cache Hit Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(redis_keyspace_hits_total[5m]) / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m])) * 100",
+                "legendFormat": "Hit Rate %"
+              }
+            ],
+            "gridPos": {"x": 12, "y": 8, "w": 12, "h": 8}
+          },
+          {
+            "id": 5,
+            "title": "Redis Operations per Second",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(redis_commands_processed_total[5m])",
+                "legendFormat": "Commands/sec"
+              }
+            ],
+            "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8}
+          },
+          {
+            "id": 6,
+            "title": "Elasticsearch Cluster Health",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "elasticsearch_cluster_health_status",
+                "legendFormat": "Status"
+              }
+            ],
+            "gridPos": {"x": 12, "y": 16, "w": 12, "h": 8}
+          },
+          {
+            "id": 7,
+            "title": "Elasticsearch Index Operations",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(elasticsearch_indices_indexing_index_total[5m])",
+                "legendFormat": "Indexing Rate"
+              },
+              {
+                "expr": "rate(elasticsearch_indices_search_query_total[5m])",
+                "legendFormat": "Query Rate"
+              }
+            ],
+            "gridPos": {"x": 0, "y": 24, "w": 12, "h": 8}
+          },
+          {
+            "id": 8,
+            "title": "Elasticsearch JVM Memory",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "elasticsearch_jvm_memory_used_bytes{area=\"heap\"} / 1024 / 1024",
+                "legendFormat": "Heap Used (MB)"
+              }
+            ],
+            "gridPos": {"x": 12, "y": 24, "w": 12, "h": 8}
+          }
+        ],
+        "refresh": "30s",
+        "time": {"from": "now-1h", "to": "now"}
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: broxiva-monitoring
+  labels:
+    app: grafana
+    tier: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+        tier: monitoring
+    spec:
+      serviceAccountName: grafana
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 472
+        runAsGroup: 472
+        fsGroup: 472
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: grafana
+          image: grafana/grafana:latest
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secrets
+                  key: admin-user
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secrets
+                  key: admin-password
+            - name: GF_INSTALL_PLUGINS
+              value: "grafana-piechart-panel,grafana-clock-panel"
+            - name: GF_SERVER_ROOT_URL
+              value: "http://grafana.broxiva.com"
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: "false"
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 472
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          volumeMounts:
+            - name: grafana-storage
+              mountPath: /var/lib/grafana
+            - name: grafana-datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: grafana-dashboards-config
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: grafana-api-dashboard
+              mountPath: /var/lib/grafana/dashboards/api
+            - name: grafana-database-dashboard
+              mountPath: /var/lib/grafana/dashboards/database
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: grafana-storage
+          persistentVolumeClaim:
+            claimName: grafana-pvc
+        - name: grafana-datasources
+          configMap:
+            name: grafana-datasources
+        - name: grafana-dashboards-config
+          configMap:
+            name: grafana-dashboards-config
+        - name: grafana-api-dashboard
+          configMap:
+            name: grafana-api-dashboard
+        - name: grafana-database-dashboard
+          configMap:
+            name: grafana-database-dashboard
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: broxiva-monitoring
+  labels:
+    app: grafana
+    tier: monitoring
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+      name: http
+  selector:
+    app: grafana
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-secrets
+  namespace: broxiva-monitoring
+  labels:
+    app: grafana
+    tier: monitoring
+type: Opaque
+stringData:
+  admin-user: "admin"
+  # SECURITY FIX: Use External Secrets or generate secure password
+  admin-password: "REPLACE_WITH_SECURE_PASSWORD_MIN_32_CHARS"
+---
+# ServiceAccount for Grafana
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: grafana
+  namespace: broxiva-monitoring
+  labels:
+    app: grafana
+    tier: monitoring
+automountServiceAccountToken: false

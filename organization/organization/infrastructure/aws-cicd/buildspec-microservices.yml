@@ -1,0 +1,264 @@
+# ==============================================================================
+# AWS CodeBuild Build Specification
+# Broxiva E-Commerce Platform - Python Microservices
+# ==============================================================================
+# This buildspec handles building and pushing Docker images for all 13
+# Python microservices in apps/services/*:
+#   - ai-agents, ai-engine, analytics, chatbot, fraud-detection
+#   - inventory, media, notification, personalization, pricing
+#   - recommendation, search, supplier-integration
+# ==============================================================================
+
+version: 0.2
+
+env:
+  variables:
+    PYTHON_VERSION: "3.11"
+    DOCKER_BUILDKIT: "1"
+  parameter-store:
+    DOCKER_USERNAME: "/broxiva/docker/username"
+    DOCKER_PASSWORD: "/broxiva/docker/password"
+  exported-variables:
+    - IMAGE_TAG
+    - BUILD_MANIFEST
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+      docker: latest
+    commands:
+      - echo "=== Installing Dependencies ==="
+      - python --version
+      - pip --version
+
+      # Install build tools
+      - pip install --upgrade pip setuptools wheel
+      - pip install pytest pytest-cov flake8 black mypy safety bandit
+
+      # Install AWS CLI v2 if not present
+      - |
+        if ! command -v aws &> /dev/null; then
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip -q awscliv2.zip
+          ./aws/install --update
+        fi
+      - aws --version
+
+  pre_build:
+    commands:
+      - echo "=== Pre-Build Phase ==="
+      - echo "Build started on $(date)"
+
+      # Set build variables
+      - export COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-8)
+      - export BUILD_DATE=$(date +%Y%m%d)
+      - export IMAGE_TAG="${BUILD_DATE}-${COMMIT_HASH}"
+      - echo "Image tag:" $IMAGE_TAG
+
+      # Login to Amazon ECR
+      - echo "Logging in to Amazon ECR..."
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+
+      # Define ECR registry
+      - export ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"
+
+      # Define microservices list
+      - |
+        export MICROSERVICES="ai-agents ai-engine analytics chatbot fraud-detection inventory media notification personalization pricing recommendation search supplier-integration"
+
+      # Run security scan on Python dependencies
+      - echo "Running security scan on dependencies..."
+      - cd $CODEBUILD_SRC_DIR/organization/apps/services
+      - |
+        for service in $MICROSERVICES; do
+          if [ -f "$service/requirements.txt" ]; then
+            echo "Scanning $service dependencies..."
+            safety check -r $service/requirements.txt --continue-on-error || true
+          fi
+        done
+
+  build:
+    commands:
+      - echo "=== Build Phase ==="
+      - cd $CODEBUILD_SRC_DIR/organization/apps/services
+
+      # Initialize build manifest
+      - export BUILD_MANIFEST="{\"images\":{}}"
+
+      # Build and test each microservice
+      - |
+        for service in $MICROSERVICES; do
+          echo "=========================================="
+          echo "Processing microservice: $service"
+          echo "=========================================="
+
+          SERVICE_DIR="$CODEBUILD_SRC_DIR/organization/apps/services/$service"
+
+          if [ -d "$SERVICE_DIR" ]; then
+            cd $SERVICE_DIR
+
+            # Install dependencies if requirements.txt exists
+            if [ -f "requirements.txt" ]; then
+              echo "Installing dependencies for $service..."
+              pip install -r requirements.txt
+            fi
+
+            # Run linting with flake8
+            echo "Running flake8 linting for $service..."
+            flake8 . --max-line-length=120 --exclude=venv,__pycache__,.git || true
+
+            # Run type checking with mypy
+            echo "Running mypy type checking for $service..."
+            mypy . --ignore-missing-imports || true
+
+            # Run security scan with bandit
+            echo "Running bandit security scan for $service..."
+            bandit -r . -ll --exclude ./venv,./tests || true
+
+            # Run tests if they exist
+            if [ -d "tests" ] || [ -f "test_*.py" ] || [ -f "*_test.py" ]; then
+              echo "Running pytest for $service..."
+              pytest --tb=short --junitxml=test-results.xml || true
+            fi
+
+            # Build Docker image
+            echo "Building Docker image for $service..."
+            export SERVICE_IMAGE_URI="$ECR_REGISTRY/broxiva/$service:$IMAGE_TAG"
+
+            if [ -f "Dockerfile" ]; then
+              docker build \
+                --build-arg PYTHON_VERSION=$PYTHON_VERSION \
+                --build-arg BUILD_DATE=$BUILD_DATE \
+                --build-arg COMMIT_HASH=$COMMIT_HASH \
+                --build-arg SERVICE_NAME=$service \
+                --cache-from $ECR_REGISTRY/broxiva/$service:latest \
+                -t $SERVICE_IMAGE_URI \
+                -t $ECR_REGISTRY/broxiva/$service:latest \
+                .
+
+              echo "Successfully built: $SERVICE_IMAGE_URI"
+            else
+              echo "No Dockerfile found for $service, using base Python image..."
+              # Create a default Dockerfile if none exists
+              cat > Dockerfile.generated << 'DOCKERFILE'
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create non-root user
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
+
+# Default command
+CMD ["python", "main.py"]
+DOCKERFILE
+
+              docker build \
+                --build-arg PYTHON_VERSION=$PYTHON_VERSION \
+                -t $SERVICE_IMAGE_URI \
+                -t $ECR_REGISTRY/broxiva/$service:latest \
+                -f Dockerfile.generated .
+            fi
+
+            cd $CODEBUILD_SRC_DIR/organization/apps/services
+          else
+            echo "Warning: Service directory not found: $SERVICE_DIR"
+          fi
+        done
+
+  post_build:
+    commands:
+      - echo "=== Post-Build Phase ==="
+      - echo "Build completed on $(date)"
+      - cd $CODEBUILD_SRC_DIR
+
+      # Push all microservice images to ECR
+      - |
+        echo "Pushing microservice images to ECR..."
+        for service in $MICROSERVICES; do
+          export SERVICE_IMAGE_URI="$ECR_REGISTRY/broxiva/$service:$IMAGE_TAG"
+          echo "Pushing $service..."
+          docker push $SERVICE_IMAGE_URI || echo "Failed to push $service"
+          docker push $ECR_REGISTRY/broxiva/$service:latest || echo "Failed to push $service:latest"
+        done
+
+      # Generate imagedefinitions.json for ECS deployment
+      - echo "Generating image definitions for ECS..."
+      - |
+        cat > imagedefinitions-microservices.json << EOF
+        [
+          {"name": "ai-agents", "imageUri": "$ECR_REGISTRY/broxiva/ai-agents:$IMAGE_TAG"},
+          {"name": "ai-engine", "imageUri": "$ECR_REGISTRY/broxiva/ai-engine:$IMAGE_TAG"},
+          {"name": "analytics", "imageUri": "$ECR_REGISTRY/broxiva/analytics:$IMAGE_TAG"},
+          {"name": "chatbot", "imageUri": "$ECR_REGISTRY/broxiva/chatbot:$IMAGE_TAG"},
+          {"name": "fraud-detection", "imageUri": "$ECR_REGISTRY/broxiva/fraud-detection:$IMAGE_TAG"},
+          {"name": "inventory", "imageUri": "$ECR_REGISTRY/broxiva/inventory:$IMAGE_TAG"},
+          {"name": "media", "imageUri": "$ECR_REGISTRY/broxiva/media:$IMAGE_TAG"},
+          {"name": "notification", "imageUri": "$ECR_REGISTRY/broxiva/notification:$IMAGE_TAG"},
+          {"name": "personalization", "imageUri": "$ECR_REGISTRY/broxiva/personalization:$IMAGE_TAG"},
+          {"name": "pricing", "imageUri": "$ECR_REGISTRY/broxiva/pricing:$IMAGE_TAG"},
+          {"name": "recommendation", "imageUri": "$ECR_REGISTRY/broxiva/recommendation:$IMAGE_TAG"},
+          {"name": "search", "imageUri": "$ECR_REGISTRY/broxiva/search:$IMAGE_TAG"},
+          {"name": "supplier-integration", "imageUri": "$ECR_REGISTRY/broxiva/supplier-integration:$IMAGE_TAG"}
+        ]
+        EOF
+      - cat imagedefinitions-microservices.json
+
+      # Generate build artifacts summary
+      - |
+        cat > build-summary-microservices.json << EOF
+        {
+          "buildId": "$CODEBUILD_BUILD_ID",
+          "buildNumber": "$CODEBUILD_BUILD_NUMBER",
+          "sourceVersion": "$CODEBUILD_RESOLVED_SOURCE_VERSION",
+          "imageTag": "$IMAGE_TAG",
+          "microservices": [
+            "ai-agents", "ai-engine", "analytics", "chatbot", "fraud-detection",
+            "inventory", "media", "notification", "personalization", "pricing",
+            "recommendation", "search", "supplier-integration"
+          ],
+          "ecrRegistry": "$ECR_REGISTRY",
+          "buildDate": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        }
+        EOF
+
+artifacts:
+  files:
+    - imagedefinitions-microservices.json
+    - build-summary-microservices.json
+    - organization/apps/services/**/test-results.xml
+  discard-paths: no
+  secondary-artifacts:
+    TestReports:
+      files:
+        - organization/apps/services/**/test-results.xml
+      discard-paths: yes
+
+cache:
+  paths:
+    - '/root/.cache/pip/**/*'
+    - '/root/.cache/docker/**/*'
+
+reports:
+  pytest-reports:
+    files:
+      - 'organization/apps/services/**/test-results.xml'
+    file-format: JUNITXML

@@ -1,7 +1,6 @@
 import { SetMetadata, applyDecorators, Type } from '@nestjs/common';
 import {
   ApiExtraModels,
-  ApiResponse,
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBadRequestResponse,
@@ -48,7 +47,7 @@ export const ResponseType = <T>(type: Type<T>) =>
 /**
  * Standard success response schema for Swagger
  */
-const successResponseSchema = (dataType?: Type<any> | Type<any>[] | 'array') => {
+const successResponseSchema = (dataType?: Type<unknown> | Type<unknown>[] | 'array') => {
   if (dataType === 'array' || Array.isArray(dataType)) {
     const itemType = Array.isArray(dataType) ? dataType[0] : undefined;
     return {
@@ -74,7 +73,7 @@ const successResponseSchema = (dataType?: Type<any> | Type<any>[] | 'array') => 
 /**
  * Paginated response schema for Swagger
  */
-const paginatedResponseSchema = (itemType?: Type<any>) => ({
+const paginatedResponseSchema = (itemType?: Type<unknown>) => ({
   properties: {
     success: { type: 'boolean', example: true },
     data: itemType
@@ -131,7 +130,7 @@ const errorResponseSchema = (code: string, message: string) => ({
  * Decorator for standard OK response (200)
  * Wraps the response type in the standard ApiResponseDto structure
  */
-export const ApiStandardResponse = <T extends Type<any>>(
+export const ApiStandardResponse = <T extends Type<unknown>>(
   dataType?: T,
   description = 'Successful operation',
 ) => {
@@ -156,7 +155,7 @@ export const ApiStandardResponse = <T extends Type<any>>(
 /**
  * Decorator for created response (201)
  */
-export const ApiStandardCreatedResponse = <T extends Type<any>>(
+export const ApiStandardCreatedResponse = <T extends Type<unknown>>(
   dataType?: T,
   description = 'Resource created successfully',
 ) => {
@@ -181,7 +180,7 @@ export const ApiStandardCreatedResponse = <T extends Type<any>>(
 /**
  * Decorator for paginated list response
  */
-export const ApiPaginatedResponse = <T extends Type<any>>(
+export const ApiPaginatedResponse = <T extends Type<unknown>>(
   itemType?: T,
   description = 'Paginated list retrieved successfully',
 ) => {
@@ -212,7 +211,7 @@ export const ApiPaginatedResponse = <T extends Type<any>>(
 /**
  * Decorator for array response (non-paginated list)
  */
-export const ApiArrayResponse = <T extends Type<any>>(
+export const ApiArrayResponse = <T extends Type<unknown>>(
   itemType?: T,
   description = 'List retrieved successfully',
 ) => {
@@ -286,7 +285,7 @@ export const ApiConflictError = (message = 'Resource already exists') =>
  * Combined decorator for a full CRUD endpoint documentation
  * Includes success response and common errors
  */
-export const ApiCrudResponse = <T extends Type<any>>(
+export const ApiCrudResponse = <T extends Type<unknown>>(
   dataType?: T,
   options?: {
     description?: string;
@@ -310,7 +309,7 @@ export const ApiCrudResponse = <T extends Type<any>>(
  * Combined decorator for paginated list endpoint
  * Includes paginated response and common errors
  */
-export const ApiPaginatedCrudResponse = <T extends Type<any>>(
+export const ApiPaginatedCrudResponse = <T extends Type<unknown>>(
   itemType?: T,
   description?: string,
 ) =>

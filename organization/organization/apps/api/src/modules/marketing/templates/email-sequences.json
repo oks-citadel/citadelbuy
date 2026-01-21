@@ -1,0 +1,315 @@
+{
+  "emailSequences": [
+    {
+      "id": "cold-outreach-us-buyer",
+      "name": "Cold Outreach - U.S. Enterprise Buyers",
+      "description": "6-touch email sequence for outbound prospecting to U.S. procurement officers",
+      "targetAudience": "enterprise-buyers-us",
+      "sequenceLength": 6,
+      "totalDuration": "21 days",
+      "channel": "email",
+      "goals": {
+        "primary": "Book demo meeting",
+        "kpis": [
+          "Open rate: >25%",
+          "Reply rate: >5%",
+          "Meeting booking rate: >2%"
+        ]
+      },
+      "emails": [
+        {
+          "touchNumber": 1,
+          "delay": "Day 0",
+          "subject": "{{companyName}} + African Suppliers = 20-30% Cost Savings?",
+          "preheader": "Hi {{firstName}}, quick question about your sourcing strategy",
+          "template": "cold-email-1-problem-awareness",
+          "bodyStructure": {
+            "opening": "Hi {{firstName}},\n\nI noticed {{companyName}} sources {{productCategory}} from {{currentRegion}}. Have you considered African suppliers as an alternative?",
+            "valueProposition": "Companies like {{similarCompanyName}} are saving 20-30% on sourcing costs by diversifying to verified African suppliers. Plus, West African shipping to the U.S. East Coast is 15 days faster than from Asia.",
+            "socialProof": "We work with {{competitorName1}} and {{competitorName2}} in your industry.",
+            "cta": "Would it make sense to have a quick 15-minute conversation to explore if this could work for {{companyName}}?",
+            "signature": "{{senderName}}\n{{senderTitle}}\nBroxiva"
+          },
+          "personalizationFields": [
+            "{{firstName}}",
+            "{{companyName}}",
+            "{{productCategory}}",
+            "{{currentRegion}}",
+            "{{similarCompanyName}}",
+            "{{competitorName1}}",
+            "{{competitorName2}}",
+            "{{senderName}}",
+            "{{senderTitle}}"
+          ]
+        },
+        {
+          "touchNumber": 2,
+          "delay": "Day 3",
+          "subject": "Case study: {{industryName}} company cuts costs 28%",
+          "preheader": "Thought this might be relevant to {{companyName}}",
+          "template": "cold-email-2-case-study",
+          "bodyStructure": {
+            "opening": "Hi {{firstName}},\n\nFollowing up on my previous email. I wanted to share a quick case study that might be relevant.",
+            "caseStudy": "{{caseStudyCompany}}, a {{industryName}} company similar to {{companyName}}, reduced sourcing costs by 28% in 6 months by switching to African suppliers for {{productCategory}}.",
+            "keyTakeaways": [
+              "28% cost reduction",
+              "15-day faster delivery (West Africa to U.S. East Coast)",
+              "Better quality control with Broxiva's 3-tier verification"
+            ],
+            "cta": "I'd love to show you how we could achieve similar results for {{companyName}}. Are you open to a 15-minute call next week?",
+            "caseStudyLink": "[Read the full case study here]({{caseStudyUrl}})",
+            "signature": "{{senderName}}"
+          }
+        },
+        {
+          "touchNumber": 3,
+          "delay": "Day 7",
+          "subject": "Quick question about {{companyName}}'s sourcing",
+          "preheader": "Not sure if African sourcing is a priority for you",
+          "template": "cold-email-3-question",
+          "bodyStructure": {
+            "opening": "Hi {{firstName}},\n\nI've reached out a couple times but haven't heard back - no worries if this isn't a priority right now.",
+            "question": "Before I close the loop, I'm curious:\n\nAre you actively looking to:\n- Reduce sourcing costs?\n- Diversify your supplier base beyond Asia?\n- Improve shipping times to the U.S.?\n\nOr is your current setup working well?",
+            "breakup": "If it's not the right time, just let me know and I'll stop following up.",
+            "cta": "But if any of these are on your radar, I'd love to show you how Broxiva can help. Quick 15-minute call?",
+            "signature": "{{senderName}}"
+          }
+        },
+        {
+          "touchNumber": 4,
+          "delay": "Day 11",
+          "subject": "{{companyName}} - African sourcing resources",
+          "preheader": "Sharing some helpful content, even if we don't work together",
+          "template": "cold-email-4-value-add",
+          "bodyStructure": {
+            "opening": "Hi {{firstName}},\n\nEven if Broxiva isn't the right fit right now, I wanted to share some resources that might be helpful for {{companyName}}'s sourcing strategy:",
+            "resources": [
+              "[The Ultimate Guide to Sourcing from Africa]({{guideUrl}}) - 10,000 word guide covering suppliers, compliance, logistics",
+              "[Africa vs. Asia Sourcing: Cost & Quality Comparison]({{whitepaperUrl}}) - Data-driven analysis of 1,000+ transactions",
+              "[AGOA Trade Benefits Explained]({{blogUrl}}) - How to qualify for duty-free African imports"
+            ],
+            "noStringsAttached": "No forms to fill out, just genuinely useful content.",
+            "softCta": "And if you ever want to chat about how Broxiva could help {{companyName}}, I'm here.",
+            "signature": "{{senderName}}"
+          }
+        },
+        {
+          "touchNumber": 5,
+          "delay": "Day 17",
+          "subject": "One last try - {{companyName}} + Broxiva?",
+          "preheader": "I promise this is my last email (unless you reply)",
+          "template": "cold-email-5-final-attempt",
+          "bodyStructure": {
+            "opening": "Hi {{firstName}},\n\nI know you're busy and your inbox is probably overflowing. This will be my last email unless I hear from you.",
+            "summary": "Here's what I think Broxiva could do for {{companyName}}:\n\n✓ Save 20-30% on sourcing costs for {{productCategory}}\n✓ Diversify supplier base to reduce risk\n✓ Faster shipping from West Africa to U.S. (vs. Asia)\n✓ Integrated trade finance (BNPL, factoring) to preserve cash flow",
+            "lowCommitmentCta": "If any of this sounds interesting, just reply with \"YES\" and I'll send over some times for a quick call.",
+            "breakup": "If not, no hard feelings! I'll stop emailing and wish you the best with your sourcing strategy.",
+            "signature": "{{senderName}}\n{{senderTitle}}\nBroxiva\n{{senderEmail}} | {{senderPhone}}"
+          }
+        },
+        {
+          "touchNumber": 6,
+          "delay": "Day 21",
+          "subject": "Breaking up with {{companyName}} (but keeping the door open)",
+          "preheader": "This is officially my last email",
+          "template": "cold-email-6-breakup",
+          "bodyStructure": {
+            "opening": "Hi {{firstName}},\n\nI'm officially calling it - clearly now isn't the right time for {{companyName}} to explore African sourcing, and that's totally okay.",
+            "doorOpen": "But here's the thing: I'm going to keep you on our monthly newsletter list (\"Africa Trade Insights\"). It's actually valuable content - industry trends, new supplier spotlights, trade policy updates. No sales pitches.",
+            "optOut": "If you don't want it, just reply \"UNSUBSCRIBE\" and I'll remove you immediately.",
+            "futureContactPermission": "And if things change in 6 months or a year and you want to revisit African sourcing, my door is always open. Just reply to any of my emails.",
+            "genuineWishes": "Best of luck with {{companyName}}'s continued growth!",
+            "signature": "{{senderName}}\nBroxiva"
+          }
+        }
+      ],
+      "abTestVariants": [
+        {
+          "variant": "A",
+          "description": "Standard sequence (cost savings focus)",
+          "notes": "Emphasize 20-30% cost savings in every email"
+        },
+        {
+          "variant": "B",
+          "description": "Supply chain diversification focus",
+          "notes": "Lead with risk mitigation and supply chain resilience"
+        },
+        {
+          "variant": "C",
+          "description": "Sustainability angle",
+          "notes": "Emphasize ESG benefits of sourcing from Africa"
+        }
+      ],
+      "bestPractices": [
+        "Personalize first name, company name, product category in every email",
+        "Research LinkedIn to find similar companies they might know",
+        "Keep emails under 100 words",
+        "Always include a low-commitment CTA (15-min call, not 'demo')",
+        "Track opens and clicks to time follow-ups",
+        "Use video thumbnail in email 3 or 4 to boost engagement"
+      ]
+    },
+    {
+      "id": "cold-outreach-african-exporter",
+      "name": "Cold Outreach - African Exporters",
+      "description": "5-touch email/WhatsApp sequence for African export businesses",
+      "targetAudience": "african-exporters",
+      "sequenceLength": 5,
+      "totalDuration": "14 days",
+      "channels": ["email", "whatsapp"],
+      "goals": {
+        "primary": "Sign up for free trial",
+        "kpis": [
+          "Open rate: >30%",
+          "WhatsApp reply rate: >15%",
+          "Sign-up rate: >8%"
+        ]
+      },
+      "emails": [
+        {
+          "touchNumber": 1,
+          "delay": "Day 0",
+          "channel": "email",
+          "subject": "Export your {{productCategory}} to the U.S. and Europe",
+          "preheader": "Connect with verified international buyers on Broxiva",
+          "languages": ["en", "fr"],
+          "template": "cold-email-exporter-1",
+          "bodyStructure": {
+            "opening": "Hi {{firstName}},\n\nI came across {{companyName}} and was impressed by your {{productCategory}} products. Have you considered exporting to the U.S. or European markets?",
+            "opportunity": "Broxiva connects African exporters like you with 10,000+ verified international buyers actively seeking {{productCategory}}.",
+            "benefits": [
+              "Access to U.S., European, and Middle Eastern buyers",
+              "Trade finance (get paid faster with invoice factoring)",
+              "Integrated logistics and customs support"
+            ],
+            "socialProof": "Exporters in {{country}} are already using Broxiva to reach new markets.",
+            "cta": "Want to learn more? I can show you how it works in a quick 15-minute call. Or sign up for free: {{signUpUrl}}",
+            "signature": "{{senderName}}\n{{senderTitle}}\nBroxiva"
+          }
+        },
+        {
+          "touchNumber": 2,
+          "delay": "Day 2",
+          "channel": "whatsapp",
+          "template": "whatsapp-exporter-1",
+          "content": {
+            "message": "Hi {{firstName}}! This is {{senderName}} from Broxiva. I sent you an email about exporting your {{productCategory}} to the U.S. and Europe. \n\nAre you interested in learning more? Reply YES for details or CALL ME to schedule a quick chat.",
+            "quickReplies": ["YES", "CALL ME", "Not interested"]
+          }
+        },
+        {
+          "touchNumber": 3,
+          "delay": "Day 5",
+          "channel": "email",
+          "subject": "How {{competitorName}} is exporting to the U.S. via Broxiva",
+          "template": "cold-email-exporter-2-case-study",
+          "bodyStructure": {
+            "opening": "Hi {{firstName}},\n\nI wanted to share a quick success story from {{competitorName}}, another {{country}} exporter in your industry.",
+            "caseStudy": "They joined Broxiva 6 months ago and have already secured 8 U.S. buyers for their {{productCategory}}. Their revenue from exports grew from $200K to over $1M in the first year.",
+            "keyResults": [
+              "8 new U.S. buyers in 6 months",
+              "$1M+ in export revenue",
+              "Average payment received in 30 days (vs. 90+ days before)"
+            ],
+            "cta": "Want similar results for {{companyName}}? Let's chat: {{calendarLink}}",
+            "freeTrialOffer": "Or start with a free 14-day trial: {{signUpUrl}}",
+            "signature": "{{senderName}}"
+          }
+        },
+        {
+          "touchNumber": 4,
+          "delay": "Day 9",
+          "channel": "whatsapp",
+          "template": "whatsapp-exporter-2-video",
+          "content": {
+            "message": "Hi {{firstName}}, {{senderName}} from Broxiva here. \n\nI recorded a quick 2-minute video showing how Nigerian exporters are using our platform to find U.S. buyers: {{videoUrl}}\n\nLet me know if you have questions!",
+            "videoThumbnail": "{{videoThumbnailUrl}}",
+            "quickReplies": ["Watched it!", "Tell me more", "Not for me"]
+          }
+        },
+        {
+          "touchNumber": 5,
+          "delay": "Day 14",
+          "channel": "email",
+          "subject": "Last call: Start exporting with Broxiva (free trial)",
+          "template": "cold-email-exporter-3-final",
+          "bodyStructure": {
+            "opening": "Hi {{firstName}},\n\nThis will be my last email. I know expanding to international markets is a big decision.",
+            "finalOffer": "But here's what Broxiva can do for {{companyName}}:\n\n✓ Connect you with verified U.S., European, and Middle Eastern buyers\n✓ Help you get paid faster (invoice factoring, BNPL for buyers)\n✓ Handle logistics and shipping complexities\n✓ Free 14-day trial - no credit card required",
+            "lowRisk": "You have nothing to lose by trying. Sign up takes 5 minutes: {{signUpUrl}}",
+            "personalNote": "If you ever change your mind, I'm here to help. Just reply to this email or WhatsApp me at {{senderWhatsApp}}.",
+            "signature": "Best of luck with {{companyName}}!\n\n{{senderName}}\nBroxiva"
+          }
+        }
+      ],
+      "localization": {
+        "french": {
+          "subjectLine1": "Exportez vos {{productCategory}} vers les États-Unis et l'Europe",
+          "subjectLine3": "Comment {{competitorName}} exporte vers les États-Unis via Broxiva",
+          "subjectLine5": "Dernier appel: Commencez à exporter avec Broxiva (essai gratuit)"
+        }
+      }
+    },
+    {
+      "id": "nurture-cold-lead",
+      "name": "Long-Term Nurture - Cold Leads",
+      "description": "12-month nurture sequence for leads not ready to buy now",
+      "targetAudience": "cold-leads",
+      "sequenceLength": 12,
+      "totalDuration": "365 days",
+      "channel": "email",
+      "frequency": "monthly",
+      "goals": {
+        "primary": "Stay top-of-mind",
+        "secondary": "Provide value, build trust",
+        "kpis": [
+          "Open rate: >20%",
+          "Content engagement: >10%",
+          "Conversion to MQL: >5% annually"
+        ]
+      },
+      "emails": [
+        {
+          "touchNumber": 1,
+          "month": 1,
+          "subject": "Africa Trade Insights - January 2026",
+          "template": "monthly-newsletter",
+          "contentSections": [
+            "Industry news and trends",
+            "Featured supplier spotlight",
+            "New product categories",
+            "Upcoming webinars"
+          ]
+        },
+        {
+          "touchNumber": 2,
+          "month": 2,
+          "subject": "New Whitepaper: Africa vs. Asia Sourcing",
+          "template": "content-offer",
+          "contentOffer": "Download our new research report comparing African and Asian suppliers",
+          "cta": "Download Report"
+        },
+        {
+          "touchNumber": 3,
+          "month": 3,
+          "subject": "Webinar Invite: Sourcing from Africa 101",
+          "template": "webinar-invite",
+          "webinarDetails": {
+            "topic": "Introduction to African Sourcing",
+            "date": "March 15, 2026",
+            "duration": "45 minutes"
+          },
+          "cta": "Register for Webinar"
+        }
+      ],
+      "notes": "Continue pattern for 12 months with mix of educational content, case studies, and soft CTAs"
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "lastUpdated": "2025-12-06",
+    "owner": "Sales & Marketing Teams",
+    "tools": ["Outreach.io", "SalesLoft", "HubSpot"],
+    "reviewCycle": "Monthly"
+  }
+}

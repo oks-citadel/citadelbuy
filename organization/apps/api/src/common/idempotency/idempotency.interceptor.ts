@@ -13,7 +13,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { Request, Response } from 'express';
 import { IdempotencyService } from './idempotency.service';
-import { IDEMPOTENCY_KEY, IdempotencyOptions } from './idempotency.decorator';
+import { IDEMPOTENCY_KEY, IdempotencyOptions } from './idempotency.constants';
 
 /**
  * Enhanced Idempotency Interceptor

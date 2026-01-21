@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recommendation-service
+  namespace: broxiva-ai
+  labels:
+    app: recommendation-service
+    tier: ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: recommendation-service
+  template:
+    metadata:
+      labels:
+        app: recommendation-service
+        tier: ai
+    spec:
+      serviceAccountName: recommendation-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: recommendation
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/ai:recommendation-v2.0.0
+          ports:
+            - containerPort: 8001
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: MODEL_PATH
+              value: "/models/recommendation"
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ai-secrets
+                  key: redis-url
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ai-secrets
+                  key: database-url
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: models
+              mountPath: /models
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /app/.cache
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: ai-models-pvc
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: cache
+          emptyDir:
+            sizeLimit: 1Gi
+---
+# ServiceAccount for Recommendation Service
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: recommendation-service
+  namespace: broxiva-ai
+  labels:
+    app: recommendation-service
+    tier: ai
+automountServiceAccountToken: false
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: recommendation-service
+  namespace: broxiva-ai
+spec:
+  selector:
+    app: recommendation-service
+  ports:
+    - port: 80
+      targetPort: 8001
+  type: ClusterIP

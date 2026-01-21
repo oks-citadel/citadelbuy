@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thank You for Your Demo Request - Broxiva</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .content {
+            padding: 40px 30px;
+            background: #ffffff;
+        }
+        .cta-button {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            padding: 14px 32px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+        .cta-button:hover {
+            background: #2563eb;
+        }
+        .meeting-details {
+            background: #f3f4f6;
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .footer {
+            background: #f9fafb;
+            padding: 30px;
+            text-align: center;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        .social-links {
+            margin: 20px 0;
+        }
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #3b82f6;
+            text-decoration: none;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">Broxiva</div>
+        <p style="margin: 0; font-size: 16px;">Global B2B Marketplace | Africa ↔ World</p>
+    </div>
+
+    <div class="content">
+        <h1 style="color: #1e40af; margin-top: 0;">Thank You for Your Interest, {{firstName}}!</h1>
+
+        <p>Hi {{firstName}},</p>
+
+        <p>
+            Thank you for requesting a demo of Broxiva! We're excited to show you how our platform
+            can help {{companyName}} {{#if role}}{{#if (eq role 'buyer')}}source quality products from verified African suppliers{{else}}connect with international buyers and grow your export business{{/if}}{{else}}transform your cross-border B2B trade{{/if}}.
+        </p>
+
+        <div class="meeting-details">
+            <h3 style="margin-top: 0; color: #1e40af;">Your Demo is Scheduled</h3>
+            <p><strong>Date & Time:</strong> {{demoDate}} at {{demoTime}} {{timezone}}</p>
+            <p><strong>Duration:</strong> 45 minutes</p>
+            <p><strong>Meeting Link:</strong> <a href="{{meetingLink}}">{{meetingLink}}</a></p>
+            <p><strong>Your Account Manager:</strong> {{accountManagerName}}</p>
+        </div>
+
+        <p>
+            <a href="{{calendarLink}}" class="cta-button">Add to Calendar</a>
+        </p>
+
+        <h3 style="color: #1e40af;">What to Expect During Your Demo</h3>
+        <ul>
+            <li><strong>Platform Walkthrough:</strong> See how Broxiva's AI-powered matching connects buyers and suppliers</li>
+            <li><strong>Your Use Case:</strong> We'll tailor the demo to your specific sourcing/export needs</li>
+            <li><strong>Trade Finance:</strong> Learn about BNPL, invoice factoring, and LC services</li>
+            <li><strong>Logistics Integration:</strong> Real-time shipping quotes, tracking, and customs support</li>
+            <li><strong>ROI Analysis:</strong> We'll calculate potential cost savings and efficiency gains for your business</li>
+            <li><strong>Q&A:</strong> Get all your questions answered</li>
+        </ul>
+
+        <h3 style="color: #1e40af;">Prepare for Your Demo</h3>
+        <p>To make the most of our time together, please have the following information ready:</p>
+        <ul>
+            {{#if (eq role 'buyer')}}
+            <li>Product categories you're currently sourcing (or looking to source)</li>
+            <li>Current suppliers and countries you source from</li>
+            <li>Annual sourcing volume and budget</li>
+            <li>Key pain points with your current sourcing process</li>
+            {{else}}
+            <li>Products you currently export (or want to export)</li>
+            <li>Markets you're targeting (U.S., Europe, Middle East, etc.)</li>
+            <li>Current export volume and target growth</li>
+            <li>Certifications you have (ISO, FDA, CE, etc.)</li>
+            {{/if}}
+        </ul>
+
+        <p>
+            In the meantime, feel free to explore our resources:
+        </p>
+        <ul>
+            <li><a href="{{websiteUrl}}/case-studies">Success Stories</a> from companies like yours</li>
+            <li><a href="{{websiteUrl}}/guides">Free Guides</a> on cross-border B2B trade</li>
+            <li><a href="{{websiteUrl}}/pricing">Pricing</a> information</li>
+        </ul>
+
+        <p>
+            Have questions before the demo? Reply to this email or call/WhatsApp me directly at {{accountManagerPhone}}.
+        </p>
+
+        <p>
+            Looking forward to speaking with you!
+        </p>
+
+        <p>
+            Best regards,<br>
+            <strong>{{accountManagerName}}</strong><br>
+            {{accountManagerTitle}}<br>
+            Broxiva<br>
+            {{accountManagerEmail}} | {{accountManagerPhone}}
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+
+        <p style="font-size: 14px; color: #6b7280;">
+            <strong>Need to reschedule?</strong> No problem. <a href="{{rescheduleLink}}">Click here</a> to choose a new time.
+        </p>
+    </div>
+
+    <div class="footer">
+        <div class="social-links">
+            <a href="{{linkedinUrl}}">LinkedIn</a> |
+            <a href="{{twitterUrl}}">Twitter</a> |
+            <a href="{{youtubeUrl}}">YouTube</a>
+        </div>
+        <p>
+            <strong>Broxiva</strong><br>
+            Global B2B Marketplace for Africa-World Trade<br>
+            {{companyAddress}}
+        </p>
+        <p style="font-size: 12px; color: #9ca3af; margin-top: 20px;">
+            You're receiving this email because you requested a demo at broxiva.com.<br>
+            <a href="{{unsubscribeUrl}}" style="color: #9ca3af;">Unsubscribe</a> |
+            <a href="{{privacyUrl}}" style="color: #9ca3af;">Privacy Policy</a>
+        </p>
+    </div>
+</body>
+</html>

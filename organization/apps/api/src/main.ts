@@ -437,13 +437,54 @@ async function bootstrap() {
   }
 
   const port = process.env.PORT || 4000;
+
+  // Enable graceful shutdown hooks for Kubernetes/container environments
+  // This ensures connections are properly closed before the process exits
+  app.enableShutdownHooks();
+
+  // Graceful shutdown handler
+  const gracefulShutdown = async (signal: string) => {
+    logger.log(`Received ${signal}. Starting graceful shutdown...`);
+
+    try {
+      // Give time for health check to fail and stop routing traffic
+      logger.log('Waiting for load balancer to stop routing traffic...');
+      await new Promise(resolve => setTimeout(resolve, 5000));
+
+      // Close the application
+      logger.log('Closing application...');
+      await app.close();
+
+      logger.log('Application closed successfully. Exiting.');
+      process.exit(0);
+    } catch (error) {
+      logger.error('Error during graceful shutdown:', error);
+      process.exit(1);
+    }
+  };
+
+  // Handle termination signals
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+  // Handle uncaught exceptions and unhandled rejections
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception:', error);
+    gracefulShutdown('uncaughtException');
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error(`Unhandled Rejection at: ${promise}, reason: ${reason}`);
+  });
+
   await app.listen(port);
 
   logger.log(`
-    🚀 Application is running on: http://localhost:${port}
-    📚 API Documentation: http://localhost:${port}/api/docs
-    🔐 Environment: ${process.env.NODE_ENV || 'development'}
-    🛡️  Security Headers: Enabled (PCI DSS compliant)
+    Application is running on: http://localhost:${port}
+    API Documentation: http://localhost:${port}/api/docs
+    Environment: ${process.env.NODE_ENV || 'development'}
+    Security Headers: Enabled (PCI DSS compliant)
+    Graceful Shutdown: Enabled
   `);
 }
 

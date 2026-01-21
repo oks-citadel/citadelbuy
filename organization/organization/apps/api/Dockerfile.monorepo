@@ -1,0 +1,138 @@
+# ==================================
+# Broxiva Backend - Production Dockerfile (Monorepo)
+# Multi-stage build: Dependencies - Build - Runtime
+# ENCODING-HARDENED: UTF-8 safe across all environments
+# ==================================
+
+# Stage 1: Dependencies
+FROM node:20-alpine AS deps
+LABEL stage=deps
+
+# ENCODING FIX: Set UTF-8 locale for Alpine
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install pnpm and bash
+RUN corepack enable && corepack prepare pnpm@10.23.0 --activate && \
+    apk add --no-cache bash && rm -rf /var/cache/apk/*
+
+# ENCODING FIX: Use bash shell
+SHELL ["/bin/bash", "-c"]
+
+WORKDIR /app
+
+# Copy workspace configuration
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/api/prisma ./apps/api/prisma/
+
+# ENCODING FIX: Normalize CRLF line endings
+RUN find . -type f \( -name "*.json" -o -name "*.yaml" -o -name "*.prisma" \) -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile --filter broxiva-backend...
+
+# Generate Prisma Client
+WORKDIR /app/apps/api
+RUN npx prisma generate
+
+# Stage 2: Builder
+FROM node:20-alpine AS builder
+LABEL stage=builder
+
+# ENCODING FIX: Set UTF-8 locale
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install pnpm and bash
+RUN corepack enable && corepack prepare pnpm@10.23.0 --activate && \
+    apk add --no-cache bash && rm -rf /var/cache/apk/*
+
+# ENCODING FIX: Use bash shell
+SHELL ["/bin/bash", "-c"]
+
+WORKDIR /app
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=deps /app/apps/api/prisma ./apps/api/prisma
+
+# Copy workspace files
+COPY package.json pnpm-workspace.yaml turbo.json ./
+
+# Copy source code
+COPY apps/api ./apps/api/
+
+# ENCODING FIX: Normalize all source files
+RUN find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" \) -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
+
+# Build application
+WORKDIR /app/apps/api
+RUN npm run build
+
+# Stage 3: Production Runtime
+FROM node:20-alpine AS production
+LABEL maintainer="Broxiva Platform <dev@broxiva.com>"
+LABEL version="2.0.0"
+LABEL description="Broxiva Backend - NestJS API Server"
+LABEL org.opencontainers.image.source="https://github.com/broxiva/broxiva"
+
+# ENCODING FIX: Set UTF-8 locale for runtime
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+WORKDIR /app
+
+# Install runtime dependencies including bash
+RUN apk add --no-cache \
+    dumb-init \
+    curl \
+    tini \
+    bash \
+    postgresql-client
+
+# ENCODING FIX: Use bash shell
+SHELL ["/bin/bash", "-c"]
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nestjs -u 1001
+
+# Copy production dependencies and Prisma
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/prisma ./prisma
+
+# Copy built application
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./dist
+
+# Set environment
+ENV NODE_ENV=production
+ENV PORT=4000
+
+# Switch to non-root user
+USER nestjs
+
+# Expose port
+EXPOSE 4000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:4000/api/health || exit 1
+
+# Use tini as init system
+ENTRYPOINT ["/sbin/tini", "--"]
+
+# Start application
+CMD ["node", "dist/main.js"]
+
+# ==========================================
+# ENCODING HARDENING APPLIED:
+# - LANG=C.UTF-8, LC_ALL=C.UTF-8 in all stages
+# - SHELL ["/bin/bash", "-c"] for consistent behavior
+# - CRLF normalization for Windows compatibility
+# ==========================================

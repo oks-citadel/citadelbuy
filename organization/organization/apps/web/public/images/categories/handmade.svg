@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3d3020;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2a2015;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c9a227;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e6b82e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="clayGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c4785a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a5624a;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bgGrad)"/>
+  <!-- Pottery vase -->
+  <path d="M280 380 Q260 320 280 260 Q320 240 360 260 Q380 320 360 380 Z" fill="url(#clayGrad)"/>
+  <ellipse cx="320" cy="260" rx="40" ry="15" fill="url(#clayGrad)"/>
+  <ellipse cx="320" cy="260" rx="30" ry="10" fill="#3d3020"/>
+  <path d="M290 300 Q320 310 350 300" fill="none" stroke="url(#accentGrad)" stroke-width="3"/>
+  <path d="M285 340 Q320 350 355 340" fill="none" stroke="url(#accentGrad)" stroke-width="3"/>
+  <!-- Yarn ball -->
+  <circle cx="500" cy="320" r="60" fill="#8b6b4a"/>
+  <path d="M450 300 Q500 280 550 300 Q530 340 500 360 Q470 340 450 300" fill="none" stroke="url(#accentGrad)" stroke-width="4"/>
+  <path d="M460 340 Q500 370 540 340" fill="none" stroke="url(#accentGrad)" stroke-width="3"/>
+  <!-- Knitting needles -->
+  <line x1="480" y1="250" x2="420" y2="180" stroke="url(#accentGrad)" stroke-width="4"/>
+  <line x1="520" y1="250" x2="580" y2="180" stroke="url(#accentGrad)" stroke-width="4"/>
+  <!-- Woven basket -->
+  <path d="M150 350 Q150 300 200 300 L200 380 Q175 390 150 380 Z" fill="#5a4a35"/>
+  <path d="M160 320 L190 320 M160 340 L190 340 M160 360 L190 360" stroke="#3d3020" stroke-width="2"/>
+  <!-- Paint brushes -->
+  <rect x="620" y="260" width="8" height="80" rx="2" fill="#5a4a35"/>
+  <rect x="640" y="270" width="8" height="70" rx="2" fill="#5a4a35"/>
+  <rect x="660" y="250" width="8" height="90" rx="2" fill="#5a4a35"/>
+  <ellipse cx="624" cy="255" rx="8" ry="15" fill="url(#accentGrad)"/>
+  <ellipse cx="644" cy="265" rx="8" ry="15" fill="#e86b4a"/>
+  <ellipse cx="664" cy="245" rx="8" ry="15" fill="#4a8bc9"/>
+  <!-- Scissors -->
+  <ellipse cx="720" cy="350" rx="15" ry="25" fill="none" stroke="url(#accentGrad)" stroke-width="3"/>
+  <ellipse cx="720" cy="400" rx="15" ry="25" fill="none" stroke="url(#accentGrad)" stroke-width="3"/>
+  <line x1="720" y1="325" x2="680" y2="280" stroke="#5a4a35" stroke-width="4"/>
+  <line x1="720" y1="375" x2="680" y2="280" stroke="#5a4a35" stroke-width="4"/>
+  <!-- Text -->
+  <text x="400" y="520" font-family="Inter, sans-serif" font-size="32" font-weight="600" fill="white" text-anchor="middle">Handmade</text>
+</svg>
