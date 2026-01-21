@@ -357,7 +357,7 @@
 
 @layer components {
   .product-card { @apply relative overflow-hidden rounded-lg bg-card transition-all duration-300; }
-  .product-card:hover { @apply shadow-large -translate-y-1; }
+  .product-card:hover { @apply shadow-xl -translate-y-1; }
   .input-label { @apply block text-sm font-medium text-foreground mb-1.5; }
   .input-error { @apply text-xs text-destructive mt-1.5; }
   .badge-sale { @apply bg-destructive text-destructive-foreground font-semibold; }

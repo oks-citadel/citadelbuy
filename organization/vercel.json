@@ -5,5 +5,5 @@
       "main": true
     }
   },
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- organization/apps/web"
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- apps/web"
 }

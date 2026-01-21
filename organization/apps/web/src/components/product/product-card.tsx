@@ -102,7 +102,7 @@ export function ProductCard({
       className={cn(
         'group relative overflow-hidden rounded-xl bg-card border border-border/50',
         'transition-all duration-300 ease-out',
-        'hover:shadow-large hover:-translate-y-1 hover:border-primary/20',
+        'hover:shadow-xl hover:-translate-y-1 hover:border-primary/20',
         sizeClasses[size],
         className
       )}
