@@ -33,7 +33,7 @@ import { NetworkError, NetworkErrorCategory, NetworkErrorMessages } from './fetc
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
-const API_TIMEOUT = 30000;
+const API_TIMEOUT = 15000; // Reduced from 30s for better UX
 
 // Token storage keys
 const ACCESS_TOKEN_KEY = 'broxiva_access_token';
@@ -51,30 +51,58 @@ interface ApiError {
   error?: string;
 }
 
-// Token management
+// Safe storage helper (handles private browsing, quota exceeded, SSR)
+const safeStorage = {
+  getItem: (key: string): string | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return localStorage.getItem(key) ?? sessionStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): boolean => {
+    if (typeof window === 'undefined') return false;
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch {
+      try {
+        sessionStorage.setItem(key, value);
+        return true;
+      } catch {
+        console.warn('Storage unavailable for key:', key);
+        return false;
+      }
+    }
+  },
+  removeItem: (key: string): void => {
+    if (typeof window === 'undefined') return;
+    try { localStorage.removeItem(key); } catch { /* ignore */ }
+    try { sessionStorage.removeItem(key); } catch { /* ignore */ }
+  },
+};
+
+// Token management with safe storage
 export const tokenManager = {
   getAccessToken: (): string | null => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(ACCESS_TOKEN_KEY);
+    return safeStorage.getItem(ACCESS_TOKEN_KEY);
   },
 
   getRefreshToken: (): string | null => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(REFRESH_TOKEN_KEY);
+    return safeStorage.getItem(REFRESH_TOKEN_KEY);
   },
 
   setTokens: (accessToken: string, refreshToken?: string): void => {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+    safeStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
     if (refreshToken) {
-      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+      safeStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
     }
   },
 
   clearTokens: (): void => {
-    if (typeof window === 'undefined') return;
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    safeStorage.removeItem(ACCESS_TOKEN_KEY);
+    safeStorage.removeItem(REFRESH_TOKEN_KEY);
   },
 
   isAuthenticated: (): boolean => {

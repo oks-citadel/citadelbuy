@@ -30,6 +30,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
+    // Hydrate auth store from storage (handles SSR mismatch)
+    useAuthStore.persist.rehydrate();
     // Refresh user data on mount
     refreshUser();
   }, [refreshUser]);

@@ -1,12 +1,18 @@
 /**
  * Auth Store - Manages user authentication state
  * Connected to backend API with JWT token management
+ *
+ * Uses safe storage that handles:
+ * - Private browsing mode (Safari throws on localStorage)
+ * - Storage quota exceeded
+ * - SSR compatibility
  */
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { authApi, tokenManager } from '@/lib/api-client';
+import { authApi, tokenManager, isNetworkConnectivityError, getErrorMessage } from '@/lib/api-client';
 import { User } from '@/types';
+import { createSafeStorage } from '@/lib/safe-storage';
 
 interface AuthState {
   user: User | null;
@@ -72,9 +78,19 @@ export const useAuthStore = create<AuthState>()(
             error: null,
           });
         } catch (error) {
-          const message = error instanceof Error ? error.message : 'Registration failed';
+          // Enhanced error handling with user-friendly messages
+          let message: string;
+
+          if (isNetworkConnectivityError(error)) {
+            message = 'Unable to connect. Please check your internet connection and try again.';
+          } else if (error instanceof Error) {
+            message = getErrorMessage(error);
+          } else {
+            message = 'Registration failed. Please try again.';
+          }
+
           set({ error: message, isLoading: false });
-          throw error;
+          throw new Error(message);
         }
       },
 
@@ -186,11 +202,12 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => createSafeStorage()),
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      skipHydration: true, // Prevent SSR hydration mismatch
     }
   )
 );
