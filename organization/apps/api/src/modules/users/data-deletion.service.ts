@@ -150,7 +150,8 @@ export class DataDeletionService {
         await prisma.wishlist.deleteMany({ where: { userId } });
         await prisma.searchQuery.deleteMany({ where: { userId } });
         await prisma.productView.deleteMany({ where: { userId } });
-        await prisma.adCampaign.deleteMany({ where: { userId } });
+        // AdCampaign uses vendorId, not userId
+        await prisma.adCampaign.deleteMany({ where: { vendorId: userId } });
 
         // Delete subscriptions
         await prisma.subscription.deleteMany({ where: { userId } });
@@ -158,7 +159,7 @@ export class DataDeletionService {
         // Anonymize orders instead of deleting (legal requirement)
         await this.anonymizeOrders(userId, prisma);
 
-        // Delete payment plans that are completed
+        // Delete completed payment plans
         await prisma.bnplPaymentPlan.deleteMany({
           where: {
             userId,
@@ -166,22 +167,8 @@ export class DataDeletionService {
           },
         });
 
-        // Anonymize active payment plans
-        const activePlans = await prisma.bnplPaymentPlan.findMany({
-          where: {
-            userId,
-            status: { not: 'COMPLETED' },
-          },
-        });
-
-        for (const plan of activePlans) {
-          await prisma.bnplPaymentPlan.update({
-            where: { id: plan.id },
-            data: {
-              userId: null,
-            },
-          });
-        }
+        // Note: Active payment plans will be retained and handled
+        // by the order anonymization process since they reference orders
 
         // Finally delete the user
         await prisma.user.delete({ where: { id: userId } });
@@ -251,7 +238,8 @@ export class DataDeletionService {
       await prisma.searchQuery.deleteMany({ where: { userId } });
       await prisma.productView.deleteMany({ where: { userId } });
       await prisma.subscription.deleteMany({ where: { userId } });
-      await prisma.adCampaign.deleteMany({ where: { userId } });
+      // AdCampaign uses vendorId, not userId
+      await prisma.adCampaign.deleteMany({ where: { vendorId: userId } });
     });
 
     return {
@@ -284,7 +272,8 @@ export class DataDeletionService {
       this.prisma.searchQuery.deleteMany({ where: { userId } }),
       this.prisma.productView.deleteMany({ where: { userId } }),
       this.prisma.subscription.deleteMany({ where: { userId } }),
-      this.prisma.adCampaign.deleteMany({ where: { userId } }),
+      // AdCampaign uses vendorId, not userId
+      this.prisma.adCampaign.deleteMany({ where: { vendorId: userId } }),
     ]);
   }
 

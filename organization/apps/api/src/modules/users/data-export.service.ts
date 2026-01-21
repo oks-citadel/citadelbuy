@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Parser } from 'json2csv';
 
 export interface ExportFormat {
   format: 'json' | 'csv';
@@ -119,7 +118,7 @@ export class DataExportService {
         paymentMethod: order.paymentMethod,
         trackingNumber: order.trackingNumber,
         carrier: order.carrier,
-        estimatedDelivery: order.estimatedDelivery,
+        estimatedDeliveryDate: order.estimatedDeliveryDate,
         createdAt: order.createdAt,
         updatedAt: order.updatedAt,
         items: order.items.map(item => ({
@@ -163,24 +162,24 @@ export class DataExportService {
       })),
       subscriptions: userWithoutPassword.subscriptions.map(sub => ({
         id: sub.id,
-        type: sub.type,
+        planId: sub.planId,
         status: sub.status,
-        startDate: sub.startDate,
-        endDate: sub.endDate,
+        currentPeriodStart: sub.currentPeriodStart,
+        currentPeriodEnd: sub.currentPeriodEnd,
         createdAt: sub.createdAt,
       })),
       paymentPlans: userWithoutPassword.bnplPaymentPlans.map(plan => ({
         id: plan.id,
         orderId: plan.orderId,
-        amount: plan.amount,
-        installments: plan.installments,
+        totalAmount: plan.totalAmount,
+        numberOfInstallments: plan.numberOfInstallments,
         status: plan.status,
         createdAt: plan.createdAt,
       })),
       adCampaigns: userWithoutPassword.adCampaigns.map(campaign => ({
         id: campaign.id,
         name: campaign.name,
-        budget: campaign.budget,
+        totalBudget: campaign.totalBudget,
         status: campaign.status,
         createdAt: campaign.createdAt,
       })),
@@ -220,8 +219,8 @@ export class DataExportService {
     }
 
     // Order Items
-    const allOrderItems = data.orders.flatMap(order =>
-      order.items.map(item => ({
+    const allOrderItems = data.orders.flatMap((order: any) =>
+      order.items.map((item: any) => ({
         orderId: order.id,
         ...item,
       }))
@@ -288,23 +287,6 @@ export class DataExportService {
    * Convert an array of objects to CSV format
    */
   private objectToCSV(data: any[]): string {
-    if (!data || data.length === 0) {
-      return 'No data';
-    }
-
-    try {
-      const parser = new Parser();
-      return parser.parse(data);
-    } catch (error) {
-      // Fallback to simple CSV if json2csv fails
-      return this.simpleCSV(data);
-    }
-  }
-
-  /**
-   * Fallback simple CSV converter
-   */
-  private simpleCSV(data: any[]): string {
     if (!data || data.length === 0) return 'No data';
 
     const headers = Object.keys(data[0]);

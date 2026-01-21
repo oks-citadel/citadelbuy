@@ -1,27 +1,22 @@
-import { Injectable, NotFoundException, NotImplementedException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-// GDPR services disabled - need schema updates before enabling
-// import { DataExportService } from '../users/data-export.service';
-// import { DataDeletionService, DeletionStrategy } from '../users/data-deletion.service';
+import { DataExportService } from '../users/data-export.service';
+import { DataDeletionService, DeletionStrategy } from '../users/data-deletion.service';
 import { ConsentDto, DataDeletionRequestDto } from './dto/consent.dto';
 
 @Injectable()
 export class PrivacyService {
   constructor(
     private prisma: PrismaService,
-    // GDPR services disabled - need schema updates before enabling
-    // private dataExportService: DataExportService,
-    // private dataDeletionService: DataDeletionService,
+    private dataExportService: DataExportService,
+    private dataDeletionService: DataDeletionService,
   ) {}
 
   /**
    * Get overview of all stored data
-   * GDPR service disabled - need schema updates before enabling
    */
   async getStoredDataOverview(userId: string) {
-    throw new NotImplementedException(
-      'GDPR data overview is currently being updated. Please try again later.',
-    );
+    return this.dataExportService.generateExportReport(userId);
   }
 
   /**
@@ -48,32 +43,33 @@ export class PrivacyService {
 
   /**
    * Generate and return data export
-   * GDPR service disabled - need schema updates before enabling
    */
   async generateDataExport(userId: string, format: 'json' | 'csv') {
-    throw new NotImplementedException(
-      'GDPR data export is currently being updated. Please try again later.',
-    );
+    return this.dataExportService.exportUserData(userId, format);
   }
 
   /**
    * Request account deletion
-   * GDPR service disabled - need schema updates before enabling
    */
   async requestDeletion(userId: string, request: DataDeletionRequestDto) {
-    throw new NotImplementedException(
-      'GDPR data deletion is currently being updated. Please try again later.',
-    );
+    const strategy = request.strategy === 'HARD_DELETE'
+      ? DeletionStrategy.HARD_DELETE
+      : request.strategy === 'SOFT_DELETE'
+        ? DeletionStrategy.SOFT_DELETE
+        : DeletionStrategy.ANONYMIZE;
+
+    return this.dataDeletionService.deleteUserData({
+      userId,
+      strategy,
+      reason: request.reason,
+    });
   }
 
   /**
    * Get data retention information
-   * GDPR service disabled - need schema updates before enabling
    */
   async getRetentionInfo(userId: string) {
-    throw new NotImplementedException(
-      'GDPR data retention info is currently being updated. Please try again later.',
-    );
+    return this.dataDeletionService.getDataRetentionInfo(userId);
   }
 
   /**
