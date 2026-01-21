@@ -1,20 +1,22 @@
 'use client';
 
 import * as React from 'react';
-import { Suspense, useRef, useEffect } from 'react';
+import { Suspense, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Mail, Lock, User, Phone, Loader2, Sparkles, Check, X, AlertCircle } from 'lucide-react';
+import { Mail, Lock, User, Phone, Loader2, Sparkles, Check, X, AlertCircle, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/stores/auth-store';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { trackEvent } from '@/lib/marketing';
 
 // Phone number validation regex (international format)
 const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/;
@@ -62,6 +64,12 @@ function RegisterForm() {
 
   const { register: registerUser, isLoading, error, clearError } = useAuthStore();
 
+  // Online status detection
+  const { isOnline, wasOffline, resetWasOffline } = useOnlineStatus({
+    onOnline: () => toast.success('You\'re back online!'),
+    onOffline: () => toast.warning('You appear to be offline'),
+  });
+
   // Double-submit prevention
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const submitLockRef = useRef(false);
@@ -71,6 +79,33 @@ function RegisterForm() {
 
   // Error dismissal
   const [showError, setShowError] = React.useState(true);
+
+  // Rate limit countdown
+  const [rateLimitCountdown, setRateLimitCountdown] = React.useState(0);
+
+  // Track page view on mount
+  useEffect(() => {
+    trackEvent('signup_page_viewed', { source: redirect !== '/' ? 'redirect' : 'direct' });
+  }, [redirect]);
+
+  // Handle rate limit countdown
+  useEffect(() => {
+    if (rateLimitCountdown > 0) {
+      const timer = setTimeout(() => {
+        setRateLimitCountdown((prev) => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [rateLimitCountdown]);
+
+  // Show reconnection message
+  useEffect(() => {
+    if (wasOffline && isOnline) {
+      // User came back online, reset the flag after showing the toast
+      const timer = setTimeout(resetWasOffline, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [wasOffline, isOnline, resetWasOffline]);
 
   const {
     register,
@@ -119,10 +154,28 @@ function RegisterForm() {
   }, [errors, setFocus]);
 
   const onSubmit = async (data: RegisterFormData) => {
+    // Prevent submission when offline
+    if (!isOnline) {
+      toast.error('You appear to be offline. Please check your connection.');
+      return;
+    }
+
+    // Prevent submission during rate limit
+    if (rateLimitCountdown > 0) {
+      toast.error(`Please wait ${rateLimitCountdown} seconds before trying again.`);
+      return;
+    }
+
     // Prevent double submission
     if (submitLockRef.current || isLoading || isSubmitting) return;
     submitLockRef.current = true;
     setIsSubmitting(true);
+
+    // Track signup attempt
+    trackEvent('signup_started', {
+      method: 'email',
+      has_phone: !!data.phone,
+    });
 
     try {
       await registerUser({
@@ -131,11 +184,33 @@ function RegisterForm() {
         password: data.password,
         phone: data.phone?.trim() || undefined,
       });
+
+      // Track successful signup
+      trackEvent('signup_completed', {
+        method: 'email',
+        has_phone: !!data.phone,
+      });
+
       toast.success('Account created successfully!');
       // Small delay to ensure state persists before redirect
       await new Promise(resolve => setTimeout(resolve, 100));
       router.push(redirect);
-    } catch {
+    } catch (err) {
+      // Track failed signup
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      trackEvent('signup_failed', {
+        method: 'email',
+        error: errorMessage,
+      });
+
+      // Handle rate limiting
+      if (errorMessage.toLowerCase().includes('too many') || errorMessage.includes('429')) {
+        // Extract seconds from message or default to 60
+        const match = errorMessage.match(/(\d+)\s*seconds?/i);
+        const seconds = match ? parseInt(match[1], 10) : 60;
+        setRateLimitCountdown(seconds);
+      }
+
       // Error is handled by the store, re-enable submission
       submitLockRef.current = false;
     } finally {
@@ -239,6 +314,33 @@ function RegisterForm() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+                  {/* Offline Banner */}
+                  {!isOnline && (
+                    <div
+                      className="p-3 rounded-md bg-warning/10 text-warning-foreground text-sm flex items-center gap-2"
+                      role="alert"
+                      aria-live="assertive"
+                    >
+                      <WifiOff className="h-4 w-4 flex-shrink-0" />
+                      <span>You appear to be offline. Please check your connection.</span>
+                    </div>
+                  )}
+
+                  {/* Rate Limit Countdown */}
+                  {rateLimitCountdown > 0 && (
+                    <div
+                      className="p-3 rounded-md bg-warning/10 text-warning-foreground text-sm flex items-center gap-2"
+                      role="alert"
+                      aria-live="polite"
+                    >
+                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                      <span>
+                        Too many attempts. Please wait{' '}
+                        <strong>{rateLimitCountdown}</strong> seconds before trying again.
+                      </span>
+                    </div>
+                  )}
+
                   {/* Error Banner with dismiss */}
                   {error && showError && (
                     <div
@@ -412,14 +514,22 @@ function RegisterForm() {
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={isFormLoading}
+                    disabled={isFormLoading || !isOnline || rateLimitCountdown > 0}
                     aria-busy={isFormLoading}
+                    aria-disabled={!isOnline || rateLimitCountdown > 0}
                   >
                     {isFormLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                         <span>Creating account...</span>
                       </>
+                    ) : !isOnline ? (
+                      <>
+                        <WifiOff className="mr-2 h-4 w-4" aria-hidden="true" />
+                        <span>Offline</span>
+                      </>
+                    ) : rateLimitCountdown > 0 ? (
+                      <span>Wait {rateLimitCountdown}s...</span>
                     ) : (
                       'Create Account'
                     )}
