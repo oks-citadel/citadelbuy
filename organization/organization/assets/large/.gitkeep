@@ -1,4 +1,0 @@
-# This directory is intentionally empty
-# Large files should NOT be committed to Git
-# They should be stored in Azure Blob Storage and mounted at runtime
-# See: docs/ASSET_RUNTIME_STRATEGY.md

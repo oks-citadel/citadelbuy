@@ -536,8 +536,9 @@ export class CheckoutService implements OnModuleInit {
       subtotal,
     );
 
-    // Calculate tax (8% approximation - should integrate with tax service for accuracy)
-    const tax = Math.round(subtotal * 0.08 * 100) / 100;
+    // Calculate tax using configured rate (integrates with TaxService in orders.service for production accuracy)
+    const taxRate = this.configService.get<number>('DEFAULT_TAX_RATE') ?? 0.08;
+    const tax = Math.round(subtotal * taxRate * 100) / 100;
     const total = subtotal - discount + shipping + tax;
 
     // Get or use payment method
@@ -734,7 +735,8 @@ export class CheckoutService implements OnModuleInit {
       subtotal,
     );
 
-    const tax = Math.round(subtotal * 0.08 * 100) / 100;
+    const guestTaxRate = this.configService.get<number>('DEFAULT_TAX_RATE') ?? 0.08;
+    const tax = Math.round(subtotal * guestTaxRate * 100) / 100;
     const total = subtotal - discount + shipping + tax;
 
     // Create a guest order
@@ -916,7 +918,8 @@ export class CheckoutService implements OnModuleInit {
       );
     }
 
-    const tax = Math.round(subtotal * 0.08 * 100) / 100;
+    const initTaxRate = this.configService.get<number>('DEFAULT_TAX_RATE') ?? 0.08;
+    const tax = Math.round(subtotal * initTaxRate * 100) / 100;
     const total = subtotal - discount + shipping + tax;
 
     // Check if express checkout is possible

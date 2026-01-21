@@ -130,10 +130,21 @@ export class FeatureFlagGuard implements CanActivate {
 
   /**
    * Get country code from IP address
-   * This is a placeholder - implement with actual geo-IP service
+   *
+   * NOTE: This is a placeholder implementation. For production use, integrate with:
+   * - MaxMind GeoIP2 (https://www.maxmind.com/en/geoip2-databases)
+   * - IP2Location (https://www.ip2location.com/)
+   * - Or a cloud-based geo-IP service
+   *
+   * Configuration: Set GEOIP_SERVICE_URL and GEOIP_API_KEY environment variables
+   * to enable geo-IP lookup functionality.
+   *
+   * @param _ip - The IP address to look up
+   * @returns ISO 3166-1 alpha-2 country code or null if not available
    */
   private getCountryFromIP(_ip: string): string | null {
-    // TODO: Integrate with MaxMind or similar geo-IP service
+    // Geo-IP lookup requires external service integration
+    // Return null until configured - feature flags will skip country-based targeting
     return null;
   }
 }

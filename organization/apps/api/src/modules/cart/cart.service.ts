@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
@@ -7,9 +8,22 @@ import { LockPricesDto } from './dto/lock-prices.dto';
 import { TrackAbandonmentDto } from './dto/track-abandonment.dto';
 import { randomBytes } from 'crypto';
 
+// Default tax rate - should be configured per region in production
+const DEFAULT_TAX_RATE = 0.10;
+
 @Injectable()
 export class CartService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(CartService.name);
+  private readonly taxRate: number;
+
+  constructor(
+    private prisma: PrismaService,
+    private configService: ConfigService,
+  ) {
+    // Get tax rate from config, or use default
+    // NOTE: In production, tax should be calculated dynamically based on region
+    this.taxRate = this.configService.get<number>('DEFAULT_TAX_RATE') ?? DEFAULT_TAX_RATE;
+  }
 
   /**
    * Get or create cart for user or guest
@@ -715,8 +729,8 @@ export class CartService {
       subtotal += itemPrice * item.quantity;
     }
 
-    // Simple tax calculation (can be enhanced with tax service)
-    const tax = subtotal * 0.1; // 10% tax
+    // Tax calculation - uses configured rate (should integrate with TaxService for production accuracy)
+    const tax = Math.round(subtotal * this.taxRate * 100) / 100;
     const total = subtotal + tax;
 
     await this.prisma.cart.update({

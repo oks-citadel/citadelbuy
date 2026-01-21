@@ -1,27 +1,11 @@
 /** @type {import('jest').Config} */
+const baseConfig = require('../../jest.config.base.js');
+
 module.exports = {
+  ...baseConfig,
   displayName: '@broxiva/utils',
-  preset: 'ts-jest',
-  testEnvironment: 'node',
   rootDir: '.',
   roots: ['<rootDir>/src'],
-  testMatch: ['**/__tests__/**/*.test.ts', '**/*.spec.ts'],
-  transform: {
-    '^.+\\.tsx?$': [
-      'ts-jest',
-      {
-        isolatedModules: true,
-      },
-    ],
-  },
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
-  collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/**/*.d.ts',
-    '!src/**/__tests__/**',
-  ],
-  coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
   coverageThreshold: {
     global: {
       branches: 80,
@@ -30,8 +14,4 @@ module.exports = {
       statements: 80,
     },
   },
-  clearMocks: true,
-  resetMocks: true,
-  restoreMocks: true,
-  verbose: true,
 };

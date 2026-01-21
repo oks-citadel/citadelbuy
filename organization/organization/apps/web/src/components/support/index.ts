@@ -1,1 +1,0 @@
-export { LiveChatWidget } from './LiveChatWidget';
