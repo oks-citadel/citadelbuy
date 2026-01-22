@@ -200,7 +200,7 @@ export class OpenAIProvider implements ILLMProvider {
             error,
           );
 
-        case 429:
+        case 429: {
           // Rate limited
           const retryAfter = this.extractRetryAfter(error);
           this.rateLimitInfo = {
@@ -219,6 +219,7 @@ export class OpenAIProvider implements ILLMProvider {
             retryAfter,
             error,
           );
+        }
 
         case 400:
           return new LLMError(

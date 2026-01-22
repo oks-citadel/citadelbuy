@@ -245,7 +245,7 @@ export class LocalSeoService {
           issues.push({
             source: citation.source,
             field: 'phone',
-            expected: profile.phone,
+            expected: profile.phone ?? 'Not provided',
             found: 'Phone mismatch detected',
             severity: 'medium',
           });
@@ -389,7 +389,7 @@ export class LocalSeoService {
       name: profile.businessName,
       description: profile.description,
       url: profile.website,
-      telephone: profile.phone,
+      ...(profile.phone && { telephone: profile.phone }),
       email: profile.email,
       address: {
         '@type': 'PostalAddress',

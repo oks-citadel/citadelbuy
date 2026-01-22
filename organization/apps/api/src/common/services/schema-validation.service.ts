@@ -297,9 +297,10 @@ export class SchemaValidationService {
     switch (targetType) {
       case 'string':
         return String(value);
-      case 'number':
+      case 'number': {
         const num = Number(value);
         return isNaN(num) ? value : num;
+      }
       case 'boolean':
         if (typeof value === 'string') {
           return value.toLowerCase() === 'true';

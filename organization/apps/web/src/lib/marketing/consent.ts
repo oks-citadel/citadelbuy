@@ -4,6 +4,9 @@
  */
 
 import { type ConsentSettings } from './config';
+
+// Re-export ConsentSettings for other modules
+export type { ConsentSettings };
 import { updateConsent as updateGAConsent } from './google-analytics';
 import { fbGrantConsent, fbRevokeConsent } from './facebook-pixel';
 

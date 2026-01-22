@@ -10,10 +10,15 @@ import {
   CURRENCY,
 } from './config';
 
+// Re-export types for other modules
+export type { EcommerceItem };
+
 declare global {
   interface Window {
-    gtag: (...args: unknown[]) => void;
-    dataLayer: unknown[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    gtag: (...args: any[]) => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    dataLayer: any[];
   }
 }
 
@@ -22,7 +27,8 @@ export function initGA(measurementId: string): void {
   if (typeof window === 'undefined') return;
 
   window.dataLayer = window.dataLayer || [];
-  window.gtag = function gtag(...args: unknown[]) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  window.gtag = function gtag(...args: any[]) {
     window.dataLayer.push(args);
   };
 

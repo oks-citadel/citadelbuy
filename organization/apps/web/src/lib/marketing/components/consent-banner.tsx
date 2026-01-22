@@ -56,7 +56,7 @@ export function ConsentBanner({
 
   const updateConsent = (key: keyof ConsentSettings, value: boolean) => {
     if (key === 'necessary') return; // Can't disable necessary
-    setConsent((prev) => ({ ...prev, [key]: value }));
+    setConsent((prev: ConsentSettings) => ({ ...prev, [key]: value }));
   };
 
   if (!isVisible) return null;

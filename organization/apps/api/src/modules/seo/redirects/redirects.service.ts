@@ -515,10 +515,11 @@ export class RedirectsService {
       case 'json':
         return JSON.stringify(redirects, null, 2);
 
-      case 'csv':
+      case 'csv': {
         const headers = 'source,destination,type\n';
         const rows = redirects.map(r => `"${r.source}","${r.destination}","${r.type}"`).join('\n');
         return headers + rows;
+      }
 
       case 'htaccess':
         return redirects.map(r => {
