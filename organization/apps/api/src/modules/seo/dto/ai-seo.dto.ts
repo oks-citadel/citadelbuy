@@ -10,6 +10,14 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+export class SearchIntentDto {
+  @ApiProperty({ description: 'Intent type' })
+  type: 'informational' | 'navigational' | 'transactional' | 'commercial';
+
+  @ApiProperty({ description: 'Confidence score (0-1)' })
+  confidence: number;
+}
+
 export class ContentOptimizationDto {
   @ApiProperty({ description: 'Overall optimization score (0-100)' })
   score: number;
@@ -90,14 +98,6 @@ export class KeywordSuggestionDto {
     hasImages: boolean;
     hasVideos: boolean;
   };
-}
-
-export class SearchIntentDto {
-  @ApiProperty({ description: 'Intent type' })
-  type: 'informational' | 'navigational' | 'transactional' | 'commercial';
-
-  @ApiProperty({ description: 'Confidence score (0-1)' })
-  confidence: number;
 }
 
 export class ContentGapAnalysisDto {
