@@ -5,8 +5,7 @@
   "description": "Broxiva - AI-Powered Premium Global E-Commerce Platform",
   "workspaces": [
     "apps/*",
-    "packages/*",
-    "services/*"
+    "packages/*"
   ],
   "scripts": {
     "dev": "turbo run dev",

@@ -116,9 +116,14 @@ async function bootstrap() {
     'Content-Disposition',
   ];
 
-  // Vercel preview deployment pattern (e.g., https://broxiva-xyz123.vercel.app)
-  // This regex matches Vercel preview URLs for the broxiva project
-  const vercelPreviewPattern = /^https:\/\/broxiva(-[a-z0-9]+)?\.vercel\.app$/;
+  // Vercel preview deployment pattern
+  // Matches various Vercel URL patterns:
+  // - https://broxiva.vercel.app (production alias)
+  // - https://broxiva-web.vercel.app (project name)
+  // - https://broxiva-web-git-branch-team.vercel.app (git branch preview)
+  // - https://broxiva-web-abc123-team.vercel.app (deployment preview)
+  // - https://citadelbuy-abc123.vercel.app (repo name based)
+  const vercelPreviewPattern = /^https:\/\/(broxiva|citadelbuy|broxiva-web)(-[a-z0-9-]+)*\.vercel\.app$/;
 
   app.enableCors({
     origin: (origin, callback) => {
