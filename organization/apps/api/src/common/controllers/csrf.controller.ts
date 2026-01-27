@@ -21,11 +21,15 @@ export class CsrfController {
     // Generate random CSRF token
     const csrfToken = crypto.randomBytes(32).toString('hex');
 
-    // Set token in httpOnly cookie
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    // Set token in cookie (not httpOnly so client can read it for headers)
+    // IMPORTANT: For cross-origin requests (Vercel frontend to Railway backend),
+    // sameSite must be 'none' to allow cookies to be sent with cross-origin requests.
     response.cookie('csrf-token', csrfToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-      sameSite: 'strict',
+      httpOnly: false, // Client needs to read this to send in X-CSRF-Token header
+      secure: isProduction, // HTTPS only in production
+      sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-origin cookies
       maxAge: 3600000, // 1 hour
     });
 

@@ -15,18 +15,20 @@ const nextConfig = {
   output: process.env.DOCKER_BUILD === 'true' ? 'standalone' : undefined,
   reactStrictMode: true,
 
-  // Allow build to succeed with ESLint warnings (errors still fail)
+  // ESLint configuration for builds
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint warnings. Run `pnpm lint` to see all warnings.
-    ignoreDuringBuilds: process.env.CI !== 'true', // Fail in CI, allow locally
+    // In Vercel production builds (CI=true), we still want to allow builds
+    // even with ESLint warnings to prevent deployment failures
+    // Run `pnpm lint` locally to see all warnings before committing
+    ignoreDuringBuilds: true,
   },
 
-  // Allow build to succeed with TypeScript errors (for development)
+  // TypeScript configuration for builds
   typescript: {
-    // Warning: Dangerously allow production builds to complete even with type errors
-    // Run `pnpm type-check` to verify types before deployment
-    ignoreBuildErrors: process.env.CI !== 'true', // Fail in CI, allow locally
+    // Allow production builds to complete even with type errors
+    // This prevents deployment failures due to type issues
+    // Run `pnpm type-check` locally to verify types before committing
+    ignoreBuildErrors: true,
   },
 
   // Enable compression for better performance

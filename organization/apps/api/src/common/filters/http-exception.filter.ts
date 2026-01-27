@@ -130,6 +130,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
   private readonly isProduction: boolean;
   private readonly allowedOrigins: string[];
+  // Vercel preview deployment pattern (e.g., https://broxiva-xyz123.vercel.app)
+  private readonly vercelPreviewPattern = /^https:\/\/broxiva(-[a-z0-9]+)?\.vercel\.app$/;
 
   constructor(private configService: ConfigService) {
     this.isProduction = this.configService.get<string>('NODE_ENV') === 'production';
@@ -561,8 +563,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
   private setCorsHeaders(request: Request, response: Response): void {
     const origin = request.headers.origin;
 
-    // Check if origin is allowed
-    if (origin && this.allowedOrigins.includes(origin)) {
+    // Check if origin is allowed (explicit list or Vercel preview pattern)
+    const isAllowedOrigin = origin && (
+      this.allowedOrigins.includes(origin) ||
+      (this.isProduction && this.vercelPreviewPattern.test(origin))
+    );
+
+    if (isAllowedOrigin) {
       response.setHeader('Access-Control-Allow-Origin', origin);
     } else if (!this.isProduction) {
       // In development, allow the origin even if not in list (for debugging)

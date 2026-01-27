@@ -286,9 +286,13 @@ async function bootstrap() {
       res.cookie('csrf-token', newToken, {
         httpOnly: false, // Client needs to read this to send in headers
         secure: isProduction, // HTTPS only in production
-        sameSite: isProduction ? 'strict' : 'lax', // Strict in production for maximum security
+        // IMPORTANT: For cross-origin requests (Vercel frontend to Railway backend),
+        // sameSite must be 'none' to allow cookies to be sent with cross-origin requests.
+        // This requires secure: true (HTTPS) in production.
+        sameSite: isProduction ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        ...(cookieDomain && { domain: cookieDomain }), // Set domain for cross-subdomain cookies
+        // Note: domain is omitted for cross-origin setups as cookies need to be set
+        // on the API domain, not shared across domains
       });
       // For first request without token, allow it but set the cookie
       // This enables the client to get the token for subsequent requests
