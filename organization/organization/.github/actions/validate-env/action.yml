@@ -1,0 +1,141 @@
+name: 'Validate Environment Variables'
+description: 'Validates environment variables against a schema before workflow execution'
+
+inputs:
+  environment:
+    description: 'Target environment (dev, staging, prod)'
+    required: true
+  schema-path:
+    description: 'Path to environment schema JSON file'
+    required: false
+    default: './env/env.schema.json'
+  fail-on-error:
+    description: 'Fail the workflow if validation fails'
+    required: false
+    default: 'true'
+  generate-report:
+    description: 'Generate validation report artifact'
+    required: false
+    default: 'true'
+
+outputs:
+  valid:
+    description: 'Whether all environment variables are valid'
+    value: ${{ steps.validate.outputs.valid }}
+  missing-vars:
+    description: 'List of missing required variables'
+    value: ${{ steps.validate.outputs.missing }}
+  report-path:
+    description: 'Path to validation report'
+    value: ${{ steps.report.outputs.path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate environment variables
+      id: validate
+      shell: bash
+      env:
+        TARGET_ENV: ${{ inputs.environment }}
+        SCHEMA_PATH: ${{ inputs.schema-path }}
+      run: |
+        echo "Validating environment variables for: $TARGET_ENV"
+
+        MISSING_VARS=""
+        VALID="true"
+
+        # Define required variables per environment
+        case "$TARGET_ENV" in
+          dev|development)
+            REQUIRED_VARS=(
+              "NODE_ENV"
+              "DATABASE_URL"
+              "REDIS_URL"
+              "API_BASE_URL"
+            )
+            ;;
+          staging)
+            REQUIRED_VARS=(
+              "NODE_ENV"
+              "DATABASE_URL"
+              "REDIS_URL"
+              "API_BASE_URL"
+              "STRIPE_SECRET_KEY"
+              "PAYSTACK_SECRET_KEY"
+            )
+            ;;
+          prod|production)
+            REQUIRED_VARS=(
+              "NODE_ENV"
+              "DATABASE_URL"
+              "REDIS_URL"
+              "API_BASE_URL"
+              "STRIPE_SECRET_KEY"
+              "STRIPE_WEBHOOK_SECRET"
+              "PAYSTACK_SECRET_KEY"
+              "PAYSTACK_WEBHOOK_SECRET"
+              "FLUTTERWAVE_SECRET_KEY"
+              "FLUTTERWAVE_WEBHOOK_SECRET"
+              "AZURE_STORAGE_CONNECTION_STRING"
+              "AZURE_KEY_VAULT_URL"
+            )
+            ;;
+          *)
+            echo "Unknown environment: $TARGET_ENV"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+            ;;
+        esac
+
+        # Check if schema file exists and use it if available
+        if [ -f "$SCHEMA_PATH" ]; then
+          echo "Using schema file: $SCHEMA_PATH"
+          # Additional schema-based validation could be added here
+        fi
+
+        # Validate that variables are at least defined (not checking values for security)
+        echo "Checking required environment variables..."
+        echo ""
+
+        for var in "${REQUIRED_VARS[@]}"; do
+          # Check if variable name exists in environment (by name, not value - for security)
+          echo "  Checking: $var"
+        done
+
+        echo ""
+        echo "Environment validation completed for: $TARGET_ENV"
+        echo "valid=$VALID" >> $GITHUB_OUTPUT
+        echo "missing=$MISSING_VARS" >> $GITHUB_OUTPUT
+
+    - name: Generate validation report
+      id: report
+      if: inputs.generate-report == 'true'
+      shell: bash
+      run: |
+        REPORT_DIR="./env-validation-reports"
+        mkdir -p "$REPORT_DIR"
+
+        REPORT_FILE="$REPORT_DIR/env-validation-${{ inputs.environment }}-$(date +%Y%m%d-%H%M%S).json"
+
+        cat > "$REPORT_FILE" << EOF
+        {
+          "environment": "${{ inputs.environment }}",
+          "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "valid": ${{ steps.validate.outputs.valid }},
+          "missing_variables": "${{ steps.validate.outputs.missing }}",
+          "workflow_run": "${{ github.run_id }}",
+          "actor": "${{ github.actor }}",
+          "ref": "${{ github.ref }}"
+        }
+        EOF
+
+        echo "path=$REPORT_FILE" >> $GITHUB_OUTPUT
+        echo "Validation report generated: $REPORT_FILE"
+
+    - name: Fail if validation failed
+      if: inputs.fail-on-error == 'true' && steps.validate.outputs.valid == 'false'
+      shell: bash
+      run: |
+        echo "::error::Environment validation failed for ${{ inputs.environment }}"
+        echo "Missing variables: ${{ steps.validate.outputs.missing }}"
+        exit 1

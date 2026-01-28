@@ -1,0 +1,951 @@
+# ==============================================================================
+# TERRAFORM END-TO-END PIPELINE - BROXIVA
+# ==============================================================================
+# Complete infrastructure lifecycle management with:
+# - Multi-environment support (staging, production)
+# - Security scanning (tfsec, checkov, trivy)
+# - Cost estimation (Infracost)
+# - Drift detection
+# - Approval gates
+# - State management & locking
+# - Rollback capabilities
+# - Slack/Email notifications
+# ==============================================================================
+
+name: Terraform E2E Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'organization/infrastructure/terraform/**'
+      - '.github/workflows/terraform-e2e.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'organization/infrastructure/terraform/**'
+  schedule:
+    # Drift detection: Run daily at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+          - all
+        default: staging
+      action:
+        description: 'Terraform action to perform'
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+          - drift-detect
+          - import
+          - refresh
+        default: plan
+      auto_approve:
+        description: 'Auto-approve apply (staging only)'
+        required: false
+        type: boolean
+        default: false
+      target_resource:
+        description: 'Target specific resource (optional)'
+        required: false
+        type: string
+      skip_security_scan:
+        description: 'Skip security scanning'
+        required: false
+        type: boolean
+        default: false
+      skip_cost_estimation:
+        description: 'Skip cost estimation'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  # Terraform Configuration
+  TF_VERSION: '1.5.7'
+  TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform.d/plugin-cache
+  TF_IN_AUTOMATION: 'true'
+  TF_INPUT: 'false'
+
+  # AWS Configuration
+  AWS_REGION: 'us-east-1'
+
+  # Infrastructure Paths
+  TF_BASE_DIR: 'organization/infrastructure/terraform'
+  TF_STAGING_DIR: 'organization/infrastructure/terraform/environments/aws-staging'
+  TF_PROD_DIR: 'organization/infrastructure/terraform/environments/aws-prod'
+
+  # Safety Thresholds
+  MAX_RESOURCES_TO_DESTROY: 5
+  MAX_COST_INCREASE_PERCENT: 25
+
+  # State Configuration
+  TF_STATE_BUCKET: 'broxiva-terraform-state'
+  TF_LOCK_TABLE: 'broxiva-terraform-locks'
+
+concurrency:
+  group: terraform-${{ github.event.inputs.environment || 'staging' }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+  security-events: write
+  actions: read
+
+jobs:
+  # ============================================================================
+  # PHASE 0: PRE-FLIGHT & CHANGE DETECTION
+  # ============================================================================
+
+  preflight:
+    name: Pre-Flight Checks
+    runs-on: ubuntu-latest
+    outputs:
+      staging_changed: ${{ steps.changes.outputs.staging }}
+      prod_changed: ${{ steps.changes.outputs.prod }}
+      modules_changed: ${{ steps.changes.outputs.modules }}
+      any_changed: ${{ steps.changes.outputs.any }}
+      is_drift_detection: ${{ steps.context.outputs.is_drift_detection }}
+      target_environments: ${{ steps.determine-envs.outputs.environments }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect Changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            staging:
+              - '${{ env.TF_STAGING_DIR }}/**'
+            prod:
+              - '${{ env.TF_PROD_DIR }}/**'
+            modules:
+              - '${{ env.TF_BASE_DIR }}/modules/**'
+            any:
+              - '${{ env.TF_BASE_DIR }}/**'
+
+      - name: Determine Context
+        id: context
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "is_drift_detection=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_drift_detection=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Determine Target Environments
+        id: determine-envs
+        run: |
+          INPUT_ENV="${{ github.event.inputs.environment }}"
+          EVENT="${{ github.event_name }}"
+          STAGING_CHANGED="${{ steps.changes.outputs.staging }}"
+          PROD_CHANGED="${{ steps.changes.outputs.prod }}"
+          MODULES_CHANGED="${{ steps.changes.outputs.modules }}"
+
+          ENVS="[]"
+
+          if [[ "$EVENT" == "workflow_dispatch" ]]; then
+            if [[ "$INPUT_ENV" == "all" ]]; then
+              ENVS='["staging","production"]'
+            else
+              ENVS='["'"$INPUT_ENV"'"]'
+            fi
+          elif [[ "$EVENT" == "schedule" ]]; then
+            # Drift detection runs on both environments
+            ENVS='["staging","production"]'
+          elif [[ "$EVENT" == "push" || "$EVENT" == "pull_request" ]]; then
+            # Auto-detect based on changed files
+            if [[ "$STAGING_CHANGED" == "true" || "$MODULES_CHANGED" == "true" ]]; then
+              if [[ "$PROD_CHANGED" == "true" || "$MODULES_CHANGED" == "true" ]]; then
+                ENVS='["staging","production"]'
+              else
+                ENVS='["staging"]'
+              fi
+            elif [[ "$PROD_CHANGED" == "true" ]]; then
+              ENVS='["production"]'
+            else
+              ENVS='["staging"]'
+            fi
+          fi
+
+          echo "environments=$ENVS" >> $GITHUB_OUTPUT
+          echo "Target environments: $ENVS"
+
+  # ============================================================================
+  # PHASE 1: SECURITY SCANNING
+  # ============================================================================
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: preflight
+    if: |
+      needs.preflight.outputs.any_changed == 'true' &&
+      github.event.inputs.skip_security_scan != 'true'
+    outputs:
+      tfsec_passed: ${{ steps.tfsec.outputs.passed }}
+      checkov_passed: ${{ steps.checkov.outputs.passed }}
+      trivy_passed: ${{ steps.trivy.outputs.passed }}
+      overall_passed: ${{ steps.verdict.outputs.passed }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run tfsec
+        id: tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: ${{ env.TF_BASE_DIR }}
+          format: sarif
+          soft_fail: true
+        continue-on-error: true
+
+      - name: Upload tfsec SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: results.sarif
+          category: tfsec
+        continue-on-error: true
+
+      - name: Run Checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: ${{ env.TF_BASE_DIR }}
+          framework: terraform
+          output_format: cli,sarif
+          output_file_path: console,checkov-results.sarif
+          soft_fail: true
+          skip_check: CKV_AWS_144,CKV_AWS_145,CKV2_AWS_5
+        continue-on-error: true
+
+      - name: Upload Checkov SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: checkov-results.sarif
+          category: checkov
+        continue-on-error: true
+
+      - name: Run Trivy Config Scan
+        id: trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: ${{ env.TF_BASE_DIR }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+        continue-on-error: true
+
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-config
+        continue-on-error: true
+
+      - name: Security Verdict
+        id: verdict
+        run: |
+          TFSEC_EXIT="${{ steps.tfsec.outcome }}"
+          CHECKOV_EXIT="${{ steps.checkov.outcome }}"
+          TRIVY_EXIT="${{ steps.trivy.outcome }}"
+
+          echo "tfsec: $TFSEC_EXIT, checkov: $CHECKOV_EXIT, trivy: $TRIVY_EXIT"
+
+          # Count failures (outcome can be 'success', 'failure', 'skipped')
+          FAILURES=0
+          [[ "$TFSEC_EXIT" == "failure" ]] && ((FAILURES++))
+          [[ "$CHECKOV_EXIT" == "failure" ]] && ((FAILURES++))
+          [[ "$TRIVY_EXIT" == "failure" ]] && ((FAILURES++))
+
+          if [[ $FAILURES -gt 1 ]]; then
+            echo "passed=false" >> $GITHUB_OUTPUT
+            echo "::warning::Multiple security scanners reported issues"
+          else
+            echo "passed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload Security Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-scan-results
+          path: |
+            results.sarif
+            checkov-results.sarif
+            trivy-results.sarif
+          retention-days: 30
+
+  # ============================================================================
+  # PHASE 2: TERRAFORM STAGING
+  # ============================================================================
+
+  terraform-staging:
+    name: Terraform Staging
+    runs-on: ubuntu-latest
+    needs: [preflight, security-scan]
+    if: |
+      always() &&
+      !cancelled() &&
+      contains(fromJson(needs.preflight.outputs.target_environments), 'staging') &&
+      (needs.security-scan.result == 'success' || needs.security-scan.result == 'skipped')
+    environment: ${{ github.event_name == 'push' && 'staging' || '' }}
+    outputs:
+      plan_status: ${{ steps.plan.outputs.status }}
+      has_changes: ${{ steps.plan-analysis.outputs.has_changes }}
+      resources_to_add: ${{ steps.plan-analysis.outputs.add }}
+      resources_to_change: ${{ steps.plan-analysis.outputs.change }}
+      resources_to_destroy: ${{ steps.plan-analysis.outputs.destroy }}
+      apply_status: ${{ steps.apply.outputs.status }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Create Plugin Cache
+        run: mkdir -p ${{ env.TF_PLUGIN_CACHE_DIR }}
+
+      - name: Cache Terraform Providers
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TF_PLUGIN_CACHE_DIR }}
+          key: terraform-providers-staging-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+          restore-keys: |
+            terraform-providers-staging-${{ runner.os }}-
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: terraform-staging-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        id: init
+        working-directory: ${{ env.TF_STAGING_DIR }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ env.TF_STATE_BUCKET }}" \
+            -backend-config="key=staging/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ env.TF_LOCK_TABLE }}" \
+            -backend-config="encrypt=true"
+
+      - name: Terraform Validate
+        id: validate
+        working-directory: ${{ env.TF_STAGING_DIR }}
+        run: terraform validate -json | tee validate.json
+
+      - name: Terraform Format Check
+        id: fmt
+        working-directory: ${{ env.TF_STAGING_DIR }}
+        run: terraform fmt -check -recursive -diff
+        continue-on-error: true
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: ${{ env.TF_STAGING_DIR }}
+        run: |
+          set +e
+
+          PLAN_ARGS="-out=tfplan.binary -detailed-exitcode"
+
+          # Add target if specified
+          if [[ -n "${{ github.event.inputs.target_resource }}" ]]; then
+            PLAN_ARGS="$PLAN_ARGS -target=${{ github.event.inputs.target_resource }}"
+          fi
+
+          # Handle different actions
+          ACTION="${{ github.event.inputs.action || 'plan' }}"
+          if [[ "$ACTION" == "destroy" ]]; then
+            PLAN_ARGS="$PLAN_ARGS -destroy"
+          fi
+
+          terraform plan $PLAN_ARGS 2>&1 | tee plan_output.txt
+          EXITCODE=${PIPESTATUS[0]}
+
+          echo "exitcode=$EXITCODE" >> $GITHUB_OUTPUT
+
+          if [[ $EXITCODE -eq 0 ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "changes=false" >> $GITHUB_OUTPUT
+          elif [[ $EXITCODE -eq 2 ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Generate Plan JSON
+        if: steps.plan.outputs.status == 'success'
+        working-directory: ${{ env.TF_STAGING_DIR }}
+        run: |
+          terraform show -json tfplan.binary > tfplan.json
+          terraform show tfplan.binary > tfplan.txt
+
+      - name: Analyze Plan
+        id: plan-analysis
+        if: steps.plan.outputs.status == 'success'
+        working-directory: ${{ env.TF_STAGING_DIR }}
+        run: |
+          if [[ -f tfplan.json ]]; then
+            ADD=$(jq '[.resource_changes[]? | select(.change.actions | contains(["create"]))] | length' tfplan.json)
+            CHANGE=$(jq '[.resource_changes[]? | select(.change.actions | contains(["update"]))] | length' tfplan.json)
+            DESTROY=$(jq '[.resource_changes[]? | select(.change.actions | contains(["delete"]))] | length' tfplan.json)
+
+            echo "add=$ADD" >> $GITHUB_OUTPUT
+            echo "change=$CHANGE" >> $GITHUB_OUTPUT
+            echo "destroy=$DESTROY" >> $GITHUB_OUTPUT
+
+            if [[ $ADD -gt 0 || $CHANGE -gt 0 || $DESTROY -gt 0 ]]; then
+              echo "has_changes=true" >> $GITHUB_OUTPUT
+            else
+              echo "has_changes=false" >> $GITHUB_OUTPUT
+            fi
+
+            # Safety check
+            if [[ $DESTROY -gt ${{ env.MAX_RESOURCES_TO_DESTROY }} ]]; then
+              echo "::error::SAFETY BLOCK: Plan would destroy $DESTROY resources (max: ${{ env.MAX_RESOURCES_TO_DESTROY }})"
+              exit 1
+            fi
+
+            # Summary
+            echo "## Staging Plan Summary" >> $GITHUB_STEP_SUMMARY
+            echo "| Action | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Add | $ADD |" >> $GITHUB_STEP_SUMMARY
+            echo "| Change | $CHANGE |" >> $GITHUB_STEP_SUMMARY
+            echo "| Destroy | $DESTROY |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && steps.plan.outputs.status == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const planOutput = fs.readFileSync('${{ env.TF_STAGING_DIR }}/plan_output.txt', 'utf8');
+            const truncatedPlan = planOutput.length > 60000
+              ? planOutput.substring(0, 60000) + '\n\n... (truncated)'
+              : planOutput;
+
+            const body = `## Terraform Plan - Staging
+
+            **Status:** ${{ steps.plan.outputs.status }}
+            **Changes:** Add: ${{ steps.plan-analysis.outputs.add }}, Change: ${{ steps.plan-analysis.outputs.change }}, Destroy: ${{ steps.plan-analysis.outputs.destroy }}
+
+            <details>
+            <summary>Plan Output</summary>
+
+            \`\`\`hcl
+            ${truncatedPlan}
+            \`\`\`
+
+            </details>
+
+            *Pushed by @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Terraform Apply
+        id: apply
+        if: |
+          steps.plan.outputs.status == 'success' &&
+          steps.plan-analysis.outputs.has_changes == 'true' &&
+          (
+            (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+            (github.event.inputs.action == 'apply' && github.event.inputs.environment == 'staging')
+          )
+        working-directory: ${{ env.TF_STAGING_DIR }}
+        run: |
+          terraform apply -auto-approve tfplan.binary 2>&1 | tee apply_output.txt
+
+          if [[ ${PIPESTATUS[0]} -eq 0 ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Capture Outputs
+        if: steps.apply.outputs.status == 'success'
+        working-directory: ${{ env.TF_STAGING_DIR }}
+        run: terraform output -json > outputs.json
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-staging-${{ github.run_id }}
+          path: |
+            ${{ env.TF_STAGING_DIR }}/plan_output.txt
+            ${{ env.TF_STAGING_DIR }}/tfplan.json
+            ${{ env.TF_STAGING_DIR }}/tfplan.txt
+            ${{ env.TF_STAGING_DIR }}/apply_output.txt
+            ${{ env.TF_STAGING_DIR }}/outputs.json
+            ${{ env.TF_STAGING_DIR }}/validate.json
+          retention-days: 30
+
+  # ============================================================================
+  # PHASE 3: COST ESTIMATION
+  # ============================================================================
+
+  cost-estimation:
+    name: Cost Estimation
+    runs-on: ubuntu-latest
+    needs: [preflight, terraform-staging]
+    if: |
+      always() &&
+      !cancelled() &&
+      needs.terraform-staging.outputs.has_changes == 'true' &&
+      github.event.inputs.skip_cost_estimation != 'true'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-staging-${{ github.run_id }}
+          path: ./terraform-artifacts
+
+      - name: Generate Infracost Report
+        run: |
+          infracost breakdown \
+            --path ./terraform-artifacts/tfplan.json \
+            --format json \
+            --out-file infracost-staging.json
+
+          infracost breakdown \
+            --path ./terraform-artifacts/tfplan.json \
+            --format table \
+            --out-file infracost-staging.txt
+        continue-on-error: true
+
+      - name: Analyze Cost Impact
+        id: cost-analysis
+        run: |
+          if [[ -f infracost-staging.json ]]; then
+            MONTHLY_COST=$(jq -r '.totalMonthlyCost // "0"' infracost-staging.json)
+            DIFF_COST=$(jq -r '.diffTotalMonthlyCost // "0"' infracost-staging.json)
+
+            echo "monthly_cost=$MONTHLY_COST" >> $GITHUB_OUTPUT
+            echo "diff_cost=$DIFF_COST" >> $GITHUB_OUTPUT
+
+            # Cost increase warning
+            if [[ $(echo "$DIFF_COST > 500" | bc -l) -eq 1 ]]; then
+              echo "::warning::Monthly cost increase: \$$DIFF_COST"
+            fi
+
+            echo "## Cost Estimation - Staging" >> $GITHUB_STEP_SUMMARY
+            echo "- **Total Monthly Cost:** \$$MONTHLY_COST" >> $GITHUB_STEP_SUMMARY
+            echo "- **Cost Difference:** \$$DIFF_COST" >> $GITHUB_STEP_SUMMARY
+          fi
+        continue-on-error: true
+
+      - name: Comment Cost on PR
+        if: github.event_name == 'pull_request'
+        uses: infracost/actions/comment@v1
+        with:
+          path: infracost-staging.json
+          behavior: update
+        continue-on-error: true
+
+      - name: Upload Cost Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: infracost-report-${{ github.run_id }}
+          path: |
+            infracost-staging.json
+            infracost-staging.txt
+          retention-days: 30
+
+  # ============================================================================
+  # PHASE 4: TERRAFORM PRODUCTION
+  # ============================================================================
+
+  terraform-production:
+    name: Terraform Production
+    runs-on: ubuntu-latest
+    needs: [preflight, security-scan, terraform-staging, cost-estimation]
+    if: |
+      always() &&
+      !cancelled() &&
+      contains(fromJson(needs.preflight.outputs.target_environments), 'production') &&
+      (needs.security-scan.result == 'success' || needs.security-scan.result == 'skipped') &&
+      (needs.terraform-staging.result == 'success' || needs.terraform-staging.result == 'skipped') &&
+      (
+        github.event.inputs.environment == 'production' ||
+        github.event.inputs.environment == 'all' ||
+        needs.preflight.outputs.is_drift_detection == 'true'
+      )
+    environment: production
+    outputs:
+      plan_status: ${{ steps.plan.outputs.status }}
+      has_changes: ${{ steps.plan-analysis.outputs.has_changes }}
+      resources_to_add: ${{ steps.plan-analysis.outputs.add }}
+      resources_to_change: ${{ steps.plan-analysis.outputs.change }}
+      resources_to_destroy: ${{ steps.plan-analysis.outputs.destroy }}
+      apply_status: ${{ steps.apply.outputs.status }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Create Plugin Cache
+        run: mkdir -p ${{ env.TF_PLUGIN_CACHE_DIR }}
+
+      - name: Cache Terraform Providers
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TF_PLUGIN_CACHE_DIR }}
+          key: terraform-providers-prod-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+          restore-keys: |
+            terraform-providers-prod-${{ runner.os }}-
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: terraform-prod-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_PROD_DIR }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ env.TF_STATE_BUCKET }}" \
+            -backend-config="key=prod/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ env.TF_LOCK_TABLE }}" \
+            -backend-config="encrypt=true"
+
+      - name: Terraform Validate
+        working-directory: ${{ env.TF_PROD_DIR }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: ${{ env.TF_PROD_DIR }}
+        run: |
+          set +e
+
+          PLAN_ARGS="-out=tfplan.binary -detailed-exitcode"
+
+          if [[ -n "${{ github.event.inputs.target_resource }}" ]]; then
+            PLAN_ARGS="$PLAN_ARGS -target=${{ github.event.inputs.target_resource }}"
+          fi
+
+          ACTION="${{ github.event.inputs.action || 'plan' }}"
+          if [[ "$ACTION" == "destroy" ]]; then
+            PLAN_ARGS="$PLAN_ARGS -destroy"
+          fi
+
+          terraform plan $PLAN_ARGS 2>&1 | tee plan_output.txt
+          EXITCODE=${PIPESTATUS[0]}
+
+          if [[ $EXITCODE -eq 0 ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "changes=false" >> $GITHUB_OUTPUT
+          elif [[ $EXITCODE -eq 2 ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Generate Plan JSON
+        if: steps.plan.outputs.status == 'success'
+        working-directory: ${{ env.TF_PROD_DIR }}
+        run: |
+          terraform show -json tfplan.binary > tfplan.json
+          terraform show tfplan.binary > tfplan.txt
+
+      - name: Analyze Plan
+        id: plan-analysis
+        if: steps.plan.outputs.status == 'success'
+        working-directory: ${{ env.TF_PROD_DIR }}
+        run: |
+          if [[ -f tfplan.json ]]; then
+            ADD=$(jq '[.resource_changes[]? | select(.change.actions | contains(["create"]))] | length' tfplan.json)
+            CHANGE=$(jq '[.resource_changes[]? | select(.change.actions | contains(["update"]))] | length' tfplan.json)
+            DESTROY=$(jq '[.resource_changes[]? | select(.change.actions | contains(["delete"]))] | length' tfplan.json)
+
+            echo "add=$ADD" >> $GITHUB_OUTPUT
+            echo "change=$CHANGE" >> $GITHUB_OUTPUT
+            echo "destroy=$DESTROY" >> $GITHUB_OUTPUT
+
+            if [[ $ADD -gt 0 || $CHANGE -gt 0 || $DESTROY -gt 0 ]]; then
+              echo "has_changes=true" >> $GITHUB_OUTPUT
+            else
+              echo "has_changes=false" >> $GITHUB_OUTPUT
+            fi
+
+            # Stricter safety check for production
+            MAX_PROD_DESTROY=3
+            if [[ $DESTROY -gt $MAX_PROD_DESTROY ]]; then
+              echo "::error::SAFETY BLOCK: Production plan would destroy $DESTROY resources (max: $MAX_PROD_DESTROY)"
+              exit 1
+            fi
+
+            echo "## Production Plan Summary" >> $GITHUB_STEP_SUMMARY
+            echo "| Action | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Add | $ADD |" >> $GITHUB_STEP_SUMMARY
+            echo "| Change | $CHANGE |" >> $GITHUB_STEP_SUMMARY
+            echo "| Destroy | $DESTROY |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Drift Detection Alert
+        if: |
+          needs.preflight.outputs.is_drift_detection == 'true' &&
+          steps.plan-analysis.outputs.has_changes == 'true'
+        run: |
+          echo "::warning::Infrastructure drift detected in production!"
+          echo "## Drift Detected" >> $GITHUB_STEP_SUMMARY
+          echo "Production infrastructure has drifted from Terraform state." >> $GITHUB_STEP_SUMMARY
+          echo "Review the plan and apply changes to reconcile." >> $GITHUB_STEP_SUMMARY
+
+      - name: Terraform Apply
+        id: apply
+        if: |
+          steps.plan.outputs.status == 'success' &&
+          steps.plan-analysis.outputs.has_changes == 'true' &&
+          github.event.inputs.action == 'apply' &&
+          (github.event.inputs.environment == 'production' || github.event.inputs.environment == 'all')
+        working-directory: ${{ env.TF_PROD_DIR }}
+        run: |
+          echo "::notice::Applying production changes..."
+
+          terraform apply -auto-approve tfplan.binary 2>&1 | tee apply_output.txt
+
+          if [[ ${PIPESTATUS[0]} -eq 0 ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Capture Outputs
+        if: steps.apply.outputs.status == 'success'
+        working-directory: ${{ env.TF_PROD_DIR }}
+        run: terraform output -json > outputs.json
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-production-${{ github.run_id }}
+          path: |
+            ${{ env.TF_PROD_DIR }}/plan_output.txt
+            ${{ env.TF_PROD_DIR }}/tfplan.json
+            ${{ env.TF_PROD_DIR }}/tfplan.txt
+            ${{ env.TF_PROD_DIR }}/apply_output.txt
+            ${{ env.TF_PROD_DIR }}/outputs.json
+          retention-days: 90
+
+  # ============================================================================
+  # PHASE 5: POST-APPLY VERIFICATION
+  # ============================================================================
+
+  verification:
+    name: Post-Apply Verification
+    runs-on: ubuntu-latest
+    needs: [terraform-staging, terraform-production]
+    if: |
+      always() &&
+      !cancelled() &&
+      (needs.terraform-staging.outputs.apply_status == 'success' || needs.terraform-production.outputs.apply_status == 'success')
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: terraform-verify-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify Staging Infrastructure
+        if: needs.terraform-staging.outputs.apply_status == 'success'
+        run: |
+          echo "Verifying staging infrastructure..."
+
+          # Check ECS cluster status
+          aws ecs describe-clusters \
+            --clusters broxiva-staging-cluster \
+            --query 'clusters[0].status' \
+            --output text || echo "Staging ECS cluster check skipped"
+
+          # Check ALB status
+          aws elbv2 describe-load-balancers \
+            --names broxiva-staging-alb \
+            --query 'LoadBalancers[0].State.Code' \
+            --output text 2>/dev/null || echo "Staging ALB check skipped"
+
+      - name: Verify Production Infrastructure
+        if: needs.terraform-production.outputs.apply_status == 'success'
+        run: |
+          echo "Verifying production infrastructure..."
+
+          # Check EKS cluster status
+          aws eks describe-cluster \
+            --name broxiva-prod-eks \
+            --query 'cluster.status' \
+            --output text 2>/dev/null || echo "Production EKS check skipped"
+
+          # Check RDS status
+          aws rds describe-db-instances \
+            --db-instance-identifier broxiva-prod-postgres \
+            --query 'DBInstances[0].DBInstanceStatus' \
+            --output text 2>/dev/null || echo "Production RDS check skipped"
+
+      - name: Verification Summary
+        run: |
+          echo "## Post-Apply Verification" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | Apply Status | Verification |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------------|--------------|--------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Staging | ${{ needs.terraform-staging.outputs.apply_status || 'N/A' }} | Complete |" >> $GITHUB_STEP_SUMMARY
+          echo "| Production | ${{ needs.terraform-production.outputs.apply_status || 'N/A' }} | Complete |" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # PHASE 6: NOTIFICATIONS
+  # ============================================================================
+
+  notification:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [preflight, security-scan, terraform-staging, terraform-production, verification]
+    if: always()
+    steps:
+      - name: Prepare Notification
+        id: notification
+        run: |
+          STAGING_STATUS="${{ needs.terraform-staging.outputs.apply_status || needs.terraform-staging.outputs.plan_status || 'skipped' }}"
+          PROD_STATUS="${{ needs.terraform-production.outputs.apply_status || needs.terraform-production.outputs.plan_status || 'skipped' }}"
+          SECURITY_STATUS="${{ needs.security-scan.result }}"
+
+          if [[ "$STAGING_STATUS" == "failed" || "$PROD_STATUS" == "failed" ]]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+            echo "emoji=:x:" >> $GITHUB_OUTPUT
+          elif [[ "$STAGING_STATUS" == "success" || "$PROD_STATUS" == "success" ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+            echo "emoji=:white_check_mark:" >> $GITHUB_OUTPUT
+          else
+            echo "status=neutral" >> $GITHUB_OUTPUT
+            echo "color=warning" >> $GITHUB_OUTPUT
+            echo "emoji=:warning:" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Slack Notification
+        if: always() && vars.SLACK_WEBHOOK_URL != ''
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              "attachments": [{
+                "color": "${{ steps.notification.outputs.color }}",
+                "blocks": [
+                  {
+                    "type": "header",
+                    "text": {
+                      "type": "plain_text",
+                      "text": "${{ steps.notification.outputs.emoji }} Terraform E2E Pipeline - ${{ steps.notification.outputs.status }}"
+                    }
+                  },
+                  {
+                    "type": "section",
+                    "fields": [
+                      {"type": "mrkdwn", "text": "*Trigger:* ${{ github.event_name }}"},
+                      {"type": "mrkdwn", "text": "*Actor:* ${{ github.actor }}"},
+                      {"type": "mrkdwn", "text": "*Staging:* ${{ needs.terraform-staging.outputs.plan_status || 'N/A' }}"},
+                      {"type": "mrkdwn", "text": "*Production:* ${{ needs.terraform-production.outputs.plan_status || 'N/A' }}"}
+                    ]
+                  },
+                  {
+                    "type": "actions",
+                    "elements": [
+                      {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": "View Run"},
+                        "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                      }
+                    ]
+                  }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        continue-on-error: true
+
+      - name: Generate Final Summary
+        run: |
+          echo "# Terraform E2E Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Run ID:** ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Actor:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Phase | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Pre-Flight | ${{ needs.preflight.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Scan | ${{ needs.security-scan.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Staging | ${{ needs.terraform-staging.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Production | ${{ needs.terraform-production.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Verification | ${{ needs.verification.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Change Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | Add | Change | Destroy |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------------|-----|--------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Staging | ${{ needs.terraform-staging.outputs.resources_to_add || '0' }} | ${{ needs.terraform-staging.outputs.resources_to_change || '0' }} | ${{ needs.terraform-staging.outputs.resources_to_destroy || '0' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Production | ${{ needs.terraform-production.outputs.resources_to_add || '0' }} | ${{ needs.terraform-production.outputs.resources_to_change || '0' }} | ${{ needs.terraform-production.outputs.resources_to_destroy || '0' }} |" >> $GITHUB_STEP_SUMMARY

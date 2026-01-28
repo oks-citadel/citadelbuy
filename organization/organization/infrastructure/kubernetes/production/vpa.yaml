@@ -1,0 +1,244 @@
+# Vertical Pod Autoscaler (VPA) Configuration for Broxiva Production
+# This configuration enables automatic vertical scaling recommendations
+# and resource right-sizing for production workloads.
+#
+# Prerequisites:
+# - VPA Controller installed: kubectl apply -f https://github.com/kubernetes/autoscaler/releases/latest/download/vertical-pod-autoscaler.yaml
+# - Metrics Server running
+#
+# Update Mode Options:
+# - "Off": VPA only provides recommendations (safest for production)
+# - "Initial": VPA sets resources only at pod creation
+# - "Auto": VPA can evict pods to apply new resources (use with caution)
+#
+# For production, we use "Off" mode initially to gather recommendations,
+# then selectively enable "Auto" for stateless workloads.
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: broxiva-api-vpa
+  namespace: broxiva-production
+  labels:
+    app: broxiva-api
+    environment: production
+    managed-by: infrastructure-team
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: broxiva-api
+  updatePolicy:
+    updateMode: "Off"  # Start with recommendations only
+  resourcePolicy:
+    containerPolicies:
+    - containerName: api
+      minAllowed:
+        cpu: 250m
+        memory: 512Mi
+      maxAllowed:
+        cpu: 4000m
+        memory: 4Gi
+      controlledResources: ["cpu", "memory"]
+      controlledValues: RequestsAndLimits
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: broxiva-web-vpa
+  namespace: broxiva-production
+  labels:
+    app: broxiva-web
+    environment: production
+    managed-by: infrastructure-team
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: broxiva-web
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: web
+      minAllowed:
+        cpu: 100m
+        memory: 256Mi
+      maxAllowed:
+        cpu: 2000m
+        memory: 2Gi
+      controlledResources: ["cpu", "memory"]
+      controlledValues: RequestsAndLimits
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: email-worker-vpa
+  namespace: broxiva-production
+  labels:
+    app: email-worker
+    environment: production
+    managed-by: infrastructure-team
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: email-worker
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: email-worker
+      minAllowed:
+        cpu: 100m
+        memory: 256Mi
+      maxAllowed:
+        cpu: 1000m
+        memory: 1Gi
+      controlledResources: ["cpu", "memory"]
+      controlledValues: RequestsAndLimits
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: order-processing-worker-vpa
+  namespace: broxiva-production
+  labels:
+    app: order-processing-worker
+    environment: production
+    managed-by: infrastructure-team
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: order-processing-worker
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: order-processing-worker
+      minAllowed:
+        cpu: 200m
+        memory: 512Mi
+      maxAllowed:
+        cpu: 2000m
+        memory: 2Gi
+      controlledResources: ["cpu", "memory"]
+      controlledValues: RequestsAndLimits
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: search-indexing-worker-vpa
+  namespace: broxiva-production
+  labels:
+    app: search-indexing-worker
+    environment: production
+    managed-by: infrastructure-team
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: search-indexing-worker
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: search-indexing-worker
+      minAllowed:
+        cpu: 100m
+        memory: 256Mi
+      maxAllowed:
+        cpu: 1500m
+        memory: 2Gi
+      controlledResources: ["cpu", "memory"]
+      controlledValues: RequestsAndLimits
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: cart-abandonment-worker-vpa
+  namespace: broxiva-production
+  labels:
+    app: cart-abandonment-worker
+    environment: production
+    managed-by: infrastructure-team
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cart-abandonment-worker
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: cart-abandonment-worker
+      minAllowed:
+        cpu: 50m
+        memory: 128Mi
+      maxAllowed:
+        cpu: 500m
+        memory: 512Mi
+      controlledResources: ["cpu", "memory"]
+      controlledValues: RequestsAndLimits
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: scheduled-jobs-worker-vpa
+  namespace: broxiva-production
+  labels:
+    app: scheduled-jobs-worker
+    environment: production
+    managed-by: infrastructure-team
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: scheduled-jobs-worker
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: scheduled-jobs-worker
+      minAllowed:
+        cpu: 50m
+        memory: 128Mi
+      maxAllowed:
+        cpu: 1000m
+        memory: 1Gi
+      controlledResources: ["cpu", "memory"]
+      controlledValues: RequestsAndLimits
+---
+# MONITORING VPA RECOMMENDATIONS:
+#
+# To view VPA recommendations:
+#   kubectl describe vpa broxiva-api-vpa -n broxiva-production
+#
+# To get all VPA recommendations:
+#   kubectl get vpa -n broxiva-production -o yaml
+#
+# Example recommendation output:
+#   recommendation:
+#     containerRecommendations:
+#     - containerName: api
+#       lowerBound:
+#         cpu: 300m
+#         memory: 600Mi
+#       target:
+#         cpu: 500m
+#         memory: 1Gi
+#       upperBound:
+#         cpu: 800m
+#         memory: 1.5Gi
+#
+# ENABLING AUTO MODE:
+#
+# After collecting recommendations for 1-2 weeks:
+# 1. Review recommendations vs current settings
+# 2. Update deployment resource limits based on upperBound
+# 3. For stateless services, consider enabling "Auto" mode
+# 4. Monitor OOM kills and pod evictions
+#
+# WARNING: Do not enable "Auto" mode for stateful workloads
+# or services without proper PDB and replica counts.

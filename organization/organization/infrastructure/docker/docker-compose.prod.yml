@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: broxiva-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-broxiva}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-broxiva_prod}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - broxiva-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-broxiva}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: broxiva-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-broxiva}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-broxiva_prod}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-1h}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+    ports:
+      - '4000:4000'
+    networks:
+      - broxiva-network
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:4000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend Application
+  frontend:
+    build:
+      context: ./app/web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+    container_name: broxiva-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+    ports:
+      - '3000:3000'
+    networks:
+      - broxiva-network
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3000')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx Reverse Proxy (optional)
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: broxiva-nginx
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    networks:
+      - broxiva-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  broxiva-network:
+    driver: bridge

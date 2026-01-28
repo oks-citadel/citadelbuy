@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "content-service.configMapName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "content-service.labels" . | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.configMap }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}

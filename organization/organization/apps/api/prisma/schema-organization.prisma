@@ -1,0 +1,418 @@
+// ==================== ORGANIZATION DOMAIN SCHEMA ====================
+// This file contains the database schema extensions for the Organization module
+// Merge these models with the main schema.prisma file
+
+// Organization Types
+enum OrganizationType {
+  INDIVIDUAL
+  SMALL_BUSINESS
+  ENTERPRISE
+  MARKETPLACE
+}
+
+enum OrganizationStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+enum MemberStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+  REMOVED
+}
+
+enum KycStatus {
+  NOT_STARTED
+  DOCUMENTS_SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+// Core Organization Model
+model Organization {
+  id                  String              @id @default(uuid())
+  name                String
+  slug                String              @unique
+  type                OrganizationType    @default(SMALL_BUSINESS)
+  status              OrganizationStatus  @default(PENDING_VERIFICATION)
+
+  // Business Details
+  legalName           String?
+  registrationNumber  String?
+  taxId               String?             // Encrypted
+  industry            String?
+  website             String?
+
+  // Contact
+  primaryEmail        String
+  primaryPhone        String?
+  address             Json?               // {street, city, state, zip, country}
+
+  // Branding
+  logoUrl             String?
+  bannerUrl           String?
+  primaryColor        String?
+  description         String?
+
+  // Settings
+  settings            Json?               // Organization-wide settings
+  features            String[]            // Enabled features
+
+  // Billing
+  billingEmail        String?
+  billingAddress      Json?
+  stripeCustomerId    String?
+  subscriptionTier    String              @default("free")
+
+  // Limits
+  maxTeamMembers      Int                 @default(5)
+  maxProducts         Int                 @default(100)
+  maxApiCalls         Int                 @default(10000)
+
+  // Dates
+  verifiedAt          DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  deletedAt           DateTime?
+
+  // Owner relation
+  ownerId             String
+
+  // Relations
+  members             OrganizationMember[]
+  departments         Department[]
+  teams               Team[]
+  roles               OrganizationRole[]
+  kycApplications     KycApplication[]
+  auditLogs           OrganizationAuditLog[]
+  invitations         OrganizationInvitation[]
+  apiKeys             OrganizationApiKey[]
+  billing             OrganizationBilling?
+
+  @@index([slug])
+  @@index([status])
+  @@index([ownerId])
+  @@map("organizations")
+}
+
+// Organization Membership
+model OrganizationMember {
+  id                  String              @id @default(uuid())
+  organizationId      String
+  userId              String
+  status              MemberStatus        @default(ACTIVE)
+
+  // Role Assignment
+  roleId              String?
+  departmentId        String?
+  teamId              String?
+
+  // Metadata
+  title               String?             // Job title
+  joinedAt            DateTime            @default(now())
+  invitedBy           String?
+  lastActiveAt        DateTime?
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  // Relations
+  organization        Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role                OrganizationRole?   @relation(fields: [roleId], references: [id])
+  department          Department?         @relation(fields: [departmentId], references: [id])
+  team                Team?               @relation(fields: [teamId], references: [id])
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("organization_members")
+}
+
+// Department within Organization
+model Department {
+  id                  String              @id @default(uuid())
+  organizationId      String
+  name                String
+  description         String?
+  parentId            String?
+  level               Int                 @default(0)
+
+  headId              String?             // Department head user ID
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  // Relations
+  organization        Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent              Department?         @relation("DeptHierarchy", fields: [parentId], references: [id])
+  children            Department[]        @relation("DeptHierarchy")
+  members             OrganizationMember[]
+  teams               Team[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([parentId])
+  @@map("departments")
+}
+
+// Team within Department/Organization
+model Team {
+  id                  String              @id @default(uuid())
+  organizationId      String
+  departmentId        String?
+  name                String
+  description         String?
+
+  leadId              String?             // Team lead user ID
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  // Relations
+  organization        Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  department          Department?         @relation(fields: [departmentId], references: [id])
+  members             OrganizationMember[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([departmentId])
+  @@map("teams")
+}
+
+// Role Definition
+model OrganizationRole {
+  id                  String              @id @default(uuid())
+  organizationId      String?             // null = system role
+  name                String
+  description         String?
+  isSystem            Boolean             @default(false)
+  isDefault           Boolean             @default(false)
+
+  // Permission set
+  permissions         String[]            // Array of permission codes
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  // Relations
+  organization        Organization?       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members             OrganizationMember[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([isSystem])
+  @@map("organization_roles")
+}
+
+// Permission Registry
+model Permission {
+  id                  String              @id @default(uuid())
+  code                String              @unique    // e.g., "org:read", "products:write"
+  name                String
+  description         String?
+  category            String              // e.g., "organization", "products", "orders"
+
+  createdAt           DateTime            @default(now())
+
+  @@index([category])
+  @@map("permissions")
+}
+
+// KYC Application
+model KycApplication {
+  id                  String              @id @default(uuid())
+  organizationId      String
+  status              KycStatus           @default(NOT_STARTED)
+
+  // Document Types
+  idType              String?             // passport, drivers_license, national_id
+  idDocumentUrl       String?             // Encrypted URL
+  idVerified          Boolean             @default(false)
+
+  addressDocumentUrl  String?
+  addressVerified     Boolean             @default(false)
+
+  businessDocUrl      String?
+  businessVerified    Boolean             @default(false)
+
+  // Verification Results
+  verificationScore   Float?
+  verificationData    Json?               // AI analysis results
+
+  // Review
+  reviewerId          String?
+  reviewNotes         String?
+  rejectionReason     String?
+
+  submittedAt         DateTime?
+  reviewedAt          DateTime?
+  expiresAt           DateTime?
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  // Relations
+  organization        Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([status])
+  @@map("kyc_applications")
+}
+
+// Organization Invitation
+model OrganizationInvitation {
+  id                  String              @id @default(uuid())
+  organizationId      String
+  email               String
+  roleId              String?
+  departmentId        String?
+  teamId              String?
+
+  token               String              @unique
+  status              String              @default("pending") // pending, accepted, expired, cancelled
+
+  invitedById         String
+  message             String?
+
+  expiresAt           DateTime
+  acceptedAt          DateTime?
+
+  createdAt           DateTime            @default(now())
+
+  // Relations
+  organization        Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+  @@index([token])
+  @@map("organization_invitations")
+}
+
+// Organization API Keys
+model OrganizationApiKey {
+  id                  String              @id @default(uuid())
+  organizationId      String
+  name                String
+  keyHash             String              // Hashed API key
+  keyPrefix           String              // First 8 chars for identification
+
+  permissions         String[]            // Scoped permissions
+  rateLimit           Int                 @default(1000)
+
+  lastUsedAt          DateTime?
+  expiresAt           DateTime?
+  revokedAt           DateTime?
+
+  createdById         String
+  createdAt           DateTime            @default(now())
+
+  // Relations
+  organization        Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([keyPrefix])
+  @@map("organization_api_keys")
+}
+
+// Organization Audit Log
+model OrganizationAuditLog {
+  id                  String              @id @default(uuid())
+  organizationId      String
+  userId              String?
+
+  action              String              // e.g., "member.invited", "role.changed"
+  resource            String              // e.g., "organization", "team", "member"
+  resourceId          String?
+
+  oldValue            Json?
+  newValue            Json?
+  metadata            Json?
+
+  ipAddress           String?
+  userAgent           String?
+
+  createdAt           DateTime            @default(now())
+
+  // Relations
+  organization        Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("organization_audit_logs")
+}
+
+// Organization Billing
+model OrganizationBilling {
+  id                  String              @id @default(uuid())
+  organizationId      String              @unique
+
+  // Stripe
+  stripeCustomerId    String?
+  stripeSubscriptionId String?
+
+  // Plan
+  planId              String              @default("free")
+  planName            String              @default("Free")
+  billingCycle        String              @default("monthly") // monthly, yearly
+
+  // Status
+  status              String              @default("active") // active, past_due, cancelled
+  currentPeriodStart  DateTime?
+  currentPeriodEnd    DateTime?
+
+  // Payment Method
+  paymentMethodId     String?
+  paymentMethodLast4  String?
+  paymentMethodBrand  String?
+
+  // Balance
+  balance             Float               @default(0)
+  creditBalance       Float               @default(0)
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  // Relations
+  organization        Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoices            OrganizationInvoice[]
+
+  @@map("organization_billing")
+}
+
+// Organization Invoice
+model OrganizationInvoice {
+  id                  String              @id @default(uuid())
+  billingId           String
+
+  stripeInvoiceId     String?
+  number              String              @unique
+
+  amount              Float
+  currency            String              @default("USD")
+  status              String              // draft, open, paid, void, uncollectible
+
+  description         String?
+  lineItems           Json?
+
+  dueDate             DateTime?
+  paidAt              DateTime?
+
+  pdfUrl              String?
+
+  createdAt           DateTime            @default(now())
+
+  // Relations
+  billing             OrganizationBilling @relation(fields: [billingId], references: [id], onDelete: Cascade)
+
+  @@index([billingId])
+  @@index([status])
+  @@map("organization_invoices")
+}

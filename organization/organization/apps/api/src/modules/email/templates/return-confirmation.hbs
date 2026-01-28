@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #4F46E5; color: white; padding: 20px; text-align: center; }
+        .content { background-color: #f9f9f9; padding: 30px; }
+        .footer { background-color: #333; color: white; padding: 20px; text-align: center; font-size: 12px; }
+        .button { background-color: #4F46E5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0; }
+        .info-box { background-color: white; border-left: 4px solid #4F46E5; padding: 15px; margin: 20px 0; }
+        .item-list { background-color: white; padding: 15px; margin: 15px 0; }
+        .item { border-bottom: 1px solid #eee; padding: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Return Request Confirmed</h1>
+        </div>
+        <div class="content">
+            <p>Hello {{customerName}},</p>
+            
+            <p>We've received your return request and it has been confirmed. Your RMA number is:</p>
+            
+            <div class="info-box">
+                <h3 style="margin: 0 0 10px 0;">RMA Number: {{rmaNumber}}</h3>
+                <p style="margin: 5px 0;"><strong>Order Number:</strong> {{orderNumber}}</p>
+                <p style="margin: 5px 0;"><strong>Expected Refund:</strong> ${{totalRefund}}</p>
+            </div>
+            
+            <h3>Items to Return:</h3>
+            <div class="item-list">
+                {{#each items}}
+                <div class="item">
+                    <strong>{{this.name}}</strong> - Quantity: {{this.quantity}}
+                </div>
+                {{/each}}
+            </div>
+            
+            <h3>What's Next?</h3>
+            <ol>
+                <li>Our team will review your return request within 24 hours</li>
+                <li>Once approved, we'll send you a prepaid shipping label</li>
+                <li>Pack the items securely and attach the shipping label</li>
+                <li>Drop off the package at the carrier location</li>
+                <li>We'll inspect the items and process your refund</li>
+            </ol>
+            
+            <p>Please keep your RMA number for reference. You can track your return status at any time.</p>
+            
+            <a href="#" class="button">Track Your Return</a>
+            
+            <p>If you have any questions, please don't hesitate to contact our customer support team.</p>
+            
+            <p>Thank you for shopping with Broxiva!</p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2025 Broxiva. All rights reserved.</p>
+            <p>This is an automated email. Please do not reply directly to this message.</p>
+        </div>
+    </div>
+</body>
+</html>

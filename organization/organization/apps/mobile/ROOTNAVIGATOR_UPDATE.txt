@@ -1,0 +1,186 @@
+================================================================================
+ROOTNAVIGATOR UPDATE INSTRUCTIONS
+================================================================================
+
+File to update: src/navigation/RootNavigator.tsx
+
+================================================================================
+STEP 1: ADD IMPORT (after line 47)
+================================================================================
+
+Add this line after the MyReviewsScreen import:
+
+// Vendor Navigator
+import VendorNavigator from './VendorNavigator';
+
+================================================================================
+STEP 2: UPDATE TYPE DEFINITION (around line 49-64)
+================================================================================
+
+Change:
+export type RootStackParamList = {
+  Auth: undefined;
+  Main: undefined;
+  ProductDetail: { productId: string };
+  ...
+}
+
+To:
+export type RootStackParamList = {
+  Auth: undefined;
+  Main: undefined;
+  Vendor: undefined;  // ADD THIS LINE
+  ProductDetail: { productId: string };
+  ...
+}
+
+================================================================================
+STEP 3: UPDATE ROOTNAVIGATOR FUNCTION (around line 172-245)
+================================================================================
+
+Change:
+export default function RootNavigator() {
+  const { isAuthenticated, isLoading } = useAuthStore();
+
+To:
+export default function RootNavigator() {
+  const { isAuthenticated, isLoading, user } = useAuthStore();
+
+Then add after line 177:
+
+  // Determine if user is a vendor
+  const isVendor = user?.role === 'vendor';
+
+Then change the return statement from:
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!isAuthenticated ? (
+        <Stack.Screen name="Auth" component={AuthNavigator} />
+      ) : (
+        <>
+          <Stack.Screen name="Main" component={MainTabNavigator} />
+          ...rest of screens...
+        </>
+      )}
+    </Stack.Navigator>
+  );
+
+To:
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!isAuthenticated ? (
+        <Stack.Screen name="Auth" component={AuthNavigator} />
+      ) : (
+        <>
+          {isVendor ? (
+            <Stack.Screen name="Vendor" component={VendorNavigator} />
+          ) : (
+            <>
+              <Stack.Screen name="Main" component={MainTabNavigator} />
+              ...rest of screens...
+            </>
+          )}
+        </>
+      )}
+    </Stack.Navigator>
+  );
+
+================================================================================
+COMPLETE UPDATED ROOTNAVIGATOR FUNCTION
+================================================================================
+
+export default function RootNavigator() {
+  const { isAuthenticated, isLoading, user } = useAuthStore();
+
+  if (isLoading) {
+    return null; // Or a loading screen
+  }
+
+  // Determine if user is a vendor
+  const isVendor = user?.role === 'vendor';
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!isAuthenticated ? (
+        <Stack.Screen name="Auth" component={AuthNavigator} />
+      ) : (
+        <>
+          {/* Route to appropriate navigator based on user role */}
+          {isVendor ? (
+            <Stack.Screen name="Vendor" component={VendorNavigator} />
+          ) : (
+            <>
+              <Stack.Screen name="Main" component={MainTabNavigator} />
+              <Stack.Screen
+                name="ProductDetail"
+                component={ProductDetailScreen}
+                options={{ headerShown: true, title: 'Product' }}
+              />
+              <Stack.Screen
+                name="Cart"
+                component={CartScreen}
+                options={{ headerShown: true, title: 'Cart' }}
+              />
+              <Stack.Screen
+                name="Checkout"
+                component={CheckoutScreen}
+                options={{ headerShown: true, title: 'Checkout' }}
+              />
+              <Stack.Screen
+                name="AIAssistant"
+                component={AIAssistantScreen}
+                options={{ headerShown: true, title: 'AI Shopping Assistant' }}
+              />
+              <Stack.Screen
+                name="ARTryOn"
+                component={ARTryOnScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="WriteReview"
+                component={WriteReviewScreen}
+                options={{ headerShown: true, title: 'Write Review' }}
+              />
+              <Stack.Screen
+                name="EditReview"
+                component={EditReviewScreen}
+                options={{ headerShown: true, title: 'Edit Review' }}
+              />
+              <Stack.Screen
+                name="Payment"
+                component={PaymentScreen}
+                options={{ headerShown: true, title: 'Payment' }}
+              />
+              <Stack.Screen
+                name="Subscription"
+                component={SubscriptionScreen}
+                options={{ headerShown: true, title: 'Subscription Plans' }}
+              />
+              <Stack.Screen
+                name="CreditPackages"
+                component={CreditPackagesScreen}
+                options={{ headerShown: true, title: 'Buy Credits' }}
+              />
+              <Stack.Screen
+                name="Wallet"
+                component={WalletScreen}
+                options={{ headerShown: true, title: 'Wallet' }}
+              />
+            </>
+          )}
+        </>
+      )}
+    </Stack.Navigator>
+  );
+}
+
+================================================================================
+THAT'S IT!
+================================================================================
+
+After making these changes:
+1. The app will automatically route vendors to the vendor interface
+2. Customers will see the regular shopping interface
+3. The routing is based on the user.role property in the auth store

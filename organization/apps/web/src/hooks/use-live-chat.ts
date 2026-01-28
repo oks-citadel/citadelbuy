@@ -64,7 +64,8 @@ interface UseStaffLiveChatReturn extends UseLiveChatReturn {
   assignChat: (sessionId: string) => void;
 }
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:4000';
+// WebSocket URL - must be set in production environment variables
+const SOCKET_URL = process.env.NEXT_PUBLIC_WS_URL || (typeof window !== 'undefined' ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}` : 'ws://localhost:4000');
 
 export function useLiveChat(options: UseLiveChatOptions = {}): UseLiveChatReturn {
   const { autoConnect = false, onConnect, onDisconnect, onError } = options;

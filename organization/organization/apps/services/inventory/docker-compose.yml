@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  inventory-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: broxiva-inventory-ai
+    ports:
+      - "8007:8007"
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PORT=8007
+      - WORKERS=${WORKERS:-2}
+      - MODEL_VERSION=${MODEL_VERSION:-v1.0.0}
+    volumes:
+      # Mount data directory for persistent storage (development only)
+      - ./data:/app/data
+      - ./models:/app/models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8007/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - broxiva-network
+
+networks:
+  broxiva-network:
+    name: broxiva-network
+    external: true

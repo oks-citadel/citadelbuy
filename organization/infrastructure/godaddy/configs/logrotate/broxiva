@@ -1,0 +1,37 @@
+# Logrotate configuration for Broxiva
+# Place this file in /etc/logrotate.d/broxiva
+
+# Broxiva application logs
+/var/log/broxiva/*.log
+/var/log/broxiva/**/*.log {
+    daily
+    missingok
+    rotate 14
+    compress
+    delaycompress
+    notifempty
+    create 0640 broxiva broxiva
+    sharedscripts
+    postrotate
+        # Reload PM2 to pick up new log files
+        /usr/bin/pm2 reloadLogs > /dev/null 2>&1 || true
+    endscript
+}
+
+# Nginx logs for Broxiva
+/var/log/nginx/broxiva_*.log
+/var/log/nginx/api_*.log {
+    daily
+    missingok
+    rotate 30
+    compress
+    delaycompress
+    notifempty
+    create 0640 www-data adm
+    sharedscripts
+    postrotate
+        if [ -f /var/run/nginx.pid ]; then
+            kill -USR1 `cat /var/run/nginx.pid`
+        fi
+    endscript
+}

@@ -1,0 +1,78 @@
+# Development environment values for ai-marketing-service
+
+global:
+  environment: development
+
+leadScorer:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+
+churnPredictor:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+
+contentGenerator:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 150m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  hosts:
+    - host: ai-marketing.dev.broxiva.local
+      paths:
+        - path: /lead-scorer
+          pathType: Prefix
+          service: lead-scorer
+        - path: /churn
+          pathType: Prefix
+          service: churn-predictor
+        - path: /content
+          pathType: Prefix
+          service: content-generator
+  tls: []
+
+serviceAccount:
+  create: true
+  annotations: {}
+
+configMap:
+  LOG_LEVEL: debug
+  LOG_FORMAT: text
+  METRICS_ENABLED: "true"
+  TRACING_ENABLED: "false"
+  ML_MODEL_CACHE_TTL: "300"
+  PREDICTION_BATCH_SIZE: "10"
+  CONTENT_MAX_TOKENS: "1024"

@@ -1,0 +1,113 @@
+# ==========================================
+# Broxiva API - Production Dockerfile for Railway
+# Use this when Railway root directory is set to /organization
+# ==========================================
+
+# Stage 1: Dependencies
+FROM node:20-alpine AS deps
+
+# Set UTF-8 locale
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install dependencies needed for Prisma and native modules
+RUN apk add --no-cache openssl libc6-compat python3 make g++
+
+WORKDIR /app
+
+# Copy package files from the API directory (relative to /organization)
+COPY apps/api/package.json ./
+COPY apps/api/package-lock.json* ./
+
+# Install ALL dependencies (including dev for build)
+# HUSKY=0 prevents husky install from running during Docker builds
+RUN HUSKY=0 npm install --legacy-peer-deps
+
+# Stage 2: Builder
+FROM node:20-alpine AS builder
+
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+RUN apk add --no-cache openssl libc6-compat
+
+WORKDIR /app
+
+# Copy package.json first (needed for npm run build)
+COPY apps/api/package.json ./
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy Prisma schema and generate client
+COPY apps/api/prisma ./prisma
+RUN npx prisma generate
+
+# Copy source code and build configuration
+COPY apps/api/src ./src
+COPY apps/api/tsconfig*.json ./
+COPY apps/api/nest-cli.json ./
+
+# Build the application with increased memory
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+RUN npm run build
+
+# Stage 3: Production
+FROM node:20-alpine AS production
+
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+# Install runtime dependencies including curl for health checks
+RUN apk add --no-cache openssl libc6-compat curl dumb-init
+
+WORKDIR /app
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nestjs -u 1001 -G nodejs
+
+# Copy package files
+COPY --chown=nestjs:nodejs apps/api/package.json ./
+
+# Install only production dependencies
+RUN HUSKY=0 npm install --omit=dev --legacy-peer-deps && npm cache clean --force
+
+# Copy Prisma schema (for migrations)
+COPY --chown=nestjs:nodejs apps/api/prisma ./prisma
+
+# Copy generated Prisma client from builder (avoids version mismatch)
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+
+# Copy built application from builder stage
+COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
+
+# Set environment
+ENV NODE_ENV=production
+
+# Railway injects PORT dynamically via $PORT
+# Default to 4000 if PORT isn't set
+ENV PORT=4000
+
+# Switch to non-root user
+USER nestjs
+
+# Expose port (Railway will use the PORT env var)
+EXPOSE 4000
+
+# Health check for Railway
+# Checks /api/health endpoint which validates database and Redis connectivity
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-4000}/api/health || exit 1
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
+# Run Prisma migrations first, then start the server
+# If migrations fail, log the error but still try to start (for initial deployment)
+CMD ["sh", "-c", "npx prisma@6.2.1 migrate deploy 2>&1 || echo 'Warning: Migration failed, continuing...'; node dist/main.js"]

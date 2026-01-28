@@ -1,0 +1,518 @@
+{
+  "workflow": "05-feedback-reviews",
+  "description": "Test payloads for Broxiva Customer Feedback & Review Collection Workflow",
+  "payloads": {
+    "shipment_delivered": {
+      "basic": {
+        "description": "Basic shipment delivered notification",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/shipment-delivered",
+        "payload": {
+          "order_id": "ORD-123456",
+          "user_id": "USR-789"
+        }
+      },
+      "complete": {
+        "description": "Complete shipment delivered with all fields",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/shipment-delivered",
+        "payload": {
+          "order_id": "ORD-123456",
+          "order_number": "#CB-123456",
+          "user_id": "USR-789",
+          "tracking_number": "1Z999AA10123456784",
+          "carrier": "UPS",
+          "delivered_at": "2025-12-03T10:00:00Z",
+          "delivery_address": {
+            "street": "123 Main St",
+            "city": "New York",
+            "state": "NY",
+            "zip": "10001",
+            "country": "USA"
+          },
+          "signature_required": true,
+          "signature_name": "John Doe"
+        }
+      },
+      "high_value_order": {
+        "description": "High-value order (should trigger NPS survey)",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/shipment-delivered",
+        "payload": {
+          "order_id": "ORD-789012",
+          "user_id": "USR-456",
+          "tracking_number": "1Z999AA10987654321",
+          "carrier": "FedEx",
+          "delivered_at": "2025-12-03T14:30:00Z",
+          "total_amount": 350.00
+        },
+        "expected_behavior": "Should send review request + NPS survey"
+      },
+      "low_value_order": {
+        "description": "Low-value order (no NPS survey)",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/shipment-delivered",
+        "payload": {
+          "order_id": "ORD-345678",
+          "user_id": "USR-123",
+          "tracking_number": "9400111899223344556677",
+          "carrier": "USPS",
+          "delivered_at": "2025-12-03T09:15:00Z",
+          "total_amount": 45.99
+        },
+        "expected_behavior": "Should send review request only (no NPS)"
+      }
+    },
+    "review_submitted": {
+      "positive_5_star": {
+        "description": "5-star positive review",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/review-submitted",
+        "payload": {
+          "review_id": "REV-001",
+          "order_id": "ORD-123456",
+          "customer_id": "USR-789",
+          "customer_email": "happy.customer@example.com",
+          "customer_name": "Jane Doe",
+          "rating": 5,
+          "review": "Absolutely love this product! Shipping was fast and the quality exceeded my expectations. Will definitely order again!",
+          "product_ids": ["PROD-123", "PROD-456"],
+          "submitted_at": "2025-12-03T15:30:00Z"
+        },
+        "expected_behavior": "Send thank you email + referral invitation + sentiment analysis + Mixpanel tracking"
+      },
+      "positive_4_star": {
+        "description": "4-star positive review",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/review-submitted",
+        "payload": {
+          "review_id": "REV-002",
+          "order_id": "ORD-234567",
+          "customer_id": "USR-890",
+          "customer_email": "satisfied.customer@example.com",
+          "customer_name": "Bob Smith",
+          "rating": 4,
+          "review": "Great product overall. Shipping took a bit longer than expected but worth the wait.",
+          "product_ids": ["PROD-789"],
+          "submitted_at": "2025-12-03T16:00:00Z"
+        },
+        "expected_behavior": "Send thank you email + referral invitation + sentiment analysis"
+      },
+      "neutral_3_star": {
+        "description": "3-star neutral review",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/review-submitted",
+        "payload": {
+          "review_id": "REV-003",
+          "order_id": "ORD-345678",
+          "customer_id": "USR-901",
+          "customer_email": "neutral.customer@example.com",
+          "customer_name": "Alice Johnson",
+          "rating": 3,
+          "review": "Product is okay. Matches the description but nothing special.",
+          "product_ids": ["PROD-234"],
+          "submitted_at": "2025-12-03T16:30:00Z"
+        },
+        "expected_behavior": "Sentiment analysis + Mixpanel tracking only (no follow-up emails)"
+      },
+      "negative_2_star": {
+        "description": "2-star negative review",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/review-submitted",
+        "payload": {
+          "review_id": "REV-004",
+          "order_id": "ORD-456789",
+          "customer_id": "USR-012",
+          "customer_email": "unhappy.customer@example.com",
+          "customer_name": "Charlie Brown",
+          "rating": 2,
+          "review": "Product quality was disappointing. Not what I expected from the photos.",
+          "product_ids": ["PROD-567"],
+          "submitted_at": "2025-12-03T17:00:00Z"
+        },
+        "expected_behavior": "Alert support@broxiva.com + Create Zendesk ticket + Slack alert + sentiment analysis"
+      },
+      "negative_1_star": {
+        "description": "1-star very negative review",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/review-submitted",
+        "payload": {
+          "review_id": "REV-005",
+          "order_id": "ORD-567890",
+          "customer_id": "USR-345",
+          "customer_email": "angry.customer@example.com",
+          "customer_name": "David Wilson",
+          "rating": 1,
+          "review": "Terrible experience! Product arrived damaged and customer service was unresponsive. Would not recommend.",
+          "product_ids": ["PROD-890"],
+          "submitted_at": "2025-12-03T17:30:00Z"
+        },
+        "expected_behavior": "URGENT alert to support + Create high-priority Zendesk ticket + Slack alert + sentiment analysis"
+      },
+      "quick_rating_only": {
+        "description": "Quick 1-click rating without text review",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/review-submitted",
+        "payload": {
+          "review_id": "REV-006",
+          "order_id": "ORD-678901",
+          "customer_id": "USR-678",
+          "customer_email": "quick.rater@example.com",
+          "customer_name": "Emma Davis",
+          "rating": 5,
+          "review": "",
+          "product_ids": ["PROD-901"],
+          "submitted_at": "2025-12-03T18:00:00Z",
+          "source": "quick_rate"
+        },
+        "expected_behavior": "Send thank you email + referral invitation (sentiment analysis with minimal text)"
+      },
+      "multi_product_review": {
+        "description": "Review covering multiple products",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/review-submitted",
+        "payload": {
+          "review_id": "REV-007",
+          "order_id": "ORD-789012",
+          "customer_id": "USR-789",
+          "customer_email": "multi.buyer@example.com",
+          "customer_name": "Frank Miller",
+          "rating": 4,
+          "review": "Ordered three items. Two were excellent, one had minor issues. Overall satisfied with the purchase.",
+          "product_ids": ["PROD-111", "PROD-222", "PROD-333"],
+          "submitted_at": "2025-12-03T18:30:00Z"
+        }
+      }
+    },
+    "nps_response": {
+      "promoter": {
+        "description": "NPS promoter (score 9-10)",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/nps-response",
+        "payload": {
+          "customer_id": "USR-789",
+          "customer_email": "promoter@example.com",
+          "order_id": "ORD-123456",
+          "score": 10,
+          "feedback": "Broxiva is amazing! I recommend it to all my friends. Best online shopping experience ever!",
+          "token": "eyJvcmRlcl9pZCI6Ik9SRC0xMjM0NTYifQ=="
+        },
+        "category": "promoter"
+      },
+      "passive": {
+        "description": "NPS passive (score 7-8)",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/nps-response",
+        "payload": {
+          "customer_id": "USR-890",
+          "customer_email": "passive@example.com",
+          "order_id": "ORD-234567",
+          "score": 8,
+          "feedback": "Good service overall. Nothing exceptional but no complaints either.",
+          "token": "eyJvcmRlcl9pZCI6Ik9SRC0yMzQ1NjcifQ=="
+        },
+        "category": "passive"
+      },
+      "detractor": {
+        "description": "NPS detractor (score 0-6)",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/nps-response",
+        "payload": {
+          "customer_id": "USR-901",
+          "customer_email": "detractor@example.com",
+          "order_id": "ORD-345678",
+          "score": 5,
+          "feedback": "Shipping was slow and product quality could be better. Not likely to recommend.",
+          "token": "eyJvcmRlcl9pZCI6Ik9SRC0zNDU2NzgifQ=="
+        },
+        "category": "detractor",
+        "expected_behavior": "Should trigger follow-up from customer success team"
+      },
+      "no_feedback": {
+        "description": "NPS response without feedback text",
+        "endpoint": "POST https://n8n.broxiva.com/webhook/nps-response",
+        "payload": {
+          "customer_id": "USR-012",
+          "customer_email": "silent.scorer@example.com",
+          "order_id": "ORD-456789",
+          "score": 7,
+          "feedback": "",
+          "token": "eyJvcmRlcl9pZCI6Ik9SRC00NTY3ODkifQ=="
+        }
+      }
+    }
+  },
+  "test_scenarios": {
+    "scenario_1_complete_flow": {
+      "description": "Test complete flow from delivery to review",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Send shipment delivered webhook",
+          "payload_ref": "shipment_delivered.complete",
+          "expected_result": "Workflow starts, waits 5 days"
+        },
+        {
+          "step": 2,
+          "action": "Wait for 5 days (or manually resume in n8n)",
+          "expected_result": "Review request email sent via SendGrid"
+        },
+        {
+          "step": 3,
+          "action": "Wait for 3 days with no response",
+          "expected_result": "Reminder email sent via Klaviyo"
+        },
+        {
+          "step": 4,
+          "action": "Send positive review webhook",
+          "payload_ref": "review_submitted.positive_5_star",
+          "expected_result": "Thank you email + referral invitation sent"
+        }
+      ]
+    },
+    "scenario_2_negative_review_handling": {
+      "description": "Test negative review alert system",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Send shipment delivered webhook",
+          "payload_ref": "shipment_delivered.complete"
+        },
+        {
+          "step": 2,
+          "action": "Send 1-star review webhook",
+          "payload_ref": "review_submitted.negative_1_star",
+          "expected_result": "Support alert email + Zendesk ticket + Slack notification"
+        },
+        {
+          "step": 3,
+          "action": "Verify Zendesk ticket created",
+          "check": "Zendesk dashboard for new urgent ticket"
+        },
+        {
+          "step": 4,
+          "action": "Verify Slack alert",
+          "check": "#customer-support channel for alert message"
+        }
+      ]
+    },
+    "scenario_3_nps_high_value_order": {
+      "description": "Test NPS survey for high-value orders",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Send high-value order shipment delivered",
+          "payload_ref": "shipment_delivered.high_value_order",
+          "expected_result": "Both review request AND NPS survey sent"
+        },
+        {
+          "step": 2,
+          "action": "Send NPS promoter response",
+          "payload_ref": "nps_response.promoter",
+          "expected_result": "NPS saved to database + tracked in Mixpanel"
+        },
+        {
+          "step": 3,
+          "action": "Verify Mixpanel event",
+          "check": "Mixpanel dashboard for 'NPS Survey Completed' event"
+        }
+      ]
+    },
+    "scenario_4_sentiment_analysis": {
+      "description": "Test OpenAI sentiment analysis",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Send review with detailed text",
+          "payload_ref": "review_submitted.positive_5_star",
+          "expected_result": "OpenAI analyzes sentiment"
+        },
+        {
+          "step": 2,
+          "action": "Verify sentiment data saved",
+          "check": "Database for sentiment_score, themes, emotional_tone"
+        },
+        {
+          "step": 3,
+          "action": "Verify Mixpanel tracking",
+          "check": "Mixpanel for sentiment_score in event properties"
+        }
+      ]
+    },
+    "scenario_5_quick_rating": {
+      "description": "Test 1-click star rating",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Simulate customer clicking 5-star link in email",
+          "method": "GET https://broxiva.com/api/v1/reviews/quick-rate?token=ABC123&rating=5",
+          "expected_result": "Review saved with rating=5, no text"
+        },
+        {
+          "step": 2,
+          "action": "Quick rating triggers review webhook",
+          "payload_ref": "review_submitted.quick_rating_only",
+          "expected_result": "Thank you email sent"
+        }
+      ]
+    }
+  },
+  "curl_commands": {
+    "test_shipment_delivered": "curl -X POST https://n8n.broxiva.com/webhook/shipment-delivered -H 'Content-Type: application/json' -d '{\"order_id\":\"ORD-123456\",\"user_id\":\"USR-789\"}'",
+    "test_positive_review": "curl -X POST https://n8n.broxiva.com/webhook/review-submitted -H 'Content-Type: application/json' -d '{\"review_id\":\"REV-001\",\"order_id\":\"ORD-123456\",\"customer_id\":\"USR-789\",\"customer_email\":\"test@example.com\",\"customer_name\":\"Test User\",\"rating\":5,\"review\":\"Great product!\"}'",
+    "test_negative_review": "curl -X POST https://n8n.broxiva.com/webhook/review-submitted -H 'Content-Type: application/json' -d '{\"review_id\":\"REV-002\",\"order_id\":\"ORD-123456\",\"customer_id\":\"USR-789\",\"customer_email\":\"test@example.com\",\"customer_name\":\"Test User\",\"rating\":1,\"review\":\"Terrible experience!\"}'",
+    "test_nps_response": "curl -X POST https://n8n.broxiva.com/webhook/nps-response -H 'Content-Type: application/json' -d '{\"customer_id\":\"USR-789\",\"customer_email\":\"test@example.com\",\"order_id\":\"ORD-123456\",\"score\":9,\"feedback\":\"Great service!\"}'"
+  },
+  "validation_checklist": {
+    "email_delivery": [
+      "Review request email received",
+      "Product images display correctly",
+      "All review platform links work",
+      "Star rating links work (1-5)",
+      "Customer name and order number correct",
+      "Unsubscribe link present"
+    ],
+    "positive_review_flow": [
+      "Thank you email sent",
+      "Referral link generated",
+      "Discount code included",
+      "Sentiment analysis completed",
+      "Mixpanel event tracked"
+    ],
+    "negative_review_flow": [
+      "Support team email received",
+      "Zendesk ticket created",
+      "Ticket marked as urgent",
+      "Slack notification sent to #customer-support",
+      "Sentiment analysis completed"
+    ],
+    "nps_survey": [
+      "NPS email sent for orders > $200",
+      "NPS email NOT sent for orders < $200",
+      "All score buttons (0-10) work",
+      "Feedback text optional",
+      "Response saved to database",
+      "Mixpanel event tracked"
+    ],
+    "reminders": [
+      "No reminder sent if review already submitted",
+      "Reminder sent if no response after 3 days",
+      "Reminder includes original review links",
+      "Reminder tone is gentle/friendly"
+    ],
+    "analytics": [
+      "All review events in Mixpanel",
+      "Sentiment scores tracked",
+      "NPS responses tracked",
+      "Customer properties updated",
+      "Event timestamps accurate"
+    ]
+  },
+  "expected_api_responses": {
+    "broxiva_order": {
+      "endpoint": "GET /v1/orders/ORD-123456",
+      "response": {
+        "id": "ORD-123456",
+        "order_number": "#CB-123456",
+        "user_id": "USR-789",
+        "total_amount": 149.99,
+        "items": [
+          {
+            "product_id": "PROD-123",
+            "name": "Wireless Headphones",
+            "sku": "WH-BLK-001",
+            "quantity": 1,
+            "price": 79.99,
+            "image_url": "https://cdn.broxiva.com/products/PROD-123/main.jpg"
+          },
+          {
+            "product_id": "PROD-456",
+            "name": "Phone Case",
+            "sku": "PC-BLU-002",
+            "quantity": 1,
+            "price": 29.99,
+            "image_url": "https://cdn.broxiva.com/products/PROD-456/main.jpg"
+          }
+        ],
+        "delivered_at": "2025-12-03T10:00:00Z",
+        "tracking_number": "1Z999AA10123456784",
+        "carrier": "UPS"
+      }
+    },
+    "broxiva_user": {
+      "endpoint": "GET /v1/users/USR-789",
+      "response": {
+        "id": "USR-789",
+        "email": "customer@example.com",
+        "first_name": "Jane",
+        "last_name": "Doe",
+        "name": "Jane Doe",
+        "created_at": "2024-01-15T08:30:00Z"
+      }
+    },
+    "review_status_pending": {
+      "endpoint": "GET /v1/reviews/requests/{token}/status",
+      "response": {
+        "status": "pending",
+        "sent_at": "2025-12-08T10:00:00Z",
+        "reminder_sent": false
+      }
+    },
+    "review_status_completed": {
+      "endpoint": "GET /v1/reviews/requests/{token}/status",
+      "response": {
+        "status": "completed",
+        "sent_at": "2025-12-08T10:00:00Z",
+        "completed_at": "2025-12-09T14:30:00Z",
+        "review_id": "REV-001"
+      }
+    }
+  },
+  "error_scenarios": {
+    "invalid_order_id": {
+      "description": "Order ID not found",
+      "payload": {
+        "order_id": "ORD-INVALID",
+        "user_id": "USR-789"
+      },
+      "expected_error": "Order not found",
+      "workflow_behavior": "Log error, skip execution"
+    },
+    "invalid_email": {
+      "description": "Customer email is invalid",
+      "payload": {
+        "order_id": "ORD-123456",
+        "user_id": "USR-INVALID"
+      },
+      "expected_error": "Invalid email address",
+      "workflow_behavior": "Log error, skip email send"
+    },
+    "sendgrid_failure": {
+      "description": "SendGrid API fails",
+      "expected_error": "Email send failed",
+      "workflow_behavior": "Retry 3 times with backoff, then log error"
+    },
+    "openai_timeout": {
+      "description": "OpenAI API times out",
+      "expected_error": "Request timeout",
+      "workflow_behavior": "Save review without sentiment analysis, log error"
+    }
+  },
+  "performance_benchmarks": {
+    "average_execution_time": {
+      "shipment_delivered": "2-3 seconds",
+      "review_submitted": "5-8 seconds (with OpenAI)",
+      "nps_response": "1-2 seconds"
+    },
+    "api_calls_per_execution": {
+      "shipment_delivered_flow": {
+        "broxiva_api": 2,
+        "sendgrid": 1,
+        "klaviyo": 0.3,
+        "total": "~3-4 calls"
+      },
+      "review_submitted_flow": {
+        "broxiva_api": 1,
+        "sendgrid": 0.7,
+        "openai": 1,
+        "mixpanel": 1,
+        "zendesk": 0.2,
+        "total": "~3-5 calls"
+      }
+    },
+    "cost_per_execution": {
+      "sendgrid": "$0.0001 per email",
+      "openai_gpt4": "$0.03 per review",
+      "klaviyo": "Included in plan",
+      "mixpanel": "Included in plan",
+      "zendesk": "Included in plan",
+      "total_estimated": "$0.03 - $0.05 per review"
+    }
+  }
+}

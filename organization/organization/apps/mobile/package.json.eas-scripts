@@ -1,0 +1,48 @@
+{
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "test": "jest --passWithNoTests",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+
+    "eas:login": "eas login",
+    "eas:init": "eas init",
+    "eas:whoami": "eas whoami",
+
+    "build:dev:ios": "eas build --profile development --platform ios",
+    "build:dev:android": "eas build --profile development --platform android",
+    "build:dev:all": "eas build --profile development --platform all",
+
+    "build:preview:ios": "eas build --profile preview --platform ios",
+    "build:preview:android": "eas build --profile preview --platform android",
+    "build:preview:all": "eas build --profile preview --platform all",
+
+    "build:prod:ios": "eas build --profile production --platform ios",
+    "build:prod:android": "eas build --profile production --platform android",
+    "build:prod:all": "eas build --profile production --platform all",
+
+    "build:list": "eas build:list",
+    "build:view": "eas build:view",
+    "build:cancel": "eas build:cancel",
+
+    "submit:ios": "eas submit --platform ios --latest",
+    "submit:android": "eas submit --platform android --latest",
+
+    "update:dev": "eas update --branch development",
+    "update:preview": "eas update --branch preview",
+    "update:prod": "eas update --branch production",
+
+    "credentials": "eas credentials",
+    "credentials:ios": "eas credentials --platform ios",
+    "credentials:android": "eas credentials --platform android",
+
+    "device:create": "eas device:create",
+    "device:list": "eas device:list",
+
+    "prebuild": "expo prebuild",
+    "prebuild:clean": "expo prebuild --clean"
+  }
+}

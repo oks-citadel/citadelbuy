@@ -1,0 +1,268 @@
+# Default values for growth-service
+
+global:
+  environment: production
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# Growth API Component
+growthApi:
+  enabled: true
+  name: growth-api
+  image:
+    repository: broxiva/growth-api
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 150m
+      memory: 384Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 12
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  probes:
+    liveness:
+      path: /health/live
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readiness:
+      path: /health/ready
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+  env: []
+  envFrom: []
+
+# Referral Engine Component
+referralEngine:
+  enabled: true
+  name: referral-engine
+  image:
+    repository: broxiva/growth-referral-engine
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 150m
+      memory: 384Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  probes:
+    liveness:
+      path: /health/live
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readiness:
+      path: /health/ready
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+  env: []
+  envFrom: []
+
+# Affiliate Tracker Component
+affiliateTracker:
+  enabled: true
+  name: affiliate-tracker
+  image:
+    repository: broxiva/growth-affiliate-tracker
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 150m
+      memory: 384Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  probes:
+    liveness:
+      path: /health/live
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readiness:
+      path: /health/ready
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+  env: []
+  envFrom: []
+
+# Landing Builder Component
+landingBuilder:
+  enabled: true
+  name: landing-builder
+  image:
+    repository: broxiva/growth-landing-builder
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  probes:
+    liveness:
+      path: /health/live
+      initialDelaySeconds: 45
+      periodSeconds: 15
+      timeoutSeconds: 10
+      failureThreshold: 3
+    readiness:
+      path: /health/ready
+      initialDelaySeconds: 20
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+  env: []
+  envFrom: []
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+  hosts:
+    - host: growth.broxiva.com
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: growth-api
+        - path: /referral
+          pathType: Prefix
+          service: referral-engine
+        - path: /affiliate
+          pathType: Prefix
+          service: affiliate-tracker
+        - path: /landing
+          pathType: Prefix
+          service: landing-builder
+  tls:
+    - secretName: growth-service-tls
+      hosts:
+        - growth.broxiva.com
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations:
+    eks.amazonaws.com/role-arn: ""
+  automountServiceAccountToken: true
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+      - ALL
+
+nodeSelector: {}
+tolerations: []
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - growth-service
+          topologyKey: kubernetes.io/hostname
+
+configMap:
+  LOG_LEVEL: info
+  LOG_FORMAT: json
+  METRICS_ENABLED: "true"
+  TRACING_ENABLED: "true"
+  REFERRAL_CODE_LENGTH: "8"
+  AFFILIATE_COOKIE_DAYS: "30"
+
+labels: {}
+annotations: {}
+podLabels: {}
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"

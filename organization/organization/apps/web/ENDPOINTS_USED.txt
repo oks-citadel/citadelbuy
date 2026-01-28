@@ -1,0 +1,108 @@
+BROXIVA FRONTEND - API ENDPOINTS INTEGRATION
+================================================
+
+FILE: src/app/admin/support/page.tsx
+------------------------------------
+Endpoints Integrated:
+  - GET /support/tickets
+  - GET /support/chat/sessions/active
+
+Data Flow:
+  Backend Response → Data Mapping → Frontend State (tickets, liveChats)
+
+Features:
+  - Parallel API calls using Promise.all
+  - Ticket data mapping with user/guest fallbacks
+  - Chat waiting time calculation
+  - Message count tracking
+  - Error handling with empty state fallbacks
+
+
+FILE: src/app/deals/page.tsx
+----------------------------
+Endpoints Integrated:
+  - GET /deals/active
+
+Data Flow:
+  Backend Response → Data Mapping → Frontend State (deals)
+
+Features:
+  - Deal price calculations (original, sale, discount)
+  - Image fallback handling
+  - Category name extraction
+  - Stock tracking (available + sold)
+  - Date conversion for deal expiration
+
+
+FILE: src/app/org/[slug]/api-keys/page.tsx
+------------------------------------------
+Endpoints Integrated:
+  - GET /organizations/${slug}/api-keys (List keys)
+  - POST /organizations/${slug}/api-keys (Create key)
+  - DELETE /organizations/${slug}/api-keys/${keyId} (Revoke key)
+
+Data Flow:
+  CREATE: Input → Backend → New Key → Add to List → Return Full Key
+  READ: Backend → Data Mapping → Frontend State (apiKeys)
+  DELETE: Delete Request → Update Status in List
+
+Features:
+  - API key prefix display (security)
+  - Full key returned only on creation
+  - Status tracking (active/revoked)
+  - Permission arrays
+  - Last used timestamp tracking
+  - Success/error toast notifications
+
+
+BACKEND CONTROLLERS REFERENCED
+===============================
+1. SupportController (/support/*)
+   - Located: organization/apps/api/src/modules/support/support.controller.ts
+   
+2. DealsController (/deals/*)
+   - Located: organization/apps/api/src/modules/deals/deals.controller.ts
+   
+3. OrganizationApiKeyController (/organizations/*/api-keys)
+   - Located: organization/apps/api/src/modules/organization/controllers/organization-api-key.controller.ts
+
+
+AUTHENTICATION
+==============
+All requests use apiClient from @/lib/api-client.ts which includes:
+- Automatic Bearer token authentication
+- CSRF token for state-changing requests (POST, PUT, DELETE)
+- Token refresh on 401 errors
+- Proper error response handling
+
+
+ERROR HANDLING PATTERN
+=======================
+try {
+  setIsLoading(true);
+  const response = await apiClient.get/post/delete(...);
+  // Process and map data
+  setState(mappedData);
+} catch (err) {
+  const errorMessage = err instanceof Error ? err.message : 'Fallback message';
+  toast.error(errorMessage);
+  setState([]); // Fallback to prevent UI crashes
+} finally {
+  setIsLoading(false);
+}
+
+
+NEXT STEPS FOR TESTING
+=======================
+1. Start backend API server
+2. Ensure all three modules are enabled:
+   - SupportModule
+   - DealsModule  
+   - OrganizationModule
+3. Create test data:
+   - Support tickets
+   - Flash deals
+   - Organizations with API keys
+4. Test frontend pages with authenticated users
+5. Verify error states with network offline
+6. Check loading states during slow connections

@@ -1,0 +1,2185 @@
+openapi: 3.0.3
+info:
+  title: Broxiva E-Commerce Platform API
+  description: |
+    RESTful API for the Broxiva E-Commerce Platform. This API provides endpoints for managing
+    users, products, orders, shopping carts, checkout processes, and payments.
+
+    ## Authentication
+    Most endpoints require authentication using JWT Bearer tokens. After logging in or registering,
+    include the access token in the Authorization header:
+    ```
+    Authorization: Bearer <access_token>
+    ```
+
+    ## Rate Limiting
+    The API implements rate limiting to prevent abuse. Limits vary by endpoint:
+    - Authentication endpoints: 3-5 requests per minute
+    - General endpoints: 100 requests per minute
+
+    ## Pagination
+    List endpoints support pagination using `page` and `limit` query parameters.
+    Responses include `total`, `page`, `limit`, and `totalPages` fields.
+
+  version: 1.0.0
+  contact:
+    name: Broxiva API Support
+    email: support@broxiva.com
+  license:
+    name: Proprietary
+    url: https://broxiva.com/terms
+
+servers:
+  - url: https://api.broxiva.com/v1
+    description: Production server
+  - url: https://staging-api.broxiva.com/v1
+    description: Staging server
+  - url: http://localhost:3000
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: User authentication and account management
+  - name: Users
+    description: User profile and address management
+  - name: Products
+    description: Product catalog and search
+  - name: Orders
+    description: Order management and tracking
+  - name: Shopping Cart
+    description: Cart operations for authenticated and guest users
+  - name: Checkout
+    description: Checkout process and payment methods
+  - name: Payments
+    description: Payment processing and webhooks
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token obtained from login or register endpoints
+
+  schemas:
+    # ==================== Authentication Schemas ====================
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+          description: User email address
+        password:
+          type: string
+          minLength: 8
+          example: SecurePass123!
+          description: User password
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - name
+      properties:
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+          description: User email address
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+          example: SecurePass123!
+          description: Password (must contain uppercase, lowercase, number, and special character)
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: John Doe
+          description: User full name
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserBasic'
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          description: JWT access token
+        refreshToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          description: JWT refresh token
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          description: Valid refresh token
+
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+
+    ResetPasswordRequest:
+      type: object
+      required:
+        - token
+        - newPassword
+      properties:
+        token:
+          type: string
+          description: Password reset token from email
+        newPassword:
+          type: string
+          minLength: 8
+          example: NewSecurePass123!
+
+    SocialLoginRequest:
+      type: object
+      required:
+        - provider
+        - accessToken
+      properties:
+        provider:
+          type: string
+          enum: [google, facebook, apple, github]
+          example: google
+        accessToken:
+          type: string
+          description: OAuth access token from the provider
+
+    MfaSetupResponse:
+      type: object
+      properties:
+        secret:
+          type: string
+          example: JBSWY3DPEHPK3PXP
+        qrCode:
+          type: string
+          description: Base64 encoded QR code image
+        backupCodes:
+          type: array
+          items:
+            type: string
+          example: [ABC123, DEF456, GHI789]
+
+    MfaVerifyRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          example: "123456"
+          description: TOTP code from authenticator app
+
+    # ==================== User Schemas ====================
+    UserBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        name:
+          type: string
+          example: John Doe
+        role:
+          type: string
+          enum: [CUSTOMER, VENDOR, ADMIN]
+          example: CUSTOMER
+
+    UserProfile:
+      allOf:
+        - $ref: '#/components/schemas/UserBasic'
+        - type: object
+          properties:
+            phone:
+              type: string
+              example: "+1 (555) 123-4567"
+            emailVerified:
+              type: boolean
+              example: true
+            avatar:
+              type: string
+              format: uri
+              example: https://cdn.broxiva.com/avatars/user-123.jpg
+            preferences:
+              $ref: '#/components/schemas/UserPreferences'
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    UserPreferences:
+      type: object
+      properties:
+        newsletter:
+          type: boolean
+          example: true
+        notifications:
+          type: boolean
+          example: true
+        emailNotifications:
+          type: boolean
+          example: true
+        smsNotifications:
+          type: boolean
+          example: false
+        language:
+          type: string
+          example: en
+        currency:
+          type: string
+          example: USD
+        timezone:
+          type: string
+          example: America/New_York
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: John Doe
+        phone:
+          type: string
+          example: "+1 (555) 123-4567"
+        avatar:
+          type: string
+          format: uri
+
+    # ==================== Address Schemas ====================
+    Address:
+      type: object
+      properties:
+        id:
+          type: string
+          example: addr_123
+        fullName:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        phone:
+          type: string
+          example: "+1 555-1234"
+        street:
+          type: string
+          example: 123 Main St, Apt 4B
+        city:
+          type: string
+          example: New York
+        state:
+          type: string
+          example: NY
+        postalCode:
+          type: string
+          example: "10001"
+        country:
+          type: string
+          example: United States
+        label:
+          type: string
+          example: Home
+        type:
+          type: string
+          enum: [SHIPPING, BILLING]
+          example: SHIPPING
+        isDefault:
+          type: boolean
+          example: true
+
+    CreateAddressRequest:
+      type: object
+      required:
+        - fullName
+        - street
+        - city
+        - state
+        - postalCode
+        - country
+      properties:
+        fullName:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        street:
+          type: string
+          example: 123 Main St, Apt 4B
+        city:
+          type: string
+          example: New York
+        state:
+          type: string
+          example: NY
+        postalCode:
+          type: string
+          example: "10001"
+        country:
+          type: string
+          example: United States
+        isDefault:
+          type: boolean
+          default: false
+
+    # ==================== Product Schemas ====================
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        name:
+          type: string
+          example: Wireless Bluetooth Headphones
+        description:
+          type: string
+          example: Premium wireless headphones with active noise cancellation
+        price:
+          type: number
+          format: decimal
+          example: 149.99
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+          example:
+            - https://cdn.broxiva.com/products/headphones-main.jpg
+            - https://cdn.broxiva.com/products/headphones-side.jpg
+        stock:
+          type: integer
+          example: 150
+        sku:
+          type: string
+          example: WBH-2024-BLK
+        weight:
+          type: number
+          example: 0.25
+        dimensions:
+          type: string
+          example: "20 x 15 x 8"
+        brand:
+          type: string
+          example: AudioTech Pro
+        category:
+          $ref: '#/components/schemas/Category'
+        vendor:
+          $ref: '#/components/schemas/VendorBasic'
+        averageRating:
+          type: number
+          example: 4.5
+        reviewCount:
+          type: integer
+          example: 128
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateProductRequest:
+      type: object
+      required:
+        - name
+        - description
+        - price
+        - stock
+        - categoryId
+        - vendorId
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 200
+          example: Wireless Bluetooth Headphones
+        description:
+          type: string
+          minLength: 10
+          maxLength: 5000
+          example: Premium wireless headphones with active noise cancellation
+        price:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 149.99
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+        stock:
+          type: integer
+          minimum: 0
+          example: 150
+        categoryId:
+          type: string
+          format: uuid
+        vendorId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+          example: WBH-2024-BLK
+        weight:
+          type: number
+          minimum: 0
+        dimensions:
+          type: string
+        brand:
+          type: string
+        isActive:
+          type: boolean
+          default: true
+
+    ProductList:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        total:
+          type: integer
+          example: 100
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 12
+        totalPages:
+          type: integer
+          example: 9
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Electronics
+        slug:
+          type: string
+          example: electronics
+
+    VendorBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: AudioTech Pro
+        rating:
+          type: number
+          example: 4.8
+
+    # ==================== Cart Schemas ====================
+    Cart:
+      type: object
+      properties:
+        id:
+          type: string
+          example: cart_123
+        userId:
+          type: string
+          format: uuid
+          nullable: true
+        sessionId:
+          type: string
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        subtotal:
+          type: number
+          example: 299.98
+        itemCount:
+          type: integer
+          example: 2
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: item_123
+        productId:
+          type: string
+          format: uuid
+        variantId:
+          type: string
+          nullable: true
+        product:
+          $ref: '#/components/schemas/Product'
+        quantity:
+          type: integer
+          example: 2
+        price:
+          type: number
+          example: 149.99
+        subtotal:
+          type: number
+          example: 299.98
+
+    AddToCartRequest:
+      type: object
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          type: string
+          example: product-123
+        variantId:
+          type: string
+          description: Variant ID if product has variants
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+        sessionId:
+          type: string
+          description: Session ID for guest carts
+
+    UpdateCartItemRequest:
+      type: object
+      required:
+        - quantity
+      properties:
+        quantity:
+          type: integer
+          minimum: 0
+          example: 3
+
+    MergeCartRequest:
+      type: object
+      required:
+        - sessionId
+      properties:
+        sessionId:
+          type: string
+          description: Guest session ID to merge from
+        strategy:
+          type: string
+          enum: [add, replace, max]
+          default: add
+          description: How to handle duplicate items
+
+    # ==================== Order Schemas ====================
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        orderNumber:
+          type: string
+          example: ORD-2024-001234
+        status:
+          type: string
+          enum: [PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED, REFUNDED]
+          example: DELIVERED
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        subtotal:
+          type: number
+          example: 145.43
+        tax:
+          type: number
+          example: 14.54
+        shipping:
+          type: number
+          example: 0
+        total:
+          type: number
+          example: 159.97
+        shippingAddress:
+          $ref: '#/components/schemas/Address'
+        paymentMethod:
+          type: string
+          example: card
+        paymentStatus:
+          type: string
+          enum: [PENDING, PAID, FAILED, REFUNDED]
+          example: PAID
+        trackingNumber:
+          type: string
+          example: TRK123456789
+        estimatedDelivery:
+          type: string
+          format: date-time
+        statusHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderStatusHistory'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: item-1
+        productId:
+          type: string
+          format: uuid
+        productName:
+          type: string
+          example: Wireless Bluetooth Headphones
+        productImage:
+          type: string
+          format: uri
+        quantity:
+          type: integer
+          example: 2
+        price:
+          type: number
+          example: 49.99
+        subtotal:
+          type: number
+          example: 99.98
+
+    OrderStatusHistory:
+      type: object
+      properties:
+        status:
+          type: string
+          example: PROCESSING
+        timestamp:
+          type: string
+          format: date-time
+
+    CreateOrderRequest:
+      type: object
+      required:
+        - items
+        - shippingAddress
+        - subtotal
+        - tax
+        - shipping
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - productId
+              - quantity
+              - price
+            properties:
+              productId:
+                type: string
+                format: uuid
+              quantity:
+                type: integer
+                minimum: 1
+              price:
+                type: number
+                minimum: 0
+        shippingAddress:
+          $ref: '#/components/schemas/CreateAddressRequest'
+        subtotal:
+          type: number
+          minimum: 0
+          example: 145.43
+        tax:
+          type: number
+          minimum: 0
+          example: 14.54
+        shipping:
+          type: number
+          minimum: 0
+          example: 0
+        total:
+          type: number
+          minimum: 0
+          example: 159.97
+
+    # ==================== Checkout Schemas ====================
+    CheckoutInitializeRequest:
+      type: object
+      properties:
+        cartId:
+          type: string
+        productId:
+          type: string
+          description: For quick buy - direct product purchase
+        quantity:
+          type: integer
+          minimum: 1
+        shippingAddressId:
+          type: string
+        couponCode:
+          type: string
+
+    CheckoutSession:
+      type: object
+      properties:
+        cartId:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        subtotal:
+          type: number
+        tax:
+          type: number
+        shipping:
+          type: number
+        discount:
+          type: number
+        total:
+          type: number
+        savedAddresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/Address'
+        savedPaymentMethods:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMethod'
+
+    ExpressCheckoutRequest:
+      type: object
+      properties:
+        cartId:
+          type: string
+        productId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        shippingAddressId:
+          type: string
+        paymentMethodId:
+          type: string
+        couponCode:
+          type: string
+        useGiftCard:
+          type: boolean
+        giftCardCode:
+          type: string
+
+    GuestCheckoutRequest:
+      type: object
+      required:
+        - items
+        - shippingAddress
+        - guestEmail
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - productId
+              - quantity
+              - price
+            properties:
+              productId:
+                type: string
+              quantity:
+                type: integer
+                minimum: 1
+              price:
+                type: number
+                minimum: 0
+        shippingAddress:
+          $ref: '#/components/schemas/CreateAddressRequest'
+        billingAddress:
+          $ref: '#/components/schemas/CreateAddressRequest'
+        couponCode:
+          type: string
+        guestEmail:
+          type: string
+          format: email
+
+    # ==================== Payment Schemas ====================
+    PaymentMethod:
+      type: object
+      properties:
+        id:
+          type: string
+          example: pm_123
+        type:
+          type: string
+          enum: [card, paypal, bank_transfer]
+          example: card
+        card:
+          type: object
+          properties:
+            brand:
+              type: string
+              example: visa
+            last4:
+              type: string
+              example: "4242"
+            expMonth:
+              type: integer
+              example: 12
+            expYear:
+              type: integer
+              example: 2025
+        isDefault:
+          type: boolean
+
+    CreatePaymentIntentRequest:
+      type: object
+      required:
+        - amount
+      properties:
+        amount:
+          type: number
+          minimum: 0.5
+          example: 109.97
+          description: Amount in dollars
+        currency:
+          type: string
+          default: usd
+          example: usd
+        orderId:
+          type: string
+          description: Order ID to associate with payment
+
+    PaymentIntentResponse:
+      type: object
+      properties:
+        clientSecret:
+          type: string
+          description: Client secret for Stripe.js
+        paymentIntentId:
+          type: string
+          example: pi_123
+
+    # ==================== Common Schemas ====================
+    Error:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: Invalid input data
+        error:
+          type: string
+          example: Bad Request
+        timestamp:
+          type: string
+          format: date-time
+
+    ValidationError:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 400
+        message:
+          type: array
+          items:
+            type: string
+          example:
+            - email must be a valid email
+            - password must be at least 8 characters
+        error:
+          type: string
+          example: Bad Request
+
+    SuccessMessage:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Operation completed successfully
+
+  responses:
+    UnauthorizedError:
+      description: Unauthorized - invalid or missing authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 401
+            message: Unauthorized
+            error: Unauthorized
+
+    ForbiddenError:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 403
+            message: Forbidden resource
+            error: Forbidden
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 404
+            message: Resource not found
+            error: Not Found
+
+    ValidationErrorResponse:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+
+    TooManyRequestsError:
+      description: Too many requests - rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 429
+            message: Too many requests
+            error: Too Many Requests
+
+paths:
+  # ==================== Authentication Endpoints ====================
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user account
+      description: Creates a new user account with email, password, and name. Returns JWT tokens upon successful registration.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User successfully registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationErrorResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequestsError'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login with email and password
+      description: Authenticates user with email and password. Returns JWT access and refresh tokens.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequestsError'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout current user
+      description: Invalidates the current session. Client should clear stored tokens.
+      responses:
+        '200':
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: Generates a new access token using a valid refresh token.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+        '401':
+          description: Invalid or expired refresh token
+
+  /auth/forgot-password:
+    post:
+      tags:
+        - Authentication
+      summary: Request password reset
+      description: Sends a password reset email to the provided address if it exists in the system.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: Password reset email sent if email exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '429':
+          $ref: '#/components/responses/TooManyRequestsError'
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Reset password with token
+      description: Resets user password using the token received via email.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '400':
+          description: Invalid or expired token
+
+  /auth/social-login:
+    post:
+      tags:
+        - Authentication
+      summary: Login with social provider
+      description: Authenticates user using OAuth tokens from Google, Facebook, Apple, or GitHub.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SocialLoginRequest'
+      responses:
+        '200':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid social login credentials
+        '429':
+          $ref: '#/components/responses/TooManyRequestsError'
+
+  /auth/mfa/setup:
+    post:
+      tags:
+        - Authentication
+      summary: Setup MFA for user account
+      description: Generates a TOTP secret and QR code for setting up multi-factor authentication.
+      responses:
+        '200':
+          description: MFA setup initiated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaSetupResponse'
+        '400':
+          description: MFA is already enabled for this account
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/mfa/verify:
+    post:
+      tags:
+        - Authentication
+      summary: Verify and enable MFA
+      description: Verifies the TOTP code from authenticator app and enables MFA for the account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaVerifyRequest'
+      responses:
+        '200':
+          description: MFA enabled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  mfaEnabled:
+                    type: boolean
+        '400':
+          description: Invalid verification code
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/mfa/status:
+    get:
+      tags:
+        - Authentication
+      summary: Get MFA status for current user
+      description: Returns whether MFA is enabled for the authenticated user.
+      responses:
+        '200':
+          description: MFA status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mfaEnabled:
+                    type: boolean
+                  mfaMethod:
+                    type: string
+                    example: totp
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/mfa/disable:
+    post:
+      tags:
+        - Authentication
+      summary: Disable MFA for user account
+      description: Disables multi-factor authentication. Requires valid TOTP code or backup code.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaVerifyRequest'
+      responses:
+        '200':
+          description: MFA disabled successfully
+        '400':
+          description: Invalid verification code
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==================== User Endpoints ====================
+  /users/profile:
+    get:
+      tags:
+        - Users
+      summary: Get current user profile
+      description: Retrieves the profile information of the currently authenticated user.
+      responses:
+        '200':
+          description: Successfully retrieved user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    patch:
+      tags:
+        - Users
+      summary: Update current user profile
+      description: Updates profile information for the authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/ValidationErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags:
+        - Users
+      summary: Delete current user account
+      description: Deletes the authenticated user account (soft delete - anonymizes data).
+      responses:
+        '200':
+          description: Account deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/preferences:
+    get:
+      tags:
+        - Users
+      summary: Get user preferences
+      description: Retrieve the current user preferences including notification settings, language, currency.
+      responses:
+        '200':
+          description: User preferences retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    patch:
+      tags:
+        - Users
+      summary: Update user preferences
+      description: Update user preferences for notifications, language, currency, timezone.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferences'
+      responses:
+        '200':
+          description: Preferences updated successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/addresses:
+    get:
+      tags:
+        - Users
+      summary: Get all user addresses
+      description: Retrieve all saved addresses for the authenticated user.
+      responses:
+        '200':
+          description: Addresses retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Users
+      summary: Create new address
+      description: Add a new shipping or billing address for the authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAddressRequest'
+      responses:
+        '201':
+          description: Address created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '400':
+          $ref: '#/components/responses/ValidationErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /users/addresses/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Address ID
+
+    get:
+      tags:
+        - Users
+      summary: Get address by ID
+      description: Retrieve a specific address by its ID.
+      responses:
+        '200':
+          description: Address retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    patch:
+      tags:
+        - Users
+      summary: Update address
+      description: Update an existing address.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAddressRequest'
+      responses:
+        '200':
+          description: Address updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Users
+      summary: Delete address
+      description: Delete an address from the user account.
+      responses:
+        '200':
+          description: Address deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # ==================== Product Endpoints ====================
+  /products:
+    get:
+      tags:
+        - Products
+      summary: Get all products with filtering and pagination
+      description: Retrieves a paginated list of products with optional filtering.
+      security: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 12
+          description: Items per page
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Category ID to filter by
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+          description: Minimum price
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+          description: Maximum price
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [price-asc, price-desc, name-asc, name-desc, date-desc]
+          description: Sort order
+      responses:
+        '200':
+          description: Successfully retrieved paginated products
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductList'
+
+    post:
+      tags:
+        - Products
+      summary: Create new product
+      description: Create a new product (vendor/admin only). Checks subscription product limits.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Product limit reached for subscription tier
+
+  /products/search:
+    get:
+      tags:
+        - Products
+      summary: Search products with filters
+      description: Search products by name or description with advanced filtering options.
+      security: []
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search query
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Category ID
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [price-asc, price-desc, name-asc, name-desc, date-desc, relevance]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Returns search results with pagination
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductList'
+
+  /products/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Product ID
+
+    get:
+      tags:
+        - Products
+      summary: Get product by ID
+      description: Retrieves detailed information about a specific product.
+      security: []
+      responses:
+        '200':
+          description: Successfully retrieved product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Products
+      summary: Update product
+      description: Update product information.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Products
+      summary: Delete product
+      description: Delete a product from the catalog.
+      responses:
+        '204':
+          description: Product deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /products/{id}/related:
+    get:
+      tags:
+        - Products
+      summary: Get related products
+      description: Get products related to the specified product.
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 4
+          description: Number of related products
+      responses:
+        '200':
+          description: Returns related products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+  # ==================== Cart Endpoints ====================
+  /cart:
+    get:
+      tags:
+        - Shopping Cart
+      summary: Get current cart
+      description: Get current cart for authenticated user or guest (by session ID).
+      security:
+        - BearerAuth: []
+        - {}
+      parameters:
+        - name: sessionId
+          in: query
+          schema:
+            type: string
+          description: Session ID for guest cart
+      responses:
+        '200':
+          description: Cart retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+
+    delete:
+      tags:
+        - Shopping Cart
+      summary: Clear entire cart
+      description: Remove all items from the cart.
+      security:
+        - BearerAuth: []
+        - {}
+      parameters:
+        - name: sessionId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cart cleared successfully
+
+  /cart/items:
+    post:
+      tags:
+        - Shopping Cart
+      summary: Add item to cart
+      description: Add a product to the shopping cart.
+      security:
+        - BearerAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddToCartRequest'
+      responses:
+        '201':
+          description: Item added to cart successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '404':
+          description: Product not found
+
+  /cart/items/{itemId}:
+    parameters:
+      - name: itemId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Cart item ID
+
+    put:
+      tags:
+        - Shopping Cart
+      summary: Update cart item quantity
+      description: Update the quantity of an item in the cart.
+      security:
+        - BearerAuth: []
+        - {}
+      parameters:
+        - name: sessionId
+          in: query
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCartItemRequest'
+      responses:
+        '200':
+          description: Cart item updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '404':
+          description: Cart item not found
+
+    delete:
+      tags:
+        - Shopping Cart
+      summary: Remove item from cart
+      description: Remove an item from the shopping cart.
+      security:
+        - BearerAuth: []
+        - {}
+      parameters:
+        - name: sessionId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item removed successfully
+        '404':
+          description: Cart item not found
+
+  /cart/merge:
+    post:
+      tags:
+        - Shopping Cart
+      summary: Merge guest cart into user cart
+      description: Merge a guest cart into the authenticated user's cart (typically called after login).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeCartRequest'
+      responses:
+        '200':
+          description: Carts merged successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==================== Order Endpoints ====================
+  /orders:
+    get:
+      tags:
+        - Orders
+      summary: Get all orders for current user
+      description: Retrieves a complete list of orders placed by the authenticated user.
+      responses:
+        '200':
+          description: Successfully retrieved user orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Orders
+      summary: Create a new order
+      description: Creates a new order with the provided items and shipping address.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Invalid order data or insufficient inventory
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /orders/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Order UUID
+
+    get:
+      tags:
+        - Orders
+      summary: Get order by ID
+      description: Retrieves detailed information about a specific order.
+      responses:
+        '200':
+          description: Successfully retrieved order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Order belongs to another user
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /orders/{id}/tracking:
+    get:
+      tags:
+        - Orders
+      summary: Get order tracking information
+      description: Retrieves detailed tracking information for a specific order.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successfully retrieved tracking information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderId:
+                    type: string
+                  trackingNumber:
+                    type: string
+                  carrier:
+                    type: string
+                  status:
+                    type: string
+                  history:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrderStatusHistory'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /orders/{id}/cancel:
+    post:
+      tags:
+        - Orders
+      summary: Cancel an order
+      description: Cancels an order if it has not been shipped yet.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Order cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  orderNumber:
+                    type: string
+                  status:
+                    type: string
+                    example: CANCELLED
+                  message:
+                    type: string
+        '400':
+          description: Order cannot be cancelled (already shipped/delivered)
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # ==================== Checkout Endpoints ====================
+  /checkout/addresses:
+    get:
+      tags:
+        - Checkout
+      summary: Get saved addresses
+      description: Get saved addresses for checkout.
+      responses:
+        '200':
+          description: List of saved addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Checkout
+      summary: Save a new address
+      description: Save a new address during checkout.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAddressRequest'
+      responses:
+        '201':
+          description: Address saved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /checkout/payment-methods:
+    get:
+      tags:
+        - Checkout
+      summary: Get saved payment methods
+      description: Get saved payment methods for checkout.
+      responses:
+        '200':
+          description: List of saved payment methods
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentMethod'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /checkout/payment-methods/setup:
+    post:
+      tags:
+        - Checkout
+      summary: Get setup intent for adding a new payment method
+      description: Creates a Stripe SetupIntent for securely saving a payment method.
+      responses:
+        '200':
+          description: Setup intent client secret
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clientSecret:
+                    type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /checkout/initialize:
+    post:
+      tags:
+        - Checkout
+      summary: Initialize checkout session
+      description: Initialize checkout session with calculated totals.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutInitializeRequest'
+      responses:
+        '200':
+          description: Checkout session initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutSession'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /checkout/express:
+    post:
+      tags:
+        - Checkout
+      summary: Express checkout
+      description: One-click purchase with saved payment and shipping details.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpressCheckoutRequest'
+      responses:
+        '200':
+          description: Order placed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Invalid request or payment failed
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /checkout/guest:
+    post:
+      tags:
+        - Checkout
+      summary: Guest checkout
+      description: Checkout without an account.
+      security:
+        - BearerAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuestCheckoutRequest'
+      responses:
+        '200':
+          description: Guest order created, payment intent ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order:
+                    $ref: '#/components/schemas/Order'
+                  clientSecret:
+                    type: string
+                    description: Stripe client secret for payment
+        '400':
+          description: Invalid request
+        '429':
+          $ref: '#/components/responses/TooManyRequestsError'
+
+  # ==================== Payment Endpoints ====================
+  /payments/create-intent:
+    post:
+      tags:
+        - Payments
+      summary: Create a Stripe payment intent
+      description: Creates a payment intent for processing a payment.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentIntentRequest'
+      responses:
+        '201':
+          description: Payment intent created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentIntentResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /payments/webhook:
+    post:
+      tags:
+        - Payments
+      summary: Handle Stripe webhook events
+      description: Endpoint for receiving Stripe webhook events. Do not call directly.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+
+  /payments/paypal/webhook:
+    post:
+      tags:
+        - Payments
+      summary: Handle PayPal webhook events
+      description: Endpoint for receiving PayPal webhook events. Do not call directly.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean

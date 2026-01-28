@@ -1,0 +1,87 @@
+{{- if .Values.contentApi.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "content-service.fullname" . }}-{{ .Values.contentApi.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "content-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.contentApi.name }}
+spec:
+  type: {{ .Values.contentApi.service.type }}
+  ports:
+    - port: {{ .Values.contentApi.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "content-service.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.contentApi.name }}
+{{- end }}
+
+{{- if .Values.contentRenderer.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "content-service.fullname" . }}-{{ .Values.contentRenderer.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "content-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.contentRenderer.name }}
+spec:
+  type: {{ .Values.contentRenderer.service.type }}
+  ports:
+    - port: {{ .Values.contentRenderer.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "content-service.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.contentRenderer.name }}
+{{- end }}
+
+{{- if .Values.contentScheduler.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "content-service.fullname" . }}-{{ .Values.contentScheduler.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "content-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.contentScheduler.name }}
+spec:
+  type: {{ .Values.contentScheduler.service.type }}
+  ports:
+    - port: {{ .Values.contentScheduler.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "content-service.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.contentScheduler.name }}
+{{- end }}
+
+{{- if .Values.searchIndexer.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "content-service.fullname" . }}-{{ .Values.searchIndexer.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "content-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.searchIndexer.name }}
+spec:
+  type: {{ .Values.searchIndexer.service.type }}
+  ports:
+    - port: {{ .Values.searchIndexer.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "content-service.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.searchIndexer.name }}
+{{- end }}

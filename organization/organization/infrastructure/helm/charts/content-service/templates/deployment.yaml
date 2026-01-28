@@ -1,0 +1,391 @@
+{{- if .Values.contentApi.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "content-service.fullname" . }}-{{ .Values.contentApi.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "content-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.contentApi.name }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.contentApi.autoscaling.enabled }}
+  replicas: {{ .Values.contentApi.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "content-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.contentApi.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "content-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ .Values.contentApi.name }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "content-service.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "content-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.contentApi.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.contentApi.image.repository }}:{{ .Values.contentApi.image.tag }}"
+          imagePullPolicy: {{ .Values.contentApi.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.contentApi.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.contentApi.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.contentApi.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.contentApi.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.contentApi.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.contentApi.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.contentApi.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.contentApi.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.contentApi.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.contentApi.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.contentApi.probes.readiness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.contentApi.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "content-service.configMapName" . }}
+            {{- with .Values.contentApi.envFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.contentApi.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+
+{{- if .Values.contentRenderer.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "content-service.fullname" . }}-{{ .Values.contentRenderer.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "content-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.contentRenderer.name }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.contentRenderer.autoscaling.enabled }}
+  replicas: {{ .Values.contentRenderer.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "content-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.contentRenderer.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "content-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ .Values.contentRenderer.name }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "content-service.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "content-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.contentRenderer.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.contentRenderer.image.repository }}:{{ .Values.contentRenderer.image.tag }}"
+          imagePullPolicy: {{ .Values.contentRenderer.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.contentRenderer.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.contentRenderer.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.contentRenderer.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.contentRenderer.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.contentRenderer.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.contentRenderer.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.contentRenderer.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.contentRenderer.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.contentRenderer.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.contentRenderer.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.contentRenderer.probes.readiness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.contentRenderer.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "content-service.configMapName" . }}
+            {{- with .Values.contentRenderer.envFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.contentRenderer.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+
+{{- if .Values.contentScheduler.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "content-service.fullname" . }}-{{ .Values.contentScheduler.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "content-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.contentScheduler.name }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.contentScheduler.autoscaling.enabled }}
+  replicas: {{ .Values.contentScheduler.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "content-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.contentScheduler.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "content-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ .Values.contentScheduler.name }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "content-service.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "content-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.contentScheduler.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.contentScheduler.image.repository }}:{{ .Values.contentScheduler.image.tag }}"
+          imagePullPolicy: {{ .Values.contentScheduler.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.contentScheduler.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.contentScheduler.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.contentScheduler.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.contentScheduler.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.contentScheduler.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.contentScheduler.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.contentScheduler.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.contentScheduler.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.contentScheduler.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.contentScheduler.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.contentScheduler.probes.readiness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.contentScheduler.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "content-service.configMapName" . }}
+            {{- with .Values.contentScheduler.envFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.contentScheduler.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+
+{{- if .Values.searchIndexer.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "content-service.fullname" . }}-{{ .Values.searchIndexer.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "content-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.searchIndexer.name }}
+  {{- with .Values.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.searchIndexer.autoscaling.enabled }}
+  replicas: {{ .Values.searchIndexer.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "content-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.searchIndexer.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "content-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ .Values.searchIndexer.name }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "content-service.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "content-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.searchIndexer.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.searchIndexer.image.repository }}:{{ .Values.searchIndexer.image.tag }}"
+          imagePullPolicy: {{ .Values.searchIndexer.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.searchIndexer.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.searchIndexer.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.searchIndexer.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.searchIndexer.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.searchIndexer.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.searchIndexer.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.searchIndexer.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.searchIndexer.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.searchIndexer.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.searchIndexer.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.searchIndexer.probes.readiness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.searchIndexer.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "content-service.configMapName" . }}
+            {{- with .Values.searchIndexer.envFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.searchIndexer.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

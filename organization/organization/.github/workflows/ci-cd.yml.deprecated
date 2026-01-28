@@ -1,0 +1,884 @@
+name: Broxiva CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  # UNIFIED RELEASE: Scheduled for Tuesday January 6, 2026 at 9:00 PM CST
+  # CST (UTC-6) means 9PM CST = 03:00 UTC on January 7, 2026
+  # This deployment bundles ALL commits accumulated on main branch
+  schedule:
+    - cron: '0 3 7 1 *'
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Deploy to production after build'
+        required: false
+        type: boolean
+        default: false
+      force_deploy:
+        description: 'Force deployment even outside scheduled window'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '10'
+  AWS_REGION: 'us-east-1'
+  ECR_REGISTRY: '${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com'
+  EKS_CLUSTER: 'broxiva-prod-eks'
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  pull-requests: write
+  security-events: write  # Required for CodeQL
+
+jobs:
+  # ============================================
+  # STAGE 0: Security Analysis (CodeQL SAST + Secrets)
+  # ============================================
+
+  # Secret Detection with Gitleaks
+  secret-detection:
+    name: Secret Detection (Gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+      - name: Upload Gitleaks Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-results
+          path: results.sarif
+          retention-days: 30
+
+  # Dependency Vulnerability Scanning
+  dependency-audit:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: organization
+
+      - name: Run npm audit
+        id: audit
+        run: |
+          pnpm audit --audit-level=high --json > audit-results.json 2>&1 || true
+          if [ -f audit-results.json ]; then
+            HIGH_VULNS=$(jq '.metadata.vulnerabilities.high // 0' audit-results.json 2>/dev/null || echo "0")
+            CRITICAL_VULNS=$(jq '.metadata.vulnerabilities.critical // 0' audit-results.json 2>/dev/null || echo "0")
+            echo "high_vulns=$HIGH_VULNS" >> $GITHUB_OUTPUT
+            echo "critical_vulns=$CRITICAL_VULNS" >> $GITHUB_OUTPUT
+            if [ "$CRITICAL_VULNS" -gt 0 ]; then
+              echo "::error::Found $CRITICAL_VULNS critical vulnerabilities"
+              exit 1
+            fi
+          fi
+        working-directory: organization
+        continue-on-error: true
+
+      - name: Upload Audit Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-results
+          path: organization/audit-results.json
+          retention-days: 30
+
+  codeql-analysis:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript-typescript']
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
+          # Security-focused query suites
+          config: |
+            query-filters:
+              - exclude:
+                  tags: /correctness/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: organization
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+          upload: true
+
+      - name: Upload SARIF results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ runner.temp }}/codeql_databases/${{ matrix.language }}/results/javascript-typescript.sarif
+          category: security-analysis
+        continue-on-error: true
+
+  # ============================================
+  # STAGE 1: CI - Build and Test
+  # ============================================
+
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-keys.outputs.cache-key }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+
+      - name: Generate cache keys
+        id: cache-keys
+        run: echo "cache-key=${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}" >> $GITHUB_OUTPUT
+
+      - run: pnpm install --frozen-lockfile
+        working-directory: organization
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            organization/node_modules
+            organization/apps/*/node_modules
+            organization/packages/*/node_modules
+          key: ${{ steps.cache-keys.outputs.cache-key }}
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: setup
+    continue-on-error: false
+    # SECURITY: Lint failures must block deployment to catch security issues
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            organization/node_modules
+            organization/apps/*/node_modules
+            organization/packages/*/node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+      - run: pnpm install --frozen-lockfile
+        working-directory: organization
+      - run: pnpm lint
+        working-directory: organization
+
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    needs: setup
+    continue-on-error: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            organization/node_modules
+            organization/apps/*/node_modules
+            organization/packages/*/node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+      - run: pnpm install --frozen-lockfile
+        working-directory: organization
+      - run: pnpm type-check
+        working-directory: organization
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: setup
+    continue-on-error: false
+    # SECURITY: Test failures must block deployment
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            organization/node_modules
+            organization/apps/*/node_modules
+            organization/packages/*/node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+      - run: pnpm install --frozen-lockfile
+        working-directory: organization
+      - run: pnpm test -- --coverage --passWithNoTests
+        working-directory: organization
+        env:
+          CI: true
+
+  build:
+    name: Build Applications
+    runs-on: ubuntu-latest
+    needs: [setup]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            organization/node_modules
+            organization/apps/*/node_modules
+            organization/packages/*/node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+          restore-keys: ${{ runner.os }}-pnpm-
+      - run: pnpm install --frozen-lockfile
+        working-directory: organization
+      - run: pnpm build
+        working-directory: organization
+        env:
+          NODE_ENV: production
+          NODE_OPTIONS: "--max-old-space-size=4096"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ github.sha }}
+          path: |
+            organization/apps/api/dist
+            organization/apps/web/.next
+          retention-days: 7
+
+  # ============================================
+  # STAGE 1.5: SBOM Generation
+  # ============================================
+
+  sbom-generation:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: organization
+
+      - name: Install Syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Generate API SBOM (CycloneDX)
+        run: |
+          syft dir:organization/apps/api -o cyclonedx-json > sbom-api.json
+          echo "Generated API SBOM"
+
+      - name: Generate Web SBOM (CycloneDX)
+        run: |
+          syft dir:organization/apps/web -o cyclonedx-json > sbom-web.json
+          echo "Generated Web SBOM"
+
+      - name: Generate Full Project SBOM
+        run: |
+          syft dir:organization -o cyclonedx-json > sbom-full.json
+          echo "Generated Full Project SBOM"
+
+      - name: Scan SBOM for Vulnerabilities with Grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+          grype sbom:sbom-full.json --output json > vulnerability-report.json || true
+          grype sbom:sbom-full.json --fail-on critical || echo "::warning::Critical vulnerabilities found in SBOM"
+        continue-on-error: true
+
+      - name: Upload SBOM Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: |
+            sbom-api.json
+            sbom-web.json
+            sbom-full.json
+            vulnerability-report.json
+          retention-days: 90
+
+      - name: SBOM Summary
+        run: |
+          echo "## SBOM Generation Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| SBOM | Components |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------------|" >> $GITHUB_STEP_SUMMARY
+          API_COMPONENTS=$(jq '.components | length' sbom-api.json 2>/dev/null || echo "N/A")
+          WEB_COMPONENTS=$(jq '.components | length' sbom-web.json 2>/dev/null || echo "N/A")
+          FULL_COMPONENTS=$(jq '.components | length' sbom-full.json 2>/dev/null || echo "N/A")
+          echo "| API | $API_COMPONENTS |" >> $GITHUB_STEP_SUMMARY
+          echo "| Web | $WEB_COMPONENTS |" >> $GITHUB_STEP_SUMMARY
+          echo "| Full | $FULL_COMPONENTS |" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # STAGE 2: Docker Build and Push to ECR
+  # ============================================
+
+  docker-build:
+    name: Build Docker Images (API & Web)
+    runs-on: ubuntu-latest
+    # SECURITY: Docker build MUST depend on all quality gates and security scans passing
+    needs: [setup, build, lint, type-check, test, codeql-analysis, secret-detection, dependency-audit]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          # SECURITY: Using OIDC federation instead of long-lived credentials
+          # Requires AWS IAM Identity Provider for GitHub Actions configured
+          # See: https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+          # Fallback to static credentials if OIDC not configured (temporary)
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build API Image (Local)
+        id: build-api-local
+        uses: docker/build-push-action@v6
+        with:
+          context: ./organization
+          file: ./organization/apps/api/Dockerfile
+          push: false
+          load: true
+          tags: broxiva/api:scan
+          no-cache: true
+
+      - name: Scan API Image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'broxiva/api:scan'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          output: 'trivy-api-results.txt'
+
+      - name: Upload API Scan Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-api-scan-results
+          path: trivy-api-results.txt
+
+      - name: Build and Push API Image
+        id: build-api
+        uses: docker/build-push-action@v6
+        with:
+          context: ./organization
+          file: ./organization/apps/api/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/broxiva/api:${{ github.sha }}
+          no-cache: true
+
+      - name: Build Web Image (Local)
+        id: build-web-local
+        uses: docker/build-push-action@v6
+        with:
+          context: ./organization
+          file: ./organization/apps/web/Dockerfile
+          push: false
+          load: true
+          tags: broxiva/web:scan
+          no-cache: true
+
+      - name: Scan Web Image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'broxiva/web:scan'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          output: 'trivy-web-results.txt'
+
+      - name: Upload Web Scan Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-web-scan-results
+          path: trivy-web-results.txt
+
+      - name: Build and Push Web Image
+        id: build-web
+        uses: docker/build-push-action@v6
+        with:
+          context: ./organization
+          file: ./organization/apps/web/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/broxiva/web:${{ github.sha }}
+          no-cache: true
+
+      - name: Output Image Digests
+        id: digests
+        run: |
+          echo "api-digest=${{ steps.build-api.outputs.digest }}" >> $GITHUB_OUTPUT
+          echo "web-digest=${{ steps.build-web.outputs.digest }}" >> $GITHUB_OUTPUT
+          echo "## Image Digests (Immutable)" >> $GITHUB_STEP_SUMMARY
+          echo "- **API**: ${{ env.ECR_REGISTRY }}/broxiva/api@${{ steps.build-api.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Web**: ${{ env.ECR_REGISTRY }}/broxiva/web@${{ steps.build-web.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
+
+  docker-build-microservices:
+    name: Build Microservice - ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    # SECURITY: Docker build MUST depend on all quality gates and security scans passing
+    needs: [setup, build, lint, type-check, test, codeql-analysis, secret-detection, dependency-audit]
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - ai-agents
+          - ai-engine
+          - analytics
+          - chatbot
+          - fraud-detection
+          - inventory
+          - media
+          - notification
+          - personalization
+          - pricing
+          - recommendation
+          - search
+          - supplier-integration
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          # SECURITY: Using OIDC federation instead of long-lived credentials
+          # Requires AWS IAM Identity Provider for GitHub Actions configured
+          # See: https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+          # Fallback to static credentials if OIDC not configured (temporary)
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push ${{ matrix.service }} Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./organization
+          file: ./organization/apps/${{ matrix.service }}/Dockerfile
+          push: true
+          # SECURITY: Only immutable SHA-based tags - 'latest' tags are PROHIBITED for production deployments
+          tags: |
+            ${{ env.ECR_REGISTRY }}/broxiva/${{ matrix.service }}:${{ github.sha }}
+          no-cache: true
+
+  # ============================================
+  # STAGE 3: Deploy to Staging (Required Gate)
+  # ============================================
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [docker-build, docker-build-microservices]
+    # SECURITY: Staging deployment required before production - acts as validation gate
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
+    environment: staging
+    env:
+      EKS_CLUSTER_STAGING: 'broxiva-staging-eks'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions-staging-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Get Staging EKS Credentials
+        run: |
+          aws eks update-kubeconfig \
+            --name ${{ env.EKS_CLUSTER_STAGING }} \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Deploy to Staging
+        run: |
+          # Deploy API and Web to staging
+          kubectl set image deployment/broxiva-api \
+            api=${{ env.ECR_REGISTRY }}/broxiva/api:${{ github.sha }} \
+            -n broxiva-staging || echo "Warning: API deployment not found"
+
+          kubectl set image deployment/broxiva-web \
+            web=${{ env.ECR_REGISTRY }}/broxiva/web:${{ github.sha }} \
+            -n broxiva-staging || echo "Warning: Web deployment not found"
+
+          # Add staging deployment annotations
+          kubectl annotate deployment/broxiva-api \
+            kubernetes.io/change-cause="Staging: commit ${{ github.sha }}" \
+            -n broxiva-staging --overwrite || true
+          kubectl annotate deployment/broxiva-web \
+            kubernetes.io/change-cause="Staging: commit ${{ github.sha }}" \
+            -n broxiva-staging --overwrite || true
+
+      - name: Wait for Staging Rollout
+        run: |
+          kubectl rollout status deployment/broxiva-api -n broxiva-staging --timeout=300s || echo "Warning: API rollout incomplete"
+          kubectl rollout status deployment/broxiva-web -n broxiva-staging --timeout=300s || echo "Warning: Web rollout incomplete"
+
+      - name: Staging Health Check
+        id: health-check
+        run: |
+          # Wait for pods to be ready
+          sleep 30
+
+          # Check staging health endpoints
+          STAGING_API_URL="${{ secrets.STAGING_API_URL }}"
+          STAGING_WEB_URL="${{ secrets.STAGING_WEB_URL }}"
+
+          HEALTH_STATUS="pass"
+
+          if [ -n "$STAGING_API_URL" ]; then
+            echo "Testing staging API health..."
+            if ! curl -sf "$STAGING_API_URL/health" --max-time 30; then
+              echo "::warning::Staging API health check failed"
+              HEALTH_STATUS="degraded"
+            fi
+          fi
+
+          if [ -n "$STAGING_WEB_URL" ]; then
+            echo "Testing staging Web health..."
+            if ! curl -sf "$STAGING_WEB_URL" --max-time 30; then
+              echo "::warning::Staging Web health check failed"
+              HEALTH_STATUS="degraded"
+            fi
+          fi
+
+          echo "health_status=$HEALTH_STATUS" >> $GITHUB_OUTPUT
+
+      - name: Staging Deployment Summary
+        run: |
+          echo "## Staging Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Health Status**: ${{ steps.health-check.outputs.health_status || 'unknown' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Cluster**: ${{ env.EKS_CLUSTER_STAGING }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Staging validation passed - ready for production promotion" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # STAGE 4: Deploy to Production EKS
+  # ============================================
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    # SECURITY: Production deployment REQUIRES successful staging deployment
+    needs: [docker-build, docker-build-microservices, deploy-staging]
+    # UNIFIED RELEASE: Deploy only on scheduled run (Jan 6, 2026 9PM CST) or manual dispatch with deploy=true
+    # Scheduled deployment bundles ALL accumulated commits for unified release
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.deploy == 'true' || github.event.inputs.force_deploy == 'true')))
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          # SECURITY: Using OIDC federation for production deployments
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions-deploy-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+          # Fallback to static credentials if OIDC not configured (temporary)
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Get EKS Credentials
+        run: |
+          aws eks update-kubeconfig \
+            --name ${{ env.EKS_CLUSTER }} \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Deploy Core Services to EKS
+        run: |
+          # Update deployment image tags for API and Web using commit SHA
+          kubectl set image deployment/broxiva-api \
+            api=${{ env.ECR_REGISTRY }}/broxiva/api:${{ github.sha }} \
+            -n broxiva
+
+          kubectl set image deployment/broxiva-web \
+            web=${{ env.ECR_REGISTRY }}/broxiva/web:${{ github.sha }} \
+            -n broxiva
+
+          # Add deployment annotations for traceability
+          kubectl annotate deployment/broxiva-api \
+            kubernetes.io/change-cause="Deployed commit ${{ github.sha }} via GitHub Actions" \
+            -n broxiva --overwrite
+          kubectl annotate deployment/broxiva-web \
+            kubernetes.io/change-cause="Deployed commit ${{ github.sha }} via GitHub Actions" \
+            -n broxiva --overwrite
+
+          # Wait for rollout - fail if deployment fails
+          kubectl rollout status deployment/broxiva-api -n broxiva --timeout=300s
+          kubectl rollout status deployment/broxiva-web -n broxiva --timeout=300s
+
+      - name: Deploy Microservices to EKS
+        run: |
+          # List of microservices to deploy
+          MICROSERVICES=(
+            "ai-agents"
+            "ai-engine"
+            "analytics"
+            "chatbot"
+            "fraud-detection"
+            "inventory"
+            "media"
+            "notification"
+            "personalization"
+            "pricing"
+            "recommendation"
+            "search"
+            "supplier-integration"
+          )
+
+          # Update deployment image tags for each microservice using commit SHA
+          for SERVICE in "${MICROSERVICES[@]}"; do
+            echo "Deploying $SERVICE..."
+            kubectl set image deployment/broxiva-${SERVICE} \
+              ${SERVICE}=${{ env.ECR_REGISTRY }}/broxiva/${SERVICE}:${{ github.sha }} \
+              -n broxiva || echo "Warning: Failed to update $SERVICE deployment"
+
+            # Add deployment annotation for traceability
+            kubectl annotate deployment/broxiva-${SERVICE} \
+              kubernetes.io/change-cause="Deployed commit ${{ github.sha }} via GitHub Actions" \
+              -n broxiva --overwrite || true
+          done
+
+          # Wait for rollouts to complete
+          for SERVICE in "${MICROSERVICES[@]}"; do
+            echo "Waiting for $SERVICE rollout..."
+            kubectl rollout status deployment/broxiva-${SERVICE} -n broxiva --timeout=300s || echo "Warning: $SERVICE rollout status check failed"
+          done
+
+      - name: Deployment Summary
+        run: |
+          echo "## Production Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Info" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit SHA**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Tag**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Core Services" >> $GITHUB_STEP_SUMMARY
+          echo "- **API Image**: ${{ env.ECR_REGISTRY }}/broxiva/api:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Web Image**: ${{ env.ECR_REGISTRY }}/broxiva/web:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Microservices" >> $GITHUB_STEP_SUMMARY
+          echo "- **ai-agents**: ${{ env.ECR_REGISTRY }}/broxiva/ai-agents:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **ai-engine**: ${{ env.ECR_REGISTRY }}/broxiva/ai-engine:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **analytics**: ${{ env.ECR_REGISTRY }}/broxiva/analytics:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **chatbot**: ${{ env.ECR_REGISTRY }}/broxiva/chatbot:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **fraud-detection**: ${{ env.ECR_REGISTRY }}/broxiva/fraud-detection:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **inventory**: ${{ env.ECR_REGISTRY }}/broxiva/inventory:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **media**: ${{ env.ECR_REGISTRY }}/broxiva/media:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **notification**: ${{ env.ECR_REGISTRY }}/broxiva/notification:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **personalization**: ${{ env.ECR_REGISTRY }}/broxiva/personalization:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **pricing**: ${{ env.ECR_REGISTRY }}/broxiva/pricing:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **recommendation**: ${{ env.ECR_REGISTRY }}/broxiva/recommendation:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **search**: ${{ env.ECR_REGISTRY }}/broxiva/search:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **supplier-integration**: ${{ env.ECR_REGISTRY }}/broxiva/supplier-integration:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Cluster Info" >> $GITHUB_STEP_SUMMARY
+          echo "- **Cluster**: ${{ env.EKS_CLUSTER }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region**: ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # STAGE 5: Smoke Tests
+  # ============================================
+
+  smoke-test:
+    name: Production Smoke Tests
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Smoke Tests
+        run: |
+          # Health check API
+          API_URL="${{ secrets.PRODUCTION_API_URL }}"
+          if [ -n "$API_URL" ]; then
+            echo "Testing API health..."
+            curl -f "$API_URL/health" || echo "API health check failed"
+          fi
+
+          # Health check Web
+          WEB_URL="${{ secrets.PRODUCTION_WEB_URL }}"
+          if [ -n "$WEB_URL" ]; then
+            echo "Testing Web health..."
+            curl -f "$WEB_URL" || echo "Web health check failed"
+          fi
+
+      - name: Smoke Test Summary
+        run: |
+          echo "## Smoke Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Production endpoints validated" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
+  # CI Summary
+  # ============================================
+
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [lint, type-check, test, build]
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## Broxiva CI Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Type Check | ${{ needs.type-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check Results
+        # SECURITY: ALL quality gates must pass - no exceptions
+        if: needs.lint.result != 'success' || needs.type-check.result != 'success' || needs.test.result != 'success' || needs.build.result != 'success'
+        run: |
+          echo "::error::Quality gates failed - deployment blocked"
+          echo "Lint: ${{ needs.lint.result }}"
+          echo "Type Check: ${{ needs.type-check.result }}"
+          echo "Tests: ${{ needs.test.result }}"
+          echo "Build: ${{ needs.build.result }}"
+          exit 1

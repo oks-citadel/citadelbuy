@@ -1,0 +1,298 @@
+name: 'Deploy to ECS Fargate'
+description: 'Reusable composite action for deploying services to AWS ECS Fargate'
+
+inputs:
+  aws-region:
+    description: 'AWS region for ECS deployment'
+    required: false
+    default: 'us-east-1'
+  ecs-cluster:
+    description: 'Name of the ECS cluster'
+    required: true
+  service-name:
+    description: 'Name of the ECS service to update'
+    required: true
+  ecr-registry:
+    description: 'ECR registry URL'
+    required: true
+  image-tag:
+    description: 'Docker image tag to deploy (typically github.sha)'
+    required: true
+  container-name:
+    description: 'Name of the container in the task definition (defaults to service-name)'
+    required: false
+    default: ''
+  wait-for-stability:
+    description: 'Wait for service to become stable after deployment'
+    required: false
+    default: 'true'
+  wait-timeout:
+    description: 'Maximum time to wait for service stability (in seconds)'
+    required: false
+    default: '600'
+  force-new-deployment:
+    description: 'Force a new deployment even if no changes'
+    required: false
+    default: 'true'
+  deployment-circuit-breaker:
+    description: 'Enable deployment circuit breaker with rollback'
+    required: false
+    default: 'true'
+  health-check-path:
+    description: 'Health check endpoint path (e.g., /health)'
+    required: false
+    default: ''
+  health-check-url:
+    description: 'Full URL for health check (overrides health-check-path)'
+    required: false
+    default: ''
+  enable-execute-command:
+    description: 'Enable ECS Exec for debugging'
+    required: false
+    default: 'false'
+
+outputs:
+  deployment-id:
+    description: 'ECS deployment ID'
+    value: ${{ steps.deploy.outputs.deployment-id }}
+  service-arn:
+    description: 'ARN of the updated ECS service'
+    value: ${{ steps.deploy.outputs.service-arn }}
+  task-definition-arn:
+    description: 'ARN of the task definition'
+    value: ${{ steps.get-task-def.outputs.task-definition-arn }}
+  image-uri:
+    description: 'Full image URI that was deployed'
+    value: ${{ steps.build-image-uri.outputs.image-uri }}
+  deployment-status:
+    description: 'Final deployment status (success/failed/timeout)'
+    value: ${{ steps.wait-stable.outputs.status || 'deployed' }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      id: validate
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.ecs-cluster }}" ]; then
+          echo "::error::ECS cluster name is required"
+          exit 1
+        fi
+        if [ -z "${{ inputs.service-name }}" ]; then
+          echo "::error::Service name is required"
+          exit 1
+        fi
+        if [ -z "${{ inputs.ecr-registry }}" ]; then
+          echo "::error::ECR registry URL is required"
+          exit 1
+        fi
+        if [ -z "${{ inputs.image-tag }}" ]; then
+          echo "::error::Image tag is required"
+          exit 1
+        fi
+        echo "Validation passed for service: ${{ inputs.service-name }}"
+
+    - name: Build image URI
+      id: build-image-uri
+      shell: bash
+      run: |
+        # Construct the full image URI
+        IMAGE_URI="${{ inputs.ecr-registry }}/broxiva/${{ inputs.service-name }}:${{ inputs.image-tag }}"
+        echo "image-uri=$IMAGE_URI" >> $GITHUB_OUTPUT
+        echo "Deploying image: $IMAGE_URI"
+
+    - name: Get current task definition
+      id: get-task-def
+      shell: bash
+      run: |
+        # Get the current task definition for the service
+        TASK_DEF_ARN=$(aws ecs describe-services \
+          --cluster ${{ inputs.ecs-cluster }} \
+          --services ${{ inputs.service-name }} \
+          --query 'services[0].taskDefinition' \
+          --output text \
+          --region ${{ inputs.aws-region }})
+
+        if [ "$TASK_DEF_ARN" == "None" ] || [ -z "$TASK_DEF_ARN" ]; then
+          echo "::error::Service ${{ inputs.service-name }} not found in cluster ${{ inputs.ecs-cluster }}"
+          exit 1
+        fi
+
+        echo "task-definition-arn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
+        echo "Current task definition: $TASK_DEF_ARN"
+
+        # Download the task definition
+        aws ecs describe-task-definition \
+          --task-definition $TASK_DEF_ARN \
+          --query 'taskDefinition' \
+          --region ${{ inputs.aws-region }} > task-definition.json
+
+    - name: Update task definition with new image
+      id: update-task-def
+      shell: bash
+      run: |
+        # Determine container name (use input or default to service name)
+        CONTAINER_NAME="${{ inputs.container-name }}"
+        if [ -z "$CONTAINER_NAME" ]; then
+          CONTAINER_NAME="${{ inputs.service-name }}"
+        fi
+
+        # Update the container image in the task definition
+        # Remove fields that cannot be included in RegisterTaskDefinition
+        jq --arg IMAGE "${{ steps.build-image-uri.outputs.image-uri }}" \
+           --arg CONTAINER "$CONTAINER_NAME" \
+           'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy) |
+            .containerDefinitions = [.containerDefinitions[] |
+              if .name == $CONTAINER then .image = $IMAGE else . end]' \
+           task-definition.json > updated-task-definition.json
+
+        echo "Updated task definition for container: $CONTAINER_NAME"
+        echo "New image: ${{ steps.build-image-uri.outputs.image-uri }}"
+
+    - name: Register new task definition
+      id: register-task-def
+      shell: bash
+      run: |
+        # Register the new task definition
+        NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+          --cli-input-json file://updated-task-definition.json \
+          --query 'taskDefinition.taskDefinitionArn' \
+          --output text \
+          --region ${{ inputs.aws-region }})
+
+        echo "new-task-definition-arn=$NEW_TASK_DEF_ARN" >> $GITHUB_OUTPUT
+        echo "Registered new task definition: $NEW_TASK_DEF_ARN"
+
+    - name: Update ECS service
+      id: deploy
+      shell: bash
+      run: |
+        # Build the update-service command
+        UPDATE_CMD="aws ecs update-service \
+          --cluster ${{ inputs.ecs-cluster }} \
+          --service ${{ inputs.service-name }} \
+          --task-definition ${{ steps.register-task-def.outputs.new-task-definition-arn }} \
+          --region ${{ inputs.aws-region }}"
+
+        # Add force-new-deployment if requested
+        if [ "${{ inputs.force-new-deployment }}" == "true" ]; then
+          UPDATE_CMD="$UPDATE_CMD --force-new-deployment"
+        fi
+
+        # Add enable-execute-command if requested
+        if [ "${{ inputs.enable-execute-command }}" == "true" ]; then
+          UPDATE_CMD="$UPDATE_CMD --enable-execute-command"
+        fi
+
+        # Execute the update
+        RESULT=$(eval $UPDATE_CMD)
+
+        # Extract deployment ID and service ARN
+        DEPLOYMENT_ID=$(echo "$RESULT" | jq -r '.service.deployments[0].id // empty')
+        SERVICE_ARN=$(echo "$RESULT" | jq -r '.service.serviceArn // empty')
+
+        echo "deployment-id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+        echo "service-arn=$SERVICE_ARN" >> $GITHUB_OUTPUT
+
+        echo "Deployment initiated"
+        echo "  Deployment ID: $DEPLOYMENT_ID"
+        echo "  Service ARN: $SERVICE_ARN"
+        echo "  Task Definition: ${{ steps.register-task-def.outputs.new-task-definition-arn }}"
+
+    - name: Wait for service stability
+      id: wait-stable
+      if: inputs.wait-for-stability == 'true'
+      shell: bash
+      run: |
+        echo "Waiting for service to become stable (timeout: ${{ inputs.wait-timeout }}s)..."
+
+        # Calculate deadline
+        START_TIME=$(date +%s)
+        TIMEOUT=${{ inputs.wait-timeout }}
+
+        # Use AWS CLI waiter with custom timeout
+        if aws ecs wait services-stable \
+          --cluster ${{ inputs.ecs-cluster }} \
+          --services ${{ inputs.service-name }} \
+          --region ${{ inputs.aws-region }} 2>&1; then
+
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "Service stabilized in ${DURATION}s"
+          echo "status=success" >> $GITHUB_OUTPUT
+        else
+          echo "::warning::Service did not stabilize within timeout"
+          echo "status=timeout" >> $GITHUB_OUTPUT
+
+          # Get deployment status for debugging
+          aws ecs describe-services \
+            --cluster ${{ inputs.ecs-cluster }} \
+            --services ${{ inputs.service-name }} \
+            --region ${{ inputs.aws-region }} \
+            --query 'services[0].deployments' \
+            --output table
+
+          # Don't fail - let health check determine final status
+        fi
+
+    - name: Health check
+      id: health-check
+      if: inputs.health-check-url != '' || inputs.health-check-path != ''
+      shell: bash
+      run: |
+        # Determine health check URL
+        HEALTH_URL="${{ inputs.health-check-url }}"
+
+        if [ -z "$HEALTH_URL" ] && [ -n "${{ inputs.health-check-path }}" ]; then
+          echo "::warning::health-check-path provided but no base URL - skipping health check"
+          echo "status=skipped" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        echo "Performing health check: $HEALTH_URL"
+
+        # Retry health check up to 5 times with 10s delay
+        MAX_RETRIES=5
+        RETRY_DELAY=10
+
+        for i in $(seq 1 $MAX_RETRIES); do
+          echo "Health check attempt $i of $MAX_RETRIES..."
+
+          if curl -sf "$HEALTH_URL" --max-time 30 > /dev/null 2>&1; then
+            echo "Health check passed on attempt $i"
+            echo "status=healthy" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          if [ $i -lt $MAX_RETRIES ]; then
+            echo "Health check failed, retrying in ${RETRY_DELAY}s..."
+            sleep $RETRY_DELAY
+          fi
+        done
+
+        echo "::error::Health check failed after $MAX_RETRIES attempts"
+        echo "status=unhealthy" >> $GITHUB_OUTPUT
+        exit 1
+
+    - name: Deployment summary
+      if: always()
+      shell: bash
+      run: |
+        echo "## ECS Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Cluster | ${{ inputs.ecs-cluster }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Service | ${{ inputs.service-name }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Image | ${{ steps.build-image-uri.outputs.image-uri }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Task Definition | ${{ steps.register-task-def.outputs.new-task-definition-arn }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Deployment ID | ${{ steps.deploy.outputs.deployment-id }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Stability Status | ${{ steps.wait-stable.outputs.status || 'not-waited' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Health Check | ${{ steps.health-check.outputs.status || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+
+    - name: Cleanup
+      if: always()
+      shell: bash
+      run: |
+        rm -f task-definition.json updated-task-definition.json 2>/dev/null || true

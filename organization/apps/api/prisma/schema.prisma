@@ -5578,15 +5578,6 @@ enum NotificationPriority {
   URGENT
 }
 
-enum SyncStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-}
-
-// ==================== SEO Optimization ====================
-
 model SeoMeta {
   id             String   @id @default(uuid())
   entityType     String

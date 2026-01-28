@@ -1,0 +1,395 @@
+---
+# Inventory Sync Worker Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-sync-worker
+  labels:
+    app: inventory-sync-worker
+    tier: worker
+    component: dropshipping
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: inventory-sync-worker
+  template:
+    metadata:
+      labels:
+        app: inventory-sync-worker
+        tier: worker
+    spec:
+      serviceAccountName: dropshipping-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/backend:v2.0.0
+          command: ["node", "dist/workers/inventory-sync.worker.js"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: WORKER_TYPE
+              value: "inventory-sync"
+            - name: CONCURRENCY
+              value: "5"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: broxiva-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: broxiva-secrets
+                  key: redis-url
+            - name: SUPPLIER_SERVICE_URL
+              value: "http://supplier-integration:8001"
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
+
+---
+# Price Sync Worker Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: price-sync-worker
+  labels:
+    app: price-sync-worker
+    tier: worker
+    component: dropshipping
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: price-sync-worker
+  template:
+    metadata:
+      labels:
+        app: price-sync-worker
+        tier: worker
+    spec:
+      serviceAccountName: dropshipping-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/backend:v2.0.0
+          command: ["node", "dist/workers/price-sync.worker.js"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: WORKER_TYPE
+              value: "price-sync"
+            - name: CONCURRENCY
+              value: "3"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: broxiva-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: broxiva-secrets
+                  key: redis-url
+            - name: AI_SERVICE_URL
+              value: "http://ai-engine:8002"
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
+
+---
+# Order Routing Worker Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-routing-worker
+  labels:
+    app: order-routing-worker
+    tier: worker
+    component: dropshipping
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: order-routing-worker
+  template:
+    metadata:
+      labels:
+        app: order-routing-worker
+        tier: worker
+    spec:
+      serviceAccountName: dropshipping-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/backend:v2.0.0
+          command: ["node", "dist/workers/order-routing.worker.js"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: WORKER_TYPE
+              value: "order-routing"
+            - name: CONCURRENCY
+              value: "10"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: broxiva-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: broxiva-secrets
+                  key: redis-url
+            - name: SUPPLIER_SERVICE_URL
+              value: "http://supplier-integration:8001"
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
+
+---
+# Tracking Sync Worker Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracking-sync-worker
+  labels:
+    app: tracking-sync-worker
+    tier: worker
+    component: dropshipping
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tracking-sync-worker
+  template:
+    metadata:
+      labels:
+        app: tracking-sync-worker
+        tier: worker
+    spec:
+      serviceAccountName: dropshipping-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/backend:v2.0.0
+          command: ["node", "dist/workers/tracking-sync.worker.js"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: WORKER_TYPE
+              value: "tracking-sync"
+            - name: CONCURRENCY
+              value: "5"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: broxiva-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: broxiva-secrets
+                  key: redis-url
+            - name: SUPPLIER_SERVICE_URL
+              value: "http://supplier-integration:8001"
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
+
+---
+# Fraud Detection Worker Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fraud-detection-worker
+  labels:
+    app: fraud-detection-worker
+    tier: worker
+    component: dropshipping
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fraud-detection-worker
+  template:
+    metadata:
+      labels:
+        app: fraud-detection-worker
+        tier: worker
+    spec:
+      serviceAccountName: dropshipping-worker
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/backend:v2.0.0
+          command: ["node", "dist/workers/fraud-detection.worker.js"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "300m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: WORKER_TYPE
+              value: "fraud-detection"
+            - name: CONCURRENCY
+              value: "5"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: broxiva-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: broxiva-secrets
+                  key: redis-url
+            - name: AI_SERVICE_URL
+              value: "http://ai-engine:8002"
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
+
+---
+# ServiceAccount for Dropshipping Workers
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dropshipping-worker
+  labels:
+    app: dropshipping-worker
+    component: dropshipping
+automountServiceAccountToken: false

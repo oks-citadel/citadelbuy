@@ -1,0 +1,351 @@
+{
+  "workflowName": "Broxiva Fraud Detection & Prevention",
+  "version": "1.0.0",
+  "lastUpdated": "2025-12-03",
+
+  "riskThresholds": {
+    "low": {
+      "min": 0,
+      "max": 30,
+      "action": "APPROVE",
+      "color": "green",
+      "description": "Process normally to fulfillment"
+    },
+    "medium": {
+      "min": 31,
+      "max": 60,
+      "action": "HOLD",
+      "color": "yellow",
+      "description": "Hold for review within 24 hours"
+    },
+    "high": {
+      "min": 61,
+      "max": 85,
+      "action": "MANUAL_REVIEW",
+      "color": "orange",
+      "description": "Urgent manual review within 4 hours"
+    },
+    "critical": {
+      "min": 86,
+      "max": 100,
+      "action": "CANCEL_AND_BLOCK",
+      "color": "red",
+      "description": "Auto-cancel order and block customer"
+    }
+  },
+
+  "riskFactors": {
+    "newCustomer": {
+      "enabled": true,
+      "points": 15,
+      "description": "First order from customer",
+      "condition": "totalOrders === 0"
+    },
+    "addressMismatch": {
+      "enabled": true,
+      "points": 20,
+      "description": "Billing and shipping address mismatch",
+      "condition": "billingCountry !== shippingCountry OR billingZip !== shippingZip"
+    },
+    "highValueOrder": {
+      "enabled": true,
+      "minPoints": 5,
+      "maxPoints": 25,
+      "threshold": 500,
+      "description": "Order value exceeds threshold",
+      "formula": "Math.min(25, 5 + Math.floor((orderTotal - 500) / 200))"
+    },
+    "failedPayments": {
+      "enabled": true,
+      "pointsPerFailure": 10,
+      "maxPoints": 30,
+      "description": "Multiple failed payment attempts",
+      "condition": "failedAttempts > 0"
+    },
+    "ipCountryMismatch": {
+      "enabled": true,
+      "points": 15,
+      "description": "IP geolocation doesn't match shipping country",
+      "condition": "ipCountry !== shippingCountry"
+    },
+    "orderVelocity": {
+      "enabled": true,
+      "points": 25,
+      "threshold": 2,
+      "timeframe": "24h",
+      "description": "More than threshold orders in timeframe",
+      "condition": "recentOrders > threshold"
+    },
+    "freeEmail": {
+      "enabled": true,
+      "points": 5,
+      "description": "Free email provider domain",
+      "condition": "emailDomain in freeEmailDomains"
+    },
+    "highRiskCountry": {
+      "enabled": true,
+      "points": 20,
+      "description": "Shipping to high-risk country",
+      "condition": "shippingCountry in highRiskCountries"
+    },
+    "expressShippingFirstOrder": {
+      "enabled": true,
+      "points": 10,
+      "description": "Express shipping on first order",
+      "condition": "totalOrders === 0 AND shippingMethod contains 'express' OR 'overnight'"
+    },
+    "disposableEmail": {
+      "enabled": true,
+      "points": 30,
+      "description": "Disposable/temporary email domain",
+      "condition": "emailDomain in disposableEmailDomains"
+    },
+    "stripeRadarElevated": {
+      "enabled": true,
+      "points": 15,
+      "description": "Stripe Radar elevated risk level",
+      "condition": "stripeRiskLevel === 'elevated'"
+    },
+    "stripeRadarHighest": {
+      "enabled": true,
+      "points": 30,
+      "description": "Stripe Radar highest risk level",
+      "condition": "stripeRiskLevel === 'highest'"
+    },
+    "stripeRiskScore": {
+      "enabled": true,
+      "threshold": 75,
+      "formula": "(riskScore - 75) / 5",
+      "description": "Stripe risk score above threshold",
+      "condition": "stripeRiskScore > threshold"
+    }
+  },
+
+  "highRiskCountries": {
+    "westAfrica": ["NG", "GH", "CI", "CM", "BJ"],
+    "asia": ["ID", "PK", "BD", "VN"],
+    "easternEurope": ["RU", "UA", "BY", "MD"],
+    "southAmerica": ["VE", "CO", "BO"],
+    "northAfrica": ["EG", "MA", "DZ"],
+    "allCodes": ["NG", "GH", "CI", "CM", "BJ", "ID", "PK", "BD", "VN", "RU", "UA", "BY", "MD", "VE", "CO", "BO", "EG", "MA", "DZ"]
+  },
+
+  "disposableEmailDomains": [
+    "mailinator.com",
+    "tempmail.com",
+    "guerrillamail.com",
+    "10minutemail.com",
+    "throwaway.email",
+    "temp-mail.org",
+    "sharklasers.com",
+    "yopmail.com",
+    "maildrop.cc",
+    "getnada.com",
+    "trashmail.com",
+    "fakeinbox.com",
+    "temp-inbox.com",
+    "throwawaymail.com",
+    "burnermail.io",
+    "mailnesia.com",
+    "mintemail.com",
+    "mytemp.email"
+  ],
+
+  "freeEmailDomains": [
+    "gmail.com",
+    "yahoo.com",
+    "hotmail.com",
+    "outlook.com",
+    "aol.com",
+    "icloud.com",
+    "mail.com",
+    "protonmail.com",
+    "live.com",
+    "msn.com",
+    "yandex.com",
+    "gmx.com"
+  ],
+
+  "notifications": {
+    "slack": {
+      "enabled": true,
+      "channels": {
+        "fraudReview": "#fraud-review",
+        "fraudAlerts": "#fraud-alerts"
+      },
+      "mentions": {
+        "high": "@fraud-team @security-team",
+        "critical": "@fraud-team @security-team @management"
+      }
+    },
+    "email": {
+      "enabled": true,
+      "templates": {
+        "orderHold": "order-hold-review",
+        "orderCancelled": "order-cancelled-fraud"
+      }
+    },
+    "zendesk": {
+      "enabled": true,
+      "priority": {
+        "high": "urgent",
+        "critical": "urgent"
+      },
+      "tags": ["fraud", "high-risk", "order-review"],
+      "customFields": {
+        "orderId": 360001234567,
+        "riskScore": 360001234568
+      }
+    }
+  },
+
+  "api": {
+    "baseUrl": "https://api.broxiva.com/v1",
+    "endpoints": {
+      "customerHistory": "/customers/{customerId}",
+      "orderVelocity": "/orders?customerId={customerId}&timeframe=24h",
+      "paymentFailures": "/payments/failed-attempts?customerId={customerId}",
+      "updateOrderStatus": "/orders/{orderId}/status",
+      "cancelOrder": "/orders/{orderId}",
+      "blockCustomer": "/customers/{customerId}/block",
+      "auditLog": "/audit/fraud-decisions",
+      "errorLog": "/audit/workflow-errors",
+      "sendEmail": "/emails/send"
+    },
+    "timeout": 10000,
+    "retries": 3
+  },
+
+  "ipGeolocation": {
+    "provider": "ip-api",
+    "url": "http://ip-api.com/json/{ipAddress}",
+    "fallbackProviders": [
+      {
+        "name": "ipstack",
+        "url": "http://api.ipstack.com/{ipAddress}?access_key={apiKey}"
+      },
+      {
+        "name": "ipgeolocation",
+        "url": "https://api.ipgeolocation.io/ipgeo?apiKey={apiKey}&ip={ipAddress}"
+      }
+    ],
+    "timeout": 5000,
+    "cache": {
+      "enabled": true,
+      "ttl": 86400
+    }
+  },
+
+  "stripe": {
+    "enabled": true,
+    "radar": {
+      "enabled": true,
+      "riskLevels": ["normal", "elevated", "highest"]
+    }
+  },
+
+  "performance": {
+    "parallelDataGathering": true,
+    "caching": {
+      "customerHistory": {
+        "enabled": true,
+        "ttl": 300
+      },
+      "ipGeolocation": {
+        "enabled": true,
+        "ttl": 86400
+      }
+    },
+    "timeout": {
+      "workflow": 30000,
+      "apiCall": 10000,
+      "ipLookup": 5000
+    }
+  },
+
+  "audit": {
+    "enabled": true,
+    "logAllDecisions": true,
+    "retentionDays": 365,
+    "fields": [
+      "orderId",
+      "customerId",
+      "action",
+      "riskLevel",
+      "riskScore",
+      "riskFactors",
+      "orderTotal",
+      "timestamp",
+      "workflowId",
+      "executionId"
+    ]
+  },
+
+  "errorHandling": {
+    "enabled": true,
+    "retryFailedCalls": true,
+    "maxRetries": 3,
+    "notifyOnError": true,
+    "fallbackAction": "HOLD",
+    "fallbackMessage": "Manual review required due to workflow error"
+  },
+
+  "testing": {
+    "testMode": false,
+    "mockData": false,
+    "debugLogging": false,
+    "testCustomerIds": [
+      "CUST-TEST-LOW",
+      "CUST-TEST-MEDIUM",
+      "CUST-TEST-HIGH",
+      "CUST-TEST-CRITICAL"
+    ]
+  },
+
+  "compliance": {
+    "gdpr": {
+      "enabled": true,
+      "dataRetentionDays": 90,
+      "anonymizeAfterDays": 365
+    },
+    "pciDss": {
+      "enabled": true,
+      "noCardDataStored": true,
+      "auditLogRetentionDays": 365
+    },
+    "ccpa": {
+      "enabled": true,
+      "rightToAppeal": true,
+      "appealEmail": "fraud-appeals@broxiva.com"
+    }
+  },
+
+  "sla": {
+    "reviewTimeframes": {
+      "low": 0,
+      "medium": 86400,
+      "high": 14400,
+      "critical": 0
+    },
+    "workflowExecutionTime": {
+      "low": 5000,
+      "medium": 10000,
+      "high": 15000,
+      "critical": 20000
+    }
+  },
+
+  "metrics": {
+    "trackPerformance": true,
+    "targetAccuracy": {
+      "truePositiveRate": 0.90,
+      "falsePositiveRate": 0.05,
+      "falseNegativeRate": 0.10
+    },
+    "alertThresholds": {
+      "highFalsePositiveRate": 0.10,
+      "highFalseNegativeRate": 0.15,
+      "slowExecutionTime": 30000
+    }
+  }
+}

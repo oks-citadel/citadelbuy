@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice #{{invoiceNumber}} - Broxiva</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+    .container { max-width: 700px; margin: 0 auto; background: #ffffff; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white; }
+    .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+    .header p { margin: 10px 0 0; font-size: 16px; opacity: 0.9; }
+    .content { padding: 40px 30px; }
+    .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 35px; padding-bottom: 25px; border-bottom: 2px solid #e0e0e0; }
+    .company-info h2 { margin: 0 0 10px; font-size: 24px; color: #667eea; }
+    .company-info p { margin: 0; font-size: 14px; color: #666; line-height: 1.5; }
+    .invoice-details { text-align: right; }
+    .invoice-number { font-size: 20px; font-weight: 700; color: #333; margin-bottom: 10px; }
+    .invoice-date { font-size: 14px; color: #666; }
+    .status-badge { display: inline-block; background: #4caf50; color: white; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-top: 10px; }
+    .status-badge.pending { background: #ff9800; }
+    .status-badge.failed { background: #f44336; }
+    .addresses { display: flex; gap: 30px; margin-bottom: 35px; }
+    .address-box { flex: 1; }
+    .address-box h4 { margin: 0 0 12px; font-size: 14px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    .address-box p { margin: 0; font-size: 14px; color: #333; line-height: 1.6; }
+    .address-box strong { display: block; margin-bottom: 5px; font-size: 15px; }
+    .items-table { width: 100%; border-collapse: collapse; margin: 30px 0; }
+    .items-table thead { background: #f8f9fa; }
+    .items-table th { text-align: left; padding: 15px 10px; font-size: 13px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; border-bottom: 2px solid #e0e0e0; }
+    .items-table th:last-child { text-align: right; }
+    .items-table tbody tr { border-bottom: 1px solid #f0f0f0; }
+    .items-table td { padding: 15px 10px; font-size: 14px; color: #333; }
+    .items-table td:last-child { text-align: right; font-weight: 600; }
+    .item-description { color: #999; font-size: 13px; margin-top: 4px; }
+    .totals { margin-top: 30px; }
+    .totals-table { width: 100%; max-width: 350px; margin-left: auto; }
+    .totals-row { display: flex; justify-content: space-between; padding: 10px 0; font-size: 15px; }
+    .totals-row.discount { color: #4caf50; }
+    .totals-row.total { font-size: 20px; font-weight: 700; border-top: 2px solid #e0e0e0; margin-top: 10px; padding-top: 15px; color: #667eea; }
+    .payment-info { background: #f8f9fa; border-radius: 8px; padding: 25px; margin: 30px 0; }
+    .payment-info h4 { margin: 0 0 15px; font-size: 16px; color: #333; }
+    .payment-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; color: #666; }
+    .payment-row strong { color: #333; }
+    .card-display { display: flex; align-items: center; background: #fff; padding: 15px; border-radius: 6px; margin-top: 15px; border: 1px solid #e0e0e0; }
+    .card-icon { font-size: 28px; margin-right: 15px; }
+    .card-details { flex: 1; }
+    .card-brand { font-weight: 600; color: #333; }
+    .card-number { color: #666; font-size: 13px; }
+    .notes-section { background: #fff3cd; border-radius: 6px; padding: 20px; margin: 30px 0; border-left: 4px solid #ffc107; }
+    .notes-section h4 { margin: 0 0 10px; color: #856404; font-size: 16px; }
+    .notes-section p { margin: 0; color: #856404; font-size: 14px; line-height: 1.6; }
+    .download-section { text-align: center; margin: 35px 0; }
+    .download-button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 35px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
+    .download-button:hover { opacity: 0.9; }
+    .divider { height: 1px; background: #e0e0e0; margin: 35px 0; }
+    .footer-info { background: #f8f9fa; padding: 25px; text-align: center; }
+    .footer-info p { margin: 0 0 10px; font-size: 14px; color: #666; }
+    .footer-info a { color: #667eea; text-decoration: none; }
+    .footer { background: #2c3e50; padding: 25px; text-align: center; color: #bdc3c7; font-size: 13px; }
+    .footer p { margin: 5px 0; }
+    .footer a { color: #ecf0f1; text-decoration: none; }
+    @media only screen and (max-width: 600px) {
+      .content { padding: 30px 20px; }
+      .invoice-header { flex-direction: column; }
+      .invoice-details { text-align: left; margin-top: 20px; }
+      .addresses { flex-direction: column; gap: 20px; }
+      .items-table { font-size: 13px; }
+      .items-table th, .items-table td { padding: 10px 5px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>&#128221; Invoice / Receipt</h1>
+      <p>Thank you for your business</p>
+    </div>
+
+    <div class="content">
+      <div class="invoice-header">
+        <div class="company-info">
+          <h2>Broxiva</h2>
+          <p>
+            {{#if companyAddress}}
+              {{companyAddress.line1}}<br>
+              {{#if companyAddress.line2}}{{companyAddress.line2}}<br>{{/if}}
+              {{companyAddress.city}}, {{companyAddress.state}} {{companyAddress.postalCode}}<br>
+              {{companyAddress.country}}
+            {{else}}
+              123 Commerce Street<br>
+              San Francisco, CA 94105<br>
+              United States
+            {{/if}}
+          </p>
+          <p style="margin-top: 10px;">
+            Email: {{supportEmail}}<br>
+            {{#if taxId}}Tax ID: {{taxId}}{{/if}}
+          </p>
+        </div>
+        <div class="invoice-details">
+          <div class="invoice-number">Invoice #{{invoiceNumber}}</div>
+          <div class="invoice-date">
+            <strong>Date:</strong> {{invoiceDate}}<br>
+            {{#if dueDate}}<strong>Due Date:</strong> {{dueDate}}<br>{{/if}}
+            {{#if orderNumber}}<strong>Order:</strong> #{{orderNumber}}{{/if}}
+          </div>
+          <div class="status-badge {{status}}">{{statusText}}</div>
+        </div>
+      </div>
+
+      <div class="addresses">
+        <div class="address-box">
+          <h4>Bill To</h4>
+          <p>
+            <strong>{{billingAddress.name}}</strong>
+            {{billingAddress.line1}}<br>
+            {{#if billingAddress.line2}}{{billingAddress.line2}}<br>{{/if}}
+            {{billingAddress.city}}, {{billingAddress.state}} {{billingAddress.postalCode}}<br>
+            {{billingAddress.country}}<br>
+            {{#if billingAddress.email}}{{billingAddress.email}}{{/if}}
+          </p>
+        </div>
+        {{#if shippingAddress}}
+        <div class="address-box">
+          <h4>Ship To</h4>
+          <p>
+            <strong>{{shippingAddress.name}}</strong>
+            {{shippingAddress.line1}}<br>
+            {{#if shippingAddress.line2}}{{shippingAddress.line2}}<br>{{/if}}
+            {{shippingAddress.city}}, {{shippingAddress.state}} {{shippingAddress.postalCode}}<br>
+            {{shippingAddress.country}}
+          </p>
+        </div>
+        {{/if}}
+      </div>
+
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th style="text-align: center; width: 100px;">Quantity</th>
+            <th style="text-align: right; width: 120px;">Unit Price</th>
+            <th style="text-align: right; width: 120px;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each items}}
+          <tr>
+            <td>
+              <div style="font-weight: 600;">{{name}}</div>
+              {{#if description}}
+              <div class="item-description">{{description}}</div>
+              {{/if}}
+              {{#if sku}}
+              <div class="item-description">SKU: {{sku}}</div>
+              {{/if}}
+            </td>
+            <td style="text-align: center;">{{quantity}}</td>
+            <td style="text-align: right;">{{../currency}}{{unitPrice}}</td>
+            <td style="text-align: right;">{{../currency}}{{amount}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+
+      <div class="totals">
+        <div class="totals-table">
+          <div class="totals-row">
+            <span>Subtotal</span>
+            <span>{{currency}}{{subtotal}}</span>
+          </div>
+          {{#if discount}}
+          <div class="totals-row discount">
+            <span>Discount {{#if discountCode}}({{discountCode}}){{/if}}</span>
+            <span>-{{currency}}{{discount}}</span>
+          </div>
+          {{/if}}
+          {{#if shipping}}
+          <div class="totals-row">
+            <span>Shipping</span>
+            <span>{{currency}}{{shipping}}</span>
+          </div>
+          {{/if}}
+          {{#if tax}}
+          <div class="totals-row">
+            <span>Tax {{#if taxRate}}({{taxRate}}%){{/if}}</span>
+            <span>{{currency}}{{tax}}</span>
+          </div>
+          {{/if}}
+          <div class="totals-row total">
+            <span>Total</span>
+            <span>{{currency}}{{total}}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="payment-info">
+        <h4>&#128179; Payment Information</h4>
+        <div class="payment-row">
+          <span>Payment Method:</span>
+          <strong>{{paymentMethod.type}}</strong>
+        </div>
+        {{#if paymentMethod.transactionId}}
+        <div class="payment-row">
+          <span>Transaction ID:</span>
+          <strong>{{paymentMethod.transactionId}}</strong>
+        </div>
+        {{/if}}
+        <div class="payment-row">
+          <span>Payment Date:</span>
+          <strong>{{paymentDate}}</strong>
+        </div>
+        {{#if paymentMethod.card}}
+        <div class="card-display">
+          <span class="card-icon">&#128179;</span>
+          <div class="card-details">
+            <div class="card-brand">{{paymentMethod.card.brand}}</div>
+            <div class="card-number">**** **** **** {{paymentMethod.card.last4}}</div>
+          </div>
+        </div>
+        {{/if}}
+      </div>
+
+      {{#if notes}}
+      <div class="notes-section">
+        <h4>&#128221; Notes</h4>
+        <p>{{notes}}</p>
+      </div>
+      {{/if}}
+
+      {{#if downloadUrl}}
+      <div class="download-section">
+        <a href="{{downloadUrl}}" class="download-button">&#11015; Download PDF Invoice</a>
+      </div>
+      {{/if}}
+
+      <div class="divider"></div>
+
+      <div class="footer-info">
+        <p><strong>Questions about this invoice?</strong></p>
+        <p>
+          Contact us at <a href="mailto:{{supportEmail}}">{{supportEmail}}</a> or call {{#if supportPhone}}{{supportPhone}}{{else}}1-800-BROXIVA{{/if}}
+        </p>
+        <p style="margin-top: 15px;">
+          <a href="{{accountUrl}}">View Account</a> |
+          <a href="{{ordersUrl}}">Order History</a> |
+          <a href="{{helpUrl}}">Help Center</a>
+        </p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p><strong>Broxiva</strong> - The Marketplace You Can Trust</p>
+      <p style="margin-top: 15px; font-size: 12px;">
+        <a href="{{privacyUrl}}">Privacy Policy</a> |
+        <a href="{{termsUrl}}">Terms of Service</a> |
+        <a href="{{refundUrl}}">Refund Policy</a>
+      </p>
+      <p style="margin-top: 10px; font-size: 11px; color: #95a5a6;">
+        &copy; {{currentYear}} Broxiva. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

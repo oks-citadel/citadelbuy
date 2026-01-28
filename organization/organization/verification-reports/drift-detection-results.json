@@ -1,0 +1,408 @@
+{
+  "metadata": {
+    "generated_at": "2026-01-05T17:00:00Z",
+    "agent": "Terraform Enforcement Agent (Agent 08)",
+    "platform": "Broxiva E-Commerce Platform",
+    "terraform_version_required": ">=1.5.0"
+  },
+  "summary": {
+    "total_environments": 7,
+    "environments_with_lock_files": 1,
+    "environments_missing_lock_files": 6,
+    "format_compliant": true,
+    "all_backends_remote": true,
+    "sensitive_outputs_marked": true,
+    "module_versions_pinned": true
+  },
+  "environments": [
+    {
+      "name": "aws-prod",
+      "path": "organization/infrastructure/terraform/environments/aws-prod",
+      "provider": "AWS",
+      "backend": {
+        "type": "s3",
+        "bucket": "broxiva-terraform-state",
+        "key": "prod/terraform.tfstate",
+        "region": "us-east-1",
+        "encryption": true,
+        "dynamodb_table": "broxiva-terraform-locks"
+      },
+      "lock_file": {
+        "exists": false,
+        "action_required": "Run terraform init to generate .terraform.lock.hcl"
+      },
+      "drift_status": {
+        "checked": false,
+        "reason": "Requires terraform plan against live infrastructure",
+        "last_known_state": "unknown"
+      },
+      "providers": {
+        "aws": "~> 5.0",
+        "kubernetes": "~> 2.23",
+        "helm": "~> 2.11"
+      },
+      "registry_modules": [
+        {
+          "name": "vpc",
+          "source": "terraform-aws-modules/vpc/aws",
+          "version": "~> 5.0"
+        },
+        {
+          "name": "eks",
+          "source": "terraform-aws-modules/eks/aws",
+          "version": "~> 19.0"
+        },
+        {
+          "name": "rds",
+          "source": "terraform-aws-modules/rds/aws",
+          "version": "~> 6.0"
+        },
+        {
+          "name": "elasticache",
+          "source": "terraform-aws-modules/elasticache/aws",
+          "version": "~> 1.0"
+        },
+        {
+          "name": "s3_media",
+          "source": "terraform-aws-modules/s3-bucket/aws",
+          "version": "~> 3.0"
+        },
+        {
+          "name": "cloudfront",
+          "source": "terraform-aws-modules/cloudfront/aws",
+          "version": "~> 3.0"
+        },
+        {
+          "name": "db_security_group",
+          "source": "terraform-aws-modules/security-group/aws",
+          "version": "~> 5.0"
+        }
+      ],
+      "resources": {
+        "estimated_count": 150,
+        "categories": [
+          "VPC/Networking",
+          "EKS Cluster",
+          "RDS PostgreSQL",
+          "ElastiCache Redis",
+          "S3 Buckets",
+          "CloudFront CDN",
+          "ECR Repositories",
+          "Secrets Manager",
+          "CloudTrail",
+          "GuardDuty",
+          "IAM Roles/Policies",
+          "CloudWatch",
+          "SNS/SQS",
+          "VPC Endpoints"
+        ]
+      }
+    },
+    {
+      "name": "prod",
+      "path": "organization/infrastructure/terraform/environments/prod",
+      "provider": "Azure",
+      "backend": {
+        "type": "azurerm",
+        "resource_group_name": "broxiva-tfstate-rg",
+        "storage_account_name": "broxivatfstate",
+        "container_name": "tfstate",
+        "key": "prod.terraform.tfstate"
+      },
+      "lock_file": {
+        "exists": false,
+        "action_required": "Run terraform init to generate .terraform.lock.hcl"
+      },
+      "drift_status": {
+        "checked": false,
+        "reason": "Requires terraform plan against live infrastructure",
+        "last_known_state": "unknown"
+      },
+      "providers": {
+        "azurerm": "~> 3.0",
+        "azuread": "~> 2.0",
+        "random": "~> 3.0"
+      },
+      "local_modules": [
+        "networking",
+        "database",
+        "compute",
+        "security",
+        "monitoring",
+        "storage",
+        "dns"
+      ]
+    },
+    {
+      "name": "staging",
+      "path": "organization/infrastructure/terraform/environments/staging",
+      "provider": "Azure",
+      "backend": {
+        "type": "azurerm",
+        "resource_group_name": "broxiva-tfstate-rg",
+        "storage_account_name": "broxivatfstate",
+        "container_name": "tfstate",
+        "key": "staging.terraform.tfstate"
+      },
+      "lock_file": {
+        "exists": false,
+        "action_required": "Run terraform init to generate .terraform.lock.hcl"
+      },
+      "drift_status": {
+        "checked": false,
+        "reason": "Requires terraform plan against live infrastructure",
+        "last_known_state": "unknown"
+      },
+      "providers": {
+        "azurerm": "~> 3.0",
+        "azuread": "~> 2.0",
+        "random": "~> 3.0"
+      }
+    },
+    {
+      "name": "dev",
+      "path": "organization/infrastructure/terraform/environments/dev",
+      "provider": "Azure/AWS (multi-cloud)",
+      "backend": {
+        "type": "azurerm",
+        "resource_group_name": "broxiva-tfstate-rg",
+        "storage_account_name": "broxivatfstate",
+        "container_name": "tfstate",
+        "key": "dev.terraform.tfstate"
+      },
+      "lock_file": {
+        "exists": false,
+        "action_required": "Run terraform init to generate .terraform.lock.hcl"
+      },
+      "drift_status": {
+        "checked": false,
+        "reason": "Requires terraform plan against live infrastructure",
+        "last_known_state": "unknown"
+      },
+      "providers": {
+        "azurerm": "~> 3.0",
+        "aws": "~> 5.0",
+        "random": "~> 3.0"
+      }
+    },
+    {
+      "name": "dns",
+      "path": "organization/infrastructure/terraform/environments/dns",
+      "provider": "AWS",
+      "backend": {
+        "type": "s3",
+        "configured": true
+      },
+      "lock_file": {
+        "exists": true,
+        "providers_locked": [
+          {
+            "name": "hashicorp/aws",
+            "version": "5.100.0",
+            "constraints": "~> 5.0"
+          }
+        ]
+      },
+      "drift_status": {
+        "checked": false,
+        "reason": "Requires terraform plan against live infrastructure",
+        "last_known_state": "unknown"
+      }
+    },
+    {
+      "name": "africa",
+      "path": "organization/infrastructure/terraform/environments/africa",
+      "provider": "Azure",
+      "backend": {
+        "type": "azurerm",
+        "configured": true
+      },
+      "lock_file": {
+        "exists": false,
+        "action_required": "Run terraform init to generate .terraform.lock.hcl"
+      },
+      "drift_status": {
+        "checked": false,
+        "reason": "Requires terraform plan against live infrastructure",
+        "last_known_state": "unknown"
+      }
+    },
+    {
+      "name": "asia",
+      "path": "organization/infrastructure/terraform/environments/asia",
+      "provider": "Azure",
+      "backend": {
+        "type": "azurerm",
+        "configured": true
+      },
+      "lock_file": {
+        "exists": false,
+        "action_required": "Run terraform init to generate .terraform.lock.hcl"
+      },
+      "drift_status": {
+        "checked": false,
+        "reason": "Requires terraform plan against live infrastructure",
+        "last_known_state": "unknown"
+      }
+    }
+  ],
+  "modules": [
+    {
+      "name": "networking",
+      "path": "organization/infrastructure/terraform/modules/networking",
+      "providers": ["azurerm"],
+      "multi_cloud": true,
+      "files": ["main.tf", "main-aws.tf", "variables.tf", "variables-extended.tf", "outputs.tf", "outputs-aws.tf"]
+    },
+    {
+      "name": "compute",
+      "path": "organization/infrastructure/terraform/modules/compute",
+      "providers": ["azurerm", "azuread"],
+      "multi_cloud": true,
+      "files": ["main.tf", "main-aws.tf", "variables.tf", "variables-extended.tf", "variables-acr-security.tf", "outputs.tf", "outputs-aws.tf"]
+    },
+    {
+      "name": "database",
+      "path": "organization/infrastructure/terraform/modules/database",
+      "providers": ["azurerm", "random"],
+      "multi_cloud": true,
+      "files": ["main.tf", "main-aws.tf", "variables.tf", "variables-extended.tf", "outputs.tf", "outputs-aws.tf"]
+    },
+    {
+      "name": "storage",
+      "path": "organization/infrastructure/terraform/modules/storage",
+      "providers": ["azurerm"],
+      "multi_cloud": true,
+      "files": ["main.tf", "main-aws.tf", "variables.tf", "variables-extended.tf", "outputs.tf", "outputs-aws.tf"]
+    },
+    {
+      "name": "security",
+      "path": "organization/infrastructure/terraform/modules/security",
+      "providers": ["azurerm", "azuread"],
+      "multi_cloud": false,
+      "files": ["main.tf", "variables.tf", "outputs.tf"]
+    },
+    {
+      "name": "monitoring",
+      "path": "organization/infrastructure/terraform/modules/monitoring",
+      "providers": ["azurerm"],
+      "multi_cloud": true,
+      "files": ["main.tf", "main-aws.tf", "variables.tf", "variables-extended.tf", "outputs.tf", "outputs-aws.tf"]
+    },
+    {
+      "name": "dns",
+      "path": "organization/infrastructure/terraform/modules/dns",
+      "providers": ["azurerm"],
+      "multi_cloud": false,
+      "files": ["main.tf", "variables.tf", "outputs.tf"]
+    },
+    {
+      "name": "messaging",
+      "path": "organization/infrastructure/terraform/modules/messaging",
+      "providers": ["aws"],
+      "multi_cloud": false,
+      "files": ["main.tf", "variables.tf", "outputs.tf"]
+    },
+    {
+      "name": "budgets",
+      "path": "organization/infrastructure/terraform/modules/budgets",
+      "providers": ["aws"],
+      "multi_cloud": false,
+      "files": ["main.tf", "variables.tf", "outputs.tf"]
+    },
+    {
+      "name": "global-cdn",
+      "path": "organization/infrastructure/terraform/modules/global-cdn",
+      "providers": ["azurerm"],
+      "multi_cloud": true,
+      "files": ["main.tf", "main-aws.tf", "variables.tf", "variables-extended.tf", "outputs.tf", "outputs-aws.tf"]
+    },
+    {
+      "name": "organization",
+      "path": "organization/infrastructure/terraform/modules/organization",
+      "providers": ["azurerm", "azuread"],
+      "multi_cloud": false,
+      "files": ["main.tf", "variables.tf"]
+    }
+  ],
+  "governance_checks": {
+    "format_compliance": {
+      "status": "PASS",
+      "command": "terraform fmt -check -recursive",
+      "details": "All files pass format check"
+    },
+    "backend_encryption": {
+      "status": "PASS",
+      "aws_s3": "encrypt = true configured",
+      "azure_blob": "Azure Storage encryption at rest enabled by default"
+    },
+    "state_locking": {
+      "status": "PASS",
+      "aws_s3": "DynamoDB table configured for state locking",
+      "azure_blob": "Blob lease locking enabled by default"
+    },
+    "sensitive_outputs": {
+      "status": "PASS",
+      "total_marked": 59,
+      "coverage": "All password/secret/key/token outputs marked sensitive"
+    },
+    "module_versioning": {
+      "status": "PASS",
+      "registry_modules": "All use version constraints (~> or >=)",
+      "local_modules": "Relative path sourcing (../../modules/)"
+    },
+    "variable_validation": {
+      "status": "PARTIAL",
+      "total_variables": 150,
+      "with_validation": 18,
+      "coverage_percent": 12
+    }
+  },
+  "recommendations": {
+    "critical": [
+      {
+        "id": "LOCK-001",
+        "title": "Generate Provider Lock Files",
+        "description": "Run terraform init in all environments to generate .terraform.lock.hcl files",
+        "affected": ["aws-prod", "prod", "staging", "dev", "africa", "asia"],
+        "remediation": "cd <environment> && terraform init && git add .terraform.lock.hcl"
+      }
+    ],
+    "high": [
+      {
+        "id": "CI-001",
+        "title": "Add Terraform Lint to CI Pipeline",
+        "description": "Integrate terraform-lint.sh script into CI/CD pipeline",
+        "remediation": "Add to .github/workflows/ci-cd.yml"
+      },
+      {
+        "id": "VAL-001",
+        "title": "Increase Variable Validation Coverage",
+        "description": "Add validation blocks to critical variables",
+        "affected": ["CIDR blocks", "instance types", "email addresses"],
+        "target_coverage": "50%"
+      }
+    ],
+    "medium": [
+      {
+        "id": "DRIFT-001",
+        "title": "Implement Automated Drift Detection",
+        "description": "Schedule periodic terraform plan runs to detect configuration drift",
+        "remediation": "Configure GitHub Actions scheduled workflow"
+      },
+      {
+        "id": "POLICY-001",
+        "title": "Implement Policy as Code",
+        "description": "Add Sentinel or OPA policies for governance enforcement",
+        "examples": ["Enforce tagging", "Require encryption", "Block public access"]
+      }
+    ]
+  },
+  "next_steps": [
+    "1. Run terraform init in all environments to generate lock files",
+    "2. Commit lock files to version control",
+    "3. Add terraform-lint.sh to CI pipeline",
+    "4. Schedule drift detection runs",
+    "5. Implement policy enforcement"
+  ]
+}

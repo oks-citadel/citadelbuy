@@ -1,0 +1,320 @@
+# Pod Security Standards for Broxiva Platform
+# Implements Kubernetes Pod Security Standards (PSS) for workload isolation and security
+
+---
+# Pod Security Standards - Namespace Labels
+# Apply baseline pod security standard to broxiva namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: broxiva
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+
+---
+# Pod Security Standards - Namespace Labels for AI Services
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: broxiva-ai
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+
+---
+# Pod Security Standards - Namespace Labels for Monitoring
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: broxiva-monitoring
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline
+
+---
+# Security Context Constraints for Application Pods
+# This is a reference template for pod security contexts
+# Apply these settings to all application deployments
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pod-security-context-template
+  namespace: broxiva
+data:
+  application-security-context.yaml: |
+    # Pod-level security context
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 3000
+      fsGroup: 2000
+      seccompProfile:
+        type: RuntimeDefault
+      supplementalGroups: [4000]
+
+    # Container-level security context
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      runAsUser: 1000
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+        add:
+          - NET_BIND_SERVICE
+      seccompProfile:
+        type: RuntimeDefault
+
+  database-security-context.yaml: |
+    # Pod-level security context for database workloads
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 999  # Standard postgres/redis user
+      runAsGroup: 999
+      fsGroup: 999
+      seccompProfile:
+        type: RuntimeDefault
+
+    # Container-level security context
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      runAsUser: 999
+      readOnlyRootFilesystem: false  # Databases need write access
+      capabilities:
+        drop:
+          - ALL
+        add:
+          - CHOWN
+          - SETGID
+          - SETUID
+      seccompProfile:
+        type: RuntimeDefault
+
+  elasticsearch-security-context.yaml: |
+    # Pod-level security context for Elasticsearch
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000  # Elasticsearch user
+      runAsGroup: 1000
+      fsGroup: 1000
+      seccompProfile:
+        type: RuntimeDefault
+
+    # Container-level security context
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      runAsUser: 1000
+      readOnlyRootFilesystem: false
+      capabilities:
+        drop:
+          - ALL
+        add:
+          - CHOWN
+          - SETGID
+          - SETUID
+      seccompProfile:
+        type: RuntimeDefault
+
+---
+# Pod Security Policy (Legacy - Use Pod Security Standards in K8s 1.25+)
+# Kept for backward compatibility with older clusters
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: broxiva-restricted
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'runtime/default'
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: 'runtime/default'
+    apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  allowedCapabilities:
+    - NET_BIND_SERVICE
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+  readOnlyRootFilesystem: true
+
+---
+# Pod Security Policy for Database Workloads
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: broxiva-database
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'runtime/default'
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: 'runtime/default'
+    apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  allowedCapabilities:
+    - CHOWN
+    - SETGID
+    - SETUID
+    - DAC_OVERRIDE
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+  readOnlyRootFilesystem: false
+
+---
+# Pod Disruption Budget for API
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: broxiva-api-pdb
+  namespace: broxiva
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: broxiva-api
+
+---
+# Pod Disruption Budget for Web Frontend
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: broxiva-web-pdb
+  namespace: broxiva
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: broxiva-web
+
+---
+# Pod Disruption Budget for PostgreSQL
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-pdb
+  namespace: broxiva
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: postgres
+
+---
+# Pod Disruption Budget for Redis
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-pdb
+  namespace: broxiva
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: redis
+
+---
+# Pod Disruption Budget for Elasticsearch
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: elasticsearch-pdb
+  namespace: broxiva
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+
+---
+# LimitRange - Set default resource limits for containers
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: broxiva-limitrange
+  namespace: broxiva
+spec:
+  limits:
+    - max:
+        cpu: "4"
+        memory: "8Gi"
+      min:
+        cpu: "100m"
+        memory: "128Mi"
+      default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "200m"
+        memory: "256Mi"
+      type: Container
+    - max:
+        cpu: "8"
+        memory: "16Gi"
+      min:
+        cpu: "100m"
+        memory: "128Mi"
+      type: Pod
+
+---
+# ResourceQuota - Limit total resource consumption in namespace
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: broxiva-quota
+  namespace: broxiva
+spec:
+  hard:
+    requests.cpu: "50"
+    requests.memory: "100Gi"
+    limits.cpu: "100"
+    limits.memory: "200Gi"
+    persistentvolumeclaims: "20"
+    services.loadbalancers: "2"
+    services.nodeports: "5"
+  scopeSelector:
+    matchExpressions:
+      - operator: In
+        scopeName: PriorityClass
+        values: ["high", "medium", "low"]

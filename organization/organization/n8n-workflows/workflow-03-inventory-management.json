@@ -1,0 +1,1043 @@
+{
+  "name": "Broxiva Inventory Management & Alerts",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 4
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Every 4 Hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "broxiva-inventory-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook: Order Fulfilled",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        500
+      ],
+      "webhookId": "broxiva-inventory-webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({\"status\": \"success\", \"message\": \"Inventory check triggered\"}) }}"
+      },
+      "id": "webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        450,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.broxiva.com/v1/inventory",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "options": {}
+      },
+      "id": "fetch-inventory",
+      "name": "Fetch Full Inventory",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.broxiva.com/v1/products/low-stock",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "options": {}
+      },
+      "id": "fetch-low-stock",
+      "name": "Fetch Pre-Flagged Low Stock",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        650,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "merge-inventory-data",
+      "name": "Merge Inventory Data",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        850,
+        350
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate inventory metrics and categorize by urgency\nconst products = $input.first().json.products || [];\nconst now = new Date();\n\nconst enrichedProducts = products.map(product => {\n  const {\n    sku,\n    product_name,\n    current_stock,\n    reserved_stock,\n    available_stock,\n    reorder_point,\n    safety_stock,\n    supplier_id,\n    lead_time_days,\n    sales_30d,\n    sales_velocity,\n    last_sale_date,\n    cost_per_unit\n  } = product;\n\n  // Calculate days of stock remaining\n  const daysOfStockRemaining = sales_velocity > 0 \n    ? Math.floor(available_stock / sales_velocity)\n    : 999;\n\n  // Calculate reorder date based on lead time\n  const reorderDate = new Date();\n  reorderDate.setDate(reorderDate.getDate() + (daysOfStockRemaining - lead_time_days));\n\n  // Calculate stock health percentage\n  const stockHealthPct = reorder_point > 0 \n    ? (available_stock / reorder_point) * 100\n    : 100;\n\n  // Dead stock identification (no sales in 90+ days)\n  const daysSinceLastSale = last_sale_date \n    ? Math.floor((now - new Date(last_sale_date)) / (1000 * 60 * 60 * 24))\n    : 999;\n  const isDeadStock = daysSinceLastSale >= 90 && current_stock > 0;\n\n  // Determine urgency level\n  let urgency = 'normal';\n  let alertType = null;\n  \n  if (available_stock === 0) {\n    urgency = 'out_of_stock';\n    alertType = 'OUT_OF_STOCK';\n  } else if (available_stock < 10) {\n    urgency = 'critical';\n    alertType = 'CRITICAL';\n  } else if (stockHealthPct < 20) {\n    urgency = 'warning';\n    alertType = 'WARNING';\n  } else if (daysOfStockRemaining <= lead_time_days) {\n    urgency = 'warning';\n    alertType = 'REORDER_NEEDED';\n  }\n\n  // Calculate recommended order quantity\n  const projectedDemand = sales_velocity * (lead_time_days + 30); // Lead time + 1 month buffer\n  const recommendedOrderQty = Math.max(\n    0,\n    Math.ceil(projectedDemand + safety_stock - available_stock - reserved_stock)\n  );\n\n  // Calculate estimated cost\n  const estimatedOrderCost = recommendedOrderQty * (cost_per_unit || 0);\n\n  return {\n    ...product,\n    daysOfStockRemaining,\n    reorderDate: reorderDate.toISOString(),\n    stockHealthPct: Math.round(stockHealthPct * 100) / 100,\n    urgency,\n    alertType,\n    isDeadStock,\n    daysSinceLastSale,\n    recommendedOrderQty,\n    estimatedOrderCost: Math.round(estimatedOrderCost * 100) / 100,\n    projectedDemand: Math.ceil(projectedDemand),\n    timestamp: now.toISOString()\n  };\n});\n\n// Categorize products by urgency\nconst outOfStock = enrichedProducts.filter(p => p.urgency === 'out_of_stock');\nconst critical = enrichedProducts.filter(p => p.urgency === 'critical');\nconst warning = enrichedProducts.filter(p => p.urgency === 'warning');\nconst deadStock = enrichedProducts.filter(p => p.isDeadStock);\nconst normal = enrichedProducts.filter(p => p.urgency === 'normal' && !p.isDeadStock);\n\n// Calculate summary metrics\nconst summary = {\n  total_products: enrichedProducts.length,\n  out_of_stock_count: outOfStock.length,\n  critical_count: critical.length,\n  warning_count: warning.length,\n  dead_stock_count: deadStock.length,\n  healthy_count: normal.length,\n  total_inventory_value: enrichedProducts.reduce((sum, p) => sum + (p.current_stock * (p.cost_per_unit || 0)), 0),\n  total_recommended_orders: enrichedProducts.filter(p => p.recommendedOrderQty > 0).length,\n  total_order_value: enrichedProducts.reduce((sum, p) => sum + p.estimatedOrderCost, 0),\n  timestamp: now.toISOString()\n};\n\nreturn {\n  json: {\n    summary,\n    outOfStock,\n    critical,\n    warning,\n    deadStock,\n    normal,\n    allProducts: enrichedProducts\n  }\n};"
+      },
+      "id": "calculate-metrics",
+      "name": "Calculate Inventory Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1050,
+        350
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.summary.out_of_stock_count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-out-of-stock",
+      "name": "Has Out of Stock?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1250,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.summary.critical_count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-critical",
+      "name": "Has Critical Stock?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1250,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.summary.warning_count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-warning",
+      "name": "Has Warning Stock?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1250,
+        650
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "outOfStock",
+        "options": {}
+      },
+      "id": "split-out-of-stock",
+      "name": "Split Out of Stock Items",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.broxiva.com/v1/products/{{ $json.sku }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "is_available",
+              "value": "false"
+            },
+            {
+              "name": "availability_status",
+              "value": "out_of_stock"
+            },
+            {
+              "name": "auto_disabled_at",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "disable-product",
+      "name": "Disable Out of Stock Product",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1650,
+        50
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.broxiva.com/v1/products/{{ $json.sku }}/waitlist",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "options": {}
+      },
+      "id": "get-waitlist",
+      "name": "Get Waitlist Customers",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1650,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "list": "={{ $json.list_id || 'waitlist' }}",
+        "email": "={{ $json.customer_email }}",
+        "additionalFields": {
+          "customProperties": {
+            "customPropertiesValues": [
+              {
+                "key": "product_name",
+                "value": "={{ $json.product_name }}"
+              },
+              {
+                "key": "product_sku",
+                "value": "={{ $json.sku }}"
+              },
+              {
+                "key": "notification_type",
+                "value": "out_of_stock"
+              },
+              {
+                "key": "expected_restock_date",
+                "value": "={{ $json.reorderDate }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "notify-klaviyo",
+      "name": "Notify Waitlist via Klaviyo",
+      "type": "n8n-nodes-base.klaviyo",
+      "typeVersion": 1,
+      "position": [
+        1850,
+        150
+      ],
+      "credentials": {
+        "klaviyoOAuth2Api": {
+          "id": "klaviyo-credentials",
+          "name": "Klaviyo API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "critical",
+        "options": {}
+      },
+      "id": "split-critical",
+      "name": "Split Critical Items",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        350
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "channel": "inventory-alerts",
+        "text": "=🚨 *CRITICAL STOCK ALERT* @channel\n\n*Product:* {{ $json.product_name }}\n*SKU:* `{{ $json.sku }}`\n*Current Stock:* {{ $json.available_stock }} units\n*Reserved:* {{ $json.reserved_stock }} units\n*Reorder Point:* {{ $json.reorder_point }} units\n\n*Metrics:*\n• Stock Health: {{ $json.stockHealthPct }}%\n• Days Remaining: {{ $json.daysOfStockRemaining }} days\n• Sales Velocity: {{ $json.sales_velocity }} units/day\n• 30-Day Sales: {{ $json.sales_30d }} units\n\n*Recommendations:*\n• Recommended Order: {{ $json.recommendedOrderQty }} units\n• Estimated Cost: ${{ $json.estimatedOrderCost }}\n• Supplier: {{ $json.supplier_id }}\n• Lead Time: {{ $json.lead_time_days }} days\n• Suggested Reorder Date: {{ $json.reorderDate.split('T')[0] }}\n\n⚠️ *IMMEDIATE ACTION REQUIRED*",
+        "otherOptions": {}
+      },
+      "id": "slack-critical",
+      "name": "Slack: Critical Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [
+        1650,
+        350
+      ],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "slack-credentials",
+          "name": "Slack OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "warning",
+        "options": {}
+      },
+      "id": "split-warning",
+      "name": "Split Warning Items",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        550
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "inventory@broxiva.com",
+        "toEmail": "purchasing@broxiva.com",
+        "subject": "=Low Stock Warning: {{ $json.product_name }} ({{ $json.sku }})",
+        "emailType": "html",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n    .container { max-width: 600px; margin: 0 auto; padding: 20px; }\n    .header { background: #f59e0b; color: white; padding: 20px; border-radius: 5px 5px 0 0; }\n    .content { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; }\n    .metrics { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; }\n    .metric-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }\n    .metric-label { font-weight: bold; color: #666; }\n    .metric-value { color: #333; }\n    .action-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 15px 0; }\n    .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h2>⚠️ Low Stock Warning</h2>\n    </div>\n    <div class=\"content\">\n      <h3>{{ $json.product_name }}</h3>\n      <p><strong>SKU:</strong> {{ $json.sku }}</p>\n      \n      <div class=\"metrics\">\n        <div class=\"metric-row\">\n          <span class=\"metric-label\">Current Stock:</span>\n          <span class=\"metric-value\">{{ $json.current_stock }} units</span>\n        </div>\n        <div class=\"metric-row\">\n          <span class=\"metric-label\">Available Stock:</span>\n          <span class=\"metric-value\">{{ $json.available_stock }} units</span>\n        </div>\n        <div class=\"metric-row\">\n          <span class=\"metric-label\">Reserved Stock:</span>\n          <span class=\"metric-value\">{{ $json.reserved_stock }} units</span>\n        </div>\n        <div class=\"metric-row\">\n          <span class=\"metric-label\">Reorder Point:</span>\n          <span class=\"metric-value\">{{ $json.reorder_point }} units</span>\n        </div>\n        <div class=\"metric-row\">\n          <span class=\"metric-label\">Stock Health:</span>\n          <span class=\"metric-value\" style=\"color: #f59e0b; font-weight: bold;\">{{ $json.stockHealthPct }}%</span>\n        </div>\n        <div class=\"metric-row\">\n          <span class=\"metric-label\">Days of Stock Remaining:</span>\n          <span class=\"metric-value\">{{ $json.daysOfStockRemaining }} days</span>\n        </div>\n      </div>\n\n      <div class=\"action-box\">\n        <h4 style=\"margin-top: 0;\">Recommended Action</h4>\n        <p><strong>Order Quantity:</strong> {{ $json.recommendedOrderQty }} units</p>\n        <p><strong>Estimated Cost:</strong> ${{ $json.estimatedOrderCost }}</p>\n        <p><strong>Supplier:</strong> {{ $json.supplier_id }}</p>\n        <p><strong>Lead Time:</strong> {{ $json.lead_time_days }} days</p>\n        <p><strong>Recommended Reorder Date:</strong> {{ $json.reorderDate.split('T')[0] }}</p>\n      </div>\n\n      <div class=\"metrics\">\n        <h4>Sales Analytics</h4>\n        <div class=\"metric-row\">\n          <span class=\"metric-label\">30-Day Sales:</span>\n          <span class=\"metric-value\">{{ $json.sales_30d }} units</span>\n        </div>\n        <div class=\"metric-row\">\n          <span class=\"metric-label\">Daily Velocity:</span>\n          <span class=\"metric-value\">{{ $json.sales_velocity }} units/day</span>\n        </div>\n        <div class=\"metric-row\">\n          <span class=\"metric-label\">Projected Demand:</span>\n          <span class=\"metric-value\">{{ $json.projectedDemand }} units</span>\n        </div>\n      </div>\n\n      <p style=\"margin-top: 20px;\"><em>A draft purchase order has been created in Notion for your review.</em></p>\n    </div>\n    <div class=\"footer\">\n      <p>Broxiva Inventory Management System<br>\n      Generated: {{ $json.timestamp }}</p>\n    </div>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "email-warning",
+      "name": "Email: Low Stock Warning",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1650,
+        500
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "smtp-credentials",
+          "name": "SMTP Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "databaseId": "={{ $env.NOTION_PO_DATABASE_ID }}",
+        "title": "=PO Draft: {{ $json.product_name }} ({{ $json.sku }})",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Status",
+              "selectValue": "Draft"
+            },
+            {
+              "key": "Product SKU",
+              "textValue": "={{ $json.sku }}"
+            },
+            {
+              "key": "Product Name",
+              "textValue": "={{ $json.product_name }}"
+            },
+            {
+              "key": "Supplier ID",
+              "textValue": "={{ $json.supplier_id }}"
+            },
+            {
+              "key": "Quantity",
+              "numberValue": "={{ $json.recommendedOrderQty }}"
+            },
+            {
+              "key": "Estimated Cost",
+              "numberValue": "={{ $json.estimatedOrderCost }}"
+            },
+            {
+              "key": "Lead Time (Days)",
+              "numberValue": "={{ $json.lead_time_days }}"
+            },
+            {
+              "key": "Current Stock",
+              "numberValue": "={{ $json.available_stock }}"
+            },
+            {
+              "key": "Stock Health %",
+              "numberValue": "={{ $json.stockHealthPct }}"
+            },
+            {
+              "key": "Priority",
+              "selectValue": "={{ $json.urgency === 'critical' ? 'High' : 'Medium' }}"
+            },
+            {
+              "key": "Auto Generated",
+              "checkboxValue": true
+            },
+            {
+              "key": "Created Date",
+              "dateValue": "={{ $now.toISO() }}"
+            }
+          ]
+        },
+        "blockUi": {
+          "blockValues": [
+            {
+              "type": "paragraph",
+              "richText": {
+                "richTextValues": [
+                  {
+                    "text": "=**Alert Type:** {{ $json.alertType }}\\n**Days of Stock Remaining:** {{ $json.daysOfStockRemaining }}\\n**Sales Velocity:** {{ $json.sales_velocity }} units/day\\n**30-Day Sales:** {{ $json.sales_30d }} units\\n**Projected Demand:** {{ $json.projectedDemand }} units\\n\\nThis purchase order was automatically generated by the inventory management system."
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "id": "notion-po",
+      "name": "Notion: Create Draft PO",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [
+        1650,
+        600
+      ],
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "notion-credentials",
+          "name": "Notion OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "merge-alerts",
+      "name": "Merge All Alerts",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1850,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate daily inventory summary report\nconst inputData = $input.first().json;\nconst summary = inputData.summary;\nconst allProducts = inputData.allProducts || [];\nconst outOfStock = inputData.outOfStock || [];\nconst critical = inputData.critical || [];\nconst warning = inputData.warning || [];\nconst deadStock = inputData.deadStock || [];\n\n// Calculate top movers (highest velocity)\nconst topMovers = [...allProducts]\n  .filter(p => p.sales_velocity > 0)\n  .sort((a, b) => b.sales_velocity - a.sales_velocity)\n  .slice(0, 10);\n\n// Calculate slow movers (lowest velocity, not dead stock)\nconst slowMovers = [...allProducts]\n  .filter(p => p.sales_velocity > 0 && !p.isDeadStock)\n  .sort((a, b) => a.sales_velocity - b.sales_velocity)\n  .slice(0, 10);\n\n// Products needing reorder within 7 days\nconst needsReorderSoon = allProducts.filter(p => {\n  const reorderDate = new Date(p.reorderDate);\n  const daysUntilReorder = Math.floor((reorderDate - new Date()) / (1000 * 60 * 60 * 24));\n  return daysUntilReorder <= 7 && daysUntilReorder >= 0;\n});\n\n// Calculate inventory turnover metrics\nconst totalSales30d = allProducts.reduce((sum, p) => sum + p.sales_30d, 0);\nconst totalInventoryUnits = allProducts.reduce((sum, p) => sum + p.current_stock, 0);\nconst avgTurnoverRate = totalInventoryUnits > 0 ? (totalSales30d / totalInventoryUnits) : 0;\n\n// Format currency\nconst formatCurrency = (amount) => {\n  return new Intl.NumberFormat('en-US', {\n    style: 'currency',\n    currency: 'USD'\n  }).format(amount);\n};\n\n// Build HTML report\nconst htmlReport = `\n<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; }\n    .container { max-width: 900px; margin: 20px auto; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }\n    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }\n    .header h1 { margin: 0; font-size: 28px; }\n    .header p { margin: 5px 0 0 0; opacity: 0.9; }\n    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 30px; background: #f9f9f9; }\n    .summary-card { background: white; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }\n    .summary-card.critical { border-left: 4px solid #ef4444; }\n    .summary-card.warning { border-left: 4px solid #f59e0b; }\n    .summary-card.success { border-left: 4px solid #10b981; }\n    .summary-card.info { border-left: 4px solid #3b82f6; }\n    .summary-value { font-size: 32px; font-weight: bold; margin: 10px 0; }\n    .summary-label { color: #666; font-size: 14px; }\n    .section { padding: 30px; border-bottom: 1px solid #eee; }\n    .section h2 { color: #667eea; margin-top: 0; font-size: 22px; }\n    table { width: 100%; border-collapse: collapse; margin: 15px 0; }\n    th { background: #f3f4f6; padding: 12px; text-align: left; font-weight: 600; color: #374151; border-bottom: 2px solid #e5e7eb; }\n    td { padding: 12px; border-bottom: 1px solid #f3f4f6; }\n    tr:hover { background: #f9fafb; }\n    .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }\n    .badge.critical { background: #fee2e2; color: #dc2626; }\n    .badge.warning { background: #fef3c7; color: #d97706; }\n    .badge.success { background: #d1fae5; color: #059669; }\n    .badge.info { background: #dbeafe; color: #2563eb; }\n    .footer { text-align: center; padding: 20px; background: #f9f9f9; color: #666; font-size: 12px; }\n    .metric-highlight { color: #667eea; font-weight: bold; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>📊 Daily Inventory Summary Report</h1>\n      <p>Broxiva E-commerce Platform</p>\n      <p>${new Date(summary.timestamp).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>\n    </div>\n\n    <div class=\"summary-grid\">\n      <div class=\"summary-card info\">\n        <div class=\"summary-label\">Total Products</div>\n        <div class=\"summary-value\">${summary.total_products}</div>\n      </div>\n      <div class=\"summary-card critical\">\n        <div class=\"summary-label\">Out of Stock</div>\n        <div class=\"summary-value\">${summary.out_of_stock_count}</div>\n      </div>\n      <div class=\"summary-card critical\">\n        <div class=\"summary-label\">Critical Stock</div>\n        <div class=\"summary-value\">${summary.critical_count}</div>\n      </div>\n      <div class=\"summary-card warning\">\n        <div class=\"summary-label\">Low Stock Warnings</div>\n        <div class=\"summary-value\">${summary.warning_count}</div>\n      </div>\n      <div class=\"summary-card success\">\n        <div class=\"summary-label\">Healthy Stock</div>\n        <div class=\"summary-value\">${summary.healthy_count}</div>\n      </div>\n      <div class=\"summary-card info\">\n        <div class=\"summary-label\">Dead Stock Items</div>\n        <div class=\"summary-value\">${summary.dead_stock_count}</div>\n      </div>\n    </div>\n\n    <div class=\"section\">\n      <h2>💰 Financial Overview</h2>\n      <table>\n        <tr>\n          <td><strong>Total Inventory Value:</strong></td>\n          <td class=\"metric-highlight\">${formatCurrency(summary.total_inventory_value)}</td>\n        </tr>\n        <tr>\n          <td><strong>Recommended Orders:</strong></td>\n          <td>${summary.total_recommended_orders} products</td>\n        </tr>\n        <tr>\n          <td><strong>Total Order Value:</strong></td>\n          <td class=\"metric-highlight\">${formatCurrency(summary.total_order_value)}</td>\n        </tr>\n        <tr>\n          <td><strong>30-Day Sales Volume:</strong></td>\n          <td>${totalSales30d.toLocaleString()} units</td>\n        </tr>\n        <tr>\n          <td><strong>Inventory Turnover Rate:</strong></td>\n          <td>${avgTurnoverRate.toFixed(2)}x per month</td>\n        </tr>\n      </table>\n    </div>\n\n    ${outOfStock.length > 0 ? `\n    <div class=\"section\">\n      <h2>🚫 Out of Stock Items (${outOfStock.length})</h2>\n      <table>\n        <thead>\n          <tr>\n            <th>SKU</th>\n            <th>Product Name</th>\n            <th>Last 30d Sales</th>\n            <th>Recommended Order</th>\n            <th>Est. Cost</th>\n          </tr>\n        </thead>\n        <tbody>\n          ${outOfStock.map(p => `\n          <tr>\n            <td><code>${p.sku}</code></td>\n            <td>${p.product_name}</td>\n            <td>${p.sales_30d} units</td>\n            <td><strong>${p.recommendedOrderQty}</strong> units</td>\n            <td>${formatCurrency(p.estimatedOrderCost)}</td>\n          </tr>\n          `).join('')}\n        </tbody>\n      </table>\n    </div>\n    ` : ''}\n\n    ${critical.length > 0 ? `\n    <div class=\"section\">\n      <h2>🚨 Critical Stock Alerts (${critical.length})</h2>\n      <table>\n        <thead>\n          <tr>\n            <th>SKU</th>\n            <th>Product Name</th>\n            <th>Available</th>\n            <th>Health</th>\n            <th>Days Left</th>\n            <th>Recommended Order</th>\n          </tr>\n        </thead>\n        <tbody>\n          ${critical.map(p => `\n          <tr>\n            <td><code>${p.sku}</code></td>\n            <td>${p.product_name}</td>\n            <td><span class=\"badge critical\">${p.available_stock} units</span></td>\n            <td>${p.stockHealthPct}%</td>\n            <td>${p.daysOfStockRemaining} days</td>\n            <td><strong>${p.recommendedOrderQty}</strong> units</td>\n          </tr>\n          `).join('')}\n        </tbody>\n      </table>\n    </div>\n    ` : ''}\n\n    ${needsReorderSoon.length > 0 ? `\n    <div class=\"section\">\n      <h2>⏰ Reorder Required Within 7 Days (${needsReorderSoon.length})</h2>\n      <table>\n        <thead>\n          <tr>\n            <th>Product</th>\n            <th>Available Stock</th>\n            <th>Reorder Date</th>\n            <th>Lead Time</th>\n            <th>Order Qty</th>\n          </tr>\n        </thead>\n        <tbody>\n          ${needsReorderSoon.map(p => `\n          <tr>\n            <td><strong>${p.product_name}</strong><br><small>${p.sku}</small></td>\n            <td>${p.available_stock} units</td>\n            <td>${new Date(p.reorderDate).toLocaleDateString()}</td>\n            <td>${p.lead_time_days} days</td>\n            <td><strong>${p.recommendedOrderQty}</strong> units</td>\n          </tr>\n          `).join('')}\n        </tbody>\n      </table>\n    </div>\n    ` : ''}\n\n    <div class=\"section\">\n      <h2>🔥 Top 10 Fast-Moving Products</h2>\n      <table>\n        <thead>\n          <tr>\n            <th>Product Name</th>\n            <th>SKU</th>\n            <th>Daily Velocity</th>\n            <th>Current Stock</th>\n            <th>Days Left</th>\n          </tr>\n        </thead>\n        <tbody>\n          ${topMovers.map(p => `\n          <tr>\n            <td><strong>${p.product_name}</strong></td>\n            <td><code>${p.sku}</code></td>\n            <td><span class=\"badge success\">${p.sales_velocity.toFixed(1)} units/day</span></td>\n            <td>${p.current_stock} units</td>\n            <td>${p.daysOfStockRemaining} days</td>\n          </tr>\n          `).join('')}\n        </tbody>\n      </table>\n    </div>\n\n    ${deadStock.length > 0 ? `\n    <div class=\"section\">\n      <h2>💀 Dead Stock (No Sales 90+ Days) - ${deadStock.length} Items</h2>\n      <table>\n        <thead>\n          <tr>\n            <th>Product Name</th>\n            <th>SKU</th>\n            <th>Current Stock</th>\n            <th>Days Since Last Sale</th>\n            <th>Inventory Value</th>\n          </tr>\n        </thead>\n        <tbody>\n          ${deadStock.slice(0, 10).map(p => `\n          <tr>\n            <td>${p.product_name}</td>\n            <td><code>${p.sku}</code></td>\n            <td>${p.current_stock} units</td>\n            <td><span class=\"badge warning\">${p.daysSinceLastSale} days</span></td>\n            <td>${formatCurrency(p.current_stock * (p.cost_per_unit || 0))}</td>\n          </tr>\n          `).join('')}\n        </tbody>\n      </table>\n      ${deadStock.length > 10 ? `<p><em>Showing top 10 of ${deadStock.length} dead stock items</em></p>` : ''}\n    </div>\n    ` : ''}\n\n    <div class=\"footer\">\n      <p><strong>Broxiva Inventory Management System</strong></p>\n      <p>Report generated: ${new Date(summary.timestamp).toLocaleString()}</p>\n      <p>This is an automated report. For questions, contact inventory@broxiva.com</p>\n    </div>\n  </div>\n</body>\n</html>\n`;\n\n// Build text summary for Slack\nconst slackSummary = `\n📊 *Daily Inventory Summary* - ${new Date(summary.timestamp).toLocaleDateString()}\n\n*Overview:*\n• Total Products: ${summary.total_products}\n• Out of Stock: ${summary.out_of_stock_count} 🚫\n• Critical: ${summary.critical_count} 🚨\n• Low Stock Warnings: ${summary.warning_count} ⚠️\n• Healthy: ${summary.healthy_count} ✅\n• Dead Stock: ${summary.dead_stock_count} 💀\n\n*Financial:*\n• Inventory Value: ${formatCurrency(summary.total_inventory_value)}\n• Recommended Orders: ${summary.total_recommended_orders} products\n• Total Order Value: ${formatCurrency(summary.total_order_value)}\n\n*Performance:*\n• 30-Day Sales: ${totalSales30d.toLocaleString()} units\n• Turnover Rate: ${avgTurnoverRate.toFixed(2)}x/month\n• Reorder Needed (7d): ${needsReorderSoon.length} products\n\n${outOfStock.length > 0 ? `⚠️ *${outOfStock.length} products are OUT OF STOCK*` : '✅ No out of stock items'}\n${needsReorderSoon.length > 0 ? `⏰ *${needsReorderSoon.length} products need reorder within 7 days*` : ''}\n`;\n\nreturn {\n  json: {\n    summary,\n    htmlReport,\n    slackSummary,\n    topMovers,\n    slowMovers,\n    needsReorderSoon,\n    deadStock,\n    metrics: {\n      totalSales30d,\n      totalInventoryUnits,\n      avgTurnoverRate: parseFloat(avgTurnoverRate.toFixed(2))\n    },\n    timestamp: summary.timestamp\n  }\n};"
+      },
+      "id": "generate-report",
+      "name": "Generate Daily Summary Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2050,
+        350
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "inventory@broxiva.com",
+        "toEmail": "management@broxiva.com, purchasing@broxiva.com, operations@broxiva.com",
+        "subject": "=Daily Inventory Summary - {{ $json.timestamp.split('T')[0] }}",
+        "emailType": "html",
+        "message": "={{ $json.htmlReport }}",
+        "options": {}
+      },
+      "id": "email-daily-report",
+      "name": "Email: Daily Summary Report",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2250,
+        250
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "smtp-credentials",
+          "name": "SMTP Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "channel": "inventory-reports",
+        "text": "={{ $json.slackSummary }}",
+        "otherOptions": {}
+      },
+      "id": "slack-daily-report",
+      "name": "Slack: Daily Summary",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [
+        2250,
+        450
+      ],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "slack-credentials",
+          "name": "Slack OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.summary.dead_stock_count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-dead-stock",
+      "name": "Has Dead Stock?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1050,
+        650
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "deadStock",
+        "options": {}
+      },
+      "id": "split-dead-stock",
+      "name": "Split Dead Stock Items",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        850
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "channel": "inventory-optimization",
+        "text": "=💀 *Dead Stock Alert*\n\n*Product:* {{ $json.product_name }}\n*SKU:* `{{ $json.sku }}`\n*Current Stock:* {{ $json.current_stock }} units\n*Days Since Last Sale:* {{ $json.daysSinceLastSale }} days\n*Inventory Value:* ${{ (($json.current_stock * ($json.cost_per_unit || 0))).toFixed(2) }}\n\n*Recommendations:*\n• Consider clearance sale or bundle offers\n• Review product placement and marketing\n• Evaluate discontinuation\n\n_No sales in over 90 days. Action recommended to free up inventory space._",
+        "otherOptions": {}
+      },
+      "id": "slack-dead-stock",
+      "name": "Slack: Dead Stock Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [
+        1450,
+        850
+      ],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "slack-credentials",
+          "name": "Slack OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Schedule Every 4 Hours').item }}",
+              "rightValue": "",
+              "operator": {
+                "type": "any",
+                "operation": "exists"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "is-scheduled-run",
+      "name": "Is Scheduled Run?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1850,
+        650
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "error-handler",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        850,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "channel": "system-alerts",
+        "text": "=🚨 *Inventory Workflow Error*\n\n*Error:* {{ $json.error.message }}\n*Node:* {{ $json.error.node }}\n*Time:* {{ $now.toISO() }}\n\n*Details:*\n```\n{{ JSON.stringify($json.error, null, 2) }}\n```\n\n_Please investigate immediately._",
+        "otherOptions": {}
+      },
+      "id": "slack-error",
+      "name": "Slack: Error Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [
+        1050,
+        150
+      ],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "slack-credentials",
+          "name": "Slack OAuth2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Every 4 Hours": {
+      "main": [
+        [
+          {
+            "node": "Fetch Full Inventory",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Pre-Flagged Low Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: Order Fulfilled": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Full Inventory",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Pre-Flagged Low Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Full Inventory": {
+      "main": [
+        [
+          {
+            "node": "Merge Inventory Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Pre-Flagged Low Stock": {
+      "main": [
+        [
+          {
+            "node": "Merge Inventory Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Inventory Data": {
+      "main": [
+        [
+          {
+            "node": "Calculate Inventory Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Inventory Metrics": {
+      "main": [
+        [
+          {
+            "node": "Has Out of Stock?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Has Critical Stock?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Has Warning Stock?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Has Dead Stock?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Out of Stock?": {
+      "main": [
+        [
+          {
+            "node": "Split Out of Stock Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Critical Stock?": {
+      "main": [
+        [
+          {
+            "node": "Split Critical Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Warning Stock?": {
+      "main": [
+        [
+          {
+            "node": "Split Warning Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out of Stock Items": {
+      "main": [
+        [
+          {
+            "node": "Disable Out of Stock Product",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Waitlist Customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Disable Out of Stock Product": {
+      "main": [
+        [
+          {
+            "node": "Merge All Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Waitlist Customers": {
+      "main": [
+        [
+          {
+            "node": "Notify Waitlist via Klaviyo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Waitlist via Klaviyo": {
+      "main": [
+        [
+          {
+            "node": "Merge All Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Critical Items": {
+      "main": [
+        [
+          {
+            "node": "Slack: Critical Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack: Critical Alert": {
+      "main": [
+        [
+          {
+            "node": "Merge All Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Warning Items": {
+      "main": [
+        [
+          {
+            "node": "Email: Low Stock Warning",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notion: Create Draft PO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email: Low Stock Warning": {
+      "main": [
+        [
+          {
+            "node": "Merge All Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: Create Draft PO": {
+      "main": [
+        [
+          {
+            "node": "Merge All Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge All Alerts": {
+      "main": [
+        [
+          {
+            "node": "Generate Daily Summary Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is Scheduled Run?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Daily Summary Report": {
+      "main": [
+        [
+          {
+            "node": "Email: Daily Summary Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack: Daily Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Dead Stock?": {
+      "main": [
+        [
+          {
+            "node": "Split Dead Stock Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Dead Stock Items": {
+      "main": [
+        [
+          {
+            "node": "Slack: Dead Stock Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack: Dead Stock Alert": {
+      "main": [
+        [
+          {
+            "node": "Merge All Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Scheduled Run?": {
+      "main": [
+        [
+          {
+            "node": "Generate Daily Summary Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Slack: Error Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "error-handler"
+  },
+  "versionId": "1",
+  "id": "broxiva-inventory-management",
+  "meta": {
+    "instanceId": "broxiva-production"
+  },
+  "tags": [
+    {
+      "createdAt": "2025-12-03T00:00:00.000Z",
+      "updatedAt": "2025-12-03T00:00:00.000Z",
+      "id": "inventory",
+      "name": "Inventory Management"
+    },
+    {
+      "createdAt": "2025-12-03T00:00:00.000Z",
+      "updatedAt": "2025-12-03T00:00:00.000Z",
+      "id": "alerts",
+      "name": "Alerts"
+    },
+    {
+      "createdAt": "2025-12-03T00:00:00.000Z",
+      "updatedAt": "2025-12-03T00:00:00.000Z",
+      "id": "automation",
+      "name": "Automation"
+    }
+  ]
+}

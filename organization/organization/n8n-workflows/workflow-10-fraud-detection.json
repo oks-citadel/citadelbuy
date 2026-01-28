@@ -1,0 +1,1055 @@
+{
+  "name": "Broxiva Fraud Detection & Prevention",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "fraud-detection",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "webhook-trigger",
+      "name": "Order Created Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "fraud-detection-webhook"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract order data from webhook\nconst orderData = $input.item.json;\n\n// Validate required fields\nif (!orderData.orderId || !orderData.customerId) {\n  throw new Error('Missing required order data');\n}\n\n// Return structured data for next nodes\nreturn {\n  json: {\n    orderId: orderData.orderId,\n    customerId: orderData.customerId,\n    customerEmail: orderData.customerEmail,\n    orderTotal: parseFloat(orderData.total || 0),\n    billingAddress: orderData.billingAddress || {},\n    shippingAddress: orderData.shippingAddress || {},\n    shippingMethod: orderData.shippingMethod,\n    ipAddress: orderData.ipAddress,\n    paymentMethod: orderData.paymentMethod,\n    createdAt: orderData.createdAt || new Date().toISOString(),\n    rawData: orderData\n  }\n};"
+      },
+      "id": "parse-order-data",
+      "name": "Parse Order Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.broxiva.com/v1/customers/{{$json.customerId}}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "get-customer-history",
+      "name": "Get Customer History",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [680, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://api.broxiva.com/v1/orders?customerId={{$json.customerId}}&timeframe=24h",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "check-order-velocity",
+      "name": "Check Order Velocity",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.broxiva.com/v1/payments/failed-attempts?customerId={{$json.customerId}}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "get-payment-failures",
+      "name": "Get Payment Failures",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "url": "http://ip-api.com/json/{{$json.ipAddress}}",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "get-ip-geolocation",
+      "name": "Get IP Geolocation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [680, 500]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "charge",
+        "operation": "get",
+        "chargeId": "={{$json.rawData.stripeChargeId}}"
+      },
+      "id": "stripe-radar-check",
+      "name": "Stripe Radar Check",
+      "type": "n8n-nodes-base.stripe",
+      "typeVersion": 1,
+      "position": [680, 600]
+    },
+    {
+      "parameters": {
+        "functionCode": "// High-risk countries list\nconst HIGH_RISK_COUNTRIES = [\n  'NG', 'GH', 'CI', 'CM', 'BJ', // West Africa\n  'ID', 'PK', 'BD', 'VN', // Asia\n  'RU', 'UA', 'BY', 'MD', // Eastern Europe\n  'VE', 'CO', 'BO', // South America\n  'EG', 'MA', 'DZ' // North Africa\n];\n\n// Disposable email domains\nconst DISPOSABLE_DOMAINS = [\n  'mailinator.com', 'tempmail.com', 'guerrillamail.com',\n  '10minutemail.com', 'throwaway.email', 'temp-mail.org',\n  'sharklasers.com', 'yopmail.com', 'maildrop.cc',\n  'getnada.com', 'trashmail.com', 'fakeinbox.com'\n];\n\n// Free email providers\nconst FREE_EMAIL_DOMAINS = [\n  'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com',\n  'aol.com', 'icloud.com', 'mail.com', 'protonmail.com'\n];\n\n// Get data from previous nodes\nconst orderData = $('Parse Order Data').item.json;\nconst customerHistory = $('Get Customer History').item.json;\nconst orderVelocity = $('Check Order Velocity').item.json;\nconst paymentFailures = $('Get Payment Failures').item.json;\nconst ipGeo = $('Get IP Geolocation').item.json;\nconst stripeRadar = $('Stripe Radar Check').item.json;\n\n// Initialize risk score and factors\nlet riskScore = 0;\nconst riskFactors = [];\n\n// 1. Check if new customer (first order)\nconst orderCount = customerHistory.totalOrders || 0;\nif (orderCount === 0) {\n  riskScore += 15;\n  riskFactors.push({ factor: 'New Customer', points: 15 });\n}\n\n// 2. Billing/Shipping address mismatch\nconst billingCountry = orderData.billingAddress?.country?.toUpperCase();\nconst shippingCountry = orderData.shippingAddress?.country?.toUpperCase();\nconst billingZip = orderData.billingAddress?.postalCode;\nconst shippingZip = orderData.shippingAddress?.postalCode;\n\nif (billingCountry !== shippingCountry || billingZip !== shippingZip) {\n  riskScore += 20;\n  riskFactors.push({ factor: 'Address Mismatch', points: 20 });\n}\n\n// 3. High-value order (>$500)\nconst orderTotal = orderData.orderTotal;\nif (orderTotal > 500) {\n  // Scale from 5-25 points based on amount\n  const highValuePoints = Math.min(25, 5 + Math.floor((orderTotal - 500) / 200));\n  riskScore += highValuePoints;\n  riskFactors.push({ factor: `High Value Order ($${orderTotal})`, points: highValuePoints });\n}\n\n// 4. Multiple failed payment attempts\nconst failedAttempts = paymentFailures.count || 0;\nif (failedAttempts > 0) {\n  const failurePoints = Math.min(30, failedAttempts * 10);\n  riskScore += failurePoints;\n  riskFactors.push({ factor: `Failed Payments (${failedAttempts})`, points: failurePoints });\n}\n\n// 5. IP geolocation vs shipping country mismatch\nconst ipCountry = ipGeo.countryCode?.toUpperCase();\nif (ipCountry && ipCountry !== shippingCountry) {\n  riskScore += 15;\n  riskFactors.push({ factor: 'IP/Shipping Country Mismatch', points: 15 });\n}\n\n// 6. Order velocity (>2 orders in 24h)\nconst recentOrders = orderVelocity.orders?.length || 0;\nif (recentOrders > 2) {\n  riskScore += 25;\n  riskFactors.push({ factor: `High Velocity (${recentOrders} orders/24h)`, points: 25 });\n}\n\n// 7. Free email domain\nconst emailDomain = orderData.customerEmail?.split('@')[1]?.toLowerCase();\nif (emailDomain && FREE_EMAIL_DOMAINS.includes(emailDomain)) {\n  riskScore += 5;\n  riskFactors.push({ factor: 'Free Email Provider', points: 5 });\n}\n\n// 8. High-risk shipping country\nif (shippingCountry && HIGH_RISK_COUNTRIES.includes(shippingCountry)) {\n  riskScore += 20;\n  riskFactors.push({ factor: `High-Risk Country (${shippingCountry})`, points: 20 });\n}\n\n// 9. Express shipping on first order\nconst isExpressShipping = orderData.shippingMethod?.toLowerCase().includes('express') ||\n                          orderData.shippingMethod?.toLowerCase().includes('overnight');\nif (orderCount === 0 && isExpressShipping) {\n  riskScore += 10;\n  riskFactors.push({ factor: 'Express Shipping (First Order)', points: 10 });\n}\n\n// 10. Disposable email domain\nif (emailDomain && DISPOSABLE_DOMAINS.includes(emailDomain)) {\n  riskScore += 30;\n  riskFactors.push({ factor: 'Disposable Email', points: 30 });\n}\n\n// 11. Stripe Radar signals\nif (stripeRadar.outcome?.risk_level === 'elevated') {\n  riskScore += 15;\n  riskFactors.push({ factor: 'Stripe Radar: Elevated Risk', points: 15 });\n} else if (stripeRadar.outcome?.risk_level === 'highest') {\n  riskScore += 30;\n  riskFactors.push({ factor: 'Stripe Radar: Highest Risk', points: 30 });\n}\n\nif (stripeRadar.outcome?.risk_score) {\n  const radarScore = stripeRadar.outcome.risk_score;\n  if (radarScore > 75) {\n    const radarPoints = Math.floor((radarScore - 75) / 5);\n    riskScore += radarPoints;\n    riskFactors.push({ factor: `Stripe Radar Score (${radarScore})`, points: radarPoints });\n  }\n}\n\n// Cap risk score at 100\nriskScore = Math.min(100, riskScore);\n\n// Determine risk level\nlet riskLevel, riskColor;\nif (riskScore <= 30) {\n  riskLevel = 'LOW';\n  riskColor = 'good';\n} else if (riskScore <= 60) {\n  riskLevel = 'MEDIUM';\n  riskColor = 'warning';\n} else if (riskScore <= 85) {\n  riskLevel = 'HIGH';\n  riskColor = 'danger';\n} else {\n  riskLevel = 'CRITICAL';\n  riskColor = 'danger';\n}\n\n// Return comprehensive risk assessment\nreturn {\n  json: {\n    orderId: orderData.orderId,\n    customerId: orderData.customerId,\n    customerEmail: orderData.customerEmail,\n    riskScore: riskScore,\n    riskLevel: riskLevel,\n    riskColor: riskColor,\n    riskFactors: riskFactors,\n    totalFactors: riskFactors.length,\n    orderTotal: orderTotal,\n    customerOrderCount: orderCount,\n    ipCountry: ipCountry,\n    shippingCountry: shippingCountry,\n    stripeRiskLevel: stripeRadar.outcome?.risk_level || 'normal',\n    timestamp: new Date().toISOString(),\n    orderData: orderData,\n    rawData: {\n      customerHistory,\n      orderVelocity,\n      paymentFailures,\n      ipGeo,\n      stripeRadar\n    }\n  }\n};"
+      },
+      "id": "calculate-risk-score",
+      "name": "Calculate Risk Score",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "number": [
+                  {
+                    "value1": "={{$json.riskScore}}",
+                    "operation": "smallerEqual",
+                    "value2": 30
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "low-risk"
+            },
+            {
+              "conditions": {
+                "number": [
+                  {
+                    "value1": "={{$json.riskScore}}",
+                    "operation": "larger",
+                    "value2": 30
+                  },
+                  {
+                    "value1": "={{$json.riskScore}}",
+                    "operation": "smallerEqual",
+                    "value2": 60
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "medium-risk"
+            },
+            {
+              "conditions": {
+                "number": [
+                  {
+                    "value1": "={{$json.riskScore}}",
+                    "operation": "larger",
+                    "value2": 60
+                  },
+                  {
+                    "value1": "={{$json.riskScore}}",
+                    "operation": "smallerEqual",
+                    "value2": 85
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "high-risk"
+            },
+            {
+              "conditions": {
+                "number": [
+                  {
+                    "value1": "={{$json.riskScore}}",
+                    "operation": "larger",
+                    "value2": 85
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "critical-risk"
+            }
+          ]
+        }
+      },
+      "id": "risk-level-switch",
+      "name": "Risk Level Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// LOW RISK: Process normally\nconst data = $input.item.json;\n\nreturn {\n  json: {\n    orderId: data.orderId,\n    action: 'APPROVE',\n    riskLevel: 'LOW',\n    riskScore: data.riskScore,\n    message: 'Order approved - low fraud risk',\n    proceedToFulfillment: true,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "low-risk-action",
+      "name": "Approve Order (Low Risk)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1340, 100]
+    },
+    {
+      "parameters": {
+        "functionCode": "// MEDIUM RISK: Hold for review\nconst data = $input.item.json;\n\nreturn {\n  json: {\n    orderId: data.orderId,\n    action: 'HOLD',\n    riskLevel: 'MEDIUM',\n    riskScore: data.riskScore,\n    message: 'Order held for fraud review',\n    proceedToFulfillment: false,\n    requiresReview: true,\n    timestamp: new Date().toISOString(),\n    riskFactors: data.riskFactors\n  }\n};"
+      },
+      "id": "medium-risk-action",
+      "name": "Hold for Review (Medium Risk)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1340, 250]
+    },
+    {
+      "parameters": {
+        "functionCode": "// HIGH RISK: Manual review required\nconst data = $input.item.json;\n\nreturn {\n  json: {\n    orderId: data.orderId,\n    action: 'MANUAL_REVIEW',\n    riskLevel: 'HIGH',\n    riskScore: data.riskScore,\n    message: 'High-risk order - urgent manual review required',\n    proceedToFulfillment: false,\n    requiresUrgentReview: true,\n    timestamp: new Date().toISOString(),\n    riskFactors: data.riskFactors\n  }\n};"
+      },
+      "id": "high-risk-action",
+      "name": "Manual Review (High Risk)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "functionCode": "// CRITICAL RISK: Auto-cancel and block\nconst data = $input.item.json;\n\nreturn {\n  json: {\n    orderId: data.orderId,\n    customerId: data.customerId,\n    action: 'CANCEL_AND_BLOCK',\n    riskLevel: 'CRITICAL',\n    riskScore: data.riskScore,\n    message: 'Order auto-cancelled - critical fraud risk detected',\n    proceedToFulfillment: false,\n    blockCustomer: true,\n    timestamp: new Date().toISOString(),\n    riskFactors: data.riskFactors\n  }\n};"
+      },
+      "id": "critical-risk-action",
+      "name": "Auto-Cancel (Critical Risk)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1340, 550]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://api.broxiva.com/v1/orders/{{$json.orderId}}/status",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "approved"
+            },
+            {
+              "name": "fraudCheckPassed",
+              "value": true
+            },
+            {
+              "name": "riskScore",
+              "value": "={{$json.riskScore}}"
+            }
+          ]
+        }
+      },
+      "id": "update-order-approved",
+      "name": "Update Order Status (Approved)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1560, 100]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://api.broxiva.com/v1/orders/{{$json.orderId}}/status",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "fraud_review"
+            },
+            {
+              "name": "fraudCheckPassed",
+              "value": false
+            },
+            {
+              "name": "riskScore",
+              "value": "={{$json.riskScore}}"
+            },
+            {
+              "name": "holdReason",
+              "value": "Medium fraud risk - requires review"
+            }
+          ]
+        }
+      },
+      "id": "update-order-hold",
+      "name": "Update Order Status (Hold)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1560, 250]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://api.broxiva.com/v1/orders/{{$json.orderId}}/status",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "status",
+              "value": "fraud_review"
+            },
+            {
+              "name": "fraudCheckPassed",
+              "value": false
+            },
+            {
+              "name": "riskScore",
+              "value": "={{$json.riskScore}}"
+            },
+            {
+              "name": "holdReason",
+              "value": "High fraud risk - urgent manual review required"
+            },
+            {
+              "name": "priority",
+              "value": "urgent"
+            }
+          ]
+        }
+      },
+      "id": "update-order-review",
+      "name": "Update Order Status (Review)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1560, 400]
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "https://api.broxiva.com/v1/orders/{{$json.orderId}}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "reason",
+              "value": "fraud_detected"
+            },
+            {
+              "name": "riskScore",
+              "value": "={{$json.riskScore}}"
+            },
+            {
+              "name": "autoRefund",
+              "value": true
+            }
+          ]
+        }
+      },
+      "id": "cancel-order",
+      "name": "Cancel Order (Critical)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1560, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.broxiva.com/v1/customers/{{$json.customerId}}/block",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "reason",
+              "value": "fraud_detected"
+            },
+            {
+              "name": "riskScore",
+              "value": "={{$json.riskScore}}"
+            },
+            {
+              "name": "blockType",
+              "value": "permanent"
+            }
+          ]
+        }
+      },
+      "id": "block-customer",
+      "name": "Block Customer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1560, 600]
+    },
+    {
+      "parameters": {
+        "channel": "#fraud-review",
+        "text": "=:warning: Medium Risk Order Detected\n\n*Order ID:* {{$json.orderId}}\n*Risk Score:* {{$json.riskScore}}/100\n*Customer:* {{$json.customerEmail}}\n*Order Total:* ${{$json.orderTotal}}\n\n*Risk Factors:*\n{{$json.riskFactors.map(f => `• ${f.factor}: +${f.points} points`).join('\\n')}}\n\n*Action Required:* Review order in admin panel\n<https://admin.broxiva.com/orders/{{$json.orderId}}|View Order>",
+        "attachments": []
+      },
+      "id": "slack-medium-alert",
+      "name": "Slack Alert (Medium Risk)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [1780, 250]
+    },
+    {
+      "parameters": {
+        "channel": "#fraud-alerts",
+        "text": "=:rotating_light: HIGH RISK ORDER - URGENT REVIEW REQUIRED\n\n*Order ID:* {{$json.orderId}}\n*Risk Score:* {{$json.riskScore}}/100 (HIGH)\n*Customer:* {{$json.customerEmail}}\n*Order Total:* ${{$json.orderTotal}}\n*IP Country:* {{$json.ipCountry}}\n*Shipping Country:* {{$json.shippingCountry}}\n\n*Risk Factors:*\n{{$json.riskFactors.map(f => `• ${f.factor}: +${f.points} points`).join('\\n')}}\n\n*Stripe Radar:* {{$json.stripeRiskLevel}}\n\n*Action Required:* URGENT manual review required\n<https://admin.broxiva.com/orders/{{$json.orderId}}|View Order> | <https://admin.broxiva.com/fraud/review/{{$json.orderId}}|Fraud Review Panel>\n\n@fraud-team @security-team",
+        "attachments": []
+      },
+      "id": "slack-high-alert",
+      "name": "Slack Alert (High Risk)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [1780, 350]
+    },
+    {
+      "parameters": {
+        "channel": "#fraud-alerts",
+        "text": "=:no_entry: CRITICAL RISK - ORDER AUTO-CANCELLED\n\n*Order ID:* {{$json.orderId}}\n*Risk Score:* {{$json.riskScore}}/100 (CRITICAL)\n*Customer:* {{$json.customerEmail}} (BLOCKED)\n*Customer ID:* {{$json.customerId}}\n*Order Total:* ${{$json.orderTotal}}\n\n*Risk Factors:*\n{{$json.riskFactors.map(f => `• ${f.factor}: +${f.points} points`).join('\\n')}}\n\n*Actions Taken:*\n• Order automatically cancelled\n• Payment refunded\n• Customer account blocked\n• Added to fraud blacklist\n\n<https://admin.broxiva.com/fraud/case/{{$json.orderId}}|View Fraud Case>\n\n@fraud-team @security-team @management",
+        "attachments": []
+      },
+      "id": "slack-critical-alert",
+      "name": "Slack Alert (Critical Risk)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [1780, 550]
+    },
+    {
+      "parameters": {
+        "subject": "{{$node['Calculate Risk Score'].json['customerId']}}",
+        "resource": "ticket",
+        "operation": "create",
+        "jsonParameters": true,
+        "additionalFieldsJson": "={\n  \"ticket\": {\n    \"subject\": \"High-Risk Order Review Required - Order #{{$json.orderId}}\",\n    \"comment\": {\n      \"body\": \"A high-risk order has been flagged for manual review.\\n\\nOrder Details:\\n- Order ID: {{$json.orderId}}\\n- Customer Email: {{$json.customerEmail}}\\n- Order Total: ${{$json.orderTotal}}\\n- Risk Score: {{$json.riskScore}}/100\\n\\nRisk Factors:\\n{{$json.riskFactors.map(f => f.factor + ': +' + f.points + ' points').join('\\\\n')}}\\n\\nIP Country: {{$json.ipCountry}}\\nShipping Country: {{$json.shippingCountry}}\\nStripe Risk Level: {{$json.stripeRiskLevel}}\\n\\nAction Required: Review order and approve/reject\\nAdmin Link: https://admin.broxiva.com/orders/{{$json.orderId}}\"\n    },\n    \"priority\": \"urgent\",\n    \"status\": \"open\",\n    \"tags\": [\"fraud\", \"high-risk\", \"order-review\"],\n    \"type\": \"problem\",\n    \"custom_fields\": [\n      {\n        \"id\": 360001234567,\n        \"value\": \"{{$json.orderId}}\"\n      },\n      {\n        \"id\": 360001234568,\n        \"value\": \"{{$json.riskScore}}\"\n      }\n    ]\n  }\n}"
+      },
+      "id": "create-zendesk-ticket",
+      "name": "Create Zendesk Ticket",
+      "type": "n8n-nodes-base.zendesk",
+      "typeVersion": 1,
+      "position": [1780, 450]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.broxiva.com/v1/emails/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{$json.customerEmail}}"
+            },
+            {
+              "name": "template",
+              "value": "order-hold-review"
+            },
+            {
+              "name": "data",
+              "value": "={\"orderId\": \"{{$json.orderId}}\", \"reason\": \"security review\"}"
+            }
+          ]
+        }
+      },
+      "id": "email-customer-hold",
+      "name": "Email Customer (Order Hold)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [2000, 250]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.broxiva.com/v1/emails/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "to",
+              "value": "={{$json.customerEmail}}"
+            },
+            {
+              "name": "template",
+              "value": "order-cancelled-fraud"
+            },
+            {
+              "name": "data",
+              "value": "={\"orderId\": \"{{$json.orderId}}\", \"refundAmount\": \"{{$json.orderTotal}}\"}"
+            }
+          ]
+        }
+      },
+      "id": "email-customer-cancel",
+      "name": "Email Customer (Order Cancelled)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [2000, 550]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.broxiva.com/v1/audit/fraud-decisions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "sendBody": true,
+        "sendQuery": false,
+        "jsonParameters": true,
+        "bodyParametersJson": "={\n  \"orderId\": \"{{$json.orderId}}\",\n  \"customerId\": \"{{$json.customerId}}\",\n  \"action\": \"{{$json.action}}\",\n  \"riskLevel\": \"{{$json.riskLevel}}\",\n  \"riskScore\": {{$json.riskScore}},\n  \"riskFactors\": {{JSON.stringify($json.riskFactors)}},\n  \"orderTotal\": {{$json.orderTotal}},\n  \"timestamp\": \"{{$json.timestamp}}\",\n  \"workflowId\": \"{{$workflow.id}}\",\n  \"workflowName\": \"{{$workflow.name}}\",\n  \"executionId\": \"{{$execution.id}}\"\n}"
+      },
+      "id": "audit-log-low",
+      "name": "Audit Log (Low Risk)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [2000, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.broxiva.com/v1/audit/fraud-decisions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "sendBody": true,
+        "sendQuery": false,
+        "jsonParameters": true,
+        "bodyParametersJson": "={\n  \"orderId\": \"{{$json.orderId}}\",\n  \"customerId\": \"{{$json.customerId}}\",\n  \"action\": \"{{$json.action}}\",\n  \"riskLevel\": \"{{$json.riskLevel}}\",\n  \"riskScore\": {{$json.riskScore}},\n  \"riskFactors\": {{JSON.stringify($json.riskFactors)}},\n  \"orderTotal\": {{$json.orderTotal}},\n  \"timestamp\": \"{{$json.timestamp}}\",\n  \"workflowId\": \"{{$workflow.id}}\",\n  \"workflowName\": \"{{$workflow.name}}\",\n  \"executionId\": \"{{$execution.id}}\"\n}"
+      },
+      "id": "audit-log-medium",
+      "name": "Audit Log (Medium Risk)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [2220, 250]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.broxiva.com/v1/audit/fraud-decisions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "sendBody": true,
+        "sendQuery": false,
+        "jsonParameters": true,
+        "bodyParametersJson": "={\n  \"orderId\": \"{{$json.orderId}}\",\n  \"customerId\": \"{{$json.customerId}}\",\n  \"action\": \"{{$json.action}}\",\n  \"riskLevel\": \"{{$json.riskLevel}}\",\n  \"riskScore\": {{$json.riskScore}},\n  \"riskFactors\": {{JSON.stringify($json.riskFactors)}},\n  \"orderTotal\": {{$json.orderTotal}},\n  \"timestamp\": \"{{$json.timestamp}}\",\n  \"workflowId\": \"{{$workflow.id}}\",\n  \"workflowName\": \"{{$workflow.name}}\",\n  \"executionId\": \"{{$execution.id}}\",\n  \"zendeskTicketId\": \"{{$node['Create Zendesk Ticket'].json.ticket.id}}\"\n}"
+      },
+      "id": "audit-log-high",
+      "name": "Audit Log (High Risk)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [2220, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.broxiva.com/v1/audit/fraud-decisions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "sendBody": true,
+        "sendQuery": false,
+        "jsonParameters": true,
+        "bodyParametersJson": "={\n  \"orderId\": \"{{$json.orderId}}\",\n  \"customerId\": \"{{$json.customerId}}\",\n  \"action\": \"{{$json.action}}\",\n  \"riskLevel\": \"{{$json.riskLevel}}\",\n  \"riskScore\": {{$json.riskScore}},\n  \"riskFactors\": {{JSON.stringify($json.riskFactors)}},\n  \"orderTotal\": {{$json.orderTotal}},\n  \"timestamp\": \"{{$json.timestamp}}\",\n  \"workflowId\": \"{{$workflow.id}}\",\n  \"workflowName\": \"{{$workflow.name}}\",\n  \"executionId\": \"{{$execution.id}}\",\n  \"customerBlocked\": true,\n  \"orderCancelled\": true\n}"
+      },
+      "id": "audit-log-critical",
+      "name": "Audit Log (Critical Risk)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [2220, 550]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"orderId\": \"{{$json.orderId}}\",\n  \"action\": \"{{$json.action}}\",\n  \"riskLevel\": \"{{$json.riskLevel}}\",\n  \"riskScore\": {{$json.riskScore}},\n  \"message\": \"Fraud check completed\"\n}",
+        "options": {}
+      },
+      "id": "webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2440, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Error handling and logging\nconst error = $input.item.json.error || $input.item.json;\n\nconsole.error('Fraud detection workflow error:', error);\n\nreturn {\n  json: {\n    success: false,\n    error: error.message || 'Unknown error occurred',\n    orderId: $('Parse Order Data').item?.json?.orderId || 'unknown',\n    timestamp: new Date().toISOString(),\n    stack: error.stack\n  }\n};"
+      },
+      "id": "error-handler",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [900, 600]
+    },
+    {
+      "parameters": {
+        "channel": "#fraud-alerts",
+        "text": "=:x: Fraud Detection Workflow Error\n\n*Error:* {{$json.error}}\n*Order ID:* {{$json.orderId}}\n*Timestamp:* {{$json.timestamp}}\n\n*Action Required:* Manual review needed\n\n@dev-team",
+        "attachments": []
+      },
+      "id": "slack-error-alert",
+      "name": "Slack Error Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [1120, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.broxiva.com/v1/audit/workflow-errors",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "broxivaApi",
+        "sendBody": true,
+        "jsonParameters": true,
+        "bodyParametersJson": "={\n  \"workflowName\": \"Fraud Detection\",\n  \"error\": \"{{$json.error}}\",\n  \"orderId\": \"{{$json.orderId}}\",\n  \"timestamp\": \"{{$json.timestamp}}\",\n  \"executionId\": \"{{$execution.id}}\"\n}"
+      },
+      "id": "log-error",
+      "name": "Log Error to Database",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1340, 600]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"error\": \"{{$json.error}}\",\n  \"orderId\": \"{{$json.orderId}}\",\n  \"message\": \"Fraud check failed - manual review required\"\n}",
+        "responseCode": 500
+      },
+      "id": "error-response",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 600]
+    }
+  ],
+  "connections": {
+    "Order Created Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Order Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Order Data": {
+      "main": [
+        [
+          {
+            "node": "Get Customer History",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Order Velocity",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Payment Failures",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get IP Geolocation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Stripe Radar Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Customer History": {
+      "main": [
+        [
+          {
+            "node": "Calculate Risk Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Order Velocity": {
+      "main": [
+        [
+          {
+            "node": "Calculate Risk Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Payment Failures": {
+      "main": [
+        [
+          {
+            "node": "Calculate Risk Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get IP Geolocation": {
+      "main": [
+        [
+          {
+            "node": "Calculate Risk Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stripe Radar Check": {
+      "main": [
+        [
+          {
+            "node": "Calculate Risk Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Risk Score": {
+      "main": [
+        [
+          {
+            "node": "Risk Level Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Risk Level Router": {
+      "main": [
+        [
+          {
+            "node": "Approve Order (Low Risk)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Hold for Review (Medium Risk)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Manual Review (High Risk)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Auto-Cancel (Critical Risk)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approve Order (Low Risk)": {
+      "main": [
+        [
+          {
+            "node": "Update Order Status (Approved)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hold for Review (Medium Risk)": {
+      "main": [
+        [
+          {
+            "node": "Update Order Status (Hold)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Review (High Risk)": {
+      "main": [
+        [
+          {
+            "node": "Update Order Status (Review)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto-Cancel (Critical Risk)": {
+      "main": [
+        [
+          {
+            "node": "Cancel Order (Critical)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Block Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Order Status (Approved)": {
+      "main": [
+        [
+          {
+            "node": "Audit Log (Low Risk)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Order Status (Hold)": {
+      "main": [
+        [
+          {
+            "node": "Slack Alert (Medium Risk)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Order Status (Review)": {
+      "main": [
+        [
+          {
+            "node": "Slack Alert (High Risk)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Zendesk Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancel Order (Critical)": {
+      "main": [
+        [
+          {
+            "node": "Slack Alert (Critical Risk)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Block Customer": {
+      "main": [
+        [
+          {
+            "node": "Email Customer (Order Cancelled)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Alert (Medium Risk)": {
+      "main": [
+        [
+          {
+            "node": "Email Customer (Order Hold)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Alert (High Risk)": {
+      "main": [
+        [
+          {
+            "node": "Audit Log (High Risk)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Alert (Critical Risk)": {
+      "main": [
+        [
+          {
+            "node": "Audit Log (Critical Risk)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Zendesk Ticket": {
+      "main": [
+        [
+          {
+            "node": "Audit Log (High Risk)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Customer (Order Hold)": {
+      "main": [
+        [
+          {
+            "node": "Audit Log (Medium Risk)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Customer (Order Cancelled)": {
+      "main": [
+        [
+          {
+            "node": "Audit Log (Critical Risk)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit Log (Low Risk)": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit Log (Medium Risk)": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit Log (High Risk)": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit Log (Critical Risk)": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Slack Error Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Error Alert": {
+      "main": [
+        [
+          {
+            "node": "Log Error to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Error to Database": {
+      "main": [
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-12-03T00:00:00.000Z",
+      "updatedAt": "2025-12-03T00:00:00.000Z",
+      "id": "1",
+      "name": "fraud-detection"
+    },
+    {
+      "createdAt": "2025-12-03T00:00:00.000Z",
+      "updatedAt": "2025-12-03T00:00:00.000Z",
+      "id": "2",
+      "name": "security"
+    },
+    {
+      "createdAt": "2025-12-03T00:00:00.000Z",
+      "updatedAt": "2025-12-03T00:00:00.000Z",
+      "id": "3",
+      "name": "broxiva"
+    }
+  ],
+  "pinData": {},
+  "versionId": "1.0.0",
+  "meta": {
+    "instanceId": "broxiva-production"
+  }
+}

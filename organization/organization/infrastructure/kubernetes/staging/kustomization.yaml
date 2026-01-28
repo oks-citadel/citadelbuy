@@ -1,0 +1,72 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: broxiva-staging
+
+# Common labels applied to all resources
+commonLabels:
+  app: broxiva
+  environment: staging
+  managed-by: kustomize
+
+# Resources to deploy
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - postgres-deployment.yaml
+  - redis-deployment.yaml
+  - api-deployment.yaml
+  - web-deployment.yaml
+  - ingress.yaml
+  - hpa.yaml
+
+# Image transformations
+images:
+  - name: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-api
+    newTag: staging-latest
+  - name: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-web
+    newTag: staging-latest
+
+# ConfigMap generator for additional configuration
+configMapGenerator:
+  - name: deployment-info
+    literals:
+      - DEPLOYMENT_TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+      - GIT_COMMIT=$(git rev-parse HEAD)
+      - DEPLOYED_BY=$(git config user.name)
+
+# Replicas for staging environment
+replicas:
+  - name: broxiva-api
+    count: 2
+  - name: broxiva-web
+    count: 2
+
+# Patches for staging-specific configuration
+patchesStrategicMerge:
+  - |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: broxiva-api
+    spec:
+      template:
+        spec:
+          containers:
+          - name: api
+            env:
+            - name: ENVIRONMENT
+              value: "staging"
+  - |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: broxiva-web
+    spec:
+      template:
+        spec:
+          containers:
+          - name: web
+            env:
+            - name: ENVIRONMENT
+              value: "staging"

@@ -1,0 +1,104 @@
+{
+  "cli": {
+    "version": ">= 7.0.0",
+    "requireCommit": false
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true,
+        "buildConfiguration": "Debug",
+        "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug",
+        "resourceClass": "medium"
+      },
+      "env": {
+        "APP_VARIANT": "development"
+      },
+      "cache": {
+        "key": "development",
+        "disabled": false,
+        "paths": [
+          "node_modules",
+          "ios/Pods"
+        ]
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": false,
+        "buildConfiguration": "Release",
+        "resourceClass": "m-medium",
+        "autoIncrement": true
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease",
+        "resourceClass": "medium",
+        "autoIncrement": true
+      },
+      "env": {
+        "APP_VARIANT": "preview"
+      },
+      "cache": {
+        "key": "preview",
+        "disabled": false,
+        "paths": [
+          "node_modules",
+          "ios/Pods"
+        ]
+      },
+      "channel": "preview"
+    },
+    "production": {
+      "distribution": "store",
+      "ios": {
+        "simulator": false,
+        "buildConfiguration": "Release",
+        "resourceClass": "m-medium",
+        "autoIncrement": true,
+        "bundleIdentifier": "com.broxiva.app"
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "gradleCommand": ":app:bundleRelease",
+        "resourceClass": "medium",
+        "autoIncrement": "versionCode",
+        "package": "com.broxiva.app"
+      },
+      "env": {
+        "APP_VARIANT": "production"
+      },
+      "cache": {
+        "key": "production",
+        "disabled": false,
+        "paths": [
+          "node_modules",
+          "ios/Pods"
+        ]
+      },
+      "channel": "production"
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "your-apple-id@example.com",
+        "ascAppId": "1234567890",
+        "appleTeamId": "ABCD123456",
+        "sku": "broxiva-ios"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account.json",
+        "track": "production",
+        "releaseStatus": "completed"
+      }
+    }
+  }
+}

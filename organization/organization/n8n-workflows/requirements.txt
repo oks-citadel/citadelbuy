@@ -1,0 +1,18 @@
+# Python dependencies for Broxiva n8n Workflows
+# Install with: pip install -r requirements.txt
+
+# Pinecone for vector database
+pinecone-client==2.2.4
+
+# OpenAI for embeddings and chat
+openai==1.3.7
+
+# HTTP requests
+requests==2.31.0
+
+# Environment variable management
+python-dotenv==1.0.0
+
+# Optional: For advanced features
+# numpy==1.24.3
+# pandas==2.0.3

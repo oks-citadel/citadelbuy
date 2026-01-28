@@ -1,0 +1,2 @@
+# Small assets (< 5MB) that can be safely baked into Docker images
+# Examples: icons, small images, static JSON configs

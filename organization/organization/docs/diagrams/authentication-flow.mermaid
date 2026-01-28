@@ -1,0 +1,413 @@
+%% Authentication Flow
+%% E-commerce Platform - Auth System
+%% Shows login, registration, token refresh, MFA, and social login flows
+
+sequenceDiagram
+    autonumber
+
+    participant Client as Client App
+    participant API as API Server
+    participant AuthSvc as AuthService
+    participant UserSvc as UsersService
+    participant LockoutSvc as AccountLockoutService
+    participant TokenSvc as TokenBlacklistService
+    participant EmailSvc as EmailService
+    participant JWT as JWT Service
+    participant DB as Database
+    participant Social as Social Provider<br/>(Google/Facebook/Apple/GitHub)
+
+    %% ==========================================
+    %% USER REGISTRATION
+    %% ==========================================
+
+    rect rgb(240, 255, 240)
+        Note over Client, DB: User Registration Flow
+
+        Client->>API: POST /auth/register
+        Note right of Client: { email, password, name }
+        Note over API: Rate Limited: 3 requests/minute
+
+        API->>AuthSvc: register()
+
+        AuthSvc->>UserSvc: findByEmail()
+        UserSvc->>DB: SELECT * FROM users WHERE email = ?
+
+        alt User Exists
+            DB-->>AuthSvc: User Found
+            AuthSvc-->>API: ConflictException
+            API-->>Client: 409 User already exists
+        else New User
+            DB-->>AuthSvc: null
+
+            AuthSvc->>AuthSvc: bcrypt.hash(password, 10)
+            AuthSvc->>UserSvc: create()
+            UserSvc->>DB: INSERT INTO users
+            DB-->>AuthSvc: New User
+
+            par Async Operations
+                AuthSvc->>EmailSvc: sendWelcomeEmail()
+                Note right of EmailSvc: Non-blocking, failures logged
+            end
+
+            AuthSvc->>JWT: generateToken()
+            Note right of JWT: payload: { sub: userId, email, role }<br/>+ jti: crypto.randomUUID()
+
+            JWT-->>AuthSvc: access_token
+            AuthSvc-->>API: { user, access_token }
+            API-->>Client: 201 Registration Successful
+        end
+    end
+
+    %% ==========================================
+    %% USER LOGIN
+    %% ==========================================
+
+    rect rgb(240, 248, 255)
+        Note over Client, DB: Login Flow with Security Features
+
+        Client->>API: POST /auth/login
+        Note right of Client: { email, password }
+        Note over API: Rate Limited: 5 requests/minute
+
+        API->>API: LocalAuthGuard
+        API->>AuthSvc: validateUser()
+
+        AuthSvc->>AuthSvc: Extract IP Address
+        Note right of AuthSvc: x-forwarded-for, x-real-ip,<br/>cf-connecting-ip, etc.
+
+        AuthSvc->>LockoutSvc: checkLockout()
+        LockoutSvc->>DB: Check Failed Attempts
+
+        alt Account Locked
+            LockoutSvc-->>AuthSvc: TooManyRequestsException
+            AuthSvc-->>API: 429 Account Locked
+            API-->>Client: Account temporarily locked
+        end
+
+        AuthSvc->>UserSvc: findByEmail()
+
+        alt User Not Found
+            AuthSvc->>LockoutSvc: recordFailedAttempt()
+            Note right of LockoutSvc: Prevent user enumeration<br/>timing attacks
+            AuthSvc-->>API: UnauthorizedException
+            API-->>Client: 401 Invalid credentials
+        else User Found
+            AuthSvc->>AuthSvc: bcrypt.compare(password, hash)
+
+            alt Password Invalid
+                AuthSvc->>LockoutSvc: recordFailedAttempt()
+                LockoutSvc->>DB: INSERT failed_attempt
+                AuthSvc-->>API: UnauthorizedException
+                API-->>Client: 401 Invalid credentials
+            else Password Valid
+                AuthSvc->>LockoutSvc: clearLockout()
+
+                AuthSvc->>AuthSvc: login()
+                AuthSvc->>JWT: generateToken(accessPayload)
+                AuthSvc->>JWT: generateToken(refreshPayload)
+                Note right of JWT: refresh: { sub, type: 'refresh' }<br/>expiresIn: 30d
+
+                JWT-->>AuthSvc: access_token, refresh_token
+                AuthSvc-->>API: { user, access_token, refresh_token }
+                API-->>Client: 200 Login Successful
+            end
+        end
+    end
+
+    %% ==========================================
+    %% TOKEN REFRESH
+    %% ==========================================
+
+    rect rgb(255, 248, 240)
+        Note over Client, DB: Token Refresh Flow
+
+        Client->>API: POST /auth/refresh
+        Note right of Client: { refreshToken }
+
+        API->>AuthSvc: refreshToken()
+
+        AuthSvc->>TokenSvc: isTokenBlacklisted()
+        TokenSvc->>DB: Check Blacklist
+
+        alt Token Blacklisted
+            DB-->>TokenSvc: Found in Blacklist
+            TokenSvc-->>AuthSvc: true
+            AuthSvc-->>API: UnauthorizedException
+            API-->>Client: 401 Token has been revoked
+        else Token Valid
+            AuthSvc->>JWT: verify(refreshToken)
+            Note right of JWT: secret: JWT_REFRESH_SECRET
+
+            alt Invalid/Expired Token
+                JWT-->>AuthSvc: Error
+                AuthSvc-->>API: UnauthorizedException
+                API-->>Client: 401 Invalid refresh token
+            else Token Valid
+                JWT-->>AuthSvc: payload
+
+                AuthSvc->>AuthSvc: Verify payload.type === 'refresh'
+                AuthSvc->>UserSvc: findById(payload.sub)
+
+                alt User Not Found
+                    AuthSvc-->>API: UnauthorizedException
+                    API-->>Client: 401 User not found
+                else User Found
+                    AuthSvc->>JWT: generateToken(newAccessPayload)
+                    AuthSvc->>JWT: generateToken(newRefreshPayload)
+
+                    JWT-->>AuthSvc: New Tokens
+                    AuthSvc-->>API: { user, access_token, refresh_token }
+                    API-->>Client: 200 Token Refreshed
+                end
+            end
+        end
+    end
+
+    %% ==========================================
+    %% LOGOUT
+    %% ==========================================
+
+    rect rgb(255, 240, 240)
+        Note over Client, DB: Logout Flow
+
+        Client->>API: POST /auth/logout
+        Note right of Client: Authorization: Bearer <token>
+
+        API->>API: JwtAuthGuard
+        API->>AuthSvc: logout()
+
+        AuthSvc->>AuthSvc: Extract Token from Header
+        AuthSvc->>TokenSvc: blacklistToken()
+        TokenSvc->>DB: INSERT INTO token_blacklist
+
+        TokenSvc-->>AuthSvc: success
+        AuthSvc-->>API: { message: 'Logged out successfully' }
+        API-->>Client: 200 Logged Out
+    end
+
+    %% ==========================================
+    %% SOCIAL LOGIN (GOOGLE/FACEBOOK/APPLE/GITHUB)
+    %% ==========================================
+
+    rect rgb(248, 240, 255)
+        Note over Client, Social: Social Login Flow
+
+        Client->>Social: OAuth Flow (Frontend)
+        Social-->>Client: Access/ID Token
+
+        Client->>API: POST /auth/social-login
+        Note right of Client: { provider: 'GOOGLE', accessToken }
+        Note over API: Rate Limited: 5 requests/minute
+
+        API->>AuthSvc: socialLogin()
+
+        AuthSvc->>AuthSvc: verifySocialToken()
+
+        alt Google Login
+            AuthSvc->>Social: verifyIdToken()
+            Note right of Social: Using google-auth-library<br/>Verify signature with Google's public keys
+            Social-->>AuthSvc: { email, name, sub, picture }
+            AuthSvc->>AuthSvc: Check email_verified
+        else Facebook Login
+            AuthSvc->>Social: GET /debug_token
+            Note right of Social: Verify token belongs to our app
+            AuthSvc->>Social: GET /me?fields=id,name,email,picture
+            Social-->>AuthSvc: { id, name, email, picture }
+        else Apple Login
+            AuthSvc->>AuthSvc: Decode JWT header (get kid)
+            AuthSvc->>Social: Fetch Apple Public Keys
+            AuthSvc->>AuthSvc: jwt.verify() with RSA public key
+            Note right of AuthSvc: Verify issuer, audience, signature
+            Social-->>AuthSvc: { sub, email }
+        else GitHub Login
+            AuthSvc->>Social: GET /user
+            Note right of Social: Authorization: Bearer token
+            AuthSvc->>Social: GET /user/emails
+            Note right of Social: Handle hidden emails
+            Social-->>AuthSvc: { id, login, name, email, avatar_url }
+        end
+
+        AuthSvc->>UserSvc: findByEmail()
+
+        alt User Exists
+            UserSvc-->>AuthSvc: Existing User
+        else New User
+            AuthSvc->>AuthSvc: Generate random password
+            AuthSvc->>UserSvc: create()
+            UserSvc->>DB: INSERT INTO users
+
+            par Async Operations
+                AuthSvc->>EmailSvc: sendWelcomeEmail()
+            end
+        end
+
+        AuthSvc->>JWT: generateToken(accessPayload)
+        AuthSvc->>JWT: generateToken(refreshPayload)
+
+        AuthSvc-->>API: { user, access_token, refresh_token }
+        API-->>Client: 200 Social Login Successful
+    end
+
+    %% ==========================================
+    %% MFA SETUP
+    %% ==========================================
+
+    rect rgb(240, 255, 248)
+        Note over Client, DB: MFA Setup Flow
+
+        Client->>API: POST /auth/mfa/setup
+        Note right of Client: Authorization: Bearer <token>
+
+        API->>API: JwtAuthGuard
+        API->>AuthSvc: setupMfa()
+
+        AuthSvc->>UserSvc: findById()
+        AuthSvc->>DB: Check existing UserMfa
+
+        alt MFA Already Enabled
+            AuthSvc-->>API: BadRequestException
+            API-->>Client: 400 MFA already enabled
+        else Setup MFA
+            AuthSvc->>AuthSvc: Generate TOTP Secret
+            Note right of AuthSvc: crypto.randomBytes(20)<br/>encodeBase32()
+
+            AuthSvc->>AuthSvc: Generate Backup Codes
+            Note right of AuthSvc: 8 codes, bcrypt hashed
+
+            AuthSvc->>DB: Upsert UserMfa (enabled: false)
+
+            AuthSvc->>AuthSvc: Generate QR Code URL
+            Note right of AuthSvc: otpauth://totp/Broxiva:{email}?secret=...
+
+            AuthSvc-->>API: { secret, qrCode, backupCodes }
+            API-->>Client: 200 MFA Setup Initiated
+        end
+
+        Note over Client: User scans QR with authenticator app
+
+        Client->>API: POST /auth/mfa/verify
+        Note right of Client: { code: '123456' }
+
+        API->>AuthSvc: verifyMfa()
+        AuthSvc->>DB: Fetch UserMfa
+        AuthSvc->>AuthSvc: verifyTotpCode()
+        Note right of AuthSvc: Check +/- 1 period window<br/>for clock skew
+
+        alt Code Invalid
+            AuthSvc-->>API: BadRequestException
+            API-->>Client: 400 Invalid verification code
+        else Code Valid
+            AuthSvc->>DB: Update UserMfa (enabled: true)
+            AuthSvc-->>API: { message: 'MFA enabled', mfaEnabled: true }
+            API-->>Client: 200 MFA Enabled
+        end
+    end
+
+    %% ==========================================
+    %% PASSWORD RESET
+    %% ==========================================
+
+    rect rgb(255, 252, 240)
+        Note over Client, DB: Password Reset Flow
+
+        Client->>API: POST /auth/forgot-password
+        Note right of Client: { email }
+        Note over API: Rate Limited: 3 requests/minute
+
+        API->>AuthSvc: forgotPassword()
+        AuthSvc->>UserSvc: findByEmail()
+
+        Note over AuthSvc: Always return same response<br/>to prevent user enumeration
+
+        alt User Found
+            AuthSvc->>AuthSvc: Generate Reset Token
+            Note right of AuthSvc: crypto.randomBytes(32).toString('hex')
+
+            AuthSvc->>AuthSvc: Hash Token
+            Note right of AuthSvc: bcrypt.hash(plainToken, 10)
+
+            AuthSvc->>DB: Create PasswordReset
+            Note right of DB: Store hashed token,<br/>expiresAt: now + 1 hour
+
+            AuthSvc->>EmailSvc: sendPasswordResetEmail()
+            Note right of EmailSvc: Send plain token in email
+        end
+
+        AuthSvc-->>API: { message: 'If email exists...' }
+        API-->>Client: 200 Reset email sent (if exists)
+
+        Note over Client: User clicks email link
+
+        Client->>API: POST /auth/reset-password
+        Note right of Client: { token, newPassword }
+
+        API->>AuthSvc: resetPassword()
+        AuthSvc->>DB: Find unused, non-expired tokens
+
+        AuthSvc->>AuthSvc: Compare token hashes
+        Note right of AuthSvc: bcrypt.compare(token, hashedToken)
+
+        alt Token Invalid/Expired
+            AuthSvc-->>API: BadRequestException
+            API-->>Client: 400 Invalid or expired token
+        else Token Valid
+            AuthSvc->>AuthSvc: bcrypt.hash(newPassword, 10)
+            AuthSvc->>DB: Update User Password
+            AuthSvc->>DB: Mark Token as Used
+
+            AuthSvc->>TokenSvc: invalidateAllUserTokens()
+            Note right of TokenSvc: Security: Logout all sessions
+
+            AuthSvc-->>API: { message: 'Password reset successfully' }
+            API-->>Client: 200 Password Reset
+        end
+    end
+
+    %% ==========================================
+    %% EMAIL VERIFICATION
+    %% ==========================================
+
+    rect rgb(248, 255, 240)
+        Note over Client, DB: Email Verification Flow
+
+        Client->>API: POST /auth/send-verification
+        Note right of Client: Authorization: Bearer <token>
+
+        API->>AuthSvc: sendVerificationEmail()
+        AuthSvc->>UserSvc: findById()
+
+        alt Already Verified
+            AuthSvc-->>API: BadRequestException
+            API-->>Client: 400 Email already verified
+        else Not Verified
+            AuthSvc->>DB: Invalidate Existing Tokens
+            AuthSvc->>AuthSvc: Generate Verification Token
+            AuthSvc->>DB: Create EmailVerificationToken
+            Note right of DB: expiresAt: now + 24 hours
+
+            AuthSvc->>EmailSvc: sendEmail(verification)
+            Note right of EmailSvc: Include verification URL
+
+            AuthSvc-->>API: { message: 'Verification email sent' }
+            API-->>Client: 200 Email Sent
+        end
+
+        Note over Client: User clicks email link
+
+        Client->>API: POST /auth/verify-email
+        Note right of Client: { token }
+
+        API->>AuthSvc: verifyEmail()
+        AuthSvc->>DB: Find Token (with user)
+
+        alt Token Invalid/Expired/Used
+            AuthSvc-->>API: BadRequestException
+            API-->>Client: 400 Invalid token
+        else Token Valid
+            AuthSvc->>DB: Update User (emailVerified: true)
+            AuthSvc->>DB: Mark Token as Used
+
+            AuthSvc-->>API: { message: 'Email verified', verified: true }
+            API-->>Client: 200 Email Verified
+        end
+    end

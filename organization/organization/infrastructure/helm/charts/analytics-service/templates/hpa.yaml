@@ -1,0 +1,151 @@
+{{- if .Values.eventIngestor.enabled }}
+{{- if .Values.eventIngestor.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "analytics-service.fullname" . }}-{{ .Values.eventIngestor.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "analytics-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.eventIngestor.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "analytics-service.fullname" . }}-{{ .Values.eventIngestor.name }}
+  minReplicas: {{ .Values.eventIngestor.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.eventIngestor.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.eventIngestor.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.eventIngestor.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.eventIngestor.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.eventIngestor.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.attributionEngine.enabled }}
+{{- if .Values.attributionEngine.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "analytics-service.fullname" . }}-{{ .Values.attributionEngine.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "analytics-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.attributionEngine.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "analytics-service.fullname" . }}-{{ .Values.attributionEngine.name }}
+  minReplicas: {{ .Values.attributionEngine.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.attributionEngine.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.attributionEngine.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.attributionEngine.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.attributionEngine.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.attributionEngine.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.analyticsApi.enabled }}
+{{- if .Values.analyticsApi.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "analytics-service.fullname" . }}-{{ .Values.analyticsApi.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "analytics-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.analyticsApi.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "analytics-service.fullname" . }}-{{ .Values.analyticsApi.name }}
+  minReplicas: {{ .Values.analyticsApi.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.analyticsApi.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.analyticsApi.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.analyticsApi.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.analyticsApi.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.analyticsApi.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.metricsAggregator.enabled }}
+{{- if .Values.metricsAggregator.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "analytics-service.fullname" . }}-{{ .Values.metricsAggregator.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "analytics-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.metricsAggregator.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "analytics-service.fullname" . }}-{{ .Values.metricsAggregator.name }}
+  minReplicas: {{ .Values.metricsAggregator.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.metricsAggregator.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.metricsAggregator.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.metricsAggregator.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.metricsAggregator.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.metricsAggregator.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}

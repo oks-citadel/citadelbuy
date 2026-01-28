@@ -1,0 +1,377 @@
+%% Database Entity-Relationship Diagram
+%% E-commerce Platform - Main Database Tables
+%% Generated: 2024
+
+erDiagram
+    %% ==========================================
+    %% CORE USER & AUTHENTICATION
+    %% ==========================================
+
+    User {
+        uuid id PK
+        string email UK
+        boolean emailVerified
+        string phoneNumber
+        boolean phoneVerified
+        string password
+        string name
+        UserRole role
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    UserProfile {
+        uuid id PK
+        uuid userId FK,UK
+        string firstName
+        string lastName
+        string bio
+        string avatarUrl
+        string companyName
+        string jobTitle
+        json address
+        string timezone
+        string locale
+    }
+
+    UserMfa {
+        uuid id PK
+        uuid userId FK,UK
+        string secret
+        json backupCodes
+        boolean enabled
+        datetime verifiedAt
+    }
+
+    UserSession {
+        uuid id PK
+        uuid userId FK
+        string token
+        string userAgent
+        string ipAddress
+        datetime expiresAt
+        datetime createdAt
+    }
+
+    PasswordReset {
+        uuid id PK
+        string email
+        string token UK
+        datetime expiresAt
+        boolean used
+    }
+
+    EmailVerificationToken {
+        uuid id PK
+        uuid userId FK
+        string email
+        string token UK
+        boolean used
+        datetime expiresAt
+    }
+
+    %% ==========================================
+    %% PRODUCT CATALOG
+    %% ==========================================
+
+    Category {
+        uuid id PK
+        string name
+        string slug UK
+        string description
+        uuid parentId FK
+        int level
+        int sortOrder
+        CategoryStatus status
+        boolean isFeatured
+        string metaTitle
+        string metaDescription
+    }
+
+    Product {
+        uuid id PK
+        string name
+        string slug UK
+        string description
+        float price
+        array images
+        int stock
+        uuid vendorId FK
+        uuid categoryId FK
+        string status
+        boolean isActive
+        string sku UK
+        string barcode UK
+        float weight
+    }
+
+    ProductVariant {
+        uuid id PK
+        uuid productId FK
+        string sku UK
+        string name
+        float price
+        int stock
+        json attributes
+        array images
+        boolean isDefault
+        float compareAtPrice
+        string barcode UK
+    }
+
+    Review {
+        uuid id PK
+        uuid userId FK
+        uuid productId FK
+        int rating
+        string comment
+        boolean isVerifiedPurchase
+        int helpfulCount
+        ReviewStatus status
+    }
+
+    %% ==========================================
+    %% ORDERS & TRANSACTIONS
+    %% ==========================================
+
+    Order {
+        uuid id PK
+        uuid userId FK
+        float total
+        float subtotal
+        float tax
+        float shipping
+        OrderStatus status
+        string shippingAddress
+        string paymentMethod
+        string paymentIntentId
+        string currency
+        string trackingNumber
+        string carrier
+        boolean isGuestOrder
+        string guestEmail
+    }
+
+    OrderItem {
+        uuid id PK
+        uuid orderId FK
+        uuid productId FK
+        int quantity
+        float price
+    }
+
+    Cart {
+        uuid id PK
+        uuid userId FK
+        boolean convertedToOrder
+        datetime lastActivityAt
+    }
+
+    CartItem {
+        uuid id PK
+        uuid cartId FK
+        uuid productId FK
+        uuid variantId FK
+        int quantity
+        float price
+    }
+
+    %% ==========================================
+    %% PAYMENTS
+    %% ==========================================
+
+    BnplPaymentPlan {
+        uuid id PK
+        uuid orderId FK,UK
+        uuid userId FK
+        BnplProvider provider
+        BnplPaymentPlanStatus status
+        float totalAmount
+        float downPayment
+        int numberOfInstallments
+        float installmentAmount
+        string providerPlanId UK
+    }
+
+    BnplInstallment {
+        uuid id PK
+        uuid paymentPlanId FK
+        int installmentNumber
+        float amount
+        datetime dueDate
+        datetime paidDate
+        BnplInstallmentStatus status
+    }
+
+    GiftCard {
+        uuid id PK
+        string code UK
+        float initialValue
+        float currentBalance
+        boolean isActive
+        datetime expiresAt
+        uuid purchaserId FK
+        uuid redeemerId FK
+    }
+
+    %% ==========================================
+    %% SUBSCRIPTIONS
+    %% ==========================================
+
+    SubscriptionPlan {
+        uuid id PK
+        string name
+        string slug UK
+        SubscriptionPlanType type
+        float price
+        float yearlyPrice
+        BillingInterval billingInterval
+        float transactionFee
+        int maxProducts
+        json features
+        boolean isActive
+    }
+
+    Subscription {
+        uuid id PK
+        uuid userId FK
+        uuid planId FK
+        SubscriptionStatus status
+        datetime currentPeriodStart
+        datetime currentPeriodEnd
+        string stripeSubscriptionId UK
+        string stripeCustomerId
+    }
+
+    %% ==========================================
+    %% WISHLISTS
+    %% ==========================================
+
+    WishlistCollection {
+        uuid id PK
+        uuid userId FK
+        string name
+        string description
+        boolean isDefault
+        boolean isPublic
+        string shareToken UK
+    }
+
+    WishlistItem {
+        uuid id PK
+        uuid wishlistId FK
+        uuid productId FK
+        uuid variantId FK
+        string notes
+        int priority
+        float priceAtAddition
+        boolean notifyOnPriceDrop
+    }
+
+    %% ==========================================
+    %% ADVERTISING
+    %% ==========================================
+
+    AdCampaign {
+        uuid id PK
+        uuid vendorId FK
+        string name
+        CampaignStatus status
+        float totalBudget
+        float dailyBudget
+        float spentAmount
+        datetime startDate
+        datetime endDate
+    }
+
+    Advertisement {
+        uuid id PK
+        uuid campaignId FK
+        uuid vendorId FK
+        uuid productId FK
+        AdType type
+        AdStatus status
+        string title
+        float bidAmount
+        int impressions
+        int clicks
+    }
+
+    %% ==========================================
+    %% SAVED ADDRESSES & PAYMENT METHODS
+    %% ==========================================
+
+    SavedAddress {
+        uuid id PK
+        uuid userId FK
+        string fullName
+        string email
+        string phone
+        string street
+        string city
+        string state
+        string postalCode
+        string country
+        boolean isDefault
+    }
+
+    %% ==========================================
+    %% VENDOR MANAGEMENT
+    %% ==========================================
+
+    VendorProfile {
+        uuid id PK
+        uuid userId FK,UK
+        string businessName
+        string businessType
+        string taxId
+        VendorStatus status
+        float commissionRate
+        json payoutSettings
+    }
+
+    %% ==========================================
+    %% RELATIONSHIPS
+    %% ==========================================
+
+    User ||--o| UserProfile : "has"
+    User ||--o| UserMfa : "has"
+    User ||--o{ UserSession : "has"
+    User ||--o| VendorProfile : "has"
+    User ||--o{ Order : "places"
+    User ||--o{ Product : "sells"
+    User ||--o{ Review : "writes"
+    User ||--o{ Cart : "has"
+    User ||--o{ WishlistCollection : "has"
+    User ||--o{ Subscription : "has"
+    User ||--o{ AdCampaign : "creates"
+    User ||--o{ SavedAddress : "has"
+    User ||--o{ BnplPaymentPlan : "has"
+    User ||--o{ GiftCard : "purchases"
+    User ||--o{ EmailVerificationToken : "has"
+
+    Category ||--o{ Category : "has children"
+    Category ||--o{ Product : "contains"
+
+    Product ||--o{ ProductVariant : "has"
+    Product ||--o{ OrderItem : "in"
+    Product ||--o{ CartItem : "in"
+    Product ||--o{ Review : "has"
+    Product ||--o{ WishlistItem : "in"
+    Product ||--o{ Advertisement : "promoted by"
+
+    ProductVariant ||--o{ CartItem : "in"
+    ProductVariant ||--o{ WishlistItem : "in"
+
+    Order ||--o{ OrderItem : "contains"
+    Order ||--o| BnplPaymentPlan : "has"
+
+    Cart ||--o{ CartItem : "contains"
+
+    WishlistCollection ||--o{ WishlistItem : "contains"
+
+    SubscriptionPlan ||--o{ Subscription : "subscribed to"
+
+    AdCampaign ||--o{ Advertisement : "contains"
+
+    BnplPaymentPlan ||--o{ BnplInstallment : "has"

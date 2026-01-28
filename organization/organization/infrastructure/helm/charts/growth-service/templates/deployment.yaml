@@ -1,0 +1,335 @@
+{{- if .Values.growthApi.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "growth-service.fullname" . }}-{{ .Values.growthApi.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "growth-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.growthApi.name }}
+spec:
+  {{- if not .Values.growthApi.autoscaling.enabled }}
+  replicas: {{ .Values.growthApi.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "growth-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.growthApi.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "growth-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ .Values.growthApi.name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "growth-service.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "growth-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.growthApi.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.growthApi.image.repository }}:{{ .Values.growthApi.image.tag }}"
+          imagePullPolicy: {{ .Values.growthApi.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.growthApi.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.growthApi.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.growthApi.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.growthApi.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.growthApi.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.growthApi.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.growthApi.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.growthApi.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.growthApi.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.growthApi.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.growthApi.probes.readiness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.growthApi.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "growth-service.configMapName" . }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+
+{{- if .Values.referralEngine.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "growth-service.fullname" . }}-{{ .Values.referralEngine.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "growth-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.referralEngine.name }}
+spec:
+  {{- if not .Values.referralEngine.autoscaling.enabled }}
+  replicas: {{ .Values.referralEngine.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "growth-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.referralEngine.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "growth-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ .Values.referralEngine.name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "growth-service.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "growth-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.referralEngine.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.referralEngine.image.repository }}:{{ .Values.referralEngine.image.tag }}"
+          imagePullPolicy: {{ .Values.referralEngine.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.referralEngine.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.referralEngine.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.referralEngine.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.referralEngine.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.referralEngine.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.referralEngine.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.referralEngine.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.referralEngine.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.referralEngine.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.referralEngine.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.referralEngine.probes.readiness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.referralEngine.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "growth-service.configMapName" . }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+
+{{- if .Values.affiliateTracker.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "growth-service.fullname" . }}-{{ .Values.affiliateTracker.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "growth-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.affiliateTracker.name }}
+spec:
+  {{- if not .Values.affiliateTracker.autoscaling.enabled }}
+  replicas: {{ .Values.affiliateTracker.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "growth-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.affiliateTracker.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "growth-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ .Values.affiliateTracker.name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "growth-service.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "growth-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.affiliateTracker.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.affiliateTracker.image.repository }}:{{ .Values.affiliateTracker.image.tag }}"
+          imagePullPolicy: {{ .Values.affiliateTracker.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.affiliateTracker.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.affiliateTracker.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.affiliateTracker.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.affiliateTracker.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.affiliateTracker.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.affiliateTracker.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.affiliateTracker.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.affiliateTracker.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.affiliateTracker.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.affiliateTracker.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.affiliateTracker.probes.readiness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.affiliateTracker.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "growth-service.configMapName" . }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+
+{{- if .Values.landingBuilder.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "growth-service.fullname" . }}-{{ .Values.landingBuilder.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "growth-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.landingBuilder.name }}
+spec:
+  {{- if not .Values.landingBuilder.autoscaling.enabled }}
+  replicas: {{ .Values.landingBuilder.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "growth-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.landingBuilder.name }}
+  template:
+    metadata:
+      labels:
+        {{- include "growth-service.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ .Values.landingBuilder.name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "growth-service.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "growth-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.landingBuilder.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.landingBuilder.image.repository }}:{{ .Values.landingBuilder.image.tag }}"
+          imagePullPolicy: {{ .Values.landingBuilder.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.landingBuilder.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.landingBuilder.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.landingBuilder.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.landingBuilder.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.landingBuilder.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.landingBuilder.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.landingBuilder.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.landingBuilder.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.landingBuilder.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.landingBuilder.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.landingBuilder.probes.readiness.failureThreshold }}
+          resources:
+            {{- toYaml .Values.landingBuilder.resources | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "growth-service.configMapName" . }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

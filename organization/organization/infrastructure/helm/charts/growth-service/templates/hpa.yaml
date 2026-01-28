@@ -1,0 +1,135 @@
+{{- if .Values.growthApi.enabled }}
+{{- if .Values.growthApi.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "growth-service.fullname" . }}-{{ .Values.growthApi.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "growth-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.growthApi.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "growth-service.fullname" . }}-{{ .Values.growthApi.name }}
+  minReplicas: {{ .Values.growthApi.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.growthApi.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.growthApi.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.growthApi.autoscaling.targetMemoryUtilizationPercentage }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.referralEngine.enabled }}
+{{- if .Values.referralEngine.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "growth-service.fullname" . }}-{{ .Values.referralEngine.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "growth-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.referralEngine.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "growth-service.fullname" . }}-{{ .Values.referralEngine.name }}
+  minReplicas: {{ .Values.referralEngine.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.referralEngine.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.referralEngine.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.referralEngine.autoscaling.targetMemoryUtilizationPercentage }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.affiliateTracker.enabled }}
+{{- if .Values.affiliateTracker.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "growth-service.fullname" . }}-{{ .Values.affiliateTracker.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "growth-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.affiliateTracker.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "growth-service.fullname" . }}-{{ .Values.affiliateTracker.name }}
+  minReplicas: {{ .Values.affiliateTracker.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.affiliateTracker.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.affiliateTracker.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.affiliateTracker.autoscaling.targetMemoryUtilizationPercentage }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.landingBuilder.enabled }}
+{{- if .Values.landingBuilder.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "growth-service.fullname" . }}-{{ .Values.landingBuilder.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "growth-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.landingBuilder.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "growth-service.fullname" . }}-{{ .Values.landingBuilder.name }}
+  minReplicas: {{ .Values.landingBuilder.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.landingBuilder.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.landingBuilder.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.landingBuilder.autoscaling.targetMemoryUtilizationPercentage }}
+{{- end }}
+{{- end }}

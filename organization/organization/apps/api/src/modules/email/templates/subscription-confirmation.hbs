@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subscription Confirmed - Broxiva</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center; }
+    .header-icon { font-size: 64px; margin-bottom: 15px; }
+    .header h1 { color: #ffffff; margin: 0; font-size: 28px; }
+    .header p { color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px; }
+    .content { padding: 40px 30px; }
+    .success-badge { background: #e8f5e9; border: 2px solid #4caf50; border-radius: 50px; padding: 10px 20px; display: inline-block; margin-bottom: 25px; }
+    .success-badge span { color: #2e7d32; font-weight: 600; font-size: 16px; }
+    .greeting { font-size: 20px; font-weight: 600; margin-bottom: 20px; }
+    .message { color: #666; margin-bottom: 30px; font-size: 16px; line-height: 1.6; }
+    .subscription-details { background: #f8f9fa; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #667eea; }
+    .subscription-details h3 { margin: 0 0 20px; font-size: 18px; color: #333; }
+    .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e0e0e0; }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: #666; font-size: 14px; }
+    .detail-value { font-weight: 600; color: #333; font-size: 14px; text-align: right; }
+    .plan-badge { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+    .pricing-box { background: #fff; border: 2px solid #667eea; border-radius: 8px; padding: 25px; margin: 25px 0; text-align: center; }
+    .pricing-amount { font-size: 36px; font-weight: 700; color: #667eea; margin-bottom: 5px; }
+    .pricing-period { color: #666; font-size: 14px; margin-bottom: 20px; }
+    .benefits { margin: 30px 0; }
+    .benefits h4 { margin: 0 0 20px; font-size: 18px; }
+    .benefit { display: flex; align-items: flex-start; margin-bottom: 15px; }
+    .benefit-icon { color: #4caf50; font-size: 24px; margin-right: 15px; flex-shrink: 0; }
+    .benefit-text { flex: 1; font-size: 15px; color: #666; }
+    .benefit-text strong { color: #333; display: block; margin-bottom: 4px; }
+    .cta-section { background: #f8f9fa; border-radius: 8px; padding: 25px; margin: 30px 0; text-align: center; }
+    .cta-button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; padding: 14px 35px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 16px; margin: 10px 5px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
+    .cta-button:hover { opacity: 0.9; }
+    .cta-button-secondary { background: #fff; color: #667eea; border: 2px solid #667eea; box-shadow: none; }
+    .payment-info { background: #e3f2fd; border-radius: 6px; padding: 20px; margin: 25px 0; }
+    .payment-info h4 { margin: 0 0 15px; color: #1565c0; font-size: 16px; }
+    .payment-info p { margin: 0 0 10px; color: #1976d2; font-size: 14px; }
+    .payment-info p:last-child { margin-bottom: 0; }
+    .card-info { display: flex; align-items: center; background: #fff; padding: 12px 15px; border-radius: 6px; margin-top: 10px; }
+    .card-icon { font-size: 24px; margin-right: 12px; }
+    .card-details { flex: 1; font-size: 14px; color: #333; }
+    .divider { height: 1px; background: #e0e0e0; margin: 30px 0; }
+    .info-box { background: #fff3cd; border-radius: 6px; padding: 20px; margin: 25px 0; border-left: 4px solid #ffc107; }
+    .info-box h4 { margin: 0 0 10px; color: #856404; font-size: 16px; }
+    .info-box p { margin: 0; color: #856404; font-size: 14px; line-height: 1.6; }
+    .footer { background: #2c3e50; padding: 30px; text-align: center; color: #bdc3c7; font-size: 14px; }
+    .footer a { color: #ecf0f1; text-decoration: none; }
+    .footer-brand { font-weight: 700; font-size: 16px; margin-bottom: 10px; color: #ecf0f1; }
+    @media only screen and (max-width: 600px) {
+      .content { padding: 30px 20px; }
+      .cta-button { display: block; margin: 10px 0; }
+      .detail-row { flex-direction: column; }
+      .detail-value { text-align: left; margin-top: 5px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-icon">&#127881;</div>
+      <h1>Subscription Confirmed!</h1>
+      <p>Welcome to {{planName}}</p>
+    </div>
+
+    <div class="content">
+      <div style="text-align: center;">
+        <div class="success-badge">
+          <span>&#10004; Active Subscription</span>
+        </div>
+      </div>
+
+      <div class="greeting">Hi {{customerName}},</div>
+
+      <div class="message">
+        <p>Thank you for subscribing to Broxiva {{planName}}! Your subscription is now active and you can start enjoying all the premium benefits right away.</p>
+      </div>
+
+      <div class="subscription-details">
+        <h3>Subscription Details</h3>
+        <div class="detail-row">
+          <span class="detail-label">Plan</span>
+          <span class="detail-value"><span class="plan-badge">{{planName}}</span></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Subscription ID</span>
+          <span class="detail-value">#{{subscriptionId}}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Started On</span>
+          <span class="detail-value">{{startDate}}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Next Billing Date</span>
+          <span class="detail-value">{{nextBillingDate}}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Status</span>
+          <span class="detail-value" style="color: #4caf50;">Active</span>
+        </div>
+      </div>
+
+      <div class="pricing-box">
+        <div class="pricing-amount">{{currency}}{{amount}}</div>
+        <div class="pricing-period">{{billingInterval}}</div>
+        {{#if trialDays}}
+        <div style="background: #e8f5e9; padding: 10px; border-radius: 6px; margin-top: 15px;">
+          <p style="margin: 0; color: #2e7d32; font-weight: 600;">&#127881; {{trialDays}}-Day Free Trial Active</p>
+          <p style="margin: 5px 0 0; color: #2e7d32; font-size: 13px;">You won't be charged until {{chargeDate}}</p>
+        </div>
+        {{/if}}
+      </div>
+
+      <div class="benefits">
+        <h4>Your Premium Benefits:</h4>
+        {{#each benefits}}
+        <div class="benefit">
+          <span class="benefit-icon">&#10004;</span>
+          <div class="benefit-text">
+            <strong>{{title}}</strong>
+            {{#if description}}{{description}}{{/if}}
+          </div>
+        </div>
+        {{/each}}
+      </div>
+
+      <div class="payment-info">
+        <h4>&#128179; Payment Information</h4>
+        <p><strong>Payment Method:</strong></p>
+        <div class="card-info">
+          <span class="card-icon">&#128179;</span>
+          <div class="card-details">
+            {{paymentMethod.brand}} ending in {{paymentMethod.last4}}<br>
+            <span style="color: #666; font-size: 12px;">Expires {{paymentMethod.expiry}}</span>
+          </div>
+        </div>
+        <p style="margin-top: 15px; font-size: 13px;">
+          Your subscription will automatically renew on {{nextBillingDate}}. You can cancel anytime from your account settings.
+        </p>
+      </div>
+
+      <div class="cta-section">
+        <p style="margin: 0 0 20px; font-size: 16px; color: #333;"><strong>Ready to explore?</strong></p>
+        <a href="{{dashboardUrl}}" class="cta-button">Go to Dashboard</a>
+        <a href="{{manageSubscriptionUrl}}" class="cta-button cta-button-secondary">Manage Subscription</a>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="info-box">
+        <h4>&#128712; Important Information</h4>
+        <p>
+          • Your subscription will automatically renew on {{nextBillingDate}}<br>
+          • You can cancel or modify your subscription anytime from your account settings<br>
+          • No refunds for partial billing periods<br>
+          • View your invoice in the <a href="{{invoiceUrl}}" style="color: #667eea;">Billing History</a>
+        </p>
+      </div>
+
+      <div class="message" style="margin-top: 30px;">
+        <p style="font-size: 14px; color: #999;">
+          Questions about your subscription? Contact us at <a href="mailto:{{supportEmail}}" style="color: #667eea;">{{supportEmail}}</a> or visit our <a href="{{helpUrl}}" style="color: #667eea;">Help Center</a>.
+        </p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p class="footer-brand">Broxiva</p>
+      <p>Thank you for your subscription!</p>
+      <p style="font-size: 12px; margin-top: 15px;">
+        <a href="{{manageSubscriptionUrl}}">Manage Subscription</a> |
+        <a href="{{unsubscribeUrl}}">Email Preferences</a> |
+        <a href="{{privacyUrl}}">Privacy Policy</a>
+      </p>
+      <p style="font-size: 12px; color: #95a5a6; margin-top: 15px;">
+        &copy; {{currentYear}} Broxiva. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
