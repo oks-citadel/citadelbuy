@@ -1,0 +1,345 @@
+# Encryption Policy
+# Broxiva Global B2B Marketplace
+# Version: 2.0
+# Last Updated: 2025-12-06
+
+metadata:
+  policy_name: Encryption Standards and Requirements
+  owner: Chief Information Security Officer
+  approved_by: Chief Technology Officer
+  effective_date: 2025-01-01
+  review_frequency: Annual
+  next_review: 2026-12-01
+
+purpose: |
+  This policy defines encryption standards and requirements for protecting
+  data at rest, in transit, and in use across all Broxiva systems,
+  applications, and infrastructure.
+
+scope:
+  - All systems storing or transmitting sensitive data
+  - All databases containing customer or business data
+  - All network communications
+  - All backup and archive media
+  - All mobile devices and endpoints
+  - All cloud storage
+
+encryption_at_rest:
+  database_encryption:
+    algorithm: AES-256-GCM
+    key_management: AWS KMS with customer-managed keys (CMK)
+    key_rotation: Automatic, every 90 days
+    implementation:
+      - PostgreSQL: Transparent Data Encryption (TDE)
+      - MongoDB: Encrypted Storage Engine
+      - Redis: Encryption at rest enabled
+      - Elasticsearch: Index-level encryption
+
+  file_storage:
+    algorithm: AES-256-GCM
+    implementation:
+      - S3: Server-side encryption with KMS (SSE-KMS)
+      - EBS volumes: Encrypted with AWS KMS
+      - EFS: Encryption enabled at creation
+
+  backup_encryption:
+    algorithm: AES-256-CBC
+    key_management: Separate encryption keys for backups
+    key_storage: AWS KMS, backed up to offline HSM
+    verification: Monthly decrypt test
+    offsite_storage: Encrypted before transmission
+
+  field_level_encryption:
+    required_for:
+      - Credit card numbers (PAN)
+      - Bank account numbers
+      - Social security/national ID numbers
+      - Passwords (hashed, see password_hashing section)
+      - Authentication tokens
+      - Encryption keys
+    algorithm: AES-256-GCM
+    implementation: Application-layer encryption before database storage
+    key_management: Per-field encryption keys in KMS
+
+encryption_in_transit:
+  external_communication:
+    protocol: TLS 1.3 (minimum TLS 1.2)
+    cipher_suites:
+      preferred:
+        - TLS_AES_256_GCM_SHA384
+        - TLS_CHACHA20_POLY1305_SHA256
+        - TLS_AES_128_GCM_SHA256
+      deprecated_prohibited:
+        - TLS 1.0 (prohibited)
+        - TLS 1.1 (prohibited)
+        - SSL (all versions prohibited)
+        - RC4, DES, 3DES (prohibited)
+    certificate_requirements:
+      - minimum_key_size: 2048-bit RSA or 256-bit ECC
+      - certificate_authority: Publicly trusted CA
+      - validity_period: Maximum 397 days
+      - certificate_renewal: 30 days before expiry
+    hsts_enabled: true
+    hsts_max_age: 31536000 # 1 year
+
+  internal_communication:
+    service_mesh: Istio with mutual TLS (mTLS)
+    protocol: TLS 1.3
+    authentication: Certificate-based mutual authentication
+    certificate_rotation: Automatic, every 30 days
+
+  api_communication:
+    protocol: HTTPS only (HTTP redirects to HTTPS)
+    tls_version: TLS 1.2 minimum, TLS 1.3 preferred
+    api_keys: Transmitted in Authorization header only
+    oauth_tokens: JWT with RS256 signing
+
+  email_encryption:
+    in_transit: TLS 1.2+ (opportunistic TLS)
+    sensitive_content: S/MIME or PGP encryption required
+    internal_email: TLS 1.3 enforced
+
+  vpn:
+    protocol: IPsec or WireGuard
+    encryption: AES-256-GCM
+    authentication: Certificate + MFA
+    key_exchange: Diffie-Hellman Group 14+
+
+password_hashing:
+  algorithm: Argon2id (winner of Password Hashing Competition)
+  parameters:
+    memory_cost: 65536 KiB (64 MB)
+    time_cost: 3 iterations
+    parallelism: 4 threads
+    salt_length: 16 bytes (cryptographically random)
+  fallback: bcrypt with cost factor 12 (for legacy systems)
+  prohibited:
+    - Plain text storage
+    - Reversible encryption
+    - MD5, SHA1, SHA256 (without proper salting/stretching)
+    - Weak algorithms (DES, RC4, etc.)
+
+key_management:
+  key_generation:
+    source: Cryptographically secure random number generator (CSRNG)
+    entropy: Minimum 256 bits
+    algorithm: FIPS 140-2 compliant
+
+  key_storage:
+    production_keys:
+      primary: AWS KMS (FIPS 140-2 Level 2)
+      backup: Hardware Security Module (HSM) - offline
+      access_control: IAM roles with MFA
+    encryption_keys:
+      master_keys: KMS with CloudHSM
+      data_encryption_keys: Envelope encryption
+      key_hierarchy: Master key -> Data key -> Encrypted data
+
+  key_rotation:
+    automatic:
+      - Master keys: Every 90 days
+      - Data encryption keys: Every 180 days
+      - TLS certificates: Every 90 days
+      - API keys: Every 180 days
+    manual:
+      - Emergency rotation: On suspected compromise
+      - Personnel change: When key custodian leaves
+
+  key_lifecycle:
+    - generation: Secure random generation
+    - distribution: Encrypted channel, authenticated recipient
+    - storage: HSM or KMS
+    - rotation: Scheduled and event-based
+    - destruction: Cryptographic erasure, overwrite
+
+  key_escrow:
+    purpose: Disaster recovery, legal compliance
+    escrow_agent: Third-party escrow service
+    split_knowledge: M-of-N key splitting (3-of-5)
+    access_procedure: Dual control, executive approval
+    audit: All escrow access logged
+
+encryption_algorithms:
+  approved_symmetric:
+    - algorithm: AES
+      key_sizes: [256, 192, 128]
+      modes: [GCM, CCM, CBC with HMAC]
+      preferred: AES-256-GCM
+
+  approved_asymmetric:
+    - algorithm: RSA
+      minimum_key_size: 2048
+      recommended_key_size: 4096
+      purpose: Key exchange, digital signatures
+
+    - algorithm: ECC (Elliptic Curve)
+      minimum_key_size: 256
+      curves: [P-256, P-384, P-521]
+      purpose: Key exchange, digital signatures
+
+  approved_hashing:
+    - algorithm: SHA-2 family
+      variants: [SHA-256, SHA-384, SHA-512]
+      purpose: Data integrity, digital signatures
+
+    - algorithm: SHA-3 family
+      variants: [SHA3-256, SHA3-384, SHA3-512]
+      purpose: Data integrity
+
+  prohibited_algorithms:
+    - DES, 3DES
+    - RC4, RC2
+    - MD5, SHA1
+    - ECB mode (for block ciphers)
+    - RSA < 2048 bits
+    - Any proprietary or non-standard algorithms
+
+digital_signatures:
+  algorithm: RSA-PSS or ECDSA
+  hash_function: SHA-256 minimum
+  key_size: 2048-bit RSA or 256-bit ECC
+  certificate_chain: Include full chain to root CA
+  timestamp: RFC 3161 compliant timestamping
+
+  use_cases:
+    - Software releases and updates
+    - Legal documents and contracts
+    - Financial transactions
+    - Audit logs (log signing)
+
+mobile_device_encryption:
+  smartphones:
+    ios:
+      - requirement: FileVault encryption enabled
+      - passcode: Minimum 6-digit passcode
+      - remote_wipe: Enabled
+
+    android:
+      - requirement: Full disk encryption
+      - passcode: Minimum 6-digit PIN
+      - remote_wipe: Enabled via MDM
+
+  laptops:
+    macos:
+      - requirement: FileVault 2 enabled
+      - recovery_key: Escrowed with IT
+
+    windows:
+      - requirement: BitLocker enabled
+      - tpm: TPM 2.0 required
+      - recovery_key: Escrowed in Active Directory
+
+    linux:
+      - requirement: LUKS full disk encryption
+      - encryption: AES-256-XTS
+
+cloud_encryption:
+  aws:
+    s3:
+      - encryption: SSE-KMS (Server-Side Encryption with KMS)
+      - default_encryption: Enabled on all buckets
+      - key_rotation: Automatic
+
+    ebs:
+      - encryption: Mandatory for all volumes
+      - key: Customer-managed KMS key
+
+    rds:
+      - encryption: Enabled at creation (cannot be added later)
+      - snapshots: Encrypted if source is encrypted
+
+  encryption_by_default:
+    - All new resources: Encryption enabled by default
+    - Compliance: Enforced via AWS Config rules
+    - Monitoring: CloudWatch alarms for unencrypted resources
+
+quantum_resistance:
+  status: Monitoring NIST post-quantum cryptography standards
+  timeline: Transition plan by 2030
+  current_mitigation: Use maximum approved key sizes (AES-256, RSA-4096)
+
+exceptions:
+  process:
+    - Request: Formal exception request with business justification
+    - Assessment: Security team risk assessment
+    - Approval: CISO approval required
+    - Compensating_controls: Documented and implemented
+    - Duration: Maximum 6 months, renewable
+    - Audit: Quarterly review of all active exceptions
+
+compliance:
+  standards:
+    - PCI-DSS v4.0
+    - GDPR Article 32 (Security of processing)
+    - HIPAA Security Rule (if applicable)
+    - SOC 2 Type II
+    - ISO 27001
+    - NIST SP 800-175B (Key Management)
+    - FIPS 140-2
+
+monitoring_and_audit:
+  automated:
+    - Daily: Unencrypted resource scan
+    - Daily: Certificate expiry check (30-day alert)
+    - Weekly: Encryption compliance report
+    - Monthly: Key rotation verification
+
+  manual:
+    - Quarterly: Encryption policy compliance audit
+    - Annual: Third-party cryptography review
+    - Annual: Key management practices audit
+
+incident_response:
+  key_compromise:
+    - immediate: Revoke compromised key
+    - 1_hour: Activate incident response team
+    - 4_hours: Assess scope of compromise
+    - 24_hours: Rotate all potentially affected keys
+    - 72_hours: Regulatory notification (if required)
+
+  certificate_compromise:
+    - immediate: Revoke certificate
+    - 1_hour: Issue new certificate
+    - 4_hours: Deploy new certificate across infrastructure
+    - 24_hours: Verify all systems updated
+
+training:
+  required_for:
+    - All developers
+    - All DevOps engineers
+    - All security team members
+    - Key custodians
+
+  topics:
+    - Approved encryption algorithms
+    - Key management best practices
+    - Common cryptographic vulnerabilities
+    - Implementation guidelines
+    - Regulatory requirements
+
+  frequency: Annual + onboarding
+
+responsibilities:
+  development_teams:
+    - Implement encryption per this policy
+    - Use approved libraries and algorithms
+    - Avoid custom cryptography
+    - Request security review for encryption changes
+
+  security_team:
+    - Define encryption standards
+    - Review encryption implementations
+    - Manage key infrastructure
+    - Monitor compliance
+
+  infrastructure_team:
+    - Enable encryption on infrastructure
+    - Manage TLS certificates
+    - Implement key rotation
+    - Monitor encryption status
+
+review_log:
+  - date: 2025-12-06
+    version: "2.0"
+    changes: Updated to TLS 1.3, added quantum resistance section
+    approved_by: Chief Information Security Officer

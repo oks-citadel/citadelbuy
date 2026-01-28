@@ -1,0 +1,80 @@
+// ==================== TENANT DOMAINS SCHEMA ====================
+// This file contains the database schema for tenant domain management
+// Enables multi-tenancy with custom domains and subdomain support
+// Merge these models with the main schema.prisma file
+
+// Domain Type - determines how the domain is configured
+enum DomainType {
+  SUBDOMAIN  // e.g., vendorslug.broxiva.com
+  CUSTOM     // e.g., shop.vendor.com
+}
+
+// Domain Status - lifecycle states for domain verification
+enum DomainStatus {
+  PENDING_VERIFICATION  // Domain added, waiting for DNS verification
+  VERIFIED              // DNS verified, pending activation
+  ACTIVE                // Fully active and serving traffic
+  SUSPENDED             // Temporarily disabled (billing, TOS violation)
+}
+
+// SSL Certificate Status
+enum SslStatus {
+  PENDING       // Not yet started
+  PROVISIONING  // Certificate being issued
+  ACTIVE        // Certificate active and valid
+  FAILED        // Certificate issuance failed
+}
+
+// Tenant Domain Model
+// Maps hostnames to organizations for multi-tenancy
+model TenantDomain {
+  id                String        @id @default(cuid())
+
+  // The hostname that will resolve to this tenant
+  // Examples: "shop.vendor.com" or "vendorslug.broxiva.com"
+  host              String        @unique
+
+  // Reference to the Organization (tenant)
+  tenantId          String
+  tenant            Organization  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Domain configuration
+  domainType        DomainType    @default(SUBDOMAIN)
+  status            DomainStatus  @default(PENDING_VERIFICATION)
+
+  // DNS Verification
+  // TXT record token for domain ownership verification
+  // Format: bx-verify=<verificationToken>
+  verificationToken String?
+
+  // CNAME target for custom domains
+  // Customer points _broxiva.<domain> CNAME to this value
+  cnameTarget       String?
+
+  // Timestamp when domain was successfully verified
+  verifiedAt        DateTime?
+
+  // SSL Certificate Status
+  sslStatus         SslStatus?    @default(PENDING)
+  sslExpiresAt      DateTime?
+
+  // Metadata
+  isPrimary         Boolean       @default(false)  // Primary domain for the tenant
+  redirectToWww     Boolean       @default(false)  // Redirect non-www to www
+
+  // Audit fields
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  createdBy         String?       // User who added the domain
+
+  // Indexes for efficient lookups
+  @@index([tenantId])
+  @@index([host])
+  @@index([status])
+  @@index([domainType])
+
+  @@map("tenant_domains")
+}
+
+// Add this relation to the Organization model:
+// domains TenantDomain[]

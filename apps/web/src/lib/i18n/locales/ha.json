@@ -1,0 +1,34 @@
+{
+  "common": {
+    "welcome": "Barka da zuwa",
+    "loading": "Ana lodawa...",
+    "error": "Kuskure",
+    "success": "Nasara",
+    "save": "Ajiye",
+    "cancel": "Soke",
+    "delete": "Share",
+    "edit": "Gyara",
+    "yes": "I",
+    "no": "A'a",
+    "email": "Imel",
+    "password": "Kalmar sirri",
+    "login": "Shiga",
+    "logout": "Fita",
+    "register": "Yi rajista"
+  },
+  "nav": {
+    "home": "Gida",
+    "products": "Kayayyaki",
+    "cart": "Katen siye",
+    "orders": "Oda"
+  },
+  "products": {
+    "title": "Kayayyaki",
+    "addToCart": "Saka a cikin katen",
+    "buyNow": "Saya yanzu"
+  },
+  "cart": {
+    "title": "Katen siye",
+    "emptyCart": "Katen ku babu komai"
+  }
+}

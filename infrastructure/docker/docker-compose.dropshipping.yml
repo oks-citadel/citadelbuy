@@ -1,0 +1,205 @@
+version: '3.8'
+
+# Docker Compose extension for Global Dropshipping Engine
+# Use: docker-compose -f docker-compose.yml -f docker-compose.dropshipping.yml up
+
+services:
+  # ============================================
+  # Supplier Integration Service (Python/FastAPI)
+  # ============================================
+  supplier-integration:
+    build:
+      context: ../../apps/services/supplier-integration
+      dockerfile: Dockerfile
+    container_name: broxiva-supplier-integration
+    restart: unless-stopped
+    environment:
+      - SERVICE_NAME=supplier-integration
+      - PORT=8001
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=INFO
+      # Supplier API Keys (encrypted in production)
+      - ALIEXPRESS_APP_KEY=${ALIEXPRESS_APP_KEY}
+      - ALIEXPRESS_APP_SECRET=${ALIEXPRESS_APP_SECRET}
+      - CJ_API_KEY=${CJ_API_KEY}
+      - PRINTFUL_API_KEY=${PRINTFUL_API_KEY}
+      - SPOCKET_API_KEY=${SPOCKET_API_KEY}
+      - ZENDROP_API_KEY=${ZENDROP_API_KEY}
+    ports:
+      - "8001:8001"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - broxiva-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.supplier-integration.rule=PathPrefix(`/api/suppliers`)"
+      - "traefik.http.services.supplier-integration.loadbalancer.server.port=8001"
+
+  # ============================================
+  # AI Engine Service (Python)
+  # ============================================
+  ai-engine:
+    build:
+      context: ../../apps/services/ai-engine
+      dockerfile: Dockerfile
+    container_name: broxiva-ai-engine
+    restart: unless-stopped
+    environment:
+      - SERVICE_NAME=ai-engine
+      - PORT=8002
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=INFO
+      # ML Model configs
+      - MODEL_PATH=/app/models
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    ports:
+      - "8002:8002"
+    volumes:
+      - ai-models:/app/models
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - broxiva-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================
+  # Inventory Sync Worker
+  # ============================================
+  inventory-sync-worker:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile
+    container_name: broxiva-inventory-sync
+    restart: unless-stopped
+    command: ["node", "dist/workers/inventory-sync.worker.js"]
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - SUPPLIER_SERVICE_URL=http://supplier-integration:8001
+      - WORKER_TYPE=inventory-sync
+      - CONCURRENCY=5
+    depends_on:
+      - postgres
+      - redis
+      - supplier-integration
+    networks:
+      - broxiva-network
+
+  # ============================================
+  # Price Sync Worker
+  # ============================================
+  price-sync-worker:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile
+    container_name: broxiva-price-sync
+    restart: unless-stopped
+    command: ["node", "dist/workers/price-sync.worker.js"]
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - AI_SERVICE_URL=http://ai-engine:8002
+      - WORKER_TYPE=price-sync
+      - CONCURRENCY=3
+    depends_on:
+      - postgres
+      - redis
+      - ai-engine
+    networks:
+      - broxiva-network
+
+  # ============================================
+  # Order Routing Worker
+  # ============================================
+  order-routing-worker:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile
+    container_name: broxiva-order-routing
+    restart: unless-stopped
+    command: ["node", "dist/workers/order-routing.worker.js"]
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - SUPPLIER_SERVICE_URL=http://supplier-integration:8001
+      - WORKER_TYPE=order-routing
+      - CONCURRENCY=10
+    depends_on:
+      - postgres
+      - redis
+      - supplier-integration
+    networks:
+      - broxiva-network
+
+  # ============================================
+  # Tracking Sync Worker
+  # ============================================
+  tracking-sync-worker:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile
+    container_name: broxiva-tracking-sync
+    restart: unless-stopped
+    command: ["node", "dist/workers/tracking-sync.worker.js"]
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - SUPPLIER_SERVICE_URL=http://supplier-integration:8001
+      - WORKER_TYPE=tracking-sync
+      - CONCURRENCY=5
+    depends_on:
+      - postgres
+      - redis
+      - supplier-integration
+    networks:
+      - broxiva-network
+
+  # ============================================
+  # Fraud Detection Worker
+  # ============================================
+  fraud-detection-worker:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile
+    container_name: broxiva-fraud-detection
+    restart: unless-stopped
+    command: ["node", "dist/workers/fraud-detection.worker.js"]
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - AI_SERVICE_URL=http://ai-engine:8002
+      - WORKER_TYPE=fraud-detection
+      - CONCURRENCY=5
+    depends_on:
+      - postgres
+      - redis
+      - ai-engine
+    networks:
+      - broxiva-network
+
+networks:
+  broxiva-network:
+    external: true
+
+volumes:
+  ai-models:
+    driver: local

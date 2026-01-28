@@ -1,0 +1,820 @@
+# ==============================================================================
+# AWS CodePipeline Infrastructure - CloudFormation Template
+# Broxiva E-Commerce Platform - CI/CD Pipeline Configuration
+# ==============================================================================
+# This CloudFormation template creates:
+# - CodePipeline for orchestrating CI/CD
+# - CodeBuild projects for Node.js and Python services
+# - ECR repositories for all 15 services
+# - IAM roles and policies
+# - GitHub connection via CodeStar
+# - SNS notifications
+# ==============================================================================
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Broxiva E-Commerce Platform - AWS CodePipeline CI/CD Infrastructure'
+
+# ==============================================================================
+# Parameters
+# ==============================================================================
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: broxiva
+    Description: Project name used for resource naming
+
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Deployment environment
+
+  GitHubOwner:
+    Type: String
+    Default: broxiva
+    Description: GitHub repository owner/organization
+
+  GitHubRepo:
+    Type: String
+    Default: broxiva
+    Description: GitHub repository name
+
+  GitHubBranch:
+    Type: String
+    Default: main
+    Description: GitHub branch to monitor
+
+  NotificationEmail:
+    Type: String
+    Default: ''
+    Description: Email address for pipeline notifications (optional)
+
+  EnableMicroservicesPipeline:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Enable separate build stage for Python microservices
+
+# ==============================================================================
+# Conditions
+# ==============================================================================
+
+Conditions:
+  HasNotificationEmail: !Not [!Equals [!Ref NotificationEmail, '']]
+  EnableMicroservices: !Equals [!Ref EnableMicroservicesPipeline, 'true']
+  IsProduction: !Equals [!Ref Environment, 'prod']
+
+# ==============================================================================
+# Resources
+# ==============================================================================
+
+Resources:
+
+  # ============================================================================
+  # S3 Bucket for Pipeline Artifacts
+  # ============================================================================
+
+  PipelineArtifactsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub '${ProjectName}-pipeline-artifacts-${AWS::AccountId}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: CleanupOldArtifacts
+            Status: Enabled
+            ExpirationInDays: 30
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 7
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ============================================================================
+  # ECR Repositories for All Services
+  # ============================================================================
+
+  ECRRepositoryApi:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/api'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep last 10 tagged images",
+                "selection": {
+                  "tagStatus": "tagged",
+                  "tagPrefixList": ["v", "20"],
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": { "type": "expire" }
+              },
+              {
+                "rulePriority": 2,
+                "description": "Remove untagged images older than 7 days",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": { "type": "expire" }
+              }
+            ]
+          }
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: api
+
+  ECRRepositoryWeb:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/web'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: web
+
+  ECRRepositoryAiAgents:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/ai-agents'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: ai-agents
+
+  ECRRepositoryAiEngine:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/ai-engine'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: ai-engine
+
+  ECRRepositoryAnalytics:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/analytics'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: analytics
+
+  ECRRepositoryChatbot:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/chatbot'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: chatbot
+
+  ECRRepositoryFraudDetection:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/fraud-detection'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: fraud-detection
+
+  ECRRepositoryInventory:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/inventory'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: inventory
+
+  ECRRepositoryMedia:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/media'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: media
+
+  ECRRepositoryNotification:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/notification'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: notification
+
+  ECRRepositoryPersonalization:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/personalization'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: personalization
+
+  ECRRepositoryPricing:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/pricing'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: pricing
+
+  ECRRepositoryRecommendation:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/recommendation'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: recommendation
+
+  ECRRepositorySearch:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/search'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: search
+
+  ECRRepositorySupplierIntegration:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${ProjectName}/supplier-integration'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: supplier-integration
+
+  # ============================================================================
+  # GitHub Connection (CodeStar Connections)
+  # ============================================================================
+
+  GitHubConnection:
+    Type: AWS::CodeStarConnections::Connection
+    Properties:
+      ConnectionName: !Sub '${ProjectName}-github-connection'
+      ProviderType: GitHub
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # ============================================================================
+  # IAM Role for CodePipeline
+  # ============================================================================
+
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-codepipeline-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodePipelinePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                Resource:
+                  - !GetAtt PipelineArtifactsBucket.Arn
+                  - !Sub '${PipelineArtifactsBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - codestar-connections:UseConnection
+                Resource: !Ref GitHubConnection
+              - Effect: Allow
+                Action:
+                  - codebuild:BatchGetBuilds
+                  - codebuild:StartBuild
+                  - codebuild:StopBuild
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - ecs:DescribeServices
+                  - ecs:DescribeTaskDefinition
+                  - ecs:DescribeTasks
+                  - ecs:ListTasks
+                  - ecs:RegisterTaskDefinition
+                  - ecs:UpdateService
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: '*'
+                Condition:
+                  StringEqualsIfExists:
+                    iam:PassedToService:
+                      - ecs-tasks.amazonaws.com
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: '*'
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # ============================================================================
+  # IAM Role for CodeBuild
+  # ============================================================================
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-codebuild-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodeBuildPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:PutObject
+                Resource:
+                  - !GetAtt PipelineArtifactsBucket.Arn
+                  - !Sub '${PipelineArtifactsBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:CompleteLayerUpload
+                  - ecr:GetAuthorizationToken
+                  - ecr:InitiateLayerUpload
+                  - ecr:PutImage
+                  - ecr:UploadLayerPart
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameters
+                  - ssm:GetParameter
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/*'
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${ProjectName}/*'
+              - Effect: Allow
+                Action:
+                  - codebuild:CreateReportGroup
+                  - codebuild:CreateReport
+                  - codebuild:UpdateReport
+                  - codebuild:BatchPutTestCases
+                  - codebuild:BatchPutCodeCoverages
+                Resource: !Sub 'arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/*'
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # ============================================================================
+  # CodeBuild Project - Node.js Services
+  # ============================================================================
+
+  CodeBuildProjectNodeJS:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub '${ProjectName}-nodejs-build'
+      Description: Build Node.js services (API and Web)
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      TimeoutInMinutes: 30
+      Artifacts:
+        Type: CODEPIPELINE
+      Cache:
+        Type: LOCAL
+        Modes:
+          - LOCAL_DOCKER_LAYER_CACHE
+          - LOCAL_SOURCE_CACHE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: AWS_ACCOUNT_ID
+            Value: !Ref AWS::AccountId
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: ENVIRONMENT
+            Value: !Ref Environment
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: organization/infrastructure/aws-cicd/buildspec.yml
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+          GroupName: !Sub '/aws/codebuild/${ProjectName}-nodejs'
+          StreamName: build-log
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Type
+          Value: NodeJS
+
+  # ============================================================================
+  # CodeBuild Project - Python Microservices
+  # ============================================================================
+
+  CodeBuildProjectMicroservices:
+    Type: AWS::CodeBuild::Project
+    Condition: EnableMicroservices
+    Properties:
+      Name: !Sub '${ProjectName}-microservices-build'
+      Description: Build Python microservices
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      TimeoutInMinutes: 60
+      Artifacts:
+        Type: CODEPIPELINE
+      Cache:
+        Type: LOCAL
+        Modes:
+          - LOCAL_DOCKER_LAYER_CACHE
+          - LOCAL_SOURCE_CACHE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: AWS_ACCOUNT_ID
+            Value: !Ref AWS::AccountId
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: ENVIRONMENT
+            Value: !Ref Environment
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: organization/infrastructure/aws-cicd/buildspec-microservices.yml
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+          GroupName: !Sub '/aws/codebuild/${ProjectName}-microservices'
+          StreamName: build-log
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Type
+          Value: Python
+
+  # ============================================================================
+  # CodePipeline - Main Pipeline
+  # ============================================================================
+
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub '${ProjectName}-pipeline'
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref PipelineArtifactsBucket
+      Stages:
+        # Stage 1: Source from GitHub
+        - Name: Source
+          Actions:
+            - Name: GitHub_Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: '1'
+              Configuration:
+                ConnectionArn: !Ref GitHubConnection
+                FullRepositoryId: !Sub '${GitHubOwner}/${GitHubRepo}'
+                BranchName: !Ref GitHubBranch
+                DetectChanges: 'true'
+              OutputArtifacts:
+                - Name: source_output
+
+        # Stage 2: Build Node.js Services
+        - Name: Build_NodeJS
+          Actions:
+            - Name: Build_API_Web
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectNodeJS
+              InputArtifacts:
+                - Name: source_output
+              OutputArtifacts:
+                - Name: nodejs_build_output
+
+        # Stage 3: Build Microservices (conditional - using dynamic reference)
+        - !If
+          - EnableMicroservices
+          - Name: Build_Microservices
+            Actions:
+              - Name: Build_Python_Services
+                ActionTypeId:
+                  Category: Build
+                  Owner: AWS
+                  Provider: CodeBuild
+                  Version: '1'
+                Configuration:
+                  ProjectName: !Ref CodeBuildProjectMicroservices
+                InputArtifacts:
+                  - Name: source_output
+                OutputArtifacts:
+                  - Name: microservices_build_output
+          - !Ref AWS::NoValue
+
+        # Stage 4: Manual Approval (for production)
+        - !If
+          - IsProduction
+          - Name: Approval
+            Actions:
+              - Name: Manual_Approval
+                ActionTypeId:
+                  Category: Approval
+                  Owner: AWS
+                  Provider: Manual
+                  Version: '1'
+                Configuration:
+                  CustomData: !Sub 'Please review the build artifacts and approve deployment to ${Environment}'
+          - !Ref AWS::NoValue
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ============================================================================
+  # SNS Topic for Pipeline Notifications
+  # ============================================================================
+
+  PipelineNotificationsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ProjectName}-pipeline-notifications'
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  PipelineNotificationsSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasNotificationEmail
+    Properties:
+      TopicArn: !Ref PipelineNotificationsTopic
+      Protocol: email
+      Endpoint: !Ref NotificationEmail
+
+  PipelineNotificationsTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref PipelineNotificationsTopic
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sns:Publish
+            Resource: !Ref PipelineNotificationsTopic
+
+  # ============================================================================
+  # CloudWatch Event Rule for Pipeline Notifications
+  # ============================================================================
+
+  PipelineEventsRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${ProjectName}-pipeline-events'
+      Description: Capture CodePipeline state changes
+      EventPattern:
+        source:
+          - aws.codepipeline
+        detail-type:
+          - CodePipeline Pipeline Execution State Change
+        detail:
+          pipeline:
+            - !Ref Pipeline
+          state:
+            - FAILED
+            - SUCCEEDED
+            - CANCELED
+      Targets:
+        - Id: SendToSNS
+          Arn: !Ref PipelineNotificationsTopic
+          InputTransformer:
+            InputPathsMap:
+              pipeline: $.detail.pipeline
+              state: $.detail.state
+              time: $.time
+            InputTemplate: '"Pipeline <pipeline> changed to state <state> at <time>"'
+
+  # ============================================================================
+  # CloudWatch Log Groups
+  # ============================================================================
+
+  NodeJSBuildLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/codebuild/${ProjectName}-nodejs'
+      RetentionInDays: 30
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  MicroservicesBuildLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: EnableMicroservices
+    Properties:
+      LogGroupName: !Sub '/aws/codebuild/${ProjectName}-microservices'
+      RetentionInDays: 30
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+# ==============================================================================
+# Outputs
+# ==============================================================================
+
+Outputs:
+  PipelineName:
+    Description: Name of the CodePipeline
+    Value: !Ref Pipeline
+    Export:
+      Name: !Sub '${ProjectName}-pipeline-name'
+
+  PipelineArn:
+    Description: ARN of the CodePipeline
+    Value: !Sub 'arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${Pipeline}'
+    Export:
+      Name: !Sub '${ProjectName}-pipeline-arn'
+
+  ArtifactsBucket:
+    Description: S3 bucket for pipeline artifacts
+    Value: !Ref PipelineArtifactsBucket
+    Export:
+      Name: !Sub '${ProjectName}-artifacts-bucket'
+
+  GitHubConnectionArn:
+    Description: ARN of the GitHub connection (must be confirmed in AWS Console)
+    Value: !Ref GitHubConnection
+    Export:
+      Name: !Sub '${ProjectName}-github-connection-arn'
+
+  CodeBuildNodeJSProject:
+    Description: CodeBuild project for Node.js services
+    Value: !Ref CodeBuildProjectNodeJS
+    Export:
+      Name: !Sub '${ProjectName}-codebuild-nodejs'
+
+  CodeBuildMicroservicesProject:
+    Description: CodeBuild project for Python microservices
+    Condition: EnableMicroservices
+    Value: !Ref CodeBuildProjectMicroservices
+    Export:
+      Name: !Sub '${ProjectName}-codebuild-microservices'
+
+  SNSTopicArn:
+    Description: ARN of the SNS topic for notifications
+    Value: !Ref PipelineNotificationsTopic
+    Export:
+      Name: !Sub '${ProjectName}-sns-topic-arn'
+
+  ECRApiRepository:
+    Description: ECR repository URL for API service
+    Value: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepositoryApi}'
+    Export:
+      Name: !Sub '${ProjectName}-ecr-api'
+
+  ECRWebRepository:
+    Description: ECR repository URL for Web service
+    Value: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepositoryWeb}'
+    Export:
+      Name: !Sub '${ProjectName}-ecr-web'
+
+  PostDeploymentInstructions:
+    Description: Post-deployment instructions
+    Value: !Sub |
+      =====================================================
+      POST-DEPLOYMENT INSTRUCTIONS
+      =====================================================
+
+      1. GITHUB CONNECTION:
+         The GitHub connection needs to be confirmed manually.
+         Go to AWS Console > Developer Tools > Connections
+         Click "Update pending connection" and authorize GitHub access.
+
+      2. PARAMETER STORE SECRETS:
+         Create the following parameters in AWS Systems Manager Parameter Store:
+         - /${ProjectName}/docker/username
+         - /${ProjectName}/docker/password
+
+      3. SNS SUBSCRIPTION:
+         If you provided an email for notifications, confirm the subscription
+         by clicking the link in the email sent to your address.
+
+      4. TRIGGER FIRST BUILD:
+         Push a commit to the ${GitHubBranch} branch to trigger the pipeline.
+
+      =====================================================

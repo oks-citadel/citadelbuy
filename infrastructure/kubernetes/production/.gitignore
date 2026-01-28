@@ -1,0 +1,20 @@
+# Ignore generated files
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Ignore temporary kustomize files
+kustomization-*.yaml
+
+# Ignore local overrides
+*.local.yaml
+local/
+
+# Ignore generated manifests
+generated/
+output/
+
+# Ignore secrets (should use external secret management)
+*-secrets.yaml
+secrets/

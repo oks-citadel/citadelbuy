@@ -1,0 +1,189 @@
+{{- if .Values.sitemapGenerator.enabled }}
+{{- if .Values.sitemapGenerator.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "seo-service.fullname" . }}-{{ .Values.sitemapGenerator.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "seo-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.sitemapGenerator.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "seo-service.fullname" . }}-{{ .Values.sitemapGenerator.name }}
+  minReplicas: {{ .Values.sitemapGenerator.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.sitemapGenerator.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.sitemapGenerator.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.sitemapGenerator.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.sitemapGenerator.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.sitemapGenerator.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.robotsTxtServer.enabled }}
+{{- if .Values.robotsTxtServer.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "seo-service.fullname" . }}-{{ .Values.robotsTxtServer.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "seo-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.robotsTxtServer.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "seo-service.fullname" . }}-{{ .Values.robotsTxtServer.name }}
+  minReplicas: {{ .Values.robotsTxtServer.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.robotsTxtServer.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.robotsTxtServer.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.robotsTxtServer.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.robotsTxtServer.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.robotsTxtServer.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.schemaOrgGenerator.enabled }}
+{{- if .Values.schemaOrgGenerator.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "seo-service.fullname" . }}-{{ .Values.schemaOrgGenerator.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "seo-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.schemaOrgGenerator.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "seo-service.fullname" . }}-{{ .Values.schemaOrgGenerator.name }}
+  minReplicas: {{ .Values.schemaOrgGenerator.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.schemaOrgGenerator.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.schemaOrgGenerator.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.schemaOrgGenerator.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.schemaOrgGenerator.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.schemaOrgGenerator.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.seoAuditor.enabled }}
+{{- if .Values.seoAuditor.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "seo-service.fullname" . }}-{{ .Values.seoAuditor.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "seo-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.seoAuditor.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "seo-service.fullname" . }}-{{ .Values.seoAuditor.name }}
+  minReplicas: {{ .Values.seoAuditor.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.seoAuditor.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.seoAuditor.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.seoAuditor.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.seoAuditor.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.seoAuditor.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.coreWebVitalsTracker.enabled }}
+{{- if .Values.coreWebVitalsTracker.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "seo-service.fullname" . }}-{{ .Values.coreWebVitalsTracker.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "seo-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.coreWebVitalsTracker.name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "seo-service.fullname" . }}-{{ .Values.coreWebVitalsTracker.name }}
+  minReplicas: {{ .Values.coreWebVitalsTracker.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.coreWebVitalsTracker.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.coreWebVitalsTracker.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.coreWebVitalsTracker.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.coreWebVitalsTracker.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.coreWebVitalsTracker.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
+{{- end }}

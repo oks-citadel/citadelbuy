@@ -1,0 +1,200 @@
+---
+# AI Engine Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-engine
+  labels:
+    app: ai-engine
+    tier: backend
+    component: ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ai-engine
+  template:
+    metadata:
+      labels:
+        app: ai-engine
+        tier: backend
+    spec:
+      serviceAccountName: ai-engine
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ai-engine
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva/ai-engine:v2.0.0
+          ports:
+            - containerPort: 8002
+              name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
+          env:
+            - name: SERVICE_NAME
+              value: "ai-engine"
+            - name: PORT
+              value: "8002"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: MODEL_PATH
+              value: "/app/models"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: broxiva-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: broxiva-secrets
+                  key: redis-url
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-secrets
+                  key: openai-api-key
+          volumeMounts:
+            - name: models-volume
+              mountPath: /app/models
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /app/.cache
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+      volumes:
+        - name: models-volume
+          persistentVolumeClaim:
+            claimName: ai-models-pvc
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: cache
+          emptyDir:
+            sizeLimit: 1Gi
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - ai-engine
+                topologyKey: kubernetes.io/hostname
+
+---
+# ServiceAccount for AI Engine
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ai-engine
+  labels:
+    app: ai-engine
+    component: ai
+automountServiceAccountToken: false
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-engine
+  labels:
+    app: ai-engine
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8002
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: ai-engine
+
+---
+# Persistent Volume Claim for ML Models
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ai-models-pvc
+spec:
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ai-engine-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-engine
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 75
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+# Pod Disruption Budget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ai-engine-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ai-engine

@@ -1,0 +1,152 @@
+# Production environment values for personalization-service
+
+global:
+  environment: production
+  imageRegistry: ""
+
+# User Profiler - Production Settings
+userProfiler:
+  enabled: true
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# Recommendation Engine - Production Settings
+recommendationEngine:
+  enabled: true
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 300m
+      memory: 768Mi
+    limits:
+      cpu: 1500m
+      memory: 1.5Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 12
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# Personalization API - Production Settings
+personalizationApi:
+  enabled: true
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 150m
+      memory: 384Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 15
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# Ingress - Production Settings
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/rate-limit: "500"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+  hosts:
+    - host: personalization.broxiva.com
+      paths:
+        - path: /profile
+          pathType: Prefix
+          service: user-profiler
+        - path: /recommend
+          pathType: Prefix
+          service: recommendation-engine
+        - path: /api
+          pathType: Prefix
+          service: personalization-api
+  tls:
+    - secretName: personalization-service-tls
+      hosts:
+        - personalization.broxiva.com
+
+# ServiceAccount - Production Settings
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::PROD_ACCOUNT_ID:role/broxiva-prod-personalization-service
+
+# Pod Security Context - Production Settings
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container Security Context - Production Settings
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+      - ALL
+
+# Affinity - Production Settings
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+                - personalization-service
+        topologyKey: kubernetes.io/hostname
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - personalization-service
+          topologyKey: topology.kubernetes.io/zone
+
+# ConfigMap - Production Settings
+configMap:
+  LOG_LEVEL: info
+  LOG_FORMAT: json
+  METRICS_ENABLED: "true"
+  TRACING_ENABLED: "true"
+  PROFILE_CACHE_TTL: "300"
+  MODEL_REFRESH_INTERVAL: "3600"
+  RECOMMENDATION_BATCH_SIZE: "100"

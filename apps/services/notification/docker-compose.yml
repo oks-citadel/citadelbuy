@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  notification-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: broxiva-notification-ai
+    ports:
+      - "8009:8009"
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PORT=8009
+      - WORKERS=${WORKERS:-2}
+      - DEFAULT_TIMEZONE=${DEFAULT_TIMEZONE:-UTC}
+    volumes:
+      # Mount data directory for persistent storage (development only)
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8009/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - broxiva-network
+
+networks:
+  broxiva-network:
+    name: broxiva-network
+    external: true

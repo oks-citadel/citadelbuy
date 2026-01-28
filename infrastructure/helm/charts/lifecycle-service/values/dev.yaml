@@ -1,0 +1,100 @@
+# Development environment values for lifecycle-service
+
+global:
+  environment: development
+  imageRegistry: ""
+
+emailDispatcher:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 75m
+      memory: 192Mi
+    limits:
+      cpu: 350m
+      memory: 384Mi
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+
+lifecycleOrchestrator:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+
+triggerProcessor:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 75m
+      memory: 192Mi
+    limits:
+      cpu: 350m
+      memory: 384Mi
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+
+templateRenderer:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/tls-acme: "false"
+  hosts:
+    - host: lifecycle.dev.broxiva.local
+      paths:
+        - path: /email
+          pathType: Prefix
+          service: email-dispatcher
+        - path: /orchestrate
+          pathType: Prefix
+          service: lifecycle-orchestrator
+        - path: /trigger
+          pathType: Prefix
+          service: trigger-processor
+        - path: /template
+          pathType: Prefix
+          service: template-renderer
+  tls: []
+
+serviceAccount:
+  create: true
+  annotations: {}
+
+configMap:
+  LOG_LEVEL: debug
+  LOG_FORMAT: text
+  METRICS_ENABLED: "true"
+  TRACING_ENABLED: "false"
+  EMAIL_BATCH_SIZE: "10"
+  EMAIL_RATE_LIMIT: "100"
+  TRIGGER_EVALUATION_INTERVAL: "10"

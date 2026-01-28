@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: broxiva
+  labels:
+    app.kubernetes.io/name: broxiva
+    app.kubernetes.io/managed-by: kustomize
+    # Pod Security Standards - Enforcing restricted profile
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: broxiva-ai
+  labels:
+    app.kubernetes.io/name: broxiva-ai
+    app.kubernetes.io/managed-by: kustomize
+    # Pod Security Standards - Enforcing restricted profile
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: broxiva-monitoring
+  labels:
+    app.kubernetes.io/name: broxiva-monitoring
+    app.kubernetes.io/managed-by: kustomize
+    # Pod Security Standards - Baseline for monitoring tools
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline

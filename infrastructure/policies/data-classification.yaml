@@ -1,0 +1,346 @@
+# Data Classification Policy
+# Broxiva Global B2B Marketplace
+# Version: 2.0
+# Last Updated: 2025-12-06
+
+metadata:
+  policy_name: Data Classification and Handling
+  owner: Chief Information Security Officer
+  approved_by: Board of Directors
+  effective_date: 2025-01-01
+  review_frequency: Semi-annual
+  next_review: 2026-06-01
+
+classification_levels:
+  - level: PUBLIC
+    risk: LOW
+    description: Information intended for public disclosure
+    examples:
+      - Marketing materials
+      - Public product listings
+      - Press releases
+      - Public-facing website content
+      - Job postings
+    handling:
+      storage: Any region
+      encryption_at_rest: Optional
+      encryption_in_transit: TLS 1.2+
+      access_control: Public access
+      backup_frequency: Weekly
+      retention: As needed
+      destruction: Standard deletion
+      sharing: Unrestricted
+
+  - level: INTERNAL
+    risk: LOW-MEDIUM
+    description: Information for internal business use only
+    examples:
+      - Internal communications
+      - Business analytics
+      - Operational metrics
+      - Non-sensitive business documents
+      - Internal training materials
+    handling:
+      storage: Regional data centers
+      encryption_at_rest: AES-256
+      encryption_in_transit: TLS 1.2+
+      access_control: Authenticated users only
+      backup_frequency: Daily
+      retention: 3 years
+      destruction: Secure deletion
+      sharing: Internal only (NDA required for external)
+
+  - level: CONFIDENTIAL
+    risk: MEDIUM
+    description: Sensitive business information requiring protection
+    examples:
+      - Business contracts
+      - Vendor agreements
+      - Financial reports
+      - Strategic plans
+      - Employee records
+      - Non-public product roadmaps
+    handling:
+      storage: Home region only
+      encryption_at_rest: AES-256-GCM
+      encryption_in_transit: TLS 1.3
+      access_control: Role-based access (RBAC)
+      backup_frequency: Daily with versioning
+      retention: 7 years
+      destruction: Secure overwrite (3-pass minimum)
+      sharing: Authorized parties only with DPA/NDA
+      logging: All access logged
+
+  - level: RESTRICTED
+    risk: HIGH
+    description: Highly sensitive data with regulatory requirements
+    examples:
+      - Authentication credentials
+      - Encryption keys
+      - Security audit logs
+      - Regulatory compliance data
+      - Trade secrets
+      - M&A documents
+    handling:
+      storage: Home region only, HSM for keys
+      encryption_at_rest: AES-256-GCM + field-level encryption
+      encryption_in_transit: TLS 1.3 with mutual auth
+      access_control: RBAC + Multi-factor authentication
+      backup_frequency: Daily, encrypted backups, air-gapped copies
+      retention: 7+ years (per regulation)
+      destruction: Cryptographic erasure + secure overwrite (7-pass)
+      sharing: Prohibited without executive approval
+      logging: All access logged, real-time alerting
+      monitoring: Continuous monitoring
+
+  - level: PII
+    risk: HIGH
+    description: Personally Identifiable Information
+    examples:
+      - Names, email addresses
+      - Physical addresses
+      - Phone numbers
+      - Date of birth
+      - National ID numbers
+      - Passport numbers
+      - Biometric data
+      - IP addresses (in some jurisdictions)
+    handling:
+      storage: User's home region (data residency compliance)
+      encryption_at_rest: AES-256-GCM
+      encryption_in_transit: TLS 1.3
+      pseudonymization: Required for analytics
+      access_control: RBAC + MFA + need-to-know basis
+      backup_frequency: Daily
+      retention: Purpose limitation (GDPR) or 7 years (other)
+      destruction: Right to erasure compliant
+      sharing: Only with explicit consent or legal basis
+      logging: Comprehensive audit trail
+      data_subject_rights:
+        - Right to access
+        - Right to rectification
+        - Right to erasure
+        - Right to data portability
+        - Right to object
+        - Right to restrict processing
+
+  - level: FINANCIAL
+    risk: CRITICAL
+    description: Financial and payment information
+    examples:
+      - Credit card numbers (PAN)
+      - Bank account numbers
+      - Routing numbers
+      - Transaction history
+      - Tax records
+      - Payment tokens
+      - Billing information
+    handling:
+      storage: User's home region, PCI-DSS compliant environment
+      encryption_at_rest: AES-256-GCM
+      encryption_in_transit: TLS 1.3
+      tokenization: Required for PAN
+      access_control: RBAC + MFA + privileged access management
+      backup_frequency: Real-time replication + daily backups
+      retention: Minimum 7 years (tax law)
+      destruction: PCI-DSS compliant destruction
+      sharing: Only with licensed payment processors
+      logging: Immutable audit logs
+      compliance: PCI-DSS Level 1, regional financial regulations
+
+  - level: HEALTH
+    risk: CRITICAL
+    description: Protected Health Information (if applicable)
+    examples:
+      - Medical records
+      - Health insurance information
+      - Prescriptions
+      - Diagnosis information
+    handling:
+      storage: User's home region, HIPAA-compliant if US
+      encryption_at_rest: AES-256-GCM + field-level
+      encryption_in_transit: TLS 1.3
+      access_control: RBAC + MFA + minimum necessary
+      backup_frequency: Daily, encrypted
+      retention: 6 years (HIPAA) or per local law
+      destruction: HIPAA-compliant destruction
+      sharing: Only with patient consent or legal requirement
+      logging: HIPAA-compliant audit logs
+      compliance: HIPAA (US), GDPR (EU), local health privacy laws
+
+data_lifecycle:
+  collection:
+    - principle: Data minimization
+    - requirement: Collect only what's necessary for stated purpose
+    - consent: Explicit consent for PII and Financial data
+    - lawful_basis: Document legal basis for processing (GDPR)
+
+  processing:
+    - principle: Purpose limitation
+    - requirement: Process only for stated, legitimate purposes
+    - transparency: Clear privacy policy
+    - security: Appropriate technical and organizational measures
+
+  storage:
+    - principle: Storage limitation
+    - requirement: Retain only as long as necessary
+    - location: Comply with data residency requirements
+    - protection: Encryption, access controls, monitoring
+
+  transmission:
+    - principle: Secure transmission
+    - requirement: Encrypt all data in transit
+    - methods: TLS 1.3, VPN, secure APIs
+    - cross_border: Comply with transfer restrictions
+
+  destruction:
+    - principle: Secure deletion
+    - requirement: Permanently delete when no longer needed
+    - methods:
+        PUBLIC: Standard deletion
+        INTERNAL: Secure deletion (1-pass overwrite)
+        CONFIDENTIAL: Secure overwrite (3-pass)
+        RESTRICTED: Cryptographic erasure + 7-pass overwrite
+        PII: Right to erasure compliant
+        FINANCIAL: PCI-DSS compliant destruction
+    - verification: Destruction certificate for RESTRICTED+
+
+data_handling_by_environment:
+  production:
+    - all_data: Encrypted at rest and in transit
+    - access: RBAC, MFA for admin access
+    - monitoring: 24/7 security monitoring
+    - backups: Daily, encrypted, tested quarterly
+
+  staging:
+    - sensitive_data: PROHIBITED (use synthetic data)
+    - acceptable_data: De-identified PUBLIC/INTERNAL data
+    - access: Development team only
+
+  development:
+    - sensitive_data: STRICTLY PROHIBITED
+    - acceptable_data: Synthetic data only
+    - access: Development team
+
+  testing:
+    - sensitive_data: PROHIBITED
+    - acceptable_data: Synthetic or anonymized data
+    - access: QA team
+
+cross_border_data_transfer:
+  mechanisms:
+    - Standard Contractual Clauses (SCC)
+    - Binding Corporate Rules (BCR)
+    - Adequacy decisions
+    - Explicit consent
+
+  prohibited_transfers:
+    - To sanctioned countries
+    - Without legal mechanism
+    - In violation of data localization laws
+
+  documentation:
+    - Transfer Impact Assessment (TIA)
+    - Data Processing Agreement (DPA)
+    - Records in ROPA
+
+data_classification_marking:
+  electronic:
+    - header: "[CLASSIFICATION] - Document Title"
+    - footer: "Classification: [LEVEL] | Owner: [NAME] | Date: [YYYY-MM-DD]"
+    - metadata: Classification level in file properties
+
+  physical:
+    - stamp: Visible classification stamp on cover
+    - labels: Classification label on all pages
+    - handling: Instructions on cover page
+
+responsibilities:
+  data_owner:
+    - Assign classification level
+    - Approve access requests
+    - Define retention period
+    - Authorize destruction
+
+  data_custodian:
+    - Implement controls
+    - Maintain security
+    - Perform backups
+    - Execute destruction
+
+  data_user:
+    - Handle per classification
+    - Report incidents
+    - Follow access controls
+    - Protect from disclosure
+
+violations:
+  minor:
+    - example: Improper email marking
+    - consequence: Warning, re-training
+
+  moderate:
+    - example: Unauthorized disclosure of CONFIDENTIAL data
+    - consequence: Written warning, mandatory training, access review
+
+  major:
+    - example: Intentional disclosure of RESTRICTED/PII/FINANCIAL data
+    - consequence: Termination, legal action, regulatory reporting
+
+  breach_response:
+    - detect: Immediate detection and containment
+    - assess: Impact assessment within 24 hours
+    - notify: Regulators within 72 hours (GDPR), affected parties
+    - remediate: Root cause analysis and remediation
+    - document: Comprehensive incident report
+
+compliance_frameworks:
+  - GDPR (EU General Data Protection Regulation)
+  - CCPA/CPRA (California Consumer Privacy Act)
+  - POPIA (South Africa)
+  - NDPR (Nigeria)
+  - PDPA (Singapore)
+  - PCI-DSS (Payment Card Industry)
+  - HIPAA (if applicable)
+  - SOC 2 Type II
+  - ISO 27001
+
+monitoring_and_audit:
+  automated:
+    - Data discovery scans: Weekly
+    - Classification compliance: Daily
+    - Access monitoring: Real-time
+    - Encryption verification: Daily
+
+  manual:
+    - Quarterly access reviews
+    - Annual data inventory audit
+    - Semi-annual policy review
+    - Annual third-party security audit
+
+training:
+  required_for: All employees, contractors
+  frequency: Annual + onboarding
+  topics:
+    - Classification levels and criteria
+    - Handling requirements
+    - Data subject rights
+    - Incident reporting
+    - Regulatory requirements
+  certification: Required for handling RESTRICTED+
+
+exceptions:
+  process:
+    - Request via formal exception process
+    - Business justification required
+    - Risk assessment performed
+    - Compensating controls identified
+    - CISO approval required
+    - Time-limited (max 6 months)
+    - Documented and tracked
+
+review_log:
+  - date: 2025-12-06
+    version: "2.0"
+    changes: Added AFCFTA data residency, updated regional requirements
+    approved_by: Chief Information Security Officer

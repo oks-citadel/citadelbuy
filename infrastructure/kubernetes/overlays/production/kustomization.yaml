@@ -1,0 +1,49 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: broxiva
+
+resources:
+  - ../../base
+  - ../../apps
+  - ../../ai-services
+
+replicas:
+  - name: broxiva-api
+    count: 5
+  - name: broxiva-web
+    count: 5
+  - name: ai-gateway
+    count: 3
+  - name: recommendation-service
+    count: 3
+
+images:
+  - name: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-ecommerce
+    newTag: v2.0-stable
+  - name: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/broxiva-ai
+    newTag: v2.0-stable
+
+configMapGenerator:
+  - name: broxiva-config
+    behavior: merge
+    literals:
+      - APP_ENV=production
+      - LOG_LEVEL=warn
+      - ENABLE_METRICS=true
+      - ENABLE_TRACING=true
+
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 1Gi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: 1000m
+    target:
+      kind: Deployment
+      name: broxiva-api
+
+commonLabels:
+  environment: production

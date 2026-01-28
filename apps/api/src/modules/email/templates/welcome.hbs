@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to Broxiva</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center; }
+    .header h1 { color: #ffffff; margin: 0; font-size: 28px; }
+    .header p { color: rgba(255,255,255,0.9); margin: 10px 0 0; }
+    .content { padding: 40px 30px; }
+    .welcome-icon { font-size: 64px; text-align: center; margin-bottom: 20px; }
+    .greeting { font-size: 24px; font-weight: 600; margin-bottom: 20px; }
+    .message { color: #666; margin-bottom: 30px; }
+    .features { background: #f8f9fa; border-radius: 8px; padding: 25px; margin: 25px 0; }
+    .feature { display: flex; align-items: flex-start; margin-bottom: 15px; }
+    .feature:last-child { margin-bottom: 0; }
+    .feature-icon { width: 40px; height: 40px; background: #667eea; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; margin-right: 15px; flex-shrink: 0; }
+    .feature-text h4 { margin: 0 0 5px; font-size: 16px; }
+    .feature-text p { margin: 0; color: #666; font-size: 14px; }
+    .cta-button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; padding: 14px 30px; border-radius: 6px; text-decoration: none; font-weight: 600; margin: 20px 0; }
+    .cta-button:hover { opacity: 0.9; }
+    .divider { height: 1px; background: #e0e0e0; margin: 30px 0; }
+    .footer { background: #f8f9fa; padding: 30px; text-align: center; color: #666; font-size: 14px; }
+    .footer a { color: #667eea; text-decoration: none; }
+    .social-links { margin: 20px 0; }
+    .social-links a { margin: 0 10px; color: #667eea; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Welcome to Broxiva!</h1>
+      <p>Your journey to amazing shopping starts here</p>
+    </div>
+
+    <div class="content">
+      <div class="welcome-icon">&#127881;</div>
+
+      <div class="greeting">Hi {{name}},</div>
+
+      <div class="message">
+        <p>Welcome to Broxiva! We're thrilled to have you join our community of smart shoppers and successful sellers.</p>
+        <p>Your account has been successfully created and you're all set to start exploring thousands of amazing products from trusted vendors around the world.</p>
+      </div>
+
+      <div class="features">
+        <h3 style="margin-top: 0;">Here's what you can do:</h3>
+
+        <div class="feature">
+          <div class="feature-icon">&#128722;</div>
+          <div class="feature-text">
+            <h4>Shop Smart</h4>
+            <p>Browse thousands of products with AI-powered recommendations tailored just for you.</p>
+          </div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">&#128176;</div>
+          <div class="feature-text">
+            <h4>Save Big</h4>
+            <p>Unlock exclusive deals, coupons, and member-only discounts.</p>
+          </div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">&#128230;</div>
+          <div class="feature-text">
+            <h4>Track Orders</h4>
+            <p>Real-time tracking for all your orders from checkout to delivery.</p>
+          </div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">&#128274;</div>
+          <div class="feature-text">
+            <h4>Shop Securely</h4>
+            <p>Advanced fraud protection keeps your purchases safe.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align: center;">
+        <a href="{{shopUrl}}" class="cta-button">Start Shopping Now</a>
+      </div>
+
+      <div class="divider"></div>
+
+      <p style="color: #666; font-size: 14px;">
+        Need help getting started? Our support team is here for you 24/7. Just reply to this email or visit our <a href="{{helpUrl}}" style="color: #667eea;">Help Center</a>.
+      </p>
+    </div>
+
+    <div class="footer">
+      <p><strong>Broxiva</strong></p>
+      <p>The Marketplace You Can Trust</p>
+
+      <div class="social-links">
+        <a href="#">Facebook</a> |
+        <a href="#">Twitter</a> |
+        <a href="#">Instagram</a>
+      </div>
+
+      <p style="font-size: 12px; color: #999;">
+        You received this email because you created an account on Broxiva.<br>
+        <a href="{{unsubscribeUrl}}">Manage email preferences</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

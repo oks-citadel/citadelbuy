@@ -1,0 +1,167 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: broxiva-config
+  namespace: broxiva
+  labels:
+    app: broxiva
+    tier: config
+data:
+  # Application Configuration
+  NODE_ENV: "production"
+  PORT: "3000"
+  LOG_LEVEL: "info"
+  TZ: "UTC"
+
+  # API Configuration
+  API_PREFIX: "/api"
+  API_VERSION: "v1"
+  ENABLE_DOCUMENTATION: "false"
+  ENABLE_METRICS: "true"
+
+  # CORS Configuration
+  CORS_ENABLED: "true"
+  CORS_ORIGINS: "https://broxiva.com,https://www.broxiva.com,https://app.broxiva.com"
+  CORS_CREDENTIALS: "true"
+
+  # Production Rate Limiting Configuration
+  # Global rate limit: 100 requests per minute per IP/user
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_TTL: "60000"  # 1 minute in milliseconds
+  RATE_LIMIT_MAX_REQUESTS: "100"
+
+  # Authenticated users get 50% more requests
+  RATE_LIMIT_AUTHENTICATED_MULTIPLIER: "1.5"
+
+  # Sensitive endpoints (auth, payments) - stricter limits
+  RATE_LIMIT_AUTH_TTL: "60000"  # 1 minute
+  RATE_LIMIT_AUTH_MAX: "10"  # 10 attempts per minute
+
+  RATE_LIMIT_PAYMENT_TTL: "60000"
+  RATE_LIMIT_PAYMENT_MAX: "20"
+
+  RATE_LIMIT_BANKING_TTL: "60000"
+  RATE_LIMIT_BANKING_MAX: "20"
+
+  # API endpoints - moderate limits
+  RATE_LIMIT_API_TTL: "60000"
+  RATE_LIMIT_API_MAX: "100"
+
+  # Search endpoints - higher limits
+  RATE_LIMIT_SEARCH_TTL: "60000"
+  RATE_LIMIT_SEARCH_MAX: "200"
+
+  # Public endpoints (products, categories) - higher limits
+  RATE_LIMIT_PUBLIC_TTL: "60000"
+  RATE_LIMIT_PUBLIC_MAX: "300"
+
+  # Database Configuration
+  DB_POOL_MIN: "5"
+  DB_POOL_MAX: "20"
+  DB_IDLE_TIMEOUT_MS: "30000"
+  DB_CONNECTION_TIMEOUT_MS: "10000"
+  DB_QUERY_TIMEOUT_MS: "30000"
+  DB_SSL_ENABLED: "true"
+
+  # Redis Configuration
+  REDIS_HOST: "redis.broxiva.svc.cluster.local"
+  REDIS_PORT: "6379"
+  REDIS_TTL: "3600"
+  REDIS_MAX_RETRIES: "3"
+  REDIS_RETRY_DELAY: "1000"
+  REDIS_KEY_PREFIX: "broxiva:"
+  REDIS_ENABLE_OFFLINE_QUEUE: "true"
+  REDIS_CONNECT_TIMEOUT: "10000"
+
+  # Elasticsearch Configuration
+  ELASTICSEARCH_NODE: "http://elasticsearch.broxiva.svc.cluster.local:9200"
+  ELASTICSEARCH_MAX_RETRIES: "3"
+  ELASTICSEARCH_REQUEST_TIMEOUT: "30000"
+  ELASTICSEARCH_PING_TIMEOUT: "3000"
+
+  # PostgreSQL Configuration
+  DATABASE_HOST: "postgres.broxiva.svc.cluster.local"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "broxiva"
+  DATABASE_USERNAME: "broxiva"
+  DATABASE_SSL_MODE: "require"
+
+  # Session Configuration
+  SESSION_SECRET_ROTATION_DAYS: "30"
+  SESSION_MAX_AGE: "86400000"  # 24 hours
+  SESSION_ROLLING: "true"
+  SESSION_SECURE: "true"
+  SESSION_HTTP_ONLY: "true"
+  SESSION_SAME_SITE: "strict"
+
+  # Security Settings
+  SECURITY_JWT_EXPIRATION: "3600"  # 1 hour
+  SECURITY_REFRESH_TOKEN_EXPIRATION: "604800"  # 7 days
+  SECURITY_BCRYPT_ROUNDS: "12"
+  SECURITY_PASSWORD_MIN_LENGTH: "8"
+  SECURITY_PASSWORD_REQUIRE_SPECIAL: "true"
+  SECURITY_PASSWORD_REQUIRE_NUMBER: "true"
+  SECURITY_PASSWORD_REQUIRE_UPPERCASE: "true"
+  SECURITY_MAX_LOGIN_ATTEMPTS: "5"
+  SECURITY_LOCKOUT_DURATION: "900000"  # 15 minutes
+
+  # Cache Configuration
+  CACHE_ENABLED: "true"
+  CACHE_TTL: "300"  # 5 minutes
+  CACHE_MAX_ITEMS: "10000"
+  CACHE_CHECK_PERIOD: "600"  # 10 minutes
+
+  # Monitoring & Observability
+  METRICS_ENABLED: "true"
+  METRICS_PORT: "9090"
+  TRACING_ENABLED: "true"
+  TRACING_SAMPLE_RATE: "0.1"
+  HEALTH_CHECK_ENABLED: "true"
+
+  # Logging Configuration
+  LOG_FORMAT: "json"
+  LOG_TIMESTAMP: "true"
+  LOG_COLORIZE: "false"
+  LOG_MAX_FILES: "14"
+  LOG_MAX_SIZE: "20m"
+  LOG_CONSOLE_LEVEL: "info"
+  LOG_FILE_LEVEL: "debug"
+
+  # Queue Configuration (BullMQ)
+  QUEUE_ENABLED: "true"
+  QUEUE_CONCURRENCY: "5"
+  QUEUE_MAX_RETRY: "3"
+  QUEUE_RETRY_DELAY: "1000"
+  QUEUE_BACKOFF_TYPE: "exponential"
+  QUEUE_REMOVE_ON_COMPLETE: "100"
+  QUEUE_REMOVE_ON_FAIL: "1000"
+
+  # Email Configuration
+  EMAIL_ENABLED: "true"
+  EMAIL_QUEUE_ENABLED: "true"
+  EMAIL_FROM_NAME: "Broxiva"
+  EMAIL_RATE_LIMIT: "100"  # Per hour
+
+  # File Upload Configuration
+  UPLOAD_MAX_FILE_SIZE: "10485760"  # 10MB
+  UPLOAD_ALLOWED_TYPES: "image/jpeg,image/png,image/webp,application/pdf"
+  UPLOAD_DESTINATION: "/app/uploads"
+
+  # Feature Flags
+  FEATURE_ELASTICSEARCH: "true"
+  FEATURE_RECOMMENDATIONS: "true"
+  FEATURE_ANALYTICS: "true"
+  FEATURE_CART_ABANDONMENT: "true"
+  FEATURE_EMAIL_QUEUE: "true"
+  FEATURE_WEBSOCKETS: "true"
+  FEATURE_ORGANIZATIONS: "true"
+
+  # Performance Settings
+  COMPRESSION_ENABLED: "true"
+  COMPRESSION_LEVEL: "6"
+  BODY_PARSER_LIMIT: "10mb"
+  URL_ENCODED_LIMIT: "10mb"
+
+  # Graceful Shutdown
+  SHUTDOWN_TIMEOUT: "30000"  # 30 seconds
+  SHUTDOWN_SIGNALS: "SIGTERM,SIGINT"

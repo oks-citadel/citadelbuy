@@ -1,432 +1,585 @@
-# Broxiva - AI-Powered E-Commerce Platform
+# Broxiva - Global Multi-Tenant AI-Powered Marketplace
 
-> Enterprise-grade e-commerce platform with advanced AI capabilities for intelligent product discovery, hyper-personalization, and automated operations.
+> Enterprise-grade multi-tenant e-commerce platform with custom domains, multi-currency, multi-language, AI-powered translations, and automated product integrations for a truly global marketplace.
 
 [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/broxiva/broxiva)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
+[![License](https://img.shields.io/badge/license-UNLICENSED-red.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
+[![pnpm](https://img.shields.io/badge/pnpm-%3E%3D10.0.0-orange.svg)](https://pnpm.io/)
 
 ---
 
-## 🚀 Quick Start
+## Executive Summary
 
-```bash
-# Clone the repository
-git clone https://github.com/broxiva/broxiva.git
-cd broxiva
+**Broxiva** is a comprehensive, AI-powered multi-vendor e-commerce marketplace built for scale and modern commerce. The platform combines a robust NestJS backend with Next.js and React Native frontends, delivering a seamless shopping experience across web and mobile.
 
-# Install dependencies
-npm install
+### Key Differentiators
 
-# Setup environment
-cp .env.example .env
+- **Multi-Tenant Architecture** with strict tenant isolation and custom domain support
+- **Global Commerce** with 13+ languages, 50+ currencies, and automatic geo-detection
+- **60+ Backend Modules** providing comprehensive e-commerce functionality
+- **14 AI/ML Features** including visual search, personalization, fraud detection, and chatbot
+- **Product Integrations** with Shopify, WooCommerce, REST APIs, and CSV import
+- **Multi-Platform Support** with web (Next.js 15), mobile (React Native/Expo), and API access
+- **Enterprise-Grade Security** with MFA, account lockout, token blacklisting, and GDPR/CCPA compliance
+- **Scalable Architecture** using Turborepo, Docker, Kubernetes, and Vercel/Railway deployment
 
-# Start development
-npm run dev
-```
+### Current Version & Status
+
+- **Version:** 2.0.0
+- **Status:** Production-Ready
+- **Last Updated:** January 2026
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
-broxiva/
-├── app/                      # Client Applications
-│   ├── mobile/              # React Native Mobile App (iOS & Android)
-│   └── web/                 # Next.js Web Application
+organization/
+├── apps/
+│   ├── api/                    # NestJS Backend API (57+ modules)
+│   ├── web/                    # Next.js 15 Web Application
+│   ├── mobile/                 # React Native/Expo Mobile App
+│   └── services/               # Microservices
+│       ├── ai-agents/          # AI Agent orchestration
+│       ├── ai-engine/          # Python ML/AI processing
+│       ├── analytics/          # Analytics processing
+│       ├── chatbot/            # Conversational AI
+│       ├── fraud-detection/    # Fraud scoring service
+│       ├── inventory/          # Inventory management
+│       ├── media/              # Media processing
+│       ├── notification/       # Push/Email notifications
+│       ├── personalization/    # User personalization
+│       ├── pricing/            # Dynamic pricing
+│       ├── recommendation/     # Product recommendations
+│       ├── search/             # Search service
+│       └── supplier-integration/ # Supplier APIs
 │
-├── backend/                  # NestJS Backend API
-│   ├── src/
-│   │   ├── modules/         # 43 Feature Modules
-│   │   │   ├── ai/          # AI-Powered Features
-│   │   │   │   ├── visual-search/
-│   │   │   │   ├── conversational/
-│   │   │   │   ├── personalization/
-│   │   │   │   ├── chatbot/
-│   │   │   │   └── pricing-engine/
-│   │   │   ├── products/
-│   │   │   ├── orders/
-│   │   │   ├── payments/
-│   │   │   └── ... (38 more modules)
-│   │   └── common/          # Shared utilities
-│   └── prisma/              # Database schema & migrations
+├── packages/
+│   ├── ai-sdk/                 # AI SDK for client applications
+│   ├── types/                  # Shared TypeScript types
+│   ├── ui/                     # Shared UI component library
+│   └── utils/                  # Shared utility functions
 │
-├── infrastructure/           # DevOps & Infrastructure
-│   ├── docker/              # Docker configurations
-│   ├── kubernetes/          # K8s manifests
-│   ├── terraform/           # Infrastructure as Code
-│   └── ansible/             # Configuration management
+├── infrastructure/
+│   ├── docker/                 # Docker configurations
+│   ├── kubernetes/             # K8s manifests (staging/production)
+│   ├── terraform/              # Infrastructure as Code (AWS)
+│   ├── helm/                   # Helm charts
+│   ├── grafana/                # Monitoring dashboards
+│   ├── prometheus/             # Metrics collection
+│   └── nginx/                  # Reverse proxy configs
 │
-├── docs/                    # Documentation
-│   ├── architecture/        # System design docs
-│   ├── deployment/          # Deployment guides
-│   ├── features/            # Feature documentation
-│   └── api/                 # API documentation
-│
-└── scripts/                 # Utility scripts
+├── docs/                       # Documentation
+├── tests/                      # E2E and integration tests
+├── scripts/                    # Utility scripts
+└── .github/
+    └── workflows/              # CI/CD pipelines
 ```
 
 ---
 
-## ✨ Core Features
+## Architecture Overview
 
-### 🛍️ **E-Commerce Essentials**
-- Multi-vendor marketplace
-- Product catalog with variants
-- Shopping cart & checkout
-- Order management
-- Payment processing (Stripe)
-- Shipping integration (UPS, FedEx, USPS)
-- Inventory management
-- Returns & refunds
+### High-Level Architecture
 
-### 🤖 **AI-Powered Features**
+```
+                                    ┌─────────────────────────────────────────────┐
+                                    │              CDN (CloudFlare)               │
+                                    └─────────────────────────────────────────────┘
+                                                         │
+                    ┌────────────────────────────────────┼────────────────────────────────────┐
+                    │                                    │                                    │
+                    ▼                                    ▼                                    ▼
+         ┌─────────────────┐                  ┌─────────────────┐                  ┌─────────────────┐
+         │   Next.js Web   │                  │  React Native   │                  │   Third Party   │
+         │   (Vercel)      │                  │  Mobile App     │                  │   Integrations  │
+         └────────┬────────┘                  └────────┬────────┘                  └────────┬────────┘
+                  │                                    │                                    │
+                  └────────────────────────────────────┼────────────────────────────────────┘
+                                                       │
+                                    ┌──────────────────▼──────────────────┐
+                                    │         Nginx Load Balancer         │
+                                    └──────────────────┬──────────────────┘
+                                                       │
+                                    ┌──────────────────▼──────────────────┐
+                                    │         NestJS API Gateway          │
+                                    │         (Railway / ECS)             │
+                                    └──────────────────┬──────────────────┘
+                                                       │
+                    ┌──────────────────────────────────┼──────────────────────────────────┐
+                    │                                  │                                  │
+                    ▼                                  ▼                                  ▼
+         ┌─────────────────┐                ┌─────────────────┐                ┌─────────────────┐
+         │   PostgreSQL    │                │     Redis       │                │  Elasticsearch  │
+         │   (Primary DB)  │                │ (Cache/Queue)   │                │    (Search)     │
+         └─────────────────┘                └─────────────────┘                └─────────────────┘
+                                                       │
+                                    ┌──────────────────▼──────────────────┐
+                                    │       AI/ML Microservices           │
+                                    │  (Python - Recommendations, Fraud,  │
+                                    │   Personalization, Chatbot)         │
+                                    └─────────────────────────────────────┘
+```
 
-#### 1. **Visual Search**
-- Camera-based product recognition
-- Reverse image search
-- Style similarity matching
-- TensorFlow.js + MobileNet
+### Authentication Flow
 
-#### 2. **Conversational Commerce**
-- Natural language product search
-- Multi-turn dialogue conversations
-- Intent recognition & entity extraction
-- Voice search support
+```
+┌─────────┐     ┌─────────────┐     ┌───────────────┐     ┌─────────────┐
+│  User   │────▶│  Frontend   │────▶│  Auth Module  │────▶│   Prisma    │
+└─────────┘     └─────────────┘     └───────────────┘     └─────────────┘
+                                           │
+                        ┌──────────────────┼──────────────────┐
+                        ▼                  ▼                  ▼
+               ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+               │  JWT Tokens  │   │  MFA/2FA     │   │  Session     │
+               │  (Access +   │   │  (TOTP via   │   │  Management  │
+               │   Refresh)   │   │   Speakeasy) │   │  (Redis)     │
+               └──────────────┘   └──────────────┘   └──────────────┘
+```
 
-#### 3. **Hyper-Personalization**
-- Behavioral tracking & analysis
-- Personalized recommendations
-- Dynamic homepage customization
-- Personalized email campaigns
+### Key Integrations
 
-#### 4. **Intelligent Chatbot**
-- 24/7 automated customer support
-- Sentiment analysis
-- Human agent handoff
-- Multi-language ready
-
-#### 5. **Dynamic Pricing**
-- Real-time price optimization
-- Demand forecasting
-- Competitor price monitoring
-- Personalized discounts
-
-### 📊 **Business Features**
-- Advanced analytics dashboard
-- Customer segmentation
-- Loyalty & rewards program
-- Gift cards & store credit
-- Coupons & promotions
-- Flash sales & deals
-- Subscription management
-- BNPL integration
-
-### 🔒 **Security & Compliance**
-- JWT authentication
-- Role-based access control (RBAC)
-- CSRF protection
-- Rate limiting
-- SQL injection prevention
-- XSS protection
-- GDPR & CCPA compliance
+| Service | Purpose | Provider |
+|---------|---------|----------|
+| Payments | Card processing, BNPL | Stripe, PayPal |
+| Search | Product discovery | Elasticsearch, Algolia |
+| Email | Transactional emails | Nodemailer (SMTP) |
+| Storage | Media/assets | AWS S3, MinIO |
+| AI/ML | OpenAI, Claude | Recommendations, chatbot |
+| Monitoring | Observability | Sentry, Prometheus, Grafana |
 
 ---
 
-## 🏗️ Technology Stack
+## Tech Stack
 
-### **Backend**
-- **Framework:** NestJS (TypeScript)
-- **Database:** PostgreSQL + Prisma ORM
-- **Cache:** Redis
-- **Search:** Elasticsearch / Algolia
-- **Queue:** Bull (Redis-based)
-- **AI/ML:** TensorFlow.js, MobileNet
-- **Payment:** Stripe
-- **Shipping:** EasyPost API
+### Backend (apps/api)
 
-### **Web Application**
-- **Framework:** Next.js 14 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **State:** Redux Toolkit
-- **Forms:** React Hook Form
-- **Validation:** Zod
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| NestJS | 10.4.x | Core framework |
+| Prisma | 6.2.x | ORM & database migrations |
+| PostgreSQL | 16 | Primary database |
+| Redis | 7 | Caching, sessions, queues |
+| Elasticsearch | 8.11 | Full-text search |
+| Bull | 4.x | Job queue processing |
+| Passport | 0.7.x | Authentication strategies |
+| JWT | - | Token-based auth |
+| Stripe | 17.x | Payment processing |
+| Socket.io | 4.8.x | Real-time features |
 
-### **Mobile Application**
-- **Framework:** React Native 0.73
-- **Language:** TypeScript
-- **Navigation:** React Navigation
-- **State:** Redux Toolkit
-- **Camera:** React Native Camera
-- **Storage:** AsyncStorage
+### Web Frontend (apps/web)
 
-### **Infrastructure**
-- **Containers:** Docker
-- **Orchestration:** Kubernetes
-- **IaC:** Terraform
-- **CI/CD:** GitHub Actions
-- **Hosting:** AWS / Azure / Railway
-- **CDN:** CloudFlare
-- **Monitoring:** Prometheus + Grafana
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Next.js | 15.5.x | React framework (App Router) |
+| React | 18.3.x | UI library |
+| TypeScript | 5.7.x | Type safety |
+| Tailwind CSS | 3.4.x | Styling |
+| Radix UI | Various | Accessible components |
+| TanStack Query | 5.90.x | Data fetching & caching |
+| Zustand | 5.0.x | State management |
+| React Hook Form | 7.54.x | Form handling |
+| Zod | 3.24.x | Schema validation |
+| Framer Motion | 11.x | Animations |
 
----
+### Mobile App (apps/mobile)
 
-## 🚀 Development
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| React Native | 0.73.x | Cross-platform mobile |
+| Expo | 50.x | Development toolchain |
+| React Navigation | 6.x | Navigation |
+| NativeWind | 2.x | Tailwind for RN |
+| TanStack Query | 5.x | Data fetching |
+| Zustand | 4.x | State management |
 
-### **Prerequisites**
-- Node.js >= 18.0.0
-- npm >= 9.0.0
-- PostgreSQL >= 14
-- Redis >= 7
-- Docker (optional)
+### Shared Packages
 
-### **Backend Development**
-```bash
-cd backend
+| Package | Purpose |
+|---------|---------|
+| `@broxiva/ai-sdk` | AI service client libraries (recommendation, search, personalization, fraud, chatbot) |
+| `@broxiva/types` | Shared TypeScript interfaces (User, Product, Order, Cart, etc.) |
+| `@broxiva/ui` | Reusable UI components (Button, Card, Input, ProductCard, etc.) |
+| `@broxiva/utils` | Utility functions (date formatting, currency, validation schemas) |
 
-# Install dependencies
-npm install
+### Infrastructure
 
-# Setup database
-npx prisma migrate dev
-npx prisma db seed
-
-# Start development server
-npm run start:dev
-
-# Run tests
-npm run test
-npm run test:e2e
-```
-
-### **Web App Development**
-```bash
-cd app/web
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-```
-
-### **Mobile App Development**
-```bash
-cd app/mobile
-
-# Install dependencies
-npm install
-
-# iOS
-cd ios && pod install && cd ..
-npm run ios
-
-# Android
-npm run android
-```
+| Technology | Purpose |
+|------------|---------|
+| Docker | Containerization |
+| Kubernetes | Container orchestration |
+| Terraform | Infrastructure as Code (AWS) |
+| Helm | K8s package management |
+| GitHub Actions | CI/CD pipelines |
+| Vercel | Web frontend hosting |
+| Railway | API hosting |
+| AWS ECS/EKS | Production orchestration |
 
 ---
 
-## 📦 Deployment
+## Core Features
 
-### **Docker Deployment**
+### E-Commerce Essentials
+
+- **Product Management** - Full CRUD, variants, categories, bulk upload, search
+- **Shopping Cart** - Persistent cart, guest cart, abandonment recovery
+- **Checkout** - Multi-step flow, guest checkout, address management
+- **Orders** - Complete lifecycle, tracking, email notifications, invoices
+- **Payments** - Stripe integration, PayPal, BNPL support
+- **Shipping** - Multiple carriers, real-time tracking, rate calculation
+- **Inventory** - Stock management, reservations, low-stock alerts
+- **Returns & Refunds** - Self-service returns, refund processing
+
+### Multi-Vendor Marketplace
+
+- **Vendor Registration** - Self-service signup with KYC
+- **Vendor Dashboard** - Sales analytics, product management
+- **Commission System** - Configurable commission rates
+- **Payout Management** - Automated vendor payouts
+- **Vendor Ratings** - Customer reviews and ratings
+
+### AI-Powered Features
+
+- **Visual Search** - Camera-based product recognition
+- **Conversational Commerce** - Natural language product search
+- **Personalization Engine** - Behavioral tracking, personalized recommendations
+- **Intelligent Chatbot** - 24/7 automated support with human handoff
+- **Dynamic Pricing** - Demand-based price optimization
+- **Fraud Detection** - ML-powered transaction risk scoring
+- **Search Intelligence** - Semantic search, auto-suggestions
+
+### Business Features
+
+- **Analytics Dashboard** - Sales, traffic, conversion metrics
+- **Customer Segmentation** - RFM analysis, cohort tracking
+- **Loyalty Program** - Points, tiers, rewards
+- **Gift Cards** - Purchase, redemption, balance tracking
+- **Coupons & Promotions** - Discount codes, flash sales
+- **Subscriptions** - Recurring billing, subscription tiers
+- **Reviews & Ratings** - Verified reviews, helpful votes
+
+### Security & Compliance
+
+- **JWT Authentication** - Access and refresh tokens
+- **MFA/2FA** - TOTP-based two-factor authentication
+- **Account Lockout** - Brute force protection
+- **Token Blacklisting** - Secure logout
+- **RBAC** - Role-based access control (Customer, Vendor, Admin, etc.)
+- **Rate Limiting** - Tiered throttling per tenant
+- **GDPR/CCPA** - Data export, deletion requests, consent management
+- **Tenant Isolation** - Complete data segregation between tenants
+
+### Global Marketplace Features
+
+- **Custom Domains** - Vendors can use `shop.vendor.com` with TXT/CNAME verification
+- **Subdomains** - Instant `vendorslug.broxiva.com` subdomains
+- **Multi-Language** - 13+ locales with AI-powered auto-translation
+- **Multi-Currency** - 50+ currencies with real-time FX rates
+- **Geo-Detection** - Automatic country/language/currency inference
+- **User Preferences** - Override geo-detection with user choices
+- **FX Snapshots** - Order totals locked at checkout (no recalculation)
+- **Translation Lifecycle** - DRAFT → AUTO_TRANSLATED → VENDOR_APPROVED → PUBLISHED
+- **SEO Optimization** - Per-locale sitemaps, hreflang tags, structured data
+- **Shipping Zones** - "Ships to your country" badges and availability
+
+### Product Integrations
+
+- **Shopify** - OAuth integration with webhook sync
+- **WooCommerce** - REST API integration with product mapping
+- **Generic REST** - Custom API connector with configurable mapping
+- **CSV Import** - Bulk product upload with validation
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- **Node.js** >= 20.0.0
+- **pnpm** >= 10.0.0
+- **PostgreSQL** >= 16
+- **Redis** >= 7
+- **Docker** (optional, for containerized development)
+
+### Environment Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/broxiva/broxiva.git
+   cd broxiva/organization
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
+
+3. **Configure environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+   **Critical environment variables:**
+   ```bash
+   # Generate secure secrets
+   openssl rand -base64 64  # For JWT_SECRET
+   openssl rand -base64 32  # For passwords
+   openssl rand -hex 32     # For encryption keys
+   ```
+
+4. **Start infrastructure (Docker)**
+   ```bash
+   pnpm docker:up
+   ```
+
+5. **Run database migrations**
+   ```bash
+   cd apps/api
+   pnpm prisma:generate
+   pnpm migrate
+   pnpm db:seed
+   ```
+
+### Local Development
+
+**Start all services (Turborepo):**
 ```bash
-# Build images
-docker-compose build
-
-# Start services
-docker-compose up -d
-
-# Check status
-docker-compose ps
+pnpm dev
 ```
 
-### **Kubernetes Deployment**
+**Start individual apps:**
 ```bash
-cd infrastructure/kubernetes
+# API only
+pnpm dev:api
 
-# Apply configurations
-kubectl apply -f backend/
-kubectl apply -f app/
-kubectl apply -f ingress/
+# Web only
+pnpm dev:web
 
-# Check deployment
-kubectl get pods
-kubectl get services
+# Mobile
+cd apps/mobile
+pnpm start
 ```
 
-### **Cloud Deployment**
+**Access points:**
+- Web: http://localhost:3000
+- API: http://localhost:4000
+- API Docs (Swagger): http://localhost:4000/api/docs
+- Prisma Studio: `pnpm prisma:studio`
 
-**Railway:**
+### Running Tests
+
 ```bash
-# Install Railway CLI
-npm install -g @railway/cli
+# All tests
+pnpm test
 
-# Login
-railway login
+# API tests
+pnpm test:api
 
-# Deploy backend
-cd backend && railway up
+# E2E tests
+pnpm test:e2e
 
-# Deploy frontend
-cd app/web && railway up
+# Smoke tests
+pnpm test:smoke
+
+# UI tests (Playwright)
+pnpm test:ui
 ```
 
 ---
 
-## 📚 Documentation
+## Deployment
+
+### Staging
+
+**Automatic deployment** on push to `develop` branch via GitHub Actions.
+
+**Manual deployment:**
+```bash
+# Build all apps
+pnpm build
+
+# Deploy to staging K8s
+kubectl apply -k infrastructure/kubernetes/overlays/staging
+```
+
+### Production
+
+**Deployment options:**
+
+1. **Railway (API)**
+   ```bash
+   # Uses railway.json configuration
+   railway up
+   ```
+
+2. **Vercel (Web)**
+   ```bash
+   # Automatic deployment on push to main
+   # Manual: vercel --prod
+   ```
+
+3. **AWS ECS/EKS**
+   ```bash
+   # Via unified pipeline
+   # Manual K8s deployment
+   kubectl apply -k infrastructure/kubernetes/overlays/production
+   ```
+
+4. **Docker Compose (Production)**
+   ```bash
+   docker-compose -f docker-compose.production.yml up -d
+   ```
+
+### CI/CD Pipeline
+
+The unified pipeline (`.github/workflows/unified-pipeline.yml`) includes:
+
+- **Phase 0:** Security Analysis (CodeQL, Gitleaks, Dependency Audit)
+- **Phase 1:** Application CI (Lint, Type Check, Test, Build)
+- **Phase 2:** Infrastructure Validation (Terraform)
+- **Phase 3:** Docker Build & Push to ECR
+- **Phase 4:** Deploy to Staging
+- **Phase 5:** Infrastructure Apply
+- **Phase 6:** Deploy to Production (scheduled/manual)
+- **Phase 7:** Smoke Tests & Verification
+
+**Trigger production deployment:**
+- Scheduled: Configurable via cron
+- Manual: GitHub Actions workflow dispatch
+
+---
+
+## API Documentation
+
+### Swagger/OpenAPI
+
+Interactive API documentation is available at:
+- **Development:** http://localhost:4000/api/docs
+- **Production:** https://api.broxiva.com/api/docs
+
+### Key Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/register` | POST | User registration |
+| `/api/auth/login` | POST | User authentication |
+| `/api/auth/refresh` | POST | Refresh access token |
+| `/api/products` | GET | List products |
+| `/api/products/:id` | GET | Get product details |
+| `/api/cart` | GET/POST/PATCH | Cart operations |
+| `/api/checkout` | POST | Create checkout session |
+| `/api/orders` | GET/POST | Order management |
+| `/api/search` | GET | Product search |
+| `/api/recommendations` | GET | AI recommendations |
+| `/api/health` | GET | Health check |
+
+### Authentication
+
+All authenticated endpoints require a Bearer token:
+```bash
+Authorization: Bearer <access_token>
+```
+
+---
+
+## Contributing
+
+We welcome contributions! Please follow these guidelines:
+
+1. **Fork the repository**
+2. **Create a feature branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. **Make your changes**
+   - Follow existing code style
+   - Write tests for new features
+   - Update documentation as needed
+4. **Run checks**
+   ```bash
+   pnpm lint
+   pnpm type-check
+   pnpm test
+   ```
+5. **Commit with conventional commits**
+   ```bash
+   git commit -m "feat: add new feature"
+   ```
+6. **Push and create a Pull Request**
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+---
+
+## Database Schema
+
+The platform uses PostgreSQL with Prisma ORM. The schema includes 100+ models covering:
+
+- User management (users, profiles, sessions, MFA)
+- Products (products, variants, categories, inventory)
+- Orders (orders, items, payments, shipping)
+- Vendor marketplace (vendors, commissions, payouts)
+- AI features (recommendations, search queries, personalization)
+- Compliance (consent logs, data deletion requests)
+
+View the full schema: `apps/api/prisma/schema.prisma`
+
+Generate Prisma client:
+```bash
+pnpm prisma:generate
+```
+
+---
+
+## Monitoring & Observability
+
+- **Sentry** - Error tracking and performance monitoring
+- **Prometheus** - Metrics collection
+- **Grafana** - Dashboards and visualization
+- **Health checks** - `/api/health` endpoint
+
+---
+
+## License
+
+This project is **UNLICENSED** - proprietary software. All rights reserved.
+
+---
+
+## Documentation
 
 | Document | Description |
 |----------|-------------|
-| [Architecture Guide](docs/architecture/ARCHITECTURE.md) | System architecture & design patterns |
-| [API Reference](docs/api/API-REFERENCE.md) | Complete API documentation |
-| [Deployment Guide](docs/deployment/DEPLOYMENT-GUIDE.md) | Production deployment instructions |
-| [Feature Documentation](docs/features/) | Individual feature guides |
-| [Development Guide](docs/development/) | Development setup & guidelines |
+| [Architecture Overview](docs/architecture-overview.md) | System architecture and data flows |
+| [Custom Domains](docs/domains.md) | Domain onboarding and verification |
+| [Internationalization](docs/i18n.md) | Multi-language and locale routing |
+| [API Reference](docs/api.md) | Backend API documentation |
+| [Database Schema](docs/db.md) | Schema design and migrations |
+| [Background Workers](docs/workers.md) | Redis jobs and processing |
+| [SEO & Growth](docs/seo-growth.md) | SEO optimization and visibility |
+| [Security](docs/security.md) | Threat model and hardening |
+| [Integrations](docs/integrations.md) | Product import connectors |
+| [Production Readiness](docs/production-readiness.md) | Deployment checklist |
 
----
-
-## 🎯 AI Features Roadmap
-
-### **Phase 1: Core AI (Completed ✅)**
-- [x] Visual search with image recognition
-- [x] Conversational commerce
-- [x] Personalization engine
-- [x] Intelligent chatbot
-- [x] Dynamic pricing
-
-### **Phase 2: Enhanced Intelligence (In Progress)**
-- [ ] Advanced visual recognition (AR try-on)
-- [ ] Demand forecasting
-- [ ] Fraud detection system
-- [ ] Content generation AI
-- [ ] Sentiment analysis enhancement
-
-### **Phase 3: Revenue Optimization**
-- [ ] Smart bundle optimization
-- [ ] Cart abandonment AI
-- [ ] Upsell/cross-sell intelligence
-- [ ] Subscription optimization
-- [ ] Loyalty program AI
-
-### **Phase 4: Advanced Features**
-- [ ] Virtual try-on (AR/VR)
-- [ ] Voice commerce
-- [ ] Social commerce AI
-- [ ] Sustainability tracking
-- [ ] Predictive analytics dashboard
-
----
-
-## 🧪 Testing
-
-```bash
-# Backend tests
-cd backend
-npm run test              # Unit tests
-npm run test:e2e          # E2E tests
-npm run test:cov          # Coverage report
-
-# Frontend tests
-cd app/web
-npm run test
-
-# Mobile tests
-cd app/mobile
-npm run test
-```
-
----
-
-## 📊 Performance Metrics
-
-### **Target KPIs**
-- API Response Time: < 200ms (P95)
-- Page Load Time: < 2s
-- Mobile App Launch: < 3s
-- Search Results: < 500ms
-- AI Inference: < 1s
-- Uptime: 99.9%
-
-### **Scalability**
-- Concurrent Users: 100,000+
-- Products: 10M+
-- Orders/day: 1M+
-- API Requests/sec: 10,000+
-
----
-
-## 🔐 Security
-
-- SSL/TLS encryption
-- JWT authentication
-- Password hashing (bcrypt)
-- Rate limiting
-- CSRF protection
-- SQL injection prevention
-- XSS protection
-- Security headers
-- Regular security audits
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for details.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 📞 Support
+## Support
 
 - **Documentation:** [docs/](docs/)
-- **Issues:** [GitHub Issues](https://github.com/broxiva/broxiva/issues)
+- **Issues:** GitHub Issues
 - **Email:** support@broxiva.com
-- **Website:** https://broxiva.com
 
 ---
 
-## 🌟 Key Highlights
+## Acknowledgments
 
-- ✅ **43 Backend Modules** - Comprehensive feature set
-- ✅ **5 AI Modules** - Cutting-edge intelligence
-- ✅ **Cross-Platform** - Web + iOS + Android
-- ✅ **Production Ready** - Enterprise-grade architecture
-- ✅ **Scalable** - Handles millions of users
-- ✅ **Secure** - Industry best practices
-- ✅ **Well-Documented** - Extensive documentation
-- ✅ **Open Source** - MIT licensed
+Built with:
+- [NestJS](https://nestjs.com/)
+- [Next.js](https://nextjs.org/)
+- [Prisma](https://www.prisma.io/)
+- [Turborepo](https://turbo.build/)
+- [Tailwind CSS](https://tailwindcss.com/)
 
 ---
 
-## 📈 Stats
-
-```
-Lines of Code:     238,000+
-Modules:           43
-API Endpoints:     200+
-Database Tables:   50+
-Test Coverage:     80%+
-Documentation:     100+ pages
-```
-
----
-
-Made with love by the Broxiva Team
-
-**🤖 Powered by Advanced AI Technology**
+**Version 2.0.0** | **January 2026**

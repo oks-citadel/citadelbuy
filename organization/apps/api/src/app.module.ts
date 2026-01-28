@@ -83,7 +83,6 @@ import { validate } from './common/config/config-validation';
         abortEarly: false, // Show all validation errors, not just first one
       },
     }),
-    ThrottlerConfigModule, // Comprehensive tiered rate limiting
     ScheduleModule.forRoot(),
     // EventEmitterModule must be initialized globally BEFORE any modules that use EventEmitter2
     EventEmitterModule.forRoot({
@@ -99,7 +98,8 @@ import { validate } from './common/config/config-validation';
     CommonModule, // Provides SchemaValidationService and other utilities
     ObservabilityModule, // Adds correlation IDs, structured logging, and metrics
     PrismaModule,
-    RedisModule,
+    RedisModule, // Must be before ThrottlerConfigModule (provides RateLimitCacheService)
+    ThrottlerConfigModule, // Comprehensive tiered rate limiting (needs RedisModule)
     AuthModule,
     UsersModule,
     ProductsModule,

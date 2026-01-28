@@ -1,0 +1,229 @@
+# Default values for personalization-service
+# This is a YAML-formatted file.
+
+global:
+  environment: production
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# User Profiler Component
+userProfiler:
+  enabled: true
+  name: user-profiler
+  image:
+    repository: broxiva/personalization-user-profiler
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  probes:
+    liveness:
+      path: /health/live
+      initialDelaySeconds: 45
+      periodSeconds: 15
+      timeoutSeconds: 10
+      failureThreshold: 3
+    readiness:
+      path: /health/ready
+      initialDelaySeconds: 20
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+  env: []
+  envFrom: []
+
+# Recommendation Engine Component
+recommendationEngine:
+  enabled: true
+  name: recommendation-engine
+  image:
+    repository: broxiva/personalization-recommendation-engine
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 300m
+      memory: 768Mi
+    limits:
+      cpu: 1500m
+      memory: 1.5Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 12
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  probes:
+    liveness:
+      path: /health/live
+      initialDelaySeconds: 60
+      periodSeconds: 15
+      timeoutSeconds: 10
+      failureThreshold: 3
+    readiness:
+      path: /health/ready
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+  env: []
+  envFrom: []
+
+# Personalization API Component
+personalizationApi:
+  enabled: true
+  name: personalization-api
+  image:
+    repository: broxiva/personalization-api
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 150m
+      memory: 384Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 15
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  probes:
+    liveness:
+      path: /health/live
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    readiness:
+      path: /health/ready
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      timeoutSeconds: 3
+      failureThreshold: 3
+  env: []
+  envFrom: []
+
+# Ingress Configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+  hosts:
+    - host: personalization.broxiva.com
+      paths:
+        - path: /profile
+          pathType: Prefix
+          service: user-profiler
+        - path: /recommend
+          pathType: Prefix
+          service: recommendation-engine
+        - path: /api
+          pathType: Prefix
+          service: personalization-api
+  tls:
+    - secretName: personalization-service-tls
+      hosts:
+        - personalization.broxiva.com
+
+# ServiceAccount Configuration
+serviceAccount:
+  create: true
+  name: ""
+  annotations:
+    eks.amazonaws.com/role-arn: ""
+  automountServiceAccountToken: true
+
+# Pod Security Context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container Security Context
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  capabilities:
+    drop:
+      - ALL
+
+# Node Selection
+nodeSelector: {}
+tolerations: []
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - personalization-service
+          topologyKey: kubernetes.io/hostname
+
+# ConfigMap data
+configMap:
+  LOG_LEVEL: info
+  LOG_FORMAT: json
+  METRICS_ENABLED: "true"
+  TRACING_ENABLED: "true"
+  PROFILE_CACHE_TTL: "300"
+  MODEL_REFRESH_INTERVAL: "3600"
+  RECOMMENDATION_BATCH_SIZE: "100"
+
+# Extra labels and annotations
+labels: {}
+annotations: {}
+podLabels: {}
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"

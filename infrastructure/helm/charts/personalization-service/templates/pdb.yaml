@@ -1,0 +1,74 @@
+{{- if .Values.userProfiler.enabled }}
+{{- if .Values.userProfiler.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "personalization-service.fullname" . }}-{{ .Values.userProfiler.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "personalization-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.userProfiler.name }}
+spec:
+  {{- if .Values.userProfiler.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.userProfiler.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  {{- if .Values.userProfiler.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.userProfiler.podDisruptionBudget.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "personalization-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.userProfiler.name }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.recommendationEngine.enabled }}
+{{- if .Values.recommendationEngine.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "personalization-service.fullname" . }}-{{ .Values.recommendationEngine.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "personalization-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.recommendationEngine.name }}
+spec:
+  {{- if .Values.recommendationEngine.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.recommendationEngine.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  {{- if .Values.recommendationEngine.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.recommendationEngine.podDisruptionBudget.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "personalization-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.recommendationEngine.name }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.personalizationApi.enabled }}
+{{- if .Values.personalizationApi.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "personalization-service.fullname" . }}-{{ .Values.personalizationApi.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "personalization-service.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.personalizationApi.name }}
+spec:
+  {{- if .Values.personalizationApi.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.personalizationApi.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  {{- if .Values.personalizationApi.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.personalizationApi.podDisruptionBudget.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "personalization-service.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.personalizationApi.name }}
+{{- end }}
+{{- end }}

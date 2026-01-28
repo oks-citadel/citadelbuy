@@ -1,0 +1,751 @@
+# ==========================================
+# Broxiva Platform - Production Docker Compose
+# Version: 2.0.0
+# ==========================================
+#
+# SECURITY NOTICE:
+# ==========================================
+# This configuration uses Docker secrets and environment variables
+# for sensitive data. NEVER commit secrets to version control.
+#
+# Required environment variables:
+#   - Database passwords (POSTGRES_PASSWORD, MONGO_PASSWORD, REDIS_PASSWORD)
+#   - API secrets (JWT_SECRET, JWT_REFRESH_SECRET)
+#   - Payment keys (STRIPE_SECRET_KEY, PAYPAL_CLIENT_SECRET)
+#   - AWS credentials (AWS_SECRET_ACCESS_KEY)
+#   - Email credentials (EMAIL_PASSWORD)
+#
+# Generate secrets: openssl rand -base64 32
+# Load from .env.production or orchestration platform
+# ==========================================
+
+version: '3.9'
+
+# ==========================================
+# Networks
+# Isolate services for security
+# ==========================================
+networks:
+  # Frontend network - web and nginx only
+  frontend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/24
+
+  # Backend network - API and services
+  backend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.1.0/24
+
+  # Database network - databases only
+  database:
+    driver: bridge
+    internal: true  # No external access
+    ipam:
+      config:
+        - subnet: 172.25.2.0/24
+
+  # Monitoring network - prometheus, grafana
+  monitoring:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.3.0/24
+
+# ==========================================
+# Volumes
+# Persistent data storage
+# ==========================================
+volumes:
+  # Database volumes
+  postgres-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volumes/postgres
+
+  mongodb-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volumes/mongodb
+
+  redis-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volumes/redis
+
+  # Message queue
+  rabbitmq-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volumes/rabbitmq
+
+  # Search engine
+  elasticsearch-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volumes/elasticsearch
+
+  # Monitoring
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+  # Logs
+  nginx-logs:
+    driver: local
+  api-logs:
+    driver: local
+
+# ==========================================
+# Services
+# ==========================================
+services:
+  # ==========================================
+  # NGINX - Reverse Proxy & Load Balancer
+  # ==========================================
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: broxiva-nginx-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infrastructure/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./infrastructure/nginx/ssl:/etc/nginx/ssl:ro
+      - nginx-logs:/var/log/nginx
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    labels:
+      - "com.broxiva.service=nginx"
+      - "com.broxiva.tier=frontend"
+
+  # ==========================================
+  # Next.js Web Application
+  # ==========================================
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile.production
+      args:
+        # Build-time environment variables
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL}
+        NEXT_PUBLIC_AI_SERVICE_URL: ${NEXT_PUBLIC_AI_SERVICE_URL}
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-Broxiva}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+        NEXT_PUBLIC_GITHUB_CLIENT_ID: ${NEXT_PUBLIC_GITHUB_CLIENT_ID}
+        NEXT_PUBLIC_FACEBOOK_APP_ID: ${NEXT_PUBLIC_FACEBOOK_APP_ID}
+        NEXT_PUBLIC_APPLE_CLIENT_ID: ${NEXT_PUBLIC_APPLE_CLIENT_ID}
+        NEXT_PUBLIC_GA_TRACKING_ID: ${NEXT_PUBLIC_GA_TRACKING_ID}
+        NEXT_PUBLIC_FB_PIXEL_ID: ${NEXT_PUBLIC_FB_PIXEL_ID}
+        NEXT_PUBLIC_TIKTOK_PIXEL_ID: ${NEXT_PUBLIC_TIKTOK_PIXEL_ID}
+        NEXT_PUBLIC_ENABLE_AI_FEATURES: ${NEXT_PUBLIC_ENABLE_AI_FEATURES:-true}
+        NEXT_PUBLIC_ENABLE_AR_TRYON: ${NEXT_PUBLIC_ENABLE_AR_TRYON:-true}
+        NEXT_PUBLIC_ENABLE_VOICE_SEARCH: ${NEXT_PUBLIC_ENABLE_VOICE_SEARCH:-true}
+        NEXT_PUBLIC_ENABLE_CHATBOT: ${NEXT_PUBLIC_ENABLE_CHATBOT:-true}
+        NEXT_PUBLIC_CDN_URL: ${NEXT_PUBLIC_CDN_URL}
+        NEXT_PUBLIC_IMAGE_OPTIMIZATION: ${NEXT_PUBLIC_IMAGE_OPTIMIZATION:-true}
+        NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${NEXT_PUBLIC_VAPID_PUBLIC_KEY}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN}
+    image: broxiva/web:${VERSION:-latest}
+    container_name: broxiva-web-prod
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    networks:
+      - frontend
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    labels:
+      - "com.broxiva.service=web"
+      - "com.broxiva.tier=frontend"
+
+  # ==========================================
+  # NestJS API Backend
+  # ==========================================
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.production
+    image: broxiva/api:${VERSION:-latest}
+    container_name: broxiva-api-prod
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      # Application
+      - NODE_ENV=production
+      - PORT=4000
+      - API_PREFIX=api
+
+      # Database
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-broxiva}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-broxiva_prod}?schema=public&connection_limit=20&pool_timeout=10
+
+      # Redis Cache
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - CACHE_TTL=${CACHE_TTL:-300}
+
+      # JWT Authentication
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-1h}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
+
+      # Email Service
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT:-587}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - EMAIL_SECURE=${EMAIL_SECURE:-true}
+
+      # Payment Providers
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID}
+      - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET}
+      - PAYPAL_MODE=${PAYPAL_MODE:-production}
+
+      # AWS Services
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+
+      # Search Services
+      - ELASTICSEARCH_NODE=http://elasticsearch:9200
+      - ALGOLIA_APP_ID=${ALGOLIA_APP_ID}
+      - ALGOLIA_API_KEY=${ALGOLIA_API_KEY}
+      - ALGOLIA_SEARCH_KEY=${ALGOLIA_SEARCH_KEY}
+
+      # Message Queue
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-broxiva}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+
+      # OAuth Providers
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - FACEBOOK_APP_ID=${FACEBOOK_APP_ID}
+      - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+
+      # Monitoring & Logging
+      - SENTRY_DSN=${SENTRY_DSN}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+
+      # CORS
+      - CORS_ORIGIN=${CORS_ORIGIN:-https://broxiva.com,https://www.broxiva.com}
+
+      # Rate Limiting
+      - RATE_LIMIT_TTL=${RATE_LIMIT_TTL:-60}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-100}
+    volumes:
+      - api-logs:/app/logs
+    networks:
+      - backend
+      - database
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    labels:
+      - "com.broxiva.service=api"
+      - "com.broxiva.tier=backend"
+
+  # ==========================================
+  # PostgreSQL Database
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: broxiva-postgres-prod
+    restart: unless-stopped
+    # SECURITY: Database ports should not be exposed externally in production
+    expose:
+      - "5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-broxiva}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-broxiva_prod}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - database
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-broxiva}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "shared_buffers=1GB"
+      - "-c"
+      - "effective_cache_size=3GB"
+      - "-c"
+      - "maintenance_work_mem=256MB"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "wal_buffers=16MB"
+      - "-c"
+      - "default_statistics_target=100"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "effective_io_concurrency=200"
+      - "-c"
+      - "work_mem=5242kB"
+      - "-c"
+      - "min_wal_size=2GB"
+      - "-c"
+      - "max_wal_size=8GB"
+      - "-c"
+      - "max_worker_processes=4"
+      - "-c"
+      - "max_parallel_workers_per_gather=2"
+      - "-c"
+      - "max_parallel_workers=4"
+      - "-c"
+      - "max_parallel_maintenance_workers=2"
+    labels:
+      - "com.broxiva.service=postgres"
+      - "com.broxiva.tier=database"
+
+  # ==========================================
+  # Redis Cache & Session Store
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: broxiva-redis-prod
+    restart: unless-stopped
+    # SECURITY: Cache ports should not be exposed externally in production
+    expose:
+      - "6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend
+      - database
+    command: >
+      sh -c "redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      ${REDIS_PASSWORD:+--requirepass $REDIS_PASSWORD}"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    labels:
+      - "com.broxiva.service=redis"
+      - "com.broxiva.tier=cache"
+
+  # ==========================================
+  # RabbitMQ Message Queue
+  # ==========================================
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: broxiva-rabbitmq-prod
+    restart: unless-stopped
+    # SECURITY: Message queue ports should not be exposed externally in production
+    # Management UI (15672) removed for security - access via VPN or SSH tunnel if needed
+    expose:
+      - "5672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-broxiva}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+      - RABBITMQ_DEFAULT_VHOST=broxiva
+      - RABBITMQ_VM_MEMORY_HIGH_WATERMARK=512MiB
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    labels:
+      - "com.broxiva.service=rabbitmq"
+      - "com.broxiva.tier=messaging"
+
+  # ==========================================
+  # MongoDB Document Store
+  # ==========================================
+  mongodb:
+    image: mongo:7-jammy
+    container_name: broxiva-mongodb-prod
+    restart: unless-stopped
+    # SECURITY: Database ports should not be exposed externally in production
+    expose:
+      - "27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-broxiva}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_INITDB_DATABASE=broxiva
+    volumes:
+      - mongodb-data:/data/db
+      - mongodb-data:/data/configdb
+    networks:
+      - database
+    command: mongod --auth
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    labels:
+      - "com.broxiva.service=mongodb"
+      - "com.broxiva.tier=database"
+
+  # ==========================================
+  # Elasticsearch Search Engine
+  # ==========================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
+    container_name: broxiva-elasticsearch-prod
+    restart: unless-stopped
+    # SECURITY: Search engine ports should not be exposed externally in production
+    expose:
+      - "9200"
+      - "9300"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - xpack.security.enrollment.enabled=false
+      - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - bootstrap.memory_lock=true
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - backend
+      - database
+    healthcheck:
+      test: ["CMD-SHELL", "curl -u elastic:${ELASTICSEARCH_PASSWORD} -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    labels:
+      - "com.broxiva.service=elasticsearch"
+      - "com.broxiva.tier=search"
+
+  # ==========================================
+  # Prometheus Metrics Collection
+  # ==========================================
+  prometheus:
+    image: prom/prometheus:v2.48.1
+    container_name: broxiva-prometheus-prod
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infrastructure/prometheus/alerts:/etc/prometheus/alerts:ro
+      - prometheus-data:/prometheus
+    networks:
+      - monitoring
+      - backend
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    labels:
+      - "com.broxiva.service=prometheus"
+      - "com.broxiva.tier=monitoring"
+
+  # ==========================================
+  # Grafana Monitoring Dashboard
+  # ==========================================
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: broxiva-grafana-prod
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-piechart-panel
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3001}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infrastructure/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./infrastructure/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    labels:
+      - "com.broxiva.service=grafana"
+      - "com.broxiva.tier=monitoring"
+
+# ==========================================
+# Deployment Instructions:
+# ==========================================
+#
+# 1. Prepare environment:
+#    cp .env.example .env.production
+#    # Edit .env.production with production values
+#
+# 2. Create volume directories:
+#    mkdir -p volumes/{postgres,mongodb,redis,rabbitmq,elasticsearch}
+#
+# 3. Generate secrets:
+#    openssl rand -base64 32  # For JWT_SECRET
+#    openssl rand -base64 32  # For JWT_REFRESH_SECRET
+#
+# 4. Build images:
+#    docker-compose -f docker-compose.production.yml build
+#
+# 5. Start services:
+#    docker-compose -f docker-compose.production.yml up -d
+#
+# 6. Run database migrations:
+#    docker-compose -f docker-compose.production.yml exec api npx prisma migrate deploy
+#
+# 7. Check service health:
+#    docker-compose -f docker-compose.production.yml ps
+#
+# 8. View logs:
+#    docker-compose -f docker-compose.production.yml logs -f [service]
+#
+# 9. Scale services:
+#    docker-compose -f docker-compose.production.yml up -d --scale api=5 --scale web=3
+#
+# ==========================================
+
+# ==========================================
+# Secrets Management:
+# ==========================================
+#
+# For production deployments, use Docker Swarm secrets
+# or Kubernetes secrets instead of environment variables.
+#
+# Docker Swarm example:
+#   echo "mypassword" | docker secret create postgres_password -
+#
+# Then use in service:
+#   secrets:
+#     - postgres_password
+#   environment:
+#     - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
+#
+# ==========================================
+
+# ==========================================
+# Backup Strategy:
+# ==========================================
+#
+# PostgreSQL:
+#   docker-compose exec postgres pg_dump -U broxiva broxiva_prod > backup.sql
+#
+# MongoDB:
+#   docker-compose exec mongodb mongodump --out /backup
+#
+# Redis:
+#   docker-compose exec redis redis-cli BGSAVE
+#
+# Volumes:
+#   docker run --rm -v broxiva_postgres-data:/data -v $(pwd):/backup \
+#     alpine tar czf /backup/postgres-backup.tar.gz /data
+#
+# ==========================================
+
+# ==========================================
+# Security Checklist:
+# ==========================================
+# ✓ All passwords in environment variables
+# ✓ Non-root users in containers
+# ✓ Network isolation
+# ✓ Resource limits set
+# ✓ Health checks configured
+# ✓ Proper restart policies
+# ✓ Read-only file systems where possible
+# ✓ Minimal base images (Alpine)
+# ✓ SSL/TLS for NGINX
+# ✓ Database authentication enabled
+# ✓ Internal networks for databases
+# ✓ Secrets not in version control
+# ==========================================

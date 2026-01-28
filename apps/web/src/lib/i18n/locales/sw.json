@@ -1,0 +1,39 @@
+{
+  "common": {
+    "welcome": "Karibu",
+    "loading": "Inapakia...",
+    "error": "Kosa",
+    "success": "Mafanikio",
+    "save": "Hifadhi",
+    "cancel": "Ghairi",
+    "delete": "Futa",
+    "edit": "Hariri",
+    "create": "Unda",
+    "update": "Sasisha",
+    "search": "Tafuta",
+    "yes": "Ndio",
+    "no": "Hapana",
+    "back": "Rudi",
+    "next": "Ifuatayo",
+    "email": "Barua pepe",
+    "password": "Neno la siri",
+    "login": "Ingia",
+    "logout": "Toka",
+    "register": "Jisajili"
+  },
+  "nav": {
+    "home": "Nyumbani",
+    "products": "Bidhaa",
+    "cart": "Kikapu",
+    "orders": "Maagizo"
+  },
+  "products": {
+    "title": "Bidhaa",
+    "addToCart": "Ongeza kwenye kikapu",
+    "buyNow": "Nunua sasa"
+  },
+  "cart": {
+    "title": "Kikapu cha ununuzi",
+    "emptyCart": "Kikapu chako ni tupu"
+  }
+}
