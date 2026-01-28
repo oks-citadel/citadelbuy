@@ -19,12 +19,6 @@
       "CI": "true"
     }
   },
-  "functions": {
-    "organization/apps/web/src/app/api/**/*.ts": {
-      "maxDuration": 30,
-      "memory": 1024
-    }
-  },
   "headers": [
     {
       "source": "/(.*)",
