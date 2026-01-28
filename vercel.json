@@ -1,9 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "name": "broxiva-web",
   "framework": "nextjs",
-  "installCommand": "cd organization && pnpm install --frozen-lockfile",
+  "installCommand": "cd organization && pnpm install",
   "buildCommand": "cd organization && pnpm turbo build --filter=@broxiva/web",
   "outputDirectory": "organization/apps/web/.next",
   "git": {
