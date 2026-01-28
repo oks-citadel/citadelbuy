@@ -1,11 +1,19 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono, Noto_Sans_Arabic } from 'next/font/google';
+import { headers } from 'next/headers';
 import { Providers } from './providers';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ChatWidget } from '@/components/ai/chatbot/chat-widget';
 import { BroxivaOrganizationJsonLd, BroxivaWebSiteJsonLd } from '@/lib/marketing';
+import { TenantProvider } from '@/lib/tenant/tenant-provider';
+import { getTenantContext } from '@/lib/tenant/tenant-context';
+import {
+  SUPPORTED_LOCALES,
+  LOCALE_DEFINITIONS,
+  I18N_HEADER_NAMES,
+} from '@/lib/i18n-edge/config';
 import '@/styles/globals.css';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://broxiva.com';
@@ -21,6 +29,26 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-mono',
   display: 'swap',
 });
+
+const notoSansArabic = Noto_Sans_Arabic({
+  subsets: ['arabic'],
+  variable: '--font-arabic',
+  display: 'swap',
+});
+
+/**
+ * Generate alternate language links for SEO
+ */
+function generateAlternateLanguages(): Record<string, string> {
+  const alternates: Record<string, string> = {};
+  SUPPORTED_LOCALES.forEach((locale) => {
+    const definition = LOCALE_DEFINITIONS[locale];
+    if (definition) {
+      alternates[definition.hreflang] = `/${locale}`;
+    }
+  });
+  return alternates;
+}
 
 export const metadata: Metadata = {
   title: {
@@ -43,10 +71,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://broxiva.com'),
   alternates: {
     canonical: '/',
-    languages: {
-      'en-US': '/en-US',
-      'es-ES': '/es-ES',
-    },
+    languages: generateAlternateLanguages(),
   },
   openGraph: {
     title: 'Broxiva - AI-Powered E-Commerce Platform',
@@ -102,35 +127,75 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Get tenant context from middleware headers
+  const tenantContext = await getTenantContext();
+  const headerStore = await headers();
+
+  // Get locale info from headers (set by middleware)
+  const locale = headerStore.get(I18N_HEADER_NAMES.locale) || 'en-us';
+  const direction = (headerStore.get(I18N_HEADER_NAMES.direction) || 'ltr') as 'ltr' | 'rtl';
+
+  // Get the language code for the html lang attribute
+  const localeDefinition = LOCALE_DEFINITIONS[locale as keyof typeof LOCALE_DEFINITIONS];
+  const htmlLang = localeDefinition?.language || 'en';
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang={htmlLang}
+      dir={direction}
+      suppressHydrationWarning
+      className={direction === 'rtl' ? 'rtl' : 'ltr'}
+    >
       <head>
         <BroxivaOrganizationJsonLd baseUrl={BASE_URL} />
         <BroxivaWebSiteJsonLd baseUrl={BASE_URL} />
+
+        {/* Generate hreflang links for SEO */}
+        {SUPPORTED_LOCALES.map((supportedLocale) => {
+          const def = LOCALE_DEFINITIONS[supportedLocale];
+          return (
+            <link
+              key={supportedLocale}
+              rel="alternate"
+              hrefLang={def.hreflang}
+              href={`${BASE_URL}/${supportedLocale}`}
+            />
+          );
+        })}
+        <link rel="alternate" hrefLang="x-default" href={`${BASE_URL}/en-us`} />
       </head>
       <body
-        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+        className={`${inter.variable} ${jetbrainsMono.variable} ${notoSansArabic.variable} font-sans antialiased`}
       >
-        <Providers>
-          <a
-            href="#main-content"
-            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md"
-          >
-            Skip to main content
-          </a>
-          <div className="relative flex min-h-screen flex-col">
-            <Header />
-            <main id="main-content" className="flex-1">{children}</main>
-            <Footer />
-          </div>
-          <ChatWidget />
-          <Toaster />
-        </Providers>
+        <TenantProvider
+          initialTenant={tenantContext.tenant}
+          initialLocale={tenantContext.locale}
+          initialCountry={tenantContext.country}
+          initialCurrency={tenantContext.currency}
+          initialTraceId={tenantContext.traceId}
+          initialDirection={direction}
+        >
+          <Providers>
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md"
+            >
+              Skip to main content
+            </a>
+            <div className="relative flex min-h-screen flex-col">
+              <Header />
+              <main id="main-content" className="flex-1">{children}</main>
+              <Footer />
+            </div>
+            <ChatWidget />
+            <Toaster />
+          </Providers>
+        </TenantProvider>
       </body>
     </html>
   );

@@ -57,3 +57,17 @@ export { RateLimitHeadersInterceptor } from './rate-limit-headers.interceptor';
 
 // Module
 export { ThrottlerConfigModule } from './throttler.module';
+
+// Tenant Rate Limiter
+export {
+  TenantRateLimiterGuard,
+  TenantRateLimitException,
+  TenantRateLimitConfig,
+  TenantUsageReport,
+  RateLimitOperation,
+  TenantRateLimit,
+  SkipTenantRateLimit,
+  PLAN_RATE_LIMITS,
+  TENANT_RATE_LIMIT_KEY,
+  SKIP_TENANT_RATE_LIMIT_KEY,
+} from './tenant-rate-limiter';

@@ -9,6 +9,7 @@ import { RateLimitCacheService } from './rate-limit-cache.service';
 import { CacheWarmingService } from './cache-warming.service';
 import { CacheHealthService } from './cache-health.service';
 import { CacheAdminController } from './cache-admin.controller';
+import { DistributedLockService } from './lock.service';
 
 @Global()
 @Module({
@@ -23,6 +24,7 @@ import { CacheAdminController } from './cache-admin.controller';
     RateLimitCacheService,
     CacheWarmingService,
     CacheHealthService,
+    DistributedLockService,
   ],
   exports: [
     RedisService,
@@ -34,6 +36,7 @@ import { CacheAdminController } from './cache-admin.controller';
     RateLimitCacheService,
     CacheWarmingService,
     CacheHealthService,
+    DistributedLockService,
   ],
 })
 export class RedisModule {}

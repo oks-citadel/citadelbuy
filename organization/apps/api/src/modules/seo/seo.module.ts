@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
+import { BullModule } from '@nestjs/bull';
 import { PrismaModule } from '@/common/prisma/prisma.module';
 import { RedisModule } from '@/common/redis/redis.module';
+import { QUEUES } from '@/common/queue/queue.constants';
 
 // Main SEO Service (legacy, for backward compatibility)
 import { SeoService } from './seo.service';
@@ -62,11 +64,17 @@ import { DashboardController } from './dashboard/dashboard.controller';
 // Scheduled Jobs
 import { SeoSchedulerService } from './seo-scheduler.service';
 
+// Background Workers
+import { SitemapProcessor } from './workers/sitemap.processor';
+
 @Module({
   imports: [
     PrismaModule,
     RedisModule,
     ScheduleModule.forRoot(),
+    BullModule.registerQueue({
+      name: QUEUES.SITEMAP,
+    }),
   ],
   controllers: [
     SeoController,
@@ -103,6 +111,9 @@ import { SeoSchedulerService } from './seo-scheduler.service';
 
     // Scheduler
     SeoSchedulerService,
+
+    // Background Workers
+    SitemapProcessor,
   ],
   exports: [
     SeoService,
@@ -120,6 +131,7 @@ import { SeoSchedulerService } from './seo-scheduler.service';
     AiSeoService,
     DashboardService,
     SeoSchedulerService,
+    SitemapProcessor,
   ],
 })
 export class SeoModule {}

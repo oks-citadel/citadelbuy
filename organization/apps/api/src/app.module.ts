@@ -9,6 +9,7 @@ import { AppService } from './app.service';
 import { CommonModule } from './common/common.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { RedisModule } from './common/redis/redis.module';
+import { QueueModule } from './common/queue/queue.module';
 import { LoggerModule } from './common/logger/logger.module';
 import { ObservabilityModule } from './common/observability/observability.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -66,11 +67,14 @@ import { MarketingModule } from './modules/marketing/marketing.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
 import { SentryModule } from './common/monitoring/sentry.module';
 import { CrossBorderModule } from './modules/cross-border/cross-border.module';
+import { DomainsModule } from './modules/domains/domains.module';
 import { GrowthModule } from './modules/growth/growth.module';
 import { EnterpriseModule } from './modules/enterprise/enterprise.module';
 import { BillingAuditModule } from './modules/billing-audit/billing-audit.module';
 import { ExperimentsModule } from './modules/experiments/experiments.module';
 import { MarketingAnalyticsModule } from './modules/marketing-analytics/marketing-analytics.module';
+import { CurrencyModule } from './modules/currency/currency.module';
+import { ConnectorsModule } from './modules/connectors/connectors.module';
 import { validate } from './common/config/config-validation';
 
 @Module({
@@ -100,6 +104,7 @@ import { validate } from './common/config/config-validation';
     ObservabilityModule, // Adds correlation IDs, structured logging, and metrics
     PrismaModule,
     RedisModule, // Must be before ThrottlerConfigModule (provides RateLimitCacheService)
+    QueueModule.forRoot(), // BullMQ queues for background jobs
     ThrottlerModule.forRoot([
       {
         name: 'default',
@@ -162,11 +167,14 @@ import { validate } from './common/config/config-validation';
     MarketingModule,
     ComplianceModule,
     CrossBorderModule,
+    DomainsModule,
     GrowthModule,
     EnterpriseModule,
     BillingAuditModule,
     ExperimentsModule,
     MarketingAnalyticsModule,
+    CurrencyModule,
+    ConnectorsModule, // Product integration connectors (Shopify, WooCommerce, REST, CSV)
     SentryModule,
   ],
   controllers: [AppController],

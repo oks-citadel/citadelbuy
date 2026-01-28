@@ -4,9 +4,11 @@ import { HttpModule } from '@nestjs/axios';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WebhookService, WEBHOOK_QUEUE } from './webhook.service';
 import { WebhookController } from './webhook.controller';
+import { WebhookSyncController } from './webhook-sync.controller';
 import { WebhookProcessor } from './webhook.processor';
 import { WebhookEventsService } from './webhook-events.service';
 import { PrismaModule } from '@/common/prisma/prisma.module';
+import { RedisModule } from '@/common/redis/redis.module';
 
 /**
  * Webhook Module
@@ -30,6 +32,7 @@ import { PrismaModule } from '@/common/prisma/prisma.module';
 @Module({
   imports: [
     PrismaModule,
+    RedisModule,
     HttpModule.register({
       timeout: 30000,
       maxRedirects: 5,
@@ -59,7 +62,7 @@ import { PrismaModule } from '@/common/prisma/prisma.module';
       inject: [ConfigService],
     }),
   ],
-  controllers: [WebhookController],
+  controllers: [WebhookController, WebhookSyncController],
   providers: [WebhookService, WebhookProcessor, WebhookEventsService],
   exports: [WebhookService, WebhookEventsService],
 })

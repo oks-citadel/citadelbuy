@@ -16,3 +16,6 @@ export { CsrfGuard } from './csrf.guard';
 
 // Rate limiting (deprecated - use throttler module instead)
 export { EnhancedThrottlerGuard } from './enhanced-throttler.guard';
+
+// Tenant isolation
+export { TenantGuard, OptionalTenantGuard, TenantInfo, RequestWithTenant } from './tenant.guard';

@@ -1,6 +1,6 @@
-# Broxiva - AI-Powered E-Commerce Platform
+# Broxiva - Global Multi-Tenant AI-Powered Marketplace
 
-> Enterprise-grade e-commerce platform with advanced AI capabilities for intelligent product discovery, hyper-personalization, and automated operations.
+> Enterprise-grade multi-tenant e-commerce platform with custom domains, multi-currency, multi-language, AI-powered translations, and automated product integrations for a truly global marketplace.
 
 [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/broxiva/broxiva)
 [![License](https://img.shields.io/badge/license-UNLICENSED-red.svg)](LICENSE)
@@ -15,11 +15,14 @@
 
 ### Key Differentiators
 
-- **57+ Backend Modules** providing comprehensive e-commerce functionality
+- **Multi-Tenant Architecture** with strict tenant isolation and custom domain support
+- **Global Commerce** with 13+ languages, 50+ currencies, and automatic geo-detection
+- **60+ Backend Modules** providing comprehensive e-commerce functionality
 - **14 AI/ML Features** including visual search, personalization, fraud detection, and chatbot
+- **Product Integrations** with Shopify, WooCommerce, REST APIs, and CSV import
 - **Multi-Platform Support** with web (Next.js 15), mobile (React Native/Expo), and API access
 - **Enterprise-Grade Security** with MFA, account lockout, token blacklisting, and GDPR/CCPA compliance
-- **Scalable Architecture** using Turborepo, Docker, Kubernetes, and AWS/Railway deployment
+- **Scalable Architecture** using Turborepo, Docker, Kubernetes, and Vercel/Railway deployment
 
 ### Current Version & Status
 
@@ -263,8 +266,29 @@ organization/
 - **Account Lockout** - Brute force protection
 - **Token Blacklisting** - Secure logout
 - **RBAC** - Role-based access control (Customer, Vendor, Admin, etc.)
-- **Rate Limiting** - Tiered throttling
+- **Rate Limiting** - Tiered throttling per tenant
 - **GDPR/CCPA** - Data export, deletion requests, consent management
+- **Tenant Isolation** - Complete data segregation between tenants
+
+### Global Marketplace Features
+
+- **Custom Domains** - Vendors can use `shop.vendor.com` with TXT/CNAME verification
+- **Subdomains** - Instant `vendorslug.broxiva.com` subdomains
+- **Multi-Language** - 13+ locales with AI-powered auto-translation
+- **Multi-Currency** - 50+ currencies with real-time FX rates
+- **Geo-Detection** - Automatic country/language/currency inference
+- **User Preferences** - Override geo-detection with user choices
+- **FX Snapshots** - Order totals locked at checkout (no recalculation)
+- **Translation Lifecycle** - DRAFT → AUTO_TRANSLATED → VENDOR_APPROVED → PUBLISHED
+- **SEO Optimization** - Per-locale sitemaps, hreflang tags, structured data
+- **Shipping Zones** - "Ships to your country" badges and availability
+
+### Product Integrations
+
+- **Shopify** - OAuth integration with webhook sync
+- **WooCommerce** - REST API integration with product mapping
+- **Generic REST** - Custom API connector with configurable mapping
+- **CSV Import** - Bulk product upload with validation
 
 ---
 
@@ -523,6 +547,21 @@ pnpm prisma:generate
 This project is **UNLICENSED** - proprietary software. All rights reserved.
 
 ---
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Architecture Overview](docs/architecture-overview.md) | System architecture and data flows |
+| [Custom Domains](docs/domains.md) | Domain onboarding and verification |
+| [Internationalization](docs/i18n.md) | Multi-language and locale routing |
+| [API Reference](docs/api.md) | Backend API documentation |
+| [Database Schema](docs/db.md) | Schema design and migrations |
+| [Background Workers](docs/workers.md) | Redis jobs and processing |
+| [SEO & Growth](docs/seo-growth.md) | SEO optimization and visibility |
+| [Security](docs/security.md) | Threat model and hardening |
+| [Integrations](docs/integrations.md) | Product import connectors |
+| [Production Readiness](docs/production-readiness.md) | Deployment checklist |
 
 ## Support
 

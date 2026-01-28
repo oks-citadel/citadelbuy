@@ -8,6 +8,11 @@
  * - CLS < 0.1
  * - LCP < 2.5s
  * - FID < 100ms
+ *
+ * i18n Strategy:
+ * - Locale detection handled by Edge Middleware (middleware.ts)
+ * - URL structure: /{locale}/path (e.g., /en-us/products)
+ * - Supported locales defined in src/lib/i18n-edge/config.ts
  */
 
 const nextConfig = {
@@ -39,6 +44,13 @@ const nextConfig = {
 
   // Generate ETags for caching
   generateEtags: true,
+
+  // Note: i18n routing is handled by Edge Middleware (middleware.ts)
+  // We don't use Next.js built-in i18n as it doesn't work with App Router
+  // The middleware handles:
+  // - Locale detection from Accept-Language, cookies, and geo
+  // - Locale-prefixed URL redirects
+  // - Setting x-bx-* headers for downstream components
 
   async redirects() {
     return [

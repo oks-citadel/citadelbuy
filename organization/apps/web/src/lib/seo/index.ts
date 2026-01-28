@@ -1,5 +1,5 @@
 /**
- * SEO utilities for structured data (JSON-LD)
+ * Comprehensive SEO utilities for Broxiva Global Marketplace
  *
  * @example
  * // Using React components
@@ -29,9 +29,69 @@
  *
  * const schema = generateProduct({ ... });
  * const jsonString = toJsonLdString(schema);
+ *
+ * @example
+ * // Using metadata generators
+ * import { generateProductMetadata, generatePageMetadata } from '@/lib/seo';
+ *
+ * export async function generateMetadata({ params }) {
+ *   return generateProductMetadata({ name: 'Product', ... });
+ * }
  */
 
-// Type definitions
+// ============================================================================
+// Configuration
+// ============================================================================
+export {
+  seoConfig,
+  SUPPORTED_LOCALES,
+  getLocaleConfig,
+  getDefaultLocale,
+  getSupportedHreflangCodes,
+  getCurrencyForLocale,
+  getRegionForLocale,
+  buildLocalizedUrl,
+  mergeTenantConfig,
+  type SEOConfig,
+  type LocaleConfig,
+  type TenantSEOConfig,
+} from './config';
+
+// ============================================================================
+// Metadata Generators
+// ============================================================================
+export {
+  generatePageMetadata,
+  generateProductMetadata,
+  generateCategoryMetadata,
+  generateVendorMetadata,
+  generateCountryMetadata,
+  generateSearchMetadata,
+  type PageMetadataParams,
+  type ProductMetadataParams,
+  type CategoryMetadataParams,
+} from './metadata';
+
+// ============================================================================
+// Hreflang Utilities
+// ============================================================================
+export {
+  generateHreflangLinks,
+  generateHreflangTags,
+  generateProductHreflang,
+  generateCategoryHreflang,
+  generateCountryHreflang,
+  validateHreflang,
+  parseHreflang,
+  buildHreflang,
+  getContentLanguage,
+  type HreflangLink,
+  type HreflangConfig,
+} from './hreflang';
+
+// ============================================================================
+// Structured Data Types
+// ============================================================================
 export type {
   Organization,
   LocalBusiness,
@@ -55,7 +115,9 @@ export type {
   WebSite,
 } from './structured-data';
 
-// Generator functions
+// ============================================================================
+// Structured Data Generators
+// ============================================================================
 export {
   generateOrganization,
   generateLocalBusiness,
@@ -79,7 +141,9 @@ export {
   combineSchemas,
 } from './structured-data';
 
-// React components
+// ============================================================================
+// React JSON-LD Components
+// ============================================================================
 export {
   JsonLd,
   OrganizationJsonLd,

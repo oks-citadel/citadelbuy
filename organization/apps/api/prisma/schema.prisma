@@ -140,6 +140,9 @@ model User {
   // Device fingerprinting relations
   deviceAssociations UserDeviceAssociation[]
 
+  // Multi-tenant marketplace preferences
+  userPreference UserPreference?
+
   @@map("users")
 }
 
@@ -363,6 +366,7 @@ model Product {
   stock       Int      @default(0)
   vendorId    String
   categoryId  String
+  tenantId    String?  // Multi-tenant: which organization/tenant owns this product
   status      String?  @default("ACTIVE") // ACTIVE, INACTIVE, DRAFT, etc.
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -376,6 +380,7 @@ model Product {
   vendor             User                   @relation(fields: [vendorId], references: [id])
   vendorEntity       Vendor?                @relation("VendorProducts", fields: [vendorId], references: [id], map: "fk_product_vendor_entity")
   category           Category               @relation(fields: [categoryId], references: [id])
+  tenant             Organization?          @relation("TenantProducts", fields: [tenantId], references: [id])
   orderItems         OrderItem[]
   reviews            Review[]
   wishlist           Wishlist[]
@@ -396,6 +401,9 @@ model Product {
   productPerformance ProductPerformance?
   featuredListings   FeaturedListing[]
 
+  // Product source mapping (connector integrations)
+  productSources     ProductSource[]
+
   trackInventory Boolean  @default(true)
   allowBackorder Boolean  @default(false)
   sku            String?  @unique
@@ -410,6 +418,9 @@ model Product {
   @@index([vendorId])
   @@index([categoryId])
   @@index([slug])
+  @@index([tenantId])
+  @@index([tenantId, id])
+  @@index([tenantId, sku])
   @@map("products")
 }
 
@@ -469,6 +480,7 @@ model Order {
   escrowAccount           EscrowAccount?
   escrows                 Escrow[]
   billingAuditLogs        BillingAuditLog[]
+  fxSnapshot              OrderFxSnapshot?     // FX rate snapshot at time of order
 
   @@index([userId])
   @@index([status])
@@ -1493,16 +1505,19 @@ model Language {
 }
 
 model ProductTranslation {
-  id              String   @id @default(uuid())
+  id              String            @id @default(uuid())
   productId       String
   languageCode    String
   name            String
-  description     String
+  description     String            @db.Text // Allow long descriptions
   metaTitle       String?
   metaDescription String?
   slug            String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  status          TranslationStatus @default(DRAFT) // Translation workflow status
+  translatedBy    String?           // "auto" | "human" | user_id
+  publishedAt     DateTime?         // When translation was published
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   language Language @relation(fields: [languageCode], references: [code], onDelete: Cascade)
@@ -1511,6 +1526,7 @@ model ProductTranslation {
   @@index([productId])
   @@index([languageCode])
   @@index([slug])
+  @@index([status])
   @@map("product_translations")
 }
 
@@ -5947,6 +5963,16 @@ model Organization {
   rfqs                RFQ[]                    @relation("RFQOrganization")
   enterpriseContracts EnterpriseContract[]     @relation("EnterpriseContractOrg")
 
+  // Multi-tenant marketplace relations
+  tenantDomains       TenantDomain[]
+  tenantLocales       TenantLocale[]
+  tenantCurrencies    TenantCurrency[]
+  tenantGeoRules      TenantGeoRule[]
+  tenantProducts      Product[]            @relation("TenantProducts")
+
+  // Product integration connectors
+  connectorConfigs    ConnectorConfig[]
+
   @@index([slug])
   @@index([status])
   @@index([ownerId])
@@ -8112,5 +8138,314 @@ model TrustedDevice {
   @@index([expiresAt])
   @@index([isActive])
   @@map("trusted_devices")
+}
+
+// ============================================================================
+// MULTI-TENANT GLOBAL MARKETPLACE MODELS
+// ============================================================================
+
+// Domain Type Enum - Types of domains a tenant can configure
+enum DomainType {
+  PRIMARY      // Main domain for the tenant (e.g., store.example.com)
+  SUBDOMAIN    // Subdomain of the platform (e.g., tenant.broxiva.com)
+  CUSTOM       // Custom domain owned by tenant
+  VANITY       // Short vanity domain
+}
+
+// Domain Status Enum - Status of domain verification/configuration
+enum DomainStatus {
+  PENDING         // Domain added but not verified
+  VERIFYING       // Verification in progress
+  VERIFIED        // Domain verified and active
+  FAILED          // Verification failed
+  SUSPENDED       // Domain suspended (e.g., billing issue)
+  EXPIRED         // Domain verification expired
+}
+
+// SSL Status Enum - SSL certificate status for domains
+enum SslStatus {
+  PENDING         // SSL cert being provisioned
+  ACTIVE          // SSL cert active
+  EXPIRED         // SSL cert expired
+  FAILED          // SSL provisioning failed
+  RENEWING        // SSL cert being renewed
+}
+
+// Translation Status Enum - For product/content translations
+enum TranslationStatus {
+  DRAFT           // Translation in progress
+  AUTO_TRANSLATED // Machine translated, needs review
+  VENDOR_APPROVED // Vendor has approved translation
+  PUBLISHED       // Translation is live
+}
+
+/// Tenant Domain Model - Maps custom domains to tenant organizations
+/// Supports multi-domain configurations for white-label storefronts
+model TenantDomain {
+  id                String       @id @default(cuid())
+  host              String       @unique // e.g., "shop.acme.com" or "acme.broxiva.com"
+  tenantId          String
+  tenant            Organization @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  domainType        DomainType   @default(SUBDOMAIN)
+  status            DomainStatus @default(PENDING)
+  verificationToken String?      // Token for DNS TXT record verification
+  cnameTarget       String?      // Target for CNAME record (e.g., "custom.broxiva.com")
+  verifiedAt        DateTime?    // When domain was verified
+  sslStatus         SslStatus?   // SSL certificate status
+  sslExpiresAt      DateTime?    // SSL certificate expiration
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([domainType])
+  @@map("tenant_domains")
+}
+
+/// Tenant Locale Model - Supported locales/languages per tenant
+/// Enables multi-language storefronts with locale-specific content
+model TenantLocale {
+  id        String       @id @default(cuid())
+  tenantId  String
+  tenant    Organization @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  locale    String       // BCP 47 format: "en-US", "fr-CA", "zh-CN"
+  isDefault Boolean      @default(false) // Default locale for tenant
+  isEnabled Boolean      @default(true) // Whether locale is active
+  label     String?      // Display name: "English (US)", "Francais (Canada)"
+  createdAt DateTime     @default(now())
+
+  @@unique([tenantId, locale])
+  @@index([tenantId])
+  @@index([isDefault])
+  @@map("tenant_locales")
+}
+
+/// Tenant Currency Model - Supported currencies per tenant
+/// Enables multi-currency pricing and transactions
+model TenantCurrency {
+  id          String       @id @default(cuid())
+  tenantId    String
+  tenant      Organization @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  currency    String       // ISO 4217: USD, EUR, GBP, NGN, etc.
+  isDefault   Boolean      @default(false) // Default currency for tenant
+  isEnabled   Boolean      @default(true) // Whether currency is active
+  symbol      String?      // Currency symbol: $, EUR, etc.
+  displayName String?      // "US Dollar", "Euro", etc.
+  createdAt   DateTime     @default(now())
+
+  @@unique([tenantId, currency])
+  @@index([tenantId])
+  @@index([isDefault])
+  @@map("tenant_currencies")
+}
+
+/// Tenant Geo Rule Model - Geographic rules and restrictions per tenant
+/// Controls market access, default settings, and regional compliance
+model TenantGeoRule {
+  id              String       @id @default(cuid())
+  tenantId        String
+  tenant          Organization @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  countryCode     String       // ISO 3166-1 alpha-2: US, GB, NG, CA, etc.
+  countryName     String?      // Human readable: "United States", "Nigeria"
+  isAllowed       Boolean      @default(true) // Is this country allowed for this tenant
+  defaultCurrency String?      // Default currency for this country (ISO 4217)
+  defaultLocale   String?      // Default locale for this country (BCP 47)
+  shippingZone    String?      // Shipping zone identifier
+  taxRate         Decimal?     @db.Decimal(5, 4) // Tax rate: 0.0750 = 7.5%
+  vatNumber       String?      // VAT/GST number if applicable
+  notes           String?      // Admin notes
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([tenantId, countryCode])
+  @@index([tenantId])
+  @@index([countryCode])
+  @@index([isAllowed])
+  @@map("tenant_geo_rules")
+}
+
+/// FX Rate Model - Foreign exchange rates for currency conversion
+/// Cached rates from external sources with expiration
+model FxRate {
+  id            String   @id @default(cuid())
+  baseCurrency  String   // Source currency (ISO 4217)
+  quoteCurrency String   // Target currency (ISO 4217)
+  rate          Decimal  @db.Decimal(18, 8) // High precision: 1.00000000 to 999999999999999999.99999999
+  inverseRate   Decimal? @db.Decimal(18, 8) // Precomputed inverse for performance
+  source        String   // Rate source: "openexchangerates", "ecb", "xe", "manual"
+  fetchedAt     DateTime @default(now()) // When rate was fetched
+  expiresAt     DateTime // When rate should be refreshed
+  metadata      Json?    // Additional data from source
+
+  @@unique([baseCurrency, quoteCurrency])
+  @@index([baseCurrency, quoteCurrency, fetchedAt])
+  @@index([expiresAt])
+  @@map("fx_rates")
+}
+
+/// Order FX Snapshot Model - Captures FX rate at time of order
+/// Ensures financial accuracy and audit trail for currency conversions
+model OrderFxSnapshot {
+  id              String   @id @default(cuid())
+  orderId         String   @unique
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  baseCurrency    String   // Original transaction currency
+  quoteCurrency   String   // Settlement/display currency
+  rate            Decimal  @db.Decimal(18, 8) // Rate at time of order
+  originalAmount  Decimal  @db.Decimal(19, 4) // Amount in base currency (minor units)
+  convertedAmount Decimal  @db.Decimal(19, 4) // Amount in quote currency (minor units)
+  source          String?  // Rate source at time of snapshot
+  snapshotAt      DateTime @default(now()) // Timestamp of snapshot
+
+  @@index([orderId])
+  @@index([snapshotAt])
+  @@map("order_fx_snapshots")
+}
+
+/// User Preference Model - User-specific locale/currency preferences
+/// Persists user choices for personalized experience
+model UserPreference {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  country   String?  // Preferred country (ISO 3166-1 alpha-2)
+  language  String?  // Preferred language/locale (BCP 47)
+  currency  String?  // Preferred currency (ISO 4217)
+  timezone  String?  // Preferred timezone (IANA: "America/New_York")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([country])
+  @@index([currency])
+  @@map("user_preferences")
+}
+
+// ==================== CONNECTOR & PRODUCT INTEGRATION MODELS ====================
+
+/// Connector Type Enum - Supported product source integrations
+enum ConnectorType {
+  SHOPIFY
+  WOOCOMMERCE
+  REST_API
+  CSV
+}
+
+/// Sync Status Enum - Product sync state tracking
+enum SyncStatus {
+  SYNCED
+  PENDING
+  FAILED
+  CONFLICT
+  DELETED
+}
+
+/// Connector Configuration Model - Stores integration settings
+/// Manages connections to external product sources (Shopify, WooCommerce, REST, CSV)
+model ConnectorConfig {
+  id       String        @id @default(cuid())
+  tenantId String
+  tenant   Organization  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type     ConnectorType
+  name     String
+
+  /// Encrypted JSON containing credentials and integration settings
+  /// Structure varies by connector type (Shopify OAuth tokens, WooCommerce keys, etc.)
+  config Json
+
+  isActive       Boolean   @default(true)
+  lastSyncAt     DateTime?
+  lastSyncStatus String?   // SYNCED, PARTIAL, FAILED, IN_PROGRESS
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  productSources ProductSource[]
+  syncLogs       ConnectorSyncLog[]
+
+  @@unique([tenantId, type, name])
+  @@index([tenantId])
+  @@index([type])
+  @@index([isActive])
+  @@map("connector_configs")
+}
+
+/// Product Source Model - Maps external products to internal products
+/// Tracks synchronization state for each imported product
+model ProductSource {
+  id          String          @id @default(cuid())
+  productId   String
+  product     Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  connectorId String
+  connector   ConnectorConfig @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+
+  /// External product identifier in the source system
+  externalId String
+
+  /// Last successful sync timestamp
+  lastSyncAt DateTime
+
+  /// Current sync status
+  syncStatus SyncStatus @default(PENDING)
+
+  /// Hash of last synced data for change detection
+  dataHash String?
+
+  /// Stores conflict details if syncStatus is CONFLICT
+  conflictData Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([connectorId, externalId])
+  @@index([productId])
+  @@index([connectorId])
+  @@index([syncStatus])
+  @@index([lastSyncAt])
+  @@map("product_sources")
+}
+
+/// Connector Sync Log Model - Audit trail for sync operations
+/// Records sync history, statistics, and errors for debugging
+model ConnectorSyncLog {
+  id          String          @id @default(cuid())
+  connectorId String
+  connector   ConnectorConfig @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+
+  /// Type of sync operation
+  syncType String // FULL, DELTA, MANUAL, WEBHOOK, SCHEDULED
+
+  /// Sync status
+  status String // PENDING, IN_PROGRESS, COMPLETED, PARTIAL, FAILED, CANCELLED
+
+  /// Sync timing
+  startedAt   DateTime
+  completedAt DateTime?
+
+  /// Statistics
+  totalProcessed Int @default(0)
+  created        Int @default(0)
+  updated        Int @default(0)
+  deleted        Int @default(0)
+  skipped        Int @default(0)
+  failed         Int @default(0)
+
+  /// Error details (JSON array of error objects)
+  errors Json?
+
+  /// Warning details (JSON array of warning objects)
+  warnings Json?
+
+  /// Triggering context (userId, scheduled, webhook, etc.)
+  triggeredBy String?
+  metadata    Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([connectorId])
+  @@index([status])
+  @@index([syncType])
+  @@index([startedAt])
+  @@map("connector_sync_logs")
 }
 

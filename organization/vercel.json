@@ -1,28 +1,21 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "name": "broxiva-web",
-  "framework": "nextjs",
-  "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm turbo build --filter=@broxiva/web",
-  "outputDirectory": "apps/web/.next",
+  "framework": null,
+  "installCommand": "cd organization && pnpm install",
+  "buildCommand": "cd organization && pnpm turbo build --filter=@broxiva/web",
+  "outputDirectory": "organization/apps/web/.next",
   "git": {
     "deploymentEnabled": {
       "main": true,
       "develop": true
     }
   },
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- apps/web packages",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- organization/apps/web organization/packages",
   "build": {
     "env": {
       "NEXT_TELEMETRY_DISABLED": "1",
       "CI": "true"
-    }
-  },
-  "functions": {
-    "apps/web/src/app/api/**/*.ts": {
-      "maxDuration": 30,
-      "memory": 1024
     }
   },
   "headers": [

@@ -1,6 +1,6 @@
 # ==========================================
 # Broxiva API - Production Dockerfile for Railway
-# Use this when Railway root directory is set to /organization
+# Optimized for Railway deployment with health checks
 # ==========================================
 
 # Stage 1: Dependencies
@@ -16,9 +16,9 @@ RUN apk add --no-cache openssl libc6-compat python3 make g++
 
 WORKDIR /app
 
-# Copy package files from the API directory (relative to /organization)
-COPY apps/api/package.json ./
-COPY apps/api/package-lock.json* ./
+# Copy package files from the API directory
+COPY organization/apps/api/package.json ./
+COPY organization/apps/api/package-lock.json* ./
 
 # Install ALL dependencies (including dev for build)
 # HUSKY=0 prevents husky install from running during Docker builds
@@ -36,19 +36,19 @@ RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
 
 # Copy package.json first (needed for npm run build)
-COPY apps/api/package.json ./
+COPY organization/apps/api/package.json ./
 
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
 # Copy Prisma schema and generate client
-COPY apps/api/prisma ./prisma
+COPY organization/apps/api/prisma ./prisma
 RUN npx prisma generate
 
 # Copy source code and build configuration
-COPY apps/api/src ./src
-COPY apps/api/tsconfig*.json ./
-COPY apps/api/nest-cli.json ./
+COPY organization/apps/api/src ./src
+COPY organization/apps/api/tsconfig*.json ./
+COPY organization/apps/api/nest-cli.json ./
 
 # Build the application with increased memory
 ENV NODE_OPTIONS="--max-old-space-size=4096"
@@ -71,13 +71,13 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001 -G nodejs
 
 # Copy package files
-COPY --chown=nestjs:nodejs apps/api/package.json ./
+COPY --chown=nestjs:nodejs organization/apps/api/package.json ./
 
 # Install only production dependencies
 RUN HUSKY=0 npm install --omit=dev --legacy-peer-deps && npm cache clean --force
 
 # Copy Prisma schema (for migrations)
-COPY --chown=nestjs:nodejs apps/api/prisma ./prisma
+COPY --chown=nestjs:nodejs organization/apps/api/prisma ./prisma
 
 # Copy generated Prisma client from builder (avoids version mismatch)
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma

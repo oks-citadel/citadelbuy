@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -7,6 +7,11 @@ import { WebhookController } from './webhook.controller';
 import { WebhookProcessor } from './webhook.processor';
 import { WebhookEventsService } from './webhook-events.service';
 import { PrismaModule } from '@/common/prisma/prisma.module';
+
+// Connector webhook handlers
+import { ShopifyWebhookController } from './shopify-webhook.handler';
+import { WooCommerceWebhookController } from './woocommerce-webhook.handler';
+import { ConnectorsModule } from '../connectors/connectors.module';
 
 /**
  * Webhooks Module
@@ -30,11 +35,13 @@ import { PrismaModule } from '@/common/prisma/prisma.module';
 @Module({
   imports: [
     PrismaModule,
+    ConfigModule,
     HttpModule.register({
       timeout: 30000,
       maxRedirects: 5,
     }),
-    
+    forwardRef(() => ConnectorsModule), // Connector module for webhook handlers
+
     BullModule.registerQueueAsync({
       name: WEBHOOK_QUEUE,
       imports: [ConfigModule],
@@ -59,7 +66,11 @@ import { PrismaModule } from '@/common/prisma/prisma.module';
       inject: [ConfigService],
     }),
   ],
-  controllers: [WebhookController],
+  controllers: [
+    WebhookController,
+    ShopifyWebhookController,      // Shopify product webhooks
+    WooCommerceWebhookController,  // WooCommerce product webhooks
+  ],
   providers: [WebhookService, WebhookProcessor, WebhookEventsService],
   exports: [WebhookService, WebhookEventsService],
 })
