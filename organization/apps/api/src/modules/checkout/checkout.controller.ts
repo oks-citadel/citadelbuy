@@ -15,7 +15,7 @@ import { CheckoutService } from './checkout.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '@/common/guards/optional-jwt-auth.guard';
 import { AuthRequest } from '@/common/types/auth-request.types';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+// ThrottlerGuard removed - using global TieredThrottlerGuard from ThrottlerConfigModule
 import { IdempotentPayment, Idempotent } from '@/common/idempotency';
 import {
   CreateCheckoutAddressDto,
@@ -170,9 +170,9 @@ export class CheckoutController {
   }
 
   @Post('guest')
-  @UseGuards(OptionalJwtAuthGuard, ThrottlerGuard)
+  @UseGuards(OptionalJwtAuthGuard)
   @Idempotent({ scope: 'guest-checkout', required: false, ttlSeconds: 86400 })
-  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 guest checkouts per minute per IP
+  // Rate limiting handled by global TieredThrottlerGuard
   @ApiOperation({ summary: 'Guest checkout - checkout without an account' })
   @ApiResponse({ status: 200, description: 'Guest order created, payment intent ready' })
   @ApiResponse({ status: 400, description: 'Invalid request' })

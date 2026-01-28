@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerConfigModule } from './common/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -99,6 +100,13 @@ import { validate } from './common/config/config-validation';
     ObservabilityModule, // Adds correlation IDs, structured logging, and metrics
     PrismaModule,
     RedisModule, // Must be before ThrottlerConfigModule (provides RateLimitCacheService)
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60000, // 60 seconds
+        limit: 100, // 100 requests per minute
+      },
+    ]),
     ThrottlerConfigModule, // Comprehensive tiered rate limiting (needs RedisModule)
     AuthModule,
     UsersModule,
