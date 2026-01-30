@@ -24,9 +24,9 @@ interface Category {
 }
 
 interface PageProps {
-  params: {
+  params: Promise<{
     locale: string;
-  };
+  }>;
 }
 
 // Default category images for when API doesn't provide them
@@ -50,7 +50,8 @@ function getCategoryImage(category: Category): string {
 }
 
 // Generate metadata for the page
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params: paramsPromise }: PageProps): Promise<Metadata> {
+  const params = await paramsPromise;
   return generateCategoryMetadata({
     name: 'All Categories',
     description: 'Browse all product categories on Broxiva. Find electronics, fashion, home goods, and more from trusted vendors worldwide.',
@@ -89,7 +90,8 @@ async function getCategories(locale: string): Promise<Category[]> {
   }
 }
 
-export default async function CategoriesPage({ params }: PageProps) {
+export default async function CategoriesPage({ params: paramsPromise }: PageProps) {
+  const params = await paramsPromise;
   const categories = await getCategories(params.locale);
 
   const featuredCategories = categories.filter(c => c.isFeatured);

@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { seoConfig, SUPPORTED_LOCALES } from '@/lib/seo/config';
 import { Hreflang } from '@/components/seo';
-import { BroxivaOrganization, BroxivaWebSiteJsonLd } from '@/lib/seo/json-ld';
+import { BroxivaOrganizationJsonLd, BroxivaWebSiteJsonLd } from '@/lib/seo/json-ld';
 
 // Generate static params for all supported locales
 export async function generateStaticParams() {
@@ -20,12 +20,13 @@ function validateLocale(locale: string): boolean {
 
 interface LocaleLayoutProps {
   children: React.ReactNode;
-  params: {
+  params: Promise<{
     locale: string;
-  };
+  }>;
 }
 
-export async function generateMetadata({ params }: LocaleLayoutProps): Promise<Metadata> {
+export async function generateMetadata({ params: paramsPromise }: LocaleLayoutProps): Promise<Metadata> {
+  const params = await paramsPromise;
   const locale = params.locale;
   const localeConfig = SUPPORTED_LOCALES.find(
     (l) => l.code === locale || l.code.toLowerCase() === locale.toLowerCase()
@@ -49,7 +50,9 @@ export async function generateMetadata({ params }: LocaleLayoutProps): Promise<M
   };
 }
 
-export default function LocaleLayout({ children, params }: LocaleLayoutProps) {
+export default async function LocaleLayout({ children, params: paramsPromise }: LocaleLayoutProps) {
+  const params = await paramsPromise;
+
   // Validate locale
   if (!validateLocale(params.locale)) {
     notFound();
@@ -62,7 +65,7 @@ export default function LocaleLayout({ children, params }: LocaleLayoutProps) {
   return (
     <>
       {/* Global SEO structured data */}
-      <BroxivaOrganization baseUrl={seoConfig.siteUrl} />
+      <BroxivaOrganizationJsonLd baseUrl={seoConfig.siteUrl} />
       <BroxivaWebSiteJsonLd baseUrl={seoConfig.siteUrl} />
 
       {/* Locale-specific hreflang tags */}

@@ -49,16 +49,16 @@ interface Product {
 }
 
 interface PageProps {
-  params: {
+  params: Promise<{
     locale: string;
     slug: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     page?: string;
     sort?: string;
     minPrice?: string;
     maxPrice?: string;
-  };
+  }>;
 }
 
 // Fetch category from API
@@ -131,7 +131,8 @@ async function getCategoryProducts(
 }
 
 // Generate metadata
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params: paramsPromise }: PageProps): Promise<Metadata> {
+  const params = await paramsPromise;
   const category = await getCategory(params.slug, params.locale);
 
   if (!category) {
@@ -154,7 +155,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 }
 
-export default async function CategoryPage({ params, searchParams }: PageProps) {
+export default async function CategoryPage({ params: paramsPromise, searchParams: searchParamsPromise }: PageProps) {
+  const params = await paramsPromise;
+  const searchParams = await searchParamsPromise;
   const category = await getCategory(params.slug, params.locale);
 
   if (!category) {

@@ -83,6 +83,13 @@ export {
   type MetaTagsProps,
 } from './MetaTags';
 
+// JSON-LD structured data from lib
+export {
+  CollectionPageJsonLd,
+  BroxivaOrganizationJsonLd,
+  BroxivaWebSiteJsonLd,
+} from '@/lib/seo/json-ld';
+
 // Re-export from lib/seo for convenience
 export {
   seoConfig,

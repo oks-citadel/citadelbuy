@@ -53,7 +53,7 @@ export {
   CURRENCIES,
   COUNTRY_CURRENCY_MAP,
   getCurrencyForCountry,
-  getCurrency,
+  getCurrency as getCurrencyInfo,
   formatCurrency,
   convertCurrency,
   getAllCurrencies,

@@ -30,10 +30,8 @@ const nextConfig = {
 
   // TypeScript configuration for builds
   typescript: {
-    // Allow production builds to complete even with type errors
-    // This prevents deployment failures due to type issues
-    // Run `pnpm type-check` locally to verify types before committing
-    ignoreBuildErrors: true,
+    // Type errors are now fixed - enforce type checking during builds
+    ignoreBuildErrors: false,
   },
 
   // Enable compression for better performance

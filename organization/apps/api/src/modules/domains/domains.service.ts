@@ -25,7 +25,7 @@ import {
 /**
  * Domain status enum matching Prisma schema
  */
-enum DomainStatus {
+export enum DomainStatus {
   PENDING = 'PENDING',
   VERIFYING = 'VERIFYING',
   VERIFIED = 'VERIFIED',
@@ -37,7 +37,7 @@ enum DomainStatus {
 /**
  * SSL status enum matching Prisma schema
  */
-enum SslStatus {
+export enum SslStatus {
   PENDING = 'PENDING',
   ACTIVE = 'ACTIVE',
   EXPIRED = 'EXPIRED',
@@ -48,7 +48,7 @@ enum SslStatus {
 /**
  * Tenant domain entity interface
  */
-interface TenantDomain {
+export interface TenantDomain {
   id: string;
   host: string;
   tenantId: string;

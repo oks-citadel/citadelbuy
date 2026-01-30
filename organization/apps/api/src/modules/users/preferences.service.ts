@@ -84,12 +84,12 @@ export class PreferencesService {
         userId,
         locale: merged.language,
         timezone: merged.timezone,
-        preferences: merged as unknown as Record<string, unknown>,
+        preferences: JSON.parse(JSON.stringify(merged)),
       },
       update: {
         locale: merged.language,
         timezone: merged.timezone,
-        preferences: merged as unknown as Record<string, unknown>,
+        preferences: JSON.parse(JSON.stringify(merged)),
       },
     });
 

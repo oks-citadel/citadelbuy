@@ -75,13 +75,10 @@ export function generatePageMetadata(params: PageMetadataParams): Metadata {
   const ogImage = image || `${seoConfig.siteUrl}${seoConfig.defaults.ogImage}`;
 
   // Build alternates for hreflang
-  const alternates: Metadata['alternates'] = {
-    canonical: canonicalUrl,
-    languages: {},
-  };
+  const languages: Record<string, string> = {};
 
   // Add x-default
-  alternates.languages!['x-default'] = buildLocalizedUrl(path);
+  languages['x-default'] = buildLocalizedUrl(path);
 
   // Add all supported locales
   const localesToInclude = alternateLocales.length > 0
@@ -91,9 +88,14 @@ export function generatePageMetadata(params: PageMetadataParams): Metadata {
   for (const loc of localesToInclude) {
     const config = getLocaleConfig(loc);
     if (config) {
-      alternates.languages![config.hreflang] = buildLocalizedUrl(path, loc);
+      languages[config.hreflang] = buildLocalizedUrl(path, loc);
     }
   }
+
+  const alternates: Metadata['alternates'] = {
+    canonical: canonicalUrl,
+    languages: languages as Metadata['alternates'] extends { languages?: infer L } ? L : never,
+  };
 
   const metadata: Metadata = {
     title: {
@@ -186,15 +188,15 @@ export function generateProductMetadata(params: ProductMetadataParams): Metadata
   };
 
   // Build alternates
+  const prodLanguages: Record<string, string> = {};
+  prodLanguages['x-default'] = buildLocalizedUrl(path);
+  for (const loc of seoConfig.supportedLocales) {
+    prodLanguages[loc.hreflang] = buildLocalizedUrl(path, loc.code);
+  }
   const alternates: Metadata['alternates'] = {
     canonical: canonicalUrl,
-    languages: {},
+    languages: prodLanguages as Metadata['alternates'] extends { languages?: infer L } ? L : never,
   };
-
-  alternates.languages!['x-default'] = buildLocalizedUrl(path);
-  for (const loc of seoConfig.supportedLocales) {
-    alternates.languages![loc.hreflang] = buildLocalizedUrl(path, loc.code);
-  }
 
   const metadata: Metadata = {
     title: brand ? `${name} by ${brand}` : name,
@@ -263,15 +265,15 @@ export function generateCategoryMetadata(params: CategoryMetadataParams): Metada
     ? `${description} Browse ${productCount.toLocaleString()} products in ${name}.`
     : description;
 
+  const catLanguages: Record<string, string> = {};
+  catLanguages['x-default'] = buildLocalizedUrl(path);
+  for (const loc of seoConfig.supportedLocales) {
+    catLanguages[loc.hreflang] = buildLocalizedUrl(path, loc.code);
+  }
   const alternates: Metadata['alternates'] = {
     canonical: canonicalUrl,
-    languages: {},
+    languages: catLanguages as Metadata['alternates'] extends { languages?: infer L } ? L : never,
   };
-
-  alternates.languages!['x-default'] = buildLocalizedUrl(path);
-  for (const loc of seoConfig.supportedLocales) {
-    alternates.languages![loc.hreflang] = buildLocalizedUrl(path, loc.code);
-  }
 
   return {
     title: fullTitle,

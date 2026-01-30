@@ -145,14 +145,15 @@ const COUNTRIES: Record<string, {
 };
 
 interface PageProps {
-  params: {
+  params: Promise<{
     locale: string;
     country: string;
-  };
+  }>;
 }
 
 // Generate metadata for the page
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params: paramsPromise }: PageProps): Promise<Metadata> {
+  const params = await paramsPromise;
   const countryData = COUNTRIES[params.country.toLowerCase()];
 
   if (!countryData) {
@@ -182,7 +183,8 @@ export async function generateStaticParams() {
   );
 }
 
-export default async function CountryLandingPage({ params }: PageProps) {
+export default async function CountryLandingPage({ params: paramsPromise }: PageProps) {
+  const params = await paramsPromise;
   const countryData = COUNTRIES[params.country.toLowerCase()];
 
   if (!countryData) {

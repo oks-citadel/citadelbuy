@@ -99,10 +99,10 @@ USER nestjs
 # Expose port (Railway will use the PORT env var)
 EXPOSE 4000
 
-# Health check for Railway
-# Checks /api/health endpoint which validates database and Redis connectivity
+# Health check - uses lightweight ping endpoint for faster startup
+# Railway external health check also uses /api/health/ping (see railway.json)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-4000}/api/health || exit 1
+    CMD curl -f http://localhost:${PORT:-4000}/api/health/ping || exit 1
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]

@@ -165,10 +165,9 @@ export class VisibilityScoreService {
           images: true,
           price: true,
           categoryId: true,
-          specifications: true,
           sku: true,
-          brand: true,
           weight: true,
+          tags: true,
         },
       });
 
@@ -207,15 +206,12 @@ export class VisibilityScoreService {
         // SKU (5 points)
         if (product.sku) productScore += 5;
 
-        // Brand (5 points)
-        if (product.brand) productScore += 5;
-
-        // Specifications (10 points)
-        const specs = product.specifications as Record<string, any> | null;
-        if (specs && Object.keys(specs).length >= 3) {
-          productScore += 10;
-        } else if (specs && Object.keys(specs).length >= 1) {
-          productScore += 5;
+        // Tags (15 points) - replaces brand + specifications scoring
+        const tags = Array.isArray(product.tags) ? product.tags : [];
+        if (tags.length >= 3) {
+          productScore += 15;
+        } else if (tags.length >= 1) {
+          productScore += 8;
         }
 
         // Weight (5 points)
@@ -297,13 +293,13 @@ export class VisibilityScoreService {
       // Attempt to get from support tickets
       const tickets = await this.prisma.supportTicket?.findMany({
         where: {
-          assignedTo: vendorId,
+          assignedToId: vendorId,
           createdAt: { gte: thirtyDaysAgo },
-          responses: { some: {} },
+          messages: { some: {} },
         },
         select: {
           createdAt: true,
-          responses: {
+          messages: {
             select: { createdAt: true },
             orderBy: { createdAt: 'asc' },
             take: 1,
@@ -321,8 +317,8 @@ export class VisibilityScoreService {
       let validResponses = 0;
 
       for (const ticket of tickets) {
-        if (ticket.responses.length > 0) {
-          const responseTime = new Date(ticket.responses[0].createdAt).getTime() -
+        if (ticket.messages.length > 0) {
+          const responseTime = new Date(ticket.messages[0].createdAt).getTime() -
             new Date(ticket.createdAt).getTime();
           totalResponseTime += responseTime;
           validResponses++;
@@ -423,7 +419,7 @@ export class VisibilityScoreService {
           order: {
             createdAt: { gte: ninetyDaysAgo },
             status: { in: ['DELIVERED', 'COMPLETED'] },
-            deliveredAt: { not: null },
+            actualDeliveryDate: { not: null },
             // Would need actual delivery window comparison
           },
         },
@@ -459,10 +455,10 @@ export class VisibilityScoreService {
       if (totalOrders === 0) return 80; // No orders - neutral score
 
       // Get returns
-      const returns = await this.prisma.return?.count({
+      const returns = await this.prisma.returnRequest?.count({
         where: {
-          orderItem: {
-            product: { vendorId },
+          order: {
+            items: { some: { product: { vendorId } } },
           },
           createdAt: { gte: ninetyDaysAgo },
           status: { in: ['APPROVED', 'COMPLETED'] },
@@ -528,7 +524,7 @@ export class VisibilityScoreService {
    */
   private async storeScoreHistory(vendorId: string, result: VisibilityScoreResult): Promise<void> {
     try {
-      await this.prisma.vendorMetrics?.create({
+      await (this.prisma as any).vendorMetrics?.create({
         data: {
           vendorId,
           metricType: 'VISIBILITY_SCORE',
@@ -560,7 +556,7 @@ export class VisibilityScoreService {
     startDate.setDate(startDate.getDate() - days);
 
     try {
-      const history = await this.prisma.vendorMetrics?.findMany({
+      const history = await (this.prisma as any).vendorMetrics?.findMany({
         where: {
           vendorId,
           metricType: 'VISIBILITY_SCORE',
@@ -590,13 +586,14 @@ export class VisibilityScoreService {
   async calculateAllVendorScores(): Promise<void> {
     this.logger.log('Starting bulk visibility score calculation');
 
-    const vendors = await this.prisma.organization.findMany({
-      where: {
-        type: 'VENDOR',
-        status: 'ACTIVE',
-      },
-      select: { id: true },
+    // Find organizations that have products (i.e., vendors)
+    const vendorIds = await this.prisma.product.findMany({
+      where: { isActive: true },
+      select: { vendorId: true },
+      distinct: ['vendorId'],
     });
+
+    const vendors = vendorIds.map(v => ({ id: v.vendorId }));
 
     let processed = 0;
     for (const vendor of vendors) {
@@ -633,7 +630,7 @@ export class VisibilityScoreService {
     tier: string;
   }>> {
     try {
-      const topVendors = await this.prisma.vendorMetrics?.findMany({
+      const topVendors = await (this.prisma as any).vendorMetrics?.findMany({
         where: {
           metricType: 'VISIBILITY_SCORE',
         },

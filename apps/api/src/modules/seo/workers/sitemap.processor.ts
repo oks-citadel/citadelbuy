@@ -284,8 +284,7 @@ export class SitemapProcessor {
     const products = await this.prisma.product.findMany({
       where: {
         tenantId,
-        status: 'ACTIVE',
-        deletedAt: null,
+        isActive: true,
       },
       select: {
         id: true,
@@ -319,8 +318,7 @@ export class SitemapProcessor {
   ): Promise<SitemapUrl[]> {
     const categories = await this.prisma.category.findMany({
       where: {
-        tenantId,
-        isActive: true,
+        status: 'ACTIVE',
       },
       select: {
         id: true,

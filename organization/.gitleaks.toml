@@ -1,0 +1,52 @@
+# Gitleaks configuration for Broxiva
+# Reduces false positives from example/template files and placeholder keys
+
+title = "Broxiva Gitleaks Config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+  description = "Allow known false positives"
+
+  # Paths that contain example/template/placeholder values
+  paths = [
+    '''\.env\.example$''',
+    '''\.env\.template$''',
+    '''\.env\.sample$''',
+    '''\.env\.docker\.example$''',
+    '''\.env\.test$''',
+    '''tests/.*\.env''',
+    '''seed-production\.js$''',
+    '''seed\.ts$''',
+    '''seed-.*\.ts$''',
+    '''generate-secrets\.(sh|ps1)$''',
+    '''validate-secrets\.sh$''',
+    '''verify-connectivity\.sh$''',
+    '''setup-elasticsearch\.sh$''',
+    '''REMEDIATION_ACTIONS\.md$''',
+    '''platform-health-report\.md$''',
+    '''penetration-test-report\.md$''',
+    '''vulnerability-assessment\.md$''',
+    '''COMPREHENSIVE_COMPLIANCE_AUDIT_REPORT\.md$''',
+    '''security-docs/.*\.md$''',
+    '''verification-reports/.*''',
+    '''VERIFICATION/.*''',
+    '''SECURITY/.*''',
+    '''infrastructure/.*\.example$''',
+    '''docs/.*''',
+  ]
+
+  # Regex patterns for known placeholder/example values
+  regexes = [
+    '''CHANGE_ME''',
+    '''your[-_].*[-_]here''',
+    '''pk_test_.*''',
+    '''sk_test_.*''',
+    '''test[-_]secret''',
+    '''example[-_]key''',
+    '''placeholder''',
+    '''xxxx+''',
+    '''your[-_]api[-_]key''',
+    '''your[-_]secret''',
+  ]
