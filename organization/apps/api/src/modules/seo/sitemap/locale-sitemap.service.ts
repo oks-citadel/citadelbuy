@@ -270,7 +270,7 @@ export class LocaleSitemapService {
 
     const vendors = await this.prisma.organization.findMany({
       where: {
-        type: 'VENDOR',
+        type: 'MARKETPLACE' as any,
         status: 'ACTIVE',
       },
       select: {

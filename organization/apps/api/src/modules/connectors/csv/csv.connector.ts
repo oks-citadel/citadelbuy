@@ -503,28 +503,28 @@ export class CsvConnector implements IConnector {
     }
 
     const fieldMapping: CsvFieldMapping = {
-      externalId: { column: mapping.externalId, type: 'string', required: true },
-      name: { column: mapping.name, type: 'string', required: true },
-      price: { column: mapping.price, type: 'number', required: true },
+      externalId: { column: mapping.externalId, targetField: 'externalId', type: 'string', required: true },
+      name: { column: mapping.name, targetField: 'name', type: 'string', required: true },
+      price: { column: mapping.price, targetField: 'price', type: 'number', required: true },
     };
 
     if (mapping.sku) {
-      fieldMapping.sku = { column: mapping.sku, type: 'string' };
+      fieldMapping.sku = { column: mapping.sku, targetField: 'sku', type: 'string' };
     }
     if (mapping.description) {
-      fieldMapping.description = { column: mapping.description, type: 'string' };
+      fieldMapping.description = { column: mapping.description, targetField: 'description', type: 'string' };
     }
     if (mapping.currency) {
-      fieldMapping.currency = { column: mapping.currency, type: 'string' };
+      fieldMapping.currency = { column: mapping.currency, targetField: 'currency', type: 'string' };
     }
     if (mapping.images) {
-      fieldMapping.images = { column: mapping.images, type: 'array', arrayDelimiter: ',' };
+      fieldMapping.images = { column: mapping.images, targetField: 'images', type: 'array', arrayDelimiter: ',' };
     }
     if (mapping.categories) {
-      fieldMapping.categories = { column: mapping.categories, type: 'array', arrayDelimiter: ',' };
+      fieldMapping.categories = { column: mapping.categories, targetField: 'categories', type: 'array', arrayDelimiter: ',' };
     }
     if (mapping.quantity) {
-      fieldMapping.quantity = { column: mapping.quantity, type: 'number' };
+      fieldMapping.quantity = { column: mapping.quantity, targetField: 'quantity', type: 'number' };
     }
 
     return fieldMapping;
@@ -591,7 +591,7 @@ export class CsvConnector implements IConnector {
 
     if (data.status) {
       const statusMap: Record<string, NormalizedProduct['status']> =
-        this.config?.settings?.fieldMapping?.statusMapping || {};
+        (this.config?.settings?.fieldMapping as any)?.statusMapping || {};
       const status = statusMap[String(data.status)] || this.mapGenericStatus(String(data.status));
       builder.setStatus(status);
     } else {

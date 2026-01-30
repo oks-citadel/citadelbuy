@@ -69,13 +69,11 @@ export class DomainVerificationProcessor {
     const pendingDomains = await this.prisma.tenantDomain.findMany({
       where: {
         status: 'PENDING',
-        deletedAt: null,
       },
       select: {
         id: true,
         tenantId: true,
-        domain: true,
-        verificationMethod: true,
+        host: true,
         verificationToken: true,
         cnameTarget: true,
       },
@@ -87,7 +85,7 @@ export class DomainVerificationProcessor {
       const recentCheck = await this.redis.get<string>(cacheKey);
 
       if (recentCheck) {
-        this.logger.debug(`Skipping ${domain.domain} - recently checked`);
+        this.logger.debug(`Skipping ${domain.host} - recently checked`);
         continue;
       }
 
@@ -97,8 +95,8 @@ export class DomainVerificationProcessor {
           jobId: `verify:${domain.id}:${Date.now()}`,
           domainId: domain.id,
           tenantId: domain.tenantId,
-          domain: domain.domain,
-          method: domain.verificationMethod as VerificationMethod || VerificationMethod.DNS_TXT,
+          domain: domain.host,
+          method: VerificationMethod.DNS_TXT,
           verificationToken: domain.verificationToken,
           cnameTarget: domain.cnameTarget,
           triggeredBy: 'scheduler',
@@ -273,7 +271,7 @@ export class DomainVerificationProcessor {
       const result = await this.handleVerifySingle({
         ...job,
         data: domains[i],
-      } as Job<DomainVerificationJobData>);
+      } as unknown as Job<DomainVerificationJobData>);
 
       results.push(result);
       await job.progress(((i + 1) / domains.length) * 100);
@@ -301,7 +299,6 @@ export class DomainVerificationProcessor {
   async handleVerifyPending(job: Job<{ tenantId?: string }>): Promise<{ checked: number; verified: number }> {
     const where: any = {
       status: 'PENDING',
-      deletedAt: null,
     };
 
     if (job.data.tenantId) {
@@ -313,8 +310,7 @@ export class DomainVerificationProcessor {
       select: {
         id: true,
         tenantId: true,
-        domain: true,
-        verificationMethod: true,
+        host: true,
         verificationToken: true,
         cnameTarget: true,
       },
@@ -328,13 +324,13 @@ export class DomainVerificationProcessor {
           jobId: `verify:${domain.id}:${Date.now()}`,
           domainId: domain.id,
           tenantId: domain.tenantId,
-          domain: domain.domain,
-          method: domain.verificationMethod as VerificationMethod || VerificationMethod.DNS_TXT,
+          domain: domain.host,
+          method: VerificationMethod.DNS_TXT,
           verificationToken: domain.verificationToken,
           cnameTarget: domain.cnameTarget,
           triggeredBy: 'batch',
         },
-      } as Job<DomainVerificationJobData>);
+      } as unknown as Job<DomainVerificationJobData>);
 
       if (result.verified) {
         verified++;
@@ -552,7 +548,7 @@ export class DomainVerificationProcessor {
     await this.prisma.tenantDomain.update({
       where: { id: domainId },
       data: {
-        status,
+        status: status as any,
         verifiedAt,
         updatedAt: new Date(),
       },
@@ -570,7 +566,7 @@ export class DomainVerificationProcessor {
   ): Promise<boolean> {
     try {
       // Get tenant admin email
-      const tenant = await this.prisma.tenant.findUnique({
+      const tenant = await (this.prisma as any).tenant.findUnique({
         where: { id: tenantId },
         select: {
           adminEmail: true,

@@ -422,7 +422,7 @@ export class DomainsService {
         details: {
           txtVerified: true,
           cnameVerified: true,
-          sslStatus: domain.sslStatus || SslStatus.ACTIVE,
+          sslStatus: (domain.sslStatus as SslStatus) || SslStatus.ACTIVE,
         },
         errors: [],
       };
@@ -436,7 +436,7 @@ export class DomainsService {
         details: {
           txtVerified: true,
           cnameVerified: true,
-          sslStatus: domain.sslStatus || undefined,
+          sslStatus: (domain.sslStatus as SslStatus) || undefined,
         },
         errors: [],
       };
@@ -449,7 +449,7 @@ export class DomainsService {
     );
 
     let newStatus = domain.status as DomainStatus;
-    let sslStatus = domain.sslStatus;
+    let sslStatus: SslStatus = domain.sslStatus as SslStatus;
 
     if (verificationResult.success) {
       newStatus = DomainStatus.VERIFIED;
@@ -495,7 +495,7 @@ export class DomainsService {
       details: {
         txtVerified: verificationResult.txtRecordFound,
         cnameVerified: verificationResult.cnameRecordFound,
-        sslStatus: sslStatus || undefined,
+        sslStatus: (sslStatus as SslStatus) || undefined,
       },
       errors: verificationResult.errors,
       dnsInstructions,
@@ -578,7 +578,7 @@ export class DomainsService {
     };
 
     // Cache the resolution
-    await this.cacheService.set(cacheKey, resolution, this.cacheTtl);
+    await this.cacheService.set(cacheKey, resolution, { ttl: this.cacheTtl });
 
     return resolution;
   }
@@ -606,6 +606,6 @@ export class DomainsService {
   private async invalidateDomainCache(host: string): Promise<void> {
     const normalizedHost = host.toLowerCase().trim();
     const cacheKey = `tenant:domain:${normalizedHost}`;
-    await this.cacheService.del(cacheKey);
+    await this.cacheService.delete(cacheKey);
   }
 }

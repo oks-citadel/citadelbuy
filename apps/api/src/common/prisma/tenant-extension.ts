@@ -93,7 +93,7 @@ export function createTenantExtension(getTenantId: TenantContextGetter) {
     name: 'tenant-scoping',
     query: {
       $allModels: {
-        async $allOperations({ model, operation, args, query }) {
+        async $allOperations({ model, operation, args, query }: { model: string; operation: string; args: any; query: (args: any) => Promise<any> }) {
           const tenantId = getTenantId();
 
           // Skip tenant scoping if no tenant context

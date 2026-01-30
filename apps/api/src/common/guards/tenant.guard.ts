@@ -28,6 +28,9 @@ export interface TenantInfo {
 export interface RequestWithTenant {
   tenant?: TenantInfo;
   tenantId?: string;
+  method?: string;
+  url?: string;
+  path?: string;
   user?: {
     id: string;
     tenantId?: string;
@@ -185,7 +188,7 @@ export class TenantGuard implements CanActivate {
     try {
       // Use tenant context service for validation
       return await this.tenantContextService.validateTenantAccess(tenantId);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Tenant validation error for "${tenantId}": ${error.message}`);
       return false;
     }
@@ -198,7 +201,7 @@ export class TenantGuard implements CanActivate {
     try {
       const tenant = await this.tenantContextService.getTenantInfo(tenantId);
       return tenant || { id: tenantId };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Error fetching tenant info for "${tenantId}": ${error.message}`);
       return { id: tenantId };
     }
@@ -256,7 +259,7 @@ export class OptionalTenantGuard implements CanActivate {
           request.tenant = await this.tenantContextService.getTenantInfo(tenantId) || { id: tenantId };
           this.tenantContextService.setTenantId(tenantId);
         }
-      } catch (error) {
+      } catch (error: any) {
         this.logger.warn(`Optional tenant validation failed: ${error.message}`);
       }
     }

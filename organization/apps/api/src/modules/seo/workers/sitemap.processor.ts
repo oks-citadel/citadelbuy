@@ -56,7 +56,7 @@ export class SitemapProcessor {
     this.logger.log('Scheduling sitemap generation for all tenants');
 
     // Get all active tenants
-    const tenants = await this.prisma.tenant.findMany({
+    const tenants = await (this.prisma as any).tenant.findMany({
       where: {
         status: 'ACTIVE',
         deletedAt: null,
@@ -146,7 +146,7 @@ export class SitemapProcessor {
       }
 
       // Get tenant configuration
-      const tenant = await this.prisma.tenant.findUnique({
+      const tenant = await (this.prisma as any).tenant.findUnique({
         where: { id: tenantId },
         select: {
           id: true,

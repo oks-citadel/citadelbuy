@@ -34,7 +34,7 @@ export const TENANT_SCOPED_KEY = 'tenant_scoped';
  * ```
  */
 export const CurrentTenant = createParamDecorator(
-  (data: keyof TenantInfo | undefined, ctx: ExecutionContext): TenantInfo | string | undefined => {
+  (data: keyof TenantInfo | undefined, ctx: ExecutionContext): TenantInfo | TenantInfo[keyof TenantInfo] | undefined => {
     const request = ctx.switchToHttp().getRequest<RequestWithTenant>();
     const tenant = request.tenant;
 

@@ -187,10 +187,10 @@ export class ProductsV1Controller {
     return {
       products: enhancedProducts,
       pagination: {
-        total: result.total,
+        total: result.pagination.total,
         page: pageNum,
         limit: limitNum,
-        totalPages: Math.ceil(result.total / limitNum),
+        totalPages: Math.ceil(result.pagination.total / limitNum),
       },
       meta: {
         locale: locale || 'en',

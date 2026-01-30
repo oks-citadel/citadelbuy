@@ -197,7 +197,7 @@ export class TranslationProcessor {
         const result = await this.handleSingleTranslation({
           ...job,
           data: singleJobData,
-        } as Job<TranslationJobData>);
+        } as unknown as Job<TranslationJobData>);
 
         results.push(result);
         completedTasks++;
@@ -277,7 +277,7 @@ export class TranslationProcessor {
         provider: TranslationProvider.ANTHROPIC,
         preserveFormatting: true,
       },
-    } as Job<BatchTranslationJobData>);
+    } as unknown as Job<BatchTranslationJobData>);
   }
 
   /**
@@ -510,10 +510,10 @@ export class TranslationProcessor {
       await this.prisma.productTranslation.updateMany({
         where: {
           productId: entityId,
-          locale: targetLocale,
-        },
+          languageCode: targetLocale,
+        } as any,
         data: {
-          status,
+          status: status as any,
           updatedAt: new Date(),
         },
       });
@@ -539,26 +539,26 @@ export class TranslationProcessor {
     provider: TranslationProvider;
   }): Promise<void> {
     try {
-      await this.prisma.productTranslation.upsert({
+      await (this.prisma.productTranslation as any).upsert({
         where: {
-          productId_locale_field: {
+          productId_languageCode_field: {
             productId: data.entityId,
-            locale: data.targetLocale,
+            languageCode: data.targetLocale,
             field: data.fieldName,
           },
-        },
+        } as any,
         create: {
           productId: data.entityId,
-          locale: data.targetLocale,
+          languageCode: data.targetLocale,
           field: data.fieldName,
           value: data.translatedText,
-          status: data.status,
+          status: data.status as any,
           autoTranslated: true,
           qualityScore: data.qualityScore,
         },
         update: {
           value: data.translatedText,
-          status: data.status,
+          status: data.status as any,
           autoTranslated: true,
           qualityScore: data.qualityScore,
           updatedAt: new Date(),

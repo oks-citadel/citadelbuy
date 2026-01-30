@@ -6,6 +6,7 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common';
+// @ts-ignore
 import * as jp from 'jsonpath';
 import {
   NormalizedProduct,

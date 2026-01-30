@@ -233,14 +233,14 @@ export class SyncService {
     const existingMappings = await this.getExistingProductMappings(job.connectorId);
     const processedExternalIds = new Set<string>();
 
-    while (hasMore && job.status !== SyncStatusEnum.CANCELLED) {
+    while (hasMore && (job.status as string) !== SyncStatusEnum.CANCELLED) {
       job.phase = `Fetching page ${page}`;
 
       const result = await connector.fetchProducts({ cursor, limit: 100 });
       job.totalItems += result.data.length;
 
       for (const product of result.data) {
-        if (job.status === SyncStatusEnum.CANCELLED) break;
+        if ((job.status as string) === SyncStatusEnum.CANCELLED) break;
 
         await this.processProduct(job, product, existingMappings, dryRun);
         processedExternalIds.add(product.externalId);
@@ -276,14 +276,14 @@ export class SyncService {
 
     const existingMappings = await this.getExistingProductMappings(job.connectorId);
 
-    while (hasMore && job.status !== SyncStatusEnum.CANCELLED) {
+    while (hasMore && (job.status as string) !== SyncStatusEnum.CANCELLED) {
       job.phase = `Fetching changes (page ${page})`;
 
       const result = await connector.fetchProducts({ cursor, limit: 100, since });
       job.totalItems += result.data.length;
 
       for (const product of result.data) {
-        if (job.status === SyncStatusEnum.CANCELLED) break;
+        if ((job.status as string) === SyncStatusEnum.CANCELLED) break;
 
         await this.processProduct(job, product, existingMappings, dryRun);
       }
@@ -307,7 +307,7 @@ export class SyncService {
     const existingMappings = await this.getExistingProductMappings(job.connectorId);
 
     for (const externalId of externalIds) {
-      if (job.status === SyncStatusEnum.CANCELLED) break;
+      if ((job.status as string) === SyncStatusEnum.CANCELLED) break;
 
       job.phase = `Fetching product ${externalId}`;
 

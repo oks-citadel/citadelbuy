@@ -202,7 +202,7 @@ export class TenantContextService {
       });
 
       // Check if tenant is active
-      return organization.status !== 'SUSPENDED' && organization.status !== 'DELETED';
+      return organization.status !== 'SUSPENDED' && (organization.status as string) !== 'DELETED';
     } catch (error) {
       this.logger.error(`Error validating tenant ${tenantId}: ${error.message}`);
       return false;

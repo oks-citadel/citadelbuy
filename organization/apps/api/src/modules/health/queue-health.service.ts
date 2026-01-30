@@ -222,7 +222,7 @@ export class QueueHealthIndicator extends HealthIndicator {
           completed: counts.completed || 0,
           failed: counts.failed || 0,
           delayed: counts.delayed || 0,
-          paused: counts.paused || 0,
+          paused: (counts as any).paused || 0,
         },
         workers: workers.length,
         healthy,

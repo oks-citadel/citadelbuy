@@ -33,7 +33,7 @@ import {
   ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ConnectorsService } from './connectors.service';
 import { CsvConnector } from './csv/csv.connector';
 import { ConnectorFactory } from './base/connector.factory';

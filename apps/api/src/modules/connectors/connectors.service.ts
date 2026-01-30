@@ -81,10 +81,10 @@ export class ConnectorsService {
         type: dto.type,
         name: dto.name,
         isActive: dto.isActive ?? true,
-        config: {
+        config: JSON.parse(JSON.stringify({
           credentials: dto.credentials,
           settings: dto.settings || this.getDefaultSettings(dto.type),
-        },
+        })),
       },
     });
 

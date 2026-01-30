@@ -7,6 +7,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { Readable } from 'stream';
+// @ts-ignore
 import * as csv from 'csv-parser';
 import {
   CsvImportOptions,
@@ -219,7 +220,7 @@ export class CsvParser {
     for (const field of mappedFields) {
       const mapping = fieldMapping[field as keyof CsvFieldMapping];
       if (mapping && typeof mapping === 'object' && 'column' in mapping) {
-        const extractResult = this.extractFieldValue(row, mapping, field, options, headers);
+        const extractResult = this.extractFieldValue(row, mapping as CsvColumnDefinition, field, options, headers);
 
         if (extractResult.error) {
           result.errors!.push({ column: field, message: extractResult.error });

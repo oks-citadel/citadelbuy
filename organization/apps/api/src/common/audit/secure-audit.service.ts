@@ -146,7 +146,7 @@ export class SecureAuditService implements OnModuleInit {
 
   async onModuleInit() {
     // Initialize hash chain from last audit entry
-    const lastEntry = await this.prisma.auditLog.findFirst({
+    const lastEntry = await (this.prisma as any).auditLog.findFirst({
       orderBy: { createdAt: 'desc' },
       select: { integrityHash: true },
     });
@@ -179,7 +179,7 @@ export class SecureAuditService implements OnModuleInit {
     const integrityHash = this.createIntegrityHash(this.lastAuditHash, contentHash);
 
     // Store audit entry
-    const auditEntry = await this.prisma.auditLog.create({
+    const auditEntry = await (this.prisma as any).auditLog.create({
       data: {
         id: crypto.randomUUID(),
         eventType: event.eventType,
@@ -412,13 +412,13 @@ export class SecureAuditService implements OnModuleInit {
     }
 
     const [entries, total] = await Promise.all([
-      this.prisma.auditLog.findMany({
+      (this.prisma as any).auditLog.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      this.prisma.auditLog.count({ where }),
+      (this.prisma as any).auditLog.count({ where }),
     ]);
 
     return {
@@ -447,7 +447,7 @@ export class SecureAuditService implements OnModuleInit {
       if (endDate) where.createdAt.lte = endDate;
     }
 
-    const entries = await this.prisma.auditLog.findMany({
+    const entries = await (this.prisma as any).auditLog.findMany({
       where,
       orderBy: { createdAt: 'asc' },
       select: {

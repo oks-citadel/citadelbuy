@@ -333,12 +333,12 @@ export class TenantRateLimiterGuard implements CanActivate {
       const key = `${this.keyPrefix}${organizationId}:${operation}`;
       const { limit, windowMs } = this.getLimitForOperation(operation, limits);
 
-      const result = await this.rateLimitCacheService.getCurrentCount(key, windowMs);
+      const result = await this.rateLimitCacheService.getRateLimitStatus(key, { windowMs, maxRequests: limit });
 
       usage[operation] = {
-        used: result.count,
+        used: result.totalRequests,
         limit,
-        remaining: Math.max(0, limit - result.count),
+        remaining: Math.max(0, limit - result.totalRequests),
       };
     }
 

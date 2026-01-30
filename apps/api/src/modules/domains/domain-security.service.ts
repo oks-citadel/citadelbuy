@@ -74,7 +74,7 @@ export class DomainSecurityService {
     const normalizedDomain = this.normalizeDomain(domain);
 
     // Check if domain is already registered
-    const existingDomain = await this.prisma.customDomain.findFirst({
+    const existingDomain = await (this.prisma as any).customDomain.findFirst({
       where: {
         domain: normalizedDomain,
         status: { in: ['ACTIVE', 'PENDING', 'VERIFYING'] },
@@ -102,6 +102,7 @@ export class DomainSecurityService {
       await this.logDomainSecurityEvent({
         type: 'DOMAIN_HIJACK_ATTEMPT',
         domain: normalizedDomain,
+        organizationId: requestingOrganizationId,
         requestingOrganizationId,
         existingOrganizationId: existingDomain.organizationId,
       });
@@ -274,7 +275,7 @@ export class DomainSecurityService {
     const normalizedDomain = this.normalizeDomain(domain);
 
     // Verify the domain belongs to the source organization
-    const existingDomain = await this.prisma.customDomain.findFirst({
+    const existingDomain = await (this.prisma as any).customDomain.findFirst({
       where: {
         domain: normalizedDomain,
         organizationId: fromOrganizationId,
@@ -287,7 +288,7 @@ export class DomainSecurityService {
     }
 
     // Check for existing pending transfers
-    const pendingTransfer = await this.prisma.domainTransfer.findFirst({
+    const pendingTransfer = await (this.prisma as any).domainTransfer.findFirst({
       where: {
         domainId: existingDomain.id,
         status: 'PENDING',
@@ -302,7 +303,7 @@ export class DomainSecurityService {
     const transferId = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72 hours
 
-    await this.prisma.domainTransfer.create({
+    await (this.prisma as any).domainTransfer.create({
       data: {
         id: transferId,
         domainId: existingDomain.id,
@@ -338,7 +339,7 @@ export class DomainSecurityService {
     toOrganizationId: string,
     confirmedBy: string,
   ): Promise<void> {
-    const transfer = await this.prisma.domainTransfer.findUnique({
+    const transfer = await (this.prisma as any).domainTransfer.findUnique({
       where: { id: transferId },
       include: { domain: true },
     });
@@ -356,7 +357,7 @@ export class DomainSecurityService {
     }
 
     if (transfer.expiresAt < new Date()) {
-      await this.prisma.domainTransfer.update({
+      await (this.prisma as any).domainTransfer.update({
         where: { id: transferId },
         data: { status: 'EXPIRED' },
       });
@@ -377,14 +378,14 @@ export class DomainSecurityService {
 
     // Complete the transfer
     await this.prisma.$transaction([
-      this.prisma.customDomain.update({
+      (this.prisma as any).customDomain.update({
         where: { id: transfer.domainId },
         data: {
           organizationId: toOrganizationId,
           verifiedAt: new Date(),
         },
       }),
-      this.prisma.domainTransfer.update({
+      (this.prisma as any).domainTransfer.update({
         where: { id: transferId },
         data: {
           status: 'COMPLETED',
@@ -505,11 +506,11 @@ export class DomainSecurityService {
         data: {
           id: crypto.randomUUID(),
           action: event.type,
-          resourceType: 'DOMAIN',
-          resourceId: event.domain,
-          organizationId: event.organizationId,
+          resource: `DOMAIN:${event.domain}`,
+          activityType: 'SECURITY' as any,
           metadata: {
             traceId,
+            organizationId: event.organizationId,
             ...event.details,
             requestingOrganizationId: event.requestingOrganizationId,
             existingOrganizationId: event.existingOrganizationId,
@@ -558,7 +559,7 @@ export class DomainSecurityService {
     const normalizedDomain = this.normalizeDomain(domain);
 
     const [domainRecord, cooldownStatus, recentEvents] = await Promise.all([
-      this.prisma.customDomain.findFirst({
+      (this.prisma as any).customDomain.findFirst({
         where: {
           domain: normalizedDomain,
           organizationId,
@@ -571,9 +572,7 @@ export class DomainSecurityService {
       this.isInCooldown(normalizedDomain),
       this.prisma.auditLog.findMany({
         where: {
-          resourceType: 'DOMAIN',
-          resourceId: normalizedDomain,
-          organizationId,
+          resource: `DOMAIN:${normalizedDomain}`,
           createdAt: {
             gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
           },
