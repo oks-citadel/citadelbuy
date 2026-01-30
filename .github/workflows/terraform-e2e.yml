@@ -341,7 +341,7 @@ jobs:
             terraform-providers-staging-${{ runner.os }}-
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           role-session-name: terraform-staging-${{ github.run_id }}
@@ -647,7 +647,7 @@ jobs:
             terraform-providers-prod-${{ runner.os }}-
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           role-session-name: terraform-prod-${{ github.run_id }}
@@ -802,7 +802,7 @@ jobs:
       (needs.terraform-staging.outputs.apply_status == 'success' || needs.terraform-production.outputs.apply_status == 'success')
     steps:
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           role-session-name: terraform-verify-${{ github.run_id }}
