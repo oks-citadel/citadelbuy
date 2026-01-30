@@ -75,7 +75,7 @@ export function NetworkStatus({ className }: NetworkStatusProps) {
         <>
           <WifiOff className="h-5 w-5 text-amber-600 flex-shrink-0" />
           <div className="flex-1">
-            <p className="font-medium text-sm">You're offline</p>
+            <p className="font-medium text-sm">You&apos;re offline</p>
             <p className="text-xs text-amber-600">Some features may be unavailable.</p>
           </div>
           <button

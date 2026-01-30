@@ -295,9 +295,19 @@ export class AuthService {
     const payload = { sub: user.id, email: user.email, role: user.role };
     const refreshPayload = { sub: user.id, type: 'refresh' };
 
+    // SECURITY: Only include safe, non-sensitive fields in the response
+    const safeUser = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+
     // Build the response with MFA status information
     const response: any = {
-      user,
+      user: safeUser,
       access_token: this.generateToken(payload),
       refresh_token: this.generateToken(refreshPayload, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET') || this.configService.get<string>('JWT_SECRET'),

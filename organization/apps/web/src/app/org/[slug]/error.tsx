@@ -34,7 +34,7 @@ export default function OrganizationError({
           </h1>
 
           <p className="text-muted-foreground mb-6">
-            We couldn't load this organization page. This might be due to access
+            We couldn&apos;t load this organization page. This might be due to access
             permissions or a temporary issue. Please try again.
           </p>
 

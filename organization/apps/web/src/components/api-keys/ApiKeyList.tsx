@@ -136,7 +136,7 @@ export function ApiKeyList({ apiKeys, onRevoke, isLoading }: ApiKeyListProps) {
             </div>
             <h3 className="text-lg font-medium">No API Keys</h3>
             <p className="text-sm text-muted-foreground max-w-md">
-              You haven't created any API keys yet. Create your first key to start
+              You haven&apos;t created any API keys yet. Create your first key to start
               using the API.
             </p>
           </div>

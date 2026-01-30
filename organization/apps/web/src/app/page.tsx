@@ -146,7 +146,7 @@ export default function HomePage() {
               Why choose Broxiva?
             </h2>
             <p className="text-bx-text-muted text-lg max-w-2xl mx-auto">
-              We've built a marketplace that puts quality, security, and convenience first.
+              We&apos;ve built a marketplace that puts quality, security, and convenience first.
             </p>
           </div>
 
@@ -204,7 +204,7 @@ export default function HomePage() {
                 Trending Now
               </h2>
               <p className="text-bx-text-muted text-lg">
-                Discover what's popular this week
+                Discover what&apos;s popular this week
               </p>
             </div>
             <Link href="/products">
@@ -287,7 +287,7 @@ export default function HomePage() {
         <div className="container relative z-10">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-bx-text mb-6 leading-tight">
-              Shopping shouldn't feel complicated.
+              Shopping shouldn&apos;t feel complicated.
             </h2>
             <p className="text-bx-text-secondary text-lg sm:text-xl leading-relaxed">
               We believe in making premium products accessible to everyone. No hidden fees, no complicated processes, no compromises on quality. Just a seamless experience from browse to delivery.

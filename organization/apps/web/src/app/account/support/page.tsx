@@ -266,7 +266,7 @@ export default function SupportPage() {
                   No support tickets
                 </h3>
                 <p className="text-gray-500 mb-6">
-                  You haven't created any support tickets yet
+                  You haven&apos;t created any support tickets yet
                 </p>
                 <Button onClick={() => setActiveTab('new-ticket')}>
                   <Plus className="w-4 h-4 mr-2" />

@@ -72,7 +72,7 @@ function CountdownTimer({ endTime }: { endTime: Date }) {
 }
 
 export function FlashDeals() {
-  const [products, setProducts] = React.useState<Product[]>(mockFlashDeals);
+  const [products] = React.useState<Product[]>(mockFlashDeals);
   const dealEndTime = React.useMemo(() => {
     const end = new Date();
     end.setHours(end.getHours() + 8);

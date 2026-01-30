@@ -113,7 +113,7 @@ export class SentryExceptionFilter implements ExceptionFilter {
           runtime: 'nodejs',
         },
         extra: {
-          query: request.query,
+          query: this.sanitizeData(request.query),
           params: request.params,
         },
         request: {
@@ -226,6 +226,30 @@ export class SentryExceptionFilter implements ExceptionFilter {
 
     // Sentry expects frames in reverse order (most recent last)
     return frames.reverse();
+  }
+
+  /**
+   * Sanitize query/body data to prevent sensitive data from being sent to Sentry
+   */
+  private sanitizeData(data: Record<string, any> | undefined): Record<string, any> | undefined {
+    if (!data) return data;
+
+    const sensitiveFields = [
+      'password', 'token', 'secret', 'accessToken', 'refreshToken',
+      'access_token', 'refresh_token', 'apiKey', 'api_key',
+      'creditCard', 'credit_card', 'cardNumber', 'card_number',
+      'cvv', 'ssn', 'socialSecurityNumber',
+    ];
+
+    const sanitized: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (sensitiveFields.some(field => key.toLowerCase().includes(field.toLowerCase()))) {
+        sanitized[key] = '[REDACTED]';
+      } else {
+        sanitized[key] = value;
+      }
+    }
+    return sanitized;
   }
 
   private sanitizeHeaders(headers: Record<string, string>): Record<string, string> {

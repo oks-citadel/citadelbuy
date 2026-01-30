@@ -12,6 +12,7 @@ import { CustomLoggerService } from './common/logger/logger.service';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
+import * as express from 'express';
 
 // Fix BigInt serialization for JSON responses (Prisma count returns BigInt)
 (BigInt.prototype as any).toJSON = function () {
@@ -193,11 +194,21 @@ async function bootstrap() {
     next();
   });
 
+  // Request body size limits to prevent DoS via large payloads
+  // SECURITY: Limits JSON and URL-encoded bodies to prevent memory exhaustion attacks
+  app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
   // Compression
   app.use(compression());
 
-  // Cookie parser
-  app.use(cookieParser());
+  // Cookie parser with signing secret for signed cookies
+  // SECURITY: Signed cookies prevent tampering by verifying HMAC signatures
+  const cookieSecret = configService.get<string>('COOKIE_SECRET') || configService.get<string>('JWT_SECRET');
+  if (!cookieSecret) {
+    throw new Error('COOKIE_SECRET or JWT_SECRET is required for signed cookies.');
+  }
+  app.use(cookieParser(cookieSecret));
 
   // HTTPS Enforcement Middleware
   // CRITICAL: Always enforce HTTPS in production to protect sensitive data

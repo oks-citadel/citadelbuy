@@ -69,7 +69,7 @@ export default function AccountDashboard() {
           Welcome back, {user?.name?.split(' ')[0]}!
         </h1>
         <p className="text-gray-600 mt-1">
-          Here's what's happening with your account today.
+          Here&apos;s what&apos;s happening with your account today.
         </p>
       </div>
 

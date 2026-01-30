@@ -71,7 +71,10 @@ export class UsersService {
   }
 
   /**
-   * Find user by email
+   * Find user by email (includes all fields)
+   * SECURITY NOTE: This returns the password hash. Callers that expose
+   * user data in responses MUST strip the password field before returning.
+   * The AuthService.validateUser() already does this correctly.
    */
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({

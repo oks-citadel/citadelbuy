@@ -120,7 +120,7 @@ export function PhoneVerificationForm({
         </Button>
 
         <div className="text-xs text-muted-foreground bg-muted p-3 rounded-lg">
-          <strong>Note:</strong> Standard messaging rates may apply. You'll receive a 6-digit verification code via SMS.
+          <strong>Note:</strong> Standard messaging rates may apply. You&apos;ll receive a 6-digit verification code via SMS.
         </div>
       </CardContent>
     </Card>

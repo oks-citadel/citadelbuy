@@ -246,7 +246,7 @@ export default function CompetitorAnalysisPage() {
         <CardHeader>
           <CardTitle>Tracked Competitors</CardTitle>
           <CardDescription>
-            Competitors you're monitoring for price changes
+            Competitors you&apos;re monitoring for price changes
           </CardDescription>
         </CardHeader>
         <CardContent>

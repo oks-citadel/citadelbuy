@@ -8,6 +8,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { FeatureFlag, isFeatureEnabled } from '@/config/feature-flags';
 import { useFeatureFlag, useFeatureFlags, useEnabledFeatures } from '@/hooks/useFeatureFlag';
 import {
@@ -121,7 +122,7 @@ export function ChatSupportExample() {
           ) : (
             <div>
               <button>Send Email</button>
-              <p>We'll respond within 24 hours</p>
+              <p>We&apos;ll respond within 24 hours</p>
             </div>
           )}
         </div>
@@ -312,16 +313,16 @@ export function NavigationExample() {
 
   return (
     <nav>
-      <a href="/">Home</a>
-      <a href="/products">Products</a>
+      <Link href="/">Home</Link>
+      <Link href="/products">Products</Link>
       {features[FeatureFlag.AI_RECOMMENDATIONS] && (
-        <a href="/recommendations">For You</a>
+        <Link href="/recommendations">For You</Link>
       )}
       {features[FeatureFlag.VIRTUAL_TRYON] && (
-        <a href="/ar-tryron">Virtual Try-On</a>
+        <Link href="/ar-tryron">Virtual Try-On</Link>
       )}
       {features[FeatureFlag.CHAT_SUPPORT] && (
-        <a href="/support">Live Support</a>
+        <Link href="/support">Live Support</Link>
       )}
     </nav>
   );
@@ -390,7 +391,7 @@ export function ProductPageExample({ userId }: { userId?: string }) {
       <FeatureFlagComponent
         flag={FeatureFlag.CHAT_SUPPORT}
         fallback={
-          <a href="/contact">Contact Support</a>
+          <Link href="/contact">Contact Support</Link>
         }
       >
         <button>Chat with Us</button>

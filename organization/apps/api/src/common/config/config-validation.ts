@@ -58,9 +58,14 @@ export class EnvironmentVariables {
   })
   JWT_REFRESH_SECRET: string;
 
+  /**
+   * JWT Access Token Expiration
+   * SECURITY: Access tokens should be short-lived (15 minutes recommended)
+   * Use refresh tokens for longer sessions
+   */
   @IsString()
   @IsNotEmpty()
-  JWT_EXPIRES_IN: string = '7d';
+  JWT_EXPIRES_IN: string = '15m';
 
   @IsString()
   @IsNotEmpty()

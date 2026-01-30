@@ -317,7 +317,7 @@ export default function GiftCardsPage() {
                   </div>
                   {message && (
                     <div className="mt-4 pt-4 border-t border-white/20">
-                      <p className="text-sm italic">"{message}"</p>
+                      <p className="text-sm italic">&quot;{message}&quot;</p>
                     </div>
                   )}
                 </div>

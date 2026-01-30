@@ -186,7 +186,7 @@ export function OtpInput({
           Enter Verification Code
         </CardTitle>
         <CardDescription>
-          We've sent a 6-digit code to <strong>{phoneNumber}</strong>
+          We&apos;ve sent a 6-digit code to <strong>{phoneNumber}</strong>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -232,7 +232,7 @@ export function OtpInput({
 
         <div className="flex flex-col items-center gap-2">
           <p className="text-sm text-muted-foreground">
-            Didn't receive the code?
+            Didn&apos;t receive the code?
           </p>
           <Button
             variant="ghost"

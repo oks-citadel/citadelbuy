@@ -310,7 +310,7 @@ export function CreateApiKeyModal({
 
             <DialogFooter>
               <Button onClick={handleClose} className="w-full">
-                I've Saved My Key
+                I&apos;ve Saved My Key
               </Button>
             </DialogFooter>
           </>

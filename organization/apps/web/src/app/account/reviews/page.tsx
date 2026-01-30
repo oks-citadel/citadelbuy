@@ -125,7 +125,7 @@ export default function ReviewsPage() {
               No reviews yet
             </h3>
             <p className="text-gray-500 mb-6">
-              Share your thoughts on products you've purchased
+              Share your thoughts on products you&apos;ve purchased
             </p>
             <Link href="/account/orders">
               <Button>Browse Past Orders</Button>
@@ -274,7 +274,7 @@ export default function ReviewsPage() {
           <ul className="space-y-2 text-sm text-blue-800">
             <li className="flex items-start gap-2">
               <Star className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              Be specific about what you liked or didn't like
+              Be specific about what you liked or didn&apos;t like
             </li>
             <li className="flex items-start gap-2">
               <Camera className="w-4 h-4 mt-0.5 flex-shrink-0" />

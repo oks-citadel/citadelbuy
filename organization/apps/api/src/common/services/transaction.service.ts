@@ -147,7 +147,15 @@ export class TransactionService {
     return this.executeWithRetry(async (tx) => {
       const tableName = this.getTableName(entityName);
 
-      // Use raw query for SELECT FOR UPDATE
+      // SECURITY: tableName is validated against VALID_ENTITY_NAMES allowlist in getTableName().
+      // Prisma.raw() is used here only for the table identifier, which is safe because:
+      // 1. The entity name is validated against a strict allowlist
+      // 2. The allowlist contains only known Prisma model names
+      // 3. The entityId parameter is properly parameterized by Prisma's tagged template
+      // Additional safety: verify tableName matches safe identifier pattern
+      if (!/^[a-z_]+$/.test(tableName)) {
+        throw new Error(`Invalid table name format: ${tableName}`);
+      }
       const entities = await tx.$queryRaw<T[]>`
         SELECT * FROM "${Prisma.raw(tableName)}"
         WHERE id = ${entityId}

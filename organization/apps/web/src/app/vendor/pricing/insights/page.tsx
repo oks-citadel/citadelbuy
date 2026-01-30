@@ -231,7 +231,7 @@ export default function PricingInsightsPage() {
             <div className="flex-1">
               <h3 className="font-semibold text-gray-900 mb-2">AI Summary</h3>
               <p className="text-muted-foreground mb-4">
-                Based on market analysis, competitor monitoring, and your sales data, we've identified
+                Based on market analysis, competitor monitoring, and your sales data, we&apos;ve identified
                 <span className="font-medium text-primary"> {opportunities} pricing opportunities </span>
                 that could increase your revenue by up to
                 <span className="font-medium text-green-600"> ${totalPotential.toLocaleString()}</span>.

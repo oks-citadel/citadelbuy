@@ -188,7 +188,7 @@ function CheckoutSuccessContent() {
         >
           <Card className="mb-8">
             <CardContent className="p-6">
-              <h3 className="font-medium mb-4">What's Next?</h3>
+              <h3 className="font-medium mb-4">What&apos;s Next?</h3>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -197,7 +197,7 @@ function CheckoutSuccessContent() {
                   <div>
                     <p className="font-medium">Check your email</p>
                     <p className="text-sm text-muted-foreground">
-                      We've sent a confirmation email with your order details and tracking
+                      We&apos;ve sent a confirmation email with your order details and tracking
                       information.
                     </p>
                   </div>
@@ -221,7 +221,7 @@ function CheckoutSuccessContent() {
                   <div>
                     <p className="font-medium">Delivery updates</p>
                     <p className="text-sm text-muted-foreground">
-                      We'll notify you via email and SMS when your order ships and when it's out
+                      We&apos;ll notify you via email and SMS when your order ships and when it&apos;s out
                       for delivery.
                     </p>
                   </div>

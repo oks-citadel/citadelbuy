@@ -470,13 +470,13 @@ describe('VariantsService', () => {
         price: 109.99,
         stock: 20,
       };
+      const createdVariant = { ...mockProductVariant, ...dto, id: 'variant-456' };
       mockPrismaService.product.findUnique.mockResolvedValue(mockProduct);
-      mockPrismaService.productVariant.findUnique.mockResolvedValue(null);
-      mockPrismaService.productVariant.create.mockResolvedValue({
-        ...mockProductVariant,
-        ...dto,
-        id: 'variant-456',
+      mockPrismaService.productVariant.findUnique.mockImplementation((args) => {
+        if (args.where.sku) return Promise.resolve(null); // SKU uniqueness check
+        return Promise.resolve(createdVariant); // getVariantWithDetails
       });
+      mockPrismaService.productVariant.create.mockResolvedValue(createdVariant);
 
       // Act
       const result = await service.createProductVariant(dto);
@@ -623,11 +623,12 @@ describe('VariantsService', () => {
       // Arrange
       const id = 'variant-123';
       const dto = { price: 119.99, stock: 50 };
-      mockPrismaService.productVariant.findUnique.mockResolvedValue(mockProductVariant);
-      mockPrismaService.productVariant.update.mockResolvedValue({
-        ...mockProductVariant,
-        ...dto,
-      });
+      const updatedVariant = { ...mockProductVariant, ...dto };
+      // First call: getVariantWithDetails (check existence), Second call: getVariantWithDetails (return updated)
+      mockPrismaService.productVariant.findUnique
+        .mockResolvedValueOnce(mockProductVariant)
+        .mockResolvedValueOnce(updatedVariant);
+      mockPrismaService.productVariant.update.mockResolvedValue(updatedVariant);
 
       // Act
       const result = await service.updateProductVariant(id, dto);
@@ -693,7 +694,10 @@ describe('VariantsService', () => {
         ],
       };
       mockPrismaService.product.findUnique.mockResolvedValue(mockProduct);
-      mockPrismaService.productVariant.findUnique.mockResolvedValue(null);
+      mockPrismaService.productVariant.findUnique.mockImplementation((args) => {
+        if (args.where.sku) return Promise.resolve(null);
+        return Promise.resolve(mockProductVariant);
+      });
       mockPrismaService.productVariant.create.mockResolvedValue(mockProductVariant);
 
       // Act
@@ -870,12 +874,18 @@ describe('VariantsService', () => {
           },
         },
       ]);
-      mockPrismaService.productVariant.findUnique.mockResolvedValue(null);
-      mockPrismaService.productVariant.create.mockImplementation((args) => ({
-        ...mockProductVariant,
-        ...args.data,
-        id: `variant-${Date.now()}`,
-      }));
+      // SKU uniqueness check returns null (no conflict), ID lookup returns the variant
+      mockPrismaService.productVariant.findUnique.mockImplementation((args) => {
+        if (args.where.sku) return Promise.resolve(null); // SKU check
+        return Promise.resolve({ ...mockProductVariant, ...args.where }); // ID lookup
+      });
+      mockPrismaService.productVariant.create.mockImplementation((args) =>
+        Promise.resolve({
+          ...mockProductVariant,
+          ...args.data,
+          id: `variant-${Date.now()}`,
+        }),
+      );
       mockPrismaService.productVariantOptionValue.createMany.mockResolvedValue({ count: 1 });
 
       // Act
@@ -924,7 +934,10 @@ describe('VariantsService', () => {
           },
         },
       ]);
-      mockPrismaService.productVariant.findUnique.mockResolvedValue(null);
+      mockPrismaService.productVariant.findUnique.mockImplementation((args) => {
+        if (args.where.sku) return Promise.resolve(null);
+        return Promise.resolve(mockProductVariant);
+      });
       mockPrismaService.productVariant.create.mockResolvedValue(mockProductVariant);
       mockPrismaService.productVariantOptionValue.createMany.mockResolvedValue({ count: 1 });
 

@@ -16,11 +16,11 @@ export default function OfflinePage() {
             <WifiOff className="h-12 w-12 text-violet-600" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-3">
-            You're Offline
+            You&apos;re Offline
           </h1>
           <p className="text-gray-600 mb-8">
-            It looks like you've lost your internet connection. Don't worry - you
-            can still browse items you've viewed before.
+            It looks like you&apos;ve lost your internet connection. Don&apos;t worry - you
+            can still browse items you&apos;ve viewed before.
           </p>
         </div>
 
@@ -52,12 +52,12 @@ export default function OfflinePage() {
 
         <div className="mt-12 p-6 bg-white rounded-xl border border-gray-200">
           <h2 className="font-semibold text-gray-900 mb-3">
-            While you're offline, you can:
+            While you&apos;re offline, you can:
           </h2>
           <ul className="text-left text-gray-600 space-y-2">
             <li className="flex items-start">
               <span className="text-violet-600 mr-2">•</span>
-              Browse products you've viewed recently
+              Browse products you&apos;ve viewed recently
             </li>
             <li className="flex items-start">
               <span className="text-violet-600 mr-2">•</span>
@@ -75,7 +75,7 @@ export default function OfflinePage() {
         </div>
 
         <p className="mt-8 text-sm text-gray-500">
-          We'll automatically reconnect when your internet is back.
+          We&apos;ll automatically reconnect when your internet is back.
         </p>
       </div>
     </div>

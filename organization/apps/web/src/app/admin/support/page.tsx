@@ -536,7 +536,7 @@ export default function SupportPage() {
                       </div>
                       <div className="flex justify-start">
                         <div className="bg-muted rounded-lg px-4 py-2 max-w-[70%]">
-                          <p className="text-sm">Sure, it's ORD-12345.</p>
+                          <p className="text-sm">Sure, it&apos;s ORD-12345.</p>
                           <span className="text-xs text-muted-foreground">11:32 AM</span>
                         </div>
                       </div>

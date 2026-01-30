@@ -110,7 +110,11 @@ import { SecurityModule } from '../security/security.module';
         return {
           secret: jwtSecret,
           signOptions: {
-            expiresIn: config.get('JWT_EXPIRATION') || '7d',
+            expiresIn: config.get('JWT_EXPIRATION') || '15m',
+            algorithm: 'HS256',
+          },
+          verifyOptions: {
+            algorithms: ['HS256'],
           },
         };
       },

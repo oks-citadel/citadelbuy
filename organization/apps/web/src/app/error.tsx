@@ -35,7 +35,7 @@ export default function GlobalError({
           </h1>
 
           <p className="text-muted-foreground text-lg mb-2">
-            We're sorry, but we encountered an unexpected error.
+            We&apos;re sorry, but we encountered an unexpected error.
           </p>
 
           <p className="text-muted-foreground text-sm mb-8">

@@ -239,7 +239,7 @@ export function SubscriptionManager({ onUpgrade, onManagePayment }: Subscription
           <div className="text-center py-8">
             <Crown className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
             <p className="text-muted-foreground mb-4">
-              You don't have an active subscription yet.
+              You don&apos;t have an active subscription yet.
             </p>
             <Button onClick={onUpgrade}>
               View Plans

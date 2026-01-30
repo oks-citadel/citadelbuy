@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
@@ -298,12 +299,12 @@ export function Footer() {
                 </Link>
               </div>
               <div className="flex items-center gap-3">
-                <img src="/payment/visa.svg" alt="Visa" className="h-8 opacity-60 hover:opacity-100 transition-opacity" />
-                <img src="/payment/mastercard.svg" alt="Mastercard" className="h-8 opacity-60 hover:opacity-100 transition-opacity" />
-                <img src="/payment/amex.svg" alt="American Express" className="h-8 opacity-60 hover:opacity-100 transition-opacity" />
-                <img src="/payment/paypal.svg" alt="PayPal" className="h-8 opacity-60 hover:opacity-100 transition-opacity" />
-                <img src="/payment/apple-pay.svg" alt="Apple Pay" className="h-8 opacity-60 hover:opacity-100 transition-opacity" />
-                <img src="/payment/google-pay.svg" alt="Google Pay" className="h-8 opacity-60 hover:opacity-100 transition-opacity" />
+                <Image src="/payment/visa.svg" alt="Visa" width={48} height={32} className="h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                <Image src="/payment/mastercard.svg" alt="Mastercard" width={48} height={32} className="h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                <Image src="/payment/amex.svg" alt="American Express" width={48} height={32} className="h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                <Image src="/payment/paypal.svg" alt="PayPal" width={48} height={32} className="h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                <Image src="/payment/apple-pay.svg" alt="Apple Pay" width={48} height={32} className="h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                <Image src="/payment/google-pay.svg" alt="Google Pay" width={48} height={32} className="h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
               </div>
             </div>
             {/* Build Info - shows version, commit, and environment */}

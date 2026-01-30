@@ -24,8 +24,8 @@ export default function NotFound() {
           </h2>
 
           <p className="text-muted-foreground mb-8">
-            The page you're looking for doesn't exist or has been moved.
-            Let's get you back on track.
+            The page you&apos;re looking for doesn&apos;t exist or has been moved.
+            Let&apos;s get you back on track.
           </p>
 
           {/* Search */}
@@ -72,7 +72,7 @@ export default function NotFound() {
             <p className="text-sm text-muted-foreground mb-4">Popular destinations:</p>
             <div className="flex flex-wrap justify-center gap-2">
               <Link href="/deals" className="text-sm text-primary hover:underline">
-                Today's Deals
+                Today&apos;s Deals
               </Link>
               <span className="text-muted-foreground">|</span>
               <Link href="/categories" className="text-sm text-primary hover:underline">

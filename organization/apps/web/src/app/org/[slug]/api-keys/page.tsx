@@ -201,7 +201,7 @@ export default function ApiKeysPage() {
                 <div>
                   <h4 className="font-medium">Copy Your Key</h4>
                   <p className="text-sm text-muted-foreground">
-                    Save the API key securely - you won't be able to see it again
+                    Save the API key securely - you won&apos;t be able to see it again
                   </p>
                 </div>
               </div>

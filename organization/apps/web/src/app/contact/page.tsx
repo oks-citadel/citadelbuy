@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Mail, MapPin, Phone, Send, Clock } from 'lucide-react';
 import { BroxivaBackground } from '@/components/theme/BroxivaBackground';
 import { Input } from '@/components/ui/input';
@@ -262,14 +263,14 @@ export default function ContactPage() {
             <p className="text-bx-text-muted mb-6">
               Check out our Help Center for frequently asked questions and guides.
             </p>
-            <a href="/help">
+            <Link href="/help">
               <Button
                 variant="outline"
                 className="border-[var(--bx-border-hover)] text-bx-text hover:bg-bx-bg-3"
               >
                 Visit Help Center
               </Button>
-            </a>
+            </Link>
           </div>
         </div>
       </section>

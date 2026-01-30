@@ -104,7 +104,7 @@ function MetricCard({ title, icon: Icon, current, limit, unit = '' }: MetricCard
               )}
               {isNearLimit && !isAtLimit && (
                 <p className="text-xs text-warning">
-                  You're approaching your limit
+                  You&apos;re approaching your limit
                 </p>
               )}
             </div>

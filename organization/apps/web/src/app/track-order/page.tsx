@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Package, Search, Truck, CheckCircle, Clock, MapPin, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -345,9 +346,9 @@ export default function TrackOrderPage() {
             <p className="mb-2">Can&apos;t find your order number?</p>
             <p className="text-sm">
               Check your email confirmation or{' '}
-              <a href="/account/orders" className="text-primary hover:underline">
+              <Link href="/account/orders" className="text-primary hover:underline">
                 view your order history
-              </a>
+              </Link>
             </p>
           </div>
         )}

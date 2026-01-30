@@ -34,9 +34,9 @@ export function NewsletterSection() {
         <div className="mx-auto w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-4">
           <Check className="h-8 w-8" />
         </div>
-        <h2 className="text-2xl md:text-3xl font-bold mb-2">You're In!</h2>
+        <h2 className="text-2xl md:text-3xl font-bold mb-2">You&apos;re In!</h2>
         <p className="text-primary-foreground/80 max-w-md mx-auto">
-          Check your inbox for your 15% off code. We can't wait to share our
+          Check your inbox for your 15% off code. We can&apos;t wait to share our
           best deals and AI shopping tips with you!
         </p>
       </div>

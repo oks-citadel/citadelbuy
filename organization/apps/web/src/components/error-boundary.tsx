@@ -210,7 +210,7 @@ function DefaultErrorFallback({
 
           {/* Error Message */}
           <p className="text-gray-600 text-center mb-6">
-            We're sorry for the inconvenience. An unexpected error occurred while loading this page.
+            We&apos;re sorry for the inconvenience. An unexpected error occurred while loading this page.
             {eventId && ' Our team has been automatically notified and will investigate the issue.'}
           </p>
 

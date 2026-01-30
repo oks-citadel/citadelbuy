@@ -375,7 +375,7 @@ export default async function CountryLandingPage({ params: paramsPromise }: Page
                       <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                     ))}
                   </div>
-                  <p className="text-gray-700 mb-4">"{testimonial.text}"</p>
+                  <p className="text-gray-700 mb-4">&quot;{testimonial.text}&quot;</p>
                   <div className="text-sm">
                     <p className="font-semibold">{testimonial.name}</p>
                     <p className="text-gray-500">{testimonial.location}</p>

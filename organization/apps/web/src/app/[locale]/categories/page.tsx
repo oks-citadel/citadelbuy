@@ -241,7 +241,7 @@ export default async function CategoriesPage({ params: paramsPromise }: PageProp
           <h2>Shop by Category on Broxiva</h2>
           <p>
             Discover millions of products across {categories.length} carefully curated categories on Broxiva,
-            Africa's leading B2B e-commerce marketplace. Whether you're looking for electronics, fashion,
+            Africa&apos;s leading B2B e-commerce marketplace. Whether you&apos;re looking for electronics, fashion,
             home goods, or industrial supplies, our verified vendors offer competitive wholesale pricing
             with secure payment options and reliable shipping worldwide.
           </p>

@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { DollarSign, Globe, Shield, TrendingUp, Users, Zap } from 'lucide-react';
 
@@ -357,7 +358,7 @@ export const ExportersAfricaLandingPage = () => {
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <div className="bg-gray-50 p-8 rounded-lg">
               <div className="mb-4">
-                <img src="/images/success-story-nigeria.jpg" alt="Nigerian exporter" className="w-full h-48 object-cover rounded-lg" />
+                <Image src="/images/success-story-nigeria.jpg" alt="Nigerian exporter" width={600} height={192} className="w-full h-48 object-cover rounded-lg" />
               </div>
               <h3 className="text-2xl font-semibold mb-2">From $200K to $2M in Annual Sales</h3>
               <p className="text-gray-600 mb-4">
@@ -374,7 +375,7 @@ export const ExportersAfricaLandingPage = () => {
             </div>
             <div className="bg-gray-50 p-8 rounded-lg">
               <div className="mb-4">
-                <img src="/images/success-story-kenya.jpg" alt="Kenyan exporter" className="w-full h-48 object-cover rounded-lg" />
+                <Image src="/images/success-story-kenya.jpg" alt="Kenyan exporter" width={600} height={192} className="w-full h-48 object-cover rounded-lg" />
               </div>
               <h3 className="text-2xl font-semibold mb-2">Scaled to 50 U.S. Retailers in 12 Months</h3>
               <p className="text-gray-600 mb-4">

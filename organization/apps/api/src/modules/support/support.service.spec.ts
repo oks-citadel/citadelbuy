@@ -800,15 +800,21 @@ describe('SupportService', () => {
         guestName: 'Guest',
         guestEmail: 'guest@example.com',
         status: ChatStatus.WAITING,
+        sessionToken: null,
       };
 
-      mockPrismaService.liveChatSession.create.mockResolvedValue(mockSession);
-      mockPrismaService.liveChatSession.findUnique.mockResolvedValue(mockSession);
+      mockPrismaService.liveChatSession.create.mockImplementation((args) => {
+        // Capture the sessionToken from the create call
+        const created = { ...mockSession, sessionToken: args.data.sessionToken };
+        // Also set findUnique to return this session with the token
+        mockPrismaService.liveChatSession.findUnique.mockResolvedValue(created);
+        return Promise.resolve(created);
+      });
       mockPrismaService.chatMessage.create.mockResolvedValue({ id: 'msg-123' });
 
       const result = await service.startChatSession(null, dto);
 
-      expect(result).toEqual(mockSession);
+      expect(result.id).toEqual('session-123');
     });
 
     it('should start a chat session for authenticated user', async () => {
@@ -858,7 +864,9 @@ describe('SupportService', () => {
     it('should send a chat message', async () => {
       const mockSession = {
         id: 'session-123',
+        userId: 'user-123',
         status: ChatStatus.ACTIVE,
+        sessionToken: null,
       };
 
       const mockMessage = {
@@ -900,14 +908,22 @@ describe('SupportService', () => {
 
   describe('getChatMessages', () => {
     it('should return chat messages for a session', async () => {
+      const mockSession = {
+        id: 'session-123',
+        userId: 'user-123',
+        status: ChatStatus.ACTIVE,
+        sessionToken: null,
+      };
+
       const mockMessages = [
         { id: 'msg-1', message: 'Hello' },
         { id: 'msg-2', message: 'Hi there' },
       ];
 
+      mockPrismaService.liveChatSession.findUnique.mockResolvedValue(mockSession);
       mockPrismaService.chatMessage.findMany.mockResolvedValue(mockMessages);
 
-      const result = await service.getChatMessages('session-123');
+      const result = await service.getChatMessages('session-123', 'user-123', true);
 
       expect(result).toEqual(mockMessages);
       expect(mockPrismaService.chatMessage.findMany).toHaveBeenCalledWith({
